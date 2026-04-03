@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useActiveTimer, useStopTimer } from "../../hooks/useClocks";
+import { useStopTimer } from "../../hooks/useClocks";
 import type { ActiveTimer as ActiveTimerType } from "../../types";
 
 function elapsed(startIso: string): string {
