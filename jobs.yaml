@@ -1,0 +1,27 @@
+jobs:
+  - id: daily-briefing
+    name: "Daily Briefing"
+    schedule: "30 9 * * 1-5"
+    model: "ollama:qwen3:14b"
+    prompt_file: "prompts/daily-briefing.md"
+    output: "~/ownCloud/cowork/research/daily-briefing-{date}.md"
+    timeout: 120
+    enabled: true
+
+  - id: weekly-scout
+    name: "Business Scout"
+    schedule: "0 9 * * 1"
+    model: "ollama:llama3.3:70b"
+    prompt_file: "prompts/weekly-scout.md"
+    output: "~/ownCloud/cowork/research/scout_ideas_{date}.md"
+    timeout: 300
+    enabled: true
+
+  - id: weekly-project-update
+    name: "Project Status"
+    schedule: "0 17 * * 5"
+    model: "ollama:qwen3:14b"
+    prompt_file: "prompts/project-update.md"
+    output: "inbox"
+    timeout: 120
+    enabled: true

@@ -1,0 +1,243 @@
+import json
+import re
+import sys
+
+import click
+
+from ..config import get_config, load_settings_yaml
+from ..org.parser import KEYWORDS as DEFAULT_KEYWORDS
+from ..services import kanban
+from ..services.settings import get_state_names
+from . import open_in_editor
+
+CUSTOMER_STRIP_RE = re.compile(r"^\[[^\]]+\]\s*")
+
+
+def _get_keywords() -> set[str]:
+    """Get task keywords from settings."""
+    settings = load_settings_yaml()
+    names = get_state_names(settings)
+    return set(names) if names else DEFAULT_KEYWORDS
+
+
+def _format_task_line(task: dict) -> str:
+    """Format a task for display."""
+    task_id = task.get("id", "?")
+    status = (task.get("status") or "").ljust(12)
+    customer = task.get("customer") or "-"
+    customer_col = f"[{customer}]"
+    title = CUSTOMER_STRIP_RE.sub("", task.get("title") or "")
+    tags = task.get("tags") or []
+    tag_str = (":" + ":".join(tags) + ":") if tags else ""
+    created = (task.get("created") or "").strip("[]")[:10]
+    parts = [f"#{task_id:<3}", status, customer_col, title]
+    if tag_str:
+        parts.append(tag_str)
+    parts.append(created)
+    return "  ".join(parts)
+
+
+@click.group()
+def task():
+    """Manage tasks in todos.org."""
+
+
+@task.command("add")
+@click.argument("customer_name")
+@click.argument("title")
+@click.option("--tag", "tags", multiple=True, help="Add tag")
+@click.option("--status", default="TODO", help="Initial status")
+@click.option("--json", "as_json", is_flag=True, help="JSON output")
+def task_add(customer_name, title, tags, status, as_json):
+    """Add a new task."""
+    cfg = get_config()
+    keywords = _get_keywords()
+    result = kanban.add_task(
+        todos_file=cfg.TODOS_FILE,
+        keywords=keywords,
+        customer=customer_name,
+        title=title,
+        status=status,
+        tags=list(tags),
+    )
+    if as_json:
+        click.echo(json.dumps(result, default=str))
+    else:
+        click.echo(f"Added task: {result['title']}")
+
+
+@task.command("list")
+@click.option("--customer", default=None, help="Filter by customer")
+@click.option("--status", "status_filter", default=None,
+              help="Filter by status")
+@click.option("--tag", default=None, help="Filter by tag")
+@click.option("--all", "include_all", is_flag=True,
+              help="Include DONE and CANCELLED")
+@click.option("--json", "as_json", is_flag=True, help="JSON output")
+def task_list(customer, status_filter, tag, include_all, as_json):
+    """List tasks."""
+    cfg = get_config()
+    keywords = _get_keywords()
+    status_list = [status_filter] if status_filter else None
+    tasks = kanban.list_tasks(
+        todos_file=cfg.TODOS_FILE,
+        keywords=keywords,
+        status=status_list,
+        customer=customer,
+        tag=tag,
+        include_done=include_all,
+    )
+    if as_json:
+        click.echo(json.dumps(tasks, default=str))
+        return
+    if not tasks:
+        click.echo("No tasks found.")
+        return
+    for t in tasks:
+        click.echo(_format_task_line(t))
+
+
+@task.command("move")
+@click.argument("task_id")
+@click.argument("new_status")
+@click.option("--json", "as_json", is_flag=True)
+def task_move(task_id, new_status, as_json):
+    """Move a task to a new status."""
+    cfg = get_config()
+    keywords = _get_keywords()
+    result = kanban.move_task(
+        todos_file=cfg.TODOS_FILE,
+        keywords=keywords,
+        task_id=task_id,
+        new_status=new_status,
+    )
+    if as_json:
+        click.echo(json.dumps(result, default=str))
+    else:
+        click.echo(f"Moved task {task_id} to {new_status}")
+
+
+def _move_to(task_id: str, new_status: str) -> None:
+    """Helper to move task to given status."""
+    cfg = get_config()
+    keywords = _get_keywords()
+    kanban.move_task(
+        todos_file=cfg.TODOS_FILE,
+        keywords=keywords,
+        task_id=task_id,
+        new_status=new_status,
+    )
+    click.echo(f"Task {task_id} -> {new_status}")
+
+
+@task.command("done")
+@click.argument("task_id")
+def task_done(task_id):
+    """Mark a task as DONE."""
+    _move_to(task_id, "DONE")
+
+
+@task.command("next")
+@click.argument("task_id")
+def task_next(task_id):
+    """Mark a task as NEXT."""
+    _move_to(task_id, "NEXT")
+
+
+@task.command("wait")
+@click.argument("task_id")
+def task_wait(task_id):
+    """Mark a task as WAIT."""
+    _move_to(task_id, "WAIT")
+
+
+@task.command("cancel")
+@click.argument("task_id")
+def task_cancel(task_id):
+    """Mark a task as CANCELLED."""
+    _move_to(task_id, "CANCELLED")
+
+
+@task.command("tag")
+@click.argument("task_id")
+@click.argument("tags", nargs=-1, required=True)
+@click.option("--json", "as_json", is_flag=True)
+def task_tag(task_id, tags, as_json):
+    """Set or modify tags on a task.
+
+    Prefix with + to add, - to remove, or bare to replace all tags.
+    """
+    cfg = get_config()
+    keywords = _get_keywords()
+
+    has_modifiers = any(t.startswith(("+", "-")) for t in tags)
+
+    if has_modifiers:
+        # Load current tags first
+        all_tasks = kanban.list_tasks(
+            todos_file=cfg.TODOS_FILE,
+            keywords=keywords,
+            include_done=True,
+        )
+        current_task = None
+        if task_id.isdigit():
+            idx = int(task_id) - 1
+            if 0 <= idx < len(all_tasks):
+                current_task = all_tasks[idx]
+        if current_task is None:
+            for t in all_tasks:
+                if task_id.lower() in (t.get("title") or "").lower():
+                    current_task = t
+                    break
+        current = list(current_task["tags"]) if current_task else []
+        for tag in tags:
+            if tag.startswith("+"):
+                tname = tag[1:]
+                if tname not in current:
+                    current.append(tname)
+            elif tag.startswith("-"):
+                tname = tag[1:]
+                current = [t for t in current if t != tname]
+            else:
+                current = [tag]
+        new_tags = current
+    else:
+        new_tags = list(tags)
+
+    result = kanban.set_task_tags(
+        todos_file=cfg.TODOS_FILE,
+        keywords=keywords,
+        task_id=task_id,
+        tags=new_tags,
+    )
+    if as_json:
+        click.echo(json.dumps(result, default=str))
+    else:
+        tag_str = ":" + ":".join(new_tags) + ":" if new_tags else "(none)"
+        click.echo(f"Tags set for task {task_id}: {tag_str}")
+
+
+@task.command("archive")
+@click.argument("task_id")
+def task_archive(task_id):
+    """Archive a task (move to archive.org)."""
+    cfg = get_config()
+    keywords = _get_keywords()
+    success = kanban.archive_task(
+        todos_file=cfg.TODOS_FILE,
+        archive_file=cfg.ARCHIVE_FILE,
+        keywords=keywords,
+        task_id=task_id,
+    )
+    if success:
+        click.echo(f"Task {task_id} archived.")
+    else:
+        click.echo(f"Task {task_id} not found.", err=True)
+        sys.exit(1)
+
+
+@task.command("edit")
+def task_edit():
+    """Open todos.org in $EDITOR."""
+    cfg = get_config()
+    open_in_editor(cfg.TODOS_FILE)

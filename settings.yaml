@@ -1,0 +1,72 @@
+# OmniControl Settings
+# Tags, States, Colors - editable via CLI or Web UI
+
+task_states:
+  - name: TODO
+    label: "Todo"
+    color: "#8c8c8a"
+    done: false
+  - name: NEXT
+    label: "Next"
+    color: "#D97757"
+    done: false
+  - name: IN-PROGRESS
+    label: "In Progress"
+    color: "#3b82f6"
+    done: false
+  - name: WAIT
+    label: "Wait"
+    color: "#f59e0b"
+    done: false
+  - name: DONE
+    label: "Done"
+    color: "#22c55e"
+    done: true
+  - name: CANCELLED
+    label: "Cancelled"
+    color: "#9ca3af"
+    done: true
+
+tags:
+  - name: "@email"
+    color: "#3b82f6"
+    description: "Email-bezogene Aufgabe"
+  - name: "@phone"
+    color: "#8b5cf6"
+    description: "Telefonat/Anruf"
+  - name: book
+    color: "#f97316"
+    description: "SENAITE-Buch bezogen"
+  - name: idea
+    color: "#a3e635"
+    description: "Idee, nicht dringend"
+  - name: code
+    color: "#06b6d4"
+    description: "Programmieraufgabe"
+  - name: github
+    color: "#171717"
+    description: "GitHub-bezogen (PR, Review)"
+  - name: issue
+    color: "#ef4444"
+    description: "Bug/Issue"
+  - name: meeting
+    color: "#8b5cf6"
+    description: "Meeting/Besprechung"
+  - name: prio-high
+    color: "#dc2626"
+    description: "Hohe Prioritaet"
+  - name: prio-low
+    color: "#9ca3af"
+    description: "Niedrige Prioritaet"
+  - name: reminder
+    color: "#f59e0b"
+    description: "Erinnerung/Follow-Up"
+  - name: ridingbytes
+    color: "#D97757"
+    description: "Internes RIDING BYTES"
+  - name: senaite
+    color: "#22c55e"
+    description: "SENAITE Core bezogen"
+  - name: youtube
+    color: "#ef4444"
+    description: "YouTube-Content"
