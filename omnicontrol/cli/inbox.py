@@ -4,25 +4,13 @@ import sys
 
 import click
 
-from ..config import get_config, load_settings_yaml
-from ..services import inbox as inbox_svc
-from ..services.settings import get_state_names
+from ..backends import get_backend
 from . import open_in_editor
 
-# Strip leading TYPE and [CUSTOMER] prefixes from title for display
 _TITLE_STRIP_RE = re.compile(
     r"^(?:EMAIL|LEAD|IDEE|NOTIZ|NOTE|IDEA)\s+", re.IGNORECASE
 )
 _CUSTOMER_STRIP_RE = re.compile(r"^\[[^\]]+\]\s*")
-
-
-def _get_keywords() -> set[str]:
-    """Get task keywords from settings."""
-    settings = load_settings_yaml()
-    names = get_state_names(settings)
-    return set(names) if names else {
-        "TODO", "NEXT", "IN-PROGRESS", "WAIT", "DONE", "CANCELLED"
-    }
 
 
 def _clean_title(title: str) -> str:
@@ -45,7 +33,7 @@ def _format_item(item: dict) -> str:
 
 @click.group()
 def inbox():
-    """Manage inbox items in inbox.org."""
+    """Manage inbox items."""
 
 
 @inbox.command("add")
@@ -59,12 +47,10 @@ def inbox_add(text, item_type, customer, as_json):
 
     Pass - as TEXT to read from stdin.
     """
-    cfg = get_config()
     joined = " ".join(text)
     if joined == "-":
         joined = sys.stdin.read().strip()
-    result = inbox_svc.add_item(
-        inbox_file=cfg.INBOX_FILE,
+    result = get_backend().inbox.add_item(
         text=joined,
         item_type=item_type,
         customer=customer,
@@ -81,8 +67,7 @@ def inbox_add(text, item_type, customer, as_json):
 @click.option("--json", "as_json", is_flag=True)
 def inbox_list(type_filter, as_json):
     """List inbox items."""
-    cfg = get_config()
-    items = inbox_svc.list_items(inbox_file=cfg.INBOX_FILE)
+    items = get_backend().inbox.list_items()
     if type_filter:
         items = [i for i in items if i.get("type") == type_filter]
     if as_json:
@@ -101,13 +86,10 @@ def inbox_list(type_filter, as_json):
 @click.option("--json", "as_json", is_flag=True)
 def inbox_promote(item_id, customer, as_json):
     """Promote an inbox item to a task."""
-    cfg = get_config()
-    keywords = _get_keywords()
-    result = inbox_svc.promote_to_task(
-        inbox_file=cfg.INBOX_FILE,
-        todos_file=cfg.TODOS_FILE,
-        keywords=keywords,
+    backend = get_backend()
+    result = backend.inbox.promote_to_task(
         item_id=item_id,
+        tasks=backend.tasks,
         customer=customer,
     )
     if as_json:
@@ -118,6 +100,9 @@ def inbox_promote(item_id, customer, as_json):
 
 @inbox.command("edit")
 def inbox_edit():
-    """Open inbox.org in $EDITOR."""
-    cfg = get_config()
-    open_in_editor(cfg.INBOX_FILE)
+    """Open the inbox file in $EDITOR."""
+    f = get_backend().inbox.data_file
+    if f is None:
+        click.echo("This backend has no editable file.", err=True)
+        sys.exit(1)
+    open_in_editor(f)

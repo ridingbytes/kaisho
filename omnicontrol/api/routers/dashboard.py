@@ -1,40 +1,17 @@
 from fastapi import APIRouter
 
-from ...config import get_config, load_settings_yaml
-from ...services import clocks as clock_svc
-from ...services import customers as customer_svc
-from ...services import inbox as inbox_svc
-from ...services import kanban as kanban_svc
-from ...services.settings import get_state_names
+from ...backends import get_backend
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 
-def _get_keywords() -> set[str]:
-    settings = load_settings_yaml()
-    names = get_state_names(settings)
-    return set(names) if names else {
-        "TODO", "NEXT", "IN-PROGRESS", "WAIT", "DONE", "CANCELLED"
-    }
-
-
 @router.get("/")
 def get_dashboard():
-    cfg = get_config()
-    keywords = _get_keywords()
-
-    active_timer = clock_svc.get_active_timer(
-        clocks_file=cfg.CLOCKS_FILE
-    )
-    open_tasks = kanban_svc.list_tasks(
-        todos_file=cfg.TODOS_FILE,
-        keywords=keywords,
-        include_done=False,
-    )
-    inbox_items = inbox_svc.list_items(inbox_file=cfg.INBOX_FILE)
-    budgets = customer_svc.get_budget_summary(
-        kunden_file=cfg.KUNDEN_FILE
-    )
+    backend = get_backend()
+    active_timer = backend.clocks.get_active()
+    open_tasks = backend.tasks.list_tasks(include_done=False)
+    inbox_items = backend.inbox.list_items()
+    budgets = backend.customers.get_budget_summary()
 
     return {
         "active_timer": active_timer,

@@ -3,8 +3,7 @@ from datetime import date
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ...config import get_config
-from ...services import clocks as clock_svc
+from ...backends import get_backend
 
 router = APIRouter(prefix="/api/clocks", tags=["clocks"])
 
@@ -27,9 +26,7 @@ def list_entries(
     from_date: date | None = None,
     to_date: date | None = None,
 ):
-    cfg = get_config()
-    return clock_svc.list_entries(
-        clocks_file=cfg.CLOCKS_FILE,
+    return get_backend().clocks.list_entries(
         period=period,
         customer=customer,
         from_date=from_date,
@@ -39,8 +36,7 @@ def list_entries(
 
 @router.get("/active")
 def get_active():
-    cfg = get_config()
-    timer = clock_svc.get_active_timer(clocks_file=cfg.CLOCKS_FILE)
+    timer = get_backend().clocks.get_active()
     if timer is None:
         return {"active": False}
     return {"active": True, **timer}
@@ -48,10 +44,8 @@ def get_active():
 
 @router.post("/quick-book", status_code=201)
 def quick_book(body: QuickBookRequest):
-    cfg = get_config()
     try:
-        return clock_svc.quick_book(
-            clocks_file=cfg.CLOCKS_FILE,
+        return get_backend().clocks.quick_book(
             duration_str=body.duration,
             customer=body.customer,
             description=body.description,
@@ -62,10 +56,8 @@ def quick_book(body: QuickBookRequest):
 
 @router.post("/start", status_code=201)
 def start_timer(body: TimerStart):
-    cfg = get_config()
     try:
-        return clock_svc.start_timer(
-            clocks_file=cfg.CLOCKS_FILE,
+        return get_backend().clocks.start(
             customer=body.customer,
             description=body.description,
         )
@@ -75,17 +67,12 @@ def start_timer(body: TimerStart):
 
 @router.post("/stop")
 def stop_timer():
-    cfg = get_config()
     try:
-        return clock_svc.stop_timer(clocks_file=cfg.CLOCKS_FILE)
+        return get_backend().clocks.stop()
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get("/summary")
 def get_summary(period: str = "month"):
-    cfg = get_config()
-    return clock_svc.get_summary(
-        clocks_file=cfg.CLOCKS_FILE,
-        period=period,
-    )
+    return get_backend().clocks.get_summary(period=period)

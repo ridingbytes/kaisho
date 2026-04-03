@@ -2,33 +2,19 @@ from datetime import datetime
 
 import click
 
-from ..config import get_config, load_settings_yaml
-from ..services import clocks as clock_svc
-from ..services import customers as customer_svc
-from ..services import inbox as inbox_svc
-from ..services import kanban
-from ..services.settings import get_state_names
+from ..backends import get_backend
 from .inbox import _clean_title as clean_inbox_title
 from .task import CUSTOMER_STRIP_RE
-
-
-def _get_keywords() -> set[str]:
-    """Get task keywords from settings."""
-    settings = load_settings_yaml()
-    names = get_state_names(settings)
-    return set(names) if names else {
-        "TODO", "NEXT", "IN-PROGRESS", "WAIT", "DONE", "CANCELLED"
-    }
 
 
 def _print_section(title: str) -> None:
     click.echo(f"\n--- {title} ---")
 
 
-def _print_active_timer(cfg) -> None:
+def _print_active_timer(backend) -> None:
     """Print active timer section."""
     _print_section("Aktiver Timer")
-    timer = clock_svc.get_active_timer(clocks_file=cfg.CLOCKS_FILE)
+    timer = backend.clocks.get_active()
     if timer is None:
         click.echo("  (keiner)")
     else:
@@ -38,13 +24,9 @@ def _print_active_timer(cfg) -> None:
         click.echo(f"  {customer}: {desc} (seit {start})")
 
 
-def _print_open_tasks(cfg, keywords: set[str]) -> None:
+def _print_open_tasks(backend) -> None:
     """Print open tasks section."""
-    tasks = kanban.list_tasks(
-        todos_file=cfg.TODOS_FILE,
-        keywords=keywords,
-        include_done=False,
-    )
+    tasks = backend.tasks.list_tasks(include_done=False)
     _print_section(f"Offene Tasks ({len(tasks)})")
     for t in tasks[:10]:
         status = (t.get("status") or "").ljust(12)
@@ -56,9 +38,9 @@ def _print_open_tasks(cfg, keywords: set[str]) -> None:
         click.echo(f"  ... and {len(tasks) - 10} more")
 
 
-def _print_inbox(cfg) -> None:
+def _print_inbox(backend) -> None:
     """Print inbox section."""
-    items = inbox_svc.list_items(inbox_file=cfg.INBOX_FILE)
+    items = backend.inbox.list_items()
     _print_section(f"Inbox ({len(items)} unbearbeitet)")
     for item in items[:5]:
         item_type = (item.get("type") or "NOTIZ").ljust(6)
@@ -70,10 +52,10 @@ def _print_inbox(cfg) -> None:
         click.echo(f"  ... and {len(items) - 5} more")
 
 
-def _print_budget_status(cfg) -> None:
+def _print_budget_status(backend) -> None:
     """Print budget status section."""
     _print_section("Budget-Stand")
-    summary = customer_svc.get_budget_summary(kunden_file=cfg.KUNDEN_FILE)
+    summary = backend.customers.get_budget_summary()
     for s in summary:
         name = s["name"].ljust(20)
         rest = s.get("rest", 0)
@@ -92,8 +74,7 @@ def _print_budget_status(cfg) -> None:
 @click.command("briefing")
 def briefing():
     """Morning overview: timer, tasks, inbox, budgets."""
-    cfg = get_config()
-    keywords = _get_keywords()
+    backend = get_backend()
 
     now = datetime.now()
     day_names = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
@@ -102,8 +83,8 @@ def briefing():
 
     click.echo(f"=== OmniControl Briefing ({date_str}, {day}) ===")
 
-    _print_active_timer(cfg)
-    _print_open_tasks(cfg, keywords)
-    _print_inbox(cfg)
-    _print_budget_status(cfg)
+    _print_active_timer(backend)
+    _print_open_tasks(backend)
+    _print_inbox(backend)
+    _print_budget_status(backend)
     click.echo("")

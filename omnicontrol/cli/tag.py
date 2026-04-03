@@ -1,17 +1,8 @@
 import click
 
+from ..backends import get_backend
 from ..config import get_config, load_settings_yaml
-from ..services import kanban as kanban_svc
 from ..services import settings as settings_svc
-from ..services.settings import get_state_names
-from ..org.parser import KEYWORDS as DEFAULT_KEYWORDS
-
-
-def _get_keywords() -> set[str]:
-    """Get task keywords from settings."""
-    s = load_settings_yaml()
-    names = get_state_names(s)
-    return set(names) if names else DEFAULT_KEYWORDS
 
 
 @click.group()
@@ -22,21 +13,12 @@ def tag():
 @tag.command("list")
 def tag_list():
     """List all tags with usage counts."""
-    cfg = get_config()
-    keywords = _get_keywords()
-    tasks = kanban_svc.list_tasks(
-        todos_file=cfg.TODOS_FILE,
-        keywords=keywords,
-        include_done=True,
-    )
+    usage = get_backend().tasks.list_all_tags()
     settings = load_settings_yaml()
     configured = {
         t["name"]: t for t in settings.get("tags", [])
     }
-    counts: dict[str, int] = {}
-    for task in tasks:
-        for t in task.get("tags") or []:
-            counts[t] = counts.get(t, 0) + 1
+    counts = {entry["name"]: entry["count"] for entry in usage}
 
     if not counts and not configured:
         click.echo("No tags found.")
@@ -68,12 +50,7 @@ def tag_add(name, color, description):
     if any(t["name"] == name for t in tags):
         click.echo(f"Tag '{name}' already exists.", err=True)
         raise SystemExit(1)
-    new_tag = {
-        "name": name,
-        "color": color,
-        "description": description,
-    }
-    tags.append(new_tag)
+    tags.append({"name": name, "color": color, "description": description})
     data["tags"] = tags
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
     click.echo(f"Tag '{name}' added.")

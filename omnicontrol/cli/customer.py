@@ -1,9 +1,9 @@
 import json
+import sys
 
 import click
 
-from ..config import get_config
-from ..services import customers as customer_svc
+from ..backends import get_backend
 from . import open_in_editor
 
 
@@ -21,7 +21,7 @@ def _format_customer(customer: dict) -> str:
 
 @click.group()
 def customer():
-    """Manage customers from kunden.org."""
+    """Manage customers."""
 
 
 @customer.command("list")
@@ -30,9 +30,7 @@ def customer():
 @click.option("--json", "as_json", is_flag=True)
 def customer_list(include_all, as_json):
     """List customers."""
-    cfg = get_config()
-    customers = customer_svc.list_customers(
-        kunden_file=cfg.KUNDEN_FILE,
+    customers = get_backend().customers.list_customers(
         include_inactive=include_all,
     )
     if as_json:
@@ -50,11 +48,7 @@ def customer_list(include_all, as_json):
 @click.option("--json", "as_json", is_flag=True)
 def customer_show(name, as_json):
     """Show details for a customer."""
-    cfg = get_config()
-    c = customer_svc.get_customer(
-        kunden_file=cfg.KUNDEN_FILE,
-        name=name,
-    )
+    c = get_backend().customers.get_customer(name)
     if c is None:
         click.echo(f"Customer not found: {name}", err=True)
         return
@@ -78,10 +72,7 @@ def customer_show(name, as_json):
 @click.option("--json", "as_json", is_flag=True)
 def customer_summary(as_json):
     """Show budget summary for all customers."""
-    cfg = get_config()
-    summary = customer_svc.get_budget_summary(
-        kunden_file=cfg.KUNDEN_FILE,
-    )
+    summary = get_backend().customers.get_budget_summary()
     if as_json:
         click.echo(json.dumps(summary, default=str))
         return
@@ -100,6 +91,9 @@ def customer_summary(as_json):
 
 @customer.command("edit")
 def customer_edit():
-    """Open kunden.org in $EDITOR."""
-    cfg = get_config()
-    open_in_editor(cfg.KUNDEN_FILE)
+    """Open the customers file in $EDITOR."""
+    f = get_backend().customers.data_file
+    if f is None:
+        click.echo("This backend has no editable file.", err=True)
+        sys.exit(1)
+    open_in_editor(f)

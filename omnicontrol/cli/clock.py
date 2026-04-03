@@ -1,10 +1,10 @@
 import json
+import sys
 from datetime import date
 
 import click
 
-from ..config import get_config
-from ..services import clocks as clock_svc
+from ..backends import get_backend
 from . import open_in_editor
 
 
@@ -22,7 +22,7 @@ def _format_entry(entry: dict) -> str:
 
 @click.group()
 def clock():
-    """Manage time tracking in clocks.org."""
+    """Manage time tracking."""
 
 
 @clock.command("book")
@@ -32,9 +32,7 @@ def clock():
 @click.option("--json", "as_json", is_flag=True)
 def clock_book(duration, customer_name, description, as_json):
     """Book time retroactively (e.g. 2h, 30min)."""
-    cfg = get_config()
-    result = clock_svc.quick_book(
-        clocks_file=cfg.CLOCKS_FILE,
+    result = get_backend().clocks.quick_book(
         duration_str=duration,
         customer=customer_name,
         description=" ".join(description),
@@ -51,10 +49,8 @@ def clock_book(duration, customer_name, description, as_json):
 @click.option("--json", "as_json", is_flag=True)
 def clock_start(customer_name, description, as_json):
     """Start a timer."""
-    cfg = get_config()
     desc = " ".join(description)
-    result = clock_svc.start_timer(
-        clocks_file=cfg.CLOCKS_FILE,
+    result = get_backend().clocks.start(
         customer=customer_name,
         description=desc,
     )
@@ -68,8 +64,7 @@ def clock_start(customer_name, description, as_json):
 @click.option("--json", "as_json", is_flag=True)
 def clock_stop(as_json):
     """Stop the active timer."""
-    cfg = get_config()
-    result = clock_svc.stop_timer(clocks_file=cfg.CLOCKS_FILE)
+    result = get_backend().clocks.stop()
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
@@ -80,8 +75,7 @@ def clock_stop(as_json):
 @click.option("--json", "as_json", is_flag=True)
 def clock_status(as_json):
     """Show the active timer if any."""
-    cfg = get_config()
-    timer = clock_svc.get_active_timer(clocks_file=cfg.CLOCKS_FILE)
+    timer = get_backend().clocks.get_active()
     if as_json:
         click.echo(json.dumps(timer, default=str))
         return
@@ -104,13 +98,11 @@ def clock_status(as_json):
 @click.option("--json", "as_json", is_flag=True)
 def clock_list(period, customer, from_date, to_date, as_json):
     """List clock entries."""
-    cfg = get_config()
     from_d = date.fromisoformat(from_date) if from_date else None
     to_d = date.fromisoformat(to_date) if to_date else None
     effective_period = period or "today"
 
-    entries = clock_svc.list_entries(
-        clocks_file=cfg.CLOCKS_FILE,
+    entries = get_backend().clocks.list_entries(
         period=effective_period,
         customer=customer,
         from_date=from_d,
@@ -132,12 +124,8 @@ def clock_list(period, customer, from_date, to_date, as_json):
 @click.option("--json", "as_json", is_flag=True)
 def clock_summary(period, as_json):
     """Show hours per customer."""
-    cfg = get_config()
     effective_period = period or "month"
-    summary = clock_svc.get_summary(
-        clocks_file=cfg.CLOCKS_FILE,
-        period=effective_period,
-    )
+    summary = get_backend().clocks.get_summary(period=effective_period)
     if as_json:
         click.echo(json.dumps(summary, default=str))
         return
@@ -155,6 +143,9 @@ def clock_summary(period, as_json):
 
 @clock.command("edit")
 def clock_edit():
-    """Open clocks.org in $EDITOR."""
-    cfg = get_config()
-    open_in_editor(cfg.CLOCKS_FILE)
+    """Open the clocks file in $EDITOR."""
+    f = get_backend().clocks.data_file
+    if f is None:
+        click.echo("This backend has no editable file.", err=True)
+        sys.exit(1)
+    open_in_editor(f)

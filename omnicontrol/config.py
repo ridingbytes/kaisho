@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     HOST: str = "0.0.0.0"
     PORT: int = 8765
+    BACKEND: str = "org"
     SETTINGS_FILE: Path = _PROJECT_ROOT / "settings.yaml"
 
     @computed_field

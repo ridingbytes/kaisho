@@ -4,20 +4,10 @@ import sys
 
 import click
 
-from ..config import get_config, load_settings_yaml
-from ..org.parser import KEYWORDS as DEFAULT_KEYWORDS
-from ..services import kanban
-from ..services.settings import get_state_names
+from ..backends import get_backend
 from . import open_in_editor
 
 CUSTOMER_STRIP_RE = re.compile(r"^\[[^\]]+\]\s*")
-
-
-def _get_keywords() -> set[str]:
-    """Get task keywords from settings."""
-    settings = load_settings_yaml()
-    names = get_state_names(settings)
-    return set(names) if names else DEFAULT_KEYWORDS
 
 
 def _format_task_line(task: dict) -> str:
@@ -39,7 +29,7 @@ def _format_task_line(task: dict) -> str:
 
 @click.group()
 def task():
-    """Manage tasks in todos.org."""
+    """Manage tasks."""
 
 
 @task.command("add")
@@ -50,11 +40,7 @@ def task():
 @click.option("--json", "as_json", is_flag=True, help="JSON output")
 def task_add(customer_name, title, tags, status, as_json):
     """Add a new task."""
-    cfg = get_config()
-    keywords = _get_keywords()
-    result = kanban.add_task(
-        todos_file=cfg.TODOS_FILE,
-        keywords=keywords,
+    result = get_backend().tasks.add_task(
         customer=customer_name,
         title=" ".join(title),
         status=status,
@@ -76,12 +62,8 @@ def task_add(customer_name, title, tags, status, as_json):
 @click.option("--json", "as_json", is_flag=True, help="JSON output")
 def task_list(customer, status_filter, tag, include_all, as_json):
     """List tasks."""
-    cfg = get_config()
-    keywords = _get_keywords()
     status_list = [status_filter] if status_filter else None
-    tasks = kanban.list_tasks(
-        todos_file=cfg.TODOS_FILE,
-        keywords=keywords,
+    tasks = get_backend().tasks.list_tasks(
         status=status_list,
         customer=customer,
         tag=tag,
@@ -103,14 +85,7 @@ def task_list(customer, status_filter, tag, include_all, as_json):
 @click.option("--json", "as_json", is_flag=True)
 def task_move(task_id, new_status, as_json):
     """Move a task to a new status."""
-    cfg = get_config()
-    keywords = _get_keywords()
-    result = kanban.move_task(
-        todos_file=cfg.TODOS_FILE,
-        keywords=keywords,
-        task_id=task_id,
-        new_status=new_status,
-    )
+    result = get_backend().tasks.move_task(task_id, new_status)
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
@@ -118,15 +93,8 @@ def task_move(task_id, new_status, as_json):
 
 
 def _move_to(task_id: str, new_status: str) -> None:
-    """Helper to move task to given status."""
-    cfg = get_config()
-    keywords = _get_keywords()
-    kanban.move_task(
-        todos_file=cfg.TODOS_FILE,
-        keywords=keywords,
-        task_id=task_id,
-        new_status=new_status,
-    )
+    """Move task to given status and print confirmation."""
+    get_backend().tasks.move_task(task_id, new_status)
     click.echo(f"Task {task_id} -> {new_status}")
 
 
@@ -167,18 +135,11 @@ def task_tag(task_id, tags, as_json):
 
     Prefix with + to add, - to remove, or bare to replace all tags.
     """
-    cfg = get_config()
-    keywords = _get_keywords()
-
+    backend = get_backend()
     has_modifiers = any(t.startswith(("+", "-")) for t in tags)
 
     if has_modifiers:
-        # Load current tags first
-        all_tasks = kanban.list_tasks(
-            todos_file=cfg.TODOS_FILE,
-            keywords=keywords,
-            include_done=True,
-        )
+        all_tasks = backend.tasks.list_tasks(include_done=True)
         current_task = None
         if task_id.isdigit():
             idx = int(task_id) - 1
@@ -204,12 +165,7 @@ def task_tag(task_id, tags, as_json):
     else:
         new_tags = list(tags)
 
-    result = kanban.set_task_tags(
-        todos_file=cfg.TODOS_FILE,
-        keywords=keywords,
-        task_id=task_id,
-        tags=new_tags,
-    )
+    result = backend.tasks.set_tags(task_id, new_tags)
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
@@ -220,15 +176,8 @@ def task_tag(task_id, tags, as_json):
 @task.command("archive")
 @click.argument("task_id")
 def task_archive(task_id):
-    """Archive a task (move to archive.org)."""
-    cfg = get_config()
-    keywords = _get_keywords()
-    success = kanban.archive_task(
-        todos_file=cfg.TODOS_FILE,
-        archive_file=cfg.ARCHIVE_FILE,
-        keywords=keywords,
-        task_id=task_id,
-    )
+    """Archive a task."""
+    success = get_backend().tasks.archive_task(task_id)
     if success:
         click.echo(f"Task {task_id} archived.")
     else:
@@ -238,6 +187,9 @@ def task_archive(task_id):
 
 @task.command("edit")
 def task_edit():
-    """Open todos.org in $EDITOR."""
-    cfg = get_config()
-    open_in_editor(cfg.TODOS_FILE)
+    """Open the task file in $EDITOR."""
+    f = get_backend().tasks.data_file
+    if f is None:
+        click.echo("This backend has no editable file.", err=True)
+        sys.exit(1)
+    open_in_editor(f)

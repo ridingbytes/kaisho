@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from ..config import get_config
+from ..backends import get_backend
 from .routers import (
     clocks,
     customers,
@@ -19,12 +19,8 @@ from .watcher.service import watch_files
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    cfg = get_config()
-    org_dir = cfg.ORG_DIR.expanduser()
-    settings_file = cfg.SETTINGS_FILE
-    task = asyncio.create_task(
-        watch_files(org_dir, settings_file)
-    )
+    watch_paths = get_backend().watch_paths
+    task = asyncio.create_task(watch_files(*watch_paths))
     yield
     task.cancel()
 

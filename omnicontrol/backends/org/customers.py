@@ -1,0 +1,34 @@
+from pathlib import Path
+
+from ...services import customers
+from ..base import CustomerBackend
+
+
+class OrgCustomerBackend(CustomerBackend):
+    """CustomerBackend backed by an org-mode kunden file."""
+
+    def __init__(self, kunden_file: Path) -> None:
+        self._kunden_file = kunden_file
+
+    @property
+    def data_file(self) -> Path:
+        return self._kunden_file
+
+    def list_customers(
+        self, include_inactive: bool = False
+    ) -> list[dict]:
+        return customers.list_customers(
+            kunden_file=self._kunden_file,
+            include_inactive=include_inactive,
+        )
+
+    def get_customer(self, name: str) -> dict | None:
+        return customers.get_customer(
+            kunden_file=self._kunden_file,
+            name=name,
+        )
+
+    def get_budget_summary(self) -> list[dict]:
+        return customers.get_budget_summary(
+            kunden_file=self._kunden_file
+        )
