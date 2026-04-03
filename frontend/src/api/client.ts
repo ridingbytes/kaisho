@@ -1,6 +1,9 @@
 import type {
   ActiveTimer,
   ClockEntry,
+  Customer,
+  Dashboard,
+  InboxItem,
   Settings,
   Task,
 } from "../types";
@@ -33,18 +36,18 @@ async function patch<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function del(path: string): Promise<void> {
+  const res = await fetch(`${BASE}${path}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`DELETE ${path}: ${res.status}`);
+}
+
 // Tasks
 
 export function fetchTasks(includeDone = false): Promise<Task[]> {
-  return get<Task[]>(
-    `/kanban/tasks?include_done=${includeDone}`
-  );
+  return get<Task[]>(`/kanban/tasks?include_done=${includeDone}`);
 }
 
-export function moveTask(
-  taskId: string,
-  status: string
-): Promise<Task> {
+export function moveTask(taskId: string, status: string): Promise<Task> {
   return patch<Task>(`/kanban/tasks/${taskId}`, { status });
 }
 
@@ -85,4 +88,45 @@ export function quickBook(
     customer,
     description,
   });
+}
+
+// Inbox
+
+export function fetchInboxItems(): Promise<InboxItem[]> {
+  return get<InboxItem[]>("/inbox/");
+}
+
+export function captureInboxItem(
+  text: string,
+  type?: string,
+  customer?: string
+): Promise<InboxItem> {
+  return post<InboxItem>("/inbox/capture", { text, type, customer });
+}
+
+export function deleteInboxItem(itemId: string): Promise<void> {
+  return del(`/inbox/${itemId}`);
+}
+
+export function promoteInboxItem(
+  itemId: string,
+  customer: string
+): Promise<Task> {
+  return post<Task>(`/inbox/${itemId}/promote`, { customer });
+}
+
+// Customers
+
+export function fetchCustomers(
+  includeInactive = false
+): Promise<Customer[]> {
+  return get<Customer[]>(
+    `/customers/?include_inactive=${includeInactive}`
+  );
+}
+
+// Dashboard
+
+export function fetchDashboard(): Promise<Dashboard> {
+  return get<Dashboard>("/dashboard/");
 }

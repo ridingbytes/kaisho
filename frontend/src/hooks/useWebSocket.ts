@@ -8,6 +8,8 @@ const RESOURCE_TO_QUERY: Record<string, string[]> = {
   kanban: ["tasks"],
   clocks: ["clocks"],
   settings: ["settings"],
+  inbox: ["inbox"],
+  customers: ["customers"],
 };
 
 export function useWebSocket() {

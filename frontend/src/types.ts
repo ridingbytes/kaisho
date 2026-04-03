@@ -40,3 +40,36 @@ export interface ActiveTimer {
   description?: string;
   start?: string;
 }
+
+export interface InboxItem {
+  id: string;
+  type: string;
+  customer: string | null;
+  title: string;
+  created: string;
+  properties: Record<string, string>;
+}
+
+export interface Customer {
+  name: string;
+  status: string;
+  kontingent: number;
+  verbraucht: number;
+  rest: number;
+  repo: string | null;
+  properties: Record<string, string>;
+}
+
+export interface BudgetSummary {
+  name: string;
+  kontingent: number;
+  rest: number;
+  percent: number;
+}
+
+export interface Dashboard {
+  active_timer: ActiveTimer | null;
+  open_task_count: number;
+  inbox_count: number;
+  budgets: BudgetSummary[];
+}

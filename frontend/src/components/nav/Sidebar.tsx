@@ -1,0 +1,75 @@
+import {
+  Columns2,
+  Inbox,
+  LayoutDashboard,
+  Users,
+} from "lucide-react";
+import type { View } from "../../App";
+import { useInboxItems } from "../../hooks/useInbox";
+
+interface NavItem {
+  id: View;
+  label: string;
+  icon: React.ElementType;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "board", label: "Board", icon: Columns2 },
+  { id: "inbox", label: "Inbox", icon: Inbox },
+  { id: "customers", label: "Customers", icon: Users },
+];
+
+interface SidebarProps {
+  active: View;
+  onChange: (v: View) => void;
+}
+
+export function Sidebar({ active, onChange }: SidebarProps) {
+  const { data: inboxItems } = useInboxItems();
+  const inboxCount = inboxItems?.length ?? 0;
+
+  return (
+    <nav className="flex flex-col w-14 shrink-0 border-r border-border-subtle bg-surface-card/40 py-3 gap-1">
+      {/* Logo dot */}
+      <div className="flex justify-center mb-3">
+        <div className="w-2 h-2 rounded-full bg-accent" />
+      </div>
+
+      {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+        const isActive = active === id;
+        return (
+          <button
+            key={id}
+            title={label}
+            onClick={() => onChange(id)}
+            className={[
+              "relative flex flex-col items-center justify-center",
+              "mx-2 h-10 rounded-lg transition-colors",
+              "text-[9px] font-semibold tracking-wider uppercase gap-1",
+              isActive
+                ? "bg-accent-muted text-accent"
+                : "text-slate-600 hover:text-slate-400 hover:bg-surface-raised",
+            ].join(" ")}
+          >
+            <Icon size={16} strokeWidth={isActive ? 2 : 1.5} />
+            <span className="leading-none">{label.slice(0, 3)}</span>
+
+            {/* Inbox badge */}
+            {id === "inbox" && inboxCount > 0 && (
+              <span
+                className={[
+                  "absolute top-1 right-1.5 min-w-[14px] h-3.5 px-0.5",
+                  "flex items-center justify-center rounded-full",
+                  "text-[9px] font-bold bg-accent text-white",
+                ].join(" ")}
+              >
+                {inboxCount > 99 ? "99+" : inboxCount}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
