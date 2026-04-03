@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from ..org.models import Heading, OrgFile
+from ..org.parser import KEYWORDS as DEFAULT_KEYWORDS  # noqa: F401
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 

@@ -49,7 +49,7 @@ def inbox():
 
 
 @inbox.command("add")
-@click.argument("text")
+@click.argument("text", nargs=-1, required=True)
 @click.option("--type", "item_type", default=None,
               help="Item type: EMAIL, IDEE, LEAD, NOTIZ")
 @click.option("--customer", default=None, help="Customer name")
@@ -60,11 +60,12 @@ def inbox_add(text, item_type, customer, as_json):
     Pass - as TEXT to read from stdin.
     """
     cfg = get_config()
-    if text == "-":
-        text = sys.stdin.read().strip()
+    joined = " ".join(text)
+    if joined == "-":
+        joined = sys.stdin.read().strip()
     result = inbox_svc.add_item(
         inbox_file=cfg.INBOX_FILE,
-        text=text,
+        text=joined,
         item_type=item_type,
         customer=customer,
     )

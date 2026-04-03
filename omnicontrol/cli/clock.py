@@ -28,7 +28,7 @@ def clock():
 @clock.command("book")
 @click.argument("duration")
 @click.argument("customer_name")
-@click.argument("description")
+@click.argument("description", nargs=-1, required=True)
 @click.option("--json", "as_json", is_flag=True)
 def clock_book(duration, customer_name, description, as_json):
     """Book time retroactively (e.g. 2h, 30min)."""
@@ -37,7 +37,7 @@ def clock_book(duration, customer_name, description, as_json):
         clocks_file=cfg.CLOCKS_FILE,
         duration_str=duration,
         customer=customer_name,
-        description=description,
+        description=" ".join(description),
     )
     if as_json:
         click.echo(json.dumps(result, default=str))
@@ -47,22 +47,21 @@ def clock_book(duration, customer_name, description, as_json):
 
 @clock.command("start")
 @click.argument("customer_name")
-@click.argument("description")
+@click.argument("description", nargs=-1, required=True)
 @click.option("--json", "as_json", is_flag=True)
 def clock_start(customer_name, description, as_json):
     """Start a timer."""
     cfg = get_config()
+    desc = " ".join(description)
     result = clock_svc.start_timer(
         clocks_file=cfg.CLOCKS_FILE,
         customer=customer_name,
-        description=description,
+        description=desc,
     )
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
-        click.echo(
-            f"Timer started: {customer_name} - {description}"
-        )
+        click.echo(f"Timer started: {customer_name} - {desc}")
 
 
 @clock.command("stop")

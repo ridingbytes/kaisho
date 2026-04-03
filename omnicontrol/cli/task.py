@@ -44,7 +44,7 @@ def task():
 
 @task.command("add")
 @click.argument("customer_name")
-@click.argument("title")
+@click.argument("title", nargs=-1, required=True)
 @click.option("--tag", "tags", multiple=True, help="Add tag")
 @click.option("--status", default="TODO", help="Initial status")
 @click.option("--json", "as_json", is_flag=True, help="JSON output")
@@ -56,7 +56,7 @@ def task_add(customer_name, title, tags, status, as_json):
         todos_file=cfg.TODOS_FILE,
         keywords=keywords,
         customer=customer_name,
-        title=title,
+        title=" ".join(title),
         status=status,
         tags=list(tags),
     )
