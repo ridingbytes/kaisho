@@ -10,3 +10,5 @@ build/
 .pytest_cache/
 .claude
 .python-version
+node_modules
+frontend/dist
