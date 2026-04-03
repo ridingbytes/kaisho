@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 
 from ..org.parser import parse_org_file
+from ..org.writer import write_org_file
 
 CUSTOMER_KEYWORDS: set[str] = set()
 # Only extract hours when explicitly marked with "h" unit
@@ -63,6 +64,48 @@ def get_customer(kunden_file: Path, name: str) -> dict | None:
     for customer in customers:
         if customer["name"].lower() == name_lower:
             return customer
+    return None
+
+
+_PROP_MAP = {
+    "status": "STATUS",
+    "kontingent": "KONTINGENT",
+    "verbraucht": "VERBRAUCHT",
+    "rest": "REST",
+    "repo": "REPO",
+}
+
+
+def update_customer(
+    kunden_file: Path,
+    name: str,
+    updates: dict,
+) -> dict | None:
+    """Update a customer's fields and persist to disk.
+
+    Supported keys in *updates*: name, status, kontingent,
+    verbraucht, rest, repo.
+    Returns the updated customer dict, or None if not found.
+    """
+    org_file = parse_org_file(kunden_file, CUSTOMER_KEYWORDS)
+    name_lower = name.lower()
+    for h1 in org_file.headings:
+        for h2 in h1.children:
+            if h2.title.strip().lower() != name_lower:
+                continue
+            if "name" in updates:
+                h2.title = updates["name"]
+            for field, prop in _PROP_MAP.items():
+                if field not in updates:
+                    continue
+                val = updates[field]
+                if field in ("kontingent", "verbraucht", "rest"):
+                    h2.properties[prop] = f"{val}h"
+                else:
+                    h2.properties[prop] = str(val)
+            h2.dirty = True
+            write_org_file(kunden_file, org_file)
+            return _heading_to_customer(h2)
     return None
 
 

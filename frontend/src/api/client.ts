@@ -125,6 +125,21 @@ export function fetchCustomers(
   );
 }
 
+export function updateCustomer(
+  name: string,
+  updates: Partial<
+    Pick<
+      Customer,
+      "name" | "status" | "kontingent" | "verbraucht" | "rest" | "repo"
+    >
+  >
+): Promise<Customer> {
+  return patch<Customer>(
+    `/customers/${encodeURIComponent(name)}`,
+    updates
+  );
+}
+
 // Dashboard
 
 export function fetchDashboard(): Promise<Dashboard> {

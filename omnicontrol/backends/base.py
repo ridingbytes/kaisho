@@ -186,3 +186,14 @@ class CustomerBackend(ABC):
         Each dict: {"name": str, "kontingent": float,
                     "rest": float, "percent": int}
         """
+
+    @abstractmethod
+    def update_customer(
+        self, name: str, updates: dict
+    ) -> dict | None:
+        """Update a customer's fields.
+
+        Supported keys: name, status, kontingent,
+        verbraucht, rest, repo.
+        Returns the updated customer dict, or None if not found.
+        """

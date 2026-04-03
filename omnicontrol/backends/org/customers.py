@@ -32,3 +32,12 @@ class OrgCustomerBackend(CustomerBackend):
         return customers.get_budget_summary(
             kunden_file=self._kunden_file
         )
+
+    def update_customer(
+        self, name: str, updates: dict
+    ) -> dict | None:
+        return customers.update_customer(
+            kunden_file=self._kunden_file,
+            name=name,
+            updates=updates,
+        )
