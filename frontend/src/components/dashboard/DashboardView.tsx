@@ -183,13 +183,15 @@ export function DashboardView() {
           <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-4">
             Budget Status
           </h2>
-          {data.budgets.map((b) => (
-            <BudgetRow
-              key={b.name}
-              b={b}
-              onNameClick={() => setView("customers")}
-            />
-          ))}
+          {data.budgets
+            .filter((b) => b.kontingent > 0)
+            .map((b) => (
+              <BudgetRow
+                key={b.name}
+                b={b}
+                onNameClick={() => setView("customers")}
+              />
+            ))}
         </div>
       )}
     </div>
