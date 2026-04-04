@@ -15,6 +15,8 @@ _STEM_TO_RESOURCE: dict[str, str] = {
     "inbox": "inbox",
 }
 
+_KNOWLEDGE_SUFFIXES = {".md"}
+
 
 def register_self_write(path: Path):
     """Call before writing a file to suppress the watcher event."""
@@ -56,6 +58,12 @@ def _build_event(
         return {
             "type": "file_changed",
             "resource": resource,
+            "file": path.name,
+        }
+    if path.suffix in _KNOWLEDGE_SUFFIXES:
+        return {
+            "type": "file_changed",
+            "resource": "knowledge",
             "file": path.name,
         }
     return None

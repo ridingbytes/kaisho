@@ -5,6 +5,7 @@ from .clock import clock
 from .config_cmd import config_cmd
 from .customer import customer
 from .inbox import inbox
+from .knowledge import knowledge
 from .tag import tag
 from .task import task
 from ..config import get_config
@@ -35,6 +36,7 @@ cli.add_command(task)
 cli.add_command(clock)
 cli.add_command(customer)
 cli.add_command(inbox)
+cli.add_command(knowledge)
 cli.add_command(briefing)
 cli.add_command(tag)
 cli.add_command(config_cmd)
