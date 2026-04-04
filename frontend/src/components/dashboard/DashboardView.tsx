@@ -1,4 +1,5 @@
-import { CheckSquare, Clock, Inbox, Square, TrendingDown } from "lucide-react";
+import { CheckSquare, ChevronDown, ChevronRight, Clock, Inbox, Square, TrendingDown } from "lucide-react";
+import { useState } from "react";
 import { useActiveTimer, useStopTimer } from "../../hooks/useClocks";
 import { useDashboard } from "../../hooks/useDashboard";
 import { useTimeEntries } from "../../hooks/useCustomers";
@@ -72,17 +73,26 @@ function BudgetRow({
   const usedPercent = Math.min(100 - b.percent, 100);
   const color = budgetBarColor(usedPercent);
   const warning = usedPercent >= 80;
-  const { data: entries = [] } = useTimeEntries(b.name);
+  const [open, setOpen] = useState(false);
+  const { data: entries = [] } = useTimeEntries(open ? b.name : null);
 
   return (
     <div className="py-3 border-b border-border-subtle last:border-0">
       <div className="flex items-baseline justify-between mb-1.5">
-        <button
-          onClick={onNameClick}
-          className="text-sm font-medium text-slate-300 hover:text-accent transition-colors text-left"
-        >
-          {b.name}
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="text-slate-600 hover:text-slate-400 transition-colors"
+          >
+            {open ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+          </button>
+          <button
+            onClick={onNameClick}
+            className="text-sm font-medium text-slate-300 hover:text-accent transition-colors text-left"
+          >
+            {b.name}
+          </button>
+        </div>
         <div className="flex items-center gap-2">
           {warning && (
             <TrendingDown
@@ -111,22 +121,26 @@ function BudgetRow({
           }}
         />
       </div>
-      {entries.length > 0 && (
+      {open && (
         <div className="mt-2 flex flex-col gap-0.5">
-          {entries.map((e) => (
-            <div
-              key={e.id}
-              className="flex items-baseline justify-between text-[11px]"
-            >
-              <span className="text-slate-600 shrink-0 mr-2">{e.date}</span>
-              <span className="text-slate-500 flex-1 min-w-0 truncate">
-                {e.description}
-              </span>
-              <span className="text-slate-500 tabular-nums shrink-0 ml-2">
-                {e.hours}h
-              </span>
-            </div>
-          ))}
+          {entries.length === 0 ? (
+            <p className="text-[11px] text-slate-700">No entries</p>
+          ) : (
+            entries.map((e) => (
+              <div
+                key={e.id}
+                className="flex items-baseline justify-between text-[11px]"
+              >
+                <span className="text-slate-600 shrink-0 mr-2">{e.date}</span>
+                <span className="text-slate-500 flex-1 min-w-0 truncate">
+                  {e.description}
+                </span>
+                <span className="text-slate-500 tabular-nums shrink-0 ml-2">
+                  {e.hours}h
+                </span>
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>

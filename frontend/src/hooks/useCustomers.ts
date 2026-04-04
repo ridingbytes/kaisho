@@ -40,10 +40,11 @@ export function useUpdateCustomer() {
   });
 }
 
-export function useTimeEntries(customerName: string) {
+export function useTimeEntries(customerName: string | null) {
   return useQuery({
     queryKey: ["time-entries", customerName],
-    queryFn: () => fetchTimeEntries(customerName),
+    queryFn: () => fetchTimeEntries(customerName!),
+    enabled: customerName !== null,
     staleTime: 30_000,
   });
 }

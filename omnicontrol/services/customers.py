@@ -40,11 +40,12 @@ def _heading_to_customer(heading: Heading) -> dict:
     """Convert a level-2 Heading to a customer dict."""
     props = heading.properties
     kontingent = _extract_hours(props.get("KONTINGENT", "0"))
+    stored_verbraucht = _extract_hours(props.get("VERBRAUCHT", "0"))
     if heading.children:
-        verbraucht = _sum_entry_hours(heading)
+        verbraucht = stored_verbraucht + _sum_entry_hours(heading)
         rest = kontingent - verbraucht
     else:
-        verbraucht = _extract_hours(props.get("VERBRAUCHT", "0"))
+        verbraucht = stored_verbraucht
         rest = _extract_hours(props.get("REST", "0"))
     return {
         "name": heading.title.strip(),
