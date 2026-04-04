@@ -4,6 +4,7 @@ from .briefing import briefing
 from .clock import clock
 from .comm import comm
 from .config_cmd import config_cmd
+from .cron import cron_cmd
 from .customer import customer
 from .gh import gh
 from .inbox import inbox
@@ -41,6 +42,7 @@ cli.add_command(inbox)
 cli.add_command(knowledge)
 cli.add_command(gh)
 cli.add_command(comm)
+cli.add_command(cron_cmd, name="cron")
 cli.add_command(briefing)
 cli.add_command(tag)
 cli.add_command(config_cmd)

@@ -8,6 +8,7 @@ from ..backends import get_backend
 from .routers import (
     clocks,
     communications,
+    cron,
     customers,
     dashboard,
     inbox,
@@ -46,6 +47,7 @@ app.include_router(customers.router)
 app.include_router(inbox.router)
 app.include_router(knowledge.router)
 app.include_router(communications.router)
+app.include_router(cron.router)
 app.include_router(settings_router.router)
 app.include_router(dashboard.router)
 app.include_router(ws_router.router)
