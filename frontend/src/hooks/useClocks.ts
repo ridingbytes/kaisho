@@ -4,11 +4,13 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import {
+  deleteClockEntry,
   fetchActiveTimer,
   fetchTodayEntries,
   quickBook,
   startTimer,
   stopTimer,
+  updateClockEntry,
 } from "../api/client";
 
 export function useActiveTimer() {
@@ -67,6 +69,32 @@ export function useQuickBook() {
       customer: string;
       description: string;
     }) => quickBook(duration, customer, description),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["clocks"] });
+    },
+  });
+}
+
+export function useUpdateClockEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      startIso,
+      updates,
+    }: {
+      startIso: string;
+      updates: { description?: string; hours?: number };
+    }) => updateClockEntry(startIso, updates),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["clocks"] });
+    },
+  });
+}
+
+export function useDeleteClockEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (startIso: string) => deleteClockEntry(startIso),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["clocks"] });
     },

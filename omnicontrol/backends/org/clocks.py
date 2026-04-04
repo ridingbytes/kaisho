@@ -61,3 +61,22 @@ class OrgClockBackend(ClockBackend):
             customer=customer,
             description=description,
         )
+
+    def update_entry(
+        self,
+        start_iso: str,
+        description: str | None = None,
+        hours: float | None = None,
+    ) -> dict | None:
+        return clocks.update_clock_entry(
+            clocks_file=self._clocks_file,
+            start_iso=start_iso,
+            description=description,
+            hours=hours,
+        )
+
+    def delete_entry(self, start_iso: str) -> bool:
+        return clocks.delete_clock_entry(
+            clocks_file=self._clocks_file,
+            start_iso=start_iso,
+        )

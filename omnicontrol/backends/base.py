@@ -122,6 +122,19 @@ class ClockBackend(ABC):
     ) -> dict:
         """Book time retroactively.  duration_str e.g. "2h", "30min"."""
 
+    @abstractmethod
+    def update_entry(
+        self,
+        start_iso: str,
+        description: str | None = None,
+        hours: float | None = None,
+    ) -> dict | None:
+        """Update description and/or hours of an entry by start time."""
+
+    @abstractmethod
+    def delete_entry(self, start_iso: str) -> bool:
+        """Delete a clock entry by start time. Return False if not found."""
+
 
 class InboxBackend(ABC):
     """Read/write inbox capture items."""

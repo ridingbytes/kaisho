@@ -26,10 +26,6 @@ export function ClockWidget() {
     setTab("start");
   }
 
-  function handleBook(entry: ClockEntry) {
-    handleReuse(entry);
-  }
-
   return (
     <aside className="flex flex-col w-80 shrink-0 border-l border-border-subtle bg-surface-card/40 overflow-y-auto">
       {/* Header */}
@@ -85,7 +81,7 @@ export function ClockWidget() {
           <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-2">
             Today
           </h3>
-          <ClockList onReuse={handleReuse} onBook={handleBook} />
+          <ClockList onReuse={handleReuse} />
         </div>
       </div>
     </aside>

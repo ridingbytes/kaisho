@@ -19,6 +19,11 @@ class TimerStart(BaseModel):
     description: str
 
 
+class EntryUpdate(BaseModel):
+    description: str | None = None
+    hours: float | None = None
+
+
 @router.get("/entries")
 def list_entries(
     period: str = "today",
@@ -76,3 +81,22 @@ def stop_timer():
 @router.get("/summary")
 def get_summary(period: str = "month"):
     return get_backend().clocks.get_summary(period=period)
+
+
+@router.patch("/entries")
+def update_entry(start: str, body: EntryUpdate):
+    result = get_backend().clocks.update_entry(
+        start_iso=start,
+        description=body.description,
+        hours=body.hours,
+    )
+    if result is None:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    return result
+
+
+@router.delete("/entries", status_code=204)
+def delete_entry(start: str):
+    found = get_backend().clocks.delete_entry(start_iso=start)
+    if not found:
+        raise HTTPException(status_code=404, detail="Entry not found")

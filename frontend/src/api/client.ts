@@ -108,6 +108,19 @@ export function quickBook(
   });
 }
 
+export function updateClockEntry(
+  startIso: string,
+  updates: { description?: string; hours?: number }
+): Promise<ClockEntry> {
+  const qs = encodeURIComponent(startIso);
+  return patch<ClockEntry>(`/clocks/entries?start=${qs}`, updates);
+}
+
+export function deleteClockEntry(startIso: string): Promise<void> {
+  const qs = encodeURIComponent(startIso);
+  return del(`/clocks/entries?start=${qs}`);
+}
+
 // Inbox
 
 export function fetchInboxItems(): Promise<InboxItem[]> {

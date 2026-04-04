@@ -259,6 +259,89 @@ def get_summary(
     ]
 
 
+def _find_clock_by_start(
+    org_file: OrgFile, start_iso: str
+) -> tuple[Clock, Heading] | None:
+    """Find a clock entry by its start timestamp. Returns (clock, heading)."""
+    try:
+        target = datetime.fromisoformat(start_iso)
+    except ValueError:
+        return None
+    for h1 in org_file.headings:
+        for h2 in h1.children:
+            for clock in h2.logbook:
+                if clock.start == target:
+                    return clock, h2
+        for clock in h1.logbook:
+            if clock.start == target:
+                return clock, h1
+    return None
+
+
+def update_clock_entry(
+    clocks_file: Path,
+    start_iso: str,
+    description: str | None = None,
+    hours: float | None = None,
+) -> dict | None:
+    """Update description and/or hours of a clock entry by start time."""
+    if not clocks_file.exists():
+        return None
+    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
+    result = _find_clock_by_start(org_file, start_iso)
+    if result is None:
+        return None
+    clock, heading = result
+    if description is not None:
+        heading.title = description
+        heading.dirty = True
+    if hours is not None:
+        minutes = int(hours * 60)
+        new_end = clock.start + timedelta(minutes=minutes)
+        h = minutes // 60
+        m = minutes % 60
+        clock.end = new_end
+        clock.duration = f"{h}:{m:02d}"
+        heading.dirty = True
+    write_org_file(clocks_file, org_file)
+    customer = ""
+    for h1 in org_file.headings:
+        for h2 in h1.children:
+            if h2 is heading:
+                customer = h1.title.strip()
+    return _clock_to_entry(clock, customer, heading.title.strip())
+
+
+def delete_clock_entry(
+    clocks_file: Path,
+    start_iso: str,
+) -> bool:
+    """Delete a clock entry by its start timestamp."""
+    if not clocks_file.exists():
+        return False
+    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
+    try:
+        target = datetime.fromisoformat(start_iso)
+    except ValueError:
+        return False
+    for h1 in org_file.headings:
+        for h2 in h1.children:
+            for clock in list(h2.logbook):
+                if clock.start == target:
+                    h2.logbook.remove(clock)
+                    h2.dirty = True
+                    h1.dirty = True
+                    write_org_file(clocks_file, org_file)
+                    return True
+        for clock in list(h1.logbook):
+            if clock.start == target:
+                h1.logbook.remove(clock)
+                h1.dirty = True
+                write_org_file(clocks_file, org_file)
+                return True
+    return False
+
+
 def _append_clock_entry(
     clocks_file: Path,
     customer: str,
