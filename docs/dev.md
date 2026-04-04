@@ -54,12 +54,12 @@ All storage access goes through `get_backend()`.
 
 Four abstract base classes live in `backends/base.py`:
 
-| Class | Methods |
-|---|---|
-| `TaskBackend` | `list_tasks`, `add_task`, `move_task`, `set_tags`, `archive_task`, `list_all_tags` |
-| `ClockBackend` | `list_entries`, `get_active`, `get_summary`, `start`, `stop`, `quick_book` |
-| `InboxBackend` | `list_items`, `add_item`, `remove_item`, `promote_to_task` |
-| `CustomerBackend` | `list_customers`, `get_customer`, `get_budget_summary` |
+| Class             | Methods                                                                            |
+|-------------------+------------------------------------------------------------------------------------|
+| `TaskBackend`     | `list_tasks`, `add_task`, `move_task`, `set_tags`, `archive_task`, `list_all_tags` |
+| `ClockBackend`    | `list_entries`, `get_active`, `get_summary`, `start`, `stop`, `quick_book`         |
+| `InboxBackend`    | `list_items`, `add_item`, `remove_item`, `promote_to_task`                         |
+| `CustomerBackend` | `list_customers`, `get_customer`, `get_budget_summary`                             |
 
 Each class also exposes `data_file: Path | None` used by the `edit`
 CLI subcommands.

@@ -318,11 +318,11 @@ development. Interactive API docs available at `/docs`.
 ---
 
 ## Environment variables
-
-| Variable | Default | Description |
-|---|---|---|
-| `ORG_DIR` | `~/ownCloud/cowork/org` | Directory containing data files |
-| `BACKEND` | `org` | Storage driver: `org` or `markdown` |
-| `SETTINGS_FILE` | `./settings.yaml` | Path to settings YAML |
-| `HOST` | `0.0.0.0` | API server bind address |
-| `PORT` | `8765` | API server port |
+    
+| Variable      | Default               | Description                     |
+|---------------+-----------------------+---------------------------------|
+| `ORG_DIR`       | `~/ownCloud/cowork/org` | Directory containing data files |
+| `BACKEND`       | `org`                   | Storage driver: `org` or `markdown` |
+| `SETTINGS_FILE` | `./settings.yaml`       | Path to settings YAML           |
+| `HOST`          | `0.0.0.0`               | API server bind address         |
+| `PORT`          | `8765`                  | API server port                 |

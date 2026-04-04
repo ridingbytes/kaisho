@@ -11,7 +11,7 @@ jobs:
   - id: weekly-scout
     name: "Business Scout"
     schedule: "0 9 * * 1"
-    model: "ollama:llama3.3:70b"
+    model: "ollama:qwen3-coder:30b"
     prompt_file: "prompts/weekly-scout.md"
     output: "~/ownCloud/cowork/research/scout_ideas_{date}.md"
     timeout: 300
