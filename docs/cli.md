@@ -317,6 +317,239 @@ oc customer entry-delete <NAME> <ENTRY_ID>
 
 ---
 
+## oc kb
+
+Search and read the knowledge base (WISSEN_DIR and RESEARCH_DIR).
+
+### kb list
+
+```bash
+oc kb list [--json]
+```
+
+List all files in the knowledge base with their directory label and size.
+
+### kb show
+
+```bash
+oc kb show <PATH> [--json]
+```
+
+Print the contents of a knowledge base file. PATH is relative to the
+knowledge base root (as shown by `kb list`).
+
+```bash
+oc kb show wissen/project-notes.md
+```
+
+### kb search
+
+```bash
+oc kb search <QUERY...> [--limit N] [--json]
+```
+
+Full-text regex search across all knowledge base files. Returns
+matching file path, line number, and snippet.
+
+```bash
+oc kb search API authentication --limit 10
+```
+
+---
+
+## oc gh
+
+Query GitHub issues and pull requests. Repos are resolved from the
+`REPO` property on each customer in `kunden.org`.
+
+### gh issues
+
+```bash
+oc gh issues <CUSTOMER> [--state STATE] [--limit N] [--json]
+```
+
+```bash
+oc gh issues ACME
+oc gh issues CERMEL --state closed --limit 10
+```
+
+### gh show
+
+```bash
+oc gh show <CUSTOMER> <NUMBER> [--json]
+```
+
+Full details of a single issue including body and labels.
+
+### gh prs
+
+```bash
+oc gh prs <CUSTOMER> [--state STATE] [--limit N] [--json]
+```
+
+### gh open
+
+```bash
+oc gh open <CUSTOMER> [NUMBER]
+```
+
+Open repo or issue in the default browser.
+
+### gh all-issues
+
+```bash
+oc gh all-issues [--state STATE] [--json]
+```
+
+List open issues across all customers that have a configured repo.
+
+---
+
+## oc comm
+
+Log and search the communications history (stored in SQLite).
+
+### comm add
+
+```bash
+oc comm add <SUBJECT...> --direction in|out \
+    [--channel email|phone|chat|other] \
+    [--customer NAME] [--body TEXT] [--contact TEXT] [--json]
+```
+
+Log an inbound or outbound communication entry.
+
+```bash
+oc comm add Pricing inquiry --direction in --customer ACME
+oc comm add Sent proposal -d out -c email -k CERMEL
+```
+
+### comm list
+
+```bash
+oc comm list [--customer NAME] [--channel CH] [--direction DIR]
+             [--limit N] [--json]
+```
+
+### comm show
+
+```bash
+oc comm show <ID> [--json]
+```
+
+Show full details including body text.
+
+### comm search
+
+```bash
+oc comm search <QUERY...> [--limit N] [--json]
+```
+
+Full-text search on subject and body.
+
+### comm delete
+
+```bash
+oc comm delete <ID>
+```
+
+---
+
+## oc cron
+
+Manage and run scheduled AI jobs. Job definitions are stored in
+`jobs.yaml` at the project root. Execution history is stored in
+SQLite.
+
+### cron list
+
+```bash
+oc cron list [--json]
+```
+
+List all jobs with their id, enabled state, and cron schedule.
+
+### cron show
+
+```bash
+oc cron show <JOB_ID> [--json]
+```
+
+Full definition of a single job.
+
+### cron enable / disable
+
+```bash
+oc cron enable <JOB_ID>
+oc cron disable <JOB_ID>
+```
+
+### cron trigger
+
+```bash
+oc cron trigger <JOB_ID> [--json]
+```
+
+Run a job immediately regardless of its schedule or enabled state.
+Outputs are written to the configured destination. Result is recorded
+in history.
+
+```bash
+oc cron trigger daily-briefing
+```
+
+### cron history
+
+```bash
+oc cron history [JOB_ID] [--limit N] [--json]
+```
+
+Show execution history. Optionally filter to a single job.
+
+### cron add
+
+```bash
+oc cron add <ID> <NAME> \
+    --schedule "30 9 * * 1-5" \
+    --prompt-file prompts/my-prompt.md \
+    --output ~/reports/output-{date}.md \
+    [--model ollama:qwen3:14b] \
+    [--timeout 120] \
+    [--enabled | --disabled]
+```
+
+Add a new job definition to `jobs.yaml`.
+
+### cron delete
+
+```bash
+oc cron delete <JOB_ID>
+```
+
+---
+
+## oc ask
+
+Ask the AI advisor a question. Context from all OmniControl data
+sources (tasks, clock entries, inbox, customer budgets, GitHub issues)
+is injected into the prompt automatically.
+
+```bash
+oc ask <QUESTION...> [--model MODEL] [--no-github] [--no-context]
+```
+
+Model format: `ollama:<model>` for a local Ollama instance,
+`claude:<model>` for the Anthropic API. Default: `ollama:qwen3:14b`.
+
+```bash
+oc ask What should I focus on today?
+oc ask Which customer is closest to exceeding their budget? --no-github
+oc ask Summarize open ACME issues --model claude:claude-opus-4-6
+oc ask What is 2+2? --no-context
+```
+
+---
+
 ## oc tag
 
 Manage tag definitions in `settings.yaml`.
@@ -367,10 +600,16 @@ development. Interactive API docs available at `/docs`.
 
 ## Environment variables
     
-| Variable      | Default               | Description                     |
-|---------------+-----------------------+---------------------------------|
-| `ORG_DIR`       | `~/ownCloud/cowork/org` | Directory containing data files |
-| `BACKEND`       | `org`                   | Storage driver: `org` or `markdown` |
-| `SETTINGS_FILE` | `./settings.yaml`       | Path to settings YAML           |
-| `HOST`          | `0.0.0.0`               | API server bind address         |
-| `PORT`          | `8765`                  | API server port                 |
+| Variable           | Default                    | Description                          |
+|--------------------+----------------------------+--------------------------------------|
+| `ORG_DIR`          | `~/ownCloud/cowork/org`    | Directory containing org data files  |
+| `WISSEN_DIR`       | `~/ownCloud/cowork/wissen` | Knowledge base directory             |
+| `RESEARCH_DIR`     | `~/ownCloud/cowork/research` | Research / AI output directory     |
+| `KUNDEN_DIR`       | `~/ownCloud/cowork/kunden` | Customer markdown files (markdown backend) |
+| `BACKEND`          | `org`                      | Storage driver: `org` or `markdown`  |
+| `JOBS_FILE`        | `./jobs.yaml`              | Cron job definitions                 |
+| `DATA_DIR`         | `./data`                   | SQLite database directory            |
+| `OLLAMA_BASE_URL`  | `http://localhost:11434`   | Ollama API base URL                  |
+| `SETTINGS_FILE`    | `./settings.yaml`          | Path to settings YAML                |
+| `HOST`             | `0.0.0.0`                  | API server bind address              |
+| `PORT`             | `8765`                     | API server port                      |
