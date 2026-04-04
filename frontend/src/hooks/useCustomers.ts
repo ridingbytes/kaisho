@@ -6,6 +6,7 @@ import {
   fetchCustomers,
   fetchTimeEntries,
   updateCustomer,
+  updateTimeEntry,
 } from "../api/client";
 
 export function useCustomers(includeInactive = false) {
@@ -61,6 +62,28 @@ export function useAddTimeEntry() {
       hours: number;
       date?: string;
     }) => addTimeEntry(customerName, description, hours, date),
+    onSuccess: (_data, vars) => {
+      void qc.invalidateQueries({
+        queryKey: ["time-entries", vars.customerName],
+      });
+      void qc.invalidateQueries({ queryKey: ["customers"] });
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useUpdateTimeEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      customerName,
+      entryId,
+      updates,
+    }: {
+      customerName: string;
+      entryId: string;
+      updates: { description?: string; hours?: number; date?: string };
+    }) => updateTimeEntry(customerName, entryId, updates),
     onSuccess: (_data, vars) => {
       void qc.invalidateQueries({
         queryKey: ["time-entries", vars.customerName],

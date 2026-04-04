@@ -180,6 +180,17 @@ export function addTimeEntry(
   );
 }
 
+export function updateTimeEntry(
+  customerName: string,
+  entryId: string,
+  updates: { description?: string; hours?: number; date?: string },
+): Promise<TimeEntry> {
+  return patch<TimeEntry>(
+    `/customers/${encodeURIComponent(customerName)}/entries/${entryId}`,
+    updates
+  );
+}
+
 export function deleteTimeEntry(
   customerName: string,
   entryId: string,

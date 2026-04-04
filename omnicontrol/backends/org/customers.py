@@ -60,6 +60,23 @@ class OrgCustomerBackend(CustomerBackend):
             entry_date=date,
         )
 
+    def update_time_entry(
+        self,
+        name: str,
+        entry_id: str,
+        description: str | None = None,
+        hours: float | None = None,
+        date: str | None = None,
+    ) -> dict | None:
+        return customers.update_time_entry(
+            kunden_file=self._kunden_file,
+            name=name,
+            entry_id=entry_id,
+            description=description,
+            hours=hours,
+            entry_date=date,
+        )
+
     def delete_time_entry(self, name: str, entry_id: str) -> bool:
         return customers.delete_time_entry(
             kunden_file=self._kunden_file,

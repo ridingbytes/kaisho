@@ -12,6 +12,7 @@ import {
   useUpdateCustomer,
   useTimeEntries,
   useAddTimeEntry,
+  useUpdateTimeEntry,
   useDeleteTimeEntry,
 } from "../../hooks/useCustomers";
 import { useTodayEntries } from "../../hooks/useClocks";
@@ -144,10 +145,92 @@ function AddEntryForm({
 
 interface EntryRowProps {
   entry: TimeEntry;
+  customerName: string;
   onDelete: (id: string) => void;
 }
 
-function EntryRow({ entry, onDelete }: EntryRowProps) {
+function EntryRow({ entry, customerName, onDelete }: EntryRowProps) {
+  const [editing, setEditing] = useState(false);
+  const [desc, setDesc] = useState(entry.description);
+  const [hours, setHours] = useState(String(entry.hours));
+  const [date, setDate] = useState(entry.date);
+  const updateEntry = useUpdateTimeEntry();
+
+  function startEdit() {
+    setDesc(entry.description);
+    setHours(String(entry.hours));
+    setDate(entry.date);
+    setEditing(true);
+  }
+
+  function handleSave() {
+    const h = parseFloat(hours);
+    if (!desc.trim() || isNaN(h)) return;
+    updateEntry.mutate(
+      {
+        customerName,
+        entryId: entry.id,
+        updates: {
+          description: desc.trim(),
+          hours: h,
+          date: date || undefined,
+        },
+      },
+      { onSuccess: () => setEditing(false) }
+    );
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") handleSave();
+    if (e.key === "Escape") setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="flex flex-col gap-1 py-1.5 border-b border-border-subtle last:border-0">
+        <input
+          autoFocus
+          type="text"
+          value={desc}
+          onChange={(e) => setDesc(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className={fieldClass()}
+        />
+        <div className="flex gap-1">
+          <input
+            type="number"
+            min="0"
+            step="0.25"
+            value={hours}
+            onChange={(e) => setHours(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className={fieldClass("flex-1 tabular-nums")}
+          />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className={fieldClass("flex-1")}
+          />
+          <button
+            onClick={() => setEditing(false)}
+            className="p-1 text-slate-600 hover:text-slate-300 rounded shrink-0"
+          >
+            <X size={11} />
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={updateEntry.isPending || !desc.trim()}
+            className="p-1 text-accent hover:bg-accent-muted rounded shrink-0 disabled:opacity-40"
+          >
+            <Check size={11} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="group flex items-center gap-2 py-1.5 border-b border-border-subtle last:border-0">
       <span className="text-[10px] text-slate-600 shrink-0 w-20 tabular-nums">
@@ -159,13 +242,22 @@ function EntryRow({ entry, onDelete }: EntryRowProps) {
       <span className="text-[10px] font-semibold text-slate-400 tabular-nums shrink-0">
         {entry.hours}h
       </span>
-      <button
-        onClick={() => onDelete(entry.id)}
-        className="p-0.5 rounded text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-        title="Delete"
-      >
-        <X size={10} />
-      </button>
+      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <button
+          onClick={startEdit}
+          className="p-0.5 rounded text-slate-700 hover:text-accent hover:bg-accent-muted transition-colors"
+          title="Edit"
+        >
+          <Pencil size={10} />
+        </button>
+        <button
+          onClick={() => onDelete(entry.id)}
+          className="p-0.5 rounded text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          title="Delete"
+        >
+          <X size={10} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -224,7 +316,12 @@ function TimeEntriesSection({ customer }: TimeEntriesSectionProps) {
   return (
     <div className="mt-2">
       {entries.map((e) => (
-        <EntryRow key={e.id} entry={e} onDelete={handleDelete} />
+        <EntryRow
+          key={e.id}
+          entry={e}
+          customerName={customer.name}
+          onDelete={handleDelete}
+        />
       ))}
 
       {adding ? (

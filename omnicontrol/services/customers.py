@@ -210,6 +210,35 @@ def add_time_entry(
     return _entry_to_dict(new_child, idx)
 
 
+def update_time_entry(
+    kunden_file: Path,
+    name: str,
+    entry_id: str,
+    description: str | None = None,
+    hours: float | None = None,
+    entry_date: str | None = None,
+) -> dict | None:
+    """Update fields of a time entry. Returns None if not found."""
+    result = _find_customer_heading(kunden_file, name)
+    if result is None:
+        return None
+    org_file, h2 = result
+    idx = int(entry_id) - 1
+    if idx < 0 or idx >= len(h2.children):
+        return None
+    child = h2.children[idx]
+    if description is not None:
+        child.title = description
+    if hours is not None:
+        child.properties["HOURS"] = str(hours)
+    if entry_date is not None:
+        child.properties["DATE"] = entry_date
+    child.dirty = True
+    h2.dirty = True
+    write_org_file(kunden_file, org_file)
+    return _entry_to_dict(child, idx)
+
+
 def delete_time_entry(
     kunden_file: Path, name: str, entry_id: str
 ) -> bool:

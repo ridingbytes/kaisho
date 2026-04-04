@@ -223,5 +223,16 @@ class CustomerBackend(ABC):
         """
 
     @abstractmethod
+    def update_time_entry(
+        self,
+        name: str,
+        entry_id: str,
+        description: str | None = None,
+        hours: float | None = None,
+        date: str | None = None,
+    ) -> dict | None:
+        """Update fields of a time entry. Returns None if not found."""
+
+    @abstractmethod
     def delete_time_entry(self, name: str, entry_id: str) -> bool:
         """Delete a time entry. Returns False if not found."""

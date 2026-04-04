@@ -42,6 +42,12 @@ class TimeEntryCreate(BaseModel):
     date: str | None = None
 
 
+class TimeEntryUpdate(BaseModel):
+    description: str | None = None
+    hours: float | None = None
+    date: str | None = None
+
+
 @router.get("/{name}/entries")
 def list_time_entries(name: str):
     return get_backend().customers.list_time_entries(name)
@@ -55,6 +61,23 @@ def add_time_entry(name: str, body: TimeEntryCreate):
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.patch("/{name}/entries/{entry_id}")
+def update_time_entry(
+    name: str, entry_id: str, body: TimeEntryUpdate
+):
+    entry = get_backend().customers.update_time_entry(
+        name, entry_id,
+        description=body.description,
+        hours=body.hours,
+        date=body.date,
+    )
+    if entry is None:
+        raise HTTPException(
+            status_code=404, detail="Entry not found"
+        )
+    return entry
 
 
 @router.delete("/{name}/entries/{entry_id}", status_code=204)
