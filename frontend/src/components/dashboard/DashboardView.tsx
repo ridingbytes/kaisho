@@ -1,6 +1,7 @@
 import { CheckSquare, Clock, Inbox, Square, TrendingDown } from "lucide-react";
 import { useActiveTimer, useStopTimer } from "../../hooks/useClocks";
 import { useDashboard } from "../../hooks/useDashboard";
+import { useTimeEntries } from "../../hooks/useCustomers";
 import { useSetView } from "../../context/ViewContext";
 import type { BudgetSummary } from "../../types";
 
@@ -71,6 +72,7 @@ function BudgetRow({
   const usedPercent = Math.min(100 - b.percent, 100);
   const color = budgetBarColor(usedPercent);
   const warning = usedPercent >= 80;
+  const { data: entries = [] } = useTimeEntries(b.name);
 
   return (
     <div className="py-3 border-b border-border-subtle last:border-0">
@@ -109,6 +111,24 @@ function BudgetRow({
           }}
         />
       </div>
+      {entries.length > 0 && (
+        <div className="mt-2 flex flex-col gap-0.5">
+          {entries.map((e) => (
+            <div
+              key={e.id}
+              className="flex items-baseline justify-between text-[11px]"
+            >
+              <span className="text-slate-600 shrink-0 mr-2">{e.date}</span>
+              <span className="text-slate-500 flex-1 min-w-0 truncate">
+                {e.description}
+              </span>
+              <span className="text-slate-500 tabular-nums shrink-0 ml-2">
+                {e.hours}h
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
