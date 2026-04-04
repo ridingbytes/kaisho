@@ -11,10 +11,10 @@ function elapsed(startIso: string): string {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-function budgetBarColor(percent: number): string {
-  if (percent >= 40) return "#10b981";
-  if (percent >= 15) return "#f59e0b";
-  return "#ef4444";
+function budgetBarColor(usedPercent: number): string {
+  if (usedPercent >= 100) return "#ef4444";
+  if (usedPercent >= 80) return "#f59e0b";
+  return "#10b981";
 }
 
 function StatCard({
@@ -68,8 +68,9 @@ function BudgetRow({
   b: BudgetSummary;
   onNameClick: () => void;
 }) {
-  const color = budgetBarColor(b.percent);
-  const warning = b.percent < 15;
+  const usedPercent = Math.min(100 - b.percent, 100);
+  const color = budgetBarColor(usedPercent);
+  const warning = usedPercent >= 80;
 
   return (
     <div className="py-3 border-b border-border-subtle last:border-0">
@@ -95,7 +96,7 @@ function BudgetRow({
             className="text-xs font-semibold tabular-nums"
             style={{ color }}
           >
-            {b.percent}%
+            {usedPercent}%
           </span>
         </div>
       </div>
@@ -103,7 +104,7 @@ function BudgetRow({
         <div
           className="h-full rounded-full transition-all"
           style={{
-            width: `${Math.min(b.percent, 100)}%`,
+            width: `${usedPercent}%`,
             backgroundColor: color,
           }}
         />

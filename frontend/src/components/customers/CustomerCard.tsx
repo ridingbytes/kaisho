@@ -18,10 +18,10 @@ import {
 import { useTodayEntries } from "../../hooks/useClocks";
 import type { Customer, TimeEntry, ClockEntry } from "../../types";
 
-function utilColor(percent: number): string {
-  if (percent >= 40) return "#10b981";
-  if (percent >= 15) return "#f59e0b";
-  return "#ef4444";
+function usedColor(usedPercent: number): string {
+  if (usedPercent >= 100) return "#ef4444";
+  if (usedPercent >= 80) return "#f59e0b";
+  return "#10b981";
 }
 
 const STATUS_OPTIONS = ["active", "inactive", "archiv"];
@@ -388,10 +388,7 @@ export function CustomerCard({ customer: c }: Props) {
         100
       )
     : 0;
-  const restPercent = hasContingent
-    ? Math.min(Math.round((c.rest / c.kontingent) * 100), 100)
-    : 0;
-  const barColor = utilColor(restPercent);
+  const barColor = usedColor(usedPercent);
   const isArchived = ["inactive", "archiv", "archived"].includes(
     c.status.toLowerCase()
   );
@@ -539,29 +536,14 @@ export function CustomerCard({ customer: c }: Props) {
           {/* Budget bar */}
           {hasContingent ? (
             <>
-              <div>
-                <div className="h-1.5 rounded-full bg-surface-overlay overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${usedPercent}%`,
-                      backgroundColor: barColor,
-                      opacity: 0.3,
-                    }}
-                  />
-                </div>
+              <div className="h-1.5 rounded-full bg-surface-overlay overflow-hidden">
                 <div
-                  className="h-1.5 rounded-full bg-surface-overlay overflow-hidden -mt-1.5"
-                  title={`${restPercent}% remaining`}
-                >
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${restPercent}%`,
-                      backgroundColor: barColor,
-                    }}
-                  />
-                </div>
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${usedPercent}%`,
+                    backgroundColor: barColor,
+                  }}
+                />
               </div>
 
               <div className="flex items-center justify-between text-xs">
@@ -572,7 +554,7 @@ export function CustomerCard({ customer: c }: Props) {
                   className="font-semibold tabular-nums"
                   style={{ color: barColor }}
                 >
-                  {restPercent}%
+                  {usedPercent}%
                 </span>
               </div>
             </>
