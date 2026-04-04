@@ -6,6 +6,7 @@ import {
   useEnableCronJob,
   useTriggerCronJob,
 } from "../../hooks/useCron";
+import { Toggle } from "../common/Toggle";
 import type { CronJob, CronRun } from "../../types";
 
 function StatusPill({ status }: { status: CronRun["status"] }) {
@@ -32,30 +33,11 @@ function EnableToggle({ job }: { job: CronJob }) {
   const pending = enable.isPending || disable.isPending;
 
   return (
-    <button
-      role="switch"
-      aria-checked={job.enabled}
+    <Toggle
+      checked={job.enabled}
+      onChange={(on) => (on ? enable.mutate(job.id) : disable.mutate(job.id))}
       disabled={pending}
-      onClick={() => {
-        if (job.enabled) {
-          disable.mutate(job.id);
-        } else {
-          enable.mutate(job.id);
-        }
-      }}
-      className={[
-        "relative w-8 h-4 rounded-full transition-colors",
-        job.enabled ? "bg-accent" : "bg-surface-raised",
-        "border border-border disabled:opacity-50",
-      ].join(" ")}
-    >
-      <span
-        className={[
-          "absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform",
-          job.enabled ? "translate-x-4" : "translate-x-0.5",
-        ].join(" ")}
-      />
-    </button>
+    />
   );
 }
 

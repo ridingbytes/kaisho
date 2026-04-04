@@ -12,6 +12,7 @@ import { useState } from "react";
 import { useMoveTask, useTasks } from "../../hooks/useTasks";
 import { useSettings } from "../../hooks/useSettings";
 import type { Task } from "../../types";
+import { Toggle } from "../common/Toggle";
 import { TaskCard } from "./TaskCard";
 import { KanbanColumn } from "./KanbanColumn";
 
@@ -111,24 +112,7 @@ export function KanbanBoard() {
         </h1>
         <label className="flex items-center gap-2 ml-auto cursor-pointer">
           <span className="text-xs text-slate-500">Show done</span>
-          <button
-            role="switch"
-            aria-checked={showDone}
-            onClick={() => setShowDone((v) => !v)}
-            className={[
-              "relative w-8 h-4 rounded-full transition-colors",
-              showDone ? "bg-accent" : "bg-surface-raised",
-              "border border-border",
-            ].join(" ")}
-          >
-            <span
-              className={[
-                "absolute top-0.5 w-3 h-3 rounded-full bg-white",
-                "transition-transform",
-                showDone ? "translate-x-4" : "translate-x-0.5",
-              ].join(" ")}
-            />
-          </button>
+          <Toggle checked={showDone} onChange={setShowDone} />
         </label>
       </div>
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCreateCustomer, useCustomers } from "../../hooks/useCustomers";
+import { Toggle } from "../common/Toggle";
 import { CustomerCard } from "./CustomerCard";
 
 const inputCls =
@@ -112,24 +113,7 @@ export function CustomersView() {
         </button>
         <label className="flex items-center gap-2 ml-auto cursor-pointer">
           <span className="text-xs text-slate-500">Show inactive</span>
-          <button
-            role="switch"
-            aria-checked={showInactive}
-            onClick={() => setShowInactive((v) => !v)}
-            className={[
-              "relative w-8 h-4 rounded-full transition-colors",
-              showInactive ? "bg-accent" : "bg-surface-raised",
-              "border border-border",
-            ].join(" ")}
-          >
-            <span
-              className={[
-                "absolute top-0.5 w-3 h-3 rounded-full bg-white",
-                "transition-transform",
-                showInactive ? "translate-x-4" : "translate-x-0.5",
-              ].join(" ")}
-            />
-          </button>
+          <Toggle checked={showInactive} onChange={setShowInactive} />
         </label>
       </div>
 
