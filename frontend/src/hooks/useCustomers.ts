@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Customer } from "../types";
 import {
   addTimeEntry,
+  createCustomer,
   deleteTimeEntry,
   fetchCustomers,
   fetchTimeEntries,
@@ -15,6 +16,22 @@ export function useCustomers(includeInactive = false) {
     queryFn: () => fetchCustomers(includeInactive),
     staleTime: 60_000,
     refetchOnWindowFocus: true,
+  });
+}
+
+export function useCreateCustomer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      status?: string;
+      kontingent?: number;
+      repo?: string | null;
+    }) => createCustomer(data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["customers"] });
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
   });
 }
 

@@ -209,6 +209,16 @@ class CustomerBackend(ABC):
         """
 
     @abstractmethod
+    def add_customer(
+        self,
+        name: str,
+        status: str = "active",
+        kontingent: float = 0,
+        repo: str | None = None,
+    ) -> dict:
+        """Create a new customer. Raises ValueError if name exists."""
+
+    @abstractmethod
     def update_customer(
         self, name: str, updates: dict
     ) -> dict | None:

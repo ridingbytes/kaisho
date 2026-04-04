@@ -139,6 +139,52 @@ _PROP_MAP = {
 }
 
 
+def add_customer(
+    kunden_file: Path,
+    name: str,
+    status: str = "active",
+    kontingent: float = 0,
+    repo: str | None = None,
+) -> dict:
+    """Add a new customer heading to kunden.org.
+
+    Appends under the first level-1 group heading, or creates one
+    called 'Kunden' if the file is empty.
+    Raises ValueError if a customer with that name already exists.
+    """
+    kunden_file.parent.mkdir(parents=True, exist_ok=True)
+    if not kunden_file.exists():
+        kunden_file.write_text("", encoding="utf-8")
+
+    existing = get_customer(kunden_file, name)
+    if existing is not None:
+        raise ValueError(f"Customer already exists: {name}")
+
+    props: dict[str, str] = {"STATUS": status}
+    if kontingent:
+        props["KONTINGENT"] = f"{kontingent}h"
+    if repo:
+        props["REPO"] = repo
+
+    new_heading = Heading(
+        level=2,
+        title=name,
+        properties=props,
+        dirty=True,
+    )
+
+    org_file = parse_org_file(kunden_file, CUSTOMER_KEYWORDS)
+    if org_file.headings:
+        org_file.headings[0].children.append(new_heading)
+    else:
+        group = Heading(level=1, title="Kunden", dirty=True)
+        group.children.append(new_heading)
+        org_file.headings.append(group)
+
+    write_org_file(kunden_file, org_file)
+    return _heading_to_customer(new_heading)
+
+
 def update_customer(
     kunden_file: Path,
     name: str,

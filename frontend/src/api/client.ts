@@ -162,6 +162,15 @@ export function fetchCustomers(
   );
 }
 
+export function createCustomer(data: {
+  name: string;
+  status?: string;
+  kontingent?: number;
+  repo?: string | null;
+}): Promise<Customer> {
+  return post<Customer>("/customers/", data);
+}
+
 export function updateCustomer(
   name: string,
   updates: Partial<

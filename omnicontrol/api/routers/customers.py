@@ -6,6 +6,26 @@ from ...backends import get_backend
 router = APIRouter(prefix="/api/customers", tags=["customers"])
 
 
+class CustomerCreate(BaseModel):
+    name: str
+    status: str = "active"
+    kontingent: float = 0
+    repo: str | None = None
+
+
+@router.post("/", status_code=201)
+def create_customer(body: CustomerCreate):
+    try:
+        return get_backend().customers.add_customer(
+            name=body.name,
+            status=body.status,
+            kontingent=body.kontingent,
+            repo=body.repo,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+
+
 @router.get("/")
 def list_customers(include_inactive: bool = False):
     return get_backend().customers.list_customers(
