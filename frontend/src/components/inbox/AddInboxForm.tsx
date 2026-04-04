@@ -73,7 +73,7 @@ export function AddInboxForm() {
           placeholder="Customer (optional)"
           value={customer}
           onChange={(e) => setCustomer(e.target.value)}
-          className={inputCls}
+          className={[inputCls, "flex-1 min-w-0"].join(" ")}
         />
       </div>
     </form>
