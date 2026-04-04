@@ -115,7 +115,7 @@ function AiSection() {
                 type="text"
                 value={form.lm_studio_url}
                 onChange={(e) => set("lm_studio_url", e.target.value)}
-                placeholder="http://localhost:1234"
+                placeholder="http://localhost:1234 (default)"
                 className={[
                   "flex-1 px-3 py-1.5 rounded-lg text-sm font-mono",
                   "bg-surface-raised border border-border text-slate-200",
