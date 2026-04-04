@@ -6,11 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from ..backends import get_backend
 from .routers import (
+    advisor,
     clocks,
     communications,
     cron,
     customers,
     dashboard,
+    github,
     inbox,
     kanban,
     knowledge,
@@ -49,6 +51,8 @@ app.include_router(knowledge.router)
 app.include_router(communications.router)
 app.include_router(cron.router)
 app.include_router(settings_router.router)
+app.include_router(github.router)
+app.include_router(advisor.router)
 app.include_router(dashboard.router)
 app.include_router(ws_router.router)
 
