@@ -1,4 +1,6 @@
-import { Play } from "lucide-react";
+import { ChevronDown, ChevronRight, Play } from "lucide-react";
+import { useState } from "react";
+import { Markdown } from "../common/Markdown";
 import {
   useCronHistory,
   useCronJobs,
@@ -81,6 +83,8 @@ function JobCard({ job }: { job: CronJob }) {
 }
 
 function HistoryTable({ runs }: { runs: CronRun[] }) {
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
   if (runs.length === 0) {
     return (
       <p className="text-sm text-slate-600 py-4">No history yet.</p>
@@ -92,6 +96,7 @@ function HistoryTable({ runs }: { runs: CronRun[] }) {
       <table className="w-full text-xs">
         <thead>
           <tr className="text-slate-600 border-b border-border-subtle">
+            <th className="text-left py-2 pr-4 font-medium w-4" />
             <th className="text-left py-2 pr-4 font-medium">#</th>
             <th className="text-left py-2 pr-4 font-medium">Job</th>
             <th className="text-left py-2 pr-4 font-medium">Started</th>
@@ -101,31 +106,67 @@ function HistoryTable({ runs }: { runs: CronRun[] }) {
           </tr>
         </thead>
         <tbody>
-          {runs.map((run) => (
-            <tr
-              key={run.id}
-              className="border-b border-border-subtle hover:bg-surface-raised transition-colors"
-            >
-              <td className="py-2 pr-4 text-slate-600">{run.id}</td>
-              <td className="py-2 pr-4 font-mono text-slate-400">
-                {run.job_id}
-              </td>
-              <td className="py-2 pr-4 text-slate-400">
-                {run.started_at.slice(0, 19).replace("T", " ")}
-              </td>
-              <td className="py-2 pr-4 text-slate-400">
-                {run.finished_at
-                  ? run.finished_at.slice(0, 19).replace("T", " ")
-                  : "—"}
-              </td>
-              <td className="py-2 pr-4">
-                <StatusPill status={run.status} />
-              </td>
-              <td className="py-2 text-red-400 max-w-xs truncate">
-                {run.status === "error" ? run.error : ""}
-              </td>
-            </tr>
-          ))}
+          {runs.map((run) => {
+            const isOpen = expandedId === run.id;
+            const hasOutput = !!run.output;
+            return (
+              <>
+                <tr
+                  key={run.id}
+                  onClick={() =>
+                    hasOutput
+                      ? setExpandedId(isOpen ? null : run.id)
+                      : undefined
+                  }
+                  className={[
+                    "border-b border-border-subtle transition-colors",
+                    hasOutput
+                      ? "cursor-pointer hover:bg-surface-raised"
+                      : "",
+                    isOpen ? "bg-surface-raised" : "",
+                  ].join(" ")}
+                >
+                  <td className="py-2 pr-2 text-slate-600 w-4">
+                    {hasOutput ? (
+                      isOpen ? (
+                        <ChevronDown size={10} />
+                      ) : (
+                        <ChevronRight size={10} />
+                      )
+                    ) : null}
+                  </td>
+                  <td className="py-2 pr-4 text-slate-600">{run.id}</td>
+                  <td className="py-2 pr-4 font-mono text-slate-400">
+                    {run.job_id}
+                  </td>
+                  <td className="py-2 pr-4 text-slate-400">
+                    {run.started_at.slice(0, 19).replace("T", " ")}
+                  </td>
+                  <td className="py-2 pr-4 text-slate-400">
+                    {run.finished_at
+                      ? run.finished_at.slice(0, 19).replace("T", " ")
+                      : "—"}
+                  </td>
+                  <td className="py-2 pr-4">
+                    <StatusPill status={run.status} />
+                  </td>
+                  <td className="py-2 text-red-400 max-w-xs truncate">
+                    {run.status === "error" ? run.error : ""}
+                  </td>
+                </tr>
+                {isOpen && (
+                  <tr
+                    key={`${run.id}-output`}
+                    className="border-b border-border-subtle bg-surface-card"
+                  >
+                    <td colSpan={7} className="px-4 py-4">
+                      <Markdown>{run.output}</Markdown>
+                    </td>
+                  </tr>
+                )}
+              </>
+            );
+          })}
         </tbody>
       </table>
     </div>
