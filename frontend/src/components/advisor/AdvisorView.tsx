@@ -9,7 +9,7 @@ const MODELS = [
   "claude:claude-sonnet-4-6",
 ];
 
-interface Message {
+export interface AdvisorMessage {
   role: "user" | "assistant";
   text: string;
 }
@@ -50,9 +50,13 @@ function AssistantBubble({
   );
 }
 
-export function AdvisorView() {
+interface AdvisorViewProps {
+  messages: AdvisorMessage[];
+  onMessagesChange: React.Dispatch<React.SetStateAction<AdvisorMessage[]>>;
+}
+
+export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
   const [model, setModel] = useState(MODELS[2]);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,12 +72,12 @@ export function AdvisorView() {
 
     setInput("");
     setError(null);
-    setMessages((prev) => [...prev, { role: "user", text: question }]);
+    onMessagesChange((prev) => [...prev, { role: "user", text: question }]);
     setLoading(true);
 
     askAdvisor(question, model)
       .then((result) => {
-        setMessages((prev) => [
+        onMessagesChange((prev) => [
           ...prev,
           { role: "assistant", text: result.answer },
         ]);

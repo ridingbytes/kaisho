@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { AdvisorMessage } from "./components/advisor/AdvisorView";
 import { AdvisorView } from "./components/advisor/AdvisorView";
 import { ClockWidget } from "./components/clock/ClockWidget";
 import { CommunicationsView } from "./components/communications/CommunicationsView";
@@ -40,6 +41,16 @@ const VIEW_TITLES: Record<View, string> = {
   advisor: "Advisor",
 };
 
+const VALID_VIEWS = new Set<View>([
+  "dashboard", "board", "inbox", "customers",
+  "knowledge", "github", "communications", "cron", "settings", "advisor",
+]);
+
+function viewFromHash(): View {
+  const hash = window.location.hash.replace(/^#\/?/, "");
+  return VALID_VIEWS.has(hash as View) ? (hash as View) : "board";
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 30_000, refetchOnWindowFocus: true },
@@ -48,7 +59,18 @@ const queryClient = new QueryClient({
 
 function AppShell() {
   useWebSocket();
-  const [view, setView] = useState<View>("board");
+  const [view, setView] = useState<View>(viewFromHash);
+  const [advisorMessages, setAdvisorMessages] = useState<AdvisorMessage[]>([]);
+
+  useEffect(() => {
+    window.location.hash = `/${view}`;
+  }, [view]);
+
+  useEffect(() => {
+    const handler = () => setView(viewFromHash());
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, []);
 
   return (
     <div className="flex flex-col h-full">
@@ -78,7 +100,12 @@ function AppShell() {
             {view === "communications" && <CommunicationsView />}
             {view === "cron" && <CronView />}
             {view === "settings" && <SettingsView />}
-            {view === "advisor" && <AdvisorView />}
+            {view === "advisor" && (
+              <AdvisorView
+                messages={advisorMessages}
+                onMessagesChange={setAdvisorMessages}
+              />
+            )}
           </main>
 
           <ClockWidget />
