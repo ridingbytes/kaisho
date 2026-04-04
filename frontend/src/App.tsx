@@ -90,7 +90,7 @@ function AppShell() {
         <div className="flex flex-1 min-h-0">
           <Sidebar active={view} onChange={setView} />
 
-          <main className="flex-1 min-w-0 overflow-hidden">
+          <main className="flex-1 min-w-0 overflow-hidden relative">
             {view === "dashboard" && <DashboardView />}
             {view === "board" && <KanbanBoard />}
             {view === "inbox" && <InboxView />}
@@ -100,12 +100,13 @@ function AppShell() {
             {view === "communications" && <CommunicationsView />}
             {view === "cron" && <CronView />}
             {view === "settings" && <SettingsView />}
-            {view === "advisor" && (
+            {/* Always mounted so chat state survives navigation */}
+            <div className={view === "advisor" ? "h-full" : "hidden"}>
               <AdvisorView
                 messages={advisorMessages}
                 onMessagesChange={setAdvisorMessages}
               />
-            )}
+            </div>
           </main>
 
           <ClockWidget />
