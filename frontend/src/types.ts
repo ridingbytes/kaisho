@@ -81,3 +81,64 @@ export interface Dashboard {
   inbox_count: number;
   budgets: BudgetSummary[];
 }
+
+export interface KnowledgeFile {
+  path: string;
+  label: string;
+  name: string;
+  size: number;
+}
+
+export interface KnowledgeSearchResult {
+  path: string;
+  label: string;
+  line_number: number;
+  snippet: string;
+}
+
+export interface CommEntry {
+  id: number;
+  ts: string;
+  customer: string | null;
+  direction: "in" | "out";
+  channel: "email" | "phone" | "chat" | "other";
+  subject: string;
+  body: string;
+  contact: string;
+}
+
+export interface CronJob {
+  id: string;
+  name: string;
+  schedule: string;
+  model: string;
+  prompt_file: string;
+  output: string;
+  timeout: number;
+  enabled: boolean;
+}
+
+export interface CronRun {
+  id: number;
+  job_id: string;
+  started_at: string;
+  finished_at: string | null;
+  status: "running" | "ok" | "error";
+  output: string;
+  error: string;
+}
+
+export interface GithubIssue {
+  number: number;
+  title: string;
+  state: string;
+  url: string;
+  createdAt: string;
+  labels: { name: string; color: string }[];
+}
+
+export interface GithubIssueGroup {
+  customer: string;
+  repo: string;
+  issues: GithubIssue[];
+}

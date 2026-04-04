@@ -1,0 +1,171 @@
+import { useEffect, useRef, useState } from "react";
+import { Send } from "lucide-react";
+import { askAdvisor } from "../../api/client";
+
+const MODELS = [
+  "ollama:qwen3:14b",
+  "claude:claude-opus-4-6",
+  "claude:claude-sonnet-4-6",
+];
+
+interface Message {
+  role: "user" | "assistant";
+  text: string;
+}
+
+function UserBubble({ text }: { text: string }) {
+  return (
+    <div className="flex justify-end mb-3">
+      <div className="max-w-[70%] px-4 py-2.5 rounded-2xl rounded-tr-sm bg-accent text-white text-sm">
+        {text}
+      </div>
+    </div>
+  );
+}
+
+function AssistantBubble({
+  text,
+  thinking,
+}: {
+  text: string;
+  thinking?: boolean;
+}) {
+  return (
+    <div className="flex justify-start mb-3">
+      <div
+        className={[
+          "max-w-[70%] px-4 py-2.5 rounded-2xl rounded-tl-sm",
+          "bg-surface-card border border-border text-sm text-slate-200",
+          thinking ? "text-slate-600 italic" : "",
+        ].join(" ")}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
+
+export function AdvisorView() {
+  const [model, setModel] = useState(MODELS[2]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  function sendMessage() {
+    const question = input.trim();
+    if (!question || loading) return;
+
+    setInput("");
+    setError(null);
+    setMessages((prev) => [...prev, { role: "user", text: question }]);
+    setLoading(true);
+
+    askAdvisor(question, model)
+      .then((result) => {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", text: result.answer },
+        ]);
+      })
+      .catch((err: unknown) => {
+        const msg =
+          err instanceof Error ? err.message : "Request failed.";
+        setError(msg);
+      })
+      .finally(() => setLoading(false));
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    sendMessage();
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Toolbar */}
+      <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
+        <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
+          Advisor
+        </h1>
+        <select
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+          className="ml-auto px-2 py-1 rounded-lg bg-surface-raised border border-border text-xs text-slate-300 focus:outline-none"
+        >
+          {MODELS.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-6 py-4">
+        {messages.length === 0 && !loading && (
+          <p className="text-sm text-slate-600 text-center mt-12">
+            Ask a question to get started.
+          </p>
+        )}
+        {messages.map((msg, i) =>
+          msg.role === "user" ? (
+            <UserBubble key={i} text={msg.text} />
+          ) : (
+            <AssistantBubble key={i} text={msg.text} />
+          )
+        )}
+        {loading && <AssistantBubble text="Thinking…" thinking />}
+        {error && (
+          <p className="text-xs text-red-400 text-center py-2">
+            {error}
+          </p>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input */}
+      <form
+        onSubmit={handleSubmit}
+        className="shrink-0 px-6 pb-4 flex gap-3 items-end border-t border-border-subtle pt-3"
+      >
+        <textarea
+          rows={3}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Ask anything… (Enter to send, Shift+Enter for newline)"
+          className={[
+            "flex-1 px-3 py-2 rounded-xl resize-none",
+            "bg-surface-raised border border-border text-sm text-slate-200",
+            "placeholder-slate-600 focus:outline-none focus:border-border-strong",
+          ].join(" ")}
+        />
+        <button
+          type="submit"
+          disabled={loading || !input.trim()}
+          className={[
+            "flex items-center gap-1.5 px-4 py-2 rounded-xl",
+            "bg-accent text-white text-sm hover:bg-accent-hover",
+            "transition-colors disabled:opacity-50 shrink-0",
+          ].join(" ")}
+        >
+          <Send size={14} />
+          Send
+        </button>
+      </form>
+    </div>
+  );
+}

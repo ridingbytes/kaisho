@@ -1,9 +1,15 @@
 import type {
   ActiveTimer,
   ClockEntry,
+  CommEntry,
+  CronJob,
+  CronRun,
   Customer,
   Dashboard,
+  GithubIssueGroup,
   InboxItem,
+  KnowledgeFile,
+  KnowledgeSearchResult,
   Settings,
   Task,
   TimeEntry,
@@ -217,4 +223,109 @@ export function deleteTimeEntry(
 
 export function fetchDashboard(): Promise<Dashboard> {
   return get<Dashboard>("/dashboard/");
+}
+
+// Knowledge
+
+export function fetchKnowledgeTree(): Promise<KnowledgeFile[]> {
+  return get<KnowledgeFile[]>("/knowledge/tree");
+}
+
+export function fetchKnowledgeFile(
+  path: string
+): Promise<{ path: string; content: string }> {
+  return get<{ path: string; content: string }>(
+    `/knowledge/file?path=${encodeURIComponent(path)}`
+  );
+}
+
+export function searchKnowledge(q: string): Promise<KnowledgeSearchResult[]> {
+  return get<KnowledgeSearchResult[]>(
+    `/knowledge/search?q=${encodeURIComponent(q)}`
+  );
+}
+
+// Communications
+
+export function fetchComms(params?: {
+  customer?: string;
+  channel?: string;
+  direction?: string;
+}): Promise<CommEntry[]> {
+  const qs = new URLSearchParams();
+  if (params?.customer) qs.set("customer", params.customer);
+  if (params?.channel) qs.set("channel", params.channel);
+  if (params?.direction) qs.set("direction", params.direction);
+  const query = qs.toString() ? `?${qs.toString()}` : "";
+  return get<CommEntry[]>(`/comm/${query}`);
+}
+
+export function addComm(data: {
+  subject: string;
+  direction: string;
+  channel?: string;
+  customer?: string;
+  body?: string;
+  contact?: string;
+}): Promise<CommEntry> {
+  return post<CommEntry>("/comm/", data);
+}
+
+export function deleteComm(id: number): Promise<void> {
+  return del(`/comm/${id}`);
+}
+
+export function searchComms(q: string): Promise<CommEntry[]> {
+  return get<CommEntry[]>(`/comm/search?q=${encodeURIComponent(q)}`);
+}
+
+// Cron
+
+export function fetchCronJobs(): Promise<CronJob[]> {
+  return get<CronJob[]>("/cron/jobs");
+}
+
+export function triggerCronJob(
+  jobId: string
+): Promise<{ run_id: number; status: string }> {
+  return post<{ run_id: number; status: string }>(
+    `/cron/jobs/${encodeURIComponent(jobId)}/trigger`,
+    {}
+  );
+}
+
+export function enableCronJob(jobId: string): Promise<CronJob> {
+  return post<CronJob>(
+    `/cron/jobs/${encodeURIComponent(jobId)}/enable`,
+    {}
+  );
+}
+
+export function disableCronJob(jobId: string): Promise<CronJob> {
+  return post<CronJob>(
+    `/cron/jobs/${encodeURIComponent(jobId)}/disable`,
+    {}
+  );
+}
+
+export function fetchCronHistory(jobId?: string): Promise<CronRun[]> {
+  const query = jobId
+    ? `?job_id=${encodeURIComponent(jobId)}`
+    : "";
+  return get<CronRun[]>(`/cron/history${query}`);
+}
+
+// GitHub
+
+export function fetchGithubIssues(): Promise<GithubIssueGroup[]> {
+  return get<GithubIssueGroup[]>("/github/issues");
+}
+
+// Advisor
+
+export function askAdvisor(
+  question: string,
+  model: string
+): Promise<{ answer: string }> {
+  return post<{ answer: string }>("/advisor/ask", { question, model });
 }

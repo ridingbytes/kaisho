@@ -1,21 +1,43 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import { AdvisorView } from "./components/advisor/AdvisorView";
 import { ClockWidget } from "./components/clock/ClockWidget";
+import { CommunicationsView } from "./components/communications/CommunicationsView";
+import { CronView } from "./components/cron/CronView";
 import { CustomersView } from "./components/customers/CustomersView";
 import { DashboardView } from "./components/dashboard/DashboardView";
+import { GithubView } from "./components/github/GithubView";
 import { InboxView } from "./components/inbox/InboxView";
 import { KanbanBoard } from "./components/kanban/KanbanBoard";
+import { KnowledgeView } from "./components/knowledge/KnowledgeView";
 import { Sidebar } from "./components/nav/Sidebar";
+import { SettingsView } from "./components/settings/SettingsView";
 import { ViewContext } from "./context/ViewContext";
 import { useWebSocket } from "./hooks/useWebSocket";
 
-export type View = "dashboard" | "board" | "inbox" | "customers";
+export type View =
+  | "dashboard"
+  | "board"
+  | "inbox"
+  | "customers"
+  | "knowledge"
+  | "github"
+  | "communications"
+  | "cron"
+  | "settings"
+  | "advisor";
 
 const VIEW_TITLES: Record<View, string> = {
   dashboard: "Dashboard",
   board: "Board",
   inbox: "Inbox",
   customers: "Customers",
+  knowledge: "Knowledge",
+  github: "GitHub",
+  communications: "Communications",
+  cron: "Cron",
+  settings: "Settings",
+  advisor: "Advisor",
 };
 
 const queryClient = new QueryClient({
@@ -51,6 +73,12 @@ function AppShell() {
             {view === "board" && <KanbanBoard />}
             {view === "inbox" && <InboxView />}
             {view === "customers" && <CustomersView />}
+            {view === "knowledge" && <KnowledgeView />}
+            {view === "github" && <GithubView />}
+            {view === "communications" && <CommunicationsView />}
+            {view === "cron" && <CronView />}
+            {view === "settings" && <SettingsView />}
+            {view === "advisor" && <AdvisorView />}
           </main>
 
           <ClockWidget />

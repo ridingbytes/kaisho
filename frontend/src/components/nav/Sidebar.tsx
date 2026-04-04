@@ -1,7 +1,13 @@
 import {
+  Bot,
+  BookOpen,
+  Clock4,
   Columns2,
+  GitPullRequest,
   Inbox,
   LayoutDashboard,
+  MessageSquare,
+  Settings,
   Users,
 } from "lucide-react";
 import type { View } from "../../App";
@@ -18,6 +24,12 @@ const NAV_ITEMS: NavItem[] = [
   { id: "board", label: "Board", icon: Columns2 },
   { id: "inbox", label: "Inbox", icon: Inbox },
   { id: "customers", label: "Customers", icon: Users },
+  { id: "knowledge", label: "Knowledge", icon: BookOpen },
+  { id: "github", label: "GitHub", icon: GitPullRequest },
+  { id: "communications", label: "Comm", icon: MessageSquare },
+  { id: "cron", label: "Cron", icon: Clock4 },
+  { id: "settings", label: "Settings", icon: Settings },
+  { id: "advisor", label: "Advisor", icon: Bot },
 ];
 
 interface SidebarProps {
@@ -49,7 +61,7 @@ export function Sidebar({ active, onChange }: SidebarProps) {
               "text-[9px] font-semibold tracking-wider uppercase gap-1",
               isActive
                 ? "bg-accent-muted text-accent"
-                : "text-slate-600 hover:text-slate-400 hover:bg-surface-raised",
+                : "text-slate-400 hover:text-slate-200 hover:bg-surface-raised",
             ].join(" ")}
           >
             <Icon size={16} strokeWidth={isActive ? 2 : 1.5} />
