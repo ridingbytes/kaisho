@@ -63,6 +63,7 @@ export function ClockWidget() {
 
             {tab === "start" ? (
               <StartForm
+                key={prefill ? `${prefill.customer}|${prefill.description}` : "empty"}
                 onStarted={() => setPrefill(null)}
                 initialCustomer={prefill?.customer}
                 initialDescription={prefill?.description}
