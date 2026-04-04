@@ -234,7 +234,7 @@ oc inbox edit
 
 ## oc customer
 
-View customer and budget data (read-only from the data file).
+Manage customers and their budget time entries.
 
 ### customer list
 
@@ -250,7 +250,7 @@ Active customers with budget utilisation. `--all` includes inactive.
 oc customer show <NAME> [--json]
 ```
 
-Full details for a single customer.
+Full details for a single customer including verbraucht and rest.
 
 ### customer summary
 
@@ -265,6 +265,54 @@ customer.
 
 ```bash
 oc customer edit
+```
+
+Opens the customers file in `$EDITOR`.
+
+### customer entries
+
+```bash
+oc customer entries <NAME> [--json]
+```
+
+List all time entries booked against a customer's budget.
+
+```bash
+oc customer entries ACME
+```
+
+### customer entry-add
+
+```bash
+oc customer entry-add <NAME> --description <TEXT> --hours <H> [--date YYYY-MM-DD]
+```
+
+Add a time entry to a customer's budget. Date defaults to today.
+
+```bash
+oc customer entry-add ACME -d "Code review" -h 2.5
+oc customer entry-add CERMEL -d "Planning call" -h 1 --date 2026-04-01
+```
+
+Budget is calculated as `VERBRAUCHT` (stored property) plus the sum
+of all time entry hours. Both contribute to consumption.
+
+### customer entry-edit
+
+```bash
+oc customer entry-edit <NAME> <ENTRY_ID> [-d TEXT] [-h H] [--date DATE]
+```
+
+Update fields of an existing time entry. Pass only the fields to change.
+
+```bash
+oc customer entry-edit ACME abc123 -h 3.0
+```
+
+### customer entry-delete
+
+```bash
+oc customer entry-delete <NAME> <ENTRY_ID>
 ```
 
 ---

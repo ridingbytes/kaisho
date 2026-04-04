@@ -679,34 +679,41 @@ pydantic-settings mit Env-Vars und Defaults:
 
 ### Kanban (/api/kanban)
 
-| Method | Path             | Beschreibung                           |
-|--------+------------------+----------------------------------------|
-| GET    | /tasks           | Tasks, Filter: ?status=&customer=&tag= |
-| PATCH  | /tasks/{id}      | Status aendern                         |
-| POST   | /tasks           | Neuen Task anlegen (mit Tags)          |
-| DELETE | /tasks/{id}      | Task archivieren (nach archive.org)    |
-| PATCH  | /tasks/{id}/move | Reihenfolge aendern                    |
-| PATCH  | /tasks/{id}/tags | Tags setzen/aendern                    |
-| GET    | /tags            | Alle bekannten Tags mit Counts         |
+| Method | Path             | Beschreibung                                        |
+|--------+------------------+-----------------------------------------------------|
+| GET    | /tasks           | Tasks, Filter: ?status=&customer=&tag=              |
+| POST   | /tasks           | Neuen Task anlegen                                  |
+| PATCH  | /tasks/{id}      | Status, Titel oder Kunde aendern                    |
+| DELETE | /tasks/{id}      | Task archivieren (nach archive.org)                 |
+| GET    | /tags            | Alle bekannten Tags mit Counts                      |
 
 Task-ID: SHA-256 von Heading-Text + CREATED-Timestamp.
 Stabil ueber Re-Reads.
 
 ### Clocks (/api/clocks)
 
-| Method | Path        | Beschreibung                                       |
-|--------+-------------+----------------------------------------------------|
-| GET    | /entries    | Alle Clock-Eintraege, Filter: ?from=&to=&customer= |
-| GET    | /active     | Aktuell laufender Timer (offener CLOCK)            |
-| POST   | /quick-book | Natural Language: "2h CERMEL Email"                |
-| GET    | /summary    | Nach Kunde gruppiert mit Summen                    |
+| Method | Path           | Beschreibung                                       |
+|--------+----------------+----------------------------------------------------|
+| GET    | /entries       | Alle Clock-Eintraege, Filter: ?period=&customer=   |
+| PATCH  | /entries       | Clock-Eintrag aendern (?start=ISO)                 |
+| DELETE | /entries       | Clock-Eintrag loeschen (?start=ISO)                |
+| GET    | /active        | Aktuell laufender Timer (offener CLOCK)            |
+| POST   | /start         | Timer starten                                      |
+| POST   | /stop          | Timer stoppen                                      |
+| POST   | /quick-book    | Retroaktiv buchen: {duration, customer, description} |
+| GET    | /summary       | Nach Kunde gruppiert mit Summen                    |
 
 ### Customers (/api/customers)
 
-| Method | Path    | Beschreibung                  |
-|--------+---------+-------------------------------|
-| GET    | /       | Alle Kunden mit Budget-Status |
-| GET    | /{name} | Einzelner Kunde mit Details   |
+| Method | Path                      | Beschreibung                        |
+|--------+---------------------------+-------------------------------------|
+| GET    | /                         | Alle Kunden mit Budget-Status       |
+| GET    | /{name}                   | Einzelner Kunde mit Details         |
+| PATCH  | /{name}                   | Kundendaten aendern (name, status, kontingent, repo) |
+| GET    | /{name}/entries           | Zeiteintraege eines Kunden          |
+| POST   | /{name}/entries           | Zeiteintrag anlegen                 |
+| PATCH  | /{name}/entries/{id}      | Zeiteintrag aendern                 |
+| DELETE | /{name}/entries/{id}      | Zeiteintrag loeschen                |
 
 ### Inbox (/api/inbox)
 
@@ -853,9 +860,17 @@ kunden.org:
 - Properties: KONTINGENT, VERBRAUCHT, REST, STATUS, REPO etc.
 - Numerische Extraktion: Regex fuer Stunden, Fallback 0
 
-Budget-Berechnung: KONTINGENT und REST aus kunden.org Properties.
-Manuell gepflegt. Backend berechnet NICHT automatisch aus clocks.org.
-Dashboard zeigt beides: manuelles REST + "diesen Monat geclockt".
+Budget-Berechnung: KONTINGENT aus kunden.org Properties.
+VERBRAUCHT ist manuell gepflegt und fungiert als Basis-Offset.
+Zeiteintraege (Level-3-Headings im Format "YYYY-MM-DD: Beschreibung"
+mit :HOURS: Property) addieren sich zum VERBRAUCHT-Offset.
+REST = KONTINGENT - (VERBRAUCHT + Summe Zeiteintraege).
+Zeiteintraege werden ueber CLI und API verwaltet:
+  oc customer entries <NAME>
+  oc customer entry-add / entry-edit / entry-delete
+Clock-Eintraege (clocks.org) bleiben davon getrennt und fliessen
+erst nach expliziter Buchung ("Book to project") in die
+Zeiteintraege ein.
 
 ---
 

@@ -13,7 +13,12 @@ omnicontrol/
 │   ├── parser.py      # Text → OrgFile tree
 │   ├── clock.py       # Clock entry parsing and formatting
 │   └── writer.py      # OrgFile → text (round-trip safe)
-├── services/          # Shared utilities used by backends
+├── services/          # Business logic used by org backend
+│   ├── kanban.py      # Task CRUD, state transitions
+│   ├── clocks.py      # Clock entries, timer, quick-book
+│   ├── customers.py   # Budget calculation, time entries
+│   ├── inbox.py       # Capture + auto-categorize
+│   ├── dashboard.py   # Aggregation across all domains
 │   └── settings.py    # settings.yaml read/write
 ├── cli/               # Click command groups
 └── api/               # FastAPI application
@@ -25,10 +30,16 @@ omnicontrol/
 frontend/              # Vite + React 18 + TypeScript
 ├── src/
 │   ├── api/           # Fetch wrappers for all endpoints
-│   ├── hooks/         # TanStack Query hooks + WebSocket
+│   ├── context/       # ViewContext for sidebar navigation
+│   ├── hooks/         # TanStack Query hooks per domain
 │   └── components/
+│       ├── common/    # CustomerAutocomplete
+│       ├── dashboard/ # DashboardView
 │       ├── kanban/    # KanbanBoard, KanbanColumn, TaskCard
-│       └── clock/     # ClockWidget, ActiveTimer, forms, list
+│       ├── clock/     # ClockWidget, ActiveTimer, forms, list
+│       ├── customers/ # CustomersView, CustomerCard
+│       ├── inbox/     # InboxView, InboxItemRow, AddInboxForm
+│       └── nav/       # Sidebar
 ```
 
 ## Data flow
@@ -54,12 +65,12 @@ All storage access goes through `get_backend()`.
 
 Four abstract base classes live in `backends/base.py`:
 
-| Class             | Methods                                                                            |
-|-------------------+------------------------------------------------------------------------------------|
-| `TaskBackend`     | `list_tasks`, `add_task`, `move_task`, `set_tags`, `archive_task`, `list_all_tags` |
-| `ClockBackend`    | `list_entries`, `get_active`, `get_summary`, `start`, `stop`, `quick_book`         |
-| `InboxBackend`    | `list_items`, `add_item`, `remove_item`, `promote_to_task`                         |
-| `CustomerBackend` | `list_customers`, `get_customer`, `get_budget_summary`                             |
+| Class             | Methods                                                                                                                                              |
+|-------------------+------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `TaskBackend`     | `list_tasks`, `add_task`, `move_task`, `set_tags`, `archive_task`, `update_task`, `list_all_tags`                                                    |
+| `ClockBackend`    | `list_entries`, `get_active`, `get_summary`, `start`, `stop`, `quick_book`, `update_entry`, `delete_entry`                                           |
+| `InboxBackend`    | `list_items`, `add_item`, `remove_item`, `promote_to_task`                                                                                           |
+| `CustomerBackend` | `list_customers`, `get_customer`, `get_budget_summary`, `update_customer`, `list_time_entries`, `add_time_entry`, `update_time_entry`, `delete_time_entry` |
 
 Each class also exposes `data_file: Path | None` used by the `edit`
 CLI subcommands.

@@ -15,7 +15,6 @@ from datetime import date
 from pathlib import Path
 
 from ..base import (
-    Backend,
     ClockBackend,
     CustomerBackend,
     InboxBackend,
@@ -48,6 +47,10 @@ class MarkdownTaskBackend(TaskBackend):
     def archive_task(self, task_id) -> bool:
         raise NotImplementedError
 
+    def update_task(self, task_id, title=None,
+                    customer=None) -> dict:
+        raise NotImplementedError
+
     def list_all_tags(self) -> list[dict]:
         raise NotImplementedError
 
@@ -77,7 +80,15 @@ class MarkdownClockBackend(ClockBackend):
     def stop(self) -> dict:
         raise NotImplementedError
 
-    def quick_book(self, duration_str, customer, description) -> dict:
+    def quick_book(self, duration_str, customer,
+                   description) -> dict:
+        raise NotImplementedError
+
+    def update_entry(self, start_iso, description=None,
+                     hours=None) -> dict | None:
+        raise NotImplementedError
+
+    def delete_entry(self, start_iso) -> bool:
         raise NotImplementedError
 
 
@@ -118,6 +129,23 @@ class MarkdownCustomerBackend(CustomerBackend):
         raise NotImplementedError
 
     def get_budget_summary(self) -> list[dict]:
+        raise NotImplementedError
+
+    def update_customer(self, name, updates) -> dict | None:
+        raise NotImplementedError
+
+    def list_time_entries(self, name) -> list[dict]:
+        raise NotImplementedError
+
+    def add_time_entry(self, name, description, hours,
+                       date=None) -> dict:
+        raise NotImplementedError
+
+    def update_time_entry(self, name, entry_id, description=None,
+                          hours=None, date=None) -> dict | None:
+        raise NotImplementedError
+
+    def delete_time_entry(self, name, entry_id) -> bool:
         raise NotImplementedError
 
 
