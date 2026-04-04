@@ -14,8 +14,10 @@ class TaskCreate(BaseModel):
     tags: list[str] = []
 
 
-class TaskMove(BaseModel):
-    status: str
+class TaskUpdate(BaseModel):
+    status: str | None = None
+    title: str | None = None
+    customer: str | None = None
 
 
 class TagsUpdate(BaseModel):
@@ -49,9 +51,21 @@ def create_task(body: TaskCreate):
 
 
 @router.patch("/tasks/{task_id}")
-def move_task(task_id: str, body: TaskMove):
+def update_task(task_id: str, body: TaskUpdate):
     try:
-        return get_backend().tasks.move_task(task_id, body.status)
+        backend = get_backend().tasks
+        result = None
+        if body.status is not None:
+            result = backend.move_task(task_id, body.status)
+        if body.title is not None or body.customer is not None:
+            result = backend.update_task(
+                task_id, title=body.title, customer=body.customer
+            )
+        if result is None:
+            raise HTTPException(
+                status_code=400, detail="No fields to update"
+            )
+        return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

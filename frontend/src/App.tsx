@@ -6,6 +6,7 @@ import { DashboardView } from "./components/dashboard/DashboardView";
 import { InboxView } from "./components/inbox/InboxView";
 import { KanbanBoard } from "./components/kanban/KanbanBoard";
 import { Sidebar } from "./components/nav/Sidebar";
+import { ViewContext } from "./context/ViewContext";
 import { useWebSocket } from "./hooks/useWebSocket";
 
 export type View = "dashboard" | "board" | "inbox" | "customers";
@@ -41,18 +42,20 @@ function AppShell() {
       </header>
 
       {/* Body */}
-      <div className="flex flex-1 min-h-0">
-        <Sidebar active={view} onChange={setView} />
+      <ViewContext.Provider value={{ setView }}>
+        <div className="flex flex-1 min-h-0">
+          <Sidebar active={view} onChange={setView} />
 
-        <main className="flex-1 min-w-0 overflow-hidden">
-          {view === "dashboard" && <DashboardView />}
-          {view === "board" && <KanbanBoard />}
-          {view === "inbox" && <InboxView />}
-          {view === "customers" && <CustomersView />}
-        </main>
+          <main className="flex-1 min-w-0 overflow-hidden">
+            {view === "dashboard" && <DashboardView />}
+            {view === "board" && <KanbanBoard />}
+            {view === "inbox" && <InboxView />}
+            {view === "customers" && <CustomersView />}
+          </main>
 
-        <ClockWidget />
-      </div>
+          <ClockWidget />
+        </div>
+      </ViewContext.Provider>
     </div>
   );
 }

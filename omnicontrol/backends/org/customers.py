@@ -41,3 +41,28 @@ class OrgCustomerBackend(CustomerBackend):
             name=name,
             updates=updates,
         )
+
+    def list_time_entries(self, name: str) -> list[dict]:
+        return customers.list_time_entries(
+            kunden_file=self._kunden_file,
+            name=name,
+        )
+
+    def add_time_entry(
+        self, name: str, description: str, hours: float,
+        date: str | None = None,
+    ) -> dict:
+        return customers.add_time_entry(
+            kunden_file=self._kunden_file,
+            name=name,
+            description=description,
+            hours=hours,
+            entry_date=date,
+        )
+
+    def delete_time_entry(self, name: str, entry_id: str) -> bool:
+        return customers.delete_time_entry(
+            kunden_file=self._kunden_file,
+            name=name,
+            entry_id=entry_id,
+        )

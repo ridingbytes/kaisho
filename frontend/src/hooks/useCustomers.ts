@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Customer } from "../types";
-import { fetchCustomers, updateCustomer } from "../api/client";
+import {
+  addTimeEntry,
+  deleteTimeEntry,
+  fetchCustomers,
+  fetchTimeEntries,
+  updateCustomer,
+} from "../api/client";
 
 export function useCustomers(includeInactive = false) {
   return useQuery({
@@ -29,6 +35,58 @@ export function useUpdateCustomer() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customers"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useTimeEntries(customerName: string) {
+  return useQuery({
+    queryKey: ["time-entries", customerName],
+    queryFn: () => fetchTimeEntries(customerName),
+    staleTime: 30_000,
+  });
+}
+
+export function useAddTimeEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      customerName,
+      description,
+      hours,
+      date,
+    }: {
+      customerName: string;
+      description: string;
+      hours: number;
+      date?: string;
+    }) => addTimeEntry(customerName, description, hours, date),
+    onSuccess: (_data, vars) => {
+      void qc.invalidateQueries({
+        queryKey: ["time-entries", vars.customerName],
+      });
+      void qc.invalidateQueries({ queryKey: ["customers"] });
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useDeleteTimeEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      customerName,
+      entryId,
+    }: {
+      customerName: string;
+      entryId: string;
+    }) => deleteTimeEntry(customerName, entryId),
+    onSuccess: (_data, vars) => {
+      void qc.invalidateQueries({
+        queryKey: ["time-entries", vars.customerName],
+      });
+      void qc.invalidateQueries({ queryKey: ["customers"] });
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }

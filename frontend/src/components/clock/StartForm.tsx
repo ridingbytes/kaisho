@@ -3,11 +3,17 @@ import { useStartTimer } from "../../hooks/useClocks";
 
 interface Props {
   onStarted: () => void;
+  initialCustomer?: string;
+  initialDescription?: string;
 }
 
-export function StartForm({ onStarted }: Props) {
-  const [customer, setCustomer] = useState("");
-  const [description, setDescription] = useState("");
+export function StartForm({
+  onStarted,
+  initialCustomer = "",
+  initialDescription = "",
+}: Props) {
+  const [customer, setCustomer] = useState(initialCustomer);
+  const [description, setDescription] = useState(initialDescription);
   const start = useStartTimer();
 
   function handleSubmit(e: React.FormEvent) {

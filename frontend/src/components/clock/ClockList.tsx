@@ -1,3 +1,4 @@
+import { Play, SquareArrowUp } from "lucide-react";
 import { useTodayEntries } from "../../hooks/useClocks";
 import type { ClockEntry } from "../../types";
 
@@ -9,9 +10,15 @@ function formatDuration(minutes: number | null): string {
   return `${m}m`;
 }
 
-function EntryRow({ entry }: { entry: ClockEntry }) {
+interface EntryRowProps {
+  entry: ClockEntry;
+  onReuse?: (entry: ClockEntry) => void;
+  onBook?: (entry: ClockEntry) => void;
+}
+
+function EntryRow({ entry, onReuse, onBook }: EntryRowProps) {
   return (
-    <div className="flex items-start gap-3 py-2.5 border-b border-border-subtle last:border-0">
+    <div className="group flex items-start gap-3 py-2.5 border-b border-border-subtle last:border-0">
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-slate-300 truncate">
           {entry.customer}
@@ -20,14 +27,39 @@ function EntryRow({ entry }: { entry: ClockEntry }) {
           {entry.description}
         </p>
       </div>
-      <span className="shrink-0 text-[11px] font-semibold text-slate-500 tabular-nums">
-        {formatDuration(entry.duration_minutes)}
-      </span>
+      <div className="flex items-center gap-1 shrink-0">
+        {onReuse && (
+          <button
+            onClick={() => onReuse(entry)}
+            className="p-0.5 rounded text-slate-700 hover:text-accent hover:bg-accent-muted transition-colors opacity-0 group-hover:opacity-100"
+            title="Reuse"
+          >
+            <Play size={10} />
+          </button>
+        )}
+        {onBook && (
+          <button
+            onClick={() => onBook(entry)}
+            className="p-0.5 rounded text-slate-700 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors opacity-0 group-hover:opacity-100"
+            title="Book to project"
+          >
+            <SquareArrowUp size={10} />
+          </button>
+        )}
+        <span className="text-[11px] font-semibold text-slate-500 tabular-nums">
+          {formatDuration(entry.duration_minutes)}
+        </span>
+      </div>
     </div>
   );
 }
 
-export function ClockList() {
+interface ClockListProps {
+  onReuse?: (entry: ClockEntry) => void;
+  onBook?: (entry: ClockEntry) => void;
+}
+
+export function ClockList({ onReuse, onBook }: ClockListProps) {
   const { data: entries = [], isLoading } = useTodayEntries();
 
   const totalMin = entries.reduce(
@@ -56,7 +88,12 @@ export function ClockList() {
   return (
     <div>
       {entries.map((entry, i) => (
-        <EntryRow key={i} entry={entry} />
+        <EntryRow
+          key={i}
+          entry={entry}
+          onReuse={onReuse}
+          onBook={onBook}
+        />
       ))}
       <div className="flex justify-between pt-2 mt-1">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">

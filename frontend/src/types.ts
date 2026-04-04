@@ -57,7 +57,15 @@ export interface Customer {
   verbraucht: number;
   rest: number;
   repo: string | null;
+  has_time_entries: boolean;
   properties: Record<string, string>;
+}
+
+export interface TimeEntry {
+  id: string;
+  description: string;
+  hours: number;
+  date: string;
 }
 
 export interface BudgetSummary {

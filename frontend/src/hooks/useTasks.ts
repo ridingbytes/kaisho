@@ -3,7 +3,13 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { fetchTasks, moveTask } from "../api/client";
+import {
+  archiveTask,
+  createTask,
+  fetchTasks,
+  moveTask,
+  updateTask,
+} from "../api/client";
 
 export function useTasks(includeDone = false) {
   return useQuery({
@@ -26,6 +32,51 @@ export function useMoveTask() {
     }) => moveTask(taskId, status),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
+export function useAddTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      customer,
+      title,
+      status,
+    }: {
+      customer: string;
+      title: string;
+      status: string;
+    }) => createTask(customer, title, status),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["tasks"] }),
+  });
+}
+
+export function useUpdateTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      updates,
+    }: {
+      taskId: string;
+      updates: {
+        title?: string;
+        customer?: string;
+        status?: string;
+      };
+    }) => updateTask(taskId, updates),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["tasks"] }),
+  });
+}
+
+export function useArchiveTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: string) => archiveTask(taskId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["tasks"] });
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }

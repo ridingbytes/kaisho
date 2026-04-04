@@ -69,6 +69,19 @@ class OrgTaskBackend(TaskBackend):
             tags=tags,
         )
 
+    def update_task(
+        self, task_id: str,
+        title: str | None = None,
+        customer: str | None = None,
+    ) -> dict:
+        return kanban.update_task(
+            todos_file=self._todos_file,
+            keywords=self._keywords,
+            task_id=task_id,
+            title=title,
+            customer=customer,
+        )
+
     def archive_task(self, task_id: str) -> bool:
         return kanban.archive_task(
             todos_file=self._todos_file,

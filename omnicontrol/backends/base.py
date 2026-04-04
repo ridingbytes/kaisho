@@ -57,6 +57,14 @@ class TaskBackend(ABC):
         """Remove task from active store.  Return False if not found."""
 
     @abstractmethod
+    def update_task(
+        self, task_id: str,
+        title: str | None = None,
+        customer: str | None = None,
+    ) -> dict:
+        """Update a task's title and/or customer."""
+
+    @abstractmethod
     def list_all_tags(self) -> list[dict]:
         """Return tags with usage counts.
 
@@ -193,7 +201,27 @@ class CustomerBackend(ABC):
     ) -> dict | None:
         """Update a customer's fields.
 
-        Supported keys: name, status, kontingent,
-        verbraucht, rest, repo.
+        Supported keys: name, status, kontingent, repo.
         Returns the updated customer dict, or None if not found.
         """
+
+    @abstractmethod
+    def list_time_entries(self, name: str) -> list[dict]:
+        """List time entries for a customer.
+
+        Each dict: id, description, hours, date
+        """
+
+    @abstractmethod
+    def add_time_entry(
+        self, name: str, description: str, hours: float,
+        date: str | None = None,
+    ) -> dict:
+        """Add a time entry to a customer.
+
+        Returns the created entry dict.
+        """
+
+    @abstractmethod
+    def delete_time_entry(self, name: str, entry_id: str) -> bool:
+        """Delete a time entry. Returns False if not found."""

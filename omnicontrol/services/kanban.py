@@ -219,6 +219,30 @@ def set_task_tags(
     return _heading_to_task(heading, task_id)
 
 
+def update_task(
+    todos_file: Path,
+    keywords: set[str],
+    task_id: str,
+    title: str | None = None,
+    customer: str | None = None,
+) -> dict:
+    """Update a task's title and/or customer."""
+    org_file = parse_org_file(todos_file, keywords)
+    heading = _find_task_heading(org_file, keywords, task_id)
+    if heading is None:
+        raise ValueError(f"Task not found: {task_id}")
+    current_customer = _extract_customer(heading.title)
+    bare_title = CUSTOMER_RE.sub("", heading.title).strip()
+    new_customer = customer if customer is not None else current_customer
+    new_bare = title if title is not None else bare_title
+    heading.title = (
+        f"[{new_customer}] {new_bare}" if new_customer else new_bare
+    )
+    heading.dirty = True
+    write_org_file(todos_file, org_file)
+    return _heading_to_task(heading, task_id)
+
+
 def archive_task(
     todos_file: Path,
     archive_file: Path,

@@ -1,6 +1,7 @@
-import { CheckSquare, Clock, Inbox, TrendingDown } from "lucide-react";
-import { useActiveTimer } from "../../hooks/useClocks";
+import { CheckSquare, Clock, Inbox, Square, TrendingDown } from "lucide-react";
+import { useActiveTimer, useStopTimer } from "../../hooks/useClocks";
 import { useDashboard } from "../../hooks/useDashboard";
+import { useSetView } from "../../context/ViewContext";
 import type { BudgetSummary } from "../../types";
 
 function elapsed(startIso: string): string {
@@ -21,14 +22,25 @@ function StatCard({
   value,
   icon: Icon,
   accent,
+  onClick,
 }: {
   label: string;
   value: number | string;
   icon: React.ElementType;
   accent?: string;
+  onClick?: () => void;
 }) {
   return (
-    <div className="flex items-center gap-4 p-5 rounded-xl bg-surface-card border border-border-subtle">
+    <div
+      onClick={onClick}
+      className={[
+        "flex items-center gap-4 p-5 rounded-xl",
+        "bg-surface-card border border-border-subtle",
+        onClick
+          ? "cursor-pointer hover:bg-surface-raised transition-colors"
+          : "",
+      ].join(" ")}
+    >
       <div
         className="flex items-center justify-center w-10 h-10 rounded-lg"
         style={{ backgroundColor: accent ? `${accent}20` : undefined }}
@@ -49,16 +61,25 @@ function StatCard({
   );
 }
 
-function BudgetRow({ b }: { b: BudgetSummary }) {
+function BudgetRow({
+  b,
+  onNameClick,
+}: {
+  b: BudgetSummary;
+  onNameClick: () => void;
+}) {
   const color = budgetBarColor(b.percent);
   const warning = b.percent < 15;
 
   return (
     <div className="py-3 border-b border-border-subtle last:border-0">
       <div className="flex items-baseline justify-between mb-1.5">
-        <span className="text-sm font-medium text-slate-300">
+        <button
+          onClick={onNameClick}
+          className="text-sm font-medium text-slate-300 hover:text-accent transition-colors text-left"
+        >
           {b.name}
-        </span>
+        </button>
         <div className="flex items-center gap-2">
           {warning && (
             <TrendingDown
@@ -94,6 +115,8 @@ function BudgetRow({ b }: { b: BudgetSummary }) {
 export function DashboardView() {
   const { data } = useDashboard();
   const { data: timer } = useActiveTimer();
+  const stopTimer = useStopTimer();
+  const setView = useSetView();
 
   if (!data) {
     return (
@@ -124,6 +147,14 @@ export function DashboardView() {
           <span className="text-lg font-mono font-semibold text-slate-200 tabular-nums shrink-0">
             {elapsed(timer.start)}
           </span>
+          <button
+            onClick={() => stopTimer.mutate()}
+            disabled={stopTimer.isPending}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+            title="Stop timer"
+          >
+            <Square size={16} strokeWidth={2} />
+          </button>
         </div>
       )}
 
@@ -134,12 +165,14 @@ export function DashboardView() {
           value={data.open_task_count}
           icon={CheckSquare}
           accent="#6366f1"
+          onClick={() => setView("board")}
         />
         <StatCard
           label="Inbox items"
           value={data.inbox_count}
           icon={Inbox}
           accent="#f59e0b"
+          onClick={() => setView("inbox")}
         />
       </div>
 
@@ -150,7 +183,11 @@ export function DashboardView() {
             Budget Status
           </h2>
           {data.budgets.map((b) => (
-            <BudgetRow key={b.name} b={b} />
+            <BudgetRow
+              key={b.name}
+              b={b}
+              onNameClick={() => setView("customers")}
+            />
           ))}
         </div>
       )}

@@ -1,8 +1,11 @@
+import { useState } from "react";
+import { Plus, X, Check } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useAddTask } from "../../hooks/useTasks";
 import type { Task, TaskState } from "../../types";
 import { TaskCard } from "./TaskCard";
 
@@ -13,6 +16,33 @@ interface KanbanColumnProps {
 
 export function KanbanColumn({ state, tasks }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: state.name });
+  const [adding, setAdding] = useState(false);
+  const [customer, setCustomer] = useState("");
+  const [title, setTitle] = useState("");
+  const addTask = useAddTask();
+
+  function handleAdd() {
+    if (!customer.trim() || !title.trim()) return;
+    addTask.mutate(
+      {
+        customer: customer.trim(),
+        title: title.trim(),
+        status: state.name,
+      },
+      {
+        onSuccess: () => {
+          setCustomer("");
+          setTitle("");
+          setAdding(false);
+        },
+      }
+    );
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") handleAdd();
+    if (e.key === "Escape") setAdding(false);
+  }
 
   return (
     <div className="flex flex-col w-72 shrink-0">
@@ -28,12 +58,23 @@ export function KanbanColumn({ state, tasks }: KanbanColumnProps) {
         <span
           className={[
             "ml-auto px-1.5 py-0.5 rounded text-[10px] font-semibold",
-            "bg-surface-raised text-slate-500",
-            "border border-border-subtle",
+            "bg-surface-raised text-slate-500 border border-border-subtle",
           ].join(" ")}
         >
           {tasks.length}
         </span>
+        <button
+          onClick={() => setAdding((v) => !v)}
+          className={[
+            "p-1 rounded-md transition-colors",
+            adding
+              ? "text-accent bg-accent-muted"
+              : "text-slate-600 hover:text-accent hover:bg-accent-muted",
+          ].join(" ")}
+          title="Add task"
+        >
+          <Plus size={13} strokeWidth={2} />
+        </button>
       </div>
 
       {/* Drop zone */}
@@ -60,12 +101,61 @@ export function KanbanColumn({ state, tasks }: KanbanColumnProps) {
           ))}
         </SortableContext>
 
-        {tasks.length === 0 && (
+        {tasks.length === 0 && !adding && (
           <div className="flex items-center justify-center h-16">
             <span className="text-xs text-slate-700">Empty</span>
+          </div>
+        )}
+
+        {/* Inline add form */}
+        {adding && (
+          <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-surface-overlay border border-border">
+            <input
+              autoFocus
+              type="text"
+              placeholder="Customer"
+              value={customer}
+              onChange={(e) => setCustomer(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className={inputCls}
+            />
+            <input
+              type="text"
+              placeholder="Task title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className={inputCls}
+            />
+            <div className="flex gap-1 justify-end">
+              <button
+                onClick={() => setAdding(false)}
+                className="p-1 text-slate-600 hover:text-slate-300 rounded"
+              >
+                <X size={13} />
+              </button>
+              <button
+                onClick={handleAdd}
+                disabled={
+                  addTask.isPending ||
+                  !customer.trim() ||
+                  !title.trim()
+                }
+                className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+              >
+                <Check size={13} />
+              </button>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 }
+
+const inputCls = [
+  "w-full px-2 py-1 rounded-md text-xs",
+  "bg-surface-raised border border-border",
+  "text-slate-200 placeholder-slate-600",
+  "focus:outline-none focus:border-accent",
+].join(" ");

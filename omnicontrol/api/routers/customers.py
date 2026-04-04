@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Body, HTTPException
+from pydantic import BaseModel
 
 from ...backends import get_backend
 
@@ -33,3 +34,33 @@ def update_customer(
             status_code=404, detail="Customer not found"
         )
     return c
+
+
+class TimeEntryCreate(BaseModel):
+    description: str
+    hours: float
+    date: str | None = None
+
+
+@router.get("/{name}/entries")
+def list_time_entries(name: str):
+    return get_backend().customers.list_time_entries(name)
+
+
+@router.post("/{name}/entries", status_code=201)
+def add_time_entry(name: str, body: TimeEntryCreate):
+    try:
+        return get_backend().customers.add_time_entry(
+            name, body.description, body.hours, body.date
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/{name}/entries/{entry_id}", status_code=204)
+def delete_time_entry(name: str, entry_id: str):
+    ok = get_backend().customers.delete_time_entry(name, entry_id)
+    if not ok:
+        raise HTTPException(
+            status_code=404, detail="Entry not found"
+        )

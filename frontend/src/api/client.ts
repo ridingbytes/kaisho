@@ -6,6 +6,7 @@ import type {
   InboxItem,
   Settings,
   Task,
+  TimeEntry,
 } from "../types";
 
 const BASE = "/api";
@@ -49,6 +50,23 @@ export function fetchTasks(includeDone = false): Promise<Task[]> {
 
 export function moveTask(taskId: string, status: string): Promise<Task> {
   return patch<Task>(`/kanban/tasks/${taskId}`, { status });
+}
+
+export function createTask(
+  customer: string, title: string, status: string
+): Promise<Task> {
+  return post<Task>("/kanban/tasks", { customer, title, status });
+}
+
+export function updateTask(
+  taskId: string,
+  updates: { title?: string; customer?: string; status?: string }
+): Promise<Task> {
+  return patch<Task>(`/kanban/tasks/${taskId}`, updates);
+}
+
+export function archiveTask(taskId: string): Promise<void> {
+  return del(`/kanban/tasks/${taskId}`);
 }
 
 // Settings
@@ -137,6 +155,37 @@ export function updateCustomer(
   return patch<Customer>(
     `/customers/${encodeURIComponent(name)}`,
     updates
+  );
+}
+
+// Time entries
+
+export function fetchTimeEntries(
+  customerName: string
+): Promise<TimeEntry[]> {
+  return get<TimeEntry[]>(
+    `/customers/${encodeURIComponent(customerName)}/entries`
+  );
+}
+
+export function addTimeEntry(
+  customerName: string,
+  description: string,
+  hours: number,
+  date?: string,
+): Promise<TimeEntry> {
+  return post<TimeEntry>(
+    `/customers/${encodeURIComponent(customerName)}/entries`,
+    { description, hours, date }
+  );
+}
+
+export function deleteTimeEntry(
+  customerName: string,
+  entryId: string,
+): Promise<void> {
+  return del(
+    `/customers/${encodeURIComponent(customerName)}/entries/${entryId}`
   );
 }
 
