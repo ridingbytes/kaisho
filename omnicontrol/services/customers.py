@@ -9,6 +9,8 @@ from ..org.writer import write_org_file
 CUSTOMER_KEYWORDS: set[str] = set()
 # Only extract hours when explicitly marked with "h" unit
 HOURS_RE = re.compile(r"(\d+(?:\.\d+)?)\s*h\b", re.IGNORECASE)
+# Matches "YYYY-MM-DD: description" heading titles
+_ENTRY_TITLE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}):\s*(.+)$")
 
 
 def _extract_hours(value: str) -> float:
@@ -78,13 +80,27 @@ def _find_customer_heading(
     return None
 
 
+def _parse_entry_title(title: str) -> tuple[str, str]:
+    """Parse 'YYYY-MM-DD: description' into (date, description).
+
+    Falls back to ("", title) for entries without a date prefix.
+    """
+    m = _ENTRY_TITLE_RE.match(title.strip())
+    if m:
+        return m.group(1), m.group(2)
+    return "", title.strip()
+
+
 def _entry_to_dict(child: Heading, idx: int) -> dict:
     """Convert a time-entry child heading to a dict."""
+    date_str, description = _parse_entry_title(child.title)
+    if not date_str:
+        date_str = child.properties.get("DATE", "")
     return {
         "id": str(idx + 1),
-        "description": child.title.strip(),
+        "description": description,
         "hours": float(child.properties.get("HOURS", "0")),
-        "date": child.properties.get("DATE", ""),
+        "date": date_str,
     }
 
 
@@ -199,7 +215,7 @@ def add_time_entry(
     new_child = Heading(
         level=3,
         keyword=None,
-        title=description,
+        title=f"{today}: {description}",
         properties={"HOURS": str(hours), "DATE": today},
         dirty=True,
     )
@@ -227,8 +243,14 @@ def update_time_entry(
     if idx < 0 or idx >= len(h2.children):
         return None
     child = h2.children[idx]
-    if description is not None:
-        child.title = description
+    current_date, current_desc = _parse_entry_title(child.title)
+    if not current_date:
+        current_date = child.properties.get("DATE", "")
+    new_date = entry_date if entry_date is not None else current_date
+    new_desc = description if description is not None else current_desc
+    child.title = (
+        f"{new_date}: {new_desc}" if new_date else new_desc
+    )
     if hours is not None:
         child.properties["HOURS"] = str(hours)
     if entry_date is not None:
