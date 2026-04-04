@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { useCaptureItem } from "../../hooks/useInbox";
 
 const TYPES = ["NOTIZ", "EMAIL", "LEAD", "IDEE"] as const;
@@ -68,12 +69,12 @@ export function AddInboxForm() {
             </option>
           ))}
         </select>
-        <input
-          type="text"
-          placeholder="Customer (optional)"
+        <CustomerAutocomplete
           value={customer}
-          onChange={(e) => setCustomer(e.target.value)}
-          className={[inputCls, "flex-1 min-w-0"].join(" ")}
+          onChange={setCustomer}
+          placeholder="Customer (optional)"
+          className="flex-1 min-w-0"
+          inputClassName={inputCls}
         />
       </div>
     </form>
