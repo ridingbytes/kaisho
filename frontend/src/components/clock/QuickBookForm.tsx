@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { useQuickBook } from "../../hooks/useClocks";
 
 export function QuickBookForm() {
@@ -37,12 +38,11 @@ export function QuickBookForm() {
           onChange={(e) => setDuration(e.target.value)}
           className={[inputCls, "w-36 shrink-0"].join(" ")}
         />
-        <input
-          type="text"
-          placeholder="Customer"
+        <CustomerAutocomplete
           value={customer}
-          onChange={(e) => setCustomer(e.target.value)}
-          className={inputCls}
+          onChange={setCustomer}
+          className="flex-1 min-w-0"
+          inputClassName={inputCls}
         />
       </div>
       <input

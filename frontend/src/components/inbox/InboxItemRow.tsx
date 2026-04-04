@@ -1,5 +1,6 @@
 import { ArrowUpRight, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { useDeleteItem, usePromoteItem } from "../../hooks/useInbox";
 import type { InboxItem } from "../../types";
 
@@ -77,21 +78,20 @@ export function InboxItemRow({ item }: Props) {
           {/* Promote form */}
           {promoting && (
             <div className="flex gap-2 mt-2">
-              <input
-                type="text"
-                placeholder="Customer"
+              <CustomerAutocomplete
+                autoFocus
                 value={targetCustomer}
-                onChange={(e) => setTargetCustomer(e.target.value)}
+                onChange={setTargetCustomer}
                 onKeyDown={(e) =>
                   e.key === "Enter" && handlePromote()
                 }
-                className={[
-                  "flex-1 px-2 py-1 rounded-md text-xs",
+                className="flex-1 min-w-0"
+                inputClassName={[
+                  "px-2 py-1 rounded-md text-xs",
                   "bg-surface-overlay border border-border",
                   "text-slate-200 placeholder-slate-600",
                   "focus:outline-none focus:border-accent",
                 ].join(" ")}
-                autoFocus
               />
               <button
                 onClick={handlePromote}

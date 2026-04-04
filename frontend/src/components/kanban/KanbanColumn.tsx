@@ -5,6 +5,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { useAddTask } from "../../hooks/useTasks";
 import type { Task, TaskState } from "../../types";
 import { TaskCard } from "./TaskCard";
@@ -110,14 +111,12 @@ export function KanbanColumn({ state, tasks }: KanbanColumnProps) {
         {/* Inline add form */}
         {adding && (
           <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-surface-overlay border border-border">
-            <input
+            <CustomerAutocomplete
               autoFocus
-              type="text"
-              placeholder="Customer"
               value={customer}
-              onChange={(e) => setCustomer(e.target.value)}
+              onChange={setCustomer}
               onKeyDown={handleKeyDown}
-              className={inputCls}
+              inputClassName={inputCls}
             />
             <input
               type="text"

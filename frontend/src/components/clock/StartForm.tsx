@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { useStartTimer } from "../../hooks/useClocks";
 
 interface Props {
@@ -27,12 +28,10 @@ export function StartForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <input
-        type="text"
-        placeholder="Customer"
+      <CustomerAutocomplete
         value={customer}
-        onChange={(e) => setCustomer(e.target.value)}
-        className={inputCls}
+        onChange={setCustomer}
+        inputClassName={inputCls}
       />
       <input
         type="text"

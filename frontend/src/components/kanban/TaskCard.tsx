@@ -2,6 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Pencil, Trash2, Check, X } from "lucide-react";
 import { useState } from "react";
+import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { useUpdateTask, useArchiveTask } from "../../hooks/useTasks";
 import type { Task } from "../../types";
 
@@ -106,13 +107,12 @@ export function TaskCard({
         <div className="flex-1 min-w-0 py-3 pr-3">
           {editing ? (
             <div className="flex flex-col gap-1.5">
-              <input
+              <CustomerAutocomplete
                 autoFocus
                 value={editCustomer}
-                onChange={(e) => setEditCustomer(e.target.value)}
+                onChange={setEditCustomer}
                 onKeyDown={handleEditKeyDown}
-                placeholder="Customer"
-                className={editInputCls}
+                inputClassName={editInputCls}
               />
               <input
                 value={editTitle}
