@@ -24,7 +24,7 @@ def api_ask(body: AskRequest):
     backend = get_backend()
 
     tasks = backend.tasks.list_tasks(include_done=False)
-    clocks = backend.clocks.list_entries(limit=30)
+    clocks = backend.clocks.list_entries(period="month")
     inbox = backend.inbox.list_items()
     customers = backend.customers.list_customers()
 

@@ -48,7 +48,7 @@ def ask_cmd(question, model, no_github, no_context):
     else:
         click.echo("Gathering context...", err=True)
         tasks = backend.tasks.list_tasks(include_done=False)
-        clocks = backend.clocks.list_entries(limit=30)
+        clocks = backend.clocks.list_entries(period="month")
         inbox = backend.inbox.list_items()
         customers = backend.customers.list_customers()
         gh_issues = (
