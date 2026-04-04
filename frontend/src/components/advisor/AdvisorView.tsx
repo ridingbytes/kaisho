@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
 import { askAdvisor } from "../../api/client";
+import { Markdown } from "../common/Markdown";
 
 const MODELS = [
   "ollama:qwen3:14b",
@@ -34,12 +35,16 @@ function AssistantBubble({
     <div className="flex justify-start mb-3">
       <div
         className={[
-          "max-w-[70%] px-4 py-2.5 rounded-2xl rounded-tl-sm",
-          "bg-surface-card border border-border text-sm text-slate-200",
-          thinking ? "text-slate-600 italic" : "",
+          "max-w-[80%] px-4 py-2.5 rounded-2xl rounded-tl-sm",
+          "bg-surface-card border border-border",
+          thinking ? "text-sm text-slate-600 italic" : "",
         ].join(" ")}
       >
-        {text}
+        {thinking ? (
+          text
+        ) : (
+          <Markdown>{text}</Markdown>
+        )}
       </div>
     </div>
   );

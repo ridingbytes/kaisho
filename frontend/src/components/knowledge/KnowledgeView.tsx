@@ -4,6 +4,7 @@ import {
   useKnowledgeSearch,
   useKnowledgeTree,
 } from "../../hooks/useKnowledge";
+import { Markdown } from "../common/Markdown";
 
 export function KnowledgeView() {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
@@ -114,9 +115,7 @@ export function KnowledgeView() {
             </p>
           )}
           {!fileLoading && fileData && (
-            <pre className="whitespace-pre-wrap text-sm font-mono text-slate-300">
-              {fileData.content}
-            </pre>
+            <Markdown className="p-1">{fileData.content}</Markdown>
           )}
         </div>
       </div>
