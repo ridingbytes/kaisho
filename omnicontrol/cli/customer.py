@@ -97,3 +97,78 @@ def customer_edit():
         click.echo("This backend has no editable file.", err=True)
         sys.exit(1)
     open_in_editor(f)
+
+
+@customer.command("entries")
+@click.argument("name")
+@click.option("--json", "as_json", is_flag=True)
+def customer_entries(name, as_json):
+    """List time entries for a customer."""
+    entries = get_backend().customers.list_time_entries(name)
+    if as_json:
+        click.echo(json.dumps(entries, default=str))
+        return
+    if not entries:
+        click.echo("No entries found.")
+        return
+    for e in entries:
+        click.echo(
+            f"{e['date']}  {e['hours']:>5.1f}h  {e['description']}"
+        )
+
+
+@customer.command("entry-add")
+@click.argument("name")
+@click.option(
+    "--description", "-d", required=True, help="Entry description"
+)
+@click.option(
+    "--hours", "-h", required=True, type=float, help="Hours spent"
+)
+@click.option("--date", default=None, help="Date (YYYY-MM-DD, default today)")
+def customer_entry_add(name, description, hours, date):
+    """Add a time entry to a customer."""
+    try:
+        entry = get_backend().customers.add_time_entry(
+            name, description, hours, date
+        )
+    except ValueError as e:
+        click.echo(str(e), err=True)
+        sys.exit(1)
+    click.echo(
+        f"Added: {entry['date']}  {entry['hours']:.1f}h  {entry['description']}"
+    )
+
+
+@customer.command("entry-edit")
+@click.argument("name")
+@click.argument("entry_id")
+@click.option("--description", "-d", default=None)
+@click.option("--hours", "-h", default=None, type=float)
+@click.option("--date", default=None)
+def customer_entry_edit(name, entry_id, description, hours, date):
+    """Edit a time entry for a customer."""
+    entry = get_backend().customers.update_time_entry(
+        name, entry_id,
+        description=description,
+        hours=hours,
+        date=date,
+    )
+    if entry is None:
+        click.echo("Entry not found.", err=True)
+        sys.exit(1)
+    click.echo(
+        f"Updated: {entry['date']}  {entry['hours']:.1f}h  {entry['description']}"
+    )
+
+
+@customer.command("entry-delete")
+@click.argument("name")
+@click.argument("entry_id")
+def customer_entry_delete(name, entry_id):
+    """Delete a time entry from a customer."""
+    ok = get_backend().customers.delete_time_entry(name, entry_id)
+    if not ok:
+        click.echo("Entry not found.", err=True)
+        sys.exit(1)
+    click.echo("Entry deleted.")
