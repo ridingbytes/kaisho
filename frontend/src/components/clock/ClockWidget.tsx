@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useActiveTimer } from "../../hooks/useClocks";
-import type { ClockEntry } from "../../types";
 import { ActiveTimer } from "./ActiveTimer";
 import { ClockList } from "./ClockList";
 import { QuickBookForm } from "./QuickBookForm";
@@ -11,20 +10,8 @@ type Tab = "start" | "book";
 export function ClockWidget() {
   const { data: timer } = useActiveTimer();
   const [tab, setTab] = useState<Tab>("start");
-  const [prefill, setPrefill] = useState<{
-    customer: string;
-    description: string;
-  } | null>(null);
 
   const isRunning = timer?.active === true;
-
-  function handleReuse(entry: ClockEntry) {
-    setPrefill({
-      customer: entry.customer,
-      description: entry.description,
-    });
-    setTab("start");
-  }
 
   return (
     <aside className="flex flex-col w-80 shrink-0 border-l border-border-subtle bg-surface-card/40 overflow-y-auto">
@@ -62,12 +49,7 @@ export function ClockWidget() {
             </div>
 
             {tab === "start" ? (
-              <StartForm
-                key={prefill ? `${prefill.customer}|${prefill.description}` : "empty"}
-                onStarted={() => setPrefill(null)}
-                initialCustomer={prefill?.customer}
-                initialDescription={prefill?.description}
-              />
+              <StartForm />
             ) : (
               <QuickBookForm />
             )}
@@ -82,7 +64,7 @@ export function ClockWidget() {
           <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-2">
             Today
           </h3>
-          <ClockList onReuse={handleReuse} />
+          <ClockList isRunning={isRunning} />
         </div>
       </div>
     </aside>

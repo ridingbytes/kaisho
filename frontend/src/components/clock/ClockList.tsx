@@ -1,7 +1,12 @@
-import { Pencil, Play, SquareArrowUp, Trash2, X, Check } from "lucide-react";
+import { Check, Pencil, RotateCw, SquareArrowUp, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
-import { useTodayEntries, useUpdateClockEntry, useDeleteClockEntry } from "../../hooks/useClocks";
+import {
+  useDeleteClockEntry,
+  useStartTimer,
+  useTodayEntries,
+  useUpdateClockEntry,
+} from "../../hooks/useClocks";
 import { useAddTimeEntry } from "../../hooks/useCustomers";
 import type { ClockEntry } from "../../types";
 
@@ -22,10 +27,10 @@ type Mode = "view" | "edit" | "book";
 
 interface EntryRowProps {
   entry: ClockEntry;
-  onReuse?: (entry: ClockEntry) => void;
+  isRunning: boolean;
 }
 
-function EntryRow({ entry, onReuse }: EntryRowProps) {
+function EntryRow({ entry, isRunning }: EntryRowProps) {
   const [mode, setMode] = useState<Mode>("view");
   const [editDesc, setEditDesc] = useState("");
   const [editHours, setEditHours] = useState("");
@@ -35,6 +40,7 @@ function EntryRow({ entry, onReuse }: EntryRowProps) {
   const updateEntry = useUpdateClockEntry();
   const deleteEntry = useDeleteClockEntry();
   const addTimeEntry = useAddTimeEntry();
+  const resumeTimer = useStartTimer();
 
   function startEdit() {
     setEditDesc(entry.description);
@@ -194,15 +200,19 @@ function EntryRow({ entry, onReuse }: EntryRowProps) {
         </p>
       </div>
       <div className="flex items-center gap-0.5 shrink-0">
-        {onReuse && (
-          <button
-            onClick={() => onReuse(entry)}
-            className="p-0.5 rounded text-slate-700 hover:text-accent hover:bg-accent-muted transition-colors opacity-0 group-hover:opacity-100"
-            title="Reuse"
-          >
-            <Play size={10} />
-          </button>
-        )}
+        <button
+          onClick={() =>
+            resumeTimer.mutate({
+              customer: entry.customer,
+              description: entry.description,
+            })
+          }
+          disabled={isRunning || resumeTimer.isPending}
+          className="p-0.5 rounded text-slate-700 hover:text-accent hover:bg-accent-muted transition-colors opacity-0 group-hover:opacity-100 disabled:cursor-not-allowed"
+          title="Resume"
+        >
+          <RotateCw size={10} />
+        </button>
         <button
           onClick={startBook}
           className="p-0.5 rounded text-slate-700 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors opacity-0 group-hover:opacity-100"
@@ -234,10 +244,10 @@ function EntryRow({ entry, onReuse }: EntryRowProps) {
 }
 
 interface ClockListProps {
-  onReuse?: (entry: ClockEntry) => void;
+  isRunning: boolean;
 }
 
-export function ClockList({ onReuse }: ClockListProps) {
+export function ClockList({ isRunning }: ClockListProps) {
   const { data: entries = [], isLoading } = useTodayEntries();
 
   const totalMin = entries.reduce(
@@ -266,7 +276,7 @@ export function ClockList({ onReuse }: ClockListProps) {
   return (
     <div>
       {entries.map((entry, i) => (
-        <EntryRow key={i} entry={entry} onReuse={onReuse} />
+        <EntryRow key={i} entry={entry} isRunning={isRunning} />
       ))}
       <div className="flex justify-between pt-2 mt-1">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">

@@ -3,18 +3,12 @@ import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { useStartTimer } from "../../hooks/useClocks";
 
 interface Props {
-  onStarted: () => void;
-  initialCustomer?: string;
-  initialDescription?: string;
+  onStarted?: () => void;
 }
 
-export function StartForm({
-  onStarted,
-  initialCustomer = "",
-  initialDescription = "",
-}: Props) {
-  const [customer, setCustomer] = useState(initialCustomer);
-  const [description, setDescription] = useState(initialDescription);
+export function StartForm({ onStarted }: Props) {
+  const [customer, setCustomer] = useState("");
+  const [description, setDescription] = useState("");
   const start = useStartTimer();
 
   function handleSubmit(e: React.FormEvent) {
@@ -22,7 +16,13 @@ export function StartForm({
     if (!customer.trim() || !description.trim()) return;
     start.mutate(
       { customer: customer.trim(), description: description.trim() },
-      { onSuccess: onStarted }
+      {
+        onSuccess: () => {
+          setCustomer("");
+          setDescription("");
+          onStarted?.();
+        },
+      }
     );
   }
 
