@@ -652,26 +652,26 @@ authentifiziert (`gh auth login`).
 
 pydantic-settings mit Env-Vars und Defaults:
 
-| Setting | Default |
-|---------|---------|
-| ORG_DIR | ~/ownCloud/cowork/org |
-| WISSEN_DIR | ~/ownCloud/cowork/wissen |
-| RESEARCH_DIR | ~/ownCloud/cowork/research |
-| TODOS_FILE | {ORG_DIR}/todos.org |
-| CLOCKS_FILE | {ORG_DIR}/clocks.org |
-| KUNDEN_FILE | {ORG_DIR}/kunden.org |
-| INBOX_FILE | {ORG_DIR}/inbox.org |
-| ARCHIVE_FILE | {ORG_DIR}/archive.org |
-| KUNDEN_DIR | ~/ownCloud/cowork/kunden |
-| JOBS_FILE | ./jobs.yaml |
-| DATA_DIR | ./data |
-| DB_FILE | {DATA_DIR}/omnicontrol.db |
-| OLLAMA_BASE_URL | http://localhost:11434 |
-| TASK_STATES | ["TODO","NEXT","IN-PROGRESS","WAIT","DONE","CANCELLED"] |
-| DONE_STATES | ["DONE","CANCELLED"] |
-| DEFAULT_TAGS | (siehe unten) |
-| HOST | 0.0.0.0 |
-| PORT | 8000 |
+| Setting         | Default                                                 |
+|-----------------+---------------------------------------------------------|
+| ORG_DIR         | ~/ownCloud/cowork/org                                   |
+| WISSEN_DIR      | ~/ownCloud/cowork/wissen                                |
+| RESEARCH_DIR    | ~/ownCloud/cowork/research                              |
+| TODOS_FILE      | {ORG_DIR}/todos.org                                     |
+| CLOCKS_FILE     | {ORG_DIR}/clocks.org                                    |
+| KUNDEN_FILE     | {ORG_DIR}/kunden.org                                    |
+| INBOX_FILE      | {ORG_DIR}/inbox.org                                     |
+| ARCHIVE_FILE    | {ORG_DIR}/archive.org                                   |
+| KUNDEN_DIR      | ~/ownCloud/cowork/kunden                                |
+| JOBS_FILE       | ./jobs.yaml                                             |
+| DATA_DIR        | ./data                                                  |
+| DB_FILE         | {DATA_DIR}/omnicontrol.db                               |
+| OLLAMA_BASE_URL | http://localhost:11434                                  |
+| TASK_STATES     | ["TODO","NEXT","IN-PROGRESS","WAIT","DONE","CANCELLED"] |
+| DONE_STATES     | ["DONE","CANCELLED"]                                    |
+| DEFAULT_TAGS    | (siehe unten)                                           |
+| HOST            | 0.0.0.0                                                 |
+| PORT            | 8000                                                    |
 
 ---
 
@@ -679,81 +679,81 @@ pydantic-settings mit Env-Vars und Defaults:
 
 ### Kanban (/api/kanban)
 
-| Method | Path | Beschreibung |
-|--------|------|--------------|
-| GET | /tasks | Tasks, Filter: ?status=&customer=&tag= |
-| PATCH | /tasks/{id} | Status aendern |
-| POST | /tasks | Neuen Task anlegen (mit Tags) |
-| DELETE | /tasks/{id} | Task archivieren (nach archive.org) |
-| PATCH | /tasks/{id}/move | Reihenfolge aendern |
-| PATCH | /tasks/{id}/tags | Tags setzen/aendern |
-| GET | /tags | Alle bekannten Tags mit Counts |
+| Method | Path             | Beschreibung                           |
+|--------+------------------+----------------------------------------|
+| GET    | /tasks           | Tasks, Filter: ?status=&customer=&tag= |
+| PATCH  | /tasks/{id}      | Status aendern                         |
+| POST   | /tasks           | Neuen Task anlegen (mit Tags)          |
+| DELETE | /tasks/{id}      | Task archivieren (nach archive.org)    |
+| PATCH  | /tasks/{id}/move | Reihenfolge aendern                    |
+| PATCH  | /tasks/{id}/tags | Tags setzen/aendern                    |
+| GET    | /tags            | Alle bekannten Tags mit Counts         |
 
 Task-ID: SHA-256 von Heading-Text + CREATED-Timestamp.
 Stabil ueber Re-Reads.
 
 ### Clocks (/api/clocks)
 
-| Method | Path | Beschreibung |
-|--------|------|--------------|
-| GET | /entries | Alle Clock-Eintraege, Filter: ?from=&to=&customer= |
-| GET | /active | Aktuell laufender Timer (offener CLOCK) |
-| POST | /quick-book | Natural Language: "2h CERMEL Email" |
-| GET | /summary | Nach Kunde gruppiert mit Summen |
+| Method | Path        | Beschreibung                                       |
+|--------+-------------+----------------------------------------------------|
+| GET    | /entries    | Alle Clock-Eintraege, Filter: ?from=&to=&customer= |
+| GET    | /active     | Aktuell laufender Timer (offener CLOCK)            |
+| POST   | /quick-book | Natural Language: "2h CERMEL Email"                |
+| GET    | /summary    | Nach Kunde gruppiert mit Summen                    |
 
 ### Customers (/api/customers)
 
-| Method | Path | Beschreibung |
-|--------|------|--------------|
-| GET | / | Alle Kunden mit Budget-Status |
-| GET | /{name} | Einzelner Kunde mit Details |
+| Method | Path    | Beschreibung                  |
+|--------+---------+-------------------------------|
+| GET    | /       | Alle Kunden mit Budget-Status |
+| GET    | /{name} | Einzelner Kunde mit Details   |
 
 ### Inbox (/api/inbox)
 
-| Method | Path | Beschreibung |
-|--------|------|--------------|
-| GET | / | Alle Inbox-Items |
-| POST | /capture | Neuer Eintrag mit Auto-Kategorisierung |
-| DELETE | /{id} | Item loeschen/umordnen |
+| Method | Path     | Beschreibung                           |
+|--------+----------+----------------------------------------|
+| GET    | /        | Alle Inbox-Items                       |
+| POST   | /capture | Neuer Eintrag mit Auto-Kategorisierung |
+| DELETE | /{id}    | Item loeschen/umordnen                 |
 
 ### Knowledge (/api/knowledge)
 
-| Method | Path | Beschreibung |
-|--------|------|--------------|
-| GET | /tree | Verzeichnisbaum wissen/ + research/ |
-| GET | /file | ?path=senaite/security.md Markdown-Inhalt |
-| GET | /search | ?q=docker+senaite Volltextsuche |
+| Method | Path    | Beschreibung                              |
+|--------+---------+-------------------------------------------|
+| GET    | /tree   | Verzeichnisbaum wissen/ + research/       |
+| GET    | /file   | ?path=senaite/security.md Markdown-Inhalt |
+| GET    | /search | ?q=docker+senaite Volltextsuche           |
 
 ### Cron (/api/cron)
 
-| Method | Path | Beschreibung |
-|--------|------|--------------|
-| GET | /jobs | Alle Job-Definitionen |
-| POST | /jobs | Neuen Job anlegen |
-| PATCH | /jobs/{id} | Job aendern |
-| DELETE | /jobs/{id} | Job loeschen |
-| POST | /jobs/{id}/trigger | Manuell ausfuehren |
-| GET | /jobs/{id}/history | Ausfuehrungshistorie |
-| GET | /next | Naechste N geplante Ausfuehrungen |
+| Method | Path               | Beschreibung                      |
+|--------+--------------------+-----------------------------------|
+| GET    | /jobs              | Alle Job-Definitionen             |
+| POST   | /jobs              | Neuen Job anlegen                 |
+| PATCH  | /jobs/{id}         | Job aendern                       |
+| DELETE | /jobs/{id}         | Job loeschen                      |
+| POST   | /jobs/{id}/trigger | Manuell ausfuehren                |
+| GET    | /jobs/{id}/history | Ausfuehrungshistorie              |
+| GET    | /next              | Naechste N geplante Ausfuehrungen |
 
 ### Settings (/api/settings)
 
-| Method | Path | Beschreibung |
-|--------|------|--------------|
-| GET | / | Gesamte settings.yaml als JSON |
-| PATCH | /states | States aktualisieren (Reihenfolge, Farben) |
-| POST | /states | Neuen State hinzufuegen |
-| DELETE | /states/{name} | State entfernen |
-| PATCH | /tags | Tags aktualisieren |
-| POST | /tags | Neuen Tag hinzufuegen |
-| PATCH | /tags/{name} | Tag aendern (Farbe, Beschreibung) |
-| DELETE | /tags/{name} | Tag aus Config entfernen |
+| Method | Path           | Beschreibung                               |
+|--------+----------------+--------------------------------------------|
+| GET    | /              | Gesamte settings.yaml als JSON             |
+| PATCH  | /states        | States aktualisieren (Reihenfolge, Farben) |
+| POST   | /states        | Neuen State hinzufuegen                    |
+| DELETE | /states/{name} | State entfernen                            |
+| POST   | /tags          | Neuen Tag hinzufuegen                      |
+| PATCH  | /tags          | Tags aktualisieren                         |
+| PATCH  | /tags/{name}   | Tag aendern (Farbe, Beschreibung)          |
+| DELETE | /tags/{name}   | Tag aus Config entfernen                   |
 
 ### Dashboard (/api/dashboard)
 
-| Method | Path | Beschreibung |
-|--------|------|--------------|
-| GET | / | Aggregiert: Timer, Budgets, Inbox, Cron, Activity |
+| Method | Path | Beschreibung                                      |
+|--------+------+---------------------------------------------------|
+| GET    | /    | Aggregiert: Timer, Budgets, Inbox, Cron, Activity |
 
 ### WebSocket (/ws)
 
@@ -900,17 +900,17 @@ ws://localhost:8000/ws -- kein Auth, Heartbeat alle 30s.
 
 ### Event-Typen
 
-| type | resource | Wann |
-|------|----------|------|
-| file_changed | kanban | todos.org extern geaendert |
-| file_changed | clocks | clocks.org geaendert |
-| file_changed | customers | kunden.org geaendert |
-| file_changed | inbox | inbox.org geaendert |
-| file_changed | knowledge | .md in wissen/ oder research/ |
-| cron_started | cron | Job gestartet |
-| cron_finished | cron | Job beendet |
-| clock_tick | clocks | Alle 60s bei laufendem Timer |
-| settings_changed | settings | settings.yaml geaendert |
+| type             | resource  | Wann                          |
+|------------------+-----------+-------------------------------|
+| file_changed     | kanban    | todos.org extern geaendert    |
+| file_changed     | clocks    | clocks.org geaendert          |
+| file_changed     | customers | kunden.org geaendert          |
+| file_changed     | inbox     | inbox.org geaendert           |
+| file_changed     | knowledge | .md in wissen/ oder research/ |
+| cron_started     | cron      | Job gestartet                 |
+| cron_finished    | cron      | Job beendet                   |
+| clock_tick       | clocks    | Alle 60s bei laufendem Timer  |
+| settings_changed | settings  | settings.yaml geaendert       |
 
 ### Client -> Server
 Keine Befehle ueber WS. Alle Mutationen gehen ueber REST.
@@ -923,14 +923,14 @@ Keine Befehle ueber WS. Alle Mutationen gehen ueber REST.
 
 Jede Spalte bildet exakt ein org-mode Keyword ab:
 
-| Spalte | Org Keyword | Beschreibung |
-|--------|-------------|--------------|
-| TODO | TODO | Neue/offene Tasks |
-| NEXT | NEXT | Priorisiert, als naechstes dran |
-| IN-PROGRESS | IN-PROGRESS | Aktiv in Bearbeitung |
-| WAIT | WAIT | Blockiert, wartet auf Externe |
-| DONE | DONE | Erledigt (noch nicht archiviert) |
-| CANCELLED | CANCELLED | Abgebrochen |
+| Spalte      | Org Keyword | Beschreibung                     |
+|-------------+-------------+----------------------------------|
+| TODO        | TODO        | Neue/offene Tasks                |
+| NEXT        | NEXT        | Priorisiert, als naechstes dran  |
+| IN-PROGRESS | IN-PROGRESS | Aktiv in Bearbeitung             |
+| WAIT        | WAIT        | Blockiert, wartet auf Externe    |
+| DONE        | DONE        | Erledigt (noch nicht archiviert) |
+| CANCELLED   | CANCELLED   | Abgebrochen                      |
 
 DONE und CANCELLED sind collapsed (eingeklappt) per Default.
 Archivierung: DONE/CANCELLED Tasks per Klick nach archive.org.
@@ -1217,16 +1217,16 @@ in settings.yaml konfiguriert sind.
 
 ### API Endpoints (/api/settings)
 
-| Method | Path | Beschreibung |
-|--------|------|--------------|
-| GET | /settings | Gesamte settings.yaml als JSON |
-| PATCH | /settings/states | States aktualisieren |
-| PATCH | /settings/tags | Tags aktualisieren |
-| POST | /settings/states | State hinzufuegen |
-| DELETE | /settings/states/{name} | State entfernen |
-| POST | /settings/tags | Tag hinzufuegen |
-| PATCH | /settings/tags/{name} | Tag aendern |
-| DELETE | /settings/tags/{name} | Tag entfernen |
+| Method | Path                    | Beschreibung                   |
+|--------+-------------------------+--------------------------------|
+| GET    | /settings               | Gesamte settings.yaml als JSON |
+| PATCH  | /settings/states        | States aktualisieren           |
+| PATCH  | /settings/tags          | Tags aktualisieren             |
+| POST   | /settings/states        | State hinzufuegen              |
+| DELETE | /settings/states/{name} | State entfernen                |
+| POST   | /settings/tags          | Tag hinzufuegen                |
+| PATCH  | /settings/tags/{name}   | Tag aendern                    |
+| DELETE | /settings/tags/{name}   | Tag entfernen                  |
 
 ### Parser (org/models.py)
 
@@ -1477,20 +1477,20 @@ CREATE TABLE cron_history (
 
 ### Wann wird geschrieben
 
-| Aktion | Was passiert |
-|--------|-------------|
-| Email reinpaste | Comm-Eintrag + Inbox-Eintrag + Attachments |
-| `oc comm add` | Manueller Comm-Eintrag (Telefonat, Meeting) |
-| Cron "Follow-Up Check" | Prueft ueberfaellige FOLLOW_UP Daten |
+| Aktion                 | Was passiert                                |
+|------------------------+---------------------------------------------|
+| Email reinpaste        | Comm-Eintrag + Inbox-Eintrag + Attachments  |
+| `oc comm add`          | Manueller Comm-Eintrag (Telefonat, Meeting) |
+| Cron "Follow-Up Check" | Prueft ueberfaellige FOLLOW_UP Daten        |
 
 ### Speicher-Abgrenzung
 
-| Speicher | Was | Warum |
-|----------|-----|-------|
-| MEMORY.md | Wer Ramon ist, Praeferenzen | Stabil, Claude-Kontext |
-| Org-Files | Tasks, Clocks, Inbox, Kunden | Source of Truth, Emacs |
-| SQLite | Comm-History, Knowledge FTS, Cron | Durchsuchbar, verifizierbar |
-| kunden/ | Attachments, Dokumente | Dateien, ownCloud Sync |
+| Speicher  | Was                               | Warum                       |
+|-----------+-----------------------------------+-----------------------------|
+| MEMORY.md | Wer Ramon ist, Praeferenzen       | Stabil, Claude-Kontext      |
+| Org-Files | Tasks, Clocks, Inbox, Kunden      | Source of Truth, Emacs      |
+| SQLite    | Comm-History, Knowledge FTS, Cron | Durchsuchbar, verifizierbar |
+| kunden/   | Attachments, Dokumente            | Dateien, ownCloud Sync      |
 
 MEMORY.md bleibt klein (<200 Zeilen). Alles Faktische was wachsen
 kann geht in SQLite. Claude fragt die DB ab statt zu raten.
@@ -1524,13 +1524,13 @@ Ausgabe `oc comm list LUNG-MV`:
 
 ### API Endpoints (/api/communications)
 
-| Method | Path | Beschreibung |
-|--------|------|--------------|
-| GET | / | Alle Eintraege, Filter: ?customer=&type=&from=&to= |
-| GET | /{id} | Einzelner Eintrag mit Attachments |
-| POST | / | Neuen Eintrag anlegen |
-| GET | /search | ?q=... Volltextsuche |
-| GET | /follow-ups | Ueberfaellige + anstehende Follow-Ups |
+| Method | Path        | Beschreibung                                       |
+|--------+-------------+----------------------------------------------------|
+| GET    | /           | Alle Eintraege, Filter: ?customer=&type=&from=&to= |
+| GET    | /{id}       | Einzelner Eintrag mit Attachments                  |
+| POST   | /           | Neuen Eintrag anlegen                              |
+| GET    | /search     | ?q=... Volltextsuche                               |
+| GET    | /follow-ups | Ueberfaellige + anstehende Follow-Ups              |
 
 ### Frontend
 
@@ -1796,12 +1796,12 @@ oc task add CERMEL "#<TAB>"       # -> Issue-Titel als Vorschlag
 
 ### API Endpoints (/api/github)
 
-| Method | Path | Beschreibung |
-|--------|------|--------------|
-| GET | /issues | Issues, Filter: ?customer=&state= |
-| GET | /issues/{customer}/{number} | Einzelnes Issue |
-| GET | /prs | Pull Requests, Filter: ?customer=&state= |
-| GET | /summary | Issue-Counts pro Kunde |
+| Method | Path                        | Beschreibung                             |
+|--------+-----------------------------+------------------------------------------|
+| GET    | /issues                     | Issues, Filter: ?customer=&state=        |
+| GET    | /issues/{customer}/{number} | Einzelnes Issue                          |
+| GET    | /prs                        | Pull Requests, Filter: ?customer=&state= |
+| GET    | /summary                    | Issue-Counts pro Kunde                   |
 
 ### Frontend
 
@@ -1821,20 +1821,20 @@ Ollama (lokal, kostenlos). Kein Ersatz fuer Claude Code
 
 ### Abgrenzung: Terminal vs. App-Chat
 
-| | Terminal (cowork) | App-Chat (Advisor) |
-|---|---|---|
-| **Modell** | Claude Opus (voll) | Ollama lokal (kostenlos) |
-| **Emails reinpasten** | Ja | Nein |
-| **Attachments lesen** | Ja (PDF, Bilder, Excel) | Nein |
-| **Antwortvorschlaege** | Ja (Opus-Qualitaet) | Nein |
-| **Code editieren** | Ja | Nein |
-| **Komplexe Recherche** | Ja | Nein |
-| **Tasks anlegen/verschieben** | Ja | Ja (via oc-Commands) |
-| **"Was steht heute an?"** | Ja (ausfuehrlich) | Ja (Quick-Check) |
-| **Budget/Stunden-Fragen** | Ja | Ja |
-| **GitHub Issues abfragen** | Ja | Ja |
-| **Verfuegbar ohne Terminal** | Nein | Ja (Browser) |
-| **Kosten** | API-Kosten | Kostenlos (Ollama) |
+|                               | Terminal (cowork)       | App-Chat (Advisor)       |
+|-------------------------------+-------------------------+--------------------------|
+| **Modell**                    | Claude Opus (voll)      | Ollama lokal (kostenlos) |
+| **Emails reinpasten**         | Ja                      | Nein                     |
+| **Attachments lesen**         | Ja (PDF, Bilder, Excel) | Nein                     |
+| **Antwortvorschlaege**        | Ja (Opus-Qualitaet)     | Nein                     |
+| **Code editieren**            | Ja                      | Nein                     |
+| **Komplexe Recherche**        | Ja                      | Nein                     |
+| **Tasks anlegen/verschieben** | Ja                      | Ja (via oc-Commands)     |
+| **"Was steht heute an?"**     | Ja (ausfuehrlich)       | Ja (Quick-Check)         |
+| **Budget/Stunden-Fragen**     | Ja                      | Ja                       |
+| **GitHub Issues abfragen**    | Ja                      | Ja                       |
+| **Verfuegbar ohne Terminal**  | Nein                    | Ja (Browser)             |
+| **Kosten**                    | API-Kosten              | Kostenlos (Ollama)       |
 
 Faustregel: Alles was Analyse, Dateizugriff oder Qualitaet
 braucht -> Terminal. Alles was schnelle Daten-Abfrage ist
@@ -1938,10 +1938,10 @@ Antworte kurz und strukturiert:
 
 ### API Endpoints (/api/advisor)
 
-| Method | Path | Beschreibung |
-|--------|------|--------------|
-| POST | /ask | Frage stellen, Antwort + Vorschlaege |
-| POST | /execute | Vorgeschlagene Commands ausfuehren |
+| Method | Path     | Beschreibung                         |
+|--------+----------+--------------------------------------|
+| POST   | /ask     | Frage stellen, Antwort + Vorschlaege |
+| POST   | /execute | Vorgeschlagene Commands ausfuehren   |
 
 ### Frontend: Chat Panel
 
@@ -2114,22 +2114,22 @@ die zugehoerigen docs/ aktualisieren (Definition of Done).
 
 ## 21. Technische Entscheidungen
 
-| Entscheidung | Gewaehlt | Grund |
-|-------------|----------|-------|
-| Keine DB fuer Tasks | Org-Files direkt parsen | unter 5ms pro Parse, kein Sync |
-| WS nur Notifications | REST fuer Daten | Einfaches Protokoll, testbar |
-| Zustand statt Redux | Minimal Boilerplate | Single-User App |
-| APScheduler | Battle-tested Cron | Async, Cron-Expressions |
-| watchfiles statt watchdog | Rust-basiert, async | Zuverlaessig auf macOS |
-| Claude CLI statt API | Kein Key-Management | CLI uebernimmt Auth |
-| Hash-basierte Task IDs | Stabil ueber Re-Reads | Line-Numbers brechen |
-| Kein In-Memory Cache | Re-Parse pro Request | Dateien unter 10KB |
-| gh CLI statt GitHub API | Kein Token-Management | gh uebernimmt Auth + Pagination |
-| Advisor via oc CLI | Einheitlicher Codepfad | Gleiche Validierung wie manuell |
-| Issue-Cache mit TTL | Schnelle Autocomplete | gh API-Calls sparen |
-| Eine SQLite-Datei | Alles in omnicontrol.db | Kein DB-Wildwuchs, ein Backup |
-| Comm-DB statt Memory | Nachschlagen statt Erinnern | Anti-Halluzination |
-| Attachments in ownCloud | Dateien in kunden/ | Sync auf alle Geraete |
+| Entscheidung              | Gewaehlt                    | Grund                           |
+|---------------------------+-----------------------------+---------------------------------|
+| Keine DB fuer Tasks       | Org-Files direkt parsen     | unter 5ms pro Parse, kein Sync  |
+| WS nur Notifications      | REST fuer Daten             | Einfaches Protokoll, testbar    |
+| Zustand statt Redux       | Minimal Boilerplate         | Single-User App                 |
+| APScheduler               | Battle-tested Cron          | Async, Cron-Expressions         |
+| watchfiles statt watchdog | Rust-basiert, async         | Zuverlaessig auf macOS          |
+| Claude CLI statt API      | Kein Key-Management         | CLI uebernimmt Auth             |
+| Hash-basierte Task IDs    | Stabil ueber Re-Reads       | Line-Numbers brechen            |
+| Kein In-Memory Cache      | Re-Parse pro Request        | Dateien unter 10KB              |
+| gh CLI statt GitHub API   | Kein Token-Management       | gh uebernimmt Auth + Pagination |
+| Advisor via oc CLI        | Einheitlicher Codepfad      | Gleiche Validierung wie manuell |
+| Issue-Cache mit TTL       | Schnelle Autocomplete       | gh API-Calls sparen             |
+| Eine SQLite-Datei         | Alles in omnicontrol.db     | Kein DB-Wildwuchs, ein Backup   |
+| Comm-DB statt Memory      | Nachschlagen statt Erinnern | Anti-Halluzination              |
+| Attachments in ownCloud   | Dateien in kunden/          | Sync auf alle Geraete           |
 
 ---
 
@@ -2299,18 +2299,18 @@ Nachtraegliche Zeitbuchung.
   oc clock book <dauer> <kunde> "<beschreibung>"
 
 **Argumente:**
-| Argument | Beschreibung |
-|----------|-------------|
-| dauer | Zeitangabe: 2h, 30min, 1h30min |
-| kunde | Kundenname (aus kunden.org) |
-| beschreibung | Aufgabenbeschreibung |
+| Argument     | Beschreibung                   |
+|--------------+--------------------------------|
+| dauer        | Zeitangabe: 2h, 30min, 1h30min |
+| kunde        | Kundenname (aus kunden.org)    |
+| beschreibung | Aufgabenbeschreibung           |
 
 **Flags:**
-| Flag | Beschreibung |
-|------|-------------|
-| --at | Endzeitpunkt (Default: jetzt) |
-| --json | JSON-Ausgabe |
-| --quiet | Nur Bestaetigung |
+| Flag    | Beschreibung                  |
+|---------+-------------------------------|
+| --at    | Endzeitpunkt (Default: jetzt) |
+| --json  | JSON-Ausgabe                  |
+| --quiet | Nur Bestaetigung              |
 
 **Beispiele:**
   # 2 Stunden auf CERMEL buchen
@@ -2362,18 +2362,18 @@ separater Schritt, sondern Teil der Definition of Done.
 
 ## 23. Kritische Dateien (Referenz)
 
-| Datei | Relevant fuer |
-|-------|--------------|
-| ~/ownCloud/cowork/org/todos.org | Kanban Parser Format |
-| ~/ownCloud/cowork/org/clocks.org | Clock Parser Edge Cases |
-| ~/ownCloud/cowork/org/kunden.org | Customer Parser Budget |
-| ~/ownCloud/cowork/org/inbox.org | Inbox Format |
-| ~/ownCloud/cowork/org/archive.org | Archiv-Format |
-| ~/ownCloud/cowork/scripts/generate-today.py | Org-Parsing Patterns |
-| ~/ownCloud/cowork/wissen/ | Knowledge Base (67 md, ~1MB) |
-| ~/ownCloud/cowork/research/ | Knowledge Base (16 md) |
-| ~/ownCloud/cowork/bruce/sub-agents/ | Prompt-Templates |
-| ~/ownCloud/cowork/dashboard.html | Farbschema CSS Vars |
+| Datei                                       | Relevant fuer                |
+|---------------------------------------------+------------------------------|
+| ~/ownCloud/cowork/org/todos.org             | Kanban Parser Format         |
+| ~/ownCloud/cowork/org/clocks.org            | Clock Parser Edge Cases      |
+| ~/ownCloud/cowork/org/kunden.org            | Customer Parser Budget       |
+| ~/ownCloud/cowork/org/inbox.org             | Inbox Format                 |
+| ~/ownCloud/cowork/org/archive.org           | Archiv-Format                |
+| ~/ownCloud/cowork/scripts/generate-today.py | Org-Parsing Patterns         |
+| ~/ownCloud/cowork/wissen/                   | Knowledge Base (67 md, ~1MB) |
+| ~/ownCloud/cowork/research/                 | Knowledge Base (16 md)       |
+| ~/ownCloud/cowork/bruce/sub-agents/         | Prompt-Templates             |
+| ~/ownCloud/cowork/dashboard.html            | Farbschema CSS Vars          |
 
 ---
 
