@@ -1,13 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
 import { askAdvisor } from "../../api/client";
+import { useAiSettings, useAvailableModels } from "../../hooks/useSettings";
 import { Markdown } from "../common/Markdown";
-
-const MODELS = [
-  "ollama:qwen3:14b",
-  "claude:claude-opus-4-6",
-  "claude:claude-sonnet-4-6",
-];
 
 export interface AdvisorMessage {
   role: "user" | "assistant";
@@ -56,11 +51,21 @@ interface AdvisorViewProps {
 }
 
 export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
-  const [model, setModel] = useState(MODELS[2]);
+  const { data: aiSettings } = useAiSettings();
+  const { data: models = [] } = useAvailableModels();
+
+  const [model, setModel] = useState("");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Set model default once AI settings load
+  useEffect(() => {
+    if (aiSettings?.advisor_model && !model) {
+      setModel(aiSettings.advisor_model);
+    }
+  }, [aiSettings, model]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -109,17 +114,23 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
         <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
           Advisor
         </h1>
-        <select
+        <datalist id="advisor-model-list">
+          {models.map((m) => (
+            <option key={m} value={m} />
+          ))}
+        </datalist>
+        <input
+          type="text"
+          list="advisor-model-list"
           value={model}
           onChange={(e) => setModel(e.target.value)}
-          className="ml-auto px-2 py-1 rounded-lg bg-surface-raised border border-border text-xs text-slate-300 focus:outline-none"
-        >
-          {MODELS.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
+          placeholder="model string…"
+          className={[
+            "ml-auto w-64 px-2 py-1 rounded-lg text-xs font-mono",
+            "bg-surface-raised border border-border text-slate-300",
+            "placeholder-slate-600 focus:outline-none",
+          ].join(" ")}
+        />
       </div>
 
       {/* Messages */}

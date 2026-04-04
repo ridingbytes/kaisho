@@ -1,6 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
-import { fetchSettings } from "../api/client";
-import type { TaskState } from "../types";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import {
+  fetchAiSettings,
+  fetchAvailableModels,
+  fetchSettings,
+  updateAiSettings,
+} from "../api/client";
+import type { AiSettings, TaskState } from "../types";
 
 const DEFAULT_STATES: TaskState[] = [
   { name: "TODO", label: "To Do", color: "#64748b", done: false },
@@ -33,5 +42,38 @@ export function useSettings() {
           ? data.task_states
           : DEFAULT_STATES,
     }),
+  });
+}
+
+export function useAiSettings() {
+  return useQuery({
+    queryKey: ["settings", "ai"],
+    queryFn: fetchAiSettings,
+    staleTime: 30_000,
+  });
+}
+
+export function useUpdateAiSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (updates: Partial<AiSettings>) =>
+      updateAiSettings(updates),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["settings", "ai"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["settings", "ai", "models"],
+      });
+    },
+  });
+}
+
+export function useAvailableModels() {
+  return useQuery({
+    queryKey: ["settings", "ai", "models"],
+    queryFn: fetchAvailableModels,
+    staleTime: 60_000,
+    select: (data) => data.models,
   });
 }

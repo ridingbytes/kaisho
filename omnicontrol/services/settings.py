@@ -2,6 +2,14 @@ from pathlib import Path
 
 import yaml
 
+DEFAULT_AI: dict = {
+    "ollama_url": "http://localhost:11434",
+    "lm_studio_url": "",
+    "claude_api_key": "",
+    "advisor_model": "ollama:qwen3:14b",
+    "cron_model": "ollama:qwen3:14b",
+}
+
 
 def load_settings(path: Path) -> dict:
     """Load settings from a YAML file."""
@@ -39,3 +47,18 @@ def get_done_state_names(settings: dict) -> list[str]:
         for s in get_task_states(settings)
         if s.get("done", False)
     ]
+
+
+def get_ai_settings(settings: dict) -> dict:
+    """Return AI settings with defaults filled in."""
+    return {**DEFAULT_AI, **settings.get("ai", {})}
+
+
+def set_ai_settings(path: Path, updates: dict) -> dict:
+    """Persist AI settings updates; return the new full ai block."""
+    data = load_settings(path)
+    ai = data.get("ai", {})
+    ai.update(updates)
+    data["ai"] = ai
+    save_settings(path, data)
+    return get_ai_settings(data)

@@ -1,3 +1,6 @@
+import json
+import urllib.request
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -121,3 +124,75 @@ def remove_tag(name: str):
         t for t in data.get("tags", []) if t["name"] != name
     ]
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+
+
+# ---------------------------------------------------------------------------
+# AI settings
+# ---------------------------------------------------------------------------
+
+_CLAUDE_MODELS = [
+    "claude:claude-opus-4-6",
+    "claude:claude-sonnet-4-6",
+    "claude:claude-haiku-4-5-20251001",
+]
+
+
+def _fetch_ollama_models(base_url: str) -> list[str]:
+    url = base_url.rstrip("/") + "/api/tags"
+    try:
+        with urllib.request.urlopen(url, timeout=3) as resp:
+            data = json.loads(resp.read())
+        return [
+            f"ollama:{m['name']}" for m in data.get("models", [])
+        ]
+    except Exception:
+        return []
+
+
+def _fetch_lm_studio_models(base_url: str) -> list[str]:
+    if not base_url:
+        return []
+    url = base_url.rstrip("/") + "/v1/models"
+    try:
+        with urllib.request.urlopen(url, timeout=3) as resp:
+            data = json.loads(resp.read())
+        return [
+            f"lm_studio:{m['id']}" for m in data.get("data", [])
+        ]
+    except Exception:
+        return []
+
+
+class AiSettingsUpdate(BaseModel):
+    ollama_url: str | None = None
+    lm_studio_url: str | None = None
+    claude_api_key: str | None = None
+    advisor_model: str | None = None
+    cron_model: str | None = None
+
+
+@router.get("/ai")
+def get_ai():
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    return settings_svc.get_ai_settings(data)
+
+
+@router.patch("/ai")
+def update_ai(body: AiSettingsUpdate):
+    cfg = get_config()
+    updates = body.model_dump(exclude_none=True)
+    return settings_svc.set_ai_settings(cfg.SETTINGS_FILE, updates)
+
+
+@router.get("/ai/models")
+def list_models():
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    ai = settings_svc.get_ai_settings(data)
+    models = (
+        _fetch_ollama_models(ai["ollama_url"])
+        + _fetch_lm_studio_models(ai.get("lm_studio_url", ""))
+        + _CLAUDE_MODELS
+    )
+    return {"models": models}

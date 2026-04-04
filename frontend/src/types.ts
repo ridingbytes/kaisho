@@ -26,6 +26,14 @@ export interface Settings {
   tags: ConfigTag[];
 }
 
+export interface AiSettings {
+  ollama_url: string;
+  lm_studio_url: string;
+  claude_api_key: string;
+  advisor_model: string;
+  cron_model: string;
+}
+
 export interface ClockEntry {
   customer: string;
   description: string;

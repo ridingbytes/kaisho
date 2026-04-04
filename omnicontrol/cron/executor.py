@@ -82,7 +82,7 @@ def _parse_model(model_str: str) -> tuple[str, str]:
     """Return (provider, model_name) from model string."""
     if ":" in model_str:
         provider, name = model_str.split(":", 1)
-        if provider in ("ollama", "claude"):
+        if provider in ("ollama", "claude", "lm_studio"):
             return provider, name
     return "ollama", model_str
 
@@ -111,7 +111,9 @@ def run_prompt_ollama(model: str, prompt: str, base_url: str) -> str:
     return data.get("response", "")
 
 
-def run_prompt_claude(model: str, prompt: str) -> str:
+def run_prompt_claude(
+    model: str, prompt: str, api_key: str = ""
+) -> str:
     """Send prompt to Anthropic Claude API and return response text."""
     try:
         import anthropic
@@ -119,7 +121,7 @@ def run_prompt_claude(model: str, prompt: str) -> str:
         raise ExecutorError(
             "anthropic package not installed"
         ) from exc
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(api_key=api_key or None)
     message = client.messages.create(
         model=model,
         max_tokens=4096,
@@ -128,13 +130,52 @@ def run_prompt_claude(model: str, prompt: str) -> str:
     return message.content[0].text
 
 
-def execute_job(job: dict, project_root: Path, ollama_base_url: str,
-                inbox_file: Path) -> str:
+def run_prompt_lm_studio(
+    model: str, prompt: str, base_url: str
+) -> str:
+    """Send prompt to LM Studio (OpenAI-compatible) and return text."""
+    import urllib.request
+    import json
+
+    payload = json.dumps({
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+    }).encode()
+    url = base_url.rstrip("/") + "/v1/chat/completions"
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=600) as resp:
+            data = json.loads(resp.read())
+    except Exception as exc:
+        raise ExecutorError(
+            f"LM Studio request failed: {exc}"
+        ) from exc
+    return data["choices"][0]["message"]["content"]
+
+
+def execute_job(
+    job: dict,
+    project_root: Path,
+    ollama_base_url: str,
+    inbox_file: Path,
+    lm_studio_base_url: str = "",
+    claude_api_key: str = "",
+) -> str:
     """Run a job definition end-to-end. Returns the output text."""
     prompt = load_prompt(job["prompt_file"], project_root)
     provider, model_name = _parse_model(job.get("model", ""))
     if provider == "claude":
-        output_text = run_prompt_claude(model_name, prompt)
+        output_text = run_prompt_claude(
+            model_name, prompt, api_key=claude_api_key
+        )
+    elif provider == "lm_studio":
+        output_text = run_prompt_lm_studio(
+            model_name, prompt, lm_studio_base_url
+        )
     else:
         output_text = run_prompt_ollama(
             model_name, prompt, ollama_base_url

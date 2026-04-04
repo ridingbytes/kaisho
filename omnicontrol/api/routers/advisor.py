@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from ...backends import get_backend
 from ...config import get_config
+from ...services import settings as settings_svc
 from ...services.advisor import ask
 from ...services.github import GhError, issues_for_customers
 
@@ -35,6 +36,10 @@ def api_ask(body: AskRequest):
         except (GhError, FileNotFoundError):
             pass
 
+    ai = settings_svc.get_ai_settings(
+        settings_svc.load_settings(cfg.SETTINGS_FILE)
+    )
+
     try:
         answer = ask(
             question=body.question,
@@ -44,7 +49,9 @@ def api_ask(body: AskRequest):
             inbox_items=inbox,
             customers=customers,
             github_issues=github_issues,
-            ollama_base_url=cfg.OLLAMA_BASE_URL,
+            ollama_base_url=ai["ollama_url"],
+            lm_studio_base_url=ai.get("lm_studio_url", ""),
+            claude_api_key=ai.get("claude_api_key", ""),
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc))

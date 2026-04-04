@@ -114,7 +114,7 @@ def build_context_prompt(
 def _parse_model(model_str: str) -> tuple[str, str]:
     if ":" in model_str:
         provider, name = model_str.split(":", 1)
-        if provider in ("ollama", "claude"):
+        if provider in ("ollama", "claude", "lm_studio"):
             return provider, name
     return "ollama", model_str
 
@@ -142,14 +142,41 @@ def ask_ollama(model: str, prompt: str, base_url: str) -> str:
     return data.get("response", "")
 
 
-def ask_claude(model: str, prompt: str) -> str:
+def ask_lm_studio(model: str, prompt: str, base_url: str) -> str:
+    """Send prompt to LM Studio (OpenAI-compatible) and return text."""
+    import json
+    import urllib.request
+
+    payload = json.dumps({
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+    }).encode()
+    url = base_url.rstrip("/") + "/v1/chat/completions"
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=300) as resp:
+            data = json.loads(resp.read())
+    except Exception as exc:
+        raise RuntimeError(
+            f"LM Studio request failed: {exc}"
+        ) from exc
+    return data["choices"][0]["message"]["content"]
+
+
+def ask_claude(
+    model: str, prompt: str, api_key: str = ""
+) -> str:
     try:
         import anthropic
     except ImportError as exc:
         raise RuntimeError(
             "anthropic package not installed"
         ) from exc
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(api_key=api_key or None)
     message = client.messages.create(
         model=model,
         max_tokens=4096,
@@ -167,6 +194,8 @@ def ask(
     customers: list[dict],
     github_issues: list[dict],
     ollama_base_url: str,
+    lm_studio_base_url: str = "",
+    claude_api_key: str = "",
 ) -> str:
     """Assemble context, call model, return answer text."""
     prompt = build_context_prompt(
@@ -175,5 +204,7 @@ def ask(
     )
     provider, model_name = _parse_model(model_str)
     if provider == "claude":
-        return ask_claude(model_name, prompt)
+        return ask_claude(model_name, prompt, api_key=claude_api_key)
+    if provider == "lm_studio":
+        return ask_lm_studio(model_name, prompt, lm_studio_base_url)
     return ask_ollama(model_name, prompt, ollama_base_url)

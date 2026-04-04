@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from ...config import get_config
 from ...cron.executor import ExecutorError, execute_job
+from ...services import settings as settings_svc
 from ...services.cron import (
     add_job,
     delete_job,
@@ -112,12 +113,17 @@ def api_disable_job(job_id: str):
 
 def _run_job_bg(job: dict, run_id: int) -> None:
     cfg = get_config()
+    ai = settings_svc.get_ai_settings(
+        settings_svc.load_settings(cfg.SETTINGS_FILE)
+    )
     try:
         output = execute_job(
             job,
             project_root=_project_root(),
-            ollama_base_url=cfg.OLLAMA_BASE_URL,
+            ollama_base_url=ai["ollama_url"],
             inbox_file=cfg.INBOX_FILE,
+            lm_studio_base_url=ai.get("lm_studio_url", ""),
+            claude_api_key=ai.get("claude_api_key", ""),
         )
         finish_run(_db(), run_id, "ok", output=output[:4000])
     except ExecutorError as exc:

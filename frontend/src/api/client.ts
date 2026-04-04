@@ -1,5 +1,6 @@
 import type {
   ActiveTimer,
+  AiSettings,
   ClockEntry,
   CommEntry,
   CronJob,
@@ -79,6 +80,20 @@ export function archiveTask(taskId: string): Promise<void> {
 
 export function fetchSettings(): Promise<Settings> {
   return get<Settings>("/settings");
+}
+
+export function fetchAiSettings(): Promise<AiSettings> {
+  return get<AiSettings>("/settings/ai");
+}
+
+export function updateAiSettings(
+  updates: Partial<AiSettings>
+): Promise<AiSettings> {
+  return patch<AiSettings>("/settings/ai", updates);
+}
+
+export function fetchAvailableModels(): Promise<{ models: string[] }> {
+  return get<{ models: string[] }>("/settings/ai/models");
 }
 
 // Clocks
