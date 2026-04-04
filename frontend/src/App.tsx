@@ -60,7 +60,23 @@ const queryClient = new QueryClient({
 function AppShell() {
   useWebSocket();
   const [view, setView] = useState<View>(viewFromHash);
-  const [advisorMessages, setAdvisorMessages] = useState<AdvisorMessage[]>([]);
+  const [advisorMessages, setAdvisorMessages] = useState<AdvisorMessage[]>(
+    () => {
+      try {
+        const raw = localStorage.getItem("advisor_messages");
+        return raw ? (JSON.parse(raw) as AdvisorMessage[]) : [];
+      } catch {
+        return [];
+      }
+    }
+  );
+
+  useEffect(() => {
+    localStorage.setItem(
+      "advisor_messages",
+      JSON.stringify(advisorMessages)
+    );
+  }, [advisorMessages]);
 
   useEffect(() => {
     window.location.hash = `/${view}`;

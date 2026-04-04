@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Send } from "lucide-react";
+import { Send, Trash2 } from "lucide-react";
 import { askAdvisor } from "../../api/client";
 import { useAiSettings, useAvailableModels } from "../../hooks/useSettings";
 import { Markdown } from "../common/Markdown";
@@ -71,9 +71,20 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  function clearMessages() {
+    onMessagesChange([]);
+    setError(null);
+  }
+
   function sendMessage() {
     const question = input.trim();
     if (!question || loading) return;
+
+    if (question === "/reset") {
+      setInput("");
+      clearMessages();
+      return;
+    }
 
     setInput("");
     setError(null);
@@ -114,6 +125,15 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
         <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
           Advisor
         </h1>
+        {messages.length > 0 && (
+          <button
+            onClick={clearMessages}
+            title="Clear chat (/reset)"
+            className="p-1 rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          >
+            <Trash2 size={13} />
+          </button>
+        )}
         <datalist id="advisor-model-list">
           {models.map((m) => (
             <option key={m} value={m} />
