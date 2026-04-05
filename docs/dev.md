@@ -16,11 +16,10 @@ omnicontrol/
 ├── services/          # Business logic used by org backend
 │   ├── kanban.py      # Task CRUD, state transitions, archive
 │   ├── clocks.py      # Clock entries, timer, quick-book
-│   ├── customers.py   # Budget calculation, time entries
+│   ├── customers.py   # Budget calculation, time entries, contracts
 │   ├── inbox.py       # Capture + auto-categorize
 │   ├── notes.py       # Notes CRUD
 │   ├── knowledge.py   # File tree, full-text search
-│   ├── communications.py  # Communication log (SQLite)
 │   ├── cron.py        # Cron job CRUD and history
 │   ├── github.py      # GitHub API via gh CLI
 │   ├── advisor.py     # AI LLM calls
@@ -42,16 +41,17 @@ frontend/              # Vite + React 18 + TypeScript
 │   ├── utils/         # panelActions.ts (panel open_form trigger)
 │   └── components/
 │       ├── common/    # CustomerAutocomplete, TaskAutocomplete,
-│       │              # TagDropdown, Markdown, HelpButton, Toggle
+│       │              # TagDropdown, Markdown, HelpButton, Toggle,
+│       │              # ContentPopup
 │       ├── dashboard/ # DashboardView
 │       ├── kanban/    # KanbanBoard, KanbanColumn, TaskCard
+│       ├── calendar/  # CalendarView
 │       ├── clock/     # ClockWidget, ActiveTimer, ClockView, forms
 │       ├── customers/ # CustomersView, CustomerCard
 │       ├── inbox/     # InboxView, InboxItemRow, AddInboxForm
 │       ├── notes/     # NotesView
 │       ├── knowledge/ # KnowledgeView
 │       ├── github/    # GithubView
-│       ├── communications/ # CommunicationsView
 │       ├── cron/      # CronView
 │       ├── settings/  # SettingsView
 │       ├── advisor/   # AdvisorView
@@ -86,7 +86,7 @@ Five abstract base classes live in `backends/base.py`:
 | `TaskBackend`     | `list_tasks`, `add_task`, `move_task`, `set_tags`, `archive_task`, `update_task`, `list_all_tags`, `list_archived`, `unarchive_task` |
 | `ClockBackend`    | `list_entries`, `get_active`, `get_summary`, `start`, `stop`, `quick_book`, `update_entry`, `delete_entry`                          |
 | `InboxBackend`    | `list_items`, `add_item`, `remove_item`, `update_item`, `promote_to_task`                                                            |
-| `CustomerBackend` | `list_customers`, `get_customer`, `get_budget_summary`, `update_customer`, `list_time_entries`, `add_time_entry`, `update_time_entry`, `delete_time_entry` |
+| `CustomerBackend` | `list_customers`, `get_customer`, `get_budget_summary`, `add_customer`, `update_customer`, `list_contracts`, `add_contract`, `update_contract`, `close_contract`, `delete_contract` |
 | `NotesBackend`    | `list_notes`, `add_note`, `delete_note`, `update_note`, `promote_to_task`                                                            |
 
 Each class also exposes `data_file: Path | None` used by the `edit`

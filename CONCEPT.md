@@ -2462,3 +2462,64 @@ npm run dev
     relevanten Kontext mitbekommen (offene Tasks,
     Kunden-Status, letzte Clocks). Der Executor liest
     dafuer die org-Files und substituiert Template-Variablen.
+
+---
+
+## Implementation Notes (2026-04)
+
+This section documents deviations from the original concept that
+emerged during implementation.
+
+### Communications consolidated into inbox
+
+The standalone communications panel (Section 12) was removed.
+Channel and direction fields were added directly to inbox items,
+giving the inbox the combined capture and logging capability. Cron
+jobs drop their findings into the inbox with type "AI". The SQLite
+communications table is no longer used; the `comms.org` file and
+all comm-related CLI/API/frontend code were removed.
+
+### Customer time entries replaced by clock-based budgets
+
+The concept described separate time entries under customer headings
+(Section 6, Budget-Berechnung) with a "Book to project" flow from
+clock entries. This was simplified: budget consumption is now
+computed as `VERBRAUCHT` property (manual offset) plus the sum of
+all clock entry hours for that customer. Contracts carry their own
+`VERBRAUCHT` offset. The `customer entries`, `entry-add`,
+`entry-edit`, and `entry-delete` CLI commands were removed.
+
+### Contracts
+
+Named contracts were added as sub-headings under customers. Each
+contract has its own `KONTINGENT` and `VERBRAUCHT` offset. Clock
+entries reference contracts by name. Consumption per contract is
+computed from clock data at query time.
+
+### Notes panel
+
+A notes panel was added for freeform notes stored in an org file.
+Notes support move-to-task, move-to-KB, and archive actions.
+
+### Inbox and notes "Move" actions
+
+Instead of a single "Promote to task" action, inbox items and notes
+can be moved to multiple destinations: Todo (task), Note, Knowledge
+base file, or Archive.
+
+### Booked flag removed
+
+The `booked` flag on clock entries (indicating an entry was "booked
+to project") was removed along with the time entries system. All
+clock entries contribute directly to budget consumption.
+
+### Calendar view
+
+A full-page calendar view was added showing monthly clock entry
+data per day cell, with a detail panel for selected dates.
+
+### Content popup
+
+A reusable `ContentPopup` component (expand icon) was added
+across task cards, clock entries, inbox items, notes, and cron
+output for viewing long content in a modal.

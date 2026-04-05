@@ -126,13 +126,16 @@ Manage time tracking.
 
 ```bash
 oc clock start <CUSTOMER> <DESCRIPTION...>
+               [--contract NAME] [--task-id ID]
 ```
 
 Opens a new clock entry (live timer). Fails if a timer is already
-running. Optionally link to a task with `--task-id`.
+running. Use `--task-id` to link to a task and `--contract` to
+assign the entry to a named contract.
 
 ```bash
 oc clock start ACME Implement search feature
+oc clock start ACME Sprint review --contract "Phase 2"
 ```
 
 ### clock stop
@@ -155,13 +158,15 @@ Shows the currently running timer, or "No active timer."
 
 ```bash
 oc clock book <DURATION> <CUSTOMER> <DESCRIPTION...>
+              [--contract NAME] [--task-id ID]
 ```
 
 Retroactively book time. Duration examples: `2h`, `90min`, `1.5h`.
+Use `--contract` to assign the entry to a named contract.
 
 ```bash
 oc clock book 2h ACME Code review
-oc clock book 30min CERMEL Planning call
+oc clock book 30min CERMEL Planning call --contract "Phase 1"
 ```
 
 ### clock list
@@ -181,6 +186,23 @@ oc clock summary [--week] [--json]
 ```
 
 Shows total hours per customer. Default period is the current month.
+
+### clock update
+
+```bash
+oc clock update <START_ISO> [--customer NAME] [--description TEXT]
+                [--hours H] [--date YYYY-MM-DD] [--contract NAME]
+                [--task-id ID]
+```
+
+Update fields of an existing clock entry. Identifies the entry by its
+start timestamp (ISO format, as shown in `clock list --json`).
+Pass only the fields to change.
+
+```bash
+oc clock update 2026-04-05T09:00:00 --hours 2.5
+oc clock update 2026-04-05T09:00:00 --contract "Phase 2"
+```
 
 ### clock edit
 
@@ -241,7 +263,7 @@ oc inbox edit
 
 ## oc customer
 
-Manage customers and their budget time entries.
+Manage customers and budget data.
 
 ### customer list
 
@@ -257,7 +279,9 @@ Active customers with budget utilisation. `--all` includes inactive.
 oc customer show <NAME> [--json]
 ```
 
-Full details for a single customer including verbraucht and rest.
+Full details for a single customer including budget status. Budget
+consumption is computed as the `VERBRAUCHT` property (manual offset)
+plus the sum of all clock entry hours for that customer.
 
 ### customer summary
 
@@ -276,51 +300,79 @@ oc customer edit
 
 Opens the customers file in `$EDITOR`.
 
-### customer entries
+---
+
+## oc contract
+
+Manage named contracts (budget periods) for a customer. Each contract
+has an independent hour budget. Clock entries reference contracts by
+name via the `CONTRACT` property, so actual consumption is computed
+from clock data at query time — no copying required.
+
+### contract add
 
 ```bash
-oc customer entries <NAME> [--json]
+oc contract add <CUSTOMER> <NAME> --hours <H> [--start YYYY-MM-DD]
+                [--notes TEXT]
 ```
 
-List all time entries booked against a customer's budget.
+Start date defaults to today.
 
 ```bash
-oc customer entries ACME
+oc contract add ACME "Phase 1" --hours 100 --start 2026-01-01
+oc contract add ACME "Phase 2" --hours 80
 ```
 
-### customer entry-add
+### contract list
 
 ```bash
-oc customer entry-add <NAME> --description <TEXT> --hours <H> [--date YYYY-MM-DD]
+oc contract list <CUSTOMER> [--with-hours] [--json]
 ```
 
-Add a time entry to a customer's budget. Date defaults to today.
+`--with-hours` computes actual consumption from clock entries.
 
 ```bash
-oc customer entry-add ACME -d "Code review" -h 2.5
-oc customer entry-add CERMEL -d "Planning call" -h 1 --date 2026-04-01
+oc contract list ACME --with-hours
 ```
 
-Budget is calculated as `VERBRAUCHT` (stored property) plus the sum
-of all time entry hours. Both contribute to consumption.
-
-### customer entry-edit
+### contract show
 
 ```bash
-oc customer entry-edit <NAME> <ENTRY_ID> [-d TEXT] [-h H] [--date DATE]
+oc contract show <CUSTOMER> <NAME> [--json]
 ```
 
-Update fields of an existing time entry. Pass only the fields to change.
+Full details with computed hours, rest, and status.
+
+### contract edit
 
 ```bash
-oc customer entry-edit ACME abc123 -h 3.0
+oc contract edit <CUSTOMER> <NAME> [--rename NEW_NAME]
+                 [--hours H] [--start DATE] [--end DATE] [--notes TEXT]
 ```
 
-### customer entry-delete
+Pass `--end ""` to reopen a closed contract.
 
 ```bash
-oc customer entry-delete <NAME> <ENTRY_ID>
+oc contract edit ACME "Phase 1" --hours 120
+oc contract edit ACME "Phase 1" --rename "Phase 1 Extended"
 ```
+
+### contract close
+
+```bash
+oc contract close <CUSTOMER> <NAME> [--date YYYY-MM-DD]
+```
+
+Sets the end date. Date defaults to today.
+
+### contract delete
+
+```bash
+oc contract delete <CUSTOMER> <NAME>
+```
+
+Prompts for confirmation. Clock entries that referenced this contract
+retain their `CONTRACT` property but the contract definition is gone.
 
 ---
 
@@ -410,56 +462,6 @@ oc gh all-issues [--state STATE] [--json]
 ```
 
 List open issues across all customers that have a configured repo.
-
----
-
-## oc comm
-
-Log and search the communications history (stored in SQLite).
-
-### comm add
-
-```bash
-oc comm add <SUBJECT...> --direction in|out \
-    [--channel email|phone|chat|other] \
-    [--customer NAME] [--body TEXT] [--contact TEXT] [--json]
-```
-
-Log an inbound or outbound communication entry.
-
-```bash
-oc comm add Pricing inquiry --direction in --customer ACME
-oc comm add Sent proposal -d out -c email -k CERMEL
-```
-
-### comm list
-
-```bash
-oc comm list [--customer NAME] [--channel CH] [--direction DIR]
-             [--limit N] [--json]
-```
-
-### comm show
-
-```bash
-oc comm show <ID> [--json]
-```
-
-Show full details including body text.
-
-### comm search
-
-```bash
-oc comm search <QUERY...> [--limit N] [--json]
-```
-
-Full-text search on subject and body.
-
-### comm delete
-
-```bash
-oc comm delete <ID>
-```
 
 ---
 
@@ -595,6 +597,36 @@ excluded from the kanban board unless the "show done" toggle is on.
 
 ---
 
+## oc youtube
+
+YouTube video tools.
+
+### youtube transcribe
+
+```bash
+oc youtube transcribe <URL> [--lang LANGS] [--timestamps]
+```
+
+Fetch and print the transcript of a YouTube video. URL can be a full
+YouTube URL or a bare 11-character video ID. `--lang` accepts a
+comma-separated language preference list (default `en,de`).
+`--timestamps` includes `[MM:SS]` markers in the output.
+
+```bash
+oc youtube transcribe https://youtu.be/dQw4w9WgXcQ
+oc youtube transcribe dQw4w9WgXcQ --lang de,en --timestamps
+```
+
+### youtube languages
+
+```bash
+oc youtube languages <URL>
+```
+
+List available transcript languages for a video.
+
+---
+
 ## oc serve
 
 ```bash
@@ -617,7 +649,7 @@ development. Interactive API docs available at `/docs`.
 | `KUNDEN_DIR`       | `~/ownCloud/cowork/kunden`   | Customer markdown files (markdown backend)         |
 | `BACKEND`          | `org`                        | Storage driver: `org` or `markdown`                |
 | `JOBS_FILE`        | `./jobs.yaml`                | Cron job definitions                               |
-| `DATA_DIR`         | `./data`                     | SQLite database directory (communications, cron)   |
+| `DATA_DIR`         | `./data`                     | SQLite database directory (cron history)            |
 | `OLLAMA_BASE_URL`  | `http://localhost:11434`     | Ollama API base URL                                |
 | `SETTINGS_FILE`    | `./settings.yaml`            | Path to settings YAML                              |
 | `HOST`             | `0.0.0.0`                   | API server bind address                            |
