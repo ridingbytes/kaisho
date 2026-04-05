@@ -433,8 +433,10 @@ class MarkdownClockBackend(ClockBackend):
         contract=None,
     ) -> dict:
         minutes = _parse_duration_minutes(duration_str)
-        end = datetime.now()
+        end = datetime.now().replace(second=0, microsecond=0)
         start = end - timedelta(minutes=minutes)
+        if start.date() < end.date():
+            start = end.replace(hour=0, minute=0)
         entries = _read_json(self._clocks_file)
         entry = {
             "customer": customer,

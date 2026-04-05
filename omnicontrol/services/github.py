@@ -90,12 +90,13 @@ def _api_get(
 def _fetch_issues(
     repo: str, state: str = "open", limit: int = 30
 ) -> list[dict]:
+    if "/" not in repo:
+        raise GhError(f"Invalid repo format: {repo!r}")
     owner, name = repo.split("/", 1)
     path = f"/repos/{owner}/{name}/issues"
     params = {
         "state": state,
         "per_page": min(limit, 100),
-        "type": "issue",
     }
     items = _api_get(path, params)
     return [
@@ -108,6 +109,8 @@ def _fetch_issues(
 def _fetch_prs(
     repo: str, state: str = "open", limit: int = 20
 ) -> list[dict]:
+    if "/" not in repo:
+        raise GhError(f"Invalid repo format: {repo!r}")
     owner, name = repo.split("/", 1)
     path = f"/repos/{owner}/{name}/pulls"
     params = {
@@ -182,6 +185,8 @@ def list_issues(
 
 def show_issue(repo: str, number: int) -> dict:
     """Return full details of a single issue."""
+    if "/" not in repo:
+        raise GhError(f"Invalid repo format: {repo!r}")
     owner, name = repo.split("/", 1)
     item = _api_get(
         f"/repos/{owner}/{name}/issues/{number}"
