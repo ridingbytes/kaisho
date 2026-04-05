@@ -10,6 +10,10 @@ DEFAULT_AI: dict = {
     "ollama_url": "http://localhost:11434",
     "lm_studio_url": "http://localhost:1234",
     "claude_api_key": "",
+    "openrouter_url": "https://openrouter.ai/api/v1",
+    "openrouter_api_key": "",
+    "openai_url": "https://api.openai.com/v1",
+    "openai_api_key": "",
     "advisor_model": "ollama:qwen3:14b",
     "cron_model": "ollama:qwen3:14b",
 }

@@ -6,6 +6,17 @@ import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
 
+const QUESTION_TEMPLATES = [
+  "What should I focus on today?",
+  "Which customers are close to budget limit?",
+  "Summarize my week",
+  "Any overdue tasks or follow-ups?",
+  "Book 1h for ...",
+  "Create a task for ...",
+  "How many hours did I log this month?",
+  "Show open issues across all customers",
+];
+
 export interface AdvisorMessage {
   role: "user" | "assistant";
   text: string;
@@ -159,9 +170,28 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
         {messages.length === 0 && !loading && (
-          <p className="text-sm text-slate-600 text-center mt-12">
-            Ask a question to get started.
-          </p>
+          <div className="mt-8 space-y-3">
+            <p className="text-sm text-slate-600 text-center">
+              Ask a question or pick a template:
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {QUESTION_TEMPLATES.map((q) => (
+                <button
+                  key={q}
+                  onClick={() => { setInput(q); }}
+                  className={[
+                    "px-3 py-1.5 rounded-lg text-xs",
+                    "bg-surface-raised border border-border",
+                    "text-slate-400 hover:text-accent",
+                    "hover:border-accent/40 transition-colors",
+                    "text-left",
+                  ].join(" ")}
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         {messages.map((msg, i) =>
           msg.role === "user" ? (

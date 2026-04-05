@@ -238,6 +238,10 @@ class AiSettingsUpdate(BaseModel):
     ollama_url: str | None = None
     lm_studio_url: str | None = None
     claude_api_key: str | None = None
+    openrouter_url: str | None = None
+    openrouter_api_key: str | None = None
+    openai_url: str | None = None
+    openai_api_key: str | None = None
     advisor_model: str | None = None
     cron_model: str | None = None
 
@@ -359,6 +363,28 @@ def update_github(body: GithubSettingsUpdate):
     return settings_svc.set_github_settings(cfg.SETTINGS_FILE, updates)
 
 
+def _fetch_openai_compatible_models(
+    base_url: str, api_key: str, prefix: str,
+) -> list[str]:
+    """Fetch models from an OpenAI-compatible /v1/models endpoint."""
+    if not base_url:
+        return []
+    url = base_url.rstrip("/") + "/models"
+    headers: dict[str, str] = {}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read())
+        return [
+            f"{prefix}:{m['id']}"
+            for m in data.get("data", [])
+        ]
+    except Exception:
+        return []
+
+
 @router.get("/ai/models")
 def list_models():
     cfg = get_config()
@@ -367,6 +393,16 @@ def list_models():
     models = (
         _fetch_ollama_models(ai["ollama_url"])
         + _fetch_lm_studio_models(ai.get("lm_studio_url", ""))
+        + _fetch_openai_compatible_models(
+            ai.get("openrouter_url", ""),
+            ai.get("openrouter_api_key", ""),
+            "openrouter",
+        )
+        + _fetch_openai_compatible_models(
+            ai.get("openai_url", ""),
+            ai.get("openai_api_key", ""),
+            "openai",
+        )
         + _CLAUDE_MODELS
     )
     return {"models": models}

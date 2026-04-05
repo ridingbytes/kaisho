@@ -177,7 +177,10 @@ def _claims_action(text: str) -> bool:
 def _parse_model(model_str: str) -> tuple[str, str]:
     if ":" in model_str:
         provider, name = model_str.split(":", 1)
-        if provider in ("ollama", "claude", "lm_studio"):
+        if provider in (
+            "ollama", "claude", "lm_studio",
+            "openrouter", "openai",
+        ):
             return provider, name
     return "ollama", model_str
 
@@ -366,6 +369,83 @@ def ask_claude(
     return ""
 
 
+def ask_openai_compatible(
+    model: str,
+    prompt: str,
+    base_url: str,
+    api_key: str = "",
+) -> str:
+    """Run an agentic OpenAI-compatible session with tools.
+
+    Works with OpenRouter, OpenAI, and any provider that implements
+    the /v1/chat/completions endpoint.
+    """
+    import urllib.request
+
+    tools = openai_tools()
+    messages: list[dict] = [
+        {"role": "system", "content": _SYSTEM_PROMPT},
+        {"role": "user", "content": prompt},
+    ]
+
+    headers: dict[str, str] = {
+        "Content-Type": "application/json",
+    }
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    tools_called = False
+    for _ in range(_MAX_TURNS):
+        payload = json.dumps({
+            "model": model,
+            "messages": messages,
+            "tools": tools,
+        }).encode()
+        url = base_url.rstrip("/") + "/chat/completions"
+        req = urllib.request.Request(
+            url, data=payload, headers=headers,
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=300) as resp:
+                data = json.loads(resp.read())
+        except Exception as exc:
+            raise RuntimeError(
+                f"OpenAI-compatible request failed: {exc}"
+            ) from exc
+
+        choice = data["choices"][0]
+        msg = choice["message"]
+        tool_calls = msg.get("tool_calls") or []
+
+        if not tool_calls:
+            content = msg.get("content", "")
+            if not tools_called and _claims_action(content):
+                messages.append(
+                    {"role": "assistant", "content": content}
+                )
+                messages.append(
+                    {"role": "user", "content": _TOOL_REMINDER}
+                )
+                continue
+            return content
+
+        tools_called = True
+        messages.append(msg)
+        for call in tool_calls:
+            fn = call.get("function", {})
+            result = execute_tool(
+                fn.get("name", ""),
+                fn.get("arguments", "{}"),
+            )
+            messages.append({
+                "role": "tool",
+                "tool_call_id": call.get("id", ""),
+                "content": json.dumps(result, default=str),
+            })
+
+    return messages[-1].get("content", "")
+
+
 def ask(
     question: str,
     model_str: str,
@@ -377,6 +457,10 @@ def ask(
     ollama_base_url: str,
     lm_studio_base_url: str = "",
     claude_api_key: str = "",
+    openrouter_base_url: str = "",
+    openrouter_api_key: str = "",
+    openai_base_url: str = "",
+    openai_api_key: str = "",
 ) -> str:
     """Assemble context, call model in agentic loop, return answer."""
     prompt = build_context_prompt(
@@ -385,7 +469,23 @@ def ask(
     )
     provider, model_name = _parse_model(model_str)
     if provider == "claude":
-        return ask_claude(model_name, prompt, api_key=claude_api_key)
+        return ask_claude(
+            model_name, prompt, api_key=claude_api_key,
+        )
     if provider == "lm_studio":
-        return ask_lm_studio(model_name, prompt, lm_studio_base_url)
+        return ask_lm_studio(
+            model_name, prompt, lm_studio_base_url,
+        )
+    if provider == "openrouter":
+        return ask_openai_compatible(
+            model_name, prompt,
+            base_url=openrouter_base_url,
+            api_key=openrouter_api_key,
+        )
+    if provider == "openai":
+        return ask_openai_compatible(
+            model_name, prompt,
+            base_url=openai_base_url,
+            api_key=openai_api_key,
+        )
     return ask_ollama(model_name, prompt, ollama_base_url)

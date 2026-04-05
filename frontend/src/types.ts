@@ -38,6 +38,10 @@ export interface AiSettings {
   ollama_url: string;
   lm_studio_url: string;
   claude_api_key: string;
+  openrouter_url: string;
+  openrouter_api_key: string;
+  openai_url: string;
+  openai_api_key: string;
   advisor_model: string;
   cron_model: string;
 }

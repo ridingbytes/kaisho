@@ -129,6 +129,10 @@ function AiSection() {
     ollama_url: "",
     lm_studio_url: "",
     claude_api_key: "",
+    openrouter_url: "",
+    openrouter_api_key: "",
+    openai_url: "",
+    openai_api_key: "",
     advisor_model: "",
     cron_model: "",
   });
@@ -202,6 +206,54 @@ function AiSection() {
                 value={form.claude_api_key}
                 onChange={(e) => set("claude_api_key", e.target.value)}
                 placeholder="sk-ant-… (or set ANTHROPIC_API_KEY)"
+                className={inputCls}
+              />
+            </label>
+            <label className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 w-32 shrink-0">
+                OpenRouter URL
+              </span>
+              <input
+                type="text"
+                value={form.openrouter_url}
+                onChange={(e) => set("openrouter_url", e.target.value)}
+                placeholder="https://openrouter.ai/api/v1"
+                className={inputCls}
+              />
+            </label>
+            <label className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 w-32 shrink-0">
+                OpenRouter API Key
+              </span>
+              <input
+                type="password"
+                value={form.openrouter_api_key}
+                onChange={(e) => set("openrouter_api_key", e.target.value)}
+                placeholder="sk-or-…"
+                className={inputCls}
+              />
+            </label>
+            <label className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 w-32 shrink-0">
+                OpenAI URL
+              </span>
+              <input
+                type="text"
+                value={form.openai_url}
+                onChange={(e) => set("openai_url", e.target.value)}
+                placeholder="https://api.openai.com/v1"
+                className={inputCls}
+              />
+            </label>
+            <label className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 w-32 shrink-0">
+                OpenAI API Key
+              </span>
+              <input
+                type="password"
+                value={form.openai_api_key}
+                onChange={(e) => set("openai_api_key", e.target.value)}
+                placeholder="sk-…"
                 className={inputCls}
               />
             </label>

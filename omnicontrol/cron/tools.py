@@ -147,13 +147,30 @@ TOOL_DEFS: list[dict] = [
         "input_schema": {"type": "object", "properties": {}},
     },
     {
+        "name": "list_contracts",
+        "description": (
+            "List contracts for a customer with budget and "
+            "consumption info."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "customer": {
+                    "type": "string",
+                    "description": "Customer name",
+                },
+            },
+            "required": ["customer"],
+        },
+    },
+    {
         "name": "execute_cli",
         "description": (
             "Execute an occontrol CLI command and return its output. "
             "Use this to read or modify any data in the app. "
             "Pass the subcommand and its arguments as a list.\n\n"
             "Available subcommands (oc <sub> --help for details):\n"
-            "  task list [--customer C] [--status S] [--tag T] [--all]\n"
+            "  task list [--customer C] [--status S] [--tag T]\n"
             "  task add CUSTOMER TITLE [--status S] [--tag T]\n"
             "  task move TASK_ID STATUS\n"
             "  task done/next/wait/cancel TASK_ID\n"
@@ -164,18 +181,22 @@ TOOL_DEFS: list[dict] = [
             "  inbox promote ITEM_ID --customer CUSTOMER\n"
             "  clock list [--week|--month] [--customer C]\n"
             "  clock summary [--week]\n"
-            "  clock book DURATION CUSTOMER DESCRIPTION\n"
-            "  clock start CUSTOMER DESCRIPTION\n"
+            "  clock book DURATION CUSTOMER DESCRIPTION"
+            " [--contract N]\n"
+            "  clock start CUSTOMER DESCRIPTION"
+            " [--contract N]\n"
             "  clock stop\n"
             "  clock status\n"
             "  customer list [--all]\n"
             "  customer show NAME\n"
             "  customer summary\n"
-            "  customer entry-add NAME --description D --hours H\n"
+            "  contract list CUSTOMER\n"
+            "  contract add CUSTOMER NAME --hours H\n"
+            "  contract edit CUSTOMER NAME [--hours H]"
+            " [--end DATE]\n"
+            "  contract close CUSTOMER NAME\n"
             "  note list\n"
             "  note add TITLE [--customer C] [--body B]\n"
-            "  comm list [--customer C] [--channel CH]\n"
-            "  comm add SUBJECT --direction in|out [--customer C]\n"
             "  cron list\n"
             "  cron trigger JOB_ID\n"
             "  briefing\n"
@@ -340,15 +361,22 @@ def _dispatch(name: str, args: dict) -> dict:
 
     if name == "book_time":
         entry = backend.clocks.quick_book(
-            duration=args["duration"],
+            duration_str=args["duration"],
             customer=args["customer"],
             description=args["description"],
+            contract=args.get("contract"),
         )
         return {"entry": entry}
 
     if name == "list_customers":
         customers = backend.customers.list_customers()
         return {"customers": customers}
+
+    if name == "list_contracts":
+        contracts = backend.customers.list_contracts(
+            args["customer"]
+        )
+        return {"contracts": contracts}
 
     if name == "transcribe_youtube":
         return _transcribe_youtube(

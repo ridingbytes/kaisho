@@ -52,6 +52,14 @@ def api_ask(body: AskRequest):
             ollama_base_url=ai["ollama_url"],
             lm_studio_base_url=ai.get("lm_studio_url", ""),
             claude_api_key=ai.get("claude_api_key", ""),
+            openrouter_base_url=ai.get(
+                "openrouter_url", ""
+            ),
+            openrouter_api_key=ai.get(
+                "openrouter_api_key", ""
+            ),
+            openai_base_url=ai.get("openai_url", ""),
+            openai_api_key=ai.get("openai_api_key", ""),
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
