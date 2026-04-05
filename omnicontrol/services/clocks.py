@@ -44,6 +44,7 @@ def _clock_to_entry(
     customer: str,
     description: str,
     task_id: str | None = None,
+    booked: bool = False,
 ) -> dict:
     """Convert a Clock to a clock entry dict."""
     duration_minutes = None
@@ -57,6 +58,7 @@ def _clock_to_entry(
         "end": clock.end.isoformat() if clock.end else None,
         "duration_minutes": duration_minutes,
         "task_id": task_id,
+        "booked": booked,
     }
 
 
@@ -66,9 +68,10 @@ def _collect_clock_entries(org_file: OrgFile) -> list[dict]:
     for h1 in org_file.headings:
         customer, desc = _parse_entry_title(h1.title)
         task_id = h1.properties.get("TASK_ID") or None
+        booked = h1.properties.get("BOOKED", "").lower() == "true"
         for clock in h1.logbook:
             entries.append(
-                _clock_to_entry(clock, customer, desc, task_id)
+                _clock_to_entry(clock, customer, desc, task_id, booked)
             )
     return entries
 
@@ -164,9 +167,12 @@ def get_active_timer(clocks_file: Path) -> dict | None:
     for h1 in org_file.headings:
         customer, desc = _parse_entry_title(h1.title)
         task_id = h1.properties.get("TASK_ID") or None
+        booked = h1.properties.get("BOOKED", "").lower() == "true"
         for clock in h1.logbook:
             if clock.end is None:
-                return _clock_to_entry(clock, customer, desc, task_id)
+                return _clock_to_entry(
+                    clock, customer, desc, task_id, booked
+                )
     return None
 
 
@@ -295,8 +301,9 @@ def update_clock_entry(
     hours: float | None = None,
     new_date: date | None = None,
     task_id: str | None = None,
+    booked: bool | None = None,
 ) -> dict | None:
-    """Update customer, description, hours, date, and/or task."""
+    """Update customer, description, hours, date, task, or booked."""
     if not clocks_file.exists():
         return None
     org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
@@ -334,10 +341,20 @@ def update_clock_entry(
         else:
             heading.properties["TASK_ID"] = task_id
         heading.dirty = True
+    if booked is not None:
+        if booked:
+            heading.properties["BOOKED"] = "true"
+        else:
+            heading.properties.pop("BOOKED", None)
+        heading.dirty = True
     current_task_id = heading.properties.get("TASK_ID") or None
+    current_booked = (
+        heading.properties.get("BOOKED", "").lower() == "true"
+    )
     write_org_file(clocks_file, org_file)
     return _clock_to_entry(
-        clock, current_customer, current_desc, current_task_id
+        clock, current_customer, current_desc,
+        current_task_id, current_booked
     )
 
 

@@ -80,6 +80,7 @@ class OrgClockBackend(ClockBackend):
         hours: float | None = None,
         new_date=None,
         task_id: str | None = None,
+        booked: bool | None = None,
     ) -> dict | None:
         return clocks.update_clock_entry(
             clocks_file=self._clocks_file,
@@ -89,6 +90,7 @@ class OrgClockBackend(ClockBackend):
             hours=hours,
             new_date=new_date,
             task_id=task_id,
+            booked=booked,
         )
 
     def delete_entry(self, start_iso: str) -> bool:
