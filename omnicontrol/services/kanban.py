@@ -9,6 +9,8 @@ from ..org.writer import write_org_file
 
 CUSTOMER_RE = re.compile(r"^\[([^\]]+)\]:\s*")
 CREATED_FMT = "%Y-%m-%d %a %H:%M"
+_WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+ARCHIVE_HEADING = "Archiv"
 
 
 def _extract_customer(title: str) -> str | None:
@@ -229,27 +231,81 @@ def archive_task(
     keywords: set[str],
     task_id: str,
 ) -> bool:
-    """Move a task from todos.org to archive.org."""
+    """Move a task from todos.org to archive.org.
+
+    Places the heading under '* Archiv' with standard org archive
+    properties, compatible with org-archive-subtree-default.
+    """
     org_file = parse_org_file(todos_file, keywords)
     heading = _find_task_heading(org_file, keywords, task_id)
     if heading is None:
         return False
 
+    original_keyword = heading.keyword
+
     # Remove from todos.org
     _remove_heading_from_tree(org_file.headings, heading)
     write_org_file(todos_file, org_file)
 
-    # Append to archive.org
+    # Load or create archive.org
     if not archive_file.exists():
         archive_file.parent.mkdir(parents=True, exist_ok=True)
         archive_org = OrgFile()
     else:
         archive_org = parse_org_file(archive_file, keywords)
 
+    # Find or create the '* Archiv' heading
+    archiv = _find_or_create_archiv_heading(archive_org)
+
+    # Prepare heading as level-2 child with archive properties
+    _add_archive_properties(heading, todos_file, original_keyword)
+    heading.level = 2
     heading.dirty = True
-    archive_org.headings.append(heading)
+    archiv.children.append(heading)
+    archiv.dirty = True
+
     write_org_file(archive_file, archive_org)
     return True
+
+
+def _find_or_create_archiv_heading(archive_org: OrgFile) -> Heading:
+    """Return the '* Archiv' top-level heading, creating it if absent."""
+    for h in archive_org.headings:
+        if h.level == 1 and h.title.strip() == ARCHIVE_HEADING:
+            return h
+    archiv = Heading(
+        level=1,
+        keyword=None,
+        title=ARCHIVE_HEADING,
+        dirty=True,
+    )
+    archive_org.headings.append(archiv)
+    return archiv
+
+
+def _add_archive_properties(
+    heading: Heading,
+    source_file: Path,
+    original_keyword: str | None,
+) -> None:
+    """Add standard org archive properties to a heading."""
+    now = datetime.now()
+    day = _WEEKDAYS[now.weekday()]
+    archive_time = now.strftime(f"%Y-%m-%d {day} %H:%M")
+    heading.properties["ARCHIVE_TIME"] = archive_time
+    heading.properties["ARCHIVE_FILE"] = _home_relative(source_file)
+    heading.properties["ARCHIVE_CATEGORY"] = source_file.stem
+    if original_keyword:
+        heading.properties["ARCHIVE_TODO"] = original_keyword
+
+
+def _home_relative(path: Path) -> str:
+    """Return path as ~/... string when possible, else absolute."""
+    home = Path.home()
+    try:
+        return "~/" + str(path.relative_to(home))
+    except ValueError:
+        return str(path)
 
 
 def _remove_heading_from_tree(
