@@ -35,7 +35,7 @@ export function ClockWidget({ open }: ClockWidgetProps) {
     () => localStorage.getItem("clock_calendar_open") !== "false"
   );
   const [selectedDate, setSelectedDate] = useState<string | null>(
-    todayIso()
+    null
   );
 
   const isRunning = timer?.active === true;

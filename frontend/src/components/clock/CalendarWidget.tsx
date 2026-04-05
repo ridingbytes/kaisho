@@ -122,11 +122,11 @@ export function CalendarWidget({
     const now = new Date();
     setYear(now.getFullYear());
     setMonth(now.getMonth() + 1);
-    onDateChange(todayIso);
+    onDateChange(null);
   }
 
   const showTodayLink =
-    selectedDate !== todayIso ||
+    selectedDate !== null ||
     year !== today.getFullYear() ||
     month !== today.getMonth() + 1;
 
@@ -169,7 +169,9 @@ export function CalendarWidget({
           const iso = toIsoDate(date);
           const mins = minutesByDate.get(iso) ?? 0;
           const isToday = iso === todayIso;
-          const isSelected = iso === selectedDate;
+          const isSelected =
+            iso === selectedDate ||
+            (selectedDate === null && isToday);
 
           return (
             <div
