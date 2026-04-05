@@ -13,6 +13,7 @@ _STEM_TO_RESOURCE: dict[str, str] = {
     "clocks": "clocks",
     "kunden": "customers",
     "inbox": "inbox",
+    "comms": "communications",
 }
 
 _KNOWLEDGE_SUFFIXES = {".md"}

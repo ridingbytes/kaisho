@@ -60,6 +60,11 @@ class Settings(BaseSettings):
 
     @computed_field
     @property
+    def COMMS_FILE(self) -> Path:
+        return self.ORG_DIR.expanduser() / "comms.org"
+
+    @computed_field
+    @property
     def DB_FILE(self) -> Path:
         return self.DATA_DIR.expanduser() / "omnicontrol.db"
 

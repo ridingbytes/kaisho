@@ -2,15 +2,15 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ...config import get_config
-from ...services import communications as comm_service
+from ...services import org_comms as comm_service
 
 router = APIRouter(
     prefix="/api/comm", tags=["communications"]
 )
 
 
-def _db():
-    return get_config().DB_FILE
+def _comms_file():
+    return get_config().COMMS_FILE
 
 
 class CommCreate(BaseModel):
@@ -42,7 +42,7 @@ def list_comms(
     limit: int = 50,
 ):
     return comm_service.list_comms(
-        _db(), customer=customer, channel=channel,
+        _comms_file(), customer=customer, channel=channel,
         direction=direction, limit=limit,
     )
 
@@ -51,7 +51,7 @@ def list_comms(
 def add_comm(body: CommCreate):
     try:
         return comm_service.log_comm(
-            _db(),
+            _comms_file(),
             subject=body.subject,
             direction=body.direction,
             channel=body.channel,
@@ -69,7 +69,7 @@ def add_comm(body: CommCreate):
 @router.patch("/{comm_id}")
 def patch_comm(comm_id: int, body: CommUpdate):
     updates = body.model_dump(exclude_none=True)
-    record = comm_service.update_comm(_db(), comm_id, updates)
+    record = comm_service.update_comm(_comms_file(), comm_id, updates)
     if record is None:
         raise HTTPException(
             status_code=404, detail="Entry not found"
@@ -79,12 +79,12 @@ def patch_comm(comm_id: int, body: CommUpdate):
 
 @router.get("/search")
 def search_comms(q: str, limit: int = 50):
-    return comm_service.search_comms(_db(), q, limit=limit)
+    return comm_service.search_comms(_comms_file(), q, limit=limit)
 
 
 @router.get("/{comm_id}")
 def get_comm(comm_id: int):
-    record = comm_service.get_comm(_db(), comm_id)
+    record = comm_service.get_comm(_comms_file(), comm_id)
     if record is None:
         raise HTTPException(
             status_code=404, detail="Entry not found"
@@ -94,7 +94,7 @@ def get_comm(comm_id: int):
 
 @router.delete("/{comm_id}", status_code=204)
 def delete_comm(comm_id: int):
-    ok = comm_service.delete_comm(_db(), comm_id)
+    ok = comm_service.delete_comm(_comms_file(), comm_id)
     if not ok:
         raise HTTPException(
             status_code=404, detail="Entry not found"
