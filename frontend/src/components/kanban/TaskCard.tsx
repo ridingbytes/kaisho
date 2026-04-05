@@ -7,6 +7,7 @@ import {
   Check,
   X,
   Clock,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   SquareArrowUp,
@@ -58,26 +59,59 @@ function TaskClockSection({ task }: TaskClockSectionProps) {
 
   if (entries.length === 0) return null;
 
-  const total = totalMinutes(entries);
+  const unbooked = entries.filter((e) => !e.booked);
+  const totalAll = totalMinutes(entries);
+  const totalUnbooked = totalMinutes(unbooked);
+  const allBooked = unbooked.length === 0;
+
+  function bookOne(entry: ClockEntry) {
+    if (!task.customer) return;
+    const hours = parseFloat(
+      ((entry.duration_minutes ?? 0) / 60).toFixed(2)
+    );
+    addTimeEntry.mutate(
+      {
+        customerName: task.customer,
+        description: entry.description,
+        hours,
+      },
+      {
+        onSuccess: () => {
+          updateEntry.mutate({
+            startIso: entry.start,
+            updates: { booked: true },
+          });
+        },
+      }
+    );
+  }
+
+  function bookUnbooked() {
+    if (!task.customer || unbooked.length === 0) return;
+    const hours = parseFloat((totalUnbooked / 60).toFixed(2));
+    const desc = unbooked.length === 1
+      ? unbooked[0].description
+      : task.title.replace(/^\[[^\]]+\]:?\s*/, "");
+    addTimeEntry.mutate(
+      { customerName: task.customer, description: desc, hours },
+      {
+        onSuccess: () => {
+          unbooked.forEach((e) =>
+            updateEntry.mutate({
+              startIso: e.start,
+              updates: { booked: true },
+            })
+          );
+        },
+      }
+    );
+  }
 
   function detach(entry: ClockEntry) {
     updateEntry.mutate({
       startIso: entry.start,
       updates: { task_id: "" },
     });
-  }
-
-  function bookAll() {
-    if (!task.customer) return;
-    const hours = parseFloat((total / 60).toFixed(2));
-    addTimeEntry.mutate(
-      {
-        customerName: task.customer,
-        description: task.title,
-        hours,
-      },
-      { onSuccess: () => setOpen(false) }
-    );
   }
 
   return (
@@ -89,29 +123,38 @@ function TaskClockSection({ task }: TaskClockSectionProps) {
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-300 w-full"
       >
-        {open ? (
-          <ChevronDown size={10} />
-        ) : (
-          <ChevronRight size={10} />
-        )}
+        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         <Clock size={10} />
         <span>
           {entries.length} {entries.length === 1 ? "entry" : "entries"}
           {" · "}
-          {fmtHours(total)}
+          {fmtHours(totalAll)}
+          {!allBooked && (
+            <span className="text-slate-600 ml-1">
+              ({fmtHours(totalUnbooked)} unbooked)
+            </span>
+          )}
+          {allBooked && (
+            <span className="text-emerald-600 ml-1">all booked</span>
+          )}
         </span>
-        {task.customer && (
+        {task.customer && !allBooked && (
           <button
             onClick={(e) => {
               e.stopPropagation();
-              bookAll();
+              bookUnbooked();
             }}
             disabled={addTimeEntry.isPending}
-            title="Book total to project"
+            title="Book unbooked to project"
             className="ml-auto p-0.5 rounded text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-40"
           >
             <SquareArrowUp size={10} />
           </button>
+        )}
+        {allBooked && (
+          <span title="All entries booked" className="ml-auto">
+            <CheckCircle2 size={10} className="text-emerald-600" />
+          </span>
         )}
       </button>
       {open && (
@@ -119,13 +162,38 @@ function TaskClockSection({ task }: TaskClockSectionProps) {
           {entries.map((e) => (
             <li
               key={e.start}
-              className="flex items-center gap-1.5 text-[10px] text-slate-500 group/entry"
+              className="flex items-center gap-1.5 text-[10px] group/entry"
             >
-              <span className="font-mono">{fmtDate(e.start)}</span>
-              <span className="flex-1 truncate">{e.description}</span>
-              <span className="tabular-nums text-slate-400">
+              <span className="font-mono text-slate-600">
+                {fmtDate(e.start)}
+              </span>
+              <span
+                className={[
+                  "flex-1 truncate",
+                  e.booked ? "text-slate-600" : "text-slate-500",
+                ].join(" ")}
+              >
+                {e.description}
+              </span>
+              <span
+                className={[
+                  "tabular-nums",
+                  e.booked ? "text-emerald-600" : "text-slate-400",
+                ].join(" ")}
+              >
+                {e.booked && <CheckCircle2 size={8} className="inline mr-0.5" />}
                 {fmtHours(e.duration_minutes)}
               </span>
+              {!e.booked && task.customer && (
+                <button
+                  onClick={() => bookOne(e)}
+                  disabled={addTimeEntry.isPending}
+                  title="Book to project"
+                  className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-40"
+                >
+                  <SquareArrowUp size={9} />
+                </button>
+              )}
               <button
                 onClick={() => detach(e)}
                 disabled={updateEntry.isPending}
