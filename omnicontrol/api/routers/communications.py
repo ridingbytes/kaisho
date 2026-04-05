@@ -21,6 +21,17 @@ class CommCreate(BaseModel):
     body: str = ""
     contact: str = ""
     ts: str | None = None
+    type: str = ""
+    tags: list[str] = []
+
+
+class CommUpdate(BaseModel):
+    subject: str | None = None
+    body: str | None = None
+    contact: str | None = None
+    customer: str | None = None
+    type: str | None = None
+    tags: list[str] | None = None
 
 
 @router.get("/")
@@ -48,9 +59,22 @@ def add_comm(body: CommCreate):
             body=body.body,
             contact=body.contact,
             ts=body.ts,
+            comm_type=body.type,
+            tags=body.tags,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.patch("/{comm_id}")
+def patch_comm(comm_id: int, body: CommUpdate):
+    updates = body.model_dump(exclude_none=True)
+    record = comm_service.update_comm(_db(), comm_id, updates)
+    if record is None:
+        raise HTTPException(
+            status_code=404, detail="Entry not found"
+        )
+    return record
 
 
 @router.get("/search")

@@ -16,7 +16,9 @@ CREATE TABLE IF NOT EXISTS communications (
     channel     TEXT    NOT NULL,       -- 'email' | 'phone' | 'chat' | 'other'
     subject     TEXT    NOT NULL,
     body        TEXT    DEFAULT '',
-    contact     TEXT    DEFAULT ''
+    contact     TEXT    DEFAULT '',
+    type        TEXT    DEFAULT '',
+    tags        TEXT    DEFAULT '[]'   -- JSON array of tag names
 );
 
 CREATE TABLE IF NOT EXISTS cron_history (

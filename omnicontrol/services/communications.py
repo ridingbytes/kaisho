@@ -4,6 +4,7 @@ Stores inbound/outbound communication history in SQLite.
 All write operations go through this service; the API and CLI
 are thin callers.
 """
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,7 +19,14 @@ def _now_iso() -> str:
 
 
 def _row_to_dict(row) -> dict:
-    return dict(row)
+    d = dict(row)
+    raw = d.get("tags", "[]") or "[]"
+    try:
+        d["tags"] = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        d["tags"] = []
+    d.setdefault("type", "")
+    return d
 
 
 def log_comm(
@@ -30,6 +38,8 @@ def log_comm(
     body: str = "",
     contact: str = "",
     ts: str | None = None,
+    comm_type: str = "",
+    tags: list[str] | None = None,
 ) -> dict:
     """Add a communication entry. Returns the created record."""
     if direction not in DIRECTIONS:
@@ -41,14 +51,17 @@ def log_comm(
             f"channel must be one of {sorted(CHANNELS)}"
         )
     ts = ts or _now_iso()
+    tags_json = json.dumps(tags or [])
     with get_db_conn(db_file) as conn:
         cursor = conn.execute(
             """
             INSERT INTO communications
-                (ts, customer, direction, channel, subject, body, contact)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                (ts, customer, direction, channel, subject,
+                 body, contact, type, tags)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (ts, customer, direction, channel, subject, body, contact),
+            (ts, customer, direction, channel, subject,
+             body, contact, comm_type, tags_json),
         )
         conn.commit()
         row = conn.execute(
@@ -56,6 +69,33 @@ def log_comm(
             (cursor.lastrowid,),
         ).fetchone()
     return _row_to_dict(row)
+
+
+def update_comm(
+    db_file: Path,
+    comm_id: int,
+    updates: dict,
+) -> dict | None:
+    """Update fields of a communication entry. Returns None if not found."""
+    allowed = {"subject", "body", "contact", "type", "tags", "customer"}
+    fields = {k: v for k, v in updates.items() if k in allowed}
+    if not fields:
+        return get_comm(db_file, comm_id)
+    if "tags" in fields:
+        fields["tags"] = json.dumps(fields["tags"])
+    assignments = ", ".join(f"{k} = ?" for k in fields)
+    values = list(fields.values()) + [comm_id]
+    with get_db_conn(db_file) as conn:
+        conn.execute(
+            f"UPDATE communications SET {assignments} WHERE id = ?",
+            values,
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT * FROM communications WHERE id = ?",
+            (comm_id,),
+        ).fetchone()
+    return _row_to_dict(row) if row else None
 
 
 def list_comms(

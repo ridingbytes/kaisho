@@ -50,6 +50,8 @@ def _heading_to_customer(heading: Heading) -> dict:
     return {
         "name": heading.title.strip(),
         "status": props.get("STATUS", "active"),
+        "type": props.get("TYPE", ""),
+        "tags": list(heading.tags),
         "kontingent": kontingent,
         "verbraucht": verbraucht,
         "rest": rest,
@@ -134,6 +136,7 @@ def get_customer(kunden_file: Path, name: str) -> dict | None:
 
 _PROP_MAP = {
     "status": "STATUS",
+    "type": "TYPE",
     "kontingent": "KONTINGENT",
     "repo": "REPO",
 }
@@ -143,8 +146,10 @@ def add_customer(
     kunden_file: Path,
     name: str,
     status: str = "active",
+    customer_type: str = "",
     kontingent: float = 0,
     repo: str | None = None,
+    tags: list[str] | None = None,
 ) -> dict:
     """Add a new customer heading to kunden.org.
 
@@ -161,6 +166,8 @@ def add_customer(
         raise ValueError(f"Customer already exists: {name}")
 
     props: dict[str, str] = {"STATUS": status}
+    if customer_type:
+        props["TYPE"] = customer_type
     if kontingent:
         props["KONTINGENT"] = f"{kontingent}h"
     if repo:
@@ -169,6 +176,7 @@ def add_customer(
     new_heading = Heading(
         level=2,
         title=name,
+        tags=tags or [],
         properties=props,
         dirty=True,
     )
@@ -203,14 +211,18 @@ def update_customer(
                 continue
             if "name" in updates:
                 h2.title = updates["name"]
+            if "tags" in updates:
+                h2.tags = list(updates["tags"])
             for field, prop in _PROP_MAP.items():
                 if field not in updates:
                     continue
                 val = updates[field]
                 if field == "kontingent":
                     h2.properties[prop] = f"{val}h"
-                else:
+                elif val:
                     h2.properties[prop] = str(val)
+                else:
+                    h2.properties.pop(prop, None)
             h2.dirty = True
             write_org_file(kunden_file, org_file)
             return _heading_to_customer(h2)

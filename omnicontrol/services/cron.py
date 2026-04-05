@@ -129,6 +129,15 @@ def get_history_entry(db_file: Path, entry_id: int) -> dict | None:
     return _row_to_dict(row) if row else None
 
 
+def delete_history_entry(db_file: Path, entry_id: int) -> bool:
+    """Delete a history record. Returns False if not found."""
+    with get_db_conn(db_file) as conn:
+        cur = conn.execute(
+            "DELETE FROM cron_history WHERE id = ?", (entry_id,)
+        )
+    return cur.rowcount > 0
+
+
 def start_run(db_file: Path, job_id: str) -> int:
     """Insert a 'running' history record. Returns its row id."""
     with get_db_conn(db_file) as conn:

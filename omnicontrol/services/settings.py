@@ -2,6 +2,10 @@ from pathlib import Path
 
 import yaml
 
+DEFAULT_CUSTOMER_TYPES: list[str] = [
+    "LEAD", "CLIENT", "PROSPECT", "PARTNER",
+]
+
 DEFAULT_AI: dict = {
     "ollama_url": "http://localhost:11434",
     "lm_studio_url": "http://localhost:1234",
@@ -47,6 +51,11 @@ def get_done_state_names(settings: dict) -> list[str]:
         for s in get_task_states(settings)
         if s.get("done", False)
     ]
+
+
+def get_customer_types(settings: dict) -> list[str]:
+    """Return customer_types list with defaults."""
+    return settings.get("customer_types", list(DEFAULT_CUSTOMER_TYPES))
 
 
 def get_ai_settings(settings: dict) -> dict:

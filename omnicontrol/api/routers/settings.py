@@ -1,7 +1,7 @@
 import json
 import urllib.request
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 
 from ...config import get_config
@@ -32,7 +32,10 @@ class TagUpdate(BaseModel):
 @router.get("/")
 def get_settings():
     cfg = get_config()
-    return settings_svc.load_settings(cfg.SETTINGS_FILE)
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    merged = dict(data)
+    merged["customer_types"] = settings_svc.get_customer_types(data)
+    return merged
 
 
 @router.post("/states", status_code=201)
@@ -123,6 +126,36 @@ def remove_tag(name: str):
     data["tags"] = [
         t for t in data.get("tags", []) if t["name"] != name
     ]
+    settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+
+
+# ---------------------------------------------------------------------------
+# Customer types
+# ---------------------------------------------------------------------------
+
+
+@router.post("/customer_types", status_code=201)
+def add_customer_type(body: dict = Body(...)):
+    name = body.get("name", "").strip().upper()
+    if not name:
+        raise HTTPException(status_code=400, detail="name required")
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    types = settings_svc.get_customer_types(data)
+    if name in types:
+        raise HTTPException(status_code=409, detail="Type already exists")
+    types.append(name)
+    data["customer_types"] = types
+    settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+    return {"customer_types": types}
+
+
+@router.delete("/customer_types/{name}", status_code=204)
+def remove_customer_type(name: str):
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    types = settings_svc.get_customer_types(data)
+    data["customer_types"] = [t for t in types if t != name.upper()]
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
 
 

@@ -4,10 +4,11 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 
 from ...config import get_config
-from ...cron.executor import ExecutorError, execute_job
+from ...cron.executor import ExecutorError, execute_job, load_prompt
 from ...services import settings as settings_svc
 from ...services.cron import (
     add_job,
+    delete_history_entry,
     delete_job,
     finish_run,
     get_job,
@@ -38,8 +39,9 @@ class JobCreate(BaseModel):
     name: str
     schedule: str
     model: str = "ollama:qwen3:14b"
-    prompt_file: str
-    output: str
+    prompt_file: str = ""
+    prompt_content: str = ""
+    output: str = "inbox"
     timeout: int = 120
     enabled: bool = True
 
@@ -52,6 +54,10 @@ class JobUpdate(BaseModel):
     output: str | None = None
     timeout: int | None = None
     enabled: bool | None = None
+
+
+class PromptUpdate(BaseModel):
+    content: str
 
 
 @router.get("/jobs")
@@ -67,10 +73,30 @@ def api_get_job(job_id: str):
     return job
 
 
+def _write_prompt_file(job_id: str, content: str) -> str:
+    """Write inline prompt content to prompts/<job_id>.md.
+
+    Returns the relative path string stored in the job definition.
+    """
+    prompts_dir = _project_root() / "prompts"
+    prompts_dir.mkdir(exist_ok=True)
+    (prompts_dir / f"{job_id}.md").write_text(content, encoding="utf-8")
+    return f"prompts/{job_id}.md"
+
+
 @router.post("/jobs", status_code=201)
 def api_add_job(body: JobCreate):
+    data = body.model_dump()
+    prompt_content = data.pop("prompt_content", "")
+
+    if not data["prompt_file"] and prompt_content:
+        data["prompt_file"] = _write_prompt_file(body.id, prompt_content)
+    elif not data["prompt_file"]:
+        # Create an empty placeholder so the job is runnable after editing
+        data["prompt_file"] = _write_prompt_file(body.id, "")
+
     try:
-        return add_job(_jobs_file(), body.model_dump())
+        return add_job(_jobs_file(), data)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -89,6 +115,32 @@ def api_delete_job(job_id: str):
     ok = delete_job(_jobs_file(), job_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Job not found")
+
+
+@router.get("/jobs/{job_id}/prompt")
+def api_get_prompt(job_id: str):
+    job = get_job(_jobs_file(), job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    try:
+        content = load_prompt(job["prompt_file"], _project_root())
+    except ExecutorError as exc:
+        return {"content": "", "path": job.get("prompt_file", ""), "error": str(exc)}
+    return {"content": content, "path": job.get("prompt_file", "")}
+
+
+@router.put("/jobs/{job_id}/prompt")
+def api_update_prompt(job_id: str, body: PromptUpdate):
+    job = get_job(_jobs_file(), job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    p = Path(job["prompt_file"])
+    if not p.is_absolute():
+        p = _project_root() / p
+    p = p.expanduser()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(body.content, encoding="utf-8")
+    return {"content": body.content, "path": job.get("prompt_file", "")}
 
 
 @router.post("/jobs/{job_id}/enable")
@@ -159,3 +211,10 @@ def api_get_history(entry_id: int):
     if record is None:
         raise HTTPException(status_code=404, detail="History entry not found")
     return record
+
+
+@router.delete("/history/{entry_id}", status_code=204)
+def api_delete_history(entry_id: int):
+    ok = delete_history_entry(_db(), entry_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="History entry not found")

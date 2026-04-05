@@ -29,12 +29,21 @@ class OrgInboxBackend(InboxBackend):
         text: str,
         item_type: str | None = None,
         customer: str | None = None,
+        body: str | None = None,
     ) -> dict:
         return inbox.add_item(
             inbox_file=self._inbox_file,
             text=text,
             item_type=item_type,
             customer=customer,
+            body=body,
+        )
+
+    def update_item(self, item_id: str, updates: dict) -> dict:
+        return inbox.update_item(
+            inbox_file=self._inbox_file,
+            item_id=item_id,
+            updates=updates,
         )
 
     def remove_item(self, item_id: str) -> bool:

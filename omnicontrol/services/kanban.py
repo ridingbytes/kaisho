@@ -7,7 +7,7 @@ from ..org.parser import KEYWORDS as DEFAULT_KEYWORDS  # noqa: F401
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 
-CUSTOMER_RE = re.compile(r"^\[([^\]]+)\]\s*")
+CUSTOMER_RE = re.compile(r"^\[([^\]]+)\]:\s*")
 CREATED_FMT = "%Y-%m-%d %a %H:%M"
 
 
@@ -36,17 +36,16 @@ def _collect_tasks(
     org_file: OrgFile,
     keywords: set[str],
 ) -> list[tuple[Heading, str]]:
-    """Collect all level-2 headings with keywords as tasks.
+    """Collect all level-1 headings with keywords as tasks.
 
     Returns list of (heading, id) tuples.
     """
     tasks = []
     idx = 1
     for h1 in org_file.headings:
-        for h2 in h1.children:
-            if h2.keyword in keywords:
-                tasks.append((h2, str(idx)))
-                idx += 1
+        if h1.keyword in keywords:
+            tasks.append((h1, str(idx)))
+            idx += 1
     return tasks
 
 
@@ -127,19 +126,19 @@ def add_task(
     status: str = "TODO",
     tags: list[str] | None = None,
 ) -> dict:
-    """Add a new task to todos.org under the customer's group."""
+    """Add a new task to todos.org as a flat heading."""
     if not todos_file.exists():
         todos_file.parent.mkdir(parents=True, exist_ok=True)
         todos_file.write_text("", encoding="utf-8")
 
     org_file = parse_org_file(todos_file, keywords)
 
-    full_title = f"[{customer}] {title}"
+    full_title = f"[{customer}]: {title}"
     now = datetime.now()
     created_str = now.strftime(CREATED_FMT)
 
     new_heading = Heading(
-        level=2,
+        level=1,
         keyword=status,
         title=full_title,
         tags=tags or [],
@@ -147,30 +146,11 @@ def add_task(
         dirty=True,
     )
 
-    parent = _find_or_create_customer_group(org_file, customer)
-    parent.children.append(new_heading)
-
+    org_file.headings.append(new_heading)
     write_org_file(todos_file, org_file)
 
     idx = len(_collect_tasks(org_file, keywords))
     return _heading_to_task(new_heading, str(idx))
-
-
-def _find_or_create_customer_group(
-    org_file: OrgFile, customer: str
-) -> Heading:
-    """Find level-1 heading for customer or create it."""
-    for h in org_file.headings:
-        if h.title.strip().upper() == customer.upper():
-            return h
-    new_group = Heading(
-        level=1,
-        keyword=None,
-        title=customer,
-        dirty=True,
-    )
-    org_file.headings.append(new_group)
-    return new_group
 
 
 def move_task(
@@ -236,7 +216,7 @@ def update_task(
     new_customer = customer if customer is not None else current_customer
     new_bare = title if title is not None else bare_title
     heading.title = (
-        f"[{new_customer}] {new_bare}" if new_customer else new_bare
+        f"[{new_customer}]: {new_bare}" if new_customer else new_bare
     )
     heading.dirty = True
     write_org_file(todos_file, org_file)

@@ -9,8 +9,10 @@ router = APIRouter(prefix="/api/customers", tags=["customers"])
 class CustomerCreate(BaseModel):
     name: str
     status: str = "active"
+    type: str = ""
     kontingent: float = 0
     repo: str | None = None
+    tags: list[str] = []
 
 
 @router.post("/", status_code=201)
@@ -19,8 +21,10 @@ def create_customer(body: CustomerCreate):
         return get_backend().customers.add_customer(
             name=body.name,
             status=body.status,
+            customer_type=body.type,
             kontingent=body.kontingent,
             repo=body.repo,
+            tags=body.tags,
         )
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))

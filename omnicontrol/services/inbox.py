@@ -68,6 +68,7 @@ def _heading_to_item(heading: Heading, item_id: str) -> dict:
         "type": item_type,
         "customer": customer,
         "title": heading.title.strip(),
+        "body": "\n".join(heading.body).strip(),
         "created": props.get("CREATED", ""),
         "properties": dict(props),
     }
@@ -89,6 +90,7 @@ def add_item(
     text: str,
     item_type: str | None = None,
     customer: str | None = None,
+    body: str | None = None,
 ) -> dict:
     """Add an item to inbox.org with auto-categorization."""
     detected_type = item_type or _detect_type(text)
@@ -110,6 +112,9 @@ def add_item(
         dirty=True,
     )
 
+    if body:
+        new_heading.body = body.splitlines()
+
     if not inbox_file.exists():
         inbox_file.parent.mkdir(parents=True, exist_ok=True)
         org_file = OrgFile()
@@ -121,6 +126,40 @@ def add_item(
 
     item_id = str(len(org_file.headings))
     return _heading_to_item(new_heading, item_id)
+
+
+def update_item(
+    inbox_file: Path,
+    item_id: str,
+    updates: dict,
+) -> dict:
+    """Update title, type, customer, and/or body of an inbox item."""
+    if not inbox_file.exists():
+        raise ValueError("Item not found")
+    org_file = parse_org_file(inbox_file, INBOX_KEYWORDS)
+    idx = int(item_id) - 1
+    if idx < 0 or idx >= len(org_file.headings):
+        raise ValueError("Item not found")
+    heading = org_file.headings[idx]
+    heading.dirty = True
+    if "title" in updates:
+        heading.title = updates["title"]
+    if "type" in updates:
+        heading.keyword = updates["type"].upper() if updates["type"] else None
+        heading.properties["TYPE"] = updates["type"].upper()
+    if "customer" in updates:
+        new_customer = updates["customer"]
+        bare = re.sub(r"\[([^\]]+)\]\s*", "", heading.title).strip()
+        if new_customer:
+            heading.title = f"[{new_customer}] {bare}"
+        else:
+            heading.title = bare
+    if "body" in updates:
+        heading.body = (
+            updates["body"].splitlines() if updates["body"] else []
+        )
+    write_org_file(inbox_file, org_file)
+    return _heading_to_item(heading, item_id)
 
 
 def promote_to_task(
