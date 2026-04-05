@@ -1,7 +1,11 @@
 from fastapi import APIRouter, HTTPException
 
 from ...backends import get_backend
-from ...services.github import GhError, issues_for_customers, list_issues, _token
+from ...services.github import (
+    GhError,
+    issues_for_customers,
+    list_issues,
+)
 
 router = APIRouter(prefix="/api/github", tags=["github"])
 
@@ -11,14 +15,12 @@ def api_all_issues(state: str = "open", limit: int = 30):
     """Return open issues grouped by customer."""
     customers = get_backend().customers.list_customers()
     try:
-        return issues_for_customers(customers, state=state, limit=limit)
-    except FileNotFoundError:
+        return issues_for_customers(
+            customers, state=state, limit=limit
+        )
+    except GhError as e:
         raise HTTPException(
-            status_code=503,
-            detail=(
-                "gh CLI not found. Install GitHub CLI or "
-                "configure a GitHub PAT in Settings."
-            ),
+            status_code=502, detail=str(e)
         )
 
 

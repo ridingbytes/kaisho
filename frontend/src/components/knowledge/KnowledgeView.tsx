@@ -156,11 +156,86 @@ function toggleFolder(nodes: TreeNode[], targetPath: string): TreeNode[] {
 }
 
 // ---------------------------------------------------------------------------
+// File type helpers
+// ---------------------------------------------------------------------------
+
+type FileType = "md" | "org" | "rst" | "txt";
+
+function detectFileType(path: string): FileType {
+  if (path.endsWith(".org")) return "org";
+  if (path.endsWith(".rst")) return "rst";
+  if (path.endsWith(".md")) return "md";
+  return "txt";
+}
+
+const FILE_TYPE_COLORS: Record<FileType, string> = {
+  md: "bg-blue-900/40 text-blue-300",
+  org: "bg-emerald-900/40 text-emerald-300",
+  rst: "bg-amber-900/40 text-amber-300",
+  txt: "bg-slate-700/40 text-slate-400",
+};
+
+// ---------------------------------------------------------------------------
+// Syntax toolbar definitions
+// ---------------------------------------------------------------------------
+
+interface SyntaxAction {
+  label: string;
+  title: string;
+  wrap: [string, string];
+}
+
+const MD_ACTIONS: SyntaxAction[] = [
+  { label: "B", title: "Bold", wrap: ["**", "**"] },
+  { label: "I", title: "Italic", wrap: ["*", "*"] },
+  { label: "#", title: "Heading", wrap: ["# ", ""] },
+  { label: "[]", title: "Link", wrap: ["[", "]()"] },
+  { label: "`", title: "Code", wrap: ["`", "`"] },
+];
+
+const ORG_ACTIONS: SyntaxAction[] = [
+  { label: "B", title: "Bold", wrap: ["*", "*"] },
+  { label: "I", title: "Italic", wrap: ["/", "/"] },
+  { label: "*", title: "Heading", wrap: ["* ", ""] },
+  { label: "[[]]", title: "Link", wrap: ["[[", "]]"] },
+  { label: "~", title: "Code", wrap: ["~", "~"] },
+];
+
+function actionsForType(ft: FileType): SyntaxAction[] {
+  if (ft === "md") return MD_ACTIONS;
+  if (ft === "org") return ORG_ACTIONS;
+  return [];
+}
+
+function applySyntax(
+  textarea: HTMLTextAreaElement,
+  action: SyntaxAction,
+  content: string,
+  setContent: (v: string) => void,
+) {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selected = content.slice(start, end);
+  const [pre, post] = action.wrap;
+  const replacement = pre + (selected || action.title) + post;
+  const next =
+    content.slice(0, start) + replacement + content.slice(end);
+  setContent(next);
+  requestAnimationFrame(() => {
+    textarea.focus();
+    const cursorPos = start + pre.length
+      + (selected ? selected.length : action.title.length);
+    textarea.setSelectionRange(cursorPos, cursorPos);
+  });
+}
+
+// ---------------------------------------------------------------------------
 // localStorage helpers
 // ---------------------------------------------------------------------------
 
 const LS_WIDTH = "kb_sidebar_width";
 const LS_OPEN = "kb_sidebar_open";
+const LS_COLLAPSED = "kb_collapsed_labels";
 const DEFAULT_WIDTH = 220;
 const MIN_WIDTH = 140;
 const MAX_WIDTH = 400;
@@ -175,6 +250,16 @@ function readStoredWidth(): number {
 function readStoredOpen(): boolean {
   const raw = localStorage.getItem(LS_OPEN);
   return raw === null ? true : raw === "true";
+}
+
+function readCollapsedLabels(): Set<string> {
+  const raw = localStorage.getItem(LS_COLLAPSED);
+  if (!raw) return new Set();
+  try {
+    return new Set(JSON.parse(raw) as string[]);
+  } catch {
+    return new Set();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -310,6 +395,8 @@ function EditorPanel({
   }
 
   const dirty = content !== initialContent;
+  const fileType = detectFileType(file.path);
+  const syntaxActions = actionsForType(fileType);
 
   return (
     <div className="flex flex-col h-full">
@@ -317,6 +404,15 @@ function EditorPanel({
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border-subtle shrink-0">
         <span className="text-xs text-slate-500 font-mono truncate">
           {file.label}/{file.path}
+        </span>
+        <span
+          className={[
+            "shrink-0 px-1.5 py-0.5 rounded text-[10px]",
+            "font-semibold uppercase tracking-wider",
+            FILE_TYPE_COLORS[fileType],
+          ].join(" ")}
+        >
+          {fileType}
         </span>
         {dirty && (
           <span className="text-[10px] text-amber-500 shrink-0">
@@ -345,7 +441,9 @@ function EditorPanel({
             </button>
           ) : (
             <>
-              <span className="text-xs text-red-400">Delete?</span>
+              <span className="text-xs text-red-400">
+                Delete?
+              </span>
               <button
                 onClick={handleDelete}
                 disabled={remove.isPending}
@@ -374,7 +472,7 @@ function EditorPanel({
             className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent text-white text-xs font-semibold disabled:opacity-40"
           >
             <Check size={11} />
-            {save.isPending ? "Saving…" : "Save"}
+            {save.isPending ? "Saving\u2026" : "Save"}
           </button>
         </div>
       </div>
@@ -385,18 +483,46 @@ function EditorPanel({
           <Markdown className="p-1">{content}</Markdown>
         </div>
       ) : (
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className={[
-            "flex-1 resize-none p-4 font-mono text-sm leading-relaxed",
-            "bg-surface-card text-slate-200 placeholder-slate-600",
-            "focus:outline-none",
-          ].join(" ")}
-          placeholder="Write markdown here…"
-          spellCheck={false}
-        />
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Syntax toolbar */}
+          {syntaxActions.length > 0 && (
+            <div className="flex items-center gap-1 px-4 py-1.5 border-b border-border-subtle bg-surface-card/60 shrink-0">
+              {syntaxActions.map((action) => (
+                <button
+                  key={action.title}
+                  type="button"
+                  title={action.title}
+                  onClick={() => {
+                    if (!textareaRef.current) return;
+                    applySyntax(
+                      textareaRef.current,
+                      action,
+                      content,
+                      setContent,
+                    );
+                  }}
+                  className="px-2 py-0.5 rounded text-xs font-mono text-slate-400 hover:text-slate-200 hover:bg-surface-raised transition-colors"
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className={[
+              "flex-1 resize-none p-4 font-mono",
+              "text-sm leading-relaxed",
+              "bg-surface-card text-slate-200",
+              "placeholder-slate-600",
+              "focus:outline-none",
+            ].join(" ")}
+            placeholder="Write here\u2026"
+            spellCheck={false}
+          />
+        </div>
       )}
 
       {save.isError && (
@@ -497,6 +623,11 @@ export function KnowledgeView() {
   // Tree state: per-label node lists with expanded flags
   const [treeNodes, setTreeNodes] = useState<Record<string, TreeNode[]>>({});
 
+  // Collapsible root labels
+  const [collapsedLabels, setCollapsedLabels] = useState<Set<string>>(
+    readCollapsedLabels
+  );
+
   // Resize drag state
   const isDragging = useRef(false);
   const dragStartX = useRef(0);
@@ -551,6 +682,13 @@ export function KnowledgeView() {
     localStorage.setItem(LS_WIDTH, String(sidebarWidth));
   }, [sidebarWidth]);
 
+  useEffect(() => {
+    localStorage.setItem(
+      LS_COLLAPSED,
+      JSON.stringify([...collapsedLabels])
+    );
+  }, [collapsedLabels]);
+
   // Resize mouse handlers
   function startResize(e: React.MouseEvent) {
     e.preventDefault();
@@ -594,6 +732,18 @@ export function KnowledgeView() {
   function handleDeleted() {
     setSelectedPath(null);
     setEditing(false);
+  }
+
+  function handleToggleLabel(label: string) {
+    setCollapsedLabels((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
   }
 
   function handleToggleFolder(path: string) {
@@ -744,23 +894,40 @@ export function KnowledgeView() {
               ) : (
                 labels.map((label) => (
                   <div key={label}>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider px-3 pt-2 pb-1 select-none">
-                      {label}
-                    </p>
-                    {(treeNodes[label] ?? []).map((node) => (
-                      <TreeNodeRow
-                        key={
-                          node.kind === "leaf"
-                            ? node.path
-                            : node.path + "/"
-                        }
-                        node={node}
-                        depth={0}
-                        selectedPath={selectedPath}
-                        onSelect={selectFile}
-                        onToggle={handleToggleFolder}
-                      />
-                    ))}
+                    <button
+                      onClick={() => handleToggleLabel(label)}
+                      className="w-full text-left flex items-center gap-1 px-3 pt-2 pb-1 select-none hover:bg-surface-raised transition-colors"
+                    >
+                      {collapsedLabels.has(label) ? (
+                        <ChevronRight
+                          size={10}
+                          className="shrink-0 text-slate-500"
+                        />
+                      ) : (
+                        <ChevronDown
+                          size={10}
+                          className="shrink-0 text-slate-500"
+                        />
+                      )}
+                      <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+                        {label}
+                      </span>
+                    </button>
+                    {!collapsedLabels.has(label) &&
+                      (treeNodes[label] ?? []).map((node) => (
+                        <TreeNodeRow
+                          key={
+                            node.kind === "leaf"
+                              ? node.path
+                              : node.path + "/"
+                          }
+                          node={node}
+                          depth={0}
+                          selectedPath={selectedPath}
+                          onSelect={selectFile}
+                          onToggle={handleToggleFolder}
+                        />
+                      ))}
                   </div>
                 ))
               )}
