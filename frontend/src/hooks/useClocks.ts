@@ -6,6 +6,7 @@ import {
 import {
   deleteClockEntry,
   fetchActiveTimer,
+  fetchClockEntries,
   fetchTodayEntries,
   quickBook,
   startTimer,
@@ -26,6 +27,15 @@ export function useTodayEntries() {
   return useQuery({
     queryKey: ["clocks", "today"],
     queryFn: fetchTodayEntries,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useClockEntries(period: string) {
+  return useQuery({
+    queryKey: ["clocks", "entries", period],
+    queryFn: () => fetchClockEntries(period),
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   });
@@ -83,7 +93,12 @@ export function useUpdateClockEntry() {
       updates,
     }: {
       startIso: string;
-      updates: { description?: string; hours?: number };
+      updates: {
+        customer?: string;
+        description?: string;
+        hours?: number;
+        new_date?: string;
+      };
     }) => updateClockEntry(startIso, updates),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["clocks"] });

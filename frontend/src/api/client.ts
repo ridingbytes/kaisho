@@ -11,6 +11,7 @@ import type {
   InboxItem,
   KnowledgeFile,
   KnowledgeSearchResult,
+  NoteItem,
   Settings,
   Task,
   TimeEntry,
@@ -72,6 +73,13 @@ export function updateTask(
   return patch<Task>(`/kanban/tasks/${taskId}`, updates);
 }
 
+export function setTaskTags(
+  taskId: string,
+  tags: string[]
+): Promise<Task> {
+  return patch<Task>(`/kanban/tasks/${taskId}/tags`, { tags });
+}
+
 export function archiveTask(taskId: string): Promise<void> {
   return del(`/kanban/tasks/${taskId}`);
 }
@@ -96,6 +104,33 @@ export function fetchAvailableModels(): Promise<{ models: string[] }> {
   return get<{ models: string[] }>("/settings/ai/models");
 }
 
+export function addTag(
+  name: string,
+  color: string,
+  description = ""
+): Promise<{ name: string; color: string; description: string }> {
+  return post("/settings/tags", { name, color, description });
+}
+
+export function updateTag(
+  name: string,
+  updates: { color?: string; description?: string }
+): Promise<{ name: string; color: string; description: string }> {
+  return patch(`/settings/tags/${encodeURIComponent(name)}`, updates);
+}
+
+export function deleteTag(name: string): Promise<void> {
+  return del(`/settings/tags/${encodeURIComponent(name)}`);
+}
+
+export function addCustomerType(name: string): Promise<void> {
+  return post("/settings/customer_types", { name });
+}
+
+export function deleteCustomerType(name: string): Promise<void> {
+  return del(`/settings/customer_types/${encodeURIComponent(name)}`);
+}
+
 // Clocks
 
 export function fetchActiveTimer(): Promise<ActiveTimer> {
@@ -104,6 +139,10 @@ export function fetchActiveTimer(): Promise<ActiveTimer> {
 
 export function fetchTodayEntries(): Promise<ClockEntry[]> {
   return get<ClockEntry[]>("/clocks/entries?period=today");
+}
+
+export function fetchClockEntries(period: string): Promise<ClockEntry[]> {
+  return get<ClockEntry[]>(`/clocks/entries?period=${period}`);
 }
 
 export function startTimer(
@@ -131,7 +170,12 @@ export function quickBook(
 
 export function updateClockEntry(
   startIso: string,
-  updates: { description?: string; hours?: number }
+  updates: {
+    customer?: string;
+    description?: string;
+    hours?: number;
+    new_date?: string;
+  }
 ): Promise<ClockEntry> {
   const qs = encodeURIComponent(startIso);
   return patch<ClockEntry>(`/clocks/entries?start=${qs}`, updates);
@@ -151,13 +195,21 @@ export function fetchInboxItems(): Promise<InboxItem[]> {
 export function captureInboxItem(
   text: string,
   type?: string,
-  customer?: string
+  customer?: string,
+  body?: string
 ): Promise<InboxItem> {
-  return post<InboxItem>("/inbox/capture", { text, type, customer });
+  return post<InboxItem>("/inbox/capture", { text, type, customer, body });
 }
 
 export function deleteInboxItem(itemId: string): Promise<void> {
   return del(`/inbox/${itemId}`);
+}
+
+export function updateInboxItem(
+  itemId: string,
+  updates: { title?: string; type?: string; customer?: string; body?: string }
+): Promise<InboxItem> {
+  return patch<InboxItem>(`/inbox/${itemId}`, updates);
 }
 
 export function promoteInboxItem(
@@ -269,6 +321,60 @@ export function searchKnowledge(q: string): Promise<KnowledgeSearchResult[]> {
   );
 }
 
+export function saveKnowledgeFile(
+  label: string,
+  path: string,
+  content: string
+): Promise<KnowledgeFile> {
+  return fetch(`${BASE}/knowledge/file`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ label, path, content }),
+  }).then((res) => {
+    if (!res.ok) throw new Error(`PUT /knowledge/file: ${res.status}`);
+    return res.json() as Promise<KnowledgeFile>;
+  });
+}
+
+export function deleteKnowledgeFile(path: string): Promise<void> {
+  return del(`/knowledge/file?path=${encodeURIComponent(path)}`);
+}
+
+// Notes
+
+export function fetchNotes(): Promise<NoteItem[]> {
+  return get<NoteItem[]>("/notes/");
+}
+
+export function addNote(data: {
+  title: string;
+  body?: string;
+  customer?: string | null;
+  tags?: string[];
+}): Promise<NoteItem> {
+  return post<NoteItem>("/notes/", data);
+}
+
+export function deleteNote(noteId: string): Promise<void> {
+  return del(`/notes/${noteId}`);
+}
+
+export function updateNote(
+  noteId: string,
+  updates: {
+    title?: string;
+    body?: string;
+    customer?: string | null;
+    tags?: string[];
+  }
+): Promise<NoteItem> {
+  return patch<NoteItem>(`/notes/${noteId}`, updates);
+}
+
+export function promoteNote(noteId: string, customer: string): Promise<Task> {
+  return post<Task>(`/notes/${noteId}/promote`, { customer });
+}
+
 // Communications
 
 export function fetchComms(params?: {
@@ -291,8 +397,24 @@ export function addComm(data: {
   customer?: string;
   body?: string;
   contact?: string;
+  type?: string;
+  tags?: string[];
 }): Promise<CommEntry> {
   return post<CommEntry>("/comm/", data);
+}
+
+export function updateComm(
+  id: number,
+  updates: {
+    subject?: string;
+    body?: string;
+    contact?: string;
+    customer?: string;
+    type?: string;
+    tags?: string[];
+  }
+): Promise<CommEntry> {
+  return patch<CommEntry>(`/comm/${id}`, updates);
 }
 
 export function deleteComm(id: number): Promise<void> {
@@ -307,6 +429,50 @@ export function searchComms(q: string): Promise<CommEntry[]> {
 
 export function fetchCronJobs(): Promise<CronJob[]> {
   return get<CronJob[]>("/cron/jobs");
+}
+
+export function createCronJob(data: {
+  id: string;
+  name: string;
+  schedule: string;
+  model: string;
+  prompt_content: string;
+  output: string;
+  timeout: number;
+  enabled: boolean;
+}): Promise<CronJob> {
+  return post<CronJob>("/cron/jobs", data);
+}
+
+export function updateCronJob(
+  jobId: string,
+  updates: Partial<Pick<CronJob, "name" | "schedule" | "model" | "output" | "timeout">>
+): Promise<CronJob> {
+  return patch<CronJob>(`/cron/jobs/${encodeURIComponent(jobId)}`, updates);
+}
+
+export function deleteCronJob(jobId: string): Promise<void> {
+  return del(`/cron/jobs/${encodeURIComponent(jobId)}`);
+}
+
+export function fetchJobPrompt(
+  jobId: string
+): Promise<{ content: string; path: string; error?: string }> {
+  return get(`/cron/jobs/${encodeURIComponent(jobId)}/prompt`);
+}
+
+export function saveJobPrompt(
+  jobId: string,
+  content: string
+): Promise<{ content: string; path: string }> {
+  return fetch(`/api/cron/jobs/${encodeURIComponent(jobId)}/prompt`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  }).then((r) => {
+    if (!r.ok) throw new Error(`PUT prompt: ${r.status}`);
+    return r.json() as Promise<{ content: string; path: string }>;
+  });
 }
 
 export function triggerCronJob(
@@ -330,6 +496,10 @@ export function disableCronJob(jobId: string): Promise<CronJob> {
     `/cron/jobs/${encodeURIComponent(jobId)}/disable`,
     {}
   );
+}
+
+export function deleteCronRun(runId: number): Promise<void> {
+  return del(`/cron/history/${runId}`);
 }
 
 export function fetchCronHistory(jobId?: string): Promise<CronRun[]> {

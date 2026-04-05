@@ -20,8 +20,10 @@ class TimerStart(BaseModel):
 
 
 class EntryUpdate(BaseModel):
+    customer: str | None = None
     description: str | None = None
     hours: float | None = None
+    new_date: date | None = None
 
 
 @router.get("/entries")
@@ -87,8 +89,10 @@ def get_summary(period: str = "month"):
 def update_entry(start: str, body: EntryUpdate):
     result = get_backend().clocks.update_entry(
         start_iso=start,
+        customer=body.customer,
         description=body.description,
         hours=body.hours,
+        new_date=body.new_date,
     )
     if result is None:
         raise HTTPException(status_code=404, detail="Entry not found")

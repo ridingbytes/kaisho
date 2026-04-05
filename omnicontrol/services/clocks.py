@@ -6,10 +6,25 @@ from ..org.models import Clock, Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 
+# Heading title format: [CUSTOMER]: description
+ENTRY_RE = re.compile(r"^\[([^\]]+)\]:\s*(.*)")
 DURATION_RE = re.compile(
     r"^(\d+(?:\.\d+)?)\s*(h|hour|hours|min|mins|minutes?)$"
 )
 CLOCK_KEYWORDS: set[str] = set()
+
+
+def _parse_entry_title(title: str) -> tuple[str, str]:
+    """Parse '[CUSTOMER]: description' into (customer, description)."""
+    m = ENTRY_RE.match(title.strip())
+    if m:
+        return m.group(1), m.group(2).strip()
+    return "", title.strip()
+
+
+def _entry_title(customer: str, description: str) -> str:
+    """Format a heading title as '[customer]: description'."""
+    return f"[{customer}]: {description}"
 
 
 def _parse_duration(duration_str: str) -> int | None:
@@ -42,17 +57,12 @@ def _clock_to_entry(
 
 
 def _collect_clock_entries(org_file: OrgFile) -> list[dict]:
-    """Collect all clock entries from the org file."""
+    """Collect all clock entries from the flat org file."""
     entries = []
     for h1 in org_file.headings:
-        customer = h1.title.strip()
-        for h2 in h1.children:
-            desc = h2.title.strip()
-            for clock in h2.logbook:
-                entries.append(_clock_to_entry(clock, customer, desc))
-            # Also check direct clocks on h1
+        customer, desc = _parse_entry_title(h1.title)
         for clock in h1.logbook:
-            entries.append(_clock_to_entry(clock, customer, ""))
+            entries.append(_clock_to_entry(clock, customer, desc))
     return entries
 
 
@@ -80,7 +90,9 @@ def _month_range(d: date) -> tuple[date, date]:
     if d.month == 12:
         last = d.replace(day=31)
     else:
-        last = d.replace(month=d.month + 1, day=1) - timedelta(days=1)
+        last = d.replace(
+            month=d.month + 1, day=1
+        ) - timedelta(days=1)
     return first, last
 
 
@@ -138,15 +150,10 @@ def get_active_timer(clocks_file: Path) -> dict | None:
         return None
     org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
     for h1 in org_file.headings:
-        customer = h1.title.strip()
-        for h2 in h1.children:
-            desc = h2.title.strip()
-            for clock in h2.logbook:
-                if clock.end is None:
-                    return _clock_to_entry(clock, customer, desc)
+        customer, desc = _parse_entry_title(h1.title)
         for clock in h1.logbook:
             if clock.end is None:
-                return _clock_to_entry(clock, customer, "")
+                return _clock_to_entry(clock, customer, desc)
     return None
 
 
@@ -196,26 +203,13 @@ def stop_timer(clocks_file: Path) -> dict:
     org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
     found_clock = None
     found_heading = None
-    found_customer = None
 
     for h1 in org_file.headings:
-        customer = h1.title.strip()
-        for h2 in h1.children:
-            for clock in h2.logbook:
-                if clock.end is None:
-                    found_clock = clock
-                    found_heading = h2
-                    found_customer = customer
-                    break
-            if found_clock:
+        for clock in h1.logbook:
+            if clock.end is None:
+                found_clock = clock
+                found_heading = h1
                 break
-        if not found_clock:
-            for clock in h1.logbook:
-                if clock.end is None:
-                    found_clock = clock
-                    found_heading = h1
-                    found_customer = customer
-                    break
         if found_clock:
             break
 
@@ -233,8 +227,8 @@ def stop_timer(clocks_file: Path) -> dict:
 
     write_org_file(clocks_file, org_file)
 
-    desc = found_heading.title.strip()
-    return _clock_to_entry(found_clock, found_customer or desc, desc)
+    customer, desc = _parse_entry_title(found_heading.title)
+    return _clock_to_entry(found_clock, customer, desc)
 
 
 def get_summary(
@@ -268,10 +262,6 @@ def _find_clock_by_start(
     except ValueError:
         return None
     for h1 in org_file.headings:
-        for h2 in h1.children:
-            for clock in h2.logbook:
-                if clock.start == target:
-                    return clock, h2
         for clock in h1.logbook:
             if clock.start == target:
                 return clock, h1
@@ -281,10 +271,12 @@ def _find_clock_by_start(
 def update_clock_entry(
     clocks_file: Path,
     start_iso: str,
+    customer: str | None = None,
     description: str | None = None,
     hours: float | None = None,
+    new_date: date | None = None,
 ) -> dict | None:
-    """Update description and/or hours of a clock entry by start time."""
+    """Update customer, description, hours, and/or date of an entry."""
     if not clocks_file.exists():
         return None
     org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
@@ -292,8 +284,21 @@ def update_clock_entry(
     if result is None:
         return None
     clock, heading = result
+    current_customer, current_desc = _parse_entry_title(heading.title)
+    if customer is not None:
+        current_customer = customer
     if description is not None:
-        heading.title = description
+        current_desc = description
+    if customer is not None or description is not None:
+        heading.title = _entry_title(current_customer, current_desc)
+        heading.dirty = True
+    if new_date is not None:
+        delta = timedelta(
+            days=(new_date - clock.start.date()).days
+        )
+        clock.start = clock.start + delta
+        if clock.end is not None:
+            clock.end = clock.end + delta
         heading.dirty = True
     if hours is not None:
         minutes = int(hours * 60)
@@ -304,12 +309,7 @@ def update_clock_entry(
         clock.duration = f"{h}:{m:02d}"
         heading.dirty = True
     write_org_file(clocks_file, org_file)
-    customer = ""
-    for h1 in org_file.headings:
-        for h2 in h1.children:
-            if h2 is heading:
-                customer = h1.title.strip()
-    return _clock_to_entry(clock, customer, heading.title.strip())
+    return _clock_to_entry(clock, current_customer, current_desc)
 
 
 def delete_clock_entry(
@@ -325,14 +325,6 @@ def delete_clock_entry(
     except ValueError:
         return False
     for h1 in org_file.headings:
-        for h2 in h1.children:
-            for clock in list(h2.logbook):
-                if clock.start == target:
-                    h2.logbook.remove(clock)
-                    h2.dirty = True
-                    h1.dirty = True
-                    write_org_file(clocks_file, org_file)
-                    return True
         for clock in list(h1.logbook):
             if clock.start == target:
                 h1.logbook.remove(clock)
@@ -348,22 +340,19 @@ def _append_clock_entry(
     description: str,
     clock: Clock,
 ) -> None:
-    """Append a clock entry to clocks.org."""
+    """Append a clock entry to clocks.org as a flat heading."""
     if not clocks_file.exists():
         clocks_file.parent.mkdir(parents=True, exist_ok=True)
         org_file = OrgFile()
     else:
         org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
 
-    customer_heading = _find_or_create_heading(
-        org_file.headings, customer, level=1
+    title = _entry_title(customer, description)
+    entry_heading = _find_or_create_heading(
+        org_file.headings, title, level=1
     )
-    task_heading = _find_or_create_heading(
-        customer_heading.children, description, level=2
-    )
-    task_heading.logbook.append(clock)
-    task_heading.dirty = True
-    customer_heading.dirty = True
+    entry_heading.logbook.append(clock)
+    entry_heading.dirty = True
 
     write_org_file(clocks_file, org_file)
 
@@ -375,6 +364,8 @@ def _find_or_create_heading(
     for h in headings:
         if h.title.strip().lower() == title.strip().lower():
             return h
-    new_h = Heading(level=level, keyword=None, title=title, dirty=True)
+    new_h = Heading(
+        level=level, keyword=None, title=title, dirty=True
+    )
     headings.append(new_h)
     return new_h
