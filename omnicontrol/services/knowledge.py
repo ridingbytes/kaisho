@@ -39,6 +39,15 @@ def file_tree(
     return entries
 
 
+def _base_for_label(
+    wissen_dir: Path, research_dir: Path, label: str
+) -> Path:
+    """Return the expanded base directory for a label."""
+    if label == "research":
+        return research_dir.expanduser()
+    return wissen_dir.expanduser()
+
+
 def read_file(
     wissen_dir: Path, research_dir: Path, rel_path: str
 ) -> str | None:
@@ -48,6 +57,38 @@ def read_file(
         if candidate.exists() and candidate.is_file():
             return candidate.read_text(encoding="utf-8")
     return None
+
+
+def write_file(
+    wissen_dir: Path,
+    research_dir: Path,
+    label: str,
+    rel_path: str,
+    content: str,
+) -> dict:
+    """Write content to a KB file, creating it if it doesn't exist."""
+    base = _base_for_label(wissen_dir, research_dir, label)
+    path = base / rel_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+    return {
+        "path": rel_path,
+        "label": label,
+        "name": path.stem,
+        "size": path.stat().st_size,
+    }
+
+
+def delete_file(
+    wissen_dir: Path, research_dir: Path, rel_path: str
+) -> bool:
+    """Delete a KB file by relative path. Returns False if not found."""
+    for _label, base in _kb_dirs(wissen_dir, research_dir):
+        candidate = base / rel_path
+        if candidate.exists() and candidate.is_file():
+            candidate.unlink()
+            return True
+    return False
 
 
 def search(

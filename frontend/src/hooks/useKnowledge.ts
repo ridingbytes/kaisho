@@ -1,7 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  deleteKnowledgeFile,
   fetchKnowledgeFile,
   fetchKnowledgeTree,
+  saveKnowledgeFile,
   searchKnowledge,
 } from "../api/client";
 
@@ -28,5 +30,36 @@ export function useKnowledgeSearch(q: string) {
     queryFn: () => searchKnowledge(q),
     enabled: q.length > 1,
     staleTime: 10_000,
+  });
+}
+
+export function useSaveKnowledgeFile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      label,
+      path,
+      content,
+    }: {
+      label: string;
+      path: string;
+      content: string;
+    }) => saveKnowledgeFile(label, path, content),
+    onSuccess: (_data, vars) => {
+      void qc.invalidateQueries({ queryKey: ["knowledge", "tree"] });
+      void qc.invalidateQueries({
+        queryKey: ["knowledge", "file", vars.path],
+      });
+    },
+  });
+}
+
+export function useDeleteKnowledgeFile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (path: string) => deleteKnowledgeFile(path),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["knowledge", "tree"] });
+    },
   });
 }
