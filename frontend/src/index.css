@@ -2,6 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   DESIGN TOKENS — dark (default) and light
+   ============================================================ */
+
+:root {
+  /* Surfaces */
+  --surface-base:    #0c0e14;
+  --surface-card:    #161b27;
+  --surface-raised:  #1e2535;
+  --surface-overlay: #252d40;
+
+  /* Borders */
+  --border-subtle:  rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-strong:  rgba(255, 255, 255, 0.18);
+
+  /* Accent (indigo) */
+  --accent:       #6366f1;
+  --accent-hover: #818cf8;
+  --accent-muted: rgba(99, 102, 241, 0.15);
+
+  /* Shadows */
+  --shadow-card:      0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-card-hover:0 4px 12px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
+  --shadow-card-drag: 0 20px 40px rgba(0,0,0,0.6), 0 8px 16px rgba(0,0,0,0.4);
+
+  /* Body */
+  --body-bg:    #0c0e14;
+  --body-color: #e2e8f0;
+
+  /* Scrollbar */
+  --scrollbar-thumb:       rgba(255, 255, 255, 0.12);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
+}
+
+[data-theme="light"] {
+  /* Surfaces */
+  --surface-base:    #f0f2f7;
+  --surface-card:    #ffffff;
+  --surface-raised:  #e8eaf2;
+  --surface-overlay: #dde0ec;
+
+  /* Borders */
+  --border-subtle:  rgba(0, 0, 0, 0.07);
+  --border-default: rgba(0, 0, 0, 0.12);
+  --border-strong:  rgba(0, 0, 0, 0.22);
+
+  /* Accent — slightly deeper for light backgrounds */
+  --accent:       #6366f1;
+  --accent-hover: #4f52e0;
+  --accent-muted: rgba(99, 102, 241, 0.12);
+
+  /* Shadows — lighter for light backgrounds */
+  --shadow-card:      0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-card-hover:0 4px 12px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
+  --shadow-card-drag: 0 20px 40px rgba(0,0,0,0.18), 0 8px 16px rgba(0,0,0,0.10);
+
+  /* Body */
+  --body-bg:    #f0f2f7;
+  --body-color: #1e293b;
+
+  /* Scrollbar */
+  --scrollbar-thumb:       rgba(0, 0, 0, 0.15);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.28);
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -16,8 +86,8 @@
   }
 
   body {
-    background-color: #0c0e14;
-    color: #e2e8f0;
+    background-color: var(--body-bg);
+    color: var(--body-color);
     font-family: "Inter", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -33,14 +103,47 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--scrollbar-thumb);
     border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--scrollbar-thumb-hover);
   }
 }
+
+/* ============================================================
+   LIGHT THEME — text colour overrides
+   Tailwind's slate-* text classes bake in literal hex values,
+   so we remap them here for the light theme. The scale is
+   effectively inverted: what reads as bright on dark should
+   read as dark on light.
+   ============================================================ */
+
+[data-theme="light"] .text-slate-200,
+[data-theme="light"] .text-slate-300 { color: #1e293b; }
+[data-theme="light"] .text-slate-400  { color: #334155; }
+[data-theme="light"] .text-slate-500  { color: #475569; }
+[data-theme="light"] .text-slate-600  { color: #64748b; }
+[data-theme="light"] .text-slate-700  { color: #94a3b8; }
+
+[data-theme="light"] .hover\:text-slate-200:hover,
+[data-theme="light"] .hover\:text-slate-300:hover { color: #0f172a; }
+[data-theme="light"] .hover\:text-slate-400:hover  { color: #1e293b; }
+
+[data-theme="light"] .placeholder-slate-600::placeholder { color: #94a3b8; }
+
+/* Status pill colours — muted tones work better on light bg */
+[data-theme="light"] .text-green-400   { color: #16a34a; }
+[data-theme="light"] .text-yellow-400  { color: #b45309; }
+[data-theme="light"] .text-red-400     { color: #dc2626; }
+[data-theme="light"] .bg-green-900\/40  { background-color: rgba(22, 163, 74, 0.12); }
+[data-theme="light"] .bg-yellow-900\/40 { background-color: rgba(180, 83, 9, 0.12); }
+[data-theme="light"] .bg-red-900\/40    { background-color: rgba(220, 38, 38, 0.12); }
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
 
 @layer utilities {
   .drag-overlay {

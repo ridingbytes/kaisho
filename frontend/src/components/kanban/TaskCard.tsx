@@ -3,10 +3,16 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Pencil, Trash2, Check, X } from "lucide-react";
 import { useState } from "react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
-import { useUpdateTask, useArchiveTask } from "../../hooks/useTasks";
+import { TagDropdown } from "../common/TagDropdown";
+import {
+  useUpdateTask,
+  useArchiveTask,
+  useSetTaskTags,
+} from "../../hooks/useTasks";
+import { useSettings } from "../../hooks/useSettings";
 import type { Task } from "../../types";
 
-const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]\s*/;
+const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
 
 function stripCustomerPrefix(title: string): string {
   return title.replace(CUSTOMER_PREFIX_RE, "");
@@ -40,8 +46,12 @@ export function TaskCard({
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editCustomer, setEditCustomer] = useState("");
+  const [editTags, setEditTags] = useState<string[]>([]);
   const updateTask = useUpdateTask();
+  const setTaskTags = useSetTaskTags();
   const archiveTask = useArchiveTask();
+  const { data: settings } = useSettings();
+  const allTags = settings?.tags ?? [];
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -51,10 +61,14 @@ export function TaskCard({
   function startEdit() {
     setEditTitle(stripCustomerPrefix(task.title));
     setEditCustomer(task.customer ?? "");
+    setEditTags([...task.tags]);
     setEditing(true);
   }
 
   function handleSave() {
+    const tagsChanged =
+      JSON.stringify([...editTags].sort()) !==
+      JSON.stringify([...task.tags].sort());
     updateTask.mutate(
       {
         taskId: task.id,
@@ -63,7 +77,18 @@ export function TaskCard({
           customer: editCustomer.trim(),
         },
       },
-      { onSuccess: () => setEditing(false) }
+      {
+        onSuccess: () => {
+          if (tagsChanged) {
+            setTaskTags.mutate(
+              { taskId: task.id, tags: editTags },
+              { onSuccess: () => setEditing(false) }
+            );
+          } else {
+            setEditing(false);
+          }
+        },
+      }
     );
   }
 
@@ -121,6 +146,13 @@ export function TaskCard({
                 placeholder="Title"
                 className={editInputCls}
               />
+              <div onPointerDown={(e) => e.stopPropagation()}>
+                <TagDropdown
+                  selected={editTags}
+                  allTags={allTags}
+                  onChange={setEditTags}
+                />
+              </div>
               <div className="flex gap-1 justify-end">
                 <button
                   onPointerDown={(e) => e.stopPropagation()}
@@ -132,7 +164,9 @@ export function TaskCard({
                 <button
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={handleSave}
-                  disabled={updateTask.isPending}
+                  disabled={
+                    updateTask.isPending || setTaskTags.isPending
+                  }
                   className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
                 >
                   <Check size={12} />
@@ -158,18 +192,29 @@ export function TaskCard({
                 {stripCustomerPrefix(task.title)}
               </p>
               <div className="flex items-center gap-2 flex-wrap">
-                {task.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className={[
-                      "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                      "bg-surface-overlay text-slate-400",
-                      "border border-border-subtle",
-                    ].join(" ")}
-                  >
-                    {tag}
-                  </span>
-                ))}
+                {task.tags.map((tagName) => {
+                  const def = allTags.find((t) => t.name === tagName);
+                  return def ? (
+                    <span
+                      key={tagName}
+                      className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white"
+                      style={{ backgroundColor: def.color }}
+                    >
+                      {tagName}
+                    </span>
+                  ) : (
+                    <span
+                      key={tagName}
+                      className={[
+                        "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                        "bg-surface-overlay text-slate-400",
+                        "border border-border-subtle",
+                      ].join(" ")}
+                    >
+                      {tagName}
+                    </span>
+                  );
+                })}
                 <span className="ml-auto text-[10px] text-slate-600 shrink-0">
                   {formatDate(task.created)}
                 </span>

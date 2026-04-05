@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addComm, deleteComm, fetchComms, searchComms } from "../api/client";
+import {
+  addComm,
+  deleteComm,
+  fetchComms,
+  searchComms,
+  updateComm,
+} from "../api/client";
 
 export function useComms(params?: {
   customer?: string;
@@ -13,6 +19,29 @@ export function useComms(params?: {
   });
 }
 
+export function useUpdateComm() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: number;
+      updates: {
+        subject?: string;
+        body?: string;
+        contact?: string;
+        customer?: string;
+        type?: string;
+        tags?: string[];
+      };
+    }) => updateComm(id, updates),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["comm"] });
+    },
+  });
+}
+
 export function useAddComm() {
   const qc = useQueryClient();
   return useMutation({
@@ -23,6 +52,8 @@ export function useAddComm() {
       customer?: string;
       body?: string;
       contact?: string;
+      type?: string;
+      tags?: string[];
     }) => addComm(data),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["comm"] });

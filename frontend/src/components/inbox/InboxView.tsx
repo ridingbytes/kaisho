@@ -1,12 +1,20 @@
 import { useInboxItems } from "../../hooks/useInbox";
 import { AddInboxForm } from "./AddInboxForm";
 import { InboxItemRow } from "./InboxItemRow";
+import { HelpButton } from "../common/HelpButton";
+import { DOCS } from "../../docs/panelDocs";
 
 export function InboxView() {
   const { data: items = [], isLoading } = useInboxItems();
 
   return (
     <div className="flex flex-col h-full">
+      <div className="flex items-center px-4 py-2 border-b border-border-subtle shrink-0">
+        <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400 flex-1">
+          Inbox
+        </h1>
+        <HelpButton title="Inbox" doc={DOCS.inbox} view="inbox" />
+      </div>
       <AddInboxForm />
 
       <div className="flex-1 overflow-y-auto">

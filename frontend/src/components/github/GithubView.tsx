@@ -1,5 +1,7 @@
 import { useGithubIssues } from "../../hooks/useGithub";
 import type { GithubIssue } from "../../types";
+import { HelpButton } from "../common/HelpButton";
+import { DOCS } from "../../docs/panelDocs";
 
 function LabelPill({
   label,
@@ -61,6 +63,7 @@ export function GithubView() {
         <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
           GitHub
         </h1>
+        <HelpButton title="GitHub Issues" doc={DOCS.github} view="github" />
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">

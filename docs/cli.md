@@ -32,8 +32,9 @@ Manage tasks.
 oc task add <CUSTOMER> <TITLE...> [--status STATUS] [--tag TAG]...
 ```
 
-Creates a task under the customer group. `TITLE` can span multiple
-words without quoting. Default status is `TODO`.
+Creates a task as a flat heading `* TODO [CUSTOMER]: TITLE`.
+`TITLE` can span multiple words without quoting.
+Default status is `TODO`.
 
 ```bash
 oc task add ACME Fix login redirect bug --tag bug --tag urgent

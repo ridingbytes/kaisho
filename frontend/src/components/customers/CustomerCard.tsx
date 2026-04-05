@@ -15,6 +15,7 @@ import {
   useUpdateTimeEntry,
   useDeleteTimeEntry,
 } from "../../hooks/useCustomers";
+import { useSettings } from "../../hooks/useSettings";
 import { useTodayEntries } from "../../hooks/useClocks";
 import type { Customer, TimeEntry, ClockEntry } from "../../types";
 
@@ -33,6 +34,7 @@ interface Props {
 interface EditState {
   name: string;
   status: string;
+  type: string;
   kontingent: string;
   repo: string;
 }
@@ -41,6 +43,7 @@ function toEditState(c: Customer): EditState {
   return {
     name: c.name,
     status: c.status,
+    type: c.type ?? "",
     kontingent: String(c.kontingent),
     repo: c.repo ?? "",
   };
@@ -380,6 +383,8 @@ export function CustomerCard({ customer: c }: Props) {
   const [entriesOpen, setEntriesOpen] = useState(false);
   const update = useUpdateCustomer();
   const { data: entries = [] } = useTimeEntries(c.name);
+  const { data: settings } = useSettings();
+  const customerTypes = settings?.customer_types ?? [];
 
   const hasContingent = c.kontingent > 0;
   const usedPercent = hasContingent
@@ -405,6 +410,7 @@ export function CustomerCard({ customer: c }: Props) {
         updates: {
           name: form.name.trim() || c.name,
           status: form.status,
+          type: form.type,
           kontingent: parseFloat(form.kontingent) || 0,
           repo: form.repo.trim() || null,
         },
@@ -418,6 +424,7 @@ export function CustomerCard({ customer: c }: Props) {
       e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => setForm((f) => ({ ...f, [key]: e.target.value }));
   }
+
 
   return (
     <div
@@ -440,17 +447,31 @@ export function CustomerCard({ customer: c }: Props) {
             autoFocus
           />
 
-          <select
-            className={fieldClass()}
-            value={form.status}
-            onChange={set("status")}
-          >
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+          <div className="flex gap-2">
+            <select
+              className={fieldClass("flex-1")}
+              value={form.status}
+              onChange={set("status")}
+            >
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <select
+              className={fieldClass("flex-1")}
+              value={form.type}
+              onChange={set("type")}
+            >
+              <option value="">— type —</option>
+              {customerTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <label className="flex flex-col gap-0.5">
             <span className="text-[10px] text-slate-600 uppercase tracking-wider">
@@ -512,7 +533,12 @@ export function CustomerCard({ customer: c }: Props) {
                 </a>
               )}
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+              {c.type && (
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-overlay text-slate-400">
+                  {c.type}
+                </span>
+              )}
               <span
                 className={[
                   "px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider",

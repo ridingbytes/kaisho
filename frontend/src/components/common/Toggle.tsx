@@ -12,7 +12,8 @@ export function Toggle({ checked, onChange, disabled }: ToggleProps) {
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={[
-        "relative w-8 h-4 rounded-full transition-colors shrink-0",
+        "relative inline-flex items-center w-8 h-4 rounded-full",
+        "transition-colors shrink-0",
         "border border-border disabled:opacity-40",
         checked ? "bg-accent" : "bg-surface-raised",
       ].join(" ")}

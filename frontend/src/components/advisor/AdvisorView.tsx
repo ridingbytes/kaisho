@@ -3,6 +3,8 @@ import { Send, Trash2 } from "lucide-react";
 import { askAdvisor } from "../../api/client";
 import { useAiSettings, useAvailableModels } from "../../hooks/useSettings";
 import { Markdown } from "../common/Markdown";
+import { HelpButton } from "../common/HelpButton";
+import { DOCS } from "../../docs/panelDocs";
 
 export interface AdvisorMessage {
   role: "user" | "assistant";
@@ -151,6 +153,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             "placeholder-slate-600 focus:outline-none",
           ].join(" ")}
         />
+        <HelpButton title="Advisor" doc={DOCS.advisor} view="advisor" />
       </div>
 
       {/* Messages */}

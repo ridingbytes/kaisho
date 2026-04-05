@@ -5,6 +5,8 @@ import { useDashboard } from "../../hooks/useDashboard";
 import { useTimeEntries } from "../../hooks/useCustomers";
 import { useSetView } from "../../context/ViewContext";
 import type { BudgetSummary } from "../../types";
+import { HelpButton } from "../common/HelpButton";
+import { DOCS } from "../../docs/panelDocs";
 
 function elapsed(startIso: string): string {
   const diffMs = Date.now() - new Date(startIso).getTime();
@@ -162,7 +164,14 @@ export function DashboardView() {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-6 space-y-6">
+    <div className="flex flex-col h-full">
+    <div className="flex items-center px-6 py-3 border-b border-border-subtle shrink-0">
+      <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400 flex-1">
+        Dashboard
+      </h1>
+      <HelpButton title="Dashboard" doc={DOCS.dashboard} view="dashboard" />
+    </div>
+    <div className="flex-1 overflow-y-auto p-6 space-y-6">
       {/* Active timer banner */}
       {timer?.active && timer.start && (
         <div className="flex items-center gap-4 p-4 rounded-xl bg-accent-muted border border-accent/30">
@@ -228,6 +237,7 @@ export function DashboardView() {
             ))}
         </div>
       )}
+    </div>
     </div>
   );
 }

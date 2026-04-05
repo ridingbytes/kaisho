@@ -1,11 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { X, Check, Plus, Pencil, RotateCcw } from "lucide-react";
+import { HelpButton } from "../common/HelpButton";
+import { DOCS } from "../../docs/panelDocs";
+import {
+  DEFAULT_SHORTCUTS,
+  displayShortcut,
+  eventToShortcut,
+  useShortcutsContext,
+} from "../../context/ShortcutsContext";
 import {
   useAiSettings,
   useAvailableModels,
   useSettings,
   useUpdateAiSettings,
+  useAddTag,
+  useUpdateTag,
+  useDeleteTag,
+  useAddCustomerType,
+  useDeleteCustomerType,
 } from "../../hooks/useSettings";
-import type { AiSettings } from "../../types";
+import type { AiSettings, ConfigTag } from "../../types";
 
 const DATALIST_ID = "ai-model-list";
 
@@ -208,6 +222,447 @@ function AiSection() {
   );
 }
 
+const fieldCls = [
+  "px-2 py-1 rounded-lg text-xs",
+  "bg-surface-raised border border-border text-slate-200",
+  "placeholder-slate-600 focus:outline-none focus:border-border-strong",
+].join(" ");
+
+interface TagRowProps {
+  tag: ConfigTag;
+}
+
+function TagRow({ tag }: TagRowProps) {
+  const [editing, setEditing] = useState(false);
+  const [color, setColor] = useState(tag.color);
+  const [description, setDescription] = useState(tag.description);
+  const updateTag = useUpdateTag();
+  const deleteTag = useDeleteTag();
+
+  function handleSave() {
+    updateTag.mutate(
+      { name: tag.name, updates: { color, description } },
+      { onSuccess: () => setEditing(false) }
+    );
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border-subtle last:border-0">
+        <input
+          type="color"
+          value={color}
+          onChange={(e) => setColor(e.target.value)}
+          className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent shrink-0"
+        />
+        <span className="text-xs text-slate-400 w-24 shrink-0">
+          {tag.name}
+        </span>
+        <input
+          autoFocus
+          type="text"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSave();
+            if (e.key === "Escape") setEditing(false);
+          }}
+          className={`${fieldCls} flex-1`}
+          placeholder="Description"
+        />
+        <button
+          onClick={() => setEditing(false)}
+          className="p-1 text-slate-600 hover:text-slate-300 rounded"
+        >
+          <X size={12} />
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={updateTag.isPending}
+          className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+        >
+          <Check size={12} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="group flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle last:border-0">
+      <span
+        className="w-3 h-3 rounded-full shrink-0"
+        style={{ backgroundColor: tag.color }}
+      />
+      <span className="text-sm text-slate-200 w-32 shrink-0">
+        {tag.name}
+      </span>
+      <span className="text-xs text-slate-500 flex-1">
+        {tag.description}
+      </span>
+      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => setEditing(true)}
+          className="p-1 rounded text-slate-600 hover:text-accent hover:bg-accent-muted transition-colors"
+          title="Edit"
+        >
+          <Pencil size={11} />
+        </button>
+        <button
+          onClick={() => deleteTag.mutate(tag.name)}
+          disabled={deleteTag.isPending}
+          className="p-1 rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          title="Delete"
+        >
+          <X size={11} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AddTagForm({ onDone }: { onDone: () => void }) {
+  const [name, setName] = useState("");
+  const [color, setColor] = useState("#64748b");
+  const [description, setDescription] = useState("");
+  const addTag = useAddTag();
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    addTag.mutate(
+      { name: name.trim(), color, description },
+      { onSuccess: onDone }
+    );
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="flex items-center gap-2 px-4 py-2.5 border-t border-border-subtle"
+    >
+      <input
+        type="color"
+        value={color}
+        onChange={(e) => setColor(e.target.value)}
+        className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent shrink-0"
+      />
+      <input
+        autoFocus
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className={`${fieldCls} w-28`}
+        placeholder="Name"
+      />
+      <input
+        type="text"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        className={`${fieldCls} flex-1`}
+        placeholder="Description"
+      />
+      <button
+        type="button"
+        onClick={onDone}
+        className="p-1 text-slate-600 hover:text-slate-300 rounded"
+      >
+        <X size={12} />
+      </button>
+      <button
+        type="submit"
+        disabled={addTag.isPending || !name.trim()}
+        className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+      >
+        <Check size={12} />
+      </button>
+    </form>
+  );
+}
+
+function TagsSection({ tags }: { tags: ConfigTag[] }) {
+  const [adding, setAdding] = useState(false);
+
+  return (
+    <section className="flex-1">
+      <div className="flex items-center gap-3 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500">
+          Tags
+        </h2>
+        <button
+          onClick={() => setAdding((v) => !v)}
+          className="ml-auto p-1 rounded text-slate-600 hover:text-accent hover:bg-accent-muted transition-colors"
+          title="Add tag"
+        >
+          <Plus size={12} />
+        </button>
+      </div>
+      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        {tags.length === 0 && !adding && (
+          <p className="px-4 py-3 text-xs text-slate-600">
+            No tags defined.
+          </p>
+        )}
+        {tags.map((tag) => (
+          <TagRow key={tag.name} tag={tag} />
+        ))}
+        {adding && (
+          <AddTagForm onDone={() => setAdding(false)} />
+        )}
+      </div>
+    </section>
+  );
+}
+
+function CustomerTypesSection({ types }: { types: string[] }) {
+  const [adding, setAdding] = useState(false);
+  const [newType, setNewType] = useState("");
+  const addType = useAddCustomerType();
+  const deleteType = useDeleteCustomerType();
+
+  function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newType.trim()) return;
+    addType.mutate(newType.trim(), {
+      onSuccess: () => {
+        setNewType("");
+        setAdding(false);
+      },
+    });
+  }
+
+  return (
+    <section>
+      <div className="flex items-center gap-3 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500">
+          Customer Types
+        </h2>
+        <button
+          onClick={() => setAdding((v) => !v)}
+          className="ml-auto p-1 rounded text-slate-600 hover:text-accent hover:bg-accent-muted transition-colors"
+          title="Add type"
+        >
+          <Plus size={12} />
+        </button>
+      </div>
+      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        {types.length === 0 && !adding && (
+          <p className="px-4 py-3 text-xs text-slate-600">
+            No types defined.
+          </p>
+        )}
+        {types.map((t, i) => (
+          <div
+            key={t}
+            className={[
+              "group flex items-center gap-3 px-4 py-2.5",
+              i < types.length - 1
+                ? "border-b border-border-subtle"
+                : "",
+            ].join(" ")}
+          >
+            <span className="text-xs font-mono text-slate-200 flex-1">
+              {t}
+            </span>
+            <button
+              onClick={() => deleteType.mutate(t)}
+              disabled={deleteType.isPending}
+              className="p-1 rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
+              title="Delete"
+            >
+              <X size={11} />
+            </button>
+          </div>
+        ))}
+        {adding && (
+          <form
+            onSubmit={handleAdd}
+            className="flex items-center gap-2 px-4 py-2.5 border-t border-border-subtle"
+          >
+            <input
+              autoFocus
+              type="text"
+              value={newType}
+              onChange={(e) => setNewType(e.target.value)}
+              className={`${fieldCls} flex-1`}
+              placeholder="TYPE NAME"
+            />
+            <button
+              type="button"
+              onClick={() => setAdding(false)}
+              className="p-1 text-slate-600 hover:text-slate-300 rounded"
+            >
+              <X size={12} />
+            </button>
+            <button
+              type="submit"
+              disabled={addType.isPending || !newType.trim()}
+              className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+            >
+              <Check size={12} />
+            </button>
+          </form>
+        )}
+      </div>
+    </section>
+  );
+}
+
+const SHORTCUT_ROWS: { key: string; label: string }[] = [
+  { key: "dashboard", label: "Dashboard" },
+  { key: "board", label: "Board" },
+  { key: "inbox", label: "Inbox" },
+  { key: "notes", label: "Notes" },
+  { key: "customers", label: "Customers" },
+  { key: "knowledge", label: "Knowledge" },
+  { key: "github", label: "GitHub Issues" },
+  { key: "communications", label: "Communications" },
+  { key: "cron", label: "Cron Jobs" },
+  { key: "settings", label: "Settings" },
+  { key: "advisor", label: "Advisor" },
+];
+
+function KeyCapture({
+  onCapture,
+  onCancel,
+}: {
+  onCapture: (s: string) => void;
+  onCancel: () => void;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    ref.current?.focus();
+    function handler(e: KeyboardEvent) {
+      e.preventDefault();
+      if (e.key === "Escape") {
+        onCancel();
+        return;
+      }
+      const s = eventToShortcut(e);
+      if (s) onCapture(s);
+    }
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onCapture, onCancel]);
+
+  return (
+    <span
+      ref={ref}
+      tabIndex={-1}
+      className="text-xs text-slate-500 italic focus:outline-none"
+    >
+      Press a key…
+    </span>
+  );
+}
+
+function ShortcutsSection() {
+  const { config, setViewShortcut, setCommandPaletteShortcut, resetToDefaults } =
+    useShortcutsContext();
+  const [recording, setRecording] = useState<string | null>(null);
+
+  function handleCapture(rowKey: string, s: string) {
+    if (rowKey === "_palette") {
+      setCommandPaletteShortcut(s);
+    } else {
+      setViewShortcut(rowKey, s);
+    }
+    setRecording(null);
+  }
+
+  const allRows = [
+    { key: "_palette", label: "Command palette" },
+    ...SHORTCUT_ROWS,
+  ];
+
+  return (
+    <section>
+      <div className="flex items-center gap-3 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500">
+          Keyboard Shortcuts
+        </h2>
+        <button
+          onClick={resetToDefaults}
+          className="ml-auto flex items-center gap-1 text-xs text-slate-600 hover:text-slate-300 transition-colors"
+          title="Reset to defaults"
+        >
+          <RotateCcw size={11} />
+          Reset
+        </button>
+      </div>
+      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        {allRows.map((row, i) => {
+          const current =
+            row.key === "_palette"
+              ? config.commandPalette
+              : config.views[row.key] ?? "";
+          const isDefault =
+            row.key === "_palette"
+              ? current === DEFAULT_SHORTCUTS.commandPalette
+              : current === (DEFAULT_SHORTCUTS.views[row.key] ?? "");
+          const isRecording = recording === row.key;
+
+          return (
+            <div
+              key={row.key}
+              className={[
+                "group flex items-center gap-3 px-4 py-2.5",
+                i < allRows.length - 1 ? "border-b border-border-subtle" : "",
+              ].join(" ")}
+            >
+              <span className="text-sm text-slate-300 flex-1">
+                {row.label}
+              </span>
+              {!isDefault && (
+                <button
+                  onClick={() =>
+                    row.key === "_palette"
+                      ? setCommandPaletteShortcut(
+                          DEFAULT_SHORTCUTS.commandPalette
+                        )
+                      : setViewShortcut(
+                          row.key,
+                          DEFAULT_SHORTCUTS.views[row.key] ?? ""
+                        )
+                  }
+                  className="text-[10px] text-slate-700 hover:text-slate-400 transition-colors shrink-0"
+                  title="Reset this shortcut"
+                >
+                  reset
+                </button>
+              )}
+              {isRecording ? (
+                <KeyCapture
+                  onCapture={(s) => handleCapture(row.key, s)}
+                  onCancel={() => setRecording(null)}
+                />
+              ) : (
+                <button
+                  onClick={() => setRecording(row.key)}
+                  className="flex items-center gap-2 group/edit"
+                  title="Click to reassign"
+                >
+                  <kbd className="text-[10px] font-mono text-slate-400 border border-border rounded px-1.5 py-0.5 group-hover/edit:border-accent group-hover/edit:text-accent transition-colors">
+                    {current ? displayShortcut(current) : "—"}
+                  </kbd>
+                  <Pencil
+                    size={10}
+                    className="text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                  />
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[10px] text-slate-700">
+        Shortcuts fire when no text field is focused. Click a shortcut to
+        reassign it by pressing any key.
+      </p>
+    </section>
+  );
+}
+
 export function SettingsView() {
   const { data: settings, isLoading } = useSettings();
 
@@ -218,6 +673,7 @@ export function SettingsView() {
         <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
           Settings
         </h1>
+        <HelpButton title="Settings" doc={DOCS.settings} view="settings" />
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
@@ -228,6 +684,7 @@ export function SettingsView() {
             <p className="text-sm text-slate-600">Loading…</p>
           )}
           {settings && (
+            <>
             <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
               {/* Task States */}
               <section className="flex-1">
@@ -271,48 +728,15 @@ export function SettingsView() {
               </section>
 
               {/* Tags */}
-              <section className="flex-1">
-                <div className="flex items-baseline gap-3 mb-3">
-                  <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500">
-                    Tags
-                  </h2>
-                  <span className="text-xs text-slate-700">
-                    Edit via oc tag
-                  </span>
-                </div>
-                {settings.tags.length === 0 ? (
-                  <p className="text-sm text-slate-600">
-                    No tags defined.
-                  </p>
-                ) : (
-                  <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
-                    {settings.tags.map((tag, i) => (
-                      <div
-                        key={tag.name}
-                        className={[
-                          "flex items-center gap-3 px-4 py-2.5",
-                          i < settings.tags.length - 1
-                            ? "border-b border-border-subtle"
-                            : "",
-                        ].join(" ")}
-                      >
-                        <span
-                          className="w-3 h-3 rounded-full shrink-0"
-                          style={{ backgroundColor: tag.color }}
-                        />
-                        <span className="text-sm text-slate-200 w-32">
-                          {tag.name}
-                        </span>
-                        <span className="text-xs text-slate-500 flex-1">
-                          {tag.description}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
+              <TagsSection tags={settings.tags} />
             </div>
+
+            <CustomerTypesSection
+              types={settings.customer_types ?? []}
+            />
+            </>
           )}
+          <ShortcutsSection />
         </div>
       </div>
     </div>

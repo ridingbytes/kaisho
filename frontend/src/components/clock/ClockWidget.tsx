@@ -4,25 +4,38 @@ import { ActiveTimer } from "./ActiveTimer";
 import { ClockList } from "./ClockList";
 import { QuickBookForm } from "./QuickBookForm";
 import { StartForm } from "./StartForm";
+import { HelpButton } from "../common/HelpButton";
+import { DOCS } from "../../docs/panelDocs";
 
 type Tab = "start" | "book";
 
-export function ClockWidget() {
+interface ClockWidgetProps {
+  open: boolean;
+}
+
+export function ClockWidget({ open }: ClockWidgetProps) {
   const { data: timer } = useActiveTimer();
   const [tab, setTab] = useState<Tab>("start");
 
   const isRunning = timer?.active === true;
 
   return (
-    <aside className="flex flex-col w-80 shrink-0 border-l border-border-subtle bg-surface-card/40 overflow-y-auto">
+    <aside
+      className={[
+        "flex flex-col shrink-0 border-l border-border-subtle bg-surface-card",
+        "overflow-hidden transition-[width] duration-200",
+        open ? "w-80" : "w-0",
+      ].join(" ")}
+    >
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border-subtle shrink-0">
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
+      <div className="flex items-center px-4 py-3 border-b border-border-subtle shrink-0">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-400 flex-1">
           Time Tracking
         </h2>
+        <HelpButton title="Time Tracking" doc={DOCS.clock} />
       </div>
 
-      <div className="flex flex-col gap-4 p-4">
+      <div className="flex flex-col gap-4 p-4 overflow-y-auto flex-1">
         {/* Active timer */}
         {timer && <ActiveTimer timer={timer} />}
 

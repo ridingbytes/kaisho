@@ -24,6 +24,7 @@ export interface ConfigTag {
 export interface Settings {
   task_states: TaskState[];
   tags: ConfigTag[];
+  customer_types: string[];
 }
 
 export interface AiSettings {
@@ -54,6 +55,7 @@ export interface InboxItem {
   type: string;
   customer: string | null;
   title: string;
+  body: string;
   created: string;
   properties: Record<string, string>;
 }
@@ -61,6 +63,8 @@ export interface InboxItem {
 export interface Customer {
   name: string;
   status: string;
+  type: string;
+  tags: string[];
   kontingent: number;
   verbraucht: number;
   rest: number;
@@ -104,6 +108,15 @@ export interface KnowledgeSearchResult {
   snippet: string;
 }
 
+export interface NoteItem {
+  id: string;
+  title: string;
+  customer: string | null;
+  body: string;
+  tags: string[];
+  created: string;
+}
+
 export interface CommEntry {
   id: number;
   ts: string;
@@ -113,6 +126,8 @@ export interface CommEntry {
   subject: string;
   body: string;
   contact: string;
+  type: string;
+  tags: string[];
 }
 
 export interface CronJob {

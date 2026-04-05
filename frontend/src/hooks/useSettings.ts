@@ -4,10 +4,15 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import {
+  addCustomerType,
+  addTag,
+  deleteCustomerType,
+  deleteTag,
   fetchAiSettings,
   fetchAvailableModels,
   fetchSettings,
   updateAiSettings,
+  updateTag,
 } from "../api/client";
 import type { AiSettings, TaskState } from "../types";
 
@@ -75,5 +80,69 @@ export function useAvailableModels() {
     queryFn: fetchAvailableModels,
     staleTime: 60_000,
     select: (data) => data.models,
+  });
+}
+
+export function useAddTag() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      name,
+      color,
+      description,
+    }: {
+      name: string;
+      color: string;
+      description?: string;
+    }) => addTag(name, color, description),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useUpdateTag() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      name,
+      updates,
+    }: {
+      name: string;
+      updates: { color?: string; description?: string };
+    }) => updateTag(name, updates),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useDeleteTag() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => deleteTag(name),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useAddCustomerType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => addCustomerType(name),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useDeleteCustomerType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => deleteCustomerType(name),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
   });
 }

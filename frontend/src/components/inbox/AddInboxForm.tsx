@@ -8,6 +8,7 @@ export function AddInboxForm() {
   const [text, setText] = useState("");
   const [type, setType] = useState<string>("");
   const [customer, setCustomer] = useState("");
+  const [body, setBody] = useState("");
   const capture = useCaptureItem();
 
   function handleSubmit(e: React.FormEvent) {
@@ -18,12 +19,14 @@ export function AddInboxForm() {
         text: text.trim(),
         type: type || undefined,
         customer: customer.trim() || undefined,
+        body: body.trim() || undefined,
       },
       {
         onSuccess: () => {
           setText("");
           setType("");
           setCustomer("");
+          setBody("");
         },
       }
     );
@@ -77,6 +80,13 @@ export function AddInboxForm() {
           inputClassName={inputCls}
         />
       </div>
+      <textarea
+        placeholder="Body (optional)"
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={2}
+        className={[inputCls, "resize-none"].join(" ")}
+      />
     </form>
   );
 }

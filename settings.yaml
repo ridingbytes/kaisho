@@ -1,72 +1,74 @@
-# OmniControl Settings
-# Tags, States, Colors - editable via CLI or Web UI
-
-task_states:
-  - name: TODO
-    label: "Todo"
-    color: "#8c8c8a"
-    done: false
-  - name: NEXT
-    label: "Next"
-    color: "#D97757"
-    done: false
-  - name: IN-PROGRESS
-    label: "In Progress"
-    color: "#3b82f6"
-    done: false
-  - name: WAIT
-    label: "Wait"
-    color: "#f59e0b"
-    done: false
-  - name: DONE
-    label: "Done"
-    color: "#22c55e"
-    done: true
-  - name: CANCELLED
-    label: "Cancelled"
-    color: "#9ca3af"
-    done: true
-
+ai:
+  advisor_model: lm_studio:qwen/qwen3-coder-30b
+  claude_api_key: ''
+  cron_model: lm_studio:qwen/qwen3-coder-30b
+  lm_studio_url: http://localhost:1234
+  ollama_url: http://localhost:11434
 tags:
-  - name: "@email"
-    color: "#3b82f6"
-    description: "Email-bezogene Aufgabe"
-  - name: "@phone"
-    color: "#8b5cf6"
-    description: "Telefonat/Anruf"
-  - name: book
-    color: "#f97316"
-    description: "SENAITE-Buch bezogen"
-  - name: idea
-    color: "#a3e635"
-    description: "Idee, nicht dringend"
-  - name: code
-    color: "#06b6d4"
-    description: "Programmieraufgabe"
-  - name: github
-    color: "#171717"
-    description: "GitHub-bezogen (PR, Review)"
-  - name: issue
-    color: "#ef4444"
-    description: "Bug/Issue"
-  - name: meeting
-    color: "#8b5cf6"
-    description: "Meeting/Besprechung"
-  - name: prio-high
-    color: "#dc2626"
-    description: "Hohe Prioritaet"
-  - name: prio-low
-    color: "#9ca3af"
-    description: "Niedrige Prioritaet"
-  - name: reminder
-    color: "#f59e0b"
-    description: "Erinnerung/Follow-Up"
-  - name: ridingbytes
-    color: "#D97757"
-    description: "Internes RIDING BYTES"
-  - name: senaite
-    color: "#22c55e"
-    description: "SENAITE Core bezogen"
-  - name: youtube
-    color: "#ef4444"
-    description: "YouTube-Content"
+- color: '#3b82f6'
+  description: Email-bezogene Aufgabe
+  name: '@email'
+- color: '#8b5cf6'
+  description: Telefonat/Anruf
+  name: '@phone'
+- color: '#f97316'
+  description: SENAITE-Buch bezogen
+  name: book
+- color: '#a3e635'
+  description: Idee, nicht dringend
+  name: idea
+- color: '#06b6d4'
+  description: Programmieraufgabe
+  name: code
+- color: '#171717'
+  description: GitHub-bezogen (PR, Review)
+  name: github
+- color: '#ef4444'
+  description: Bug/Issue
+  name: issue
+- color: '#8b5cf6'
+  description: Meeting/Besprechung
+  name: meeting
+- color: '#dc2626'
+  description: Hohe Prioritaet
+  name: prio-high
+- color: '#9ca3af'
+  description: Niedrige Prioritaet
+  name: prio-low
+- color: '#f59e0b'
+  description: Erinnerung/Follow-Up
+  name: reminder
+- color: '#D97757'
+  description: Internes RIDING BYTES
+  name: ridingbytes
+- color: '#22c55e'
+  description: SENAITE Core bezogen
+  name: senaite
+- color: '#ef4444'
+  description: YouTube-Content
+  name: youtube
+task_states:
+- color: '#8c8c8a'
+  done: false
+  label: Todo
+  name: TODO
+- color: '#D97757'
+  done: false
+  label: Next
+  name: NEXT
+- color: '#3b82f6'
+  done: false
+  label: In Progress
+  name: IN-PROGRESS
+- color: '#f59e0b'
+  done: false
+  label: Wait
+  name: WAIT
+- color: '#22c55e'
+  done: true
+  label: Done
+  name: DONE
+- color: '#9ca3af'
+  done: true
+  label: Cancelled
+  name: CANCELLED

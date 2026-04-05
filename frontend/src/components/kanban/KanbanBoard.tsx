@@ -13,6 +13,8 @@ import { useMoveTask, useTasks } from "../../hooks/useTasks";
 import { useSettings } from "../../hooks/useSettings";
 import type { Task } from "../../types";
 import { Toggle } from "../common/Toggle";
+import { HelpButton } from "../common/HelpButton";
+import { DOCS } from "../../docs/panelDocs";
 import { TaskCard } from "./TaskCard";
 import { KanbanColumn } from "./KanbanColumn";
 
@@ -114,6 +116,7 @@ export function KanbanBoard() {
           <span className="text-xs text-slate-500">Show done</span>
           <Toggle checked={showDone} onChange={setShowDone} />
         </label>
+        <HelpButton title="Board" doc={DOCS.board} view="board" />
       </div>
 
       {/* Board */}

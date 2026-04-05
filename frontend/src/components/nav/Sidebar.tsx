@@ -4,13 +4,19 @@ import {
   Clock4,
   Columns2,
   GitPullRequest,
+  History,
   Inbox,
   LayoutDashboard,
   MessageSquare,
+  NotebookPen,
   Settings,
   Users,
 } from "lucide-react";
 import type { View } from "../../App";
+import {
+  displayShortcut,
+  useShortcutsContext,
+} from "../../context/ShortcutsContext";
 import { useInboxItems } from "../../hooks/useInbox";
 
 interface NavItem {
@@ -23,10 +29,12 @@ const NAV_ITEMS: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "board", label: "Board", icon: Columns2 },
   { id: "inbox", label: "Inbox", icon: Inbox },
+  { id: "notes", label: "Notes", icon: NotebookPen },
   { id: "customers", label: "Customers", icon: Users },
   { id: "knowledge", label: "Knowledge", icon: BookOpen },
   { id: "github", label: "GitHub", icon: GitPullRequest },
   { id: "communications", label: "Comm", icon: MessageSquare },
+  { id: "clocks", label: "Clocks", icon: History },
   { id: "cron", label: "Cron", icon: Clock4 },
   { id: "settings", label: "Settings", icon: Settings },
   { id: "advisor", label: "Advisor", icon: Bot },
@@ -35,14 +43,22 @@ const NAV_ITEMS: NavItem[] = [
 interface SidebarProps {
   active: View;
   onChange: (v: View) => void;
+  open: boolean;
 }
 
-export function Sidebar({ active, onChange }: SidebarProps) {
+export function Sidebar({ active, onChange, open }: SidebarProps) {
   const { data: inboxItems } = useInboxItems();
   const inboxCount = inboxItems?.length ?? 0;
+  const { config } = useShortcutsContext();
 
   return (
-    <nav className="flex flex-col w-14 shrink-0 border-r border-border-subtle bg-surface-card/40 py-3 gap-1">
+    <nav
+      className={[
+        "flex flex-col shrink-0 border-r border-border-subtle bg-surface-card",
+        "overflow-hidden transition-[width] duration-200 py-3 gap-1",
+        open ? "w-14" : "w-0",
+      ].join(" ")}
+    >
       {/* Logo dot */}
       <div className="flex justify-center mb-3">
         <div className="w-2 h-2 rounded-full bg-accent" />
@@ -53,7 +69,10 @@ export function Sidebar({ active, onChange }: SidebarProps) {
         return (
           <button
             key={id}
-            title={label}
+            title={config.views[id]
+              ? `${label} (${displayShortcut(config.views[id])})`
+              : label
+            }
             onClick={() => onChange(id)}
             className={[
               "relative flex flex-col items-center justify-center",

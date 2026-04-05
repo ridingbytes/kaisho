@@ -8,6 +8,7 @@ import {
   createTask,
   fetchTasks,
   moveTask,
+  setTaskTags,
   updateTask,
 } from "../api/client";
 
@@ -66,6 +67,20 @@ export function useUpdateTask() {
         status?: string;
       };
     }) => updateTask(taskId, updates),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["tasks"] }),
+  });
+}
+
+export function useSetTaskTags() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      tags,
+    }: {
+      taskId: string;
+      tags: string[];
+    }) => setTaskTags(taskId, tags),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["tasks"] }),
   });
 }

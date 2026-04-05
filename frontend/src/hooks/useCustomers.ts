@@ -25,8 +25,10 @@ export function useCreateCustomer() {
     mutationFn: (data: {
       name: string;
       status?: string;
+      type?: string;
       kontingent?: number;
       repo?: string | null;
+      tags?: string[];
     }) => createCustomer(data),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["customers"] });
@@ -46,7 +48,14 @@ export function useUpdateCustomer() {
       updates: Partial<
         Pick<
           Customer,
-          "name" | "status" | "kontingent" | "verbraucht" | "rest" | "repo"
+          | "name"
+          | "status"
+          | "type"
+          | "kontingent"
+          | "verbraucht"
+          | "rest"
+          | "repo"
+          | "tags"
         >
       >;
     }) => updateCustomer(name, updates),
