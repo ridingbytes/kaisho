@@ -42,6 +42,7 @@ class TaskBackend(ABC):
         status: str = "TODO",
         tags: list[str] | None = None,
         body: str | None = None,
+        github_url: str | None = None,
     ) -> dict:
         """Create and persist a new task, return its dict."""
 
@@ -63,6 +64,7 @@ class TaskBackend(ABC):
         title: str | None = None,
         customer: str | None = None,
         body: str | None = None,
+        github_url: str | None = None,
     ) -> dict:
         """Update a task's title, customer, and/or body."""
 

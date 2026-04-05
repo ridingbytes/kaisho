@@ -46,11 +46,13 @@ export function useAddTask() {
       customer,
       title,
       status,
+      github_url,
     }: {
       customer: string;
       title: string;
       status: string;
-    }) => createTask(customer, title, status),
+      github_url?: string;
+    }) => createTask(customer, title, status, github_url),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["tasks"] }),
   });
 }
@@ -68,6 +70,7 @@ export function useUpdateTask() {
         customer?: string;
         status?: string;
         body?: string;
+        github_url?: string;
       };
     }) => updateTask(taskId, updates),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["tasks"] }),

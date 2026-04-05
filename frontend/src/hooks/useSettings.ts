@@ -10,6 +10,7 @@ import {
   deleteTag,
   fetchAiSettings,
   fetchAvailableModels,
+  fetchPaths,
   fetchSettings,
   reorderStates,
   updateAiSettings,
@@ -155,5 +156,13 @@ export function useReorderStates() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["settings"] });
     },
+  });
+}
+
+export function usePaths() {
+  return useQuery({
+    queryKey: ["settings", "paths"],
+    queryFn: fetchPaths,
+    staleTime: 300_000,
   });
 }

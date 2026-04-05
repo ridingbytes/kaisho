@@ -7,6 +7,7 @@ export interface Task {
   properties: Record<string, string>;
   created: string;
   body: string;
+  github_url: string;
 }
 
 export interface ArchivedTask extends Task {

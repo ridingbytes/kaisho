@@ -44,6 +44,7 @@ class OrgTaskBackend(TaskBackend):
         status: str = "TODO",
         tags: list[str] | None = None,
         body: str | None = None,
+        github_url: str | None = None,
     ) -> dict:
         return kanban.add_task(
             todos_file=self._todos_file,
@@ -53,6 +54,7 @@ class OrgTaskBackend(TaskBackend):
             status=status,
             tags=tags,
             body=body,
+            github_url=github_url,
         )
 
     def move_task(self, task_id: str, new_status: str) -> dict:
@@ -76,6 +78,7 @@ class OrgTaskBackend(TaskBackend):
         title: str | None = None,
         customer: str | None = None,
         body: str | None = None,
+        github_url: str | None = None,
     ) -> dict:
         return kanban.update_task(
             todos_file=self._todos_file,
@@ -84,6 +87,7 @@ class OrgTaskBackend(TaskBackend):
             title=title,
             customer=customer,
             body=body,
+            github_url=github_url,
         )
 
     def archive_task(self, task_id: str) -> bool:

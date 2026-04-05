@@ -256,6 +256,26 @@ def update_ai(body: AiSettingsUpdate):
     return settings_svc.set_ai_settings(cfg.SETTINGS_FILE, updates)
 
 
+@router.get("/paths")
+def get_paths():
+    """Return current file path configuration (read-only)."""
+    cfg = get_config()
+    return {
+        "org_dir": str(cfg.ORG_DIR.expanduser()),
+        "todos_file": str(cfg.TODOS_FILE),
+        "clocks_file": str(cfg.CLOCKS_FILE),
+        "inbox_file": str(cfg.INBOX_FILE),
+        "notes_file": str(cfg.NOTES_FILE),
+        "archive_file": str(cfg.ARCHIVE_FILE),
+        "kunden_file": str(cfg.KUNDEN_FILE),
+        "wissen_dir": str(cfg.WISSEN_DIR.expanduser()),
+        "research_dir": str(cfg.RESEARCH_DIR.expanduser()),
+        "data_dir": str(cfg.DATA_DIR.expanduser()),
+        "settings_file": str(cfg.SETTINGS_FILE.expanduser()),
+        "backend": cfg.BACKEND,
+    }
+
+
 @router.get("/ai/models")
 def list_models():
     cfg = get_config()

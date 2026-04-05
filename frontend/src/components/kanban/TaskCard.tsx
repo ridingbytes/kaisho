@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronRight,
   SquareArrowUp,
+  GitBranch,
 } from "lucide-react";
 import { useState } from "react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
@@ -30,6 +31,11 @@ import { useSettings } from "../../hooks/useSettings";
 import type { ClockEntry, Task } from "../../types";
 
 const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
+
+function extractIssueNumber(url: string): string {
+  const m = url.match(/\/(\d+)$/);
+  return m ? m[1] : "issue";
+}
 
 function fmtDate(iso: string): string {
   return iso.slice(0, 10);
@@ -213,6 +219,98 @@ function TaskClockSection({ task }: TaskClockSectionProps) {
   );
 }
 
+interface GithubIssueInputProps {
+  customer: string;
+  value: string;
+  onChange: (v: string) => void;
+  inputClassName: string;
+}
+
+function GithubIssueInput({
+  customer,
+  value,
+  onChange,
+  inputClassName,
+}: GithubIssueInputProps) {
+  const [issues, setIssues] = useState<
+    Array<{ number: number; title: string; url: string }>
+  >([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function fetchIssues() {
+    if (!customer.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/github/issues/${encodeURIComponent(customer.trim())}?limit=50`
+      );
+      if (res.ok) {
+        const data = await res.json() as {
+          issues?: Array<{ number: number; title: string; url: string }>;
+        };
+        setIssues(data.issues ?? []);
+        setOpen(true);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="relative">
+      <div className="flex gap-1">
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="GitHub issue URL"
+          className={[inputClassName, "flex-1"].join(" ")}
+        />
+        {customer.trim() && (
+          <button
+            type="button"
+            onClick={fetchIssues}
+            disabled={loading}
+            title="Pick GitHub issue"
+            className="px-2 rounded bg-surface-raised border border-border text-slate-500 hover:text-accent hover:border-accent transition-colors disabled:opacity-40"
+          >
+            <GitBranch size={11} />
+          </button>
+        )}
+      </div>
+      {open && issues.length > 0 && (
+        <ul className="absolute z-50 left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto rounded-lg bg-surface-overlay border border-border shadow-lg">
+          {issues.map((issue) => (
+            <li key={issue.number}>
+              <button
+                type="button"
+                onClick={() => { onChange(issue.url); setOpen(false); }}
+                className="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-accent-muted transition-colors flex items-center gap-2"
+              >
+                <span className="text-slate-600 font-mono shrink-0">
+                  #{issue.number}
+                </span>
+                <span className="truncate">{issue.title}</span>
+              </button>
+            </li>
+          ))}
+          <li>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="w-full text-left px-3 py-1 text-[10px] text-slate-600 hover:text-slate-400"
+            >
+              Close
+            </button>
+          </li>
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function stripCustomerPrefix(title: string): string {
   return title.replace(CUSTOMER_PREFIX_RE, "");
 }
@@ -247,6 +345,7 @@ export function TaskCard({
   const [editCustomer, setEditCustomer] = useState("");
   const [editTags, setEditTags] = useState<string[]>([]);
   const [editBody, setEditBody] = useState("");
+  const [editGithubUrl, setEditGithubUrl] = useState("");
   const [bodyExpanded, setBodyExpanded] = useState(false);
   const updateTask = useUpdateTask();
   const setTaskTags = useSetTaskTags();
@@ -264,6 +363,7 @@ export function TaskCard({
     setEditCustomer(task.customer ?? "");
     setEditTags([...task.tags]);
     setEditBody(task.body ?? "");
+    setEditGithubUrl(task.github_url ?? "");
     setEditing(true);
   }
 
@@ -278,6 +378,7 @@ export function TaskCard({
           title: editTitle.trim(),
           customer: editCustomer.trim(),
           body: editBody,
+          github_url: editGithubUrl,
         },
       },
       {
@@ -360,6 +461,14 @@ export function TaskCard({
                 rows={3}
                 className={[editInputCls, "resize-none"].join(" ")}
               />
+              <div onPointerDown={(e) => e.stopPropagation()}>
+                <GithubIssueInput
+                  customer={editCustomer}
+                  value={editGithubUrl}
+                  onChange={setEditGithubUrl}
+                  inputClassName={editInputCls}
+                />
+              </div>
               <div onPointerDown={(e) => e.stopPropagation()}>
                 <TagDropdown
                   selected={editTags}
@@ -462,6 +571,19 @@ export function TaskCard({
                   {formatDate(task.created)}
                 </span>
               </div>
+              {task.github_url && (
+                <a
+                  href={task.github_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 text-[10px] text-slate-500 hover:text-accent transition-colors"
+                  title={task.github_url}
+                >
+                  <GitBranch size={10} />
+                  #{extractIssueNumber(task.github_url)}
+                </a>
+              )}
               <TaskClockSection task={task} />
             </>
           )}

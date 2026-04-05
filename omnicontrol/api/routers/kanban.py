@@ -13,6 +13,7 @@ class TaskCreate(BaseModel):
     status: str = "TODO"
     tags: list[str] = []
     body: str | None = None
+    github_url: str | None = None
 
 
 class TaskUpdate(BaseModel):
@@ -20,6 +21,7 @@ class TaskUpdate(BaseModel):
     title: str | None = None
     customer: str | None = None
     body: str | None = None
+    github_url: str | None = None
 
 
 class TagsUpdate(BaseModel):
@@ -50,6 +52,7 @@ def create_task(body: TaskCreate):
         status=body.status,
         tags=body.tags,
         body=body.body,
+        github_url=body.github_url,
     )
 
 
@@ -64,12 +67,14 @@ def update_task(task_id: str, body: TaskUpdate):
             body.title is not None
             or body.customer is not None
             or body.body is not None
+            or body.github_url is not None
         ):
             result = backend.update_task(
                 task_id,
                 title=body.title,
                 customer=body.customer,
                 body=body.body,
+                github_url=body.github_url,
             )
         if result is None:
             raise HTTPException(

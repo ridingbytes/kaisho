@@ -35,7 +35,7 @@ class MarkdownTaskBackend(TaskBackend):
         raise NotImplementedError
 
     def add_task(self, customer, title, status="TODO",
-                 tags=None, body=None) -> dict:
+                 tags=None, body=None, github_url=None) -> dict:
         raise NotImplementedError
 
     def move_task(self, task_id, new_status) -> dict:
@@ -48,7 +48,8 @@ class MarkdownTaskBackend(TaskBackend):
         raise NotImplementedError
 
     def update_task(self, task_id, title=None,
-                    customer=None, body=None) -> dict:
+                    customer=None, body=None,
+                    github_url=None) -> dict:
         raise NotImplementedError
 
     def list_all_tags(self) -> list[dict]:

@@ -62,9 +62,14 @@ export function moveTask(taskId: string, status: string): Promise<Task> {
 }
 
 export function createTask(
-  customer: string, title: string, status: string
+  customer: string,
+  title: string,
+  status: string,
+  github_url?: string,
 ): Promise<Task> {
-  return post<Task>("/kanban/tasks", { customer, title, status });
+  return post<Task>("/kanban/tasks", {
+    customer, title, status, github_url,
+  });
 }
 
 export function updateTask(
@@ -74,6 +79,7 @@ export function updateTask(
     customer?: string;
     status?: string;
     body?: string;
+    github_url?: string;
   }
 ): Promise<Task> {
   return patch<Task>(`/kanban/tasks/${taskId}`, updates);
@@ -119,6 +125,10 @@ export function updateAiSettings(
 
 export function fetchAvailableModels(): Promise<{ models: string[] }> {
   return get<{ models: string[] }>("/settings/ai/models");
+}
+
+export function fetchPaths(): Promise<Record<string, string>> {
+  return get("/settings/paths");
 }
 
 export function addTag(

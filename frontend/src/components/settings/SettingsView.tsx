@@ -11,6 +11,7 @@ import {
 import {
   useAiSettings,
   useAvailableModels,
+  usePaths,
   useSettings,
   useUpdateAiSettings,
   useAddTag,
@@ -663,6 +664,47 @@ function ShortcutsSection() {
   );
 }
 
+function PathsSection() {
+  const { data: paths } = usePaths();
+  if (!paths) return null;
+  const rows = [
+    { label: "Backend", value: paths.backend },
+    { label: "ORG_DIR", value: paths.org_dir },
+    { label: "DATA_DIR", value: paths.data_dir },
+    { label: "WISSEN_DIR", value: paths.wissen_dir },
+    { label: "RESEARCH_DIR", value: paths.research_dir },
+    { label: "Settings file", value: paths.settings_file },
+  ];
+  return (
+    <section>
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+        Paths
+      </h2>
+      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        {rows.map((row, i) => (
+          <div
+            key={row.label}
+            className={[
+              "flex items-center gap-3 px-4 py-2.5",
+              i < rows.length - 1 ? "border-b border-border-subtle" : "",
+            ].join(" ")}
+          >
+            <span className="text-xs text-slate-500 w-32 shrink-0">
+              {row.label}
+            </span>
+            <span className="text-xs font-mono text-slate-400 truncate flex-1">
+              {row.value}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-[10px] text-slate-700">
+        Read-only. Configure via environment variables or .env file.
+      </p>
+    </section>
+  );
+}
+
 export function SettingsView() {
   const { data: settings, isLoading } = useSettings();
 
@@ -679,6 +721,7 @@ export function SettingsView() {
       <div className="flex-1 overflow-y-auto p-6">
         <div className="flex flex-col gap-10 max-w-3xl">
           <AiSection />
+          <PathsSection />
 
           {isLoading && (
             <p className="text-sm text-slate-600">Loading…</p>

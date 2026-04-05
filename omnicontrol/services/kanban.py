@@ -46,6 +46,7 @@ def _heading_to_task(heading: Heading, task_id: str) -> dict:
         "properties": dict(heading.properties),
         "created": created,
         "body": _user_body(heading),
+        "github_url": heading.properties.get("GITHUB_URL", ""),
     }
 
 
@@ -143,6 +144,7 @@ def add_task(
     status: str = "TODO",
     tags: list[str] | None = None,
     body: str | None = None,
+    github_url: str | None = None,
 ) -> dict:
     """Add a new task to todos.org as a flat heading."""
     if not todos_file.exists():
@@ -164,6 +166,8 @@ def add_task(
         body=body.splitlines() if body and body.strip() else [],
         dirty=True,
     )
+    if github_url:
+        new_heading.properties["GITHUB_URL"] = github_url
 
     org_file.headings.append(new_heading)
     write_org_file(todos_file, org_file)
@@ -225,6 +229,7 @@ def update_task(
     title: str | None = None,
     customer: str | None = None,
     body: str | None = None,
+    github_url: str | None = None,
 ) -> dict:
     """Update a task's title, customer, and/or body."""
     org_file = parse_org_file(todos_file, keywords)
@@ -240,6 +245,11 @@ def update_task(
     )
     if body is not None:
         _update_body(heading, body)
+    if github_url is not None:
+        if github_url:
+            heading.properties["GITHUB_URL"] = github_url
+        else:
+            heading.properties.pop("GITHUB_URL", None)
     heading.dirty = True
     write_org_file(todos_file, org_file)
     return _heading_to_task(heading, task_id)
