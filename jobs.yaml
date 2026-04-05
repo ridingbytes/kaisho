@@ -1,27 +1,33 @@
 jobs:
-  - id: daily-briefing
-    name: "Daily Briefing"
-    schedule: "30 9 * * 1-5"
-    model: "ollama:qwen3:14b"
-    prompt_file: "prompts/daily-briefing.md"
-    output: "~/ownCloud/cowork/research/daily-briefing-{date}.md"
-    timeout: 120
-    enabled: true
-
-  - id: weekly-scout
-    name: "Business Scout"
-    schedule: "0 9 * * 1"
-    model: "ollama:qwen3-coder:30b"
-    prompt_file: "prompts/weekly-scout.md"
-    output: "~/ownCloud/cowork/research/scout_ideas_{date}.md"
-    timeout: 300
-    enabled: true
-
-  - id: weekly-project-update
-    name: "Project Status"
-    schedule: "0 17 * * 5"
-    model: "ollama:qwen3:14b"
-    prompt_file: "prompts/project-update.md"
-    output: "inbox"
-    timeout: 120
-    enabled: true
+- enabled: true
+  id: daily-briefing
+  model: lm_studio:qwen/qwen3-coder-30b
+  name: Daily Briefing
+  output: ~/ownCloud/cowork/research/daily-briefing-{date}.md
+  prompt_file: prompts/daily-briefing.md
+  schedule: 30 9 * * 1-5
+  timeout: 120
+- enabled: true
+  id: weekly-scout
+  model: lm_studio:qwen/qwen3-coder-30b
+  name: Business Scout
+  output: ~/ownCloud/cowork/research/scout_ideas_{date}.md
+  prompt_file: prompts/weekly-scout.md
+  schedule: 0 9 * * 1
+  timeout: 900
+- enabled: true
+  id: weekly-project-update
+  model: lm_studio:qwen/qwen3-coder-30b
+  name: Project Status
+  output: inbox
+  prompt_file: prompts/project-update.md
+  schedule: 0 17 * * 5
+  timeout: 120
+- enabled: true
+  id: hn-ai-daily
+  model: lm_studio:qwen/qwen3-coder-30b
+  name: HN KI-Digest
+  output: inbox
+  prompt_file: prompts/hn-ai-daily.md
+  schedule: 0 8 * * *
+  timeout: 120
