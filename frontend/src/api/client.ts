@@ -3,7 +3,8 @@ import type {
   AiSettings,
   ArchivedTask,
   ClockEntry,
-  CommEntry,
+
+  Contract,
   CronJob,
   CronRun,
   Customer,
@@ -16,7 +17,6 @@ import type {
   NoteItem,
   Settings,
   Task,
-  TimeEntry,
 } from "../types";
 
 const BASE = "/api";
@@ -132,6 +132,15 @@ export function fetchPaths(): Promise<Record<string, string>> {
   return get("/settings/paths");
 }
 
+export function updatePaths(updates: {
+  org_dir?: string;
+  data_dir?: string;
+  wissen_dir?: string;
+  research_dir?: string;
+}): Promise<{ message: string }> {
+  return patch<{ message: string }>("/settings/paths", updates);
+}
+
 export function addTag(
   name: string,
   color: string,
@@ -192,6 +201,16 @@ export function fetchClockEntries(
   return get<ClockEntry[]>(`/clocks/entries?period=${period}`);
 }
 
+export function fetchCustomerClockEntries(
+  customer: string,
+  period = "all",
+): Promise<ClockEntry[]> {
+  return get<ClockEntry[]>(
+    `/clocks/entries?period=${period}` +
+    `&customer=${encodeURIComponent(customer)}`
+  );
+}
+
 export function fetchTaskClockEntries(
   taskId: string
 ): Promise<ClockEntry[]> {
@@ -204,11 +223,13 @@ export function startTimer(
   customer: string,
   description: string,
   taskId?: string,
+  contract?: string,
 ): Promise<ClockEntry> {
   return post<ClockEntry>("/clocks/start", {
     customer,
     description,
     task_id: taskId ?? null,
+    contract: contract ?? null,
   });
 }
 
@@ -221,12 +242,14 @@ export function quickBook(
   customer: string,
   description: string,
   taskId?: string,
+  contract?: string,
 ): Promise<ClockEntry> {
   return post<ClockEntry>("/clocks/quick-book", {
     duration,
     customer,
     description,
     task_id: taskId ?? null,
+    contract: contract ?? null,
   });
 }
 
@@ -239,6 +262,8 @@ export function updateClockEntry(
     new_date?: string;
     task_id?: string;
     booked?: boolean;
+    notes?: string;
+    contract?: string;
   }
 ): Promise<ClockEntry> {
   const qs = encodeURIComponent(startIso);
@@ -260,9 +285,13 @@ export function captureInboxItem(
   text: string,
   type?: string,
   customer?: string,
-  body?: string
+  body?: string,
+  channel?: string,
+  direction?: string,
 ): Promise<InboxItem> {
-  return post<InboxItem>("/inbox/capture", { text, type, customer, body });
+  return post<InboxItem>("/inbox/capture", {
+    text, type, customer, body, channel, direction,
+  });
 }
 
 export function deleteInboxItem(itemId: string): Promise<void> {
@@ -271,7 +300,14 @@ export function deleteInboxItem(itemId: string): Promise<void> {
 
 export function updateInboxItem(
   itemId: string,
-  updates: { title?: string; type?: string; customer?: string; body?: string }
+  updates: {
+    title?: string;
+    type?: string;
+    customer?: string;
+    body?: string;
+    channel?: string;
+    direction?: string;
+  }
 ): Promise<InboxItem> {
   return patch<InboxItem>(`/inbox/${itemId}`, updates);
 }
@@ -281,6 +317,18 @@ export function promoteInboxItem(
   customer: string
 ): Promise<Task> {
   return post<Task>(`/inbox/${itemId}/promote`, { customer });
+}
+
+export function moveInboxItem(
+  itemId: string,
+  destination: "todo" | "note" | "kb" | "archive",
+  opts: { customer?: string; filename?: string } = {}
+): Promise<unknown> {
+  return post<unknown>(`/inbox/${itemId}/move`, {
+    destination,
+    customer: opts.customer ?? null,
+    filename: opts.filename ?? null,
+  });
 }
 
 // Customers
@@ -317,45 +365,55 @@ export function updateCustomer(
   );
 }
 
-// Time entries
-
-export function fetchTimeEntries(
-  customerName: string
-): Promise<TimeEntry[]> {
-  return get<TimeEntry[]>(
-    `/customers/${encodeURIComponent(customerName)}/entries`
+export function fetchContracts(
+  customerName: string,
+): Promise<Contract[]> {
+  return get<Contract[]>(
+    `/customers/${encodeURIComponent(customerName)}/contracts`
   );
 }
 
-export function addTimeEntry(
+export function addContract(
   customerName: string,
-  description: string,
-  hours: number,
-  date?: string,
-): Promise<TimeEntry> {
-  return post<TimeEntry>(
-    `/customers/${encodeURIComponent(customerName)}/entries`,
-    { description, hours, date }
+  data: {
+    name: string;
+    kontingent: number;
+    start_date: string;
+    notes?: string;
+  },
+): Promise<Contract> {
+  return post<Contract>(
+    `/customers/${encodeURIComponent(customerName)}/contracts`,
+    data
   );
 }
 
-export function updateTimeEntry(
+export function updateContract(
   customerName: string,
-  entryId: string,
-  updates: { description?: string; hours?: number; date?: string },
-): Promise<TimeEntry> {
-  return patch<TimeEntry>(
-    `/customers/${encodeURIComponent(customerName)}/entries/${entryId}`,
+  contractName: string,
+  updates: {
+    name?: string;
+    kontingent?: number;
+    verbraucht_offset?: number;
+    start_date?: string;
+    end_date?: string | null;
+    notes?: string;
+  },
+): Promise<Contract> {
+  return patch<Contract>(
+    `/customers/${encodeURIComponent(customerName)}/contracts/` +
+      encodeURIComponent(contractName),
     updates
   );
 }
 
-export function deleteTimeEntry(
+export function deleteContract(
   customerName: string,
-  entryId: string,
+  contractName: string,
 ): Promise<void> {
   return del(
-    `/customers/${encodeURIComponent(customerName)}/entries/${entryId}`
+    `/customers/${encodeURIComponent(customerName)}/contracts/` +
+      encodeURIComponent(contractName)
   );
 }
 
@@ -435,58 +493,23 @@ export function updateNote(
   return patch<NoteItem>(`/notes/${noteId}`, updates);
 }
 
-export function promoteNote(noteId: string, customer: string): Promise<Task> {
+export function promoteNote(
+  noteId: string,
+  customer: string
+): Promise<Task> {
   return post<Task>(`/notes/${noteId}/promote`, { customer });
 }
 
-// Communications
-
-export function fetchComms(params?: {
-  customer?: string;
-  channel?: string;
-  direction?: string;
-}): Promise<CommEntry[]> {
-  const qs = new URLSearchParams();
-  if (params?.customer) qs.set("customer", params.customer);
-  if (params?.channel) qs.set("channel", params.channel);
-  if (params?.direction) qs.set("direction", params.direction);
-  const query = qs.toString() ? `?${qs.toString()}` : "";
-  return get<CommEntry[]>(`/comm/${query}`);
-}
-
-export function addComm(data: {
-  subject: string;
-  direction: string;
-  channel?: string;
-  customer?: string;
-  body?: string;
-  contact?: string;
-  type?: string;
-  tags?: string[];
-}): Promise<CommEntry> {
-  return post<CommEntry>("/comm/", data);
-}
-
-export function updateComm(
-  id: number,
-  updates: {
-    subject?: string;
-    body?: string;
-    contact?: string;
-    customer?: string;
-    type?: string;
-    tags?: string[];
-  }
-): Promise<CommEntry> {
-  return patch<CommEntry>(`/comm/${id}`, updates);
-}
-
-export function deleteComm(id: number): Promise<void> {
-  return del(`/comm/${id}`);
-}
-
-export function searchComms(q: string): Promise<CommEntry[]> {
-  return get<CommEntry[]>(`/comm/search?q=${encodeURIComponent(q)}`);
+export function moveNote(
+  noteId: string,
+  destination: "task" | "kb" | "archive",
+  opts: { customer?: string; filename?: string } = {}
+): Promise<unknown> {
+  return post<unknown>(`/notes/${noteId}/move`, {
+    destination,
+    customer: opts.customer ?? null,
+    filename: opts.filename ?? null,
+  });
 }
 
 // Cron
@@ -571,6 +594,18 @@ export function fetchCronHistory(jobId?: string): Promise<CronRun[]> {
     ? `?job_id=${encodeURIComponent(jobId)}`
     : "";
   return get<CronRun[]>(`/cron/history${query}`);
+}
+
+export function moveCronOutput(
+  runId: number,
+  destination: "todo" | "note" | "kb",
+  opts: { customer?: string; filename?: string } = {}
+): Promise<unknown> {
+  return post<unknown>(`/cron/history/${runId}/move`, {
+    destination,
+    customer: opts.customer ?? null,
+    filename: opts.filename ?? null,
+  });
 }
 
 // GitHub

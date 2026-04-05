@@ -60,54 +60,62 @@ def update_customer(
     return c
 
 
-class TimeEntryCreate(BaseModel):
-    description: str
-    hours: float
-    date: str | None = None
+class ContractCreate(BaseModel):
+    name: str
+    kontingent: float
+    start_date: str
+    notes: str = ""
 
 
-class TimeEntryUpdate(BaseModel):
-    description: str | None = None
-    hours: float | None = None
-    date: str | None = None
+class ContractUpdate(BaseModel):
+    name: str | None = None
+    kontingent: float | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+    notes: str | None = None
+    verbraucht_offset: float | None = None
 
 
-@router.get("/{name}/entries")
-def list_time_entries(name: str):
-    return get_backend().customers.list_time_entries(name)
-
-
-@router.post("/{name}/entries", status_code=201)
-def add_time_entry(name: str, body: TimeEntryCreate):
+@router.get("/{name}/contracts")
+def list_contracts(name: str):
     try:
-        return get_backend().customers.add_time_entry(
-            name, body.description, body.hours, body.date
+        return get_backend().customers.list_contracts(name)
+    except ValueError:
+        raise HTTPException(
+            status_code=404, detail="Customer not found"
+        )
+
+
+@router.post("/{name}/contracts", status_code=201)
+def add_contract(name: str, body: ContractCreate):
+    try:
+        return get_backend().customers.add_contract(
+            name, body.name, body.kontingent,
+            body.start_date, body.notes,
         )
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e))
 
 
-@router.patch("/{name}/entries/{entry_id}")
-def update_time_entry(
-    name: str, entry_id: str, body: TimeEntryUpdate
+@router.patch("/{name}/contracts/{contract_name}")
+def update_contract(
+    name: str, contract_name: str, body: ContractUpdate
 ):
-    entry = get_backend().customers.update_time_entry(
-        name, entry_id,
-        description=body.description,
-        hours=body.hours,
-        date=body.date,
+    updates = body.model_dump(exclude_none=True)
+    contract = get_backend().customers.update_contract(
+        name, contract_name, updates
     )
-    if entry is None:
+    if contract is None:
         raise HTTPException(
-            status_code=404, detail="Entry not found"
+            status_code=404, detail="Contract not found"
         )
-    return entry
+    return contract
 
 
-@router.delete("/{name}/entries/{entry_id}", status_code=204)
-def delete_time_entry(name: str, entry_id: str):
-    ok = get_backend().customers.delete_time_entry(name, entry_id)
+@router.delete("/{name}/contracts/{contract_name}", status_code=204)
+def delete_contract(name: str, contract_name: str):
+    ok = get_backend().customers.delete_contract(name, contract_name)
     if not ok:
         raise HTTPException(
-            status_code=404, detail="Entry not found"
+            status_code=404, detail="Contract not found"
         )

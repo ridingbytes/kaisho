@@ -32,7 +32,7 @@ def make_org_backend(cfg: Settings) -> tuple[
     tasks = OrgTaskBackend(cfg.TODOS_FILE, cfg.ARCHIVE_FILE, kw)
     clocks = OrgClockBackend(cfg.CLOCKS_FILE)
     inbox = OrgInboxBackend(cfg.INBOX_FILE)
-    cust = OrgCustomerBackend(cfg.KUNDEN_FILE)
+    cust = OrgCustomerBackend(cfg.KUNDEN_FILE, cfg.CLOCKS_FILE)
     notes = OrgNotesBackend(cfg.NOTES_FILE)
     watch_paths = [
         cfg.ORG_DIR.expanduser(),

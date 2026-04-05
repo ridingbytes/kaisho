@@ -107,6 +107,7 @@ class ClockBackend(ABC):
         from_date: date | None = None,
         to_date: date | None = None,
         task_id: str | None = None,
+        contract: str | None = None,
     ) -> list[dict]:
         """Return clock entries for the given period and filters.
 
@@ -133,6 +134,7 @@ class ClockBackend(ABC):
         customer: str,
         description: str,
         task_id: str | None = None,
+        contract: str | None = None,
     ) -> dict:
         """Open a new clock entry (raises ValueError if one is running)."""
 
@@ -147,6 +149,7 @@ class ClockBackend(ABC):
         customer: str,
         description: str,
         task_id: str | None = None,
+        contract: str | None = None,
     ) -> dict:
         """Book time retroactively.  duration_str e.g. "2h", "30min"."""
 
@@ -161,6 +164,7 @@ class ClockBackend(ABC):
         task_id: str | None = None,
         booked: bool | None = None,
         notes: str | None = None,
+        contract: str | None = None,
     ) -> dict | None:
         """Update customer, description, hours, date, task, booked, or notes."""
 
@@ -190,6 +194,9 @@ class InboxBackend(ABC):
         text: str,
         item_type: str | None = None,
         customer: str | None = None,
+        body: str | None = None,
+        channel: str | None = None,
+        direction: str | None = None,
     ) -> dict:
         """Capture a new inbox item, return its dict."""
 
@@ -309,33 +316,38 @@ class CustomerBackend(ABC):
         """
 
     @abstractmethod
-    def list_time_entries(self, name: str) -> list[dict]:
-        """List time entries for a customer.
-
-        Each dict: id, description, hours, date
-        """
+    def list_contracts(self, name: str) -> list[dict]:
+        """List contracts for a customer."""
 
     @abstractmethod
-    def add_time_entry(
-        self, name: str, description: str, hours: float,
-        date: str | None = None,
-    ) -> dict:
-        """Add a time entry to a customer.
-
-        Returns the created entry dict.
-        """
-
-    @abstractmethod
-    def update_time_entry(
+    def add_contract(
         self,
         name: str,
-        entry_id: str,
-        description: str | None = None,
-        hours: float | None = None,
-        date: str | None = None,
-    ) -> dict | None:
-        """Update fields of a time entry. Returns None if not found."""
+        contract_name: str,
+        kontingent: float,
+        start_date: str,
+        notes: str = "",
+    ) -> dict:
+        """Add a named contract to a customer."""
 
     @abstractmethod
-    def delete_time_entry(self, name: str, entry_id: str) -> bool:
-        """Delete a time entry. Returns False if not found."""
+    def update_contract(
+        self,
+        name: str,
+        contract_name: str,
+        updates: dict,
+    ) -> dict | None:
+        """Update contract fields. Returns None if not found."""
+
+    @abstractmethod
+    def close_contract(
+        self,
+        name: str,
+        contract_name: str,
+        end_date: str,
+    ) -> dict | None:
+        """Close a contract by setting its end_date."""
+
+    @abstractmethod
+    def delete_contract(self, name: str, contract_name: str) -> bool:
+        """Delete a contract. Returns False if not found."""

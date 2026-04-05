@@ -114,11 +114,16 @@ class MarkdownInboxBackend(InboxBackend):
     def list_items(self) -> list[dict]:
         raise NotImplementedError
 
-    def add_item(self, text, item_type=None,
-                 customer=None) -> dict:
+    def add_item(
+        self, text, item_type=None, customer=None,
+        body=None, channel=None, direction=None,
+    ) -> dict:
         raise NotImplementedError
 
     def remove_item(self, item_id) -> bool:
+        raise NotImplementedError
+
+    def update_item(self, item_id, updates) -> dict:
         raise NotImplementedError
 
     def promote_to_task(self, item_id, tasks, customer) -> dict:
@@ -143,20 +148,6 @@ class MarkdownCustomerBackend(CustomerBackend):
         raise NotImplementedError
 
     def update_customer(self, name, updates) -> dict | None:
-        raise NotImplementedError
-
-    def list_time_entries(self, name) -> list[dict]:
-        raise NotImplementedError
-
-    def add_time_entry(self, name, description, hours,
-                       date=None) -> dict:
-        raise NotImplementedError
-
-    def update_time_entry(self, name, entry_id, description=None,
-                          hours=None, date=None) -> dict | None:
-        raise NotImplementedError
-
-    def delete_time_entry(self, name, entry_id) -> bool:
         raise NotImplementedError
 
 

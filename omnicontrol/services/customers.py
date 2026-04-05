@@ -1,16 +1,13 @@
 import re
-from datetime import date
 from pathlib import Path
 
 from ..org.models import Heading
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 
-CUSTOMER_KEYWORDS: set[str] = set()
+CUSTOMER_KEYWORDS: set[str] = {"CONTRACT"}
 # Only extract hours when explicitly marked with "h" unit
 HOURS_RE = re.compile(r"(\d+(?:\.\d+)?)\s*h\b", re.IGNORECASE)
-# Matches "YYYY-MM-DD: description" heading titles
-_ENTRY_TITLE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}):\s*(.+)$")
 
 
 def _extract_hours(value: str) -> float:
@@ -24,31 +21,46 @@ def _extract_hours(value: str) -> float:
     return 0.0
 
 
-def _sum_entry_hours(heading: Heading) -> float:
-    """Sum the HOURS property of all heading children."""
-    total = 0.0
-    for child in heading.children:
-        raw = child.properties.get("HOURS", "0")
-        try:
-            total += float(raw)
-        except ValueError:
-            pass
-    return total
+def _heading_to_contract(heading: "Heading", customer_name: str) -> dict:
+    """Convert a CONTRACT-keyword heading to a contract dict."""
+    props = heading.properties
+    kontingent = _extract_hours(props.get("KONTINGENT", "0"))
+    verbraucht_offset = _extract_hours(props.get("VERBRAUCHT", "0"))
+    return {
+        "customer": customer_name,
+        "name": heading.title.strip(),
+        "kontingent": kontingent,
+        "start_date": props.get("START", ""),
+        "end_date": props.get("END_DATE") or None,
+        "notes": "\n".join(heading.body).strip(),
+        "verbraucht_offset": verbraucht_offset,
+        "verbraucht": 0.0,
+        "rest": kontingent,
+    }
 
 
 def _heading_to_customer(heading: Heading) -> dict:
-    """Convert a level-2 Heading to a customer dict."""
     props = heading.properties
-    kontingent = _extract_hours(props.get("KONTINGENT", "0"))
-    stored_verbraucht = _extract_hours(props.get("VERBRAUCHT", "0"))
-    if heading.children:
-        verbraucht = stored_verbraucht + _sum_entry_hours(heading)
-        rest = kontingent - verbraucht
+    contract_children = [
+        c for c in heading.children if c.keyword == "CONTRACT"
+    ]
+    name = heading.title.strip()
+    contracts = [_heading_to_contract(c, name) for c in contract_children]
+
+    if contracts:
+        active = next(
+            (c for c in contracts if not c["end_date"]), None
+        )
+        kontingent = active["kontingent"] if active else 0.0
+        verbraucht = 0.0
+        rest = kontingent
     else:
-        verbraucht = stored_verbraucht
-        rest = _extract_hours(props.get("REST", "0"))
+        kontingent = _extract_hours(props.get("KONTINGENT", "0"))
+        verbraucht = _extract_hours(props.get("VERBRAUCHT", "0"))
+        rest = kontingent - verbraucht
+
     return {
-        "name": heading.title.strip(),
+        "name": name,
         "status": props.get("STATUS", "active"),
         "type": props.get("TYPE", ""),
         "tags": list(heading.tags),
@@ -56,7 +68,7 @@ def _heading_to_customer(heading: Heading) -> dict:
         "verbraucht": verbraucht,
         "rest": rest,
         "repo": props.get("REPO", None),
-        "has_time_entries": bool(heading.children),
+        "contracts": contracts,
         "properties": dict(props),
     }
 
@@ -83,35 +95,31 @@ def _find_customer_heading(
     return None
 
 
-def _parse_entry_title(title: str) -> tuple[str, str]:
-    """Parse 'YYYY-MM-DD: description' into (date, description).
+def _clock_hours_for_customer(
+    clocks_file: Path, customer_name: str
+) -> float:
+    """Sum all clock entry hours for a customer (all time)."""
+    from . import clocks as clocks_svc
+    entries = clocks_svc.list_entries(
+        clocks_file, period="all", customer=customer_name
+    )
+    return sum((e.get("duration_minutes") or 0) / 60.0 for e in entries)
 
-    Falls back to ("", title) for entries without a date prefix.
-    """
-    m = _ENTRY_TITLE_RE.match(title.strip())
-    if m:
-        return m.group(1), m.group(2)
-    return "", title.strip()
 
-
-def _entry_to_dict(child: Heading, idx: int) -> dict:
-    """Convert a time-entry child heading to a dict."""
-    date_str, description = _parse_entry_title(child.title)
-    if not date_str:
-        date_str = child.properties.get("DATE", "")
-    return {
-        "id": str(idx + 1),
-        "description": description,
-        "hours": float(child.properties.get("HOURS", "0")),
-        "date": date_str,
-    }
+def _enrich_customer(customer: dict, clocks_file: Path) -> dict:
+    """Add clock-derived hours to a customer's verbraucht and rest."""
+    clock_h = _clock_hours_for_customer(clocks_file, customer["name"])
+    verbraucht = round(customer["verbraucht"] + clock_h, 2)
+    rest = round(customer["kontingent"] - verbraucht, 2)
+    return {**customer, "verbraucht": verbraucht, "rest": rest}
 
 
 def list_customers(
     kunden_file: Path,
+    clocks_file: Path,
     include_inactive: bool = False,
 ) -> list[dict]:
-    """List customers from kunden.org."""
+    """List customers from kunden.org, enriched with clock hours."""
     if not kunden_file.exists():
         return []
     org_file = parse_org_file(kunden_file, CUSTOMER_KEYWORDS)
@@ -120,15 +128,19 @@ def list_customers(
         for h2 in h1.children:
             customer = _heading_to_customer(h2)
             if include_inactive or _is_active(customer):
-                customers.append(customer)
+                customers.append(_enrich_customer(customer, clocks_file))
     return customers
 
 
-def get_customer(kunden_file: Path, name: str) -> dict | None:
+def get_customer(
+    kunden_file: Path, clocks_file: Path, name: str
+) -> dict | None:
     """Get a customer by name."""
-    customers = list_customers(kunden_file, include_inactive=True)
+    all_customers = list_customers(
+        kunden_file, clocks_file, include_inactive=True
+    )
     name_lower = name.lower()
-    for customer in customers:
+    for customer in all_customers:
         if customer["name"].lower() == name_lower:
             return customer
     return None
@@ -138,6 +150,7 @@ _PROP_MAP = {
     "status": "STATUS",
     "type": "TYPE",
     "kontingent": "KONTINGENT",
+    "verbraucht_offset": "VERBRAUCHT",
     "repo": "REPO",
 }
 
@@ -161,8 +174,7 @@ def add_customer(
     if not kunden_file.exists():
         kunden_file.write_text("", encoding="utf-8")
 
-    existing = get_customer(kunden_file, name)
-    if existing is not None:
+    if _find_customer_heading(kunden_file, name) is not None:
         raise ValueError(f"Customer already exists: {name}")
 
     props: dict[str, str] = {"STATUS": status}
@@ -217,7 +229,7 @@ def update_customer(
                 if field not in updates:
                     continue
                 val = updates[field]
-                if field == "kontingent":
+                if field in ("kontingent", "verbraucht_offset"):
                     h2.properties[prop] = f"{val}h"
                 elif val:
                     h2.properties[prop] = str(val)
@@ -229,9 +241,13 @@ def update_customer(
     return None
 
 
-def get_budget_summary(kunden_file: Path) -> list[dict]:
+def get_budget_summary(
+    kunden_file: Path, clocks_file: Path
+) -> list[dict]:
     """Return budget summary for all active customers."""
-    customers = list_customers(kunden_file, include_inactive=False)
+    customers = list_customers(
+        kunden_file, clocks_file, include_inactive=False
+    )
     summaries = []
     for customer in customers:
         kontingent = customer["kontingent"]
@@ -249,89 +265,167 @@ def get_budget_summary(kunden_file: Path) -> list[dict]:
     return summaries
 
 
-def list_time_entries(kunden_file: Path, name: str) -> list[dict]:
-    """List time entries for a customer."""
-    result = _find_customer_heading(kunden_file, name)
+def _clock_hours_by_contract(
+    clocks_file: Path, customer_name: str
+) -> dict[str, float]:
+    """Return {contract_name: hours} from clock entries."""
+    from . import clocks as clocks_svc
+    entries = clocks_svc.list_entries(
+        clocks_file, period="all", customer=customer_name
+    )
+    totals: dict[str, float] = {}
+    for entry in entries:
+        contract = entry.get("contract") or ""
+        if not contract:
+            continue
+        mins = entry.get("duration_minutes") or 0
+        totals[contract] = totals.get(contract, 0.0) + mins / 60.0
+    return totals
+
+
+def list_contracts(
+    kunden_file: Path, clocks_file: Path, customer_name: str
+) -> list[dict]:
+    """List contracts for a customer with clock-derived hours."""
+    result = _find_customer_heading(kunden_file, customer_name)
     if result is None:
-        raise ValueError(f"Customer not found: {name}")
+        raise ValueError(f"Customer not found: {customer_name}")
     _, h2 = result
-    return [_entry_to_dict(c, i) for i, c in enumerate(h2.children)]
+    name = h2.title.strip()
+    contracts = [
+        _heading_to_contract(c, name)
+        for c in h2.children
+        if c.keyword == "CONTRACT"
+    ]
+    hours_map = _clock_hours_by_contract(clocks_file, customer_name)
+    enriched = []
+    for contract in contracts:
+        clock_h = hours_map.get(contract["name"], 0.0)
+        verbraucht = round(
+            contract["verbraucht_offset"] + clock_h, 2
+        )
+        rest = round(contract["kontingent"] - verbraucht, 2)
+        enriched.append(
+            {**contract, "verbraucht": verbraucht, "rest": rest}
+        )
+    return enriched
 
 
-def add_time_entry(
+def add_contract(
     kunden_file: Path,
+    customer_name: str,
     name: str,
-    description: str,
-    hours: float,
-    entry_date: str | None = None,
+    kontingent: float,
+    start_date: str,
+    notes: str = "",
 ) -> dict:
-    """Add a time entry to a customer. Returns the created entry dict."""
-    result = _find_customer_heading(kunden_file, name)
+    """Add a named contract to a customer."""
+    result = _find_customer_heading(kunden_file, customer_name)
     if result is None:
-        raise ValueError(f"Customer not found: {name}")
+        raise ValueError(f"Customer not found: {customer_name}")
     org_file, h2 = result
-    today = entry_date or date.today().isoformat()
-    new_child = Heading(
+    existing = {
+        c.title.strip().lower()
+        for c in h2.children
+        if c.keyword == "CONTRACT"
+    }
+    if name.lower() in existing:
+        raise ValueError(f"Contract already exists: {name}")
+    props: dict[str, str] = {
+        "KONTINGENT": f"{kontingent}h",
+        "START": start_date,
+    }
+    new_contract = Heading(
         level=3,
-        keyword=None,
-        title=f"{today}: {description}",
-        properties={"HOURS": str(hours), "DATE": today},
+        keyword="CONTRACT",
+        title=name,
+        properties=props,
+        body=notes.splitlines() if notes else [],
         dirty=True,
     )
-    h2.children.append(new_child)
+    h2.children.append(new_contract)
     h2.dirty = True
     write_org_file(kunden_file, org_file)
-    idx = len(h2.children) - 1
-    return _entry_to_dict(new_child, idx)
+    return _heading_to_contract(new_contract, h2.title.strip())
 
 
-def update_time_entry(
+def update_contract(
     kunden_file: Path,
-    name: str,
-    entry_id: str,
-    description: str | None = None,
-    hours: float | None = None,
-    entry_date: str | None = None,
+    customer_name: str,
+    contract_name: str,
+    updates: dict,
 ) -> dict | None:
-    """Update fields of a time entry. Returns None if not found."""
-    result = _find_customer_heading(kunden_file, name)
+    """Update fields of a contract. Supported keys:
+    name, kontingent, start_date, end_date, notes.
+    """
+    result = _find_customer_heading(kunden_file, customer_name)
     if result is None:
         return None
     org_file, h2 = result
-    idx = int(entry_id) - 1
-    if idx < 0 or idx >= len(h2.children):
-        return None
-    child = h2.children[idx]
-    current_date, current_desc = _parse_entry_title(child.title)
-    if not current_date:
-        current_date = child.properties.get("DATE", "")
-    new_date = entry_date if entry_date is not None else current_date
-    new_desc = description if description is not None else current_desc
-    child.title = (
-        f"{new_date}: {new_desc}" if new_date else new_desc
+    name_lower = contract_name.lower()
+    for child in h2.children:
+        if child.keyword != "CONTRACT":
+            continue
+        if child.title.strip().lower() != name_lower:
+            continue
+        if "name" in updates:
+            child.title = updates["name"]
+        if "kontingent" in updates:
+            child.properties["KONTINGENT"] = f"{updates['kontingent']}h"
+        if "start_date" in updates:
+            child.properties["START"] = updates["start_date"]
+        if "end_date" in updates:
+            if updates["end_date"]:
+                child.properties["END_DATE"] = updates["end_date"]
+            else:
+                child.properties.pop("END_DATE", None)
+        if "verbraucht_offset" in updates:
+            child.properties["VERBRAUCHT"] = (
+                f"{updates['verbraucht_offset']}h"
+            )
+        if "notes" in updates:
+            child.body = (
+                updates["notes"].splitlines()
+                if updates["notes"]
+                else []
+            )
+        child.dirty = True
+        h2.dirty = True
+        write_org_file(kunden_file, org_file)
+        return _heading_to_contract(child, h2.title.strip())
+    return None
+
+
+def close_contract(
+    kunden_file: Path,
+    customer_name: str,
+    contract_name: str,
+    end_date: str,
+) -> dict | None:
+    """Set END_DATE on a contract, marking it closed."""
+    return update_contract(
+        kunden_file, customer_name, contract_name,
+        {"end_date": end_date},
     )
-    if hours is not None:
-        child.properties["HOURS"] = str(hours)
-    if entry_date is not None:
-        child.properties["DATE"] = entry_date
-    child.dirty = True
-    h2.dirty = True
-    write_org_file(kunden_file, org_file)
-    return _entry_to_dict(child, idx)
 
 
-def delete_time_entry(
-    kunden_file: Path, name: str, entry_id: str
+def delete_contract(
+    kunden_file: Path,
+    customer_name: str,
+    contract_name: str,
 ) -> bool:
-    """Delete a time entry by 1-based ID. Returns False if not found."""
-    result = _find_customer_heading(kunden_file, name)
+    """Delete a contract from a customer."""
+    result = _find_customer_heading(kunden_file, customer_name)
     if result is None:
         return False
     org_file, h2 = result
-    idx = int(entry_id) - 1
-    if idx < 0 or idx >= len(h2.children):
-        return False
-    h2.children.pop(idx)
-    h2.dirty = True
-    write_org_file(kunden_file, org_file)
-    return True
+    name_lower = contract_name.lower()
+    for i, child in enumerate(h2.children):
+        if (child.keyword == "CONTRACT"
+                and child.title.strip().lower() == name_lower):
+            h2.children.pop(i)
+            h2.dirty = True
+            write_org_file(kunden_file, org_file)
+            return True
+    return False
+

@@ -42,6 +42,18 @@ export interface AiSettings {
   cron_model: string;
 }
 
+export interface Contract {
+  customer: string;
+  name: string;
+  kontingent: number;
+  start_date: string;
+  end_date: string | null;
+  notes: string;
+  verbraucht_offset: number;
+  verbraucht: number;
+  rest: number;
+}
+
 export interface ClockEntry {
   customer: string;
   description: string;
@@ -51,6 +63,7 @@ export interface ClockEntry {
   task_id: string | null;
   booked: boolean;
   notes: string;
+  contract: string | null;
 }
 
 export interface ActiveTimer {
@@ -68,6 +81,8 @@ export interface InboxItem {
   title: string;
   body: string;
   created: string;
+  channel: string;
+  direction: string;
   properties: Record<string, string>;
 }
 
@@ -80,15 +95,8 @@ export interface Customer {
   verbraucht: number;
   rest: number;
   repo: string | null;
-  has_time_entries: boolean;
+  contracts: Contract[];
   properties: Record<string, string>;
-}
-
-export interface TimeEntry {
-  id: string;
-  description: string;
-  hours: number;
-  date: string;
 }
 
 export interface BudgetSummary {
@@ -126,19 +134,6 @@ export interface NoteItem {
   body: string;
   tags: string[];
   created: string;
-}
-
-export interface CommEntry {
-  id: number;
-  ts: string;
-  customer: string | null;
-  direction: "in" | "out";
-  channel: "email" | "phone" | "chat" | "other";
-  subject: string;
-  body: string;
-  contact: string;
-  type: string;
-  tags: string[];
 }
 
 export interface CronJob {
