@@ -8,7 +8,6 @@ import {
   History,
   Inbox,
   LayoutDashboard,
-  MessageSquare,
   NotebookPen,
   Plus,
   Search,
@@ -41,7 +40,6 @@ const COMMANDS: Command[] = [
   { id: "goto-customers", label: "Customers", hint: "Go to", view: "customers", icon: Users },
   { id: "goto-knowledge", label: "Knowledge", hint: "Go to", view: "knowledge", icon: BookOpen },
   { id: "goto-github", label: "GitHub Issues", hint: "Go to", view: "github", icon: GitPullRequest },
-  { id: "goto-communications", label: "Communications", hint: "Go to", view: "communications", icon: MessageSquare },
   { id: "goto-clocks", label: "Clock Entries", hint: "Go to", view: "clocks", icon: History },
   { id: "goto-cron", label: "Cron Jobs", hint: "Go to", view: "cron", icon: Clock4 },
   { id: "goto-settings", label: "Settings", hint: "Go to", view: "settings", icon: Settings },
@@ -51,7 +49,6 @@ const COMMANDS: Command[] = [
   { id: "new-task", label: "New Task", hint: "Create", view: "board", icon: Plus },
   { id: "new-inbox", label: "New Inbox Item", hint: "Create", view: "inbox", icon: Plus },
   { id: "new-customer", label: "New Customer", hint: "Create", view: "customers", icon: Plus, panelAction: "open_form" },
-  { id: "new-comm", label: "New Communication", hint: "Create", view: "communications", icon: Plus, panelAction: "open_form" },
   { id: "new-clock", label: "New Clock Entry", hint: "Create", view: "clocks", icon: Plus, panelAction: "open_form" },
 ];
 

@@ -6,6 +6,7 @@ from ..org.models import Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 from .kanban import add_task
+from . import notes as notes_service
 
 INBOX_KEYWORDS: set[str] = set()
 CREATED_FMT = "%Y-%m-%d %a %H:%M"
@@ -70,6 +71,8 @@ def _heading_to_item(heading: Heading, item_id: str) -> dict:
         "title": heading.title.strip(),
         "body": "\n".join(heading.body).strip(),
         "created": props.get("CREATED", ""),
+        "channel": props.get("CHANNEL", ""),
+        "direction": props.get("DIRECTION", ""),
         "properties": dict(props),
     }
 
@@ -91,6 +94,8 @@ def add_item(
     item_type: str | None = None,
     customer: str | None = None,
     body: str | None = None,
+    channel: str | None = None,
+    direction: str | None = None,
 ) -> dict:
     """Add an item to inbox.org with auto-categorization."""
     detected_type = item_type or _detect_type(text)
@@ -114,6 +119,11 @@ def add_item(
 
     if body:
         new_heading.body = body.splitlines()
+
+    if channel:
+        new_heading.properties["CHANNEL"] = channel
+    if direction:
+        new_heading.properties["DIRECTION"] = direction
 
     if not inbox_file.exists():
         inbox_file.parent.mkdir(parents=True, exist_ok=True)
@@ -158,6 +168,16 @@ def update_item(
         heading.body = (
             updates["body"].splitlines() if updates["body"] else []
         )
+    if "channel" in updates:
+        if updates["channel"]:
+            heading.properties["CHANNEL"] = updates["channel"]
+        else:
+            heading.properties.pop("CHANNEL", None)
+    if "direction" in updates:
+        if updates["direction"]:
+            heading.properties["DIRECTION"] = updates["direction"]
+        else:
+            heading.properties.pop("DIRECTION", None)
     write_org_file(inbox_file, org_file)
     return _heading_to_item(heading, item_id)
 
@@ -200,3 +220,74 @@ def promote_to_task(
     write_org_file(inbox_file, org_file)
 
     return task
+
+
+def _load_heading(
+    inbox_file: Path, item_id: str
+) -> tuple[OrgFile, int, Heading]:
+    """Parse inbox file and return (org_file, idx, heading)."""
+    if not inbox_file.exists():
+        raise ValueError("Inbox file not found")
+    org_file = parse_org_file(inbox_file, INBOX_KEYWORDS)
+    idx = int(item_id) - 1
+    if idx < 0 or idx >= len(org_file.headings):
+        raise ValueError(f"Item not found: {item_id}")
+    return org_file, idx, org_file.headings[idx]
+
+
+def move_to_note(
+    inbox_file: Path,
+    notes_file: Path,
+    item_id: str,
+) -> dict:
+    """Create a note from an inbox item then delete it from inbox.
+
+    Returns the created note dict.
+    """
+    org_file, idx, heading = _load_heading(inbox_file, item_id)
+
+    title = re.sub(r"^\[[^\]]+\]\s*", "", heading.title.strip())
+    customer = _extract_customer(heading)
+    body = "\n".join(heading.body).strip() or ""
+
+    note = notes_service.add_note(
+        notes_file=notes_file,
+        title=title,
+        body=body,
+        customer=customer,
+    )
+
+    org_file.headings.pop(idx)
+    write_org_file(inbox_file, org_file)
+
+    return note
+
+
+def move_to_kb(
+    inbox_file: Path,
+    kb_dir: Path,
+    item_id: str,
+    filename: str,
+) -> dict:
+    """Write inbox item body as a markdown KB file then delete it.
+
+    filename must end with '.md'.
+    Returns a dict with the file path.
+    """
+    if not filename.endswith(".md"):
+        raise ValueError("filename must end with .md")
+
+    org_file, idx, heading = _load_heading(inbox_file, item_id)
+
+    body = "\n".join(heading.body).strip()
+    title = re.sub(r"^\[[^\]]+\]\s*", "", heading.title.strip())
+    content = f"# {title}\n\n{body}\n" if body else f"# {title}\n"
+
+    kb_dir.mkdir(parents=True, exist_ok=True)
+    dest = kb_dir / filename
+    dest.write_text(content, encoding="utf-8")
+
+    org_file.headings.pop(idx)
+    write_org_file(inbox_file, org_file)
+
+    return {"path": str(dest)}

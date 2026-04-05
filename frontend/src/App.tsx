@@ -5,9 +5,7 @@ import type { AdvisorMessage } from "./components/advisor/AdvisorView";
 import { AdvisorView } from "./components/advisor/AdvisorView";
 import { CommandPalette } from "./components/commandPalette/CommandPalette";
 import { ClockWidget } from "./components/clock/ClockWidget";
-import { CalendarView } from "./components/calendar/CalendarView";
 import { ClockView } from "./components/clock/ClockView";
-import { CommunicationsView } from "./components/communications/CommunicationsView";
 import { CronView } from "./components/cron/CronView";
 import { CustomersView } from "./components/customers/CustomersView";
 import { DashboardView } from "./components/dashboard/DashboardView";
@@ -35,8 +33,6 @@ export type View =
   | "customers"
   | "knowledge"
   | "github"
-  | "communications"
-  | "calendar"
   | "clocks"
   | "cron"
   | "settings"
@@ -50,8 +46,6 @@ const VIEW_TITLES: Record<View, string> = {
   customers: "Customers",
   knowledge: "Knowledge",
   github: "GitHub",
-  communications: "Communications",
-  calendar: "Calendar",
   clocks: "Clock Entries",
   cron: "Cron",
   settings: "Settings",
@@ -60,7 +54,7 @@ const VIEW_TITLES: Record<View, string> = {
 
 const VALID_VIEWS = new Set<View>([
   "dashboard", "board", "inbox", "notes", "customers",
-  "knowledge", "github", "communications", "calendar",
+  "knowledge", "github",
   "clocks", "cron", "settings", "advisor",
 ]);
 
@@ -224,8 +218,6 @@ function AppShell() {
             {view === "customers" && <CustomersView />}
             {view === "knowledge" && <KnowledgeView />}
             {view === "github" && <GithubView />}
-            {view === "communications" && <CommunicationsView />}
-            {view === "calendar" && <CalendarView />}
             {view === "clocks" && <ClockView />}
             {view === "cron" && <CronView />}
             {view === "settings" && <SettingsView />}

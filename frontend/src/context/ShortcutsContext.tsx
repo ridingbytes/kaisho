@@ -22,7 +22,6 @@ export const DEFAULT_SHORTCUTS: ShortcutsConfig = {
     knowledge: "k",
     github: "g",
     communications: "m",
-    calendar: "l",
     clocks: "t",
     cron: "r",
     settings: "s",

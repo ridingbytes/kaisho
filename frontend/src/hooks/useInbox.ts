@@ -7,6 +7,7 @@ import {
   captureInboxItem,
   deleteInboxItem,
   fetchInboxItems,
+  moveInboxItem,
   promoteInboxItem,
   updateInboxItem,
 } from "../api/client";
@@ -28,12 +29,16 @@ export function useCaptureItem() {
       type,
       customer,
       body,
+      channel,
+      direction,
     }: {
       text: string;
       type?: string;
       customer?: string;
       body?: string;
-    }) => captureInboxItem(text, type, customer, body),
+      channel?: string;
+      direction?: string;
+    }) => captureInboxItem(text, type, customer, body, channel, direction),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["inbox"] });
     },
@@ -63,10 +68,34 @@ export function useUpdateItem() {
         type?: string;
         customer?: string;
         body?: string;
+        channel?: string;
+        direction?: string;
       };
     }) => updateInboxItem(itemId, updates),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["inbox"] });
+    },
+  });
+}
+
+export function useMoveItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      itemId,
+      destination,
+      customer,
+      filename,
+    }: {
+      itemId: string;
+      destination: "todo" | "note" | "kb" | "archive";
+      customer?: string;
+      filename?: string;
+    }) => moveInboxItem(itemId, destination, { customer, filename }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["inbox"] });
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      void queryClient.invalidateQueries({ queryKey: ["notes"] });
     },
   });
 }

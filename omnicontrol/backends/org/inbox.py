@@ -30,6 +30,8 @@ class OrgInboxBackend(InboxBackend):
         item_type: str | None = None,
         customer: str | None = None,
         body: str | None = None,
+        channel: str | None = None,
+        direction: str | None = None,
     ) -> dict:
         return inbox.add_item(
             inbox_file=self._inbox_file,
@@ -37,6 +39,8 @@ class OrgInboxBackend(InboxBackend):
             item_type=item_type,
             customer=customer,
             body=body,
+            channel=channel,
+            direction=direction,
         )
 
     def update_item(self, item_id: str, updates: dict) -> dict:
@@ -80,8 +84,13 @@ class OrgInboxBackend(InboxBackend):
         title = heading.title.strip()
         clean_title = _CUSTOMER_PREFIX_RE.sub("", title)
 
+        body = "\n".join(heading.body).strip() or None
+
         task = tasks.add_task(
-            customer=customer, title=clean_title, status="TODO"
+            customer=customer,
+            title=clean_title,
+            status="TODO",
+            body=body,
         )
 
         org_file.headings.pop(idx)

@@ -4,11 +4,27 @@ import { useCaptureItem } from "../../hooks/useInbox";
 
 const TYPES = ["NOTIZ", "EMAIL", "LEAD", "IDEE"] as const;
 
+const CHANNELS = [
+  { value: "", label: "Any channel" },
+  { value: "email", label: "Email" },
+  { value: "phone", label: "Phone" },
+  { value: "chat", label: "Chat" },
+  { value: "other", label: "Other" },
+] as const;
+
+const DIRECTIONS = [
+  { value: "", label: "Any direction" },
+  { value: "in", label: "In" },
+  { value: "out", label: "Out" },
+] as const;
+
 export function AddInboxForm() {
   const [text, setText] = useState("");
   const [type, setType] = useState<string>("");
   const [customer, setCustomer] = useState("");
   const [body, setBody] = useState("");
+  const [channel, setChannel] = useState("");
+  const [direction, setDirection] = useState("");
   const capture = useCaptureItem();
 
   function handleSubmit(e: React.FormEvent) {
@@ -20,6 +36,8 @@ export function AddInboxForm() {
         type: type || undefined,
         customer: customer.trim() || undefined,
         body: body.trim() || undefined,
+        channel: channel || undefined,
+        direction: direction || undefined,
       },
       {
         onSuccess: () => {
@@ -27,6 +45,8 @@ export function AddInboxForm() {
           setType("");
           setCustomer("");
           setBody("");
+          setChannel("");
+          setDirection("");
         },
       }
     );
@@ -79,6 +99,30 @@ export function AddInboxForm() {
           className="flex-1 min-w-0"
           inputClassName={inputCls}
         />
+      </div>
+      <div className="flex gap-2">
+        <select
+          value={channel}
+          onChange={(e) => setChannel(e.target.value)}
+          className={[inputCls, "flex-1"].join(" ")}
+        >
+          {CHANNELS.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={direction}
+          onChange={(e) => setDirection(e.target.value)}
+          className={[inputCls, "flex-1"].join(" ")}
+        >
+          {DIRECTIONS.map((d) => (
+            <option key={d.value} value={d.value}>
+              {d.label}
+            </option>
+          ))}
+        </select>
       </div>
       <textarea
         placeholder="Body (optional)"

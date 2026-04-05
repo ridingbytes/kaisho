@@ -1,15 +1,36 @@
-import { ArrowUpRight, Check, Pencil, Trash2, X } from "lucide-react";
+import {
+  ArrowRightLeft,
+  Check,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useState } from "react";
+import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { Markdown } from "../common/Markdown";
 import {
   useDeleteItem,
-  usePromoteItem,
+  useMoveItem,
   useUpdateItem,
 } from "../../hooks/useInbox";
 import type { InboxItem } from "../../types";
 
 const TYPES = ["NOTIZ", "EMAIL", "LEAD", "IDEE"] as const;
+
+const CHANNELS = [
+  { value: "", label: "Any" },
+  { value: "email", label: "Email" },
+  { value: "phone", label: "Phone" },
+  { value: "chat", label: "Chat" },
+  { value: "other", label: "Other" },
+] as const;
+
+const DIRECTIONS = [
+  { value: "", label: "Any" },
+  { value: "in", label: "In" },
+  { value: "out", label: "Out" },
+] as const;
 
 const TYPE_STYLES: Record<string, string> = {
   EMAIL: "bg-sky-500/15 text-sky-400",
@@ -29,6 +50,14 @@ function formatDate(dateStr: string): string {
   return dateStr.replace(/^\[/, "").replace(/\]$/, "").slice(0, 10);
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
 const fieldCls = [
   "px-2 py-1 rounded-md text-xs",
   "bg-surface-overlay border border-border",
@@ -36,23 +65,32 @@ const fieldCls = [
   "focus:outline-none focus:border-accent",
 ].join(" ");
 
+const badgeCls =
+  "shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider";
+
+type MoveDestination = "todo" | "note" | "kb" | "archive";
+
 interface Props {
   item: InboxItem;
 }
 
 export function InboxItemRow({ item }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const [promoting, setPromoting] = useState(false);
+  const [moving, setMoving] = useState(false);
+  const [moveDest, setMoveDest] = useState<MoveDestination | null>(null);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editType, setEditType] = useState("");
   const [editCustomer, setEditCustomer] = useState("");
   const [editBody, setEditBody] = useState("");
+  const [editChannel, setEditChannel] = useState("");
+  const [editDirection, setEditDirection] = useState("");
   const [targetCustomer, setTargetCustomer] = useState(
     item.customer ?? ""
   );
+  const [targetFilename, setTargetFilename] = useState("");
   const del = useDeleteItem();
-  const promote = usePromoteItem();
+  const move = useMoveItem();
   const update = useUpdateItem();
 
   const typeStyle =
@@ -64,6 +102,8 @@ export function InboxItemRow({ item }: Props) {
     setEditType(item.type ?? "NOTIZ");
     setEditCustomer(item.customer ?? "");
     setEditBody(item.body ?? "");
+    setEditChannel(item.channel ?? "");
+    setEditDirection(item.direction ?? "");
     setEditing(true);
     setExpanded(true);
   }
@@ -78,6 +118,8 @@ export function InboxItemRow({ item }: Props) {
           type: editType,
           customer: editCustomer.trim() || undefined,
           body: editBody,
+          channel: editChannel,
+          direction: editDirection,
         },
       },
       { onSuccess: () => setEditing(false) }
@@ -89,11 +131,46 @@ export function InboxItemRow({ item }: Props) {
     setEditing(false);
   }
 
-  function handlePromote() {
+  function openMovePanel(e: React.MouseEvent) {
+    e.stopPropagation();
+    setMoving((v) => !v);
+    setMoveDest(null);
+    setTargetCustomer(item.customer ?? "");
+    setTargetFilename(slugify(cleanTitle(item.title)) + ".md");
+    setExpanded(true);
+  }
+
+  function selectDest(dest: MoveDestination) {
+    setMoveDest(dest);
+    if (dest === "note" || dest === "archive") {
+      move.mutate(
+        { itemId: item.id, destination: dest },
+        { onSuccess: () => setMoving(false) }
+      );
+    }
+  }
+
+  function handleMoveTodo() {
     if (!targetCustomer.trim()) return;
-    promote.mutate(
-      { itemId: item.id, customer: targetCustomer.trim() },
-      { onSuccess: () => setPromoting(false) }
+    move.mutate(
+      {
+        itemId: item.id,
+        destination: "todo",
+        customer: targetCustomer.trim(),
+      },
+      { onSuccess: () => setMoving(false) }
+    );
+  }
+
+  function handleMoveKb() {
+    if (!targetFilename.trim()) return;
+    move.mutate(
+      {
+        itemId: item.id,
+        destination: "kb",
+        filename: targetFilename.trim(),
+      },
+      { onSuccess: () => setMoving(false) }
     );
   }
 
@@ -104,15 +181,33 @@ export function InboxItemRow({ item }: Props) {
         onClick={() => !editing && setExpanded((v) => !v)}
       >
         {/* Type badge */}
-        <span
-          className={[
-            "shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[10px]",
-            "font-bold uppercase tracking-wider",
-            typeStyle,
-          ].join(" ")}
-        >
+        <span className={[badgeCls, typeStyle].join(" ")}>
           {item.type ?? "NOTIZ"}
         </span>
+
+        {/* Channel badge */}
+        {item.channel && (
+          <span
+            className={[
+              badgeCls,
+              "bg-amber-500/15 text-amber-400",
+            ].join(" ")}
+          >
+            {item.channel}
+          </span>
+        )}
+
+        {/* Direction badge */}
+        {item.direction && (
+          <span
+            className={[
+              badgeCls,
+              "bg-teal-500/15 text-teal-400",
+            ].join(" ")}
+          >
+            {item.direction}
+          </span>
+        )}
 
         {/* Content */}
         <div className="flex-1 min-w-0">
@@ -125,6 +220,13 @@ export function InboxItemRow({ item }: Props) {
             <span className="text-sm text-slate-300 break-words">
               {cleanTitle(item.title)}
             </span>
+            {item.body && (
+              <ContentPopup
+                content={item.body}
+                title={cleanTitle(item.title)}
+                markdown
+              />
+            )}
           </div>
           <p className="text-[10px] text-slate-600 mt-0.5">
             {formatDate(item.created)}
@@ -141,20 +243,16 @@ export function InboxItemRow({ item }: Props) {
             <Pencil size={13} strokeWidth={2} />
           </button>
           <button
-            title="Promote to task"
-            onClick={(e) => {
-              e.stopPropagation();
-              setPromoting((v) => !v);
-              setExpanded(true);
-            }}
+            title="Move"
+            onClick={openMovePanel}
             className={[
               "p-1.5 rounded-md transition-colors",
-              promoting
+              moving
                 ? "text-accent bg-accent-muted"
                 : "text-slate-600 hover:text-accent hover:bg-accent-muted",
             ].join(" ")}
           >
-            <ArrowUpRight size={14} strokeWidth={2} />
+            <ArrowRightLeft size={14} strokeWidth={2} />
           </button>
           <button
             title="Delete"
@@ -195,6 +293,30 @@ export function InboxItemRow({ item }: Props) {
                   className="flex-1 min-w-0"
                   inputClassName={fieldCls}
                 />
+              </div>
+              <div className="flex gap-2">
+                <select
+                  value={editChannel}
+                  onChange={(e) => setEditChannel(e.target.value)}
+                  className={`${fieldCls} flex-1`}
+                >
+                  {CHANNELS.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={editDirection}
+                  onChange={(e) => setEditDirection(e.target.value)}
+                  className={`${fieldCls} flex-1`}
+                >
+                  {DIRECTIONS.map((d) => (
+                    <option key={d.value} value={d.value}>
+                      {d.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <input
                 type="text"
@@ -238,34 +360,106 @@ export function InboxItemRow({ item }: Props) {
             </>
           )}
 
-          {/* Promote form */}
-          {promoting && !editing && (
-            <div className="flex gap-2 mt-1">
-              <CustomerAutocomplete
-                autoFocus
-                value={targetCustomer}
-                onChange={setTargetCustomer}
-                onKeyDown={(e) =>
-                  e.key === "Enter" && handlePromote()
-                }
-                className="flex-1 min-w-0"
-                inputClassName={fieldCls}
-              />
-              <button
-                onClick={handlePromote}
-                disabled={
-                  promote.isPending || !targetCustomer.trim()
-                }
-                className="px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
-              >
-                {promote.isPending ? "…" : "Move"}
-              </button>
-              <button
-                onClick={() => setPromoting(false)}
-                className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
-              >
-                Cancel
-              </button>
+          {/* Move panel */}
+          {moving && !editing && (
+            <div className="flex flex-col gap-2 mt-1 p-2 rounded-md bg-surface-overlay border border-border">
+              {!moveDest && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => selectDest("todo")}
+                    className="flex-1 px-2 py-1 rounded-md text-xs font-semibold bg-accent/20 text-accent hover:bg-accent/30 transition-colors"
+                  >
+                    Todo
+                  </button>
+                  <button
+                    onClick={() => selectDest("note")}
+                    disabled={move.isPending}
+                    className="flex-1 px-2 py-1 rounded-md text-xs font-semibold bg-accent/20 text-accent hover:bg-accent/30 transition-colors disabled:opacity-40"
+                  >
+                    {move.isPending ? "…" : "Note"}
+                  </button>
+                  <button
+                    onClick={() => selectDest("kb")}
+                    className="flex-1 px-2 py-1 rounded-md text-xs font-semibold bg-accent/20 text-accent hover:bg-accent/30 transition-colors"
+                  >
+                    Knowledge
+                  </button>
+                  <button
+                    onClick={() => selectDest("archive")}
+                    disabled={move.isPending}
+                    className="flex-1 px-2 py-1 rounded-md text-xs font-semibold bg-accent/20 text-accent hover:bg-accent/30 transition-colors disabled:opacity-40"
+                  >
+                    {move.isPending ? "…" : "Archive"}
+                  </button>
+                  <button
+                    onClick={() => setMoving(false)}
+                    className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+
+              {moveDest === "todo" && (
+                <div className="flex gap-2">
+                  <CustomerAutocomplete
+                    autoFocus
+                    value={targetCustomer}
+                    onChange={setTargetCustomer}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleMoveTodo()
+                    }
+                    className="flex-1 min-w-0"
+                    inputClassName={fieldCls}
+                  />
+                  <button
+                    onClick={handleMoveTodo}
+                    disabled={
+                      move.isPending || !targetCustomer.trim()
+                    }
+                    className="px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
+                  >
+                    {move.isPending ? "…" : "Move"}
+                  </button>
+                  <button
+                    onClick={() => setMoveDest(null)}
+                    className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                  >
+                    Back
+                  </button>
+                </div>
+              )}
+
+              {moveDest === "kb" && (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    autoFocus
+                    value={targetFilename}
+                    onChange={(e) => setTargetFilename(e.target.value)}
+                    placeholder="filename.md"
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleMoveKb()
+                    }
+                    className={`${fieldCls} flex-1`}
+                  />
+                  <button
+                    onClick={handleMoveKb}
+                    disabled={
+                      move.isPending || !targetFilename.trim()
+                    }
+                    className="px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
+                  >
+                    {move.isPending ? "…" : "Move"}
+                  </button>
+                  <button
+                    onClick={() => setMoveDest(null)}
+                    className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                  >
+                    Back
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

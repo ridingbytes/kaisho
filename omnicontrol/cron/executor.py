@@ -62,29 +62,26 @@ def write_output(
 ) -> str:
     """Write content to the resolved destination.
 
-    If output_dest is "inbox", append to inbox org file.
+    If output_dest is "inbox", add a structured inbox item (type AI)
+    via the inbox service so it appears in the inbox panel.
     Otherwise write to the (possibly date-interpolated) file path.
 
     Returns a description of where output was written.
     """
     dest = _render_output_path(output_dest)
     if dest == "inbox":
-        _append_to_inbox(content, inbox_file, job_name)
+        from ..services import inbox as inbox_svc
+        inbox_svc.add_item(
+            inbox_file=inbox_file,
+            text=job_name,
+            item_type="AI",
+            body=content.strip(),
+        )
         return str(inbox_file)
     out_path = _resolve_path(dest)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(content, encoding="utf-8")
     return str(out_path)
-
-
-def _append_to_inbox(
-    content: str, inbox_file: Path, job_name: str = "AI Report"
-) -> None:
-    """Append content as a new org heading to the inbox file."""
-    today = date.today().isoformat()
-    heading = f"* AI: {job_name} {today}\n\n{content.strip()}\n"
-    with open(inbox_file, "a", encoding="utf-8") as f:
-        f.write("\n" + heading)
 
 
 # ---------------------------------------------------------------------------
