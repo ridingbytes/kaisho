@@ -52,6 +52,10 @@ task_states:
   done: false
   label: Todo
   name: TODO
+- color: '#f59e0b'
+  done: false
+  label: Wait
+  name: WAIT
 - color: '#D97757'
   done: false
   label: Next
@@ -60,10 +64,6 @@ task_states:
   done: false
   label: In Progress
   name: IN-PROGRESS
-- color: '#f59e0b'
-  done: false
-  label: Wait
-  name: WAIT
 - color: '#22c55e'
   done: true
   label: Done
