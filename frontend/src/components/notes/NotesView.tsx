@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { ArrowUpRight, Check, Pencil, Trash2, X } from "lucide-react";
+import {
+  ArrowRightLeft,
+  Check,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
+import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
 import { TagDropdown } from "../common/TagDropdown";
@@ -8,8 +15,8 @@ import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import {
   useAddNote,
   useDeleteNote,
+  useMoveNote,
   useNotes,
-  usePromoteNote,
   useUpdateNote,
 } from "../../hooks/useNotes";
 import { useSettings } from "../../hooks/useSettings";
@@ -26,68 +33,43 @@ const smallFieldCls =
   "text-xs text-slate-200 placeholder-slate-600 " +
   "focus:outline-none focus:border-border-strong";
 
-function PromoteDialog({
-  note,
-  onConfirm,
-  onCancel,
-}: {
-  note: NoteItem;
-  onConfirm: (customer: string) => void;
-  onCancel: () => void;
-}) {
-  const [customer, setCustomer] = useState(note.customer ?? "");
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-surface-card border border-border rounded-xl p-5 w-80 flex flex-col gap-3">
-        <p className="text-sm text-slate-300 font-medium">
-          Promote to task
-        </p>
-        <p className="text-xs text-slate-500 truncate">{note.title}</p>
-        <CustomerAutocomplete
-          value={customer}
-          onChange={setCustomer}
-          placeholder="Customer"
-          className="w-full"
-          inputClassName={`${fieldCls} w-full`}
-        />
-        <div className="flex gap-2 justify-end">
-          <button
-            onClick={onCancel}
-            className="px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-slate-200 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => customer && onConfirm(customer)}
-            disabled={!customer}
-            className="px-4 py-1.5 rounded-lg text-sm bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-50"
-          >
-            Promote
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+type MoveDest = "task" | "kb" | "archive";
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
 }
 
 function NoteRow({
   note,
   allTags,
   onDelete,
-  onPromote,
 }: {
   note: NoteItem;
   allTags: { name: string; color: string }[];
   onDelete: () => void;
-  onPromote: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [moving, setMoving] = useState(false);
+  const [moveDest, setMoveDest] = useState<MoveDest | null>(null);
   const [editTitle, setEditTitle] = useState(note.title);
   const [editBody, setEditBody] = useState(note.body ?? "");
-  const [editCustomer, setEditCustomer] = useState(note.customer ?? "");
-  const [editTags, setEditTags] = useState<string[]>(note.tags ?? []);
+  const [editCustomer, setEditCustomer] = useState(
+    note.customer ?? ""
+  );
+  const [editTags, setEditTags] = useState<string[]>(
+    note.tags ?? []
+  );
+  const [targetCustomer, setTargetCustomer] = useState(
+    note.customer ?? ""
+  );
+  const [targetFilename, setTargetFilename] = useState("");
   const updateNote = useUpdateNote();
+  const move = useMoveNote();
 
   function startEdit(e: React.MouseEvent) {
     e.stopPropagation();
@@ -120,8 +102,51 @@ function NoteRow({
     setEditing(false);
   }
 
+  function openMovePanel(e: React.MouseEvent) {
+    e.stopPropagation();
+    setMoving((v) => !v);
+    setMoveDest(null);
+    setTargetCustomer(note.customer ?? "");
+    setTargetFilename(slugify(note.title) + ".md");
+    setExpanded(true);
+  }
+
+  function selectDest(dest: MoveDest) {
+    setMoveDest(dest);
+    if (dest === "archive") {
+      move.mutate(
+        { noteId: note.id, destination: "archive" },
+        { onSuccess: () => setMoving(false) }
+      );
+    }
+  }
+
+  function handleMoveTask() {
+    if (!targetCustomer.trim()) return;
+    move.mutate(
+      {
+        noteId: note.id,
+        destination: "task",
+        customer: targetCustomer.trim(),
+      },
+      { onSuccess: () => setMoving(false) }
+    );
+  }
+
+  function handleMoveKb() {
+    if (!targetFilename.trim()) return;
+    move.mutate(
+      {
+        noteId: note.id,
+        destination: "kb",
+        filename: targetFilename.trim(),
+      },
+      { onSuccess: () => setMoving(false) }
+    );
+  }
+
   return (
-    <div className="border-b border-border-subtle">
+    <div className="group border-b border-border-subtle">
       <div
         className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-surface-raised transition-colors"
         onClick={() => !editing && setExpanded((v) => !v)}
@@ -140,13 +165,24 @@ function NoteRow({
         <span className="text-sm text-slate-200 flex-1 truncate">
           {note.title}
         </span>
+        {note.body && (
+          <span onClick={(e) => e.stopPropagation()}>
+            <ContentPopup
+              content={note.body}
+              title={note.title}
+              markdown
+            />
+          </span>
+        )}
         {note.tags?.map((tagName) => {
           const def = allTags.find((t) => t.name === tagName);
           return (
             <span
               key={tagName}
               className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white shrink-0"
-              style={{ backgroundColor: def?.color ?? "#64748b" }}
+              style={{
+                backgroundColor: def?.color ?? "#64748b",
+              }}
             >
               {tagName}
             </span>
@@ -160,14 +196,16 @@ function NoteRow({
           <Pencil size={12} />
         </button>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onPromote();
-          }}
-          className="text-slate-700 hover:text-accent transition-colors shrink-0"
-          title="Promote to task"
+          title="Move"
+          onClick={openMovePanel}
+          className={[
+            "transition-colors shrink-0",
+            moving
+              ? "text-accent"
+              : "text-slate-700 hover:text-accent",
+          ].join(" ")}
         >
-          <ArrowUpRight size={13} />
+          <ArrowRightLeft size={13} strokeWidth={2} />
         </button>
         <button
           onClick={(e) => {
@@ -242,6 +280,106 @@ function NoteRow({
                 {note.body}
               </Markdown>
             )
+          )}
+
+          {/* Move panel */}
+          {moving && !editing && (
+            <div className="flex flex-col gap-2 mt-1 p-2 rounded-md bg-surface-overlay border border-border">
+              {!moveDest && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => selectDest("task")}
+                    className="flex-1 px-2 py-1 rounded-md text-xs font-semibold bg-accent/20 text-accent hover:bg-accent/30 transition-colors"
+                  >
+                    Task
+                  </button>
+                  <button
+                    onClick={() => selectDest("kb")}
+                    className="flex-1 px-2 py-1 rounded-md text-xs font-semibold bg-accent/20 text-accent hover:bg-accent/30 transition-colors"
+                  >
+                    Knowledge
+                  </button>
+                  <button
+                    onClick={() => selectDest("archive")}
+                    disabled={move.isPending}
+                    className="flex-1 px-2 py-1 rounded-md text-xs font-semibold bg-accent/20 text-accent hover:bg-accent/30 transition-colors disabled:opacity-40"
+                  >
+                    {move.isPending ? "…" : "Archive"}
+                  </button>
+                  <button
+                    onClick={() => setMoving(false)}
+                    className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+
+              {moveDest === "task" && (
+                <div className="flex gap-2">
+                  <CustomerAutocomplete
+                    autoFocus
+                    value={targetCustomer}
+                    onChange={setTargetCustomer}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleMoveTask()
+                    }
+                    className="flex-1 min-w-0"
+                    inputClassName={smallFieldCls}
+                  />
+                  <button
+                    onClick={handleMoveTask}
+                    disabled={
+                      move.isPending
+                      || !targetCustomer.trim()
+                    }
+                    className="px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
+                  >
+                    {move.isPending ? "…" : "Move"}
+                  </button>
+                  <button
+                    onClick={() => setMoveDest(null)}
+                    className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                  >
+                    Back
+                  </button>
+                </div>
+              )}
+
+              {moveDest === "kb" && (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    autoFocus
+                    value={targetFilename}
+                    onChange={(e) =>
+                      setTargetFilename(e.target.value)
+                    }
+                    placeholder="filename.md"
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleMoveKb()
+                    }
+                    className={`${smallFieldCls} flex-1`}
+                  />
+                  <button
+                    onClick={handleMoveKb}
+                    disabled={
+                      move.isPending
+                      || !targetFilename.trim()
+                    }
+                    className="px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
+                  >
+                    {move.isPending ? "…" : "Move"}
+                  </button>
+                  <button
+                    onClick={() => setMoveDest(null)}
+                    className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                  >
+                    Back
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -328,19 +466,12 @@ export function NotesView() {
   const { data: settings } = useSettings();
   const allTags = settings?.tags ?? [];
   const deleteNote = useDeleteNote();
-  const promoteNote = usePromoteNote();
   const [showForm, setShowForm] = useState(false);
-  const [promoting, setPromoting] = useState<NoteItem | null>(null);
 
-  useEffect(() => registerPanelAction("notes", () => setShowForm(true)), []);
-
-  function handlePromoteConfirm(customer: string) {
-    if (!promoting) return;
-    promoteNote.mutate(
-      { noteId: promoting.id, customer },
-      { onSuccess: () => setPromoting(null) }
-    );
-  }
+  useEffect(
+    () => registerPanelAction("notes", () => setShowForm(true)),
+    []
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -358,14 +489,8 @@ export function NotesView() {
         <HelpButton title="Notes" doc={DOCS.notes} view="notes" />
       </div>
 
-      {showForm && <AddNoteForm onClose={() => setShowForm(false)} />}
-
-      {promoting && (
-        <PromoteDialog
-          note={promoting}
-          onConfirm={handlePromoteConfirm}
-          onCancel={() => setPromoting(null)}
-        />
+      {showForm && (
+        <AddNoteForm onClose={() => setShowForm(false)} />
       )}
 
       <div className="flex-1 overflow-y-auto">
@@ -385,7 +510,6 @@ export function NotesView() {
             note={note}
             allTags={allTags}
             onDelete={() => deleteNote.mutate(note.id)}
-            onPromote={() => setPromoting(note)}
           />
         ))}
       </div>

@@ -133,6 +133,19 @@ def update_note(
     return _heading_to_note(heading, note_id)
 
 
+def _load_heading(
+    notes_file: Path, note_id: str
+) -> tuple[OrgFile, int, Heading]:
+    """Parse notes file and return (org_file, idx, heading)."""
+    if not notes_file.exists():
+        raise ValueError("Notes file not found")
+    org_file = parse_org_file(notes_file, NOTES_KEYWORDS)
+    idx = int(note_id) - 1
+    if idx < 0 or idx >= len(org_file.headings):
+        raise ValueError(f"Note not found: {note_id}")
+    return org_file, idx, org_file.headings[idx]
+
+
 def promote_to_task(
     notes_file: Path,
     note_id: str,
@@ -140,17 +153,9 @@ def promote_to_task(
     customer: str,
 ) -> dict:
     """Promote a note to a task. Removes the note from notes.org."""
-    if not notes_file.exists():
-        raise ValueError("Notes file not found")
+    org_file, idx, heading = _load_heading(notes_file, note_id)
 
-    org_file = parse_org_file(notes_file, NOTES_KEYWORDS)
-    idx = int(note_id) - 1
-    if idx < 0 or idx >= len(org_file.headings):
-        raise ValueError(f"Note not found: {note_id}")
-
-    heading = org_file.headings[idx]
     title = _strip_customer(heading.title.strip())
-
     body = "\n".join(heading.body).strip() or None
 
     task = tasks_backend.add_task(
@@ -161,3 +166,37 @@ def promote_to_task(
     write_org_file(notes_file, org_file)
 
     return task
+
+
+def move_to_kb(
+    notes_file: Path,
+    kb_dir: Path,
+    note_id: str,
+    filename: str,
+) -> dict:
+    """Write note body as a markdown KB file then delete it.
+
+    Returns a dict with the file path.
+    """
+    if not filename.endswith(".md"):
+        raise ValueError("filename must end with .md")
+
+    org_file, idx, heading = _load_heading(notes_file, note_id)
+
+    body = "\n".join(heading.body).strip()
+    title = _strip_customer(heading.title.strip())
+    content = f"# {title}\n\n{body}\n" if body else f"# {title}\n"
+
+    kb_dir.mkdir(parents=True, exist_ok=True)
+    dest = kb_dir / filename
+    dest.write_text(content, encoding="utf-8")
+
+    org_file.headings.pop(idx)
+    write_org_file(notes_file, org_file)
+
+    return {"path": str(dest)}
+
+
+def archive_note(notes_file: Path, note_id: str) -> bool:
+    """Delete a note (archive). Returns False if not found."""
+    return delete_note(notes_file, note_id)

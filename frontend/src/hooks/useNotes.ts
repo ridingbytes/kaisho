@@ -3,6 +3,7 @@ import {
   addNote,
   deleteNote,
   fetchNotes,
+  moveNote,
   promoteNote,
   updateNote,
 } from "../api/client";
@@ -71,6 +72,27 @@ export function usePromoteNote() {
       noteId: string;
       customer: string;
     }) => promoteNote(noteId, customer),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["notes"] });
+      void qc.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
+export function useMoveNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      noteId,
+      destination,
+      customer,
+      filename,
+    }: {
+      noteId: string;
+      destination: "task" | "kb" | "archive";
+      customer?: string;
+      filename?: string;
+    }) => moveNote(noteId, destination, { customer, filename }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["notes"] });
       void qc.invalidateQueries({ queryKey: ["tasks"] });

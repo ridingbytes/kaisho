@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ...backends import get_backend
+from ...config import get_config
+from ...services import notes as notes_service
 
 router = APIRouter(prefix="/api/notes", tags=["notes"])
 
@@ -68,3 +70,61 @@ def promote_note(note_id: str, body: PromoteRequest):
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+class MoveRequest(BaseModel):
+    destination: str  # "task" | "kb" | "archive"
+    customer: str | None = None
+    filename: str | None = None
+
+
+@router.post("/{note_id}/move", status_code=201)
+def move_note(note_id: str, body: MoveRequest):
+    backend = get_backend()
+    cfg = get_config()
+
+    if body.destination == "task":
+        if not body.customer:
+            raise HTTPException(
+                status_code=400,
+                detail="customer is required for destination=task",
+            )
+        try:
+            return backend.notes.promote_to_task(
+                note_id=note_id,
+                tasks=backend.tasks,
+                customer=body.customer,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+
+    if body.destination == "kb":
+        if not body.filename:
+            raise HTTPException(
+                status_code=400,
+                detail="filename is required for destination=kb",
+            )
+        try:
+            return notes_service.move_to_kb(
+                notes_file=backend.notes.data_file,
+                kb_dir=cfg.WISSEN_DIR.expanduser(),
+                note_id=note_id,
+                filename=body.filename,
+            )
+        except ValueError as e:
+            raise HTTPException(
+                status_code=400, detail=str(e)
+            )
+
+    if body.destination == "archive":
+        ok = backend.notes.delete_note(note_id)
+        if not ok:
+            raise HTTPException(
+                status_code=404, detail="Note not found"
+            )
+        return {"ok": True}
+
+    raise HTTPException(
+        status_code=400,
+        detail="destination must be 'task', 'kb', or 'archive'",
+    )
