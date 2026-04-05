@@ -29,14 +29,27 @@ budget status for all active customers.
 Kanban-style task board. Each column is a task state. Drag cards
 between columns or use the status dropdown inside the card.
 
-**Add task** — "+ New" in the toolbar. Select a customer, enter a
-title.
+**New task** — "+ New" in the toolbar or double-tap **B**. The add
+form opens in the first column.
 
-**Move task** — drag the card, or open the card menu and pick a state.
+**Move task** — drag the card to a column, or hover and pick a state.
 
-**Archive** — removes the task from the board (moves to archive.org).
+**Edit** — pencil icon on hover. Edit title, customer, description
+(body), and tags. Save with **⌘↵** (Cmd+Enter) or the check button.
+
+**Body** — each task can have a multi-line description. It is shown
+collapsed below the title; click to expand. Rendered as Markdown.
+
+**Tags** — colored labels defined in Settings. Edit them inline.
+
+**Archive** — trash icon on hover. Moves the task to archive.org.
 
 **Show done** — toggle to reveal done and cancelled columns.
+
+**Archive drawer** — at the bottom of the board, click "Archive" to
+expand the list of archived tasks. Each row shows the archive date,
+customer, title, and original status. Click the restore icon to
+unarchive.
 
 ## CLI
 
@@ -47,6 +60,7 @@ oc task add ACME Implement login --status NEXT
 oc task move 3 IN-PROGRESS
 oc task done 3
 oc task cancel 3
+oc task archive 3
 \`\`\`
 
 ### Tag a task
@@ -55,16 +69,6 @@ oc task cancel 3
 oc task tag 3 bug urgent          # replace tags
 oc task tag 3 +review             # add one tag
 oc task tag 3 -urgent +shipped    # remove and add
-\`\`\`
-
-### Shortcuts
-
-\`\`\`bash
-oc task done   <ID>
-oc task next   <ID>
-oc task wait   <ID>
-oc task cancel <ID>
-oc task archive <ID>
 \`\`\`
 `,
 
@@ -80,7 +84,8 @@ capture fast, then promote to tasks or discard.
 **Customer** — optionally assign an item to a customer at capture time.
 
 **Promote** — click the arrow on an item to convert it to a task. You
-will be asked to pick a customer.
+will be asked to pick a customer. The body text of the inbox item is
+carried over to the new task.
 
 **Delete** — click the × on an item to discard it.
 
@@ -169,12 +174,16 @@ Environment variables:
 # GitHub Issues
 
 Shows open GitHub issues grouped by customer. Repos are resolved from
-the \`REPO\` property set on each customer.
+the \`REPO\` property set on each customer. Only customers with a
+configured repo are shown.
+
+**Customer filter** — when multiple customers have repos, a dropdown
+in the toolbar lets you narrow the view to one customer.
+
+**Refresh** — issues are cached for 2 minutes; use the reload button
+to fetch current data.
 
 Click an issue title to open it directly on GitHub.
-
-**Refresh** — issues are cached; use the reload button to fetch
-current data.
 
 ## CLI
 
@@ -199,13 +208,13 @@ Requires \`GITHUB_TOKEN\` (or gh CLI auth) to be configured. Set the
 Freeform notes stored in \`notes.org\` in \`ORG_DIR\`. Each note has a
 title, an optional body, and an optional customer association.
 
-**Add note** — \"+ Add\" opens a form. Enter a title, optional body
+**Add note** — "+ Add" opens a form. Enter a title, optional body
 text, and optionally assign a customer.
 
 **Expand** — click a row to toggle the body text.
 
-**Promote** — click the arrow icon to convert a note into a task. You
-will be asked to confirm the customer.
+**Promote** — click the arrow icon to convert a note into a task. The
+body text is carried over to the new task.
 
 **Delete** — trash icon removes the note permanently.
 
@@ -361,6 +370,7 @@ oc tag remove urgent
 oc config states
 oc config add-state REVIEW --label "In Review" --color "#8b5cf6"
 oc config remove-state REVIEW
+oc config move-state REVIEW --after IN-PROGRESS
 \`\`\`
 
 Settings are stored in \`settings.yaml\` (path: \`SETTINGS_FILE\` env
@@ -402,21 +412,38 @@ review, correct, and book time.
 
 **Period** — filter by Today, This week, or This month.
 
+**Date picker** — pick a specific date to see all entries for that
+day, regardless of the period selection.
+
 **Search** — filter rows by customer name or description.
+
+**Task** — each entry can be linked to a task. The task name appears
+in its own column. Use the edit form to assign or change the task.
+
+**Booked** — a green check icon marks entries already transferred to
+a customer's budget. The book button is hidden for booked entries.
 
 **Book** — "+ Book" in the toolbar opens a quick-book form to log a
 new entry with a duration string (e.g. \`2h\`, \`90min\`, \`1.5h\`).
+Double-tap **T** to open the book form directly.
 
 **Edit** (pencil icon on hover) — inline form to change date,
-customer, description, and hours. Date changes shift the entry to
-the new day while keeping the original time-of-day.
+customer, description, hours, and linked task. Date changes shift the
+entry to the new day while keeping the original time-of-day.
 
 **Book to project** (arrow icon on hover) — copy the entry's hours
 to a customer's budget as a time entry. Customer, description, and
-hours are pre-filled and editable.
+hours are pre-filled and editable. Marks the clock entry as booked.
 
 **Delete** (trash icon on hover) — removes the clock entry
 permanently.
+
+## Task card clock section
+
+On the Kanban board, each task card shows a collapsible clock section
+listing all entries linked to that task. A "book all unbooked" button
+lets you transfer unbooked hours to the customer's budget in one
+click.
 
 ## CLI
 
@@ -445,6 +472,10 @@ press Enter.
 
 **Quick Book** — log time retroactively with a duration string
 (e.g. \`2h\`, \`90min\`, \`1.5h\`).
+
+**Task** — optionally link the entry to a task using the task
+autocomplete field. If the task does not exist yet, it is created
+automatically.
 
 **Entries** — today's entries grouped by customer and description.
 Click a group to expand individual time slots. Use Resume to restart

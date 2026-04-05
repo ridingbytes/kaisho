@@ -1,4 +1,7 @@
+import { useState } from "react";
+import { RefreshCcw } from "lucide-react";
 import { useGithubIssues } from "../../hooks/useGithub";
+import { useQueryClient } from "@tanstack/react-query";
 import type { GithubIssue } from "../../types";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
@@ -50,8 +53,16 @@ function IssueRow({ issue }: { issue: GithubIssue }) {
 
 export function GithubView() {
   const { data: groups = [], isLoading, error } = useGithubIssues();
+  const qc = useQueryClient();
+  const [customerFilter, setCustomerFilter] = useState("");
 
-  const totalIssues = groups.reduce(
+  const customers = groups.map((g) => g.customer);
+
+  const filtered = customerFilter
+    ? groups.filter((g) => g.customer === customerFilter)
+    : groups;
+
+  const totalIssues = filtered.reduce(
     (sum, g) => sum + g.issues.length,
     0
   );
@@ -59,10 +70,33 @@ export function GithubView() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
+      <div className="flex items-center gap-3 px-6 py-3 border-b border-border-subtle shrink-0">
         <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
           GitHub
         </h1>
+        {customers.length > 1 && (
+          <select
+            value={customerFilter}
+            onChange={(e) => setCustomerFilter(e.target.value)}
+            className="text-xs bg-surface-raised border border-border rounded px-2 py-1 text-slate-300 focus:outline-none focus:border-accent"
+          >
+            <option value="">All customers</option>
+            {customers.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        )}
+        <button
+          onClick={() =>
+            void qc.invalidateQueries({ queryKey: ["github"] })
+          }
+          title="Refresh"
+          className="ml-auto p-1 rounded text-slate-600 hover:text-slate-300 hover:bg-surface-overlay transition-colors"
+        >
+          <RefreshCcw size={13} />
+        </button>
         <HelpButton title="GitHub Issues" doc={DOCS.github} view="github" />
       </div>
 
@@ -78,12 +112,14 @@ export function GithubView() {
         )}
 
         {!isLoading && !error && totalIssues === 0 && (
-          <p className="text-sm text-slate-600">No open issues.</p>
+          <p className="text-sm text-slate-600">
+            {customerFilter ? "No open issues for this customer." : "No open issues."}
+          </p>
         )}
 
         {!isLoading &&
           !error &&
-          groups.map((group) => (
+          filtered.map((group) => (
             <section key={`${group.customer}/${group.repo}`} className="mb-6">
               <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-2">
                 {group.customer}{" "}

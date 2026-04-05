@@ -67,6 +67,7 @@ export function useUpdateTask() {
         title?: string;
         customer?: string;
         status?: string;
+        body?: string;
       };
     }) => updateTask(taskId, updates),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["tasks"] }),

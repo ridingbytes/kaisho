@@ -151,8 +151,10 @@ def promote_to_task(
     heading = org_file.headings[idx]
     title = _strip_customer(heading.title.strip())
 
+    body = "\n".join(heading.body).strip() or None
+
     task = tasks_backend.add_task(
-        customer=customer, title=title, status="TODO"
+        customer=customer, title=title, status="TODO", body=body
     )
 
     org_file.headings.pop(idx)

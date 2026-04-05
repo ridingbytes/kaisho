@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
+import { Markdown } from "../common/Markdown";
 import { TagDropdown } from "../common/TagDropdown";
 import {
   useUpdateTask,
@@ -89,9 +90,10 @@ function TaskClockSection({ task }: TaskClockSectionProps) {
   function bookUnbooked() {
     if (!task.customer || unbooked.length === 0) return;
     const hours = parseFloat((totalUnbooked / 60).toFixed(2));
-    const desc = unbooked.length === 1
-      ? unbooked[0].description
-      : task.title.replace(/^\[[^\]]+\]:?\s*/, "");
+    const desc =
+      unbooked.length === 1
+        ? unbooked[0].description
+        : task.title.replace(/^\[[^\]]+\]:?\s*/, "");
     addTimeEntry.mutate(
       { customerName: task.customer, description: desc, hours },
       {
@@ -180,7 +182,9 @@ function TaskClockSection({ task }: TaskClockSectionProps) {
                   e.booked ? "text-emerald-600" : "text-slate-400",
                 ].join(" ")}
               >
-                {e.booked && <CheckCircle2 size={8} className="inline mr-0.5" />}
+                {e.booked && (
+                  <CheckCircle2 size={8} className="inline mr-0.5" />
+                )}
                 {fmtHours(e.duration_minutes)}
               </span>
               {!e.booked && task.customer && (
@@ -242,6 +246,8 @@ export function TaskCard({
   const [editTitle, setEditTitle] = useState("");
   const [editCustomer, setEditCustomer] = useState("");
   const [editTags, setEditTags] = useState<string[]>([]);
+  const [editBody, setEditBody] = useState("");
+  const [bodyExpanded, setBodyExpanded] = useState(false);
   const updateTask = useUpdateTask();
   const setTaskTags = useSetTaskTags();
   const archiveTask = useArchiveTask();
@@ -257,6 +263,7 @@ export function TaskCard({
     setEditTitle(stripCustomerPrefix(task.title));
     setEditCustomer(task.customer ?? "");
     setEditTags([...task.tags]);
+    setEditBody(task.body ?? "");
     setEditing(true);
   }
 
@@ -270,6 +277,7 @@ export function TaskCard({
         updates: {
           title: editTitle.trim(),
           customer: editCustomer.trim(),
+          body: editBody,
         },
       },
       {
@@ -288,7 +296,10 @@ export function TaskCard({
   }
 
   function handleEditKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") handleSave();
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      handleSave();
+    }
     if (e.key === "Escape") setEditing(false);
   }
 
@@ -341,6 +352,14 @@ export function TaskCard({
                 placeholder="Title"
                 className={editInputCls}
               />
+              <textarea
+                value={editBody}
+                onChange={(e) => setEditBody(e.target.value)}
+                onKeyDown={handleEditKeyDown}
+                placeholder="Description (optional)"
+                rows={3}
+                className={[editInputCls, "resize-none"].join(" ")}
+              />
               <div onPointerDown={(e) => e.stopPropagation()}>
                 <TagDropdown
                   selected={editTags}
@@ -348,7 +367,10 @@ export function TaskCard({
                   onChange={setEditTags}
                 />
               </div>
-              <div className="flex gap-1 justify-end">
+              <div className="flex gap-1 justify-end items-center">
+                <span className="text-[10px] text-slate-700 mr-auto">
+                  ⌘↵ to save
+                </span>
                 <button
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => setEditing(false)}
@@ -383,9 +405,35 @@ export function TaskCard({
                   </span>
                 </div>
               )}
-              <p className="text-sm font-medium text-slate-200 leading-snug mb-2">
+              <p className="text-sm font-medium text-slate-200 leading-snug mb-1">
                 {stripCustomerPrefix(task.title)}
               </p>
+              {task.body && (
+                <div className="mb-1.5">
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => setBodyExpanded((v) => !v)}
+                    className="flex items-center gap-1 text-[10px] text-slate-600 hover:text-slate-400 transition-colors"
+                  >
+                    {bodyExpanded ? (
+                      <ChevronDown size={10} />
+                    ) : (
+                      <ChevronRight size={10} />
+                    )}
+                    Description
+                  </button>
+                  {bodyExpanded && (
+                    <div
+                      className="mt-1 pl-1 border-l border-border-subtle"
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <Markdown className="text-xs text-slate-400 [&_p]:mb-1 [&_p]:leading-relaxed">
+                        {task.body}
+                      </Markdown>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex items-center gap-2 flex-wrap">
                 {task.tags.map((tagName) => {
                   const def = allTags.find((t) => t.name === tagName);

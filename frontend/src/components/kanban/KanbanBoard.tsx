@@ -8,8 +8,8 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { ChevronDown, ChevronRight, ArchiveRestore } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, ChevronRight, ArchiveRestore, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   useArchivedTasks,
   useMoveTask,
@@ -23,6 +23,7 @@ import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
 import { TaskCard } from "./TaskCard";
 import { KanbanColumn } from "./KanbanColumn";
+import { registerPanelAction } from "../../utils/panelActions";
 
 const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
 
@@ -140,7 +141,13 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
 
 export function KanbanBoard() {
   const [showDone, setShowDone] = useState(false);
+  const [openAddInFirst, setOpenAddInFirst] = useState(false);
   const { data: tasks = [], isLoading } = useTasks(showDone);
+
+  useEffect(
+    () => registerPanelAction("board", () => setOpenAddInFirst(true)),
+    []
+  );
   const { data: settings } = useSettings();
   const moveTask = useMoveTask();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -232,6 +239,14 @@ export function KanbanBoard() {
         <h1 className="text-sm font-semibold text-slate-300 tracking-wide uppercase">
           Board
         </h1>
+        <button
+          onClick={() => setOpenAddInFirst(true)}
+          className="flex items-center gap-1 px-2 py-1 rounded text-xs text-slate-500 hover:text-accent hover:bg-accent-muted transition-colors"
+          title="New task (double-tap B)"
+        >
+          <Plus size={12} />
+          New
+        </button>
         <label className="flex items-center gap-2 ml-auto cursor-pointer">
           <span className="text-xs text-slate-500">Show done</span>
           <Toggle checked={showDone} onChange={setShowDone} />
@@ -249,11 +264,13 @@ export function KanbanBoard() {
           onDragCancel={onDragCancel}
         >
           <div className="flex gap-4 p-6 h-full items-start">
-            {states.map((state) => (
+            {states.map((state, idx) => (
               <KanbanColumn
                 key={state.name}
                 state={state}
                 tasks={tasksByStatus(state.name)}
+                openAdd={idx === 0 && openAddInFirst}
+                onAddOpened={() => setOpenAddInFirst(false)}
               />
             ))}
           </div>

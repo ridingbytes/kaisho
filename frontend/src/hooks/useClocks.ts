@@ -33,10 +33,10 @@ export function useTodayEntries() {
   });
 }
 
-export function useClockEntries(period: string) {
+export function useClockEntries(period: string, specificDate?: string) {
   return useQuery({
-    queryKey: ["clocks", "entries", period],
-    queryFn: () => fetchClockEntries(period),
+    queryKey: ["clocks", "entries", period, specificDate ?? ""],
+    queryFn: () => fetchClockEntries(period, specificDate),
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   });

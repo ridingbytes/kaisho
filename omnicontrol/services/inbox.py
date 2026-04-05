@@ -184,12 +184,15 @@ def promote_to_task(
     # Remove [CUSTOMER] prefix if present, will be re-added by add_task
     clean_title = re.sub(r"^\[[^\]]+\]\s*", "", title)
 
+    body = "\n".join(heading.body).strip() or None
+
     task = add_task(
         todos_file=todos_file,
         keywords=keywords,
         customer=customer,
         title=clean_title,
         status="TODO",
+        body=body,
     )
 
     # Remove item from inbox

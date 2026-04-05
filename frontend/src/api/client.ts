@@ -69,7 +69,12 @@ export function createTask(
 
 export function updateTask(
   taskId: string,
-  updates: { title?: string; customer?: string; status?: string }
+  updates: {
+    title?: string;
+    customer?: string;
+    status?: string;
+    body?: string;
+  }
 ): Promise<Task> {
   return patch<Task>(`/kanban/tasks/${taskId}`, updates);
 }
@@ -153,7 +158,15 @@ export function fetchTodayEntries(): Promise<ClockEntry[]> {
   return get<ClockEntry[]>("/clocks/entries?period=today");
 }
 
-export function fetchClockEntries(period: string): Promise<ClockEntry[]> {
+export function fetchClockEntries(
+  period: string,
+  specificDate?: string
+): Promise<ClockEntry[]> {
+  if (specificDate) {
+    return get<ClockEntry[]>(
+      `/clocks/entries?from_date=${specificDate}&to_date=${specificDate}`
+    );
+  }
   return get<ClockEntry[]>(`/clocks/entries?period=${period}`);
 }
 

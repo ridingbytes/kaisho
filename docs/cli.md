@@ -100,7 +100,13 @@ oc task tag 3 -urgent +shipped    # remove urgent, add shipped
 oc task archive <ID>
 ```
 
-Moves the task from `todos.org` to `archive.org`.
+Moves the task from `todos.org` to `archive.org` under the `* Archiv`
+heading with standard `ARCHIVE_TIME`, `ARCHIVE_FILE`,
+`ARCHIVE_CATEGORY`, and `ARCHIVE_TODO` properties. Compatible with
+`org-archive-subtree-default` in Emacs.
+
+Archived tasks can be viewed and unarchived from the board UI
+(Archive drawer at the bottom of the board).
 
 ### task edit
 
@@ -123,7 +129,7 @@ oc clock start <CUSTOMER> <DESCRIPTION...>
 ```
 
 Opens a new clock entry (live timer). Fails if a timer is already
-running.
+running. Optionally link to a task with `--task-id`.
 
 ```bash
 oc clock start ACME Implement search feature
@@ -361,7 +367,8 @@ oc kb search API authentication --limit 10
 ## oc gh
 
 Query GitHub issues and pull requests. Repos are resolved from the
-`REPO` property on each customer in `kunden.org`.
+`REPO` property on each customer in `kunden.org`. Only customers with
+a configured `REPO` appear in the GitHub view.
 
 ### gh issues
 
@@ -540,7 +547,8 @@ oc ask <QUESTION...> [--model MODEL] [--no-github] [--no-context]
 ```
 
 Model format: `ollama:<model>` for a local Ollama instance,
-`claude:<model>` for the Anthropic API. Default: `ollama:qwen3:14b`.
+`lm_studio:<model>` for LM Studio, `claude:<model>` for the
+Anthropic API. Default: `ollama:qwen3:14b`.
 
 ```bash
 oc ask What should I focus on today?
@@ -600,17 +608,17 @@ development. Interactive API docs available at `/docs`.
 ---
 
 ## Environment variables
-    
-| Variable           | Default                    | Description                          |
-|--------------------+----------------------------+--------------------------------------|
-| `ORG_DIR`          | `~/ownCloud/cowork/org`    | Directory containing org data files  |
-| `WISSEN_DIR`       | `~/ownCloud/cowork/wissen` | Knowledge base directory             |
-| `RESEARCH_DIR`     | `~/ownCloud/cowork/research` | Research / AI output directory     |
-| `KUNDEN_DIR`       | `~/ownCloud/cowork/kunden` | Customer markdown files (markdown backend) |
-| `BACKEND`          | `org`                      | Storage driver: `org` or `markdown`  |
-| `JOBS_FILE`        | `./jobs.yaml`              | Cron job definitions                 |
-| `DATA_DIR`         | `./data`                   | SQLite database directory            |
-| `OLLAMA_BASE_URL`  | `http://localhost:11434`   | Ollama API base URL                  |
-| `SETTINGS_FILE`    | `./settings.yaml`          | Path to settings YAML                |
-| `HOST`             | `0.0.0.0`                  | API server bind address              |
-| `PORT`             | `8765`                     | API server port                      |
+
+| Variable           | Default                      | Description                                        |
+|--------------------|------------------------------|----------------------------------------------------|
+| `ORG_DIR`          | `~/ownCloud/cowork/org`      | Directory containing org data files                |
+| `WISSEN_DIR`       | `~/ownCloud/cowork/wissen`   | Knowledge base directory                           |
+| `RESEARCH_DIR`     | `~/ownCloud/cowork/research` | Research / AI output directory                     |
+| `KUNDEN_DIR`       | `~/ownCloud/cowork/kunden`   | Customer markdown files (markdown backend)         |
+| `BACKEND`          | `org`                        | Storage driver: `org` or `markdown`                |
+| `JOBS_FILE`        | `./jobs.yaml`                | Cron job definitions                               |
+| `DATA_DIR`         | `./data`                     | SQLite database directory (communications, cron)   |
+| `OLLAMA_BASE_URL`  | `http://localhost:11434`     | Ollama API base URL                                |
+| `SETTINGS_FILE`    | `./settings.yaml`            | Path to settings YAML                              |
+| `HOST`             | `0.0.0.0`                   | API server bind address                            |
+| `PORT`             | `8765`                       | API server port                                    |

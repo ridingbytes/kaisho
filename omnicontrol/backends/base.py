@@ -41,6 +41,7 @@ class TaskBackend(ABC):
         title: str,
         status: str = "TODO",
         tags: list[str] | None = None,
+        body: str | None = None,
     ) -> dict:
         """Create and persist a new task, return its dict."""
 
@@ -61,8 +62,9 @@ class TaskBackend(ABC):
         self, task_id: str,
         title: str | None = None,
         customer: str | None = None,
+        body: str | None = None,
     ) -> dict:
-        """Update a task's title and/or customer."""
+        """Update a task's title, customer, and/or body."""
 
     @abstractmethod
     def list_all_tags(self) -> list[dict]:

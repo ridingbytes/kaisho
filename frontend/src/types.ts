@@ -6,6 +6,7 @@ export interface Task {
   tags: string[];
   properties: Record<string, string>;
   created: string;
+  body: string;
 }
 
 export interface ArchivedTask extends Task {

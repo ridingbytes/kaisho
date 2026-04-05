@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, X, Check } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import {
@@ -13,11 +13,26 @@ import { TaskCard } from "./TaskCard";
 interface KanbanColumnProps {
   state: TaskState;
   tasks: Task[];
+  /** When true, open the add-task form immediately (caller resets to false). */
+  openAdd?: boolean;
+  onAddOpened?: () => void;
 }
 
-export function KanbanColumn({ state, tasks }: KanbanColumnProps) {
+export function KanbanColumn({
+  state,
+  tasks,
+  openAdd,
+  onAddOpened,
+}: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: state.name });
   const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    if (openAdd) {
+      setAdding(true);
+      onAddOpened?.();
+    }
+  }, [openAdd, onAddOpened]);
   const [customer, setCustomer] = useState("");
   const [title, setTitle] = useState("");
   const addTask = useAddTask();
@@ -41,7 +56,10 @@ export function KanbanColumn({ state, tasks }: KanbanColumnProps) {
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") handleAdd();
+    if (e.key === "Enter" || ((e.metaKey || e.ctrlKey) && e.key === "Enter")) {
+      e.preventDefault();
+      handleAdd();
+    }
     if (e.key === "Escape") setAdding(false);
   }
 

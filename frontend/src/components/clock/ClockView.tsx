@@ -503,9 +503,13 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
 
 export function ClockView() {
   const [period, setPeriod] = useState<Period>("week");
+  const [specificDate, setSpecificDate] = useState("");
   const [search, setSearch] = useState("");
   const [booking, setBooking] = useState(false);
-  const { data: entries = [], isLoading } = useClockEntries(period);
+  const { data: entries = [], isLoading } = useClockEntries(
+    period,
+    specificDate || undefined
+  );
   const { data: tasks = [] } = useTasks();
 
   useEffect(
@@ -541,12 +545,22 @@ export function ClockView() {
         <select
           className={`${inputCls} w-28`}
           value={period}
-          onChange={(e) => setPeriod(e.target.value as Period)}
+          onChange={(e) => {
+            setPeriod(e.target.value as Period);
+            setSpecificDate("");
+          }}
         >
           <option value="today">Today</option>
           <option value="week">This week</option>
           <option value="month">This month</option>
         </select>
+        <input
+          type="date"
+          className={`${inputCls} w-36`}
+          value={specificDate}
+          title="Filter by specific date"
+          onChange={(e) => setSpecificDate(e.target.value)}
+        />
         {!isLoading && filtered.length > 0 && (
           <span className="text-xs text-slate-500">
             {filtered.length} entries · {totalHours(filtered)}h

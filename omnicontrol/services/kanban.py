@@ -11,12 +11,26 @@ CUSTOMER_RE = re.compile(r"^\[([^\]]+)\]:\s*")
 CREATED_FMT = "%Y-%m-%d %a %H:%M"
 _WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 ARCHIVE_HEADING = "Archiv"
+_STATE_LOG_RE = re.compile(r'^- State "')
 
 
 def _extract_customer(title: str) -> str | None:
     """Extract [CUSTOMER] prefix from task title."""
     m = CUSTOMER_RE.match(title)
     return m.group(1) if m else None
+
+
+def _user_body(heading: Heading) -> str:
+    """Return user-editable body text, excluding state log entries."""
+    lines = [l for l in heading.body if not _STATE_LOG_RE.match(l)]
+    return "\n".join(lines).strip()
+
+
+def _update_body(heading: Heading, new_body: str) -> None:
+    """Replace user body lines, preserving state log entries at top."""
+    log_lines = [l for l in heading.body if _STATE_LOG_RE.match(l)]
+    user_lines = new_body.splitlines() if new_body.strip() else []
+    heading.body = log_lines + user_lines
 
 
 def _heading_to_task(heading: Heading, task_id: str) -> dict:
@@ -31,6 +45,7 @@ def _heading_to_task(heading: Heading, task_id: str) -> dict:
         "tags": list(heading.tags),
         "properties": dict(heading.properties),
         "created": created,
+        "body": _user_body(heading),
     }
 
 
@@ -127,6 +142,7 @@ def add_task(
     title: str,
     status: str = "TODO",
     tags: list[str] | None = None,
+    body: str | None = None,
 ) -> dict:
     """Add a new task to todos.org as a flat heading."""
     if not todos_file.exists():
@@ -145,6 +161,7 @@ def add_task(
         title=full_title,
         tags=tags or [],
         properties={"CREATED": f"[{created_str}]"},
+        body=body.splitlines() if body and body.strip() else [],
         dirty=True,
     )
 
@@ -207,8 +224,9 @@ def update_task(
     task_id: str,
     title: str | None = None,
     customer: str | None = None,
+    body: str | None = None,
 ) -> dict:
-    """Update a task's title and/or customer."""
+    """Update a task's title, customer, and/or body."""
     org_file = parse_org_file(todos_file, keywords)
     heading = _find_task_heading(org_file, keywords, task_id)
     if heading is None:
@@ -220,6 +238,8 @@ def update_task(
     heading.title = (
         f"[{new_customer}]: {new_bare}" if new_customer else new_bare
     )
+    if body is not None:
+        _update_body(heading, body)
     heading.dirty = True
     write_org_file(todos_file, org_file)
     return _heading_to_task(heading, task_id)

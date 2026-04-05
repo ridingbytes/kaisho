@@ -43,6 +43,7 @@ class OrgTaskBackend(TaskBackend):
         title: str,
         status: str = "TODO",
         tags: list[str] | None = None,
+        body: str | None = None,
     ) -> dict:
         return kanban.add_task(
             todos_file=self._todos_file,
@@ -51,6 +52,7 @@ class OrgTaskBackend(TaskBackend):
             title=title,
             status=status,
             tags=tags,
+            body=body,
         )
 
     def move_task(self, task_id: str, new_status: str) -> dict:
@@ -73,6 +75,7 @@ class OrgTaskBackend(TaskBackend):
         self, task_id: str,
         title: str | None = None,
         customer: str | None = None,
+        body: str | None = None,
     ) -> dict:
         return kanban.update_task(
             todos_file=self._todos_file,
@@ -80,6 +83,7 @@ class OrgTaskBackend(TaskBackend):
             task_id=task_id,
             title=title,
             customer=customer,
+            body=body,
         )
 
     def archive_task(self, task_id: str) -> bool:

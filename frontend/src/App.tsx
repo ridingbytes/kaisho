@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Moon, PanelLeft, PanelRight, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AdvisorMessage } from "./components/advisor/AdvisorView";
 import { AdvisorView } from "./components/advisor/AdvisorView";
 import { CommandPalette } from "./components/commandPalette/CommandPalette";
@@ -24,6 +24,7 @@ import {
 } from "./context/ShortcutsContext";
 import { ViewContext } from "./context/ViewContext";
 import { useWebSocket } from "./hooks/useWebSocket";
+import { schedulePanelAction } from "./utils/panelActions";
 
 export type View =
   | "dashboard"
@@ -89,6 +90,8 @@ function AppShell() {
     () => localStorage.getItem("clock_open") !== "false"
   );
 
+  const lastKeyRef = useRef<{ key: string; time: number } | null>(null);
+
   const [advisorMessages, setAdvisorMessages] = useState<AdvisorMessage[]>(
     () => {
       try {
@@ -151,6 +154,15 @@ function AppShell() {
       if (["INPUT", "TEXTAREA", "SELECT"].includes(tag)) return;
       for (const [v, shortcut] of Object.entries(config.views)) {
         if (matchesShortcut(e, shortcut)) {
+          // Double-tap same shortcut → open "new item" form in that panel
+          const now = Date.now();
+          const last = lastKeyRef.current;
+          if (last && last.key === e.key && now - last.time < 500) {
+            schedulePanelAction(v, "open_form");
+            lastKeyRef.current = null;
+          } else {
+            lastKeyRef.current = { key: e.key, time: now };
+          }
           setView(v as View);
           return;
         }
