@@ -5,6 +5,7 @@ import type { AdvisorMessage } from "./components/advisor/AdvisorView";
 import { AdvisorView } from "./components/advisor/AdvisorView";
 import { CommandPalette } from "./components/commandPalette/CommandPalette";
 import { ClockWidget } from "./components/clock/ClockWidget";
+import { CalendarView } from "./components/calendar/CalendarView";
 import { ClockView } from "./components/clock/ClockView";
 import { CommunicationsView } from "./components/communications/CommunicationsView";
 import { CronView } from "./components/cron/CronView";
@@ -35,6 +36,7 @@ export type View =
   | "knowledge"
   | "github"
   | "communications"
+  | "calendar"
   | "clocks"
   | "cron"
   | "settings"
@@ -49,6 +51,7 @@ const VIEW_TITLES: Record<View, string> = {
   knowledge: "Knowledge",
   github: "GitHub",
   communications: "Communications",
+  calendar: "Calendar",
   clocks: "Clock Entries",
   cron: "Cron",
   settings: "Settings",
@@ -57,8 +60,8 @@ const VIEW_TITLES: Record<View, string> = {
 
 const VALID_VIEWS = new Set<View>([
   "dashboard", "board", "inbox", "notes", "customers",
-  "knowledge", "github", "communications", "clocks", "cron",
-  "settings", "advisor",
+  "knowledge", "github", "communications", "calendar",
+  "clocks", "cron", "settings", "advisor",
 ]);
 
 function viewFromHash(): View {
@@ -222,6 +225,7 @@ function AppShell() {
             {view === "knowledge" && <KnowledgeView />}
             {view === "github" && <GithubView />}
             {view === "communications" && <CommunicationsView />}
+            {view === "calendar" && <CalendarView />}
             {view === "clocks" && <ClockView />}
             {view === "cron" && <CronView />}
             {view === "settings" && <SettingsView />}

@@ -10,10 +10,12 @@ import {
   deleteTag,
   fetchAiSettings,
   fetchAvailableModels,
+  fetchGithubSettings,
   fetchPaths,
   fetchSettings,
   reorderStates,
   updateAiSettings,
+  updateGithubSettings,
   updateTag,
 } from "../api/client";
 import type { AiSettings, TaskState } from "../types";
@@ -164,5 +166,27 @@ export function usePaths() {
     queryKey: ["settings", "paths"],
     queryFn: fetchPaths,
     staleTime: 300_000,
+  });
+}
+
+export function useGithubSettings() {
+  return useQuery({
+    queryKey: ["settings", "github"],
+    queryFn: fetchGithubSettings,
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateGithubSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (
+      updates: { token?: string; base_url?: string }
+    ) => updateGithubSettings(updates),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings", "github"],
+      });
+    },
   });
 }

@@ -11,9 +11,11 @@ import {
 import {
   useAiSettings,
   useAvailableModels,
+  useGithubSettings,
   usePaths,
   useSettings,
   useUpdateAiSettings,
+  useUpdateGithubSettings,
   useAddTag,
   useUpdateTag,
   useDeleteTag,
@@ -22,7 +24,74 @@ import {
 } from "../../hooks/useSettings";
 import type { AiSettings, ConfigTag } from "../../types";
 
+// ---------------------------------------------------------------------------
+// Shared styles
+// ---------------------------------------------------------------------------
+
 const DATALIST_ID = "ai-model-list";
+
+const fieldCls = [
+  "px-2 py-1 rounded-lg text-xs",
+  "bg-surface-raised border border-border text-slate-200",
+  "placeholder-slate-600 focus:outline-none focus:border-border-strong",
+].join(" ");
+
+const inputCls = [
+  "flex-1 px-3 py-1.5 rounded-lg text-sm font-mono",
+  "bg-surface-raised border border-border text-slate-200",
+  "placeholder-slate-600 focus:outline-none",
+  "focus:border-border-strong",
+].join(" ");
+
+const saveBtnCls = [
+  "px-4 py-1.5 rounded-lg text-sm",
+  "bg-accent text-white hover:bg-accent-hover",
+  "transition-colors disabled:opacity-50",
+].join(" ");
+
+// ---------------------------------------------------------------------------
+// Tab bar
+// ---------------------------------------------------------------------------
+
+type TabId = "general" | "ai" | "github" | "shortcuts" | "paths";
+
+const TABS: { id: TabId; label: string }[] = [
+  { id: "general", label: "General" },
+  { id: "ai", label: "AI" },
+  { id: "github", label: "GitHub" },
+  { id: "shortcuts", label: "Shortcuts" },
+  { id: "paths", label: "Paths" },
+];
+
+interface TabBarProps {
+  active: TabId;
+  onChange: (id: TabId) => void;
+}
+
+function TabBar({ active, onChange }: TabBarProps) {
+  return (
+    <div className="flex gap-1 border-b border-border-subtle mb-6">
+      {TABS.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => onChange(tab.id)}
+          className={[
+            "px-4 py-2 text-sm font-medium transition-colors",
+            active === tab.id
+              ? "text-white border-b-2 border-accent -mb-px"
+              : "text-slate-500 hover:text-slate-300",
+          ].join(" ")}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AI section
+// ---------------------------------------------------------------------------
 
 function ModelInput({
   value,
@@ -87,11 +156,6 @@ function AiSection() {
 
   return (
     <section>
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
-        AI
-      </h2>
-
-      {/* Shared datalist for all model inputs */}
       <datalist id={DATALIST_ID}>
         {models.map((m) => (
           <option key={m} value={m} />
@@ -99,7 +163,6 @@ function AiSection() {
       </datalist>
 
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
-        {/* Endpoints */}
         <div className="px-4 py-3 border-b border-border-subtle">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-2">
             Endpoints
@@ -114,12 +177,7 @@ function AiSection() {
                 value={form.ollama_url}
                 onChange={(e) => set("ollama_url", e.target.value)}
                 placeholder="http://localhost:11434"
-                className={[
-                  "flex-1 px-3 py-1.5 rounded-lg text-sm font-mono",
-                  "bg-surface-raised border border-border text-slate-200",
-                  "placeholder-slate-600 focus:outline-none",
-                  "focus:border-border-strong",
-                ].join(" ")}
+                className={inputCls}
               />
             </label>
             <label className="flex items-center gap-3">
@@ -131,12 +189,7 @@ function AiSection() {
                 value={form.lm_studio_url}
                 onChange={(e) => set("lm_studio_url", e.target.value)}
                 placeholder="http://localhost:1234 (default)"
-                className={[
-                  "flex-1 px-3 py-1.5 rounded-lg text-sm font-mono",
-                  "bg-surface-raised border border-border text-slate-200",
-                  "placeholder-slate-600 focus:outline-none",
-                  "focus:border-border-strong",
-                ].join(" ")}
+                className={inputCls}
               />
             </label>
             <label className="flex items-center gap-3">
@@ -148,18 +201,12 @@ function AiSection() {
                 value={form.claude_api_key}
                 onChange={(e) => set("claude_api_key", e.target.value)}
                 placeholder="sk-ant-… (or set ANTHROPIC_API_KEY)"
-                className={[
-                  "flex-1 px-3 py-1.5 rounded-lg text-sm font-mono",
-                  "bg-surface-raised border border-border text-slate-200",
-                  "placeholder-slate-600 focus:outline-none",
-                  "focus:border-border-strong",
-                ].join(" ")}
+                className={inputCls}
               />
             </label>
           </div>
         </div>
 
-        {/* Model defaults */}
         <div className="px-4 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-2">
             Default models
@@ -204,11 +251,7 @@ function AiSection() {
         <button
           onClick={handleSave}
           disabled={update.isPending}
-          className={[
-            "px-4 py-1.5 rounded-lg text-sm",
-            "bg-accent text-white hover:bg-accent-hover",
-            "transition-colors disabled:opacity-50",
-          ].join(" ")}
+          className={saveBtnCls}
         >
           {update.isPending ? "Saving…" : "Save"}
         </button>
@@ -223,11 +266,121 @@ function AiSection() {
   );
 }
 
-const fieldCls = [
-  "px-2 py-1 rounded-lg text-xs",
-  "bg-surface-raised border border-border text-slate-200",
-  "placeholder-slate-600 focus:outline-none focus:border-border-strong",
-].join(" ");
+// ---------------------------------------------------------------------------
+// GitHub section
+// ---------------------------------------------------------------------------
+
+function GithubSection() {
+  const { data: githubSettings, isLoading } = useGithubSettings();
+  const update = useUpdateGithubSettings();
+
+  const [token, setToken] = useState("");
+  const [baseUrl, setBaseUrl] = useState("https://api.github.com");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (githubSettings) {
+      setToken(githubSettings.token ?? "");
+      setBaseUrl(
+        githubSettings.base_url || "https://api.github.com"
+      );
+    }
+  }, [githubSettings]);
+
+  function handleSave() {
+    const updates: { token?: string; base_url?: string } = {
+      base_url: baseUrl,
+    };
+    if (token) updates.token = token;
+    update.mutate(updates, {
+      onSuccess: () => {
+        setSaved(true);
+        setToken("");
+        setTimeout(() => setSaved(false), 2000);
+      },
+    });
+  }
+
+  if (isLoading) {
+    return <p className="text-sm text-slate-600">Loading…</p>;
+  }
+
+  return (
+    <section>
+      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border-subtle">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-2">
+            Authentication
+          </p>
+          <div className="flex flex-col gap-2">
+            {githubSettings?.token_set && (
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
+                <span className="text-xs text-green-400">
+                  Token configured
+                </span>
+              </div>
+            )}
+            <label className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 w-32 shrink-0">
+                Personal Access Token
+              </span>
+              <input
+                type="password"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder="ghp_..."
+                className={inputCls}
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-2">
+            API
+          </p>
+          <label className="flex items-center gap-3">
+            <span className="text-xs text-slate-400 w-32 shrink-0">
+              Base URL
+            </span>
+            <input
+              type="text"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder="https://api.github.com"
+              className={inputCls}
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={update.isPending}
+          className={saveBtnCls}
+        >
+          {update.isPending ? "Saving…" : "Save"}
+        </button>
+        {saved && (
+          <span className="text-xs text-green-400">Saved.</span>
+        )}
+        {update.isError && (
+          <span className="text-xs text-red-400">Save failed.</span>
+        )}
+      </div>
+      <p className="mt-2 text-[10px] text-slate-700">
+        Token is stored in settings.yaml. It is never sent to the
+        browser in full.
+      </p>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tags
+// ---------------------------------------------------------------------------
 
 interface TagRowProps {
   tag: ConfigTag;
@@ -414,6 +567,10 @@ function TagsSection({ tags }: { tags: ConfigTag[] }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Customer Types
+// ---------------------------------------------------------------------------
+
 function CustomerTypesSection({ types }: { types: string[] }) {
   const [adding, setAdding] = useState(false);
   const [newType, setNewType] = useState("");
@@ -508,6 +665,77 @@ function CustomerTypesSection({ types }: { types: string[] }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// General tab
+// ---------------------------------------------------------------------------
+
+function GeneralTab() {
+  const { data: settings, isLoading } = useSettings();
+
+  if (isLoading) {
+    return <p className="text-sm text-slate-600">Loading…</p>;
+  }
+
+  if (!settings) return null;
+
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
+        {/* Task States */}
+        <section className="flex-1">
+          <div className="flex items-baseline gap-3 mb-3">
+            <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500">
+              Task States
+            </h2>
+            <span className="text-xs text-slate-700">
+              Edit via oc config
+            </span>
+          </div>
+          <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+            {settings.task_states.map((state, i) => (
+              <div
+                key={state.name}
+                className={[
+                  "flex items-center gap-3 px-4 py-2.5",
+                  i < settings.task_states.length - 1
+                    ? "border-b border-border-subtle"
+                    : "",
+                ].join(" ")}
+              >
+                <span
+                  className="w-3 h-3 rounded-full shrink-0"
+                  style={{ backgroundColor: state.color }}
+                />
+                <span className="text-xs font-mono text-slate-400 w-28">
+                  {state.name}
+                </span>
+                <span className="text-sm text-slate-200 flex-1">
+                  {state.label}
+                </span>
+                {state.done && (
+                  <span className="text-[10px] font-semibold uppercase text-slate-600 bg-surface-raised px-1.5 py-0.5 rounded">
+                    done
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <TagsSection tags={settings.tags} />
+      </div>
+
+      <CustomerTypesSection
+        types={settings.customer_types ?? []}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Shortcuts
+// ---------------------------------------------------------------------------
+
 const SHORTCUT_ROWS: { key: string; label: string }[] = [
   { key: "dashboard", label: "Dashboard" },
   { key: "board", label: "Board" },
@@ -517,6 +745,8 @@ const SHORTCUT_ROWS: { key: string; label: string }[] = [
   { key: "knowledge", label: "Knowledge" },
   { key: "github", label: "GitHub Issues" },
   { key: "communications", label: "Communications" },
+  { key: "calendar", label: "Calendar" },
+  { key: "clocks", label: "Clock Entries" },
   { key: "cron", label: "Cron Jobs" },
   { key: "settings", label: "Settings" },
   { key: "advisor", label: "Advisor" },
@@ -558,8 +788,12 @@ function KeyCapture({
 }
 
 function ShortcutsSection() {
-  const { config, setViewShortcut, setCommandPaletteShortcut, resetToDefaults } =
-    useShortcutsContext();
+  const {
+    config,
+    setViewShortcut,
+    setCommandPaletteShortcut,
+    resetToDefaults,
+  } = useShortcutsContext();
   const [recording, setRecording] = useState<string | null>(null);
 
   function handleCapture(rowKey: string, s: string) {
@@ -608,7 +842,9 @@ function ShortcutsSection() {
               key={row.key}
               className={[
                 "group flex items-center gap-3 px-4 py-2.5",
-                i < allRows.length - 1 ? "border-b border-border-subtle" : "",
+                i < allRows.length - 1
+                  ? "border-b border-border-subtle"
+                  : "",
               ].join(" ")}
             >
               <span className="text-sm text-slate-300 flex-1">
@@ -657,12 +893,16 @@ function ShortcutsSection() {
         })}
       </div>
       <p className="mt-2 text-[10px] text-slate-700">
-        Shortcuts fire when no text field is focused. Click a shortcut to
-        reassign it by pressing any key.
+        Shortcuts fire when no text field is focused. Click a shortcut
+        to reassign it by pressing any key.
       </p>
     </section>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Paths
+// ---------------------------------------------------------------------------
 
 function PathsSection() {
   const { data: paths } = usePaths();
@@ -705,8 +945,12 @@ function PathsSection() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Main SettingsView
+// ---------------------------------------------------------------------------
+
 export function SettingsView() {
-  const { data: settings, isLoading } = useSettings();
+  const [activeTab, setActiveTab] = useState<TabId>("general");
 
   return (
     <div className="flex flex-col h-full">
@@ -719,67 +963,14 @@ export function SettingsView() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="flex flex-col gap-10 max-w-3xl">
-          <AiSection />
-          <PathsSection />
+        <div className="max-w-3xl">
+          <TabBar active={activeTab} onChange={setActiveTab} />
 
-          {isLoading && (
-            <p className="text-sm text-slate-600">Loading…</p>
-          )}
-          {settings && (
-            <>
-            <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
-              {/* Task States */}
-              <section className="flex-1">
-                <div className="flex items-baseline gap-3 mb-3">
-                  <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500">
-                    Task States
-                  </h2>
-                  <span className="text-xs text-slate-700">
-                    Edit via oc config
-                  </span>
-                </div>
-                <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
-                  {settings.task_states.map((state, i) => (
-                    <div
-                      key={state.name}
-                      className={[
-                        "flex items-center gap-3 px-4 py-2.5",
-                        i < settings.task_states.length - 1
-                          ? "border-b border-border-subtle"
-                          : "",
-                      ].join(" ")}
-                    >
-                      <span
-                        className="w-3 h-3 rounded-full shrink-0"
-                        style={{ backgroundColor: state.color }}
-                      />
-                      <span className="text-xs font-mono text-slate-400 w-28">
-                        {state.name}
-                      </span>
-                      <span className="text-sm text-slate-200 flex-1">
-                        {state.label}
-                      </span>
-                      {state.done && (
-                        <span className="text-[10px] font-semibold uppercase text-slate-600 bg-surface-raised px-1.5 py-0.5 rounded">
-                          done
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* Tags */}
-              <TagsSection tags={settings.tags} />
-            </div>
-
-            <CustomerTypesSection
-              types={settings.customer_types ?? []}
-            />
-            </>
-          )}
-          <ShortcutsSection />
+          {activeTab === "general" && <GeneralTab />}
+          {activeTab === "ai" && <AiSection />}
+          {activeTab === "github" && <GithubSection />}
+          {activeTab === "shortcuts" && <ShortcutsSection />}
+          {activeTab === "paths" && <PathsSection />}
         </div>
       </div>
     </div>

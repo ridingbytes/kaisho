@@ -184,9 +184,11 @@ export function DashboardView() {
             <p className="text-sm font-semibold text-slate-200">
               {timer.customer}
             </p>
-            <p className="text-xs text-slate-500 truncate">
-              {timer.description}
-            </p>
+            {timer.description && (
+              <p className="text-xs text-slate-400 truncate">
+                {timer.description}
+              </p>
+            )}
           </div>
           <span className="text-lg font-mono font-semibold text-slate-200 tabular-nums shrink-0">
             {elapsed(timer.start)}

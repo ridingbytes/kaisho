@@ -71,3 +71,24 @@ def set_ai_settings(path: Path, updates: dict) -> dict:
     data["ai"] = ai
     save_settings(path, data)
     return get_ai_settings(data)
+
+
+DEFAULT_GITHUB: dict = {
+    "token": "",
+    "base_url": "https://api.github.com",
+}
+
+
+def get_github_settings(settings: dict) -> dict:
+    """Return GitHub settings with defaults filled in."""
+    return {**DEFAULT_GITHUB, **settings.get("github", {})}
+
+
+def set_github_settings(path: Path, updates: dict) -> dict:
+    """Persist GitHub settings updates; return the new full block."""
+    data = load_settings(path)
+    gh = data.get("github", {})
+    gh.update(updates)
+    data["github"] = gh
+    save_settings(path, data)
+    return get_github_settings(data)

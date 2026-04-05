@@ -162,6 +162,12 @@ export interface CronRun {
   error: string;
 }
 
+export interface GithubSettings {
+  token: string;
+  token_set: boolean;
+  base_url: string;
+}
+
 export interface GithubIssue {
   number: number;
   title: string;

@@ -9,6 +9,7 @@ import type {
   Customer,
   Dashboard,
   GithubIssueGroup,
+  GithubSettings,
   InboxItem,
   KnowledgeFile,
   KnowledgeSearchResult,
@@ -576,6 +577,16 @@ export function fetchCronHistory(jobId?: string): Promise<CronRun[]> {
 
 export function fetchGithubIssues(): Promise<GithubIssueGroup[]> {
   return get<GithubIssueGroup[]>("/github/issues");
+}
+
+export function fetchGithubSettings(): Promise<GithubSettings> {
+  return get<GithubSettings>("/settings/github");
+}
+
+export function updateGithubSettings(
+  updates: { token?: string; base_url?: string }
+): Promise<GithubSettings> {
+  return patch<GithubSettings>("/settings/github", updates);
 }
 
 // Advisor

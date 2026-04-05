@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
 from ...backends import get_backend
-from ...services.github import GhError, issues_for_customers, list_issues
+from ...services.github import GhError, issues_for_customers, list_issues, _token
 
 router = APIRouter(prefix="/api/github", tags=["github"])
 
@@ -15,7 +15,10 @@ def api_all_issues(state: str = "open", limit: int = 30):
     except FileNotFoundError:
         raise HTTPException(
             status_code=503,
-            detail="gh CLI not found. Install GitHub CLI.",
+            detail=(
+                "gh CLI not found. Install GitHub CLI or "
+                "configure a GitHub PAT in Settings."
+            ),
         )
 
 

@@ -64,9 +64,11 @@ export function ActiveTimer({ timer }: Props) {
           <p className="text-sm font-semibold text-slate-200 truncate">
             {timer.customer}
           </p>
-          <p className="text-xs text-slate-500 truncate mt-0.5">
-            {timer.description}
-          </p>
+          {timer.description && (
+            <p className="text-xs text-slate-400 truncate mt-0.5">
+              {timer.description}
+            </p>
+          )}
         </div>
 
         <div className="shrink-0 text-right">

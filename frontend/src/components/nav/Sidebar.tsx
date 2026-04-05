@@ -1,6 +1,7 @@
 import {
   Bot,
   BookOpen,
+  CalendarDays,
   Clock4,
   Columns2,
   GitPullRequest,
@@ -34,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "knowledge", label: "Knowledge", icon: BookOpen },
   { id: "github", label: "GitHub", icon: GitPullRequest },
   { id: "communications", label: "Comm", icon: MessageSquare },
+  { id: "calendar", label: "Calendar", icon: CalendarDays },
   { id: "clocks", label: "Clocks", icon: History },
   { id: "cron", label: "Cron", icon: Clock4 },
   { id: "settings", label: "Settings", icon: Settings },

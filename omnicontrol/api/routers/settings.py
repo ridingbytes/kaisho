@@ -276,6 +276,31 @@ def get_paths():
     }
 
 
+@router.get("/github")
+def get_github():
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    result = settings_svc.get_github_settings(data)
+    # Mask token for display — show only last 4 chars
+    token = result.get("token", "")
+    result["token_set"] = bool(token)
+    if token:
+        result["token"] = "..." + token[-4:]
+    return result
+
+
+class GithubSettingsUpdate(BaseModel):
+    token: str | None = None
+    base_url: str | None = None
+
+
+@router.patch("/github")
+def update_github(body: GithubSettingsUpdate):
+    cfg = get_config()
+    updates = body.model_dump(exclude_none=True)
+    return settings_svc.set_github_settings(cfg.SETTINGS_FILE, updates)
+
+
 @router.get("/ai/models")
 def list_models():
     cfg = get_config()
