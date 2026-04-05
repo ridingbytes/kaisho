@@ -49,7 +49,7 @@ export function ActiveTimer({ timer }: Props) {
           {/* Re-render on tick */}
           <div
             key={tick}
-            className="text-2xl font-mono font-semibold text-slate-100 tabular-nums"
+            className="text-2xl font-mono font-semibold text-slate-200 tabular-nums"
           >
             {elapsed(timer.start)}
           </div>
