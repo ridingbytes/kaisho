@@ -7,6 +7,7 @@ import {
   deleteClockEntry,
   fetchActiveTimer,
   fetchClockEntries,
+  fetchTaskClockEntries,
   fetchTodayEntries,
   quickBook,
   startTimer,
@@ -41,16 +42,28 @@ export function useClockEntries(period: string) {
   });
 }
 
+export function useTaskClockEntries(taskId: string) {
+  return useQuery({
+    queryKey: ["clocks", "task", taskId],
+    queryFn: () => fetchTaskClockEntries(taskId),
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    enabled: !!taskId,
+  });
+}
+
 export function useStartTimer() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
       customer,
       description,
+      taskId,
     }: {
       customer: string;
       description: string;
-    }) => startTimer(customer, description),
+      taskId?: string;
+    }) => startTimer(customer, description, taskId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["clocks"] });
     },
@@ -74,11 +87,13 @@ export function useQuickBook() {
       duration,
       customer,
       description,
+      taskId,
     }: {
       duration: string;
       customer: string;
       description: string;
-    }) => quickBook(duration, customer, description),
+      taskId?: string;
+    }) => quickBook(duration, customer, description, taskId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["clocks"] });
     },
@@ -98,6 +113,7 @@ export function useUpdateClockEntry() {
         description?: string;
         hours?: number;
         new_date?: string;
+        task_id?: string;
       };
     }) => updateClockEntry(startIso, updates),
     onSuccess: () => {

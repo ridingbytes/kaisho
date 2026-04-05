@@ -145,11 +145,24 @@ export function fetchClockEntries(period: string): Promise<ClockEntry[]> {
   return get<ClockEntry[]>(`/clocks/entries?period=${period}`);
 }
 
+export function fetchTaskClockEntries(
+  taskId: string
+): Promise<ClockEntry[]> {
+  return get<ClockEntry[]>(
+    `/clocks/entries?task_id=${encodeURIComponent(taskId)}`
+  );
+}
+
 export function startTimer(
   customer: string,
-  description: string
+  description: string,
+  taskId?: string,
 ): Promise<ClockEntry> {
-  return post<ClockEntry>("/clocks/start", { customer, description });
+  return post<ClockEntry>("/clocks/start", {
+    customer,
+    description,
+    task_id: taskId ?? null,
+  });
 }
 
 export function stopTimer(): Promise<ClockEntry> {
@@ -159,12 +172,14 @@ export function stopTimer(): Promise<ClockEntry> {
 export function quickBook(
   duration: string,
   customer: string,
-  description: string
+  description: string,
+  taskId?: string,
 ): Promise<ClockEntry> {
   return post<ClockEntry>("/clocks/quick-book", {
     duration,
     customer,
     description,
+    task_id: taskId ?? null,
   });
 }
 
@@ -175,6 +190,7 @@ export function updateClockEntry(
     description?: string;
     hours?: number;
     new_date?: string;
+    task_id?: string;
   }
 ): Promise<ClockEntry> {
   const qs = encodeURIComponent(startIso);

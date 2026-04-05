@@ -41,6 +41,7 @@ export interface ClockEntry {
   start: string;
   end: string | null;
   duration_minutes: number | null;
+  task_id: string | null;
 }
 
 export interface ActiveTimer {
