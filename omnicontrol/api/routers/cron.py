@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 
+from ...backends import get_backend
 from ...config import get_config
 from ...cron.executor import ExecutorError, execute_job, load_prompt
 from ...services import settings as settings_svc
@@ -11,6 +12,7 @@ from ...services.cron import (
     delete_history_entry,
     delete_job,
     finish_run,
+    get_history_entry,
     get_job,
     list_history,
     list_jobs,
@@ -206,10 +208,11 @@ def api_list_history(job_id: str | None = None, limit: int = 50):
 
 @router.get("/history/{entry_id}")
 def api_get_history(entry_id: int):
-    from ...services.cron import get_history_entry
     record = get_history_entry(_db(), entry_id)
     if record is None:
-        raise HTTPException(status_code=404, detail="History entry not found")
+        raise HTTPException(
+            status_code=404, detail="History entry not found"
+        )
     return record
 
 
@@ -217,4 +220,80 @@ def api_get_history(entry_id: int):
 def api_delete_history(entry_id: int):
     ok = delete_history_entry(_db(), entry_id)
     if not ok:
-        raise HTTPException(status_code=404, detail="History entry not found")
+        raise HTTPException(
+            status_code=404, detail="History entry not found"
+        )
+
+
+# -------------------------------------------------------------------
+# Move run output to task / note / KB
+# -------------------------------------------------------------------
+
+class MoveRunRequest(BaseModel):
+    destination: str  # "todo" | "note" | "kb"
+    customer: str | None = None
+    filename: str | None = None
+
+
+def _build_title(run: dict) -> str:
+    """Build a title from a cron run record."""
+    job_id = run.get("job_id", "cron")
+    ts = run.get("started_at", "")[:10]
+    return f"Cron: {job_id} ({ts})"
+
+
+@router.post("/history/{entry_id}/move", status_code=201)
+def api_move_run_output(entry_id: int, body: MoveRunRequest):
+    run = get_history_entry(_db(), entry_id)
+    if run is None:
+        raise HTTPException(
+            status_code=404, detail="History entry not found"
+        )
+
+    output = run.get("output", "") or ""
+    title = _build_title(run)
+    cfg = get_config()
+
+    if body.destination == "todo":
+        if not body.customer:
+            raise HTTPException(
+                status_code=400,
+                detail="customer required for destination=todo",
+            )
+        task = get_backend().tasks.add_task(
+            customer=body.customer,
+            title=title,
+            status="TODO",
+            body=output,
+        )
+        return task
+
+    if body.destination == "note":
+        note = get_backend().notes.add_note(
+            title=title,
+            body=output,
+        )
+        return note
+
+    if body.destination == "kb":
+        if not body.filename:
+            raise HTTPException(
+                status_code=400,
+                detail="filename required for destination=kb",
+            )
+        if not body.filename.endswith(".md"):
+            raise HTTPException(
+                status_code=400,
+                detail="filename must end with .md",
+            )
+        kb_dir = cfg.WISSEN_DIR.expanduser()
+        kb_dir.mkdir(parents=True, exist_ok=True)
+        dest = kb_dir / body.filename
+        content = f"# {title}\n\n{output}\n"
+        dest.write_text(content, encoding="utf-8")
+        return {"path": str(dest)}
+
+    raise HTTPException(
+        status_code=400,
+        detail="destination must be 'todo', 'note', or 'kb'",
+    )

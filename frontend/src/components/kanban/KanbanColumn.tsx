@@ -13,6 +13,7 @@ interface KanbanColumnProps {
   /** When true, open the add-task form immediately (caller resets to false). */
   openAdd?: boolean;
   onAddOpened?: () => void;
+  onTagClick?: (tag: string) => void;
 }
 
 export function KanbanColumn({
@@ -20,6 +21,7 @@ export function KanbanColumn({
   tasks,
   openAdd,
   onAddOpened,
+  onTagClick,
 }: KanbanColumnProps) {
   const {
     setNodeRef,
@@ -143,6 +145,7 @@ export function KanbanColumn({
               key={task.id}
               task={task}
               statusColor={state.color}
+              onTagClick={onTagClick}
             />
           ))}
         </SortableContext>

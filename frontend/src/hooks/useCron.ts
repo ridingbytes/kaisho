@@ -8,6 +8,7 @@ import {
   fetchCronHistory,
   fetchCronJobs,
   fetchJobPrompt,
+  moveCronOutput,
   saveJobPrompt,
   triggerCronJob,
   updateCronJob,
@@ -114,6 +115,28 @@ export function useDeleteCronRun() {
     mutationFn: (runId: number) => deleteCronRun(runId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["cron"] });
+    },
+  });
+}
+
+export function useMoveCronOutput() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      runId,
+      destination,
+      customer,
+      filename,
+    }: {
+      runId: number;
+      destination: "todo" | "note" | "kb";
+      customer?: string;
+      filename?: string;
+    }) => moveCronOutput(runId, destination, { customer, filename }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["cron"] });
+      void qc.invalidateQueries({ queryKey: ["tasks"] });
+      void qc.invalidateQueries({ queryKey: ["notes"] });
     },
   });
 }

@@ -256,9 +256,37 @@ def update_ai(body: AiSettingsUpdate):
     return settings_svc.set_ai_settings(cfg.SETTINGS_FILE, updates)
 
 
+_EDITABLE_PATH_KEYS = {"ORG_DIR", "DATA_DIR", "WISSEN_DIR", "RESEARCH_DIR"}
+
+
+def _env_file_path() -> "Path":
+    from pathlib import Path as _Path
+    return _Path(get_config().SETTINGS_FILE).parent / ".env"
+
+
+def _read_env_file(path: "Path") -> dict[str, str]:
+    if not path.exists():
+        return {}
+    result: dict[str, str] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        result[key.strip()] = val.strip()
+    return result
+
+
+def _write_env_file(path: "Path", data: dict[str, str]) -> None:
+    path.write_text(
+        "\n".join(f"{k}={v}" for k, v in data.items()) + "\n",
+        encoding="utf-8",
+    )
+
+
 @router.get("/paths")
 def get_paths():
-    """Return current file path configuration (read-only)."""
+    """Return current file path configuration."""
     cfg = get_config()
     return {
         "org_dir": str(cfg.ORG_DIR.expanduser()),
@@ -273,6 +301,36 @@ def get_paths():
         "data_dir": str(cfg.DATA_DIR.expanduser()),
         "settings_file": str(cfg.SETTINGS_FILE.expanduser()),
         "backend": cfg.BACKEND,
+    }
+
+
+class PathsUpdate(BaseModel):
+    org_dir: str | None = None
+    data_dir: str | None = None
+    wissen_dir: str | None = None
+    research_dir: str | None = None
+
+
+@router.patch("/paths")
+def update_paths(body: PathsUpdate):
+    """Write editable paths to .env; server restart required."""
+    env_path = _env_file_path()
+    current = _read_env_file(env_path)
+    mapping = {
+        "org_dir": "ORG_DIR",
+        "data_dir": "DATA_DIR",
+        "wissen_dir": "WISSEN_DIR",
+        "research_dir": "RESEARCH_DIR",
+    }
+    for field, env_key in mapping.items():
+        value = getattr(body, field)
+        if value is not None:
+            current[env_key] = value
+    _write_env_file(env_path, current)
+    return {
+        "message": (
+            "Paths saved to .env. Restart the server to apply changes."
+        )
     }
 
 

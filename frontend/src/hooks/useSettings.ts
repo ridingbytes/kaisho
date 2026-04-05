@@ -16,6 +16,7 @@ import {
   reorderStates,
   updateAiSettings,
   updateGithubSettings,
+  updatePaths,
   updateTag,
 } from "../api/client";
 import type { AiSettings, TaskState } from "../types";
@@ -166,6 +167,21 @@ export function usePaths() {
     queryKey: ["settings", "paths"],
     queryFn: fetchPaths,
     staleTime: 300_000,
+  });
+}
+
+export function useUpdatePaths() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (updates: {
+      org_dir?: string;
+      data_dir?: string;
+      wissen_dir?: string;
+      research_dir?: string;
+    }) => updatePaths(updates),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings", "paths"] });
+    },
   });
 }
 

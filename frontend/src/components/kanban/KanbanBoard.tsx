@@ -161,7 +161,9 @@ function matchesSearch(task: Task, query: string): boolean {
 }
 
 export function KanbanBoard() {
-  const [showDone, setShowDone] = useState(false);
+  const [showDone, setShowDone] = useState(
+    () => localStorage.getItem("board_show_done") === "true"
+  );
   const [openAddInFirst, setOpenAddInFirst] = useState(false);
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -343,7 +345,13 @@ export function KanbanBoard() {
         </div>
         <label className="flex items-center gap-2 ml-auto cursor-pointer">
           <span className="text-xs text-slate-500">Show done</span>
-          <Toggle checked={showDone} onChange={setShowDone} />
+          <Toggle
+            checked={showDone}
+            onChange={(v) => {
+              localStorage.setItem("board_show_done", String(v));
+              setShowDone(v);
+            }}
+          />
         </label>
         <HelpButton title="Board" doc={DOCS.board} view="board" />
       </div>
@@ -369,6 +377,7 @@ export function KanbanBoard() {
                   tasks={tasksByStatus(state.name)}
                   openAdd={idx === 0 && openAddInFirst}
                   onAddOpened={() => setOpenAddInFirst(false)}
+                  onTagClick={(tag) => setSearch(tag)}
                 />
               ))}
             </div>
@@ -383,6 +392,7 @@ export function KanbanBoard() {
               />
             ) : null}
           </DragOverlay>
+
         </DndContext>
       </div>
 

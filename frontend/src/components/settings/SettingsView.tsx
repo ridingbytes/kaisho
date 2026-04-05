@@ -16,6 +16,7 @@ import {
   useSettings,
   useUpdateAiSettings,
   useUpdateGithubSettings,
+  useUpdatePaths,
   useAddTag,
   useUpdateTag,
   useDeleteTag,
@@ -745,7 +746,6 @@ const SHORTCUT_ROWS: { key: string; label: string }[] = [
   { key: "knowledge", label: "Knowledge" },
   { key: "github", label: "GitHub Issues" },
   { key: "communications", label: "Communications" },
-  { key: "calendar", label: "Calendar" },
   { key: "clocks", label: "Clock Entries" },
   { key: "cron", label: "Cron Jobs" },
   { key: "settings", label: "Settings" },
@@ -904,29 +904,112 @@ function ShortcutsSection() {
 // Paths
 // ---------------------------------------------------------------------------
 
+const EDITABLE_PATH_KEYS = [
+  { key: "org_dir", label: "ORG_DIR" },
+  { key: "data_dir", label: "DATA_DIR" },
+  { key: "wissen_dir", label: "WISSEN_DIR" },
+  { key: "research_dir", label: "RESEARCH_DIR" },
+] as const;
+
+type EditablePathKey = (typeof EDITABLE_PATH_KEYS)[number]["key"];
+
 function PathsSection() {
   const { data: paths } = usePaths();
+  const update = useUpdatePaths();
+  const [form, setForm] = useState<Record<EditablePathKey, string>>({
+    org_dir: "",
+    data_dir: "",
+    wissen_dir: "",
+    research_dir: "",
+  });
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (paths) {
+      setForm({
+        org_dir: paths.org_dir ?? "",
+        data_dir: paths.data_dir ?? "",
+        wissen_dir: paths.wissen_dir ?? "",
+        research_dir: paths.research_dir ?? "",
+      });
+    }
+  }, [paths]);
+
   if (!paths) return null;
-  const rows = [
+
+  function handleSave() {
+    update.mutate(form, {
+      onSuccess: () => {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      },
+    });
+  }
+
+  const readOnlyRows = [
     { label: "Backend", value: paths.backend },
-    { label: "ORG_DIR", value: paths.org_dir },
-    { label: "DATA_DIR", value: paths.data_dir },
-    { label: "WISSEN_DIR", value: paths.wissen_dir },
-    { label: "RESEARCH_DIR", value: paths.research_dir },
     { label: "Settings file", value: paths.settings_file },
   ];
+
   return (
     <section>
       <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
         Paths
       </h2>
+
+      <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
+        {EDITABLE_PATH_KEYS.map(({ key, label }, i) => (
+          <label
+            key={key}
+            className={[
+              "flex items-center gap-3 px-4 py-2.5",
+              i < EDITABLE_PATH_KEYS.length - 1
+                ? "border-b border-border-subtle"
+                : "",
+            ].join(" ")}
+          >
+            <span className="text-xs text-slate-400 w-32 shrink-0">
+              {label}
+            </span>
+            <input
+              type="text"
+              value={form[key]}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, [key]: e.target.value }))
+              }
+              className={inputCls}
+            />
+          </label>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={handleSave}
+          disabled={update.isPending}
+          className={saveBtnCls}
+        >
+          {update.isPending ? "Saving…" : "Save"}
+        </button>
+        {saved && (
+          <span className="text-xs text-green-400">
+            Saved. Restart the server to apply changes.
+          </span>
+        )}
+        {update.isError && (
+          <span className="text-xs text-red-400">Save failed.</span>
+        )}
+      </div>
+
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
-        {rows.map((row, i) => (
+        {readOnlyRows.map((row, i) => (
           <div
             key={row.label}
             className={[
               "flex items-center gap-3 px-4 py-2.5",
-              i < rows.length - 1 ? "border-b border-border-subtle" : "",
+              i < readOnlyRows.length - 1
+                ? "border-b border-border-subtle"
+                : "",
             ].join(" ")}
           >
             <span className="text-xs text-slate-500 w-32 shrink-0">
@@ -939,7 +1022,7 @@ function PathsSection() {
         ))}
       </div>
       <p className="mt-2 text-[10px] text-slate-700">
-        Read-only. Configure via environment variables or .env file.
+        Path changes are written to .env and require a server restart.
       </p>
     </section>
   );

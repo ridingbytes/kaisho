@@ -7,13 +7,12 @@ import {
   Check,
   X,
   Clock,
-  CheckCircle2,
   ChevronDown,
   ChevronRight,
-  SquareArrowUp,
   GitBranch,
 } from "lucide-react";
 import { useState } from "react";
+import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { Markdown } from "../common/Markdown";
 import { TagDropdown } from "../common/TagDropdown";
@@ -25,8 +24,8 @@ import {
 import {
   useTaskClockEntries,
   useUpdateClockEntry,
+  useDeleteClockEntry,
 } from "../../hooks/useClocks";
-import { useAddTimeEntry } from "../../hooks/useCustomers";
 import { useSettings } from "../../hooks/useSettings";
 import type { ClockEntry, Task } from "../../types";
 
@@ -58,69 +57,134 @@ interface TaskClockSectionProps {
   task: Task;
 }
 
+function ClockEntryRow({
+  entry,
+  updateEntry,
+  deleteEntry,
+}: {
+  entry: ClockEntry;
+  updateEntry: ReturnType<typeof useUpdateClockEntry>;
+  deleteEntry: ReturnType<typeof useDeleteClockEntry>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [desc, setDesc] = useState(entry.description);
+  const [hours, setHours] = useState(
+    String((entry.duration_minutes ?? 0) / 60)
+  );
+
+  function startEdit() {
+    setDesc(entry.description);
+    setHours(
+      String((entry.duration_minutes ?? 0) / 60)
+    );
+    setEditing(true);
+  }
+
+  function handleSave() {
+    const h = parseFloat(hours);
+    if (isNaN(h)) return;
+    updateEntry.mutate(
+      {
+        startIso: entry.start,
+        updates: { description: desc, hours: h },
+      },
+      { onSuccess: () => setEditing(false) }
+    );
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") handleSave();
+    if (e.key === "Escape") setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <li className="flex items-center gap-1 text-[10px]">
+        <input
+          autoFocus
+          value={desc}
+          onChange={(e) => setDesc(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className="flex-1 min-w-0 px-1 py-0.5 rounded text-[10px] bg-surface-raised border border-border text-slate-200 focus:outline-none focus:border-accent"
+        />
+        <input
+          type="number"
+          step="0.25"
+          min="0"
+          value={hours}
+          onChange={(e) => setHours(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className="w-14 px-1 py-0.5 rounded text-[10px] tabular-nums bg-surface-raised border border-border text-slate-200 focus:outline-none focus:border-accent"
+        />
+        <button
+          onClick={() => setEditing(false)}
+          className="p-0.5 rounded text-slate-600 hover:text-slate-300"
+        >
+          <X size={9} />
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={updateEntry.isPending}
+          className="p-0.5 rounded text-accent hover:bg-accent-muted disabled:opacity-40"
+        >
+          <Check size={9} />
+        </button>
+      </li>
+    );
+  }
+
+  return (
+    <li className="flex items-center gap-1.5 text-[10px] group/entry">
+      <span className="font-mono text-slate-600">
+        {fmtDate(entry.start)}
+      </span>
+      <span className="flex-1 truncate text-slate-500">
+        {entry.description}
+      </span>
+      <span className="tabular-nums text-slate-400">
+        {fmtHours(entry.duration_minutes)}
+      </span>
+      <button
+        onClick={startEdit}
+        title="Edit entry"
+        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-slate-600 hover:text-slate-300"
+      >
+        <Pencil size={9} />
+      </button>
+      <button
+        onClick={() =>
+          updateEntry.mutate({
+            startIso: entry.start,
+            updates: { task_id: "" },
+          })
+        }
+        disabled={updateEntry.isPending}
+        title="Detach from task"
+        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-slate-600 hover:text-slate-300 disabled:opacity-40"
+      >
+        <X size={9} />
+      </button>
+      <button
+        onClick={() => deleteEntry.mutate(entry.start)}
+        disabled={deleteEntry.isPending}
+        title="Delete entry"
+        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-slate-600 hover:text-red-400 disabled:opacity-40"
+      >
+        <Trash2 size={9} />
+      </button>
+    </li>
+  );
+}
+
 function TaskClockSection({ task }: TaskClockSectionProps) {
   const { data: entries = [] } = useTaskClockEntries(task.id);
   const updateEntry = useUpdateClockEntry();
-  const addTimeEntry = useAddTimeEntry();
+  const deleteEntry = useDeleteClockEntry();
   const [open, setOpen] = useState(false);
 
   if (entries.length === 0) return null;
 
-  const unbooked = entries.filter((e) => !e.booked);
   const totalAll = totalMinutes(entries);
-  const totalUnbooked = totalMinutes(unbooked);
-  const allBooked = unbooked.length === 0;
-
-  function bookOne(entry: ClockEntry) {
-    if (!task.customer) return;
-    const hours = parseFloat(
-      ((entry.duration_minutes ?? 0) / 60).toFixed(2)
-    );
-    addTimeEntry.mutate(
-      {
-        customerName: task.customer,
-        description: entry.description,
-        hours,
-      },
-      {
-        onSuccess: () => {
-          updateEntry.mutate({
-            startIso: entry.start,
-            updates: { booked: true },
-          });
-        },
-      }
-    );
-  }
-
-  function bookUnbooked() {
-    if (!task.customer || unbooked.length === 0) return;
-    const hours = parseFloat((totalUnbooked / 60).toFixed(2));
-    const desc =
-      unbooked.length === 1
-        ? unbooked[0].description
-        : task.title.replace(/^\[[^\]]+\]:?\s*/, "");
-    addTimeEntry.mutate(
-      { customerName: task.customer, description: desc, hours },
-      {
-        onSuccess: () => {
-          unbooked.forEach((e) =>
-            updateEntry.mutate({
-              startIso: e.start,
-              updates: { booked: true },
-            })
-          );
-        },
-      }
-    );
-  }
-
-  function detach(entry: ClockEntry) {
-    updateEntry.mutate({
-      startIso: entry.start,
-      updates: { task_id: "" },
-    });
-  }
 
   return (
     <div
@@ -132,86 +196,29 @@ function TaskClockSection({ task }: TaskClockSectionProps) {
           onClick={() => setOpen((v) => !v)}
           className="flex items-center gap-1 hover:text-slate-300 flex-1 min-w-0"
         >
-          {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+          {open ? (
+            <ChevronDown size={10} />
+          ) : (
+            <ChevronRight size={10} />
+          )}
           <Clock size={10} />
           <span className="truncate">
-            {entries.length} {entries.length === 1 ? "entry" : "entries"}
+            {entries.length}{" "}
+            {entries.length === 1 ? "entry" : "entries"}
             {" · "}
             {fmtHours(totalAll)}
-            {!allBooked && (
-              <span className="text-slate-600 ml-1">
-                ({fmtHours(totalUnbooked)} unbooked)
-              </span>
-            )}
-            {allBooked && (
-              <span className="text-emerald-600 ml-1">all booked</span>
-            )}
           </span>
         </button>
-        {task.customer && !allBooked && (
-          <button
-            onClick={bookUnbooked}
-            disabled={addTimeEntry.isPending}
-            title="Book unbooked to project"
-            className="ml-auto p-0.5 rounded text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-40 shrink-0"
-          >
-            <SquareArrowUp size={10} />
-          </button>
-        )}
-        {allBooked && (
-          <span title="All entries booked" className="ml-auto shrink-0">
-            <CheckCircle2 size={10} className="text-emerald-600" />
-          </span>
-        )}
       </div>
       {open && (
         <ul className="mt-1 space-y-0.5">
           {entries.map((e) => (
-            <li
+            <ClockEntryRow
               key={e.start}
-              className="flex items-center gap-1.5 text-[10px] group/entry"
-            >
-              <span className="font-mono text-slate-600">
-                {fmtDate(e.start)}
-              </span>
-              <span
-                className={[
-                  "flex-1 truncate",
-                  e.booked ? "text-slate-600" : "text-slate-500",
-                ].join(" ")}
-              >
-                {e.description}
-              </span>
-              <span
-                className={[
-                  "tabular-nums",
-                  e.booked ? "text-emerald-600" : "text-slate-400",
-                ].join(" ")}
-              >
-                {e.booked && (
-                  <CheckCircle2 size={8} className="inline mr-0.5" />
-                )}
-                {fmtHours(e.duration_minutes)}
-              </span>
-              {!e.booked && task.customer && (
-                <button
-                  onClick={() => bookOne(e)}
-                  disabled={addTimeEntry.isPending}
-                  title="Book to project"
-                  className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-40"
-                >
-                  <SquareArrowUp size={9} />
-                </button>
-              )}
-              <button
-                onClick={() => detach(e)}
-                disabled={updateEntry.isPending}
-                title="Detach from task"
-                className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-slate-600 hover:text-slate-300 disabled:opacity-40"
-              >
-                <X size={9} />
-              </button>
-            </li>
+              entry={e}
+              updateEntry={updateEntry}
+              deleteEntry={deleteEntry}
+            />
           ))}
         </ul>
       )}
@@ -324,12 +331,14 @@ interface TaskCardProps {
   task: Task;
   statusColor: string;
   isDragOverlay?: boolean;
+  onTagClick?: (tag: string) => void;
 }
 
 export function TaskCard({
   task,
   statusColor,
   isDragOverlay = false,
+  onTagClick,
 }: TaskCardProps) {
   const {
     attributes,
@@ -531,6 +540,13 @@ export function TaskCard({
                     )}
                     Description
                   </button>
+                  <span onPointerDown={(e) => e.stopPropagation()}>
+                    <ContentPopup
+                      content={task.body}
+                      title="Description"
+                      markdown
+                    />
+                  </span>
                   {bodyExpanded && (
                     <div
                       className="mt-1 pl-1 border-l border-border-subtle"
@@ -547,43 +563,48 @@ export function TaskCard({
                 {task.tags.map((tagName) => {
                   const def = allTags.find((t) => t.name === tagName);
                   return def ? (
-                    <span
+                    <button
                       key={tagName}
-                      className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => onTagClick?.(tagName)}
+                      className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white hover:opacity-80 transition-opacity"
                       style={{ backgroundColor: def.color }}
                     >
                       {tagName}
-                    </span>
+                    </button>
                   ) : (
-                    <span
+                    <button
                       key={tagName}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => onTagClick?.(tagName)}
                       className={[
                         "px-1.5 py-0.5 rounded text-[10px] font-medium",
                         "bg-surface-overlay text-slate-400",
                         "border border-border-subtle",
+                        "hover:border-accent hover:text-accent transition-colors",
                       ].join(" ")}
                     >
                       {tagName}
-                    </span>
+                    </button>
                   );
                 })}
+                {task.github_url && (
+                  <a
+                    href={task.github_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-overlay border border-border-subtle text-slate-400 hover:text-accent hover:border-accent transition-colors"
+                    title={task.github_url}
+                  >
+                    <GitBranch size={10} />
+                    #{extractIssueNumber(task.github_url)}
+                  </a>
+                )}
                 <span className="ml-auto text-[10px] text-slate-600 shrink-0">
                   {formatDate(task.created)}
                 </span>
               </div>
-              {task.github_url && (
-                <a
-                  href={task.github_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-1 text-[10px] text-slate-500 hover:text-accent transition-colors"
-                  title={task.github_url}
-                >
-                  <GitBranch size={10} />
-                  #{extractIssueNumber(task.github_url)}
-                </a>
-              )}
               <TaskClockSection task={task} />
             </>
           )}

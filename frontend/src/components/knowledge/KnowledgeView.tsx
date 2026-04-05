@@ -1,4 +1,13 @@
-import { Check, FilePlus, Pencil, Trash2, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  FilePlus,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   useDeleteKnowledgeFile,
@@ -15,6 +24,158 @@ import type { KnowledgeFile } from "../../types";
 const inputCls =
   "bg-surface-raised border border-border rounded px-2 py-1 text-sm " +
   "text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent";
+
+// ---------------------------------------------------------------------------
+// Tree data structures
+// ---------------------------------------------------------------------------
+
+interface TreeFolder {
+  kind: "folder";
+  name: string;
+  label: string;
+  path: string;
+  children: TreeNode[];
+  expanded: boolean;
+}
+
+interface TreeLeaf {
+  kind: "leaf";
+  name: string;
+  label: string;
+  path: string;
+}
+
+type TreeNode = TreeFolder | TreeLeaf;
+
+// ---------------------------------------------------------------------------
+// Tree building
+// ---------------------------------------------------------------------------
+
+function insertIntoFolder(
+  nodes: TreeNode[],
+  segments: string[],
+  file: KnowledgeFile
+): void {
+  if (segments.length === 1) {
+    nodes.push({
+      kind: "leaf",
+      name: segments[0].replace(/\.md$/, ""),
+      label: file.label,
+      path: file.path,
+    });
+    return;
+  }
+
+  const folderName = segments[0];
+  const existing = nodes.find(
+    (n): n is TreeFolder =>
+      n.kind === "folder" && n.name === folderName
+  );
+
+  if (existing) {
+    insertIntoFolder(existing.children, segments.slice(1), file);
+    return;
+  }
+
+  const folder: TreeFolder = {
+    kind: "folder",
+    name: folderName,
+    label: file.label,
+    path: segments[0],
+    children: [],
+    expanded: false,
+  };
+  insertIntoFolder(folder.children, segments.slice(1), file);
+  nodes.push(folder);
+}
+
+function buildLabelNodes(
+  files: KnowledgeFile[],
+  label: string
+): TreeNode[] {
+  const nodes: TreeNode[] = [];
+  for (const file of files) {
+    if (file.label !== label) continue;
+    const segments = file.path.split("/").filter(Boolean);
+    insertIntoFolder(nodes, segments, file);
+  }
+  return nodes;
+}
+
+function buildTree(
+  files: KnowledgeFile[]
+): Record<string, TreeNode[]> {
+  const labels = Array.from(new Set(files.map((f) => f.label))).sort();
+  const result: Record<string, TreeNode[]> = {};
+  for (const label of labels) {
+    result[label] = buildLabelNodes(files, label);
+  }
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Expand folders that contain matching paths
+// ---------------------------------------------------------------------------
+
+function expandMatchingFolders(
+  nodes: TreeNode[],
+  matchingPaths: Set<string>
+): TreeNode[] {
+  return nodes.map((node) => {
+    if (node.kind === "leaf") return node;
+    const leafPaths = collectLeafPaths(node);
+    const hasMatch = leafPaths.some((p) => matchingPaths.has(p));
+    return {
+      ...node,
+      expanded: hasMatch ? true : node.expanded,
+      children: expandMatchingFolders(node.children, matchingPaths),
+    };
+  });
+}
+
+function collectLeafPaths(node: TreeNode): string[] {
+  if (node.kind === "leaf") return [node.path];
+  return node.children.flatMap(collectLeafPaths);
+}
+
+// ---------------------------------------------------------------------------
+// Toggle a folder node by path within a tree
+// ---------------------------------------------------------------------------
+
+function toggleFolder(nodes: TreeNode[], targetPath: string): TreeNode[] {
+  return nodes.map((node) => {
+    if (node.kind === "leaf") return node;
+    if (node.path === targetPath) {
+      return { ...node, expanded: !node.expanded };
+    }
+    return {
+      ...node,
+      children: toggleFolder(node.children, targetPath),
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// localStorage helpers
+// ---------------------------------------------------------------------------
+
+const LS_WIDTH = "kb_sidebar_width";
+const LS_OPEN = "kb_sidebar_open";
+const DEFAULT_WIDTH = 220;
+const MIN_WIDTH = 140;
+const MAX_WIDTH = 400;
+
+function readStoredWidth(): number {
+  const raw = localStorage.getItem(LS_WIDTH);
+  if (!raw) return DEFAULT_WIDTH;
+  const n = parseInt(raw, 10);
+  return isNaN(n) ? DEFAULT_WIDTH : Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, n));
+}
+
+function readStoredOpen(): boolean {
+  const raw = localStorage.getItem(LS_OPEN);
+  return raw === null ? true : raw === "true";
+}
 
 // ---------------------------------------------------------------------------
 // New-file form
@@ -36,7 +197,11 @@ function NewFileForm({ onCreated, onClose }: NewFileFormProps) {
     if (!p) return;
     const rel = p.endsWith(".md") ? p : `${p}.md`;
     save.mutate(
-      { label, path: rel, content: `# ${rel.split("/").pop()?.replace(/\.md$/, "") ?? ""}\n` },
+      {
+        label,
+        path: rel,
+        content: `# ${rel.split("/").pop()?.replace(/\.md$/, "") ?? ""}\n`,
+      },
       {
         onSuccess: (file) => {
           onCreated(file);
@@ -58,7 +223,9 @@ function NewFileForm({ onCreated, onClose }: NewFileFormProps) {
         <select
           className={`${inputCls} w-28`}
           value={label}
-          onChange={(e) => setLabel(e.target.value as "wissen" | "research")}
+          onChange={(e) =>
+            setLabel(e.target.value as "wissen" | "research")
+          }
         >
           <option value="wissen">wissen</option>
           <option value="research">research</option>
@@ -152,7 +319,9 @@ function EditorPanel({
           {file.label}/{file.path}
         </span>
         {dirty && (
-          <span className="text-[10px] text-amber-500 shrink-0">unsaved</span>
+          <span className="text-[10px] text-amber-500 shrink-0">
+            unsaved
+          </span>
         )}
         <div className="ml-auto flex items-center gap-1">
           <button
@@ -240,6 +409,76 @@ function EditorPanel({
 }
 
 // ---------------------------------------------------------------------------
+// Tree node renderer
+// ---------------------------------------------------------------------------
+
+interface TreeNodeRowProps {
+  node: TreeNode;
+  depth: number;
+  selectedPath: string | null;
+  onSelect: (path: string, label: string) => void;
+  onToggle: (path: string) => void;
+}
+
+function TreeNodeRow({
+  node,
+  depth,
+  selectedPath,
+  onSelect,
+  onToggle,
+}: TreeNodeRowProps) {
+  const indent = depth * 12;
+
+  if (node.kind === "leaf") {
+    const isSelected = selectedPath === node.path;
+    return (
+      <button
+        onClick={() => onSelect(node.path, node.label)}
+        className={[
+          "w-full text-left py-1 pr-2 text-xs truncate transition-colors",
+          "hover:bg-surface-raised",
+          isSelected
+            ? "text-accent bg-accent-muted"
+            : "text-slate-300",
+        ].join(" ")}
+        style={{ paddingLeft: indent + 16 }}
+        title={node.name}
+      >
+        {node.name}
+      </button>
+    );
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => onToggle(node.path)}
+        className="w-full text-left py-1 pr-2 text-xs text-slate-400 flex items-center gap-1 hover:bg-surface-raised transition-colors"
+        style={{ paddingLeft: indent + 4 }}
+      >
+        {node.expanded ? (
+          <ChevronDown size={10} className="shrink-0" />
+        ) : (
+          <ChevronRight size={10} className="shrink-0" />
+        )}
+        <span className="truncate">{node.name}</span>
+      </button>
+      {node.expanded &&
+        node.children.map((child) => (
+          <TreeNodeRow
+            key={child.kind === "leaf" ? child.path : child.path + "/"}
+            node={child}
+            depth={depth + 1}
+            selectedPath={selectedPath}
+            onSelect={onSelect}
+            onToggle={onToggle}
+          />
+        ))}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main view
 // ---------------------------------------------------------------------------
 
@@ -250,6 +489,18 @@ export function KnowledgeView() {
   const [debouncedQ, setDebouncedQ] = useState("");
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  // Sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(readStoredOpen);
+  const [sidebarWidth, setSidebarWidth] = useState<number>(readStoredWidth);
+
+  // Tree state: per-label node lists with expanded flags
+  const [treeNodes, setTreeNodes] = useState<Record<string, TreeNode[]>>({});
+
+  // Resize drag state
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartWidth = useRef(0);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQ(searchInput), 300);
@@ -263,6 +514,69 @@ export function KnowledgeView() {
     useKnowledgeSearch(debouncedQ);
 
   const isSearching = debouncedQ.length > 1;
+
+  // Rebuild tree when files change
+  useEffect(() => {
+    if (!tree.length) return;
+    setTreeNodes((prev) => {
+      const fresh = buildTree(tree);
+      // Preserve expanded state from previous tree
+      const merged: Record<string, TreeNode[]> = {};
+      for (const label of Object.keys(fresh)) {
+        merged[label] = preserveExpanded(fresh[label], prev[label] ?? []);
+      }
+      return merged;
+    });
+  }, [tree]);
+
+  // Auto-expand folders containing search results
+  useEffect(() => {
+    if (!isSearching || searchResults.length === 0) return;
+    const matchingPaths = new Set(searchResults.map((r) => r.path));
+    setTreeNodes((prev) => {
+      const next: Record<string, TreeNode[]> = {};
+      for (const label of Object.keys(prev)) {
+        next[label] = expandMatchingFolders(prev[label], matchingPaths);
+      }
+      return next;
+    });
+  }, [isSearching, searchResults]);
+
+  // Persist sidebar state
+  useEffect(() => {
+    localStorage.setItem(LS_OPEN, String(sidebarOpen));
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    localStorage.setItem(LS_WIDTH, String(sidebarWidth));
+  }, [sidebarWidth]);
+
+  // Resize mouse handlers
+  function startResize(e: React.MouseEvent) {
+    e.preventDefault();
+    isDragging.current = true;
+    dragStartX.current = e.clientX;
+    dragStartWidth.current = sidebarWidth;
+
+    function onMove(ev: MouseEvent) {
+      if (!isDragging.current) return;
+      const delta = ev.clientX - dragStartX.current;
+      const next = Math.min(
+        MAX_WIDTH,
+        Math.max(MIN_WIDTH, dragStartWidth.current + delta)
+      );
+      setSidebarWidth(next);
+    }
+
+    function onUp() {
+      isDragging.current = false;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    }
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
 
   function selectFile(path: string, label: string) {
     setSelectedPath(path);
@@ -282,9 +596,20 @@ export function KnowledgeView() {
     setEditing(false);
   }
 
-  // When editing, show the editor full-pane (replacing the right panel)
+  function handleToggleFolder(path: string) {
+    setTreeNodes((prev) => {
+      const next: Record<string, TreeNode[]> = {};
+      for (const label of Object.keys(prev)) {
+        next[label] = toggleFolder(prev[label], path);
+      }
+      return next;
+    });
+  }
+
   const showEditor =
     editing && fileData && selectedPath && !fileLoading;
+
+  const labels = Object.keys(treeNodes).sort();
 
   return (
     <div className="flex flex-col h-full">
@@ -324,7 +649,11 @@ export function KnowledgeView() {
             Edit
           </button>
         )}
-        <HelpButton title="Knowledge" doc={DOCS.knowledge} view="knowledge" />
+        <HelpButton
+          title="Knowledge"
+          doc={DOCS.knowledge}
+          view="knowledge"
+        />
       </div>
 
       {/* New-file form */}
@@ -342,7 +671,9 @@ export function KnowledgeView() {
             tree.find((f) => f.path === selectedPath) ?? {
               path: selectedPath!,
               label: selectedLabel,
-              name: selectedPath!.split("/").pop()?.replace(/\.md$/, "") ?? "",
+              name:
+                selectedPath!.split("/").pop()?.replace(/\.md$/, "") ??
+                "",
               size: 0,
             }
           }
@@ -353,58 +684,103 @@ export function KnowledgeView() {
         />
       ) : (
         <div className="flex flex-1 min-h-0">
-          {/* Left panel: file tree or search results */}
-          <div className="w-64 shrink-0 border-r border-border-subtle overflow-y-auto py-2">
-            {isSearching ? (
-              searchLoading ? (
-                <p className="text-xs text-slate-600 px-4 py-2">Loading…</p>
-              ) : searchResults.length === 0 ? (
+          {/* Sidebar: folder tree or collapsed sliver */}
+          <div
+            className="shrink-0 border-r border-border-subtle overflow-hidden flex flex-col transition-[width] duration-150"
+            style={{ width: sidebarOpen ? sidebarWidth : 0 }}
+          >
+            {/* Toggle button row */}
+            <div className="flex items-center justify-between px-2 py-1.5 shrink-0 border-b border-border-subtle">
+              <span className="text-[10px] text-slate-600 uppercase tracking-wider">
+                Files
+              </span>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="p-0.5 rounded text-slate-600 hover:text-slate-300 transition-colors"
+                title="Collapse sidebar"
+              >
+                <ChevronLeft size={12} />
+              </button>
+            </div>
+
+            {/* Tree content */}
+            <div className="flex-1 overflow-y-auto py-1">
+              {isSearching ? (
+                searchLoading ? (
+                  <p className="text-xs text-slate-600 px-4 py-2">
+                    Loading…
+                  </p>
+                ) : searchResults.length === 0 ? (
+                  <p className="text-xs text-slate-600 px-4 py-2">
+                    No results.
+                  </p>
+                ) : (
+                  searchResults.map((r, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        selectFile(r.path, r.label);
+                        setSearchInput("");
+                        setDebouncedQ("");
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-surface-raised transition-colors"
+                    >
+                      <p className="text-xs text-slate-300 truncate">
+                        {r.label}/{r.path.split("/").pop()}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Line {r.line_number}
+                      </p>
+                      <p className="text-xs text-slate-400 truncate mt-0.5">
+                        {r.snippet}
+                      </p>
+                    </button>
+                  ))
+                )
+              ) : treeLoading ? (
                 <p className="text-xs text-slate-600 px-4 py-2">
-                  No results.
+                  Loading…
                 </p>
               ) : (
-                searchResults.map((r, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      selectFile(r.path, r.label);
-                      setSearchInput("");
-                      setDebouncedQ("");
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-surface-raised transition-colors"
-                  >
-                    <p className="text-xs text-slate-300 truncate">
-                      {r.label}/{r.path.split("/").pop()}
+                labels.map((label) => (
+                  <div key={label}>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider px-3 pt-2 pb-1 select-none">
+                      {label}
                     </p>
-                    <p className="text-xs text-slate-500">
-                      Line {r.line_number}
-                    </p>
-                    <p className="text-xs text-slate-400 truncate mt-0.5">
-                      {r.snippet}
-                    </p>
-                  </button>
+                    {(treeNodes[label] ?? []).map((node) => (
+                      <TreeNodeRow
+                        key={
+                          node.kind === "leaf"
+                            ? node.path
+                            : node.path + "/"
+                        }
+                        node={node}
+                        depth={0}
+                        selectedPath={selectedPath}
+                        onSelect={selectFile}
+                        onToggle={handleToggleFolder}
+                      />
+                    ))}
+                  </div>
                 ))
-              )
-            ) : treeLoading ? (
-              <p className="text-xs text-slate-600 px-4 py-2">Loading…</p>
-            ) : (
-              tree.map((f) => (
-                <button
-                  key={`${f.label}/${f.path}`}
-                  onClick={() => selectFile(f.path, f.label)}
-                  className={[
-                    "w-full text-left px-4 py-1.5 hover:bg-surface-raised",
-                    "transition-colors",
-                    selectedPath === f.path
-                      ? "bg-accent-muted text-accent"
-                      : "text-slate-300",
-                  ].join(" ")}
-                >
-                  <p className="text-xs truncate">
-                    {f.label}/{f.name}
-                  </p>
-                </button>
-              ))
+              )}
+            </div>
+          </div>
+
+          {/* Resize handle + collapsed toggle */}
+          <div className="relative flex flex-col shrink-0">
+            <div
+              className="w-1 flex-1 bg-border-subtle cursor-col-resize hover:bg-accent/40 transition-colors"
+              onMouseDown={startResize}
+            />
+            {!sidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="absolute top-2 left-0 w-4 h-6 flex items-center justify-center rounded-r bg-surface-raised text-slate-500 hover:text-slate-300 transition-colors"
+                title="Expand sidebar"
+              >
+                <ChevronRight size={10} />
+              </button>
             )}
           </div>
 
@@ -426,4 +802,37 @@ export function KnowledgeView() {
       )}
     </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function findFolderExpanded(
+  nodes: TreeNode[],
+  path: string
+): boolean | undefined {
+  for (const node of nodes) {
+    if (node.kind === "folder") {
+      if (node.path === path) return node.expanded;
+      const nested = findFolderExpanded(node.children, path);
+      if (nested !== undefined) return nested;
+    }
+  }
+  return undefined;
+}
+
+function preserveExpanded(
+  fresh: TreeNode[],
+  prev: TreeNode[]
+): TreeNode[] {
+  return fresh.map((node) => {
+    if (node.kind === "leaf") return node;
+    const wasExpanded = findFolderExpanded(prev, node.path);
+    return {
+      ...node,
+      expanded: wasExpanded ?? node.expanded,
+      children: preserveExpanded(node.children, prev),
+    };
+  });
 }

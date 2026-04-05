@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { useRef, useState } from "react";
+import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
@@ -505,18 +506,26 @@ function AddJobForm({ onClose }: { onClose: () => void }) {
   );
 }
 
+
 function HistoryTable({
   runs,
+  jobs,
   onDelete,
 }: {
   runs: CronRun[];
+  jobs: CronJob[];
   onDelete: (id: number) => void;
 }) {
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(
+    null
+  );
+  const jobMap = new Map(jobs.map((j) => [j.id, j]));
 
   if (runs.length === 0) {
     return (
-      <p className="text-sm text-slate-600 py-4">No history yet.</p>
+      <p className="text-sm text-slate-600 py-4">
+        No history yet.
+      </p>
     );
   }
 
@@ -526,12 +535,27 @@ function HistoryTable({
         <thead>
           <tr className="text-slate-600 border-b border-border-subtle">
             <th className="text-left py-2 pr-4 font-medium w-4" />
-            <th className="text-left py-2 pr-4 font-medium">#</th>
-            <th className="text-left py-2 pr-4 font-medium">Job</th>
-            <th className="text-left py-2 pr-4 font-medium">Started</th>
-            <th className="text-left py-2 pr-4 font-medium">Finished</th>
-            <th className="text-left py-2 pr-4 font-medium">Status</th>
-            <th className="text-left py-2 pr-4 font-medium">Error</th>
+            <th className="text-left py-2 pr-4 font-medium">
+              #
+            </th>
+            <th className="text-left py-2 pr-4 font-medium">
+              Job
+            </th>
+            <th className="text-left py-2 pr-4 font-medium">
+              Model
+            </th>
+            <th className="text-left py-2 pr-4 font-medium">
+              Started
+            </th>
+            <th className="text-left py-2 pr-4 font-medium">
+              Finished
+            </th>
+            <th className="text-left py-2 pr-4 font-medium">
+              Status
+            </th>
+            <th className="text-left py-2 pr-4 font-medium">
+              Error
+            </th>
             <th className="py-2 w-6" />
           </tr>
         </thead>
@@ -539,13 +563,16 @@ function HistoryTable({
           {runs.map((run) => {
             const isOpen = expandedId === run.id;
             const hasOutput = !!run.output;
+            const model = jobMap.get(run.job_id)?.model ?? "";
             return (
               <>
                 <tr
                   key={run.id}
                   onClick={() =>
                     hasOutput
-                      ? setExpandedId(isOpen ? null : run.id)
+                      ? setExpandedId(
+                          isOpen ? null : run.id
+                        )
                       : undefined
                   }
                   className={[
@@ -565,23 +592,38 @@ function HistoryTable({
                       )
                     ) : null}
                   </td>
-                  <td className="py-2 pr-4 text-slate-600">{run.id}</td>
+                  <td className="py-2 pr-4 text-slate-600">
+                    {run.id}
+                  </td>
                   <td className="py-2 pr-4 font-mono text-slate-400">
                     {run.job_id}
                   </td>
+                  <td className="py-2 pr-4">
+                    {model && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-indigo-900/30 text-indigo-400">
+                        {model}
+                      </span>
+                    )}
+                  </td>
                   <td className="py-2 pr-4 text-slate-400">
-                    {run.started_at.slice(0, 19).replace("T", " ")}
+                    {run.started_at
+                      .slice(0, 19)
+                      .replace("T", " ")}
                   </td>
                   <td className="py-2 pr-4 text-slate-400">
                     {run.finished_at
-                      ? run.finished_at.slice(0, 19).replace("T", " ")
-                      : "—"}
+                      ? run.finished_at
+                          .slice(0, 19)
+                          .replace("T", " ")
+                      : "\u2014"}
                   </td>
                   <td className="py-2 pr-4">
                     <StatusPill status={run.status} />
                   </td>
                   <td className="py-2 pr-4 text-red-400 max-w-xs truncate">
-                    {run.status === "error" ? run.error : ""}
+                    {run.status === "error"
+                      ? run.error
+                      : ""}
                   </td>
                   <td className="py-2">
                     <button
@@ -601,7 +643,14 @@ function HistoryTable({
                     key={`${run.id}-output`}
                     className="border-b border-border-subtle bg-surface-card"
                   >
-                    <td colSpan={8} className="px-4 py-4">
+                    <td colSpan={9} className="px-4 py-4 relative">
+                      <div className="absolute top-2 right-2">
+                        <ContentPopup
+                          content={run.output}
+                          title="Run Output"
+                          markdown
+                        />
+                      </div>
                       <Markdown>{run.output}</Markdown>
                     </td>
                   </tr>
@@ -682,6 +731,7 @@ export function CronView() {
           ) : (
             <HistoryTable
               runs={history}
+              jobs={jobs}
               onDelete={(id) => deleteRun.mutate(id)}
             />
           )}
