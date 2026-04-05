@@ -1,0 +1,428 @@
+"""Tool definitions and dispatcher for the agentic executor.
+
+Tools are defined in Anthropic format (input_schema).
+``openai_tools()`` converts them to the OpenAI / Ollama chat format.
+``execute_tool(name, args)`` dispatches a tool call to the backend.
+"""
+import json
+from typing import Any
+
+
+# ---------------------------------------------------------------------------
+# Tool definitions (Anthropic / claude format)
+# ---------------------------------------------------------------------------
+
+TOOL_DEFS: list[dict] = [
+    {
+        "name": "list_tasks",
+        "description": (
+            "List tasks from the kanban board. "
+            "Returns id, customer, title, status, tags for each task."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "customer": {
+                    "type": "string",
+                    "description": "Filter by customer name (optional)",
+                },
+                "status": {
+                    "type": "string",
+                    "description": (
+                        "Filter by status, e.g. TODO, IN-PROGRESS"
+                        " (optional)"
+                    ),
+                },
+                "include_done": {
+                    "type": "boolean",
+                    "description": "Include completed/archived tasks (default false)",
+                },
+            },
+        },
+    },
+    {
+        "name": "add_task",
+        "description": "Create a new task on the kanban board.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "customer": {"type": "string"},
+                "title": {"type": "string"},
+                "status": {
+                    "type": "string",
+                    "description": "e.g. TODO, IN-PROGRESS, WAIT (default: TODO)",
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Optional tag names",
+                },
+            },
+            "required": ["customer", "title"],
+        },
+    },
+    {
+        "name": "move_task",
+        "description": "Change the status of an existing task.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string"},
+                "status": {"type": "string"},
+            },
+            "required": ["task_id", "status"],
+        },
+    },
+    {
+        "name": "list_inbox",
+        "description": "List items currently in the inbox.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "item_type": {
+                    "type": "string",
+                    "description": "Filter by type, e.g. TASK, NOTE (optional)",
+                },
+            },
+        },
+    },
+    {
+        "name": "add_inbox_item",
+        "description": "Capture a new item to the inbox.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "description": "Title / headline of the item",
+                },
+                "item_type": {
+                    "type": "string",
+                    "description": "Type keyword, e.g. NOTIZ, TASK (optional)",
+                },
+                "customer": {
+                    "type": "string",
+                    "description": "Customer name (optional)",
+                },
+                "body": {
+                    "type": "string",
+                    "description": "Additional body text (optional)",
+                },
+            },
+            "required": ["text"],
+        },
+    },
+    {
+        "name": "list_clock_entries",
+        "description": "List time-tracking clock entries.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "period": {
+                    "type": "string",
+                    "description": "today, week, or month (default: week)",
+                },
+            },
+        },
+    },
+    {
+        "name": "book_time",
+        "description": "Book time for a customer retroactively.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "duration": {
+                    "type": "string",
+                    "description": "Duration string, e.g. 1h30m or 90m",
+                },
+                "customer": {"type": "string"},
+                "description": {"type": "string"},
+            },
+            "required": ["duration", "customer", "description"],
+        },
+    },
+    {
+        "name": "list_customers",
+        "description": "List all customers with budget and consumption info.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "execute_cli",
+        "description": (
+            "Execute an occontrol CLI command and return its output. "
+            "Use this to read or modify any data in the app. "
+            "Pass the subcommand and its arguments as a list.\n\n"
+            "Available subcommands (oc <sub> --help for details):\n"
+            "  task list [--customer C] [--status S] [--tag T] [--all]\n"
+            "  task add CUSTOMER TITLE [--status S] [--tag T]\n"
+            "  task move TASK_ID STATUS\n"
+            "  task done/next/wait/cancel TASK_ID\n"
+            "  task tag TASK_ID [+TAG|-TAG|TAG]\n"
+            "  task archive TASK_ID\n"
+            "  inbox list [--type TYPE]\n"
+            "  inbox add TEXT [--type TYPE] [--customer C]\n"
+            "  inbox promote ITEM_ID --customer CUSTOMER\n"
+            "  clock list [--week|--month] [--customer C]\n"
+            "  clock summary [--week]\n"
+            "  clock book DURATION CUSTOMER DESCRIPTION\n"
+            "  clock start CUSTOMER DESCRIPTION\n"
+            "  clock stop\n"
+            "  clock status\n"
+            "  customer list [--all]\n"
+            "  customer show NAME\n"
+            "  customer summary\n"
+            "  customer entry-add NAME --description D --hours H\n"
+            "  note list\n"
+            "  note add TITLE [--customer C] [--body B]\n"
+            "  comm list [--customer C] [--channel CH]\n"
+            "  comm add SUBJECT --direction in|out [--customer C]\n"
+            "  cron list\n"
+            "  cron trigger JOB_ID\n"
+            "  briefing\n"
+            "  ask QUESTION [--model M]"
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Arguments for the oc command, e.g. "
+                        "[\"task\", \"add\", \"Acme\", \"Fix the login bug\"]"
+                    ),
+                },
+            },
+            "required": ["args"],
+        },
+    },
+    {
+        "name": "transcribe_youtube",
+        "description": (
+            "Fetch the transcript / captions of a YouTube video. "
+            "Accepts a full YouTube URL or a bare 11-character video ID. "
+            "Returns the transcript as plain text."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "YouTube URL or video ID",
+                },
+                "languages": {
+                    "type": "string",
+                    "description": (
+                        "Comma-separated language preference list, "
+                        "e.g. 'en,de' (default: en,de)"
+                    ),
+                },
+            },
+            "required": ["url"],
+        },
+    },
+    {
+        "name": "fetch_url",
+        "description": (
+            "Fetch the content of an HTTP/HTTPS URL and return it as text. "
+            "Useful for reading web pages, JSON APIs, RSS feeds, etc. "
+            "Response is truncated to 50 000 characters."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "url": {"type": "string"},
+                "accept": {
+                    "type": "string",
+                    "description": (
+                        "Value for the Accept header, e.g. "
+                        "application/json (optional)"
+                    ),
+                },
+            },
+            "required": ["url"],
+        },
+    },
+]
+
+
+def openai_tools() -> list[dict]:
+    """Return tool definitions in OpenAI / Ollama chat format."""
+    result = []
+    for tool in TOOL_DEFS:
+        result.append({
+            "type": "function",
+            "function": {
+                "name": tool["name"],
+                "description": tool["description"],
+                "parameters": tool["input_schema"],
+            },
+        })
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Tool dispatcher
+# ---------------------------------------------------------------------------
+
+def execute_tool(name: str, args: Any) -> dict:
+    """Execute a tool call and return a result dict.
+
+    ``args`` may be a dict or a JSON string (Ollama sends strings).
+    Never raises — errors are returned as {"error": "..."}.
+    """
+    if isinstance(args, str):
+        try:
+            args = json.loads(args)
+        except json.JSONDecodeError:
+            return {"error": f"invalid JSON args: {args!r}"}
+    if not isinstance(args, dict):
+        args = {}
+
+    try:
+        return _dispatch(name, args)
+    except Exception as exc:  # noqa: BLE001
+        return {"error": str(exc)}
+
+
+def _dispatch(name: str, args: dict) -> dict:
+    from ..backends import get_backend
+    backend = get_backend()
+
+    if name == "list_tasks":
+        tasks = backend.tasks.list_tasks(
+            customer=args.get("customer"),
+            status=[args["status"]] if args.get("status") else None,
+            include_done=args.get("include_done", False),
+        )
+        return {"tasks": tasks}
+
+    if name == "add_task":
+        task = backend.tasks.add_task(
+            customer=args["customer"],
+            title=args["title"],
+            status=args.get("status", "TODO"),
+            tags=args.get("tags"),
+        )
+        return {"task": task}
+
+    if name == "move_task":
+        task = backend.tasks.move_task(
+            task_id=args["task_id"],
+            new_status=args["status"],
+        )
+        return {"task": task}
+
+    if name == "list_inbox":
+        items = backend.inbox.list_items()
+        if args.get("item_type"):
+            items = [
+                i for i in items
+                if (i.get("type") or "").upper()
+                == args["item_type"].upper()
+            ]
+        return {"items": items}
+
+    if name == "add_inbox_item":
+        item = backend.inbox.add_item(
+            text=args["text"],
+            item_type=args.get("item_type"),
+            customer=args.get("customer"),
+            body=args.get("body"),
+        )
+        return {"item": item}
+
+    if name == "list_clock_entries":
+        entries = backend.clocks.list_entries(
+            period=args.get("period", "week")
+        )
+        return {"entries": entries}
+
+    if name == "book_time":
+        entry = backend.clocks.quick_book(
+            duration=args["duration"],
+            customer=args["customer"],
+            description=args["description"],
+        )
+        return {"entry": entry}
+
+    if name == "list_customers":
+        customers = backend.customers.list_customers()
+        return {"customers": customers}
+
+    if name == "transcribe_youtube":
+        return _transcribe_youtube(
+            args["url"],
+            args.get("languages", "en,de"),
+        )
+
+    if name == "execute_cli":
+        return _execute_cli(args.get("args", []))
+
+    if name == "fetch_url":
+        return _fetch_url(args["url"], args.get("accept", ""))
+
+    return {"error": f"unknown tool: {name!r}"}
+
+
+def _transcribe_youtube(url: str, languages: str = "en,de") -> dict:
+    """Fetch a YouTube transcript and return it as text."""
+    from ..services.youtube import transcribe
+
+    langs = [c.strip() for c in languages.split(",") if c.strip()]
+    try:
+        return transcribe(url, languages=langs)
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
+def _execute_cli(args: list) -> dict:
+    """Run 'oc <args>' via subprocess and return stdout/stderr."""
+    import subprocess
+
+    if not isinstance(args, list) or not args:
+        return {"error": "args must be a non-empty list"}
+
+    cmd = ["oc"] + [str(a) for a in args]
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except FileNotFoundError:
+        return {"error": "oc CLI not found in PATH"}
+    except subprocess.TimeoutExpired:
+        return {"error": "command timed out after 60 s"}
+
+    return {
+        "exit_code": result.returncode,
+        "stdout": result.stdout[:10_000],
+        "stderr": result.stderr[:2_000],
+    }
+
+
+def _fetch_url(url: str, accept: str = "") -> dict:
+    """Fetch a URL and return its body text (truncated to 50 000 chars)."""
+    import urllib.request
+
+    if not url.startswith(("http://", "https://")):
+        return {"error": "only http/https URLs are supported"}
+
+    headers = {"User-Agent": "occontrol-cron/1.0"}
+    if accept:
+        headers["Accept"] = accept
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw = resp.read(50_000)
+            charset = "utf-8"
+            ct = resp.headers.get_content_charset()
+            if ct:
+                charset = ct
+            body = raw.decode(charset, errors="replace")
+            truncated = len(raw) >= 50_000
+    except Exception as exc:
+        return {"error": str(exc)}
+    return {"body": body, "truncated": truncated}

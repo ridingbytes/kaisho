@@ -1,17 +1,23 @@
 """Job executor.
 
-Resolves the prompt file, calls the configured model (Ollama or
-Claude API), and writes output to the configured destination.
+Resolves the prompt file, calls the configured model inside an agentic
+loop (tool calling), and writes output to the configured destination.
 
 Model string format:
-  "ollama:<model>"   — call local Ollama instance
-  "claude:<model>"   — call Anthropic API via anthropic package
-  "<model>"          — treated as Ollama model
+  "ollama:<model>"     -- call local Ollama instance
+  "claude:<model>"     -- call Anthropic API via anthropic package
+  "lm_studio:<model>"  -- call LM Studio (OpenAI-compatible)
+  "<model>"            -- treated as Ollama model
+
+The executor passes a set of tools (list/add tasks, inbox, clocks, …)
+to models that support tool calling so that jobs can read and write
+app data autonomously.
 """
-import re
-import subprocess
+import json
 from datetime import date
 from pathlib import Path
+
+from .tools import TOOL_DEFS, execute_tool, openai_tools
 
 
 class ExecutorError(Exception):
@@ -48,7 +54,12 @@ def _render_output_path(output: str) -> str:
     return output.replace("{date}", today)
 
 
-def write_output(output_dest: str, content: str, inbox_file: Path) -> str:
+def write_output(
+    output_dest: str,
+    content: str,
+    inbox_file: Path,
+    job_name: str = "AI Report",
+) -> str:
     """Write content to the resolved destination.
 
     If output_dest is "inbox", append to inbox org file.
@@ -58,7 +69,7 @@ def write_output(output_dest: str, content: str, inbox_file: Path) -> str:
     """
     dest = _render_output_path(output_dest)
     if dest == "inbox":
-        _append_to_inbox(content, inbox_file)
+        _append_to_inbox(content, inbox_file, job_name)
         return str(inbox_file)
     out_path = _resolve_path(dest)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -66,10 +77,12 @@ def write_output(output_dest: str, content: str, inbox_file: Path) -> str:
     return str(out_path)
 
 
-def _append_to_inbox(content: str, inbox_file: Path) -> None:
+def _append_to_inbox(
+    content: str, inbox_file: Path, job_name: str = "AI Report"
+) -> None:
     """Append content as a new org heading to the inbox file."""
     today = date.today().isoformat()
-    heading = f"* AI Report {today}\n\n{content.strip()}\n"
+    heading = f"* AI: {job_name} {today}\n\n{content.strip()}\n"
     with open(inbox_file, "a", encoding="utf-8") as f:
         f.write("\n" + heading)
 
@@ -87,75 +100,166 @@ def _parse_model(model_str: str) -> tuple[str, str]:
     return "ollama", model_str
 
 
-def run_prompt_ollama(model: str, prompt: str, base_url: str) -> str:
-    """Send prompt to local Ollama and return response text."""
-    import urllib.request
-    import json
-
-    payload = json.dumps({
-        "model": model,
-        "prompt": prompt,
-        "stream": False,
-    }).encode()
-    url = base_url.rstrip("/") + "/api/generate"
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=600) as resp:
-            data = json.loads(resp.read())
-    except Exception as exc:
-        raise ExecutorError(f"Ollama request failed: {exc}") from exc
-    return data.get("response", "")
-
+# ---------------------------------------------------------------------------
+# Claude agentic loop
+# ---------------------------------------------------------------------------
 
 def run_prompt_claude(
     model: str, prompt: str, api_key: str = ""
 ) -> str:
-    """Send prompt to Anthropic Claude API and return response text."""
+    """Run an agentic Claude session with tools; return final text."""
     try:
         import anthropic
     except ImportError as exc:
         raise ExecutorError(
             "anthropic package not installed"
         ) from exc
-    client = anthropic.Anthropic(api_key=api_key or None)
-    message = client.messages.create(
-        model=model,
-        max_tokens=4096,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return message.content[0].text
 
+    client = anthropic.Anthropic(api_key=api_key or None)
+    messages: list[dict] = [{"role": "user", "content": prompt}]
+
+    while True:
+        resp = client.messages.create(
+            model=model,
+            max_tokens=4096,
+            tools=TOOL_DEFS,
+            messages=messages,
+        )
+
+        if resp.stop_reason == "end_turn":
+            for block in resp.content:
+                if hasattr(block, "text"):
+                    return block.text
+            return ""
+
+        # Collect tool calls and execute them
+        messages.append({
+            "role": "assistant",
+            "content": resp.content,
+        })
+        tool_results = []
+        for block in resp.content:
+            if block.type != "tool_use":
+                continue
+            result = execute_tool(block.name, block.input)
+            tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": block.id,
+                "content": json.dumps(result, default=str),
+            })
+        if not tool_results:
+            # No tool calls despite non-end_turn; extract whatever text exists
+            for block in resp.content:
+                if hasattr(block, "text"):
+                    return block.text
+            return ""
+        messages.append({"role": "user", "content": tool_results})
+
+
+# ---------------------------------------------------------------------------
+# Ollama agentic loop  (uses /api/chat with tools)
+# ---------------------------------------------------------------------------
+
+def run_prompt_ollama(model: str, prompt: str, base_url: str) -> str:
+    """Run an agentic Ollama session with tools; return final text.
+
+    Uses the /api/chat endpoint so tool calling is supported.
+    Falls back gracefully if the model does not emit tool calls.
+    """
+    import urllib.request
+
+    tools = openai_tools()
+    messages: list[dict] = [{"role": "user", "content": prompt}]
+
+    while True:
+        payload = json.dumps({
+            "model": model,
+            "messages": messages,
+            "tools": tools,
+            "stream": False,
+        }).encode()
+        url = base_url.rstrip("/") + "/api/chat"
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=600) as resp:
+                data = json.loads(resp.read())
+        except Exception as exc:
+            raise ExecutorError(f"Ollama request failed: {exc}") from exc
+
+        msg = data.get("message", {})
+        tool_calls = msg.get("tool_calls") or []
+
+        if not tool_calls:
+            return msg.get("content", "")
+
+        messages.append(msg)
+        for call in tool_calls:
+            fn = call.get("function", {})
+            result = execute_tool(fn.get("name", ""), fn.get("arguments", {}))
+            messages.append({
+                "role": "tool",
+                "content": json.dumps(result, default=str),
+            })
+
+
+# ---------------------------------------------------------------------------
+# LM Studio agentic loop  (OpenAI-compatible)
+# ---------------------------------------------------------------------------
 
 def run_prompt_lm_studio(
     model: str, prompt: str, base_url: str
 ) -> str:
-    """Send prompt to LM Studio (OpenAI-compatible) and return text."""
+    """Run an agentic LM Studio session with tools; return final text."""
     import urllib.request
-    import json
 
-    payload = json.dumps({
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-    }).encode()
-    url = base_url.rstrip("/") + "/v1/chat/completions"
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=600) as resp:
-            data = json.loads(resp.read())
-    except Exception as exc:
-        raise ExecutorError(
-            f"LM Studio request failed: {exc}"
-        ) from exc
-    return data["choices"][0]["message"]["content"]
+    tools = openai_tools()
+    messages: list[dict] = [{"role": "user", "content": prompt}]
 
+    while True:
+        payload = json.dumps({
+            "model": model,
+            "messages": messages,
+            "tools": tools,
+        }).encode()
+        url = base_url.rstrip("/") + "/v1/chat/completions"
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=600) as resp:
+                data = json.loads(resp.read())
+        except Exception as exc:
+            raise ExecutorError(
+                f"LM Studio request failed: {exc}"
+            ) from exc
+
+        choice = data["choices"][0]
+        msg = choice["message"]
+        tool_calls = msg.get("tool_calls") or []
+
+        if not tool_calls:
+            return msg.get("content", "")
+
+        messages.append(msg)
+        for call in tool_calls:
+            fn = call.get("function", {})
+            result = execute_tool(fn.get("name", ""), fn.get("arguments", "{}"))
+            messages.append({
+                "role": "tool",
+                "tool_call_id": call.get("id", ""),
+                "content": json.dumps(result, default=str),
+            })
+
+
+# ---------------------------------------------------------------------------
+# Main entry point
+# ---------------------------------------------------------------------------
 
 def execute_job(
     job: dict,
@@ -180,5 +284,5 @@ def execute_job(
         output_text = run_prompt_ollama(
             model_name, prompt, ollama_base_url
         )
-    write_output(job["output"], output_text, inbox_file)
+    write_output(job["output"], output_text, inbox_file, job.get("name", "AI Report"))
     return output_text
