@@ -8,8 +8,11 @@ from ..org.writer import write_org_file
 
 # Heading title format: [CUSTOMER]: description
 ENTRY_RE = re.compile(r"^\[([^\]]+)\]:\s*(.*)")
-DURATION_RE = re.compile(
-    r"^(\d+(?:\.\d+)?)\s*(h|hour|hours|min|mins|minutes?)$"
+DURATION_SIMPLE_RE = re.compile(
+    r"^(\d+(?:\.\d+)?)\s*(h|hours?|m|min|mins|minutes?)$"
+)
+DURATION_COMPOUND_RE = re.compile(
+    r"^(\d+)\s*h\s*(\d+)\s*(?:m|min|mins|minutes?)?$"
 )
 CLOCK_KEYWORDS: set[str] = set()
 
@@ -28,12 +31,19 @@ def _entry_title(customer: str, description: str) -> str:
 
 
 def _parse_duration(duration_str: str) -> int | None:
-    """Parse duration string to minutes. e.g. '2h', '30min'."""
-    m = DURATION_RE.match(duration_str.strip().lower())
-    if not m:
+    """Parse duration string to minutes.
+
+    Accepts: '2h', '30min', '90m', '1.5h', '1h30m', '1h 30min'.
+    """
+    s = duration_str.strip().lower()
+    cm = DURATION_COMPOUND_RE.match(s)
+    if cm:
+        return int(cm.group(1)) * 60 + int(cm.group(2))
+    sm = DURATION_SIMPLE_RE.match(s)
+    if not sm:
         return None
-    value = float(m.group(1))
-    unit = m.group(2)
+    value = float(sm.group(1))
+    unit = sm.group(2)
     if unit.startswith("h"):
         return int(value * 60)
     return int(value)
