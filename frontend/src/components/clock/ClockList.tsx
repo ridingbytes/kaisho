@@ -6,7 +6,6 @@ import {
   useClockEntries,
   useDeleteClockEntry,
   useStartTimer,
-  useTodayEntries,
   useUpdateClockEntry,
 } from "../../hooks/useClocks";
 import { useContracts } from "../../hooks/useContracts";
@@ -394,16 +393,12 @@ export function ClockList({
   isRunning,
   selectedDate,
 }: ClockListProps) {
-  const isToday =
-    selectedDate === null || selectedDate === todayIso();
-  const todayResult = useTodayEntries();
-  const dateResult = useClockEntries(
+  const effectiveDate = selectedDate ?? todayIso();
+  const isToday = effectiveDate === todayIso();
+  const { data: entries = [], isLoading } = useClockEntries(
     "today",
-    selectedDate ?? undefined
+    effectiveDate
   );
-  const { data: entries = [], isLoading } = isToday
-    ? todayResult
-    : dateResult;
   const { data: allTasks = [] } = useTasks();
 
   const groups = groupEntries(entries);
