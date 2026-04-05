@@ -126,10 +126,12 @@ class ClockBackend(ABC):
     def update_entry(
         self,
         start_iso: str,
+        customer: str | None = None,
         description: str | None = None,
         hours: float | None = None,
+        new_date: date | None = None,
     ) -> dict | None:
-        """Update description and/or hours of an entry by start time."""
+        """Update customer, description, hours, and/or date by start time."""
 
     @abstractmethod
     def delete_entry(self, start_iso: str) -> bool:
@@ -165,6 +167,10 @@ class InboxBackend(ABC):
         """Delete an inbox item.  Return False if not found."""
 
     @abstractmethod
+    def update_item(self, item_id: str, updates: dict) -> dict:
+        """Update fields of an inbox item. Return updated dict."""
+
+    @abstractmethod
     def promote_to_task(
         self,
         item_id: str,
@@ -176,6 +182,49 @@ class InboxBackend(ABC):
         Uses *tasks* backend to create the task so the operation
         works across any backend combination.
         """
+
+
+class NotesBackend(ABC):
+    """Read/write notes."""
+
+    @property
+    def data_file(self) -> Path | None:
+        """Primary file for this backend."""
+        return None
+
+    @abstractmethod
+    def list_notes(self) -> list[dict]:
+        """Return all notes.
+
+        Each dict: id, title, customer, body, created
+        """
+
+    @abstractmethod
+    def add_note(
+        self,
+        title: str,
+        body: str = "",
+        customer: str | None = None,
+        tags: list[str] | None = None,
+    ) -> dict:
+        """Add a new note, return its dict."""
+
+    @abstractmethod
+    def delete_note(self, note_id: str) -> bool:
+        """Delete a note. Return False if not found."""
+
+    @abstractmethod
+    def update_note(self, note_id: str, updates: dict) -> dict:
+        """Update fields of a note. Return updated dict."""
+
+    @abstractmethod
+    def promote_to_task(
+        self,
+        note_id: str,
+        tasks: TaskBackend,
+        customer: str,
+    ) -> dict:
+        """Promote a note to a task and remove it from notes."""
 
 
 class CustomerBackend(ABC):

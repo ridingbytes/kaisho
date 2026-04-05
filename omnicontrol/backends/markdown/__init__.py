@@ -84,8 +84,9 @@ class MarkdownClockBackend(ClockBackend):
                    description) -> dict:
         raise NotImplementedError
 
-    def update_entry(self, start_iso, description=None,
-                     hours=None) -> dict | None:
+    def update_entry(self, start_iso, customer=None,
+                     description=None, hours=None,
+                     new_date=None) -> dict | None:
         raise NotImplementedError
 
     def delete_entry(self, start_iso) -> bool:

@@ -6,17 +6,19 @@ from .base import (
     ClockBackend,
     CustomerBackend,
     InboxBackend,
+    NotesBackend,
     TaskBackend,
 )
 
 
 @dataclass
 class Backend:
-    """Container for the four domain backends and file-watch paths."""
+    """Container for the five domain backends and file-watch paths."""
     tasks: TaskBackend
     clocks: ClockBackend
     inbox: InboxBackend
     customers: CustomerBackend
+    notes: NotesBackend
     watch_paths: list[Path] = field(default_factory=list)
 
 
@@ -29,10 +31,12 @@ def get_backend() -> Backend:
 
     if backend_type == "org":
         from .org import make_org_backend
-        tasks, clocks, inbox, customers, watch = make_org_backend(cfg)
+        tasks, clocks, inbox, customers, notes, watch = make_org_backend(cfg)
     elif backend_type == "markdown":
         from .markdown import make_markdown_backend
-        tasks, clocks, inbox, customers, watch = make_markdown_backend(cfg)
+        tasks, clocks, inbox, customers, notes, watch = (
+            make_markdown_backend(cfg)
+        )
     else:
         raise ValueError(f"Unknown backend: {backend_type!r}")
 
@@ -41,5 +45,6 @@ def get_backend() -> Backend:
         clocks=clocks,
         inbox=inbox,
         customers=customers,
+        notes=notes,
         watch_paths=watch,
     )

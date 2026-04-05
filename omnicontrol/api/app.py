@@ -16,6 +16,7 @@ from .routers import (
     inbox,
     kanban,
     knowledge,
+    notes,
     ws as ws_router,
 )
 from .routers import settings as settings_router
@@ -47,6 +48,7 @@ app.include_router(kanban.router)
 app.include_router(clocks.router)
 app.include_router(customers.router)
 app.include_router(inbox.router)
+app.include_router(notes.router)
 app.include_router(knowledge.router)
 app.include_router(communications.router)
 app.include_router(cron.router)

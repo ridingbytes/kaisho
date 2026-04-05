@@ -7,11 +7,13 @@ from ..base import (
     ClockBackend,
     CustomerBackend,
     InboxBackend,
+    NotesBackend,
     TaskBackend,
 )
 from .clocks import OrgClockBackend
 from .customers import OrgCustomerBackend
 from .inbox import OrgInboxBackend
+from .notes import OrgNotesBackend
 from .tasks import OrgTaskBackend
 
 
@@ -22,14 +24,16 @@ def _keywords(cfg: Settings) -> set[str]:
 
 
 def make_org_backend(cfg: Settings) -> tuple[
-    TaskBackend, ClockBackend, InboxBackend, CustomerBackend, list[Path]
+    TaskBackend, ClockBackend, InboxBackend, CustomerBackend,
+    NotesBackend, list[Path],
 ]:
-    """Build the four org backends and the list of paths to watch."""
+    """Build the five org backends and the list of paths to watch."""
     kw = _keywords(cfg)
     tasks = OrgTaskBackend(cfg.TODOS_FILE, cfg.ARCHIVE_FILE, kw)
     clocks = OrgClockBackend(cfg.CLOCKS_FILE)
     inbox = OrgInboxBackend(cfg.INBOX_FILE)
     cust = OrgCustomerBackend(cfg.KUNDEN_FILE)
+    notes = OrgNotesBackend(cfg.NOTES_FILE)
     watch_paths = [
         cfg.ORG_DIR.expanduser(),
         cfg.SETTINGS_FILE.expanduser(),
@@ -38,4 +42,4 @@ def make_org_backend(cfg: Settings) -> tuple[
         expanded = kb_dir.expanduser()
         if expanded.is_dir():
             watch_paths.append(expanded)
-    return tasks, clocks, inbox, cust, watch_paths
+    return tasks, clocks, inbox, cust, notes, watch_paths
