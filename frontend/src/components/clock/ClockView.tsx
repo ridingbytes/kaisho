@@ -1,6 +1,15 @@
-import { Check, Pencil, Plus, SquareArrowUp, Trash2, X } from "lucide-react";
+import {
+  Check,
+  CheckCircle2,
+  Pencil,
+  Plus,
+  SquareArrowUp,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
+import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
 import {
@@ -12,7 +21,7 @@ import {
 import { useAddTimeEntry } from "../../hooks/useCustomers";
 import { useTasks } from "../../hooks/useTasks";
 import { registerPanelAction } from "../../utils/panelActions";
-import type { ClockEntry } from "../../types";
+import type { ClockEntry, Task } from "../../types";
 
 type Period = "today" | "week" | "month";
 
@@ -27,6 +36,14 @@ const smallInputCls =
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
+
+function taskTitleById(tasks: Task[], id: string | null): string | null {
+  if (!id) return null;
+  const t = tasks.find((t) => t.id === id);
+  return t ? t.title.replace(CUSTOMER_PREFIX_RE, "") : null;
+}
 
 function formatDate(iso: string): string {
   return iso.slice(0, 10);
@@ -174,6 +191,7 @@ function BookProjectForm({ entry, onClose }: BookProjectFormProps) {
   const [description, setDescription] = useState(entry.description);
   const [hours, setHours] = useState(minutesToDecimal(entry.duration_minutes));
   const addTimeEntry = useAddTimeEntry();
+  const updateEntry = useUpdateClockEntry();
 
   function handleBook() {
     const h = parseFloat(hours);
@@ -184,7 +202,14 @@ function BookProjectForm({ entry, onClose }: BookProjectFormProps) {
         description: description.trim(),
         hours: h,
       },
-      { onSuccess: onClose }
+      {
+        onSuccess: () => {
+          updateEntry.mutate(
+            { startIso: entry.start, updates: { booked: true } },
+            { onSuccess: onClose }
+          );
+        },
+      }
     );
   }
 
@@ -267,9 +292,13 @@ function EditForm({ entry, onClose }: EditFormProps) {
   const [customer, setCustomer] = useState(entry.customer);
   const [description, setDescription] = useState(entry.description);
   const [hours, setHours] = useState(minutesToDecimal(entry.duration_minutes));
-  const [taskId, setTaskId] = useState(entry.task_id ?? "");
-  const update = useUpdateClockEntry();
+  const [taskId, setTaskId] = useState<string | null>(entry.task_id);
   const { data: tasks = [] } = useTasks();
+  const initialTitle = entry.task_id
+    ? (taskTitleById(tasks, entry.task_id) ?? "")
+    : "";
+  const [taskTitle, setTaskTitle] = useState(initialTitle);
+  const update = useUpdateClockEntry();
 
   function handleSave() {
     const updates: {
@@ -290,9 +319,10 @@ function EditForm({ entry, onClose }: EditFormProps) {
     if (!isNaN(h) && h > 0 && h !== (entry.duration_minutes ?? 0) / 60) {
       updates.hours = h;
     }
-    const currentTaskId = entry.task_id ?? "";
-    if (taskId !== currentTaskId) {
-      updates.task_id = taskId;
+    const newTaskId = taskId ?? "";
+    const oldTaskId = entry.task_id ?? "";
+    if (newTaskId !== oldTaskId) {
+      updates.task_id = newTaskId;
     }
     if (Object.keys(updates).length === 0) {
       onClose();
@@ -308,7 +338,7 @@ function EditForm({ entry, onClose }: EditFormProps) {
 
   return (
     <tr className="bg-surface-raised/40 border-b border-border-subtle">
-      <td colSpan={5} className="px-3 py-2">
+      <td colSpan={6} className="px-3 py-2">
         <div className="flex flex-wrap gap-2 items-center">
           <input
             autoFocus
@@ -342,20 +372,23 @@ function EditForm({ entry, onClose }: EditFormProps) {
             step="0.25"
             min="0"
           />
-          <select
-            value={taskId}
-            onChange={(e) => setTaskId(e.target.value)}
-            className={`${smallInputCls} w-48`}
-            title="Link to task"
-          >
-            <option value="">No task</option>
-            {tasks.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.customer ? `[${t.customer}] ` : ""}
-                {t.title.replace(/^\[[^\]]+\]:?\s*/, "")}
-              </option>
-            ))}
-          </select>
+          <TaskAutocomplete
+            taskId={taskId}
+            value={taskTitle}
+            onChange={setTaskTitle}
+            onSelect={(id, label) => {
+              setTaskId(id);
+              setTaskTitle(label);
+            }}
+            onClear={() => {
+              setTaskId(null);
+              setTaskTitle("");
+            }}
+            customer={customer}
+            inputClassName={smallInputCls}
+            className="w-48"
+            onKeyDown={handleKeyDown}
+          />
           <button
             onClick={onClose}
             className="p-1 rounded text-slate-500 hover:text-slate-300"
@@ -381,11 +414,13 @@ function EditForm({ entry, onClose }: EditFormProps) {
 
 interface EntryRowProps {
   entry: ClockEntry;
+  tasks: Task[];
 }
 
-function EntryRow({ entry }: EntryRowProps) {
+function EntryRow({ entry, tasks }: EntryRowProps) {
   const [mode, setMode] = useState<"view" | "edit" | "book">("view");
   const remove = useDeleteClockEntry();
+  const taskTitle = taskTitleById(tasks, entry.task_id);
 
   if (mode === "edit") {
     return <EditForm entry={entry} onClose={() => setMode("view")} />;
@@ -407,26 +442,40 @@ function EntryRow({ entry }: EntryRowProps) {
         {entry.customer}
       </td>
       <td className="px-3 py-1.5 text-xs text-slate-400 w-full">
-        <span>{entry.description}</span>
-        {entry.task_id && (
+        {entry.description}
+      </td>
+      <td className="px-3 py-1.5 text-xs text-slate-500 whitespace-nowrap max-w-32 truncate">
+        {taskTitle && (
           <span
-            className="ml-2 px-1 rounded text-[10px] bg-accent-muted text-accent-hover"
-            title={`Task: ${entry.task_id}`}
+            className="px-1 py-0.5 rounded text-[10px] bg-accent-muted text-accent-hover"
+            title={taskTitle}
           >
-            task
+            {taskTitle}
           </span>
         )}
       </td>
       <td className="px-3 py-1.5 text-xs text-slate-400 tabular-nums whitespace-nowrap text-right">
-        <span className="mr-2">{formatHours(entry.duration_minutes)}</span>
-        <span className="inline-flex gap-0.5 opacity-0 group-hover:opacity-100">
-          <button
-            onClick={() => setMode("book")}
-            className="p-0.5 rounded text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10"
-            title="Book to project"
+        {entry.booked ? (
+          <span
+            className="mr-2 inline-flex items-center gap-0.5 text-emerald-500"
+            title="Booked to project"
           >
-            <SquareArrowUp size={11} />
-          </button>
+            <CheckCircle2 size={11} />
+            <span>{formatHours(entry.duration_minutes)}</span>
+          </span>
+        ) : (
+          <span className="mr-2">{formatHours(entry.duration_minutes)}</span>
+        )}
+        <span className="inline-flex gap-0.5 opacity-0 group-hover:opacity-100">
+          {!entry.booked && (
+            <button
+              onClick={() => setMode("book")}
+              className="p-0.5 rounded text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10"
+              title="Book to project"
+            >
+              <SquareArrowUp size={11} />
+            </button>
+          )}
           <button
             onClick={() => setMode("edit")}
             className="p-0.5 rounded text-slate-500 hover:text-slate-200"
@@ -457,6 +506,7 @@ export function ClockView() {
   const [search, setSearch] = useState("");
   const [booking, setBooking] = useState(false);
   const { data: entries = [], isLoading } = useClockEntries(period);
+  const { data: tasks = [] } = useTasks();
 
   useEffect(
     () => registerPanelAction("clocks", () => setBooking(true)),
@@ -541,6 +591,9 @@ export function ClockView() {
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                   Description
                 </th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  Task
+                </th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500 text-right">
                   Duration
                 </th>
@@ -548,7 +601,11 @@ export function ClockView() {
             </thead>
             <tbody>
               {sorted.map((entry) => (
-                <EntryRow key={entry.start} entry={entry} />
+                <EntryRow
+                  key={entry.start}
+                  entry={entry}
+                  tasks={tasks}
+                />
               ))}
             </tbody>
           </table>
