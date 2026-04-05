@@ -8,6 +8,11 @@ export interface Task {
   created: string;
 }
 
+export interface ArchivedTask extends Task {
+  archived_at: string;
+  archive_status: string;
+}
+
 export interface TaskState {
   name: string;
   label: string;

@@ -71,6 +71,21 @@ class TaskBackend(ABC):
         Each dict: {"name": str, "count": int}
         """
 
+    @abstractmethod
+    def list_archived(self) -> list[dict]:
+        """Return archived tasks.
+
+        Each dict is like a task dict plus:
+          archived_at, archive_status
+        """
+
+    @abstractmethod
+    def unarchive_task(self, task_id: str) -> bool:
+        """Restore an archived task to the active store.
+
+        Return False if not found.
+        """
+
 
 class ClockBackend(ABC):
     """Read/write time-tracking clock entries."""

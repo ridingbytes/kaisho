@@ -1,6 +1,7 @@
 import type {
   ActiveTimer,
   AiSettings,
+  ArchivedTask,
   ClockEntry,
   CommEntry,
   CronJob,
@@ -82,6 +83,17 @@ export function setTaskTags(
 
 export function archiveTask(taskId: string): Promise<void> {
   return del(`/kanban/tasks/${taskId}`);
+}
+
+export function fetchArchivedTasks(): Promise<ArchivedTask[]> {
+  return get<ArchivedTask[]>("/kanban/archive");
+}
+
+export function unarchiveTask(taskId: string): Promise<{ ok: boolean }> {
+  return post<{ ok: boolean }>(
+    `/kanban/archive/${encodeURIComponent(taskId)}/unarchive`,
+    {}
+  );
 }
 
 // Settings

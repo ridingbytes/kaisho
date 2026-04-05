@@ -54,6 +54,12 @@ class MarkdownTaskBackend(TaskBackend):
     def list_all_tags(self) -> list[dict]:
         raise NotImplementedError
 
+    def list_archived(self) -> list[dict]:
+        raise NotImplementedError
+
+    def unarchive_task(self, task_id: str) -> bool:
+        raise NotImplementedError
+
 
 class MarkdownClockBackend(ClockBackend):
     def __init__(self, clocks_file: Path) -> None:

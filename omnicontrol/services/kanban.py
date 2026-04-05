@@ -319,3 +319,84 @@ def _remove_heading_from_tree(
         if _remove_heading_from_tree(h.children, target):
             return True
     return False
+
+
+def _archive_task_id(index: int) -> str:
+    """Return a stable archive task ID for a given 1-based index."""
+    return f"a{index}"
+
+
+def _heading_to_archived_task(heading: Heading, task_id: str) -> dict:
+    """Convert an archived Heading to a task dict with archive metadata."""
+    task = _heading_to_task(heading, task_id)
+    task["archived_at"] = heading.properties.get("ARCHIVE_TIME", "")
+    task["archive_status"] = heading.properties.get(
+        "ARCHIVE_TODO", heading.keyword or ""
+    )
+    return task
+
+
+def list_archived_tasks(
+    archive_file: Path,
+    keywords: set[str],
+) -> list[dict]:
+    """List all tasks from the archive file."""
+    if not archive_file.exists():
+        return []
+    archive_org = parse_org_file(archive_file, keywords)
+    archiv = _find_or_create_archiv_heading(archive_org)
+    return [
+        _heading_to_archived_task(h, _archive_task_id(i + 1))
+        for i, h in enumerate(archiv.children)
+    ]
+
+
+def _strip_archive_properties(heading: Heading) -> None:
+    """Remove ARCHIVE_* properties from a heading in place."""
+    for key in list(heading.properties):
+        if key.startswith("ARCHIVE_"):
+            del heading.properties[key]
+
+
+def unarchive_task(
+    archive_file: Path,
+    todos_file: Path,
+    keywords: set[str],
+    task_id: str,
+) -> bool:
+    """Move a task from archive.org back to todos.org.
+
+    Returns False if the task was not found in the archive.
+    """
+    if not archive_file.exists():
+        return False
+    archive_org = parse_org_file(archive_file, keywords)
+    archiv = _find_or_create_archiv_heading(archive_org)
+
+    # Resolve index from task_id (e.g. "a3" -> index 2)
+    if not task_id.startswith("a") or not task_id[1:].isdigit():
+        return False
+    idx = int(task_id[1:]) - 1
+    if idx < 0 or idx >= len(archiv.children):
+        return False
+
+    heading = archiv.children[idx]
+    archiv.children.pop(idx)
+    archiv.dirty = True
+    write_org_file(archive_file, archive_org)
+
+    # Restore heading for todos.org
+    _strip_archive_properties(heading)
+    original_keyword = heading.keyword
+    if not original_keyword:
+        heading.keyword = "TODO"
+    heading.level = 1
+    heading.dirty = True
+
+    if not todos_file.exists():
+        todos_file.parent.mkdir(parents=True, exist_ok=True)
+        todos_file.write_text("", encoding="utf-8")
+    todos_org = parse_org_file(todos_file, keywords)
+    todos_org.headings.append(heading)
+    write_org_file(todos_file, todos_org)
+    return True

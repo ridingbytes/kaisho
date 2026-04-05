@@ -85,6 +85,21 @@ def archive_task(task_id: str):
         raise HTTPException(status_code=404, detail="Task not found")
 
 
+@router.get("/archive")
+def list_archive():
+    return get_backend().tasks.list_archived()
+
+
+@router.post("/archive/{task_id}/unarchive", status_code=200)
+def unarchive_task(task_id: str):
+    ok = get_backend().tasks.unarchive_task(task_id)
+    if not ok:
+        raise HTTPException(
+            status_code=404, detail="Archived task not found"
+        )
+    return {"ok": True}
+
+
 @router.get("/tags")
 def list_tags():
     """Return all known tags with usage counts and configured metadata."""

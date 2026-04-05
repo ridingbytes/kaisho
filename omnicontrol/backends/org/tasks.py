@@ -100,3 +100,17 @@ class OrgTaskBackend(TaskBackend):
             {"name": name, "count": count}
             for name, count in sorted(counts.items())
         ]
+
+    def list_archived(self) -> list[dict]:
+        return kanban.list_archived_tasks(
+            archive_file=self._archive_file,
+            keywords=self._keywords,
+        )
+
+    def unarchive_task(self, task_id: str) -> bool:
+        return kanban.unarchive_task(
+            archive_file=self._archive_file,
+            todos_file=self._todos_file,
+            keywords=self._keywords,
+            task_id=task_id,
+        )

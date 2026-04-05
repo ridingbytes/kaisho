@@ -6,9 +6,11 @@ import {
 import {
   archiveTask,
   createTask,
+  fetchArchivedTasks,
   fetchTasks,
   moveTask,
   setTaskTags,
+  unarchiveTask,
   updateTask,
 } from "../api/client";
 
@@ -91,7 +93,28 @@ export function useArchiveTask() {
     mutationFn: (taskId: string) => archiveTask(taskId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["tasks"] });
+      void qc.invalidateQueries({ queryKey: ["archive"] });
       void qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useArchivedTasks() {
+  return useQuery({
+    queryKey: ["archive"],
+    queryFn: fetchArchivedTasks,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useUnarchiveTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: string) => unarchiveTask(taskId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["tasks"] });
+      void qc.invalidateQueries({ queryKey: ["archive"] });
     },
   });
 }
