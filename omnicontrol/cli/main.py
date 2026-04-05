@@ -1,6 +1,7 @@
 import click
 
 from .advisor import ask_cmd
+from .youtube import youtube_cmd
 from .briefing import briefing
 from .clock import clock
 from .comm import comm
@@ -48,3 +49,4 @@ cli.add_command(briefing)
 cli.add_command(tag)
 cli.add_command(config_cmd)
 cli.add_command(ask_cmd)
+cli.add_command(youtube_cmd, name="youtube")
