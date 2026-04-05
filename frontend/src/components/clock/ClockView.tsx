@@ -10,6 +10,7 @@ import {
   useUpdateClockEntry,
 } from "../../hooks/useClocks";
 import { useAddTimeEntry } from "../../hooks/useCustomers";
+import { useTasks } from "../../hooks/useTasks";
 import { registerPanelAction } from "../../utils/panelActions";
 import type { ClockEntry } from "../../types";
 
@@ -266,7 +267,9 @@ function EditForm({ entry, onClose }: EditFormProps) {
   const [customer, setCustomer] = useState(entry.customer);
   const [description, setDescription] = useState(entry.description);
   const [hours, setHours] = useState(minutesToDecimal(entry.duration_minutes));
+  const [taskId, setTaskId] = useState(entry.task_id ?? "");
   const update = useUpdateClockEntry();
+  const { data: tasks = [] } = useTasks();
 
   function handleSave() {
     const updates: {
@@ -274,6 +277,7 @@ function EditForm({ entry, onClose }: EditFormProps) {
       description?: string;
       hours?: number;
       new_date?: string;
+      task_id?: string;
     } = {};
     if (entryDate !== formatDate(entry.start)) updates.new_date = entryDate;
     if (customer.trim() !== entry.customer) {
@@ -285,6 +289,10 @@ function EditForm({ entry, onClose }: EditFormProps) {
     const h = parseFloat(hours);
     if (!isNaN(h) && h > 0 && h !== (entry.duration_minutes ?? 0) / 60) {
       updates.hours = h;
+    }
+    const currentTaskId = entry.task_id ?? "";
+    if (taskId !== currentTaskId) {
+      updates.task_id = taskId;
     }
     if (Object.keys(updates).length === 0) {
       onClose();
@@ -334,6 +342,20 @@ function EditForm({ entry, onClose }: EditFormProps) {
             step="0.25"
             min="0"
           />
+          <select
+            value={taskId}
+            onChange={(e) => setTaskId(e.target.value)}
+            className={`${smallInputCls} w-48`}
+            title="Link to task"
+          >
+            <option value="">No task</option>
+            {tasks.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.customer ? `[${t.customer}] ` : ""}
+                {t.title.replace(/^\[[^\]]+\]:?\s*/, "")}
+              </option>
+            ))}
+          </select>
           <button
             onClick={onClose}
             className="p-1 rounded text-slate-500 hover:text-slate-300"
@@ -385,7 +407,15 @@ function EntryRow({ entry }: EntryRowProps) {
         {entry.customer}
       </td>
       <td className="px-3 py-1.5 text-xs text-slate-400 w-full">
-        {entry.description}
+        <span>{entry.description}</span>
+        {entry.task_id && (
+          <span
+            className="ml-2 px-1 rounded text-[10px] bg-accent-muted text-accent-hover"
+            title={`Task: ${entry.task_id}`}
+          >
+            task
+          </span>
+        )}
       </td>
       <td className="px-3 py-1.5 text-xs text-slate-400 tabular-nums whitespace-nowrap text-right">
         <span className="mr-2">{formatHours(entry.duration_minutes)}</span>

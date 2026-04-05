@@ -1,6 +1,16 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil, Trash2, Check, X } from "lucide-react";
+import {
+  GripVertical,
+  Pencil,
+  Trash2,
+  Check,
+  X,
+  Clock,
+  ChevronDown,
+  ChevronRight,
+  SquareArrowUp,
+} from "lucide-react";
 import { useState } from "react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TagDropdown } from "../common/TagDropdown";
@@ -9,10 +19,128 @@ import {
   useArchiveTask,
   useSetTaskTags,
 } from "../../hooks/useTasks";
+import {
+  useTaskClockEntries,
+  useUpdateClockEntry,
+} from "../../hooks/useClocks";
+import { useAddTimeEntry } from "../../hooks/useCustomers";
 import { useSettings } from "../../hooks/useSettings";
-import type { Task } from "../../types";
+import type { ClockEntry, Task } from "../../types";
 
 const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
+
+function fmtDate(iso: string): string {
+  return iso.slice(0, 10);
+}
+
+function fmtHours(minutes: number | null): string {
+  if (!minutes) return "0h";
+  return `${(minutes / 60).toFixed(1).replace(/\.0$/, "")}h`;
+}
+
+function totalMinutes(entries: ClockEntry[]): number {
+  return entries.reduce((s, e) => s + (e.duration_minutes ?? 0), 0);
+}
+
+// ---------------------------------------------------------------------------
+// Clock entries section inside a task card
+// ---------------------------------------------------------------------------
+
+interface TaskClockSectionProps {
+  task: Task;
+}
+
+function TaskClockSection({ task }: TaskClockSectionProps) {
+  const { data: entries = [] } = useTaskClockEntries(task.id);
+  const updateEntry = useUpdateClockEntry();
+  const addTimeEntry = useAddTimeEntry();
+  const [open, setOpen] = useState(false);
+
+  if (entries.length === 0) return null;
+
+  const total = totalMinutes(entries);
+
+  function detach(entry: ClockEntry) {
+    updateEntry.mutate({
+      startIso: entry.start,
+      updates: { task_id: "" },
+    });
+  }
+
+  function bookAll() {
+    if (!task.customer) return;
+    const hours = parseFloat((total / 60).toFixed(2));
+    addTimeEntry.mutate(
+      {
+        customerName: task.customer,
+        description: task.title,
+        hours,
+      },
+      { onSuccess: () => setOpen(false) }
+    );
+  }
+
+  return (
+    <div
+      className="mt-2 border-t border-border-subtle pt-1.5"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-300 w-full"
+      >
+        {open ? (
+          <ChevronDown size={10} />
+        ) : (
+          <ChevronRight size={10} />
+        )}
+        <Clock size={10} />
+        <span>
+          {entries.length} {entries.length === 1 ? "entry" : "entries"}
+          {" · "}
+          {fmtHours(total)}
+        </span>
+        {task.customer && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              bookAll();
+            }}
+            disabled={addTimeEntry.isPending}
+            title="Book total to project"
+            className="ml-auto p-0.5 rounded text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-40"
+          >
+            <SquareArrowUp size={10} />
+          </button>
+        )}
+      </button>
+      {open && (
+        <ul className="mt-1 space-y-0.5">
+          {entries.map((e) => (
+            <li
+              key={e.start}
+              className="flex items-center gap-1.5 text-[10px] text-slate-500 group/entry"
+            >
+              <span className="font-mono">{fmtDate(e.start)}</span>
+              <span className="flex-1 truncate">{e.description}</span>
+              <span className="tabular-nums text-slate-400">
+                {fmtHours(e.duration_minutes)}
+              </span>
+              <button
+                onClick={() => detach(e)}
+                disabled={updateEntry.isPending}
+                title="Detach from task"
+                className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-slate-600 hover:text-slate-300 disabled:opacity-40"
+              >
+                <X size={9} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 function stripCustomerPrefix(title: string): string {
   return title.replace(CUSTOMER_PREFIX_RE, "");
@@ -219,6 +347,7 @@ export function TaskCard({
                   {formatDate(task.created)}
                 </span>
               </div>
+              <TaskClockSection task={task} />
             </>
           )}
         </div>
