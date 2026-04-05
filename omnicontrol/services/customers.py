@@ -52,8 +52,8 @@ def _heading_to_customer(heading: Heading) -> dict:
             (c for c in contracts if not c["end_date"]), None
         )
         kontingent = active["kontingent"] if active else 0.0
-        verbraucht = 0.0
-        rest = kontingent
+        verbraucht = active["verbraucht_offset"] if active else 0.0
+        rest = kontingent - verbraucht
     else:
         kontingent = _extract_hours(props.get("KONTINGENT", "0"))
         verbraucht = _extract_hours(props.get("VERBRAUCHT", "0"))

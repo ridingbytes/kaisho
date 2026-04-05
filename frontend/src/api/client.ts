@@ -402,7 +402,7 @@ export function updateContract(
 ): Promise<Contract> {
   return patch<Contract>(
     `/customers/${encodeURIComponent(customerName)}/contracts/` +
-      encodeURIComponent(contractName),
+      contractName,
     updates
   );
 }
@@ -413,7 +413,7 @@ export function deleteContract(
 ): Promise<void> {
   return del(
     `/customers/${encodeURIComponent(customerName)}/contracts/` +
-      encodeURIComponent(contractName)
+      contractName
   );
 }
 

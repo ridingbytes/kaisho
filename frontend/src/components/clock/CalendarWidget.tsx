@@ -118,6 +118,18 @@ export function CalendarWidget({
     onDateChange(selectedDate === iso ? null : iso);
   }
 
+  function goToday() {
+    const now = new Date();
+    setYear(now.getFullYear());
+    setMonth(now.getMonth() + 1);
+    onDateChange(todayIso);
+  }
+
+  const showTodayLink =
+    selectedDate !== todayIso ||
+    year !== today.getFullYear() ||
+    month !== today.getMonth() + 1;
+
   return (
     <div className="flex flex-col gap-2">
       {/* Month navigation */}
@@ -167,12 +179,10 @@ export function CalendarWidget({
                 "flex flex-col items-center justify-center h-8 cursor-pointer",
                 "text-[10px] leading-none transition-colors bg-surface-card",
                 isCurrentMonth ? "" : "opacity-25 pointer-events-none",
-                isToday
-                  ? isSelected
-                    ? "bg-accent/25 text-accent"
-                    : "bg-accent/15 text-accent hover:bg-accent/25"
-                  : isSelected
-                    ? "bg-accent-muted text-accent"
+                isSelected
+                  ? "bg-indigo-500/30 text-white"
+                  : isToday && !isSelected
+                    ? "bg-indigo-500/15 text-white hover:bg-indigo-500/25"
                     : "text-slate-400 hover:bg-surface-raised",
               ].join(" ")}
             >
@@ -189,6 +199,14 @@ export function CalendarWidget({
         })}
       </div>
 
+      {showTodayLink && (
+        <button
+          onClick={goToday}
+          className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors self-end"
+        >
+          Today
+        </button>
+      )}
     </div>
   );
 }

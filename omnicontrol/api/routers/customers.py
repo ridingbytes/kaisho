@@ -97,7 +97,7 @@ def add_contract(name: str, body: ContractCreate):
         raise HTTPException(status_code=409, detail=str(e))
 
 
-@router.patch("/{name}/contracts/{contract_name}")
+@router.patch("/{name}/contracts/{contract_name:path}")
 def update_contract(
     name: str, contract_name: str, body: ContractUpdate
 ):
@@ -112,7 +112,7 @@ def update_contract(
     return contract
 
 
-@router.delete("/{name}/contracts/{contract_name}", status_code=204)
+@router.delete("/{name}/contracts/{contract_name:path}", status_code=204)
 def delete_contract(name: str, contract_name: str):
     ok = get_backend().customers.delete_contract(name, contract_name)
     if not ok:
