@@ -1,11 +1,19 @@
-import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, Pencil, Trash2, X } from "lucide-react";
+import { Markdown } from "../common/Markdown";
+import { HelpButton } from "../common/HelpButton";
+import { TagDropdown } from "../common/TagDropdown";
+import { DOCS } from "../../docs/panelDocs";
+import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import {
   useAddComm,
   useCommSearch,
   useComms,
   useDeleteComm,
+  useUpdateComm,
 } from "../../hooks/useComm";
+import { useSettings } from "../../hooks/useSettings";
+import { registerPanelAction } from "../../utils/panelActions";
 import type { CommEntry } from "../../types";
 
 const DIRECTION_OPTIONS = ["all", "in", "out"] as const;
@@ -40,6 +48,11 @@ function ChannelPill({ channel }: { channel: string }) {
   );
 }
 
+const fieldCls =
+  "px-2 py-1 rounded text-xs bg-surface-raised border border-border " +
+  "text-slate-200 placeholder-slate-600 focus:outline-none " +
+  "focus:border-border-strong";
+
 function CommRow({
   entry,
   onDelete,
@@ -48,6 +61,33 @@ function CommRow({
   onDelete: (id: number) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editType, setEditType] = useState(entry.type ?? "");
+  const [editTags, setEditTags] = useState<string[]>(entry.tags ?? []);
+  const updateComm = useUpdateComm();
+  const { data: settings } = useSettings();
+  const allTags = settings?.tags ?? [];
+
+  function startEdit(e: React.MouseEvent) {
+    e.stopPropagation();
+    setEditType(entry.type ?? "");
+    setEditTags(entry.tags ?? []);
+    setEditing(true);
+    setExpanded(true);
+  }
+
+  function handleSave(e: React.MouseEvent) {
+    e.stopPropagation();
+    updateComm.mutate(
+      { id: entry.id, updates: { type: editType, tags: editTags } },
+      { onSuccess: () => setEditing(false) }
+    );
+  }
+
+  function cancelEdit(e: React.MouseEvent) {
+    e.stopPropagation();
+    setEditing(false);
+  }
 
   return (
     <div className="border-b border-border-subtle">
@@ -63,31 +103,93 @@ function CommRow({
         </span>
         <DirectionBadge direction={entry.direction} />
         <ChannelPill channel={entry.channel} />
-        <span className="text-xs text-slate-400 w-28 shrink-0 truncate">
+        {entry.type && (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-surface-overlay text-slate-400 shrink-0">
+            {entry.type}
+          </span>
+        )}
+        <span className="text-xs text-slate-400 w-24 shrink-0 truncate">
           {entry.customer ?? "—"}
         </span>
         <span className="text-sm text-slate-200 flex-1 truncate">
           {entry.subject}
         </span>
+        {entry.tags?.map((tagName) => {
+          const def = allTags.find((t) => t.name === tagName);
+          return (
+            <span
+              key={tagName}
+              className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white shrink-0"
+              style={{ backgroundColor: def?.color ?? "#64748b" }}
+            >
+              {tagName}
+            </span>
+          );
+        })}
+        <button
+          onClick={startEdit}
+          className="text-slate-700 hover:text-accent transition-colors"
+          title="Edit type / tags"
+        >
+          <Pencil size={13} />
+        </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
             onDelete(entry.id);
           }}
-          className="text-slate-600 hover:text-red-400 transition-colors ml-2"
+          className="text-slate-600 hover:text-red-400 transition-colors"
           title="Delete"
         >
-          <Trash2 size={14} />
+          <Trash2 size={13} />
         </button>
       </div>
       {expanded && (
-        <div className="px-4 pb-3">
-          <p className="text-xs text-slate-500 mb-1">
+        <div className="px-4 pb-3 flex flex-col gap-2">
+          {editing ? (
+            <div
+              className="flex flex-col gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Type (e.g. meeting, proposal)"
+                  value={editType}
+                  onChange={(e) => setEditType(e.target.value)}
+                  className={`${fieldCls} w-56`}
+                />
+                <button
+                  onClick={cancelEdit}
+                  className="p-1 text-slate-600 hover:text-slate-300 rounded"
+                >
+                  <X size={13} />
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={updateComm.isPending}
+                  className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+                >
+                  <Check size={13} />
+                </button>
+              </div>
+              <TagDropdown
+                selected={editTags}
+                allTags={allTags}
+                onChange={setEditTags}
+              />
+            </div>
+          ) : null}
+          <p className="text-xs text-slate-500">
             Contact: {entry.contact || "—"}
           </p>
-          <p className="text-sm text-slate-300 whitespace-pre-wrap">
-            {entry.body || <span className="text-slate-600">No body.</span>}
-          </p>
+          {entry.body ? (
+            <Markdown className="text-sm text-slate-300">
+              {entry.body}
+            </Markdown>
+          ) : (
+            <p className="text-sm text-slate-600">No body.</p>
+          )}
         </div>
       )}
     </div>
@@ -96,17 +198,30 @@ function CommRow({
 
 function AddCommForm({ onClose }: { onClose: () => void }) {
   const addComm = useAddComm();
+  const { data: settings } = useSettings();
+  const allTags = settings?.tags ?? [];
   const [subject, setSubject] = useState("");
   const [direction, setDirection] = useState("in");
   const [channel, setChannel] = useState("email");
   const [customer, setCustomer] = useState("");
   const [body, setBody] = useState("");
   const [contact, setContact] = useState("");
+  const [commType, setCommType] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     addComm.mutate(
-      { subject, direction, channel, customer, body, contact },
+      {
+        subject,
+        direction,
+        channel,
+        customer,
+        body,
+        contact,
+        type: commType,
+        tags,
+      },
       { onSuccess: onClose }
     );
   }
@@ -123,6 +238,7 @@ function AddCommForm({ onClose }: { onClose: () => void }) {
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           required
+          autoFocus
           className="flex-1 px-3 py-1.5 rounded-lg bg-surface-raised border border-border text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-border-strong"
         />
         <select
@@ -143,19 +259,33 @@ function AddCommForm({ onClose }: { onClose: () => void }) {
           <option value="chat">Chat</option>
           <option value="other">Other</option>
         </select>
-        <input
-          type="text"
-          placeholder="Customer"
+      </div>
+      <div className="flex items-start gap-2">
+        <CustomerAutocomplete
           value={customer}
-          onChange={(e) => setCustomer(e.target.value)}
-          className="w-32 px-3 py-1.5 rounded-lg bg-surface-raised border border-border text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-border-strong"
+          onChange={setCustomer}
+          placeholder="Customer"
+          className="w-44 shrink-0"
+          inputClassName="w-full px-3 py-1.5 rounded-lg bg-surface-raised border border-border text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-border-strong"
         />
         <input
           type="text"
           placeholder="Contact"
           value={contact}
           onChange={(e) => setContact(e.target.value)}
-          className="w-32 px-3 py-1.5 rounded-lg bg-surface-raised border border-border text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-border-strong"
+          className="w-36 px-3 py-1.5 rounded-lg bg-surface-raised border border-border text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-border-strong"
+        />
+        <input
+          type="text"
+          placeholder="Type (e.g. meeting, proposal)"
+          value={commType}
+          onChange={(e) => setCommType(e.target.value)}
+          className="flex-1 px-3 py-1.5 rounded-lg bg-surface-raised border border-border text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-border-strong"
+        />
+        <TagDropdown
+          selected={tags}
+          allTags={allTags}
+          onChange={setTags}
         />
       </div>
       <textarea
@@ -192,6 +322,11 @@ export function CommunicationsView() {
     useState<(typeof CHANNEL_OPTIONS)[number]>("all");
   const [searchText, setSearchText] = useState("");
   const [showForm, setShowForm] = useState(false);
+
+  useEffect(
+    () => registerPanelAction("communications", () => setShowForm(true)),
+    []
+  );
 
   const filterParams = {
     direction: direction !== "all" ? direction : undefined,
@@ -253,6 +388,7 @@ export function CommunicationsView() {
         >
           + Add
         </button>
+        <HelpButton title="Communications" doc={DOCS.communications} view="communications" />
       </div>
 
       {showForm && (

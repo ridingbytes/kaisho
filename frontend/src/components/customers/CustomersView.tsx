@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCreateCustomer, useCustomers } from "../../hooks/useCustomers";
+import { useSettings } from "../../hooks/useSettings";
+import { registerPanelAction } from "../../utils/panelActions";
 import { Toggle } from "../common/Toggle";
+import { HelpButton } from "../common/HelpButton";
+import { DOCS } from "../../docs/panelDocs";
 import { CustomerCard } from "./CustomerCard";
+import type { Customer } from "../../types";
 
 const inputCls =
   "bg-surface-raised border border-border rounded px-2 py-1 text-sm " +
@@ -9,9 +14,12 @@ const inputCls =
 
 function AddCustomerForm({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
+  const [type, setType] = useState("");
   const [kontingent, setKontingent] = useState("");
   const [repo, setRepo] = useState("");
   const create = useCreateCustomer();
+  const { data: settings } = useSettings();
+  const customerTypes = settings?.customer_types ?? [];
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -19,6 +27,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
     create.mutate(
       {
         name: name.trim(),
+        type: type || undefined,
         kontingent: kontingent ? parseFloat(kontingent) : 0,
         repo: repo.trim() || null,
       },
@@ -43,6 +52,25 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
           autoFocus
         />
       </div>
+      {customerTypes.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+            Type
+          </label>
+          <select
+            className={`${inputCls} w-32`}
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+          >
+            <option value="">— none —</option>
+            {customerTypes.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="flex flex-col gap-1">
         <label className="text-[10px] text-slate-500 uppercase tracking-wider">
           Budget (h)
@@ -93,28 +121,69 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
   );
 }
 
+type SortKey = "budget" | "name";
+
+function sortAndFilter(
+  customers: Customer[],
+  search: string,
+  sortBy: SortKey
+) {
+  const q = search.toLowerCase();
+  const filtered = q
+    ? customers.filter((c) => c.name.toLowerCase().includes(q))
+    : customers;
+  return [...filtered].sort((a, b) => {
+    if (sortBy === "name") return a.name.localeCompare(b.name);
+    return (b.kontingent ?? 0) - (a.kontingent ?? 0);
+  });
+}
+
 export function CustomersView() {
   const [showInactive, setShowInactive] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortKey>("budget");
   const { data: customers = [], isLoading } = useCustomers(showInactive);
+
+  useEffect(
+    () => registerPanelAction("customers", () => setAdding(true)),
+    []
+  );
+
+  const visible = sortAndFilter(customers, search, sortBy);
 
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
+      <div className="flex items-center gap-3 px-6 py-3 border-b border-border-subtle shrink-0 flex-wrap">
         <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
           Customers
         </h1>
-        <button
-          onClick={() => setAdding((v) => !v)}
-          className="ml-2 px-2.5 py-1 rounded bg-accent-muted text-accent text-xs font-semibold hover:bg-accent hover:text-white transition-colors"
+        <input
+          className={`${inputCls} w-44`}
+          placeholder="Search…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select
+          className={`${inputCls} w-32`}
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as SortKey)}
         >
-          + New
-        </button>
+          <option value="budget">Sort: Budget</option>
+          <option value="name">Sort: Name</option>
+        </select>
         <label className="flex items-center gap-2 ml-auto cursor-pointer">
           <span className="text-xs text-slate-500">Show inactive</span>
           <Toggle checked={showInactive} onChange={setShowInactive} />
         </label>
+        <button
+          onClick={() => setAdding((v) => !v)}
+          className="px-2.5 py-1 rounded bg-accent-muted text-accent text-xs font-semibold hover:bg-accent hover:text-white transition-colors"
+        >
+          + New
+        </button>
+        <HelpButton title="Customers" doc={DOCS.customers} view="customers" />
       </div>
 
       {/* Add form */}
@@ -127,13 +196,13 @@ export function CustomersView() {
             Loading…
           </p>
         )}
-        {!isLoading && customers.length === 0 && (
+        {!isLoading && visible.length === 0 && (
           <p className="text-sm text-slate-600 text-center py-8">
             No customers found.
           </p>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {customers.map((c) => (
+          {visible.map((c) => (
             <CustomerCard key={c.name} customer={c} />
           ))}
         </div>
