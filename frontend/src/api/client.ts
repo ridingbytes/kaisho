@@ -191,6 +191,7 @@ export function updateClockEntry(
     hours?: number;
     new_date?: string;
     task_id?: string;
+    booked?: boolean;
   }
 ): Promise<ClockEntry> {
   const qs = encodeURIComponent(startIso);

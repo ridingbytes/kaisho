@@ -114,6 +114,7 @@ export function useUpdateClockEntry() {
         hours?: number;
         new_date?: string;
         task_id?: string;
+        booked?: boolean;
       };
     }) => updateClockEntry(startIso, updates),
     onSuccess: () => {
