@@ -148,6 +148,17 @@ export function deleteCustomerType(name: string): Promise<void> {
   return del(`/settings/customer_types/${encodeURIComponent(name)}`);
 }
 
+export function reorderStates(names: string[]): Promise<unknown> {
+  return fetch(`${BASE}/settings/states/order`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(names),
+  }).then((r) => {
+    if (!r.ok) throw new Error(`PUT /settings/states/order: ${r.status}`);
+    return r.json();
+  });
+}
+
 // Clocks
 
 export function fetchActiveTimer(): Promise<ActiveTimer> {

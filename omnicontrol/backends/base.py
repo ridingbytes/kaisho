@@ -158,8 +158,9 @@ class ClockBackend(ABC):
         new_date: date | None = None,
         task_id: str | None = None,
         booked: bool | None = None,
+        notes: str | None = None,
     ) -> dict | None:
-        """Update customer, description, hours, date, task, or booked."""
+        """Update customer, description, hours, date, task, booked, or notes."""
 
     @abstractmethod
     def delete_entry(self, start_iso: str) -> bool:

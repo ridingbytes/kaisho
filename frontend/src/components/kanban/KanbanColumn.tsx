@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
-import { Plus, X, Check } from "lucide-react";
-import { useDroppable } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { Plus, X, Check, GripVertical } from "lucide-react";
+import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { useAddTask } from "../../hooks/useTasks";
 import type { Task, TaskState } from "../../types";
@@ -24,7 +21,21 @@ export function KanbanColumn({
   openAdd,
   onAddOpened,
 }: KanbanColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: state.name });
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+  } = useSortable({ id: state.name });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
@@ -64,9 +75,26 @@ export function KanbanColumn({
   }
 
   return (
-    <div className="flex flex-col w-72 shrink-0">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={[
+        "flex flex-col w-72 shrink-0",
+        isDragging ? "opacity-40" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {/* Column header */}
       <div className="flex items-center gap-2 mb-3 px-1">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-slate-700 hover:text-slate-500 shrink-0 touch-none"
+          title="Drag to reorder column"
+        >
+          <GripVertical size={12} />
+        </div>
         <div
           className="w-2 h-2 rounded-full shrink-0"
           style={{ backgroundColor: state.color }}
@@ -98,7 +126,6 @@ export function KanbanColumn({
 
       {/* Drop zone */}
       <div
-        ref={setNodeRef}
         className={[
           "flex flex-col gap-2 min-h-32 p-2 rounded-xl",
           "border border-dashed transition-colors duration-150",

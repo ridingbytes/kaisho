@@ -49,6 +49,7 @@ export interface ClockEntry {
   duration_minutes: number | null;
   task_id: string | null;
   booked: boolean;
+  notes: string;
 }
 
 export interface ActiveTimer {
@@ -56,6 +57,7 @@ export interface ActiveTimer {
   customer?: string;
   description?: string;
   start?: string;
+  notes?: string;
 }
 
 export interface InboxItem {

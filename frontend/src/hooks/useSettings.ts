@@ -11,6 +11,7 @@ import {
   fetchAiSettings,
   fetchAvailableModels,
   fetchSettings,
+  reorderStates,
   updateAiSettings,
   updateTag,
 } from "../api/client";
@@ -141,6 +142,16 @@ export function useDeleteCustomerType() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (name: string) => deleteCustomerType(name),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useReorderStates() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (names: string[]) => reorderStates(names),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["settings"] });
     },

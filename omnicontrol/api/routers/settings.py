@@ -72,6 +72,19 @@ def add_state(body: StateCreate):
     return new_state
 
 
+@router.put("/states/order", status_code=200)
+def reorder_states(body: list[str] = Body(...)):
+    """Replace task_states order with the given list of state names."""
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    states = {s["name"]: s for s in data.get("task_states", [])}
+    data["task_states"] = [
+        states[name] for name in body if name in states
+    ]
+    settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+    return data["task_states"]
+
+
 @router.delete("/states/{name}", status_code=204)
 def remove_state(name: str):
     cfg = get_config()

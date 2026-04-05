@@ -28,6 +28,7 @@ class EntryUpdate(BaseModel):
     new_date: date | None = None
     task_id: str | None = None
     booked: bool | None = None
+    notes: str | None = None
 
 
 @router.get("/entries")
@@ -103,6 +104,7 @@ def update_entry(start: str, body: EntryUpdate):
         new_date=body.new_date,
         task_id=body.task_id,
         booked=body.booked,
+        notes=body.notes,
     )
     if result is None:
         raise HTTPException(status_code=404, detail="Entry not found")

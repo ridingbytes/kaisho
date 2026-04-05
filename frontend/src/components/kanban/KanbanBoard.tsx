@@ -8,15 +8,27 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { ChevronDown, ChevronRight, ArchiveRestore, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  SortableContext,
+  arrayMove,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import {
+  ChevronDown,
+  ChevronRight,
+  ArchiveRestore,
+  Plus,
+  Search,
+  X,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import {
   useArchivedTasks,
   useMoveTask,
   useTasks,
   useUnarchiveTask,
 } from "../../hooks/useTasks";
-import { useSettings } from "../../hooks/useSettings";
+import { useReorderStates, useSettings } from "../../hooks/useSettings";
 import type { ArchivedTask, Task } from "../../types";
 import { Toggle } from "../common/Toggle";
 import { HelpButton } from "../common/HelpButton";
@@ -139,17 +151,42 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
   );
 }
 
+function matchesSearch(task: Task, query: string): boolean {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  if (task.title.toLowerCase().includes(q)) return true;
+  if (task.customer?.toLowerCase().includes(q)) return true;
+  if (task.tags.some((t) => t.toLowerCase().includes(q))) return true;
+  return false;
+}
+
 export function KanbanBoard() {
   const [showDone, setShowDone] = useState(false);
   const [openAddInFirst, setOpenAddInFirst] = useState(false);
-  const { data: tasks = [], isLoading } = useTasks(showDone);
+  const [search, setSearch] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  const { data: rawTasks = [], isLoading } = useTasks(showDone);
+  const tasks = rawTasks.filter((t) => matchesSearch(t, search));
 
   useEffect(
     () => registerPanelAction("board", () => setOpenAddInFirst(true)),
     []
   );
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(tag)) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const { data: settings } = useSettings();
   const moveTask = useMoveTask();
+  const reorderStates = useReorderStates();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [pendingStatus, setPendingStatus] = useState<
     Record<string, string>
@@ -168,6 +205,10 @@ export function KanbanBoard() {
     (settings?.task_states ?? []).map((s) => [s.name, s])
   );
 
+  function isColumnId(id: string): boolean {
+    return states.some((s) => s.name === id);
+  }
+
   function getTaskStatus(task: Task): string {
     return pendingStatus[task.id] ?? task.status;
   }
@@ -177,12 +218,15 @@ export function KanbanBoard() {
   }
 
   function onDragStart({ active }: DragStartEvent) {
+    if (isColumnId(String(active.id))) return;
     const task = tasks.find((t) => t.id === String(active.id));
     setActiveTask(task ?? null);
   }
 
   function onDragOver({ active, over }: DragOverEvent) {
     if (!over) return;
+    // Don't handle card-hover logic when dragging a column
+    if (isColumnId(String(active.id))) return;
     const overId = String(over.id);
     // Check if dragging over a column (droppable id = status name)
     if (states.some((s) => s.name === overId)) {
@@ -202,13 +246,30 @@ export function KanbanBoard() {
     }
   }
 
-  function onDragEnd({ active }: DragEndEvent) {
-    const taskId = String(active.id);
-    const newStatus = pendingStatus[taskId];
-    const task = tasks.find((t) => t.id === taskId);
+  function onDragEnd({ active, over }: DragEndEvent) {
+    const activeId = String(active.id);
+
+    // Column reorder
+    if (isColumnId(activeId)) {
+      if (over && activeId !== String(over.id)) {
+        const oldIdx = states.findIndex((s) => s.name === activeId);
+        const newIdx = states.findIndex((s) => s.name === String(over.id));
+        if (oldIdx !== -1 && newIdx !== -1) {
+          const reordered = arrayMove(states, oldIdx, newIdx);
+          reorderStates.mutate(reordered.map((s) => s.name));
+        }
+      }
+      setActiveTask(null);
+      setPendingStatus({});
+      return;
+    }
+
+    // Card move
+    const newStatus = pendingStatus[activeId];
+    const task = tasks.find((t) => t.id === activeId);
 
     if (newStatus && task && newStatus !== task.status) {
-      moveTask.mutate({ taskId, status: newStatus });
+      moveTask.mutate({ taskId: activeId, status: newStatus });
     }
 
     setActiveTask(null);
@@ -247,6 +308,39 @@ export function KanbanBoard() {
           <Plus size={12} />
           New
         </button>
+        <div className="relative flex items-center ml-2">
+          <Search
+            size={11}
+            className="absolute left-2 text-slate-600 pointer-events-none"
+          />
+          <input
+            ref={searchRef}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setSearch("");
+                searchRef.current?.blur();
+              }
+            }}
+            placeholder="Search tasks…"
+            className={[
+              "pl-6 pr-6 py-1 text-xs rounded",
+              "bg-surface-raised border border-border",
+              "text-slate-300 placeholder-slate-600",
+              "focus:outline-none focus:border-accent",
+              "w-44",
+            ].join(" ")}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-1.5 text-slate-600 hover:text-slate-400"
+            >
+              <X size={10} />
+            </button>
+          )}
+        </div>
         <label className="flex items-center gap-2 ml-auto cursor-pointer">
           <span className="text-xs text-slate-500">Show done</span>
           <Toggle checked={showDone} onChange={setShowDone} />
@@ -263,17 +357,22 @@ export function KanbanBoard() {
           onDragEnd={onDragEnd}
           onDragCancel={onDragCancel}
         >
-          <div className="flex gap-4 p-6 h-full items-start">
-            {states.map((state, idx) => (
-              <KanbanColumn
-                key={state.name}
-                state={state}
-                tasks={tasksByStatus(state.name)}
-                openAdd={idx === 0 && openAddInFirst}
-                onAddOpened={() => setOpenAddInFirst(false)}
-              />
-            ))}
-          </div>
+          <SortableContext
+            items={states.map((s) => s.name)}
+            strategy={horizontalListSortingStrategy}
+          >
+            <div className="flex gap-4 p-6 h-full items-start">
+              {states.map((state, idx) => (
+                <KanbanColumn
+                  key={state.name}
+                  state={state}
+                  tasks={tasksByStatus(state.name)}
+                  openAdd={idx === 0 && openAddInFirst}
+                  onAddOpened={() => setOpenAddInFirst(false)}
+                />
+              ))}
+            </div>
+          </SortableContext>
 
           <DragOverlay dropAnimation={null}>
             {activeTask && activeState ? (
