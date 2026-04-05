@@ -96,3 +96,36 @@ def set_github_settings(path: Path, updates: dict) -> dict:
     data["github"] = gh
     save_settings(path, data)
     return get_github_settings(data)
+
+
+def get_kb_sources(settings: dict, cfg=None) -> list[dict]:
+    """Return KB source list with defaults from config.
+
+    Each entry: {"label": str, "path": str}.
+    Falls back to WISSEN_DIR/RESEARCH_DIR from config if no
+    custom sources are defined in settings.
+    """
+    sources = settings.get("kb_sources")
+    if sources:
+        return sources
+    if cfg is None:
+        from ..config import get_config
+        cfg = get_config()
+    return [
+        {
+            "label": "wissen",
+            "path": str(cfg.WISSEN_DIR),
+        },
+        {
+            "label": "research",
+            "path": str(cfg.RESEARCH_DIR),
+        },
+    ]
+
+
+def set_kb_sources(path: Path, sources: list[dict]) -> list[dict]:
+    """Persist KB sources; return the updated list."""
+    data = load_settings(path)
+    data["kb_sources"] = sources
+    save_settings(path, data)
+    return sources

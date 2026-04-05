@@ -83,6 +83,38 @@ def _api_get(
 
 
 # ------------------------------------------------------------------
+# Repo normalizer
+# ------------------------------------------------------------------
+
+
+def _normalize_repo(repo: str) -> str | None:
+    """Extract owner/name from a repo string or URL.
+
+    Accepts: 'owner/name', 'https://github.com/owner/name',
+    'https://github.com/owner/name.git'.
+    Returns None for invalid formats like 'None' or bare names.
+    """
+    repo = repo.strip().rstrip("/")
+    if repo.lower() in ("none", ""):
+        return None
+    # Strip GitHub URL prefix
+    for prefix in (
+        "https://github.com/",
+        "http://github.com/",
+        "git@github.com:",
+    ):
+        if repo.lower().startswith(prefix.lower()):
+            repo = repo[len(prefix):]
+            break
+    # Strip .git suffix
+    if repo.endswith(".git"):
+        repo = repo[:-4]
+    if "/" not in repo:
+        return None
+    return repo
+
+
+# ------------------------------------------------------------------
 # Issue / PR fetchers
 # ------------------------------------------------------------------
 
@@ -229,10 +261,11 @@ def issues_for_customers(
     """Return issues grouped by customer."""
     results = []
     for c in customers:
-        repo = (
+        raw = (
             c.get("repo")
             or c.get("properties", {}).get("REPO")
         )
+        repo = _normalize_repo(raw or "")
         if not repo:
             continue
         try:

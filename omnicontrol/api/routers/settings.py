@@ -406,3 +406,23 @@ def list_models():
         + _CLAUDE_MODELS
     )
     return {"models": models}
+
+
+# ---------------------------------------------------------------------------
+# Knowledge base sources
+# ---------------------------------------------------------------------------
+
+
+@router.get("/kb_sources")
+def get_kb_sources():
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    return settings_svc.get_kb_sources(data, cfg)
+
+
+@router.put("/kb_sources")
+def set_kb_sources(body: list[dict] = Body(...)):
+    cfg = get_config()
+    return settings_svc.set_kb_sources(
+        cfg.SETTINGS_FILE, body,
+    )
