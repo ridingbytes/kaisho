@@ -12,11 +12,13 @@ class QuickBookRequest(BaseModel):
     duration: str   # "2h", "30min"
     customer: str
     description: str
+    task_id: str | None = None
 
 
 class TimerStart(BaseModel):
     customer: str
     description: str
+    task_id: str | None = None
 
 
 class EntryUpdate(BaseModel):
@@ -24,6 +26,7 @@ class EntryUpdate(BaseModel):
     description: str | None = None
     hours: float | None = None
     new_date: date | None = None
+    task_id: str | None = None
 
 
 @router.get("/entries")
@@ -32,12 +35,14 @@ def list_entries(
     customer: str | None = None,
     from_date: date | None = None,
     to_date: date | None = None,
+    task_id: str | None = None,
 ):
     return get_backend().clocks.list_entries(
         period=period,
         customer=customer,
         from_date=from_date,
         to_date=to_date,
+        task_id=task_id,
     )
 
 
@@ -56,6 +61,7 @@ def quick_book(body: QuickBookRequest):
             duration_str=body.duration,
             customer=body.customer,
             description=body.description,
+            task_id=body.task_id,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -67,6 +73,7 @@ def start_timer(body: TimerStart):
         return get_backend().clocks.start(
             customer=body.customer,
             description=body.description,
+            task_id=body.task_id,
         )
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
@@ -93,6 +100,7 @@ def update_entry(start: str, body: EntryUpdate):
         description=body.description,
         hours=body.hours,
         new_date=body.new_date,
+        task_id=body.task_id,
     )
     if result is None:
         raise HTTPException(status_code=404, detail="Entry not found")

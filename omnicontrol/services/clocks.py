@@ -40,7 +40,10 @@ def _parse_duration(duration_str: str) -> int | None:
 
 
 def _clock_to_entry(
-    clock: Clock, customer: str, description: str
+    clock: Clock,
+    customer: str,
+    description: str,
+    task_id: str | None = None,
 ) -> dict:
     """Convert a Clock to a clock entry dict."""
     duration_minutes = None
@@ -53,6 +56,7 @@ def _clock_to_entry(
         "start": clock.start.isoformat(),
         "end": clock.end.isoformat() if clock.end else None,
         "duration_minutes": duration_minutes,
+        "task_id": task_id,
     }
 
 
@@ -61,8 +65,11 @@ def _collect_clock_entries(org_file: OrgFile) -> list[dict]:
     entries = []
     for h1 in org_file.headings:
         customer, desc = _parse_entry_title(h1.title)
+        task_id = h1.properties.get("TASK_ID") or None
         for clock in h1.logbook:
-            entries.append(_clock_to_entry(clock, customer, desc))
+            entries.append(
+                _clock_to_entry(clock, customer, desc, task_id)
+            )
     return entries
 
 
@@ -128,8 +135,9 @@ def list_entries(
     customer: str | None = None,
     from_date: date | None = None,
     to_date: date | None = None,
+    task_id: str | None = None,
 ) -> list[dict]:
-    """List clock entries filtered by period and customer."""
+    """List clock entries filtered by period, customer, or task."""
     if not clocks_file.exists():
         return []
     org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
@@ -138,7 +146,11 @@ def list_entries(
     for entry in all_entries:
         if customer and entry["customer"] != customer:
             continue
-        if not _in_period(entry, period, from_date, to_date):
+        if task_id is not None and entry["task_id"] != task_id:
+            continue
+        if task_id is None and not _in_period(
+            entry, period, from_date, to_date
+        ):
             continue
         result.append(entry)
     return result
@@ -151,9 +163,10 @@ def get_active_timer(clocks_file: Path) -> dict | None:
     org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
     for h1 in org_file.headings:
         customer, desc = _parse_entry_title(h1.title)
+        task_id = h1.properties.get("TASK_ID") or None
         for clock in h1.logbook:
             if clock.end is None:
-                return _clock_to_entry(clock, customer, desc)
+                return _clock_to_entry(clock, customer, desc, task_id)
     return None
 
 
@@ -162,6 +175,7 @@ def quick_book(
     duration_str: str,
     customer: str,
     description: str,
+    task_id: str | None = None,
 ) -> dict:
     """Book time: end=now, start=now-duration."""
     minutes = _parse_duration(duration_str)
@@ -172,14 +186,17 @@ def quick_book(
     start = end - timedelta(minutes=minutes)
     clock = Clock(start=start, end=end)
 
-    _append_clock_entry(clocks_file, customer, description, clock)
-    return _clock_to_entry(clock, customer, description)
+    _append_clock_entry(
+        clocks_file, customer, description, clock, task_id
+    )
+    return _clock_to_entry(clock, customer, description, task_id)
 
 
 def start_timer(
     clocks_file: Path,
     customer: str,
     description: str,
+    task_id: str | None = None,
 ) -> dict:
     """Start an open CLOCK entry."""
     active = get_active_timer(clocks_file)
@@ -191,8 +208,10 @@ def start_timer(
 
     start = datetime.now().replace(second=0, microsecond=0)
     clock = Clock(start=start, end=None)
-    _append_clock_entry(clocks_file, customer, description, clock)
-    return _clock_to_entry(clock, customer, description)
+    _append_clock_entry(
+        clocks_file, customer, description, clock, task_id
+    )
+    return _clock_to_entry(clock, customer, description, task_id)
 
 
 def stop_timer(clocks_file: Path) -> dict:
@@ -275,8 +294,9 @@ def update_clock_entry(
     description: str | None = None,
     hours: float | None = None,
     new_date: date | None = None,
+    task_id: str | None = None,
 ) -> dict | None:
-    """Update customer, description, hours, and/or date of an entry."""
+    """Update customer, description, hours, date, and/or task."""
     if not clocks_file.exists():
         return None
     org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
@@ -308,8 +328,17 @@ def update_clock_entry(
         clock.end = new_end
         clock.duration = f"{h}:{m:02d}"
         heading.dirty = True
+    if task_id is not None:
+        if task_id == "":
+            heading.properties.pop("TASK_ID", None)
+        else:
+            heading.properties["TASK_ID"] = task_id
+        heading.dirty = True
+    current_task_id = heading.properties.get("TASK_ID") or None
     write_org_file(clocks_file, org_file)
-    return _clock_to_entry(clock, current_customer, current_desc)
+    return _clock_to_entry(
+        clock, current_customer, current_desc, current_task_id
+    )
 
 
 def delete_clock_entry(
@@ -339,6 +368,7 @@ def _append_clock_entry(
     customer: str,
     description: str,
     clock: Clock,
+    task_id: str | None = None,
 ) -> None:
     """Append a clock entry to clocks.org as a flat heading."""
     if not clocks_file.exists():
@@ -349,8 +379,10 @@ def _append_clock_entry(
 
     title = _entry_title(customer, description)
     entry_heading = _find_or_create_heading(
-        org_file.headings, title, level=1
+        org_file.headings, title, level=1, task_id=task_id
     )
+    if task_id:
+        entry_heading.properties["TASK_ID"] = task_id
     entry_heading.logbook.append(clock)
     entry_heading.dirty = True
 
@@ -358,11 +390,16 @@ def _append_clock_entry(
 
 
 def _find_or_create_heading(
-    headings: list[Heading], title: str, level: int
+    headings: list[Heading],
+    title: str,
+    level: int,
+    task_id: str | None = None,
 ) -> Heading:
-    """Find heading by title or create a new one."""
+    """Find heading by title and task_id, or create a new one."""
     for h in headings:
-        if h.title.strip().lower() == title.strip().lower():
+        title_match = h.title.strip().lower() == title.strip().lower()
+        heading_task = h.properties.get("TASK_ID") or None
+        if title_match and heading_task == task_id:
             return h
     new_h = Heading(
         level=level, keyword=None, title=title, dirty=True

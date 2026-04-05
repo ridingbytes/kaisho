@@ -21,6 +21,7 @@ class OrgClockBackend(ClockBackend):
         customer: str | None = None,
         from_date: date | None = None,
         to_date: date | None = None,
+        task_id: str | None = None,
     ) -> list[dict]:
         return clocks.list_entries(
             clocks_file=self._clocks_file,
@@ -28,6 +29,7 @@ class OrgClockBackend(ClockBackend):
             customer=customer,
             from_date=from_date,
             to_date=to_date,
+            task_id=task_id,
         )
 
     def get_active(self) -> dict | None:
@@ -39,11 +41,17 @@ class OrgClockBackend(ClockBackend):
             period=period,
         )
 
-    def start(self, customer: str, description: str) -> dict:
+    def start(
+        self,
+        customer: str,
+        description: str,
+        task_id: str | None = None,
+    ) -> dict:
         return clocks.start_timer(
             clocks_file=self._clocks_file,
             customer=customer,
             description=description,
+            task_id=task_id,
         )
 
     def stop(self) -> dict:
@@ -54,12 +62,14 @@ class OrgClockBackend(ClockBackend):
         duration_str: str,
         customer: str,
         description: str,
+        task_id: str | None = None,
     ) -> dict:
         return clocks.quick_book(
             clocks_file=self._clocks_file,
             duration_str=duration_str,
             customer=customer,
             description=description,
+            task_id=task_id,
         )
 
     def update_entry(
@@ -69,6 +79,7 @@ class OrgClockBackend(ClockBackend):
         description: str | None = None,
         hours: float | None = None,
         new_date=None,
+        task_id: str | None = None,
     ) -> dict | None:
         return clocks.update_clock_entry(
             clocks_file=self._clocks_file,
@@ -77,6 +88,7 @@ class OrgClockBackend(ClockBackend):
             description=description,
             hours=hours,
             new_date=new_date,
+            task_id=task_id,
         )
 
     def delete_entry(self, start_iso: str) -> bool:

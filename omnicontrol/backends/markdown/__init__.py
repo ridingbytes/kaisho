@@ -65,7 +65,8 @@ class MarkdownClockBackend(ClockBackend):
 
     def list_entries(self, period="today", customer=None,
                      from_date: date | None = None,
-                     to_date: date | None = None) -> list[dict]:
+                     to_date: date | None = None,
+                     task_id=None) -> list[dict]:
         raise NotImplementedError
 
     def get_active(self) -> dict | None:
@@ -74,19 +75,20 @@ class MarkdownClockBackend(ClockBackend):
     def get_summary(self, period="month") -> list[dict]:
         raise NotImplementedError
 
-    def start(self, customer, description) -> dict:
+    def start(self, customer, description,
+              task_id=None) -> dict:
         raise NotImplementedError
 
     def stop(self) -> dict:
         raise NotImplementedError
 
     def quick_book(self, duration_str, customer,
-                   description) -> dict:
+                   description, task_id=None) -> dict:
         raise NotImplementedError
 
     def update_entry(self, start_iso, customer=None,
                      description=None, hours=None,
-                     new_date=None) -> dict | None:
+                     new_date=None, task_id=None) -> dict | None:
         raise NotImplementedError
 
     def delete_entry(self, start_iso) -> bool:

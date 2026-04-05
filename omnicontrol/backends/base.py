@@ -87,11 +87,14 @@ class ClockBackend(ABC):
         customer: str | None = None,
         from_date: date | None = None,
         to_date: date | None = None,
+        task_id: str | None = None,
     ) -> list[dict]:
         """Return clock entries for the given period and filters.
 
-        period: "today" | "week" | "month" (ignored when from/to given)
-        Each dict: customer, description, start, end, duration_minutes
+        period: "today" | "week" | "month" (ignored when from/to or
+        task_id given).
+        Each dict: customer, description, start, end,
+                   duration_minutes, task_id
         """
 
     @abstractmethod
@@ -106,7 +109,12 @@ class ClockBackend(ABC):
         """
 
     @abstractmethod
-    def start(self, customer: str, description: str) -> dict:
+    def start(
+        self,
+        customer: str,
+        description: str,
+        task_id: str | None = None,
+    ) -> dict:
         """Open a new clock entry (raises ValueError if one is running)."""
 
     @abstractmethod
@@ -119,6 +127,7 @@ class ClockBackend(ABC):
         duration_str: str,
         customer: str,
         description: str,
+        task_id: str | None = None,
     ) -> dict:
         """Book time retroactively.  duration_str e.g. "2h", "30min"."""
 
@@ -130,8 +139,9 @@ class ClockBackend(ABC):
         description: str | None = None,
         hours: float | None = None,
         new_date: date | None = None,
+        task_id: str | None = None,
     ) -> dict | None:
-        """Update customer, description, hours, and/or date by start time."""
+        """Update customer, description, hours, date, and/or task."""
 
     @abstractmethod
     def delete_entry(self, start_iso: str) -> bool:
