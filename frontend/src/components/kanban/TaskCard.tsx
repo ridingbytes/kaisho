@@ -119,44 +119,43 @@ function TaskClockSection({ task }: TaskClockSectionProps) {
       className="mt-2 border-t border-border-subtle pt-1.5"
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-300 w-full"
-      >
-        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-        <Clock size={10} />
-        <span>
-          {entries.length} {entries.length === 1 ? "entry" : "entries"}
-          {" · "}
-          {fmtHours(totalAll)}
-          {!allBooked && (
-            <span className="text-slate-600 ml-1">
-              ({fmtHours(totalUnbooked)} unbooked)
-            </span>
-          )}
-          {allBooked && (
-            <span className="text-emerald-600 ml-1">all booked</span>
-          )}
-        </span>
+      <div className="flex items-center gap-1 text-[10px] text-slate-500 w-full">
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-1 hover:text-slate-300 flex-1 min-w-0"
+        >
+          {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+          <Clock size={10} />
+          <span className="truncate">
+            {entries.length} {entries.length === 1 ? "entry" : "entries"}
+            {" · "}
+            {fmtHours(totalAll)}
+            {!allBooked && (
+              <span className="text-slate-600 ml-1">
+                ({fmtHours(totalUnbooked)} unbooked)
+              </span>
+            )}
+            {allBooked && (
+              <span className="text-emerald-600 ml-1">all booked</span>
+            )}
+          </span>
+        </button>
         {task.customer && !allBooked && (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              bookUnbooked();
-            }}
+            onClick={bookUnbooked}
             disabled={addTimeEntry.isPending}
             title="Book unbooked to project"
-            className="ml-auto p-0.5 rounded text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-40"
+            className="ml-auto p-0.5 rounded text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-40 shrink-0"
           >
             <SquareArrowUp size={10} />
           </button>
         )}
         {allBooked && (
-          <span title="All entries booked" className="ml-auto">
+          <span title="All entries booked" className="ml-auto shrink-0">
             <CheckCircle2 size={10} className="text-emerald-600" />
           </span>
         )}
-      </button>
+      </div>
       {open && (
         <ul className="mt-1 space-y-0.5">
           {entries.map((e) => (
