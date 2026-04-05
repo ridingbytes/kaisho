@@ -22,6 +22,7 @@ class OrgClockBackend(ClockBackend):
         from_date: date | None = None,
         to_date: date | None = None,
         task_id: str | None = None,
+        contract: str | None = None,
     ) -> list[dict]:
         return clocks.list_entries(
             clocks_file=self._clocks_file,
@@ -30,6 +31,7 @@ class OrgClockBackend(ClockBackend):
             from_date=from_date,
             to_date=to_date,
             task_id=task_id,
+            contract=contract,
         )
 
     def get_active(self) -> dict | None:
@@ -46,12 +48,14 @@ class OrgClockBackend(ClockBackend):
         customer: str,
         description: str,
         task_id: str | None = None,
+        contract: str | None = None,
     ) -> dict:
         return clocks.start_timer(
             clocks_file=self._clocks_file,
             customer=customer,
             description=description,
             task_id=task_id,
+            contract=contract,
         )
 
     def stop(self) -> dict:
@@ -63,6 +67,7 @@ class OrgClockBackend(ClockBackend):
         customer: str,
         description: str,
         task_id: str | None = None,
+        contract: str | None = None,
     ) -> dict:
         return clocks.quick_book(
             clocks_file=self._clocks_file,
@@ -70,6 +75,7 @@ class OrgClockBackend(ClockBackend):
             customer=customer,
             description=description,
             task_id=task_id,
+            contract=contract,
         )
 
     def update_entry(
@@ -82,6 +88,7 @@ class OrgClockBackend(ClockBackend):
         task_id: str | None = None,
         booked: bool | None = None,
         notes: str | None = None,
+        contract: str | None = None,
     ) -> dict | None:
         return clocks.update_clock_entry(
             clocks_file=self._clocks_file,
@@ -93,6 +100,7 @@ class OrgClockBackend(ClockBackend):
             task_id=task_id,
             booked=booked,
             notes=notes,
+            contract=contract,
         )
 
     def delete_entry(self, start_iso: str) -> bool:

@@ -1,13 +1,28 @@
 import { useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useActiveTimer } from "../../hooks/useClocks";
 import { ActiveTimer } from "./ActiveTimer";
+import { CalendarWidget } from "./CalendarWidget";
 import { ClockList } from "./ClockList";
 import { QuickBookForm } from "./QuickBookForm";
 import { StartForm } from "./StartForm";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
 
-type Tab = "start" | "book";
+type ActionTab = "start" | "book";
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatDateHeading(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
 
 interface ClockWidgetProps {
   open: boolean;
@@ -15,9 +30,23 @@ interface ClockWidgetProps {
 
 export function ClockWidget({ open }: ClockWidgetProps) {
   const { data: timer } = useActiveTimer();
-  const [tab, setTab] = useState<Tab>("start");
+  const [tab, setTab] = useState<ActionTab>("start");
+  const [calendarOpen, setCalendarOpen] = useState(
+    () => localStorage.getItem("clock_calendar_open") !== "false"
+  );
+  const [selectedDate, setSelectedDate] = useState<string | null>(
+    todayIso()
+  );
 
   const isRunning = timer?.active === true;
+
+  function toggleCalendar() {
+    setCalendarOpen((v) => {
+      const next = !v;
+      localStorage.setItem("clock_calendar_open", String(next));
+      return next;
+    });
+  }
 
   return (
     <aside
@@ -39,12 +68,11 @@ export function ClockWidget({ open }: ClockWidgetProps) {
         {/* Active timer */}
         {timer && <ActiveTimer timer={timer} />}
 
-        {/* Action tabs */}
+        {/* Start/Book forms — always visible when no timer running */}
         {!isRunning && (
           <div>
-            {/* Tab switcher */}
             <div className="flex rounded-lg bg-surface-raised border border-border p-0.5 mb-3">
-              {(["start", "book"] as Tab[]).map((t) => (
+              {(["start", "book"] as ActionTab[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
@@ -61,23 +89,47 @@ export function ClockWidget({ open }: ClockWidgetProps) {
               ))}
             </div>
 
-            {tab === "start" ? (
-              <StartForm />
-            ) : (
-              <QuickBookForm />
-            )}
+            {tab === "start" ? <StartForm /> : <QuickBookForm />}
           </div>
         )}
 
-        {/* Divider */}
         <div className="border-t border-border-subtle" />
 
-        {/* Today's entries */}
+        {/* Calendar — collapsible, persistent */}
+        <div>
+          <button
+            onClick={toggleCalendar}
+            className="w-full flex items-center gap-1 group mb-1"
+          >
+            {calendarOpen
+              ? <ChevronDown size={10} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
+              : <ChevronRight size={10} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
+            }
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 group-hover:text-slate-400 transition-colors">
+              Calendar
+            </h3>
+          </button>
+          {calendarOpen && (
+            <CalendarWidget
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
+            />
+          )}
+        </div>
+
+        <div className="border-t border-border-subtle" />
+
+        {/* Entries for selected date */}
         <div>
           <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-2">
-            Today
+            {!selectedDate || selectedDate === todayIso()
+              ? "Today"
+              : formatDateHeading(selectedDate)}
           </h3>
-          <ClockList isRunning={isRunning} />
+          <ClockList
+            isRunning={isRunning}
+            selectedDate={selectedDate}
+          />
         </div>
       </div>
     </aside>

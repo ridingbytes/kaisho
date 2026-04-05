@@ -141,6 +141,48 @@ def clock_summary(period, as_json):
     click.echo(f"{'Gesamt':<15} {total_hours:>8.1f}h")
 
 
+@clock.command("update")
+@click.argument("start_iso")
+@click.option("--customer", default=None, help="New customer name")
+@click.option("--description", default=None, help="New description")
+@click.option("--hours", type=float, default=None,
+              help="New duration in hours")
+@click.option("--date", "new_date", default=None,
+              help="New date (YYYY-MM-DD)")
+@click.option("--task-id", default=None,
+              help="New task ID (empty to remove)")
+@click.option("--booked/--no-booked", default=None,
+              help="Mark as booked or not")
+@click.option("--notes", default=None, help="New notes")
+@click.option("--contract", default=None,
+              help="Assign to a contract (empty string to remove)")
+@click.option("--json", "as_json", is_flag=True)
+def clock_update(
+    start_iso, customer, description, hours, new_date,
+    task_id, booked, notes, contract, as_json,
+):
+    """Update a clock entry by its start timestamp."""
+    from_date = date.fromisoformat(new_date) if new_date else None
+    entry = get_backend().clocks.update_entry(
+        start_iso=start_iso,
+        customer=customer,
+        description=description,
+        hours=hours,
+        new_date=from_date,
+        task_id=task_id,
+        booked=booked,
+        notes=notes,
+        contract=contract,
+    )
+    if entry is None:
+        click.echo("Entry not found.", err=True)
+        sys.exit(1)
+    if as_json:
+        click.echo(json.dumps(entry, default=str))
+    else:
+        click.echo(f"Updated: {_format_entry(entry)}")
+
+
 @clock.command("edit")
 def clock_edit():
     """Open the clocks file in $EDITOR."""

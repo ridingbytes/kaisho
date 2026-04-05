@@ -46,6 +46,7 @@ def _clock_to_entry(
     task_id: str | None = None,
     booked: bool = False,
     notes: str | None = None,
+    contract: str | None = None,
 ) -> dict:
     """Convert a Clock to a clock entry dict."""
     duration_minutes = None
@@ -61,6 +62,7 @@ def _clock_to_entry(
         "task_id": task_id,
         "booked": booked,
         "notes": notes or "",
+        "contract": contract or None,
     }
 
 
@@ -78,10 +80,12 @@ def _collect_clock_entries(org_file: OrgFile) -> list[dict]:
         task_id = h1.properties.get("TASK_ID") or None
         booked = h1.properties.get("BOOKED", "").lower() == "true"
         notes = _heading_notes(h1)
+        contract = h1.properties.get("CONTRACT") or None
         for clock in h1.logbook:
             entries.append(
                 _clock_to_entry(
-                    clock, customer, desc, task_id, booked, notes
+                    clock, customer, desc,
+                    task_id, booked, notes, contract,
                 )
             )
     return entries
@@ -150,6 +154,7 @@ def list_entries(
     from_date: date | None = None,
     to_date: date | None = None,
     task_id: str | None = None,
+    contract: str | None = None,
 ) -> list[dict]:
     """List clock entries filtered by period, customer, or task."""
     if not clocks_file.exists():
@@ -161,6 +166,8 @@ def list_entries(
         if customer and entry["customer"] != customer:
             continue
         if task_id is not None and entry["task_id"] != task_id:
+            continue
+        if contract is not None and entry.get("contract") != contract:
             continue
         if task_id is None and not _in_period(
             entry, period, from_date, to_date
@@ -180,10 +187,12 @@ def get_active_timer(clocks_file: Path) -> dict | None:
         task_id = h1.properties.get("TASK_ID") or None
         booked = h1.properties.get("BOOKED", "").lower() == "true"
         notes = _heading_notes(h1)
+        contract = h1.properties.get("CONTRACT") or None
         for clock in h1.logbook:
             if clock.end is None:
                 return _clock_to_entry(
-                    clock, customer, desc, task_id, booked, notes
+                    clock, customer, desc,
+                    task_id, booked, notes, contract,
                 )
     return None
 
@@ -194,6 +203,7 @@ def quick_book(
     customer: str,
     description: str,
     task_id: str | None = None,
+    contract: str | None = None,
 ) -> dict:
     """Book time: end=now, start=now-duration."""
     minutes = _parse_duration(duration_str)
@@ -205,9 +215,11 @@ def quick_book(
     clock = Clock(start=start, end=end)
 
     _append_clock_entry(
-        clocks_file, customer, description, clock, task_id
+        clocks_file, customer, description, clock, task_id, contract
     )
-    return _clock_to_entry(clock, customer, description, task_id)
+    return _clock_to_entry(
+        clock, customer, description, task_id, contract=contract
+    )
 
 
 def start_timer(
@@ -215,6 +227,7 @@ def start_timer(
     customer: str,
     description: str,
     task_id: str | None = None,
+    contract: str | None = None,
 ) -> dict:
     """Start an open CLOCK entry."""
     active = get_active_timer(clocks_file)
@@ -227,9 +240,11 @@ def start_timer(
     start = datetime.now().replace(second=0, microsecond=0)
     clock = Clock(start=start, end=None)
     _append_clock_entry(
-        clocks_file, customer, description, clock, task_id
+        clocks_file, customer, description, clock, task_id, contract
     )
-    return _clock_to_entry(clock, customer, description, task_id)
+    return _clock_to_entry(
+        clock, customer, description, task_id, contract=contract
+    )
 
 
 def stop_timer(clocks_file: Path) -> dict:
@@ -315,6 +330,7 @@ def update_clock_entry(
     task_id: str | None = None,
     booked: bool | None = None,
     notes: str | None = None,
+    contract: str | None = None,
 ) -> dict | None:
     """Update customer, description, hours, date, task, booked, or notes."""
     if not clocks_file.exists():
@@ -363,15 +379,23 @@ def update_clock_entry(
     if notes is not None:
         heading.body = notes.splitlines() if notes.strip() else []
         heading.dirty = True
+    if contract is not None:
+        if contract:
+            heading.properties["CONTRACT"] = contract
+        else:
+            heading.properties.pop("CONTRACT", None)
+        heading.dirty = True
     current_task_id = heading.properties.get("TASK_ID") or None
     current_booked = (
         heading.properties.get("BOOKED", "").lower() == "true"
     )
     current_notes = _heading_notes(heading)
+    current_contract = heading.properties.get("CONTRACT") or None
     write_org_file(clocks_file, org_file)
     return _clock_to_entry(
         clock, current_customer, current_desc,
-        current_task_id, current_booked, current_notes
+        current_task_id, current_booked, current_notes,
+        current_contract,
     )
 
 
@@ -403,6 +427,7 @@ def _append_clock_entry(
     description: str,
     clock: Clock,
     task_id: str | None = None,
+    contract: str | None = None,
 ) -> None:
     """Append a clock entry to clocks.org as a flat heading."""
     if not clocks_file.exists():
@@ -417,6 +442,8 @@ def _append_clock_entry(
     )
     if task_id:
         entry_heading.properties["TASK_ID"] = task_id
+    if contract:
+        entry_heading.properties["CONTRACT"] = contract
     entry_heading.logbook.append(clock)
     entry_heading.dirty = True
 

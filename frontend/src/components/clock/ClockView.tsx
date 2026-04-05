@@ -1,13 +1,6 @@
-import {
-  Check,
-  CheckCircle2,
-  Pencil,
-  Plus,
-  SquareArrowUp,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { HelpButton } from "../common/HelpButton";
@@ -18,7 +11,7 @@ import {
   useQuickBook,
   useUpdateClockEntry,
 } from "../../hooks/useClocks";
-import { useAddTimeEntry } from "../../hooks/useCustomers";
+import { useContracts } from "../../hooks/useContracts";
 import { useTasks } from "../../hooks/useTasks";
 import { registerPanelAction } from "../../utils/panelActions";
 import type { ClockEntry, Task } from "../../types";
@@ -80,7 +73,11 @@ function totalHours(entries: ClockEntry[]): string {
 function BookForm({ onClose }: { onClose: () => void }) {
   const [duration, setDuration] = useState("");
   const [customer, setCustomer] = useState("");
+  const [contract, setContract] = useState("");
   const [description, setDescription] = useState("");
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [taskTitle, setTaskTitle] = useState("");
+  const { data: contracts = [] } = useContracts(customer || null);
   const book = useQuickBook();
 
   function handleSubmit(e: React.FormEvent) {
@@ -91,12 +88,17 @@ function BookForm({ onClose }: { onClose: () => void }) {
         duration: duration.trim(),
         customer: customer.trim(),
         description: description.trim(),
+        contract: contract || undefined,
+        taskId: taskId ?? undefined,
       },
       {
         onSuccess: () => {
           setDuration("");
           setCustomer("");
+          setContract("");
           setDescription("");
+          setTaskId(null);
+          setTaskTitle("");
           onClose();
         },
       }
@@ -131,11 +133,33 @@ function BookForm({ onClose }: { onClose: () => void }) {
         </label>
         <CustomerAutocomplete
           value={customer}
-          onChange={setCustomer}
+          onChange={(v) => {
+            setCustomer(v);
+            setContract("");
+          }}
           inputClassName={inputCls}
           className="w-44"
         />
       </div>
+      {contracts.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+            Contract
+          </label>
+          <select
+            value={contract}
+            onChange={(e) => setContract(e.target.value)}
+            className={`${inputCls} w-36`}
+          >
+            <option value="">— none —</option>
+            {contracts.map((c) => (
+              <option key={c.name} value={c.name}>
+                {c.name}{c.end_date ? " (closed)" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="flex flex-col gap-1 flex-1 min-w-40">
         <label className="text-[10px] text-slate-500 uppercase tracking-wider">
           Description *
@@ -145,6 +169,27 @@ function BookForm({ onClose }: { onClose: () => void }) {
           placeholder="What did you work on?"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+          Task
+        </label>
+        <TaskAutocomplete
+          taskId={taskId}
+          value={taskTitle}
+          onChange={setTaskTitle}
+          onSelect={(id, label) => {
+            setTaskId(id);
+            setTaskTitle(label);
+          }}
+          onClear={() => {
+            setTaskId(null);
+            setTaskTitle("");
+          }}
+          customer={customer}
+          inputClassName={inputCls}
+          className="w-48"
         />
       </div>
       <div className="flex gap-2 pb-0.5">
@@ -178,107 +223,6 @@ function BookForm({ onClose }: { onClose: () => void }) {
 }
 
 // ---------------------------------------------------------------------------
-// Book-to-project inline form (copy clock time to customer time entry)
-// ---------------------------------------------------------------------------
-
-interface BookProjectFormProps {
-  entry: ClockEntry;
-  onClose: () => void;
-}
-
-function BookProjectForm({ entry, onClose }: BookProjectFormProps) {
-  const [customer, setCustomer] = useState(entry.customer);
-  const [description, setDescription] = useState(entry.description);
-  const [hours, setHours] = useState(minutesToDecimal(entry.duration_minutes));
-  const addTimeEntry = useAddTimeEntry();
-  const updateEntry = useUpdateClockEntry();
-
-  function handleBook() {
-    const h = parseFloat(hours);
-    if (!customer.trim() || isNaN(h) || h <= 0) return;
-    addTimeEntry.mutate(
-      {
-        customerName: customer.trim(),
-        description: description.trim(),
-        hours: h,
-      },
-      {
-        onSuccess: () => {
-          updateEntry.mutate(
-            { startIso: entry.start, updates: { booked: true } },
-            { onSuccess: onClose }
-          );
-        },
-      }
-    );
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") handleBook();
-    if (e.key === "Escape") onClose();
-  }
-
-  const valid =
-    customer.trim() && !isNaN(parseFloat(hours)) && parseFloat(hours) > 0;
-
-  return (
-    <tr className="bg-emerald-950/20 border-b border-border-subtle">
-      <td colSpan={5} className="px-3 py-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 mb-1.5">
-          Book to project
-        </p>
-        <div className="flex flex-wrap gap-2 items-end">
-          <CustomerAutocomplete
-            autoFocus
-            value={customer}
-            onChange={setCustomer}
-            onKeyDown={handleKeyDown}
-            inputClassName={smallInputCls}
-            className="w-44"
-          />
-          <input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Description"
-            className={`${smallInputCls} flex-1 min-w-32`}
-          />
-          <input
-            value={hours}
-            onChange={(e) => setHours(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Hours"
-            className={`${smallInputCls} w-20`}
-            type="number"
-            step="0.25"
-            min="0"
-          />
-          <button
-            onClick={onClose}
-            className="p-1 rounded text-slate-500 hover:text-slate-300"
-          >
-            <X size={13} />
-          </button>
-          <button
-            onClick={handleBook}
-            disabled={addTimeEntry.isPending || !valid}
-            className="p-1 rounded text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-40"
-            title="Book to project"
-          >
-            <Check size={13} />
-          </button>
-        </div>
-        {addTimeEntry.isError && (
-          <p className="text-xs text-red-400 mt-1">
-            {(addTimeEntry.error as Error).message}
-          </p>
-        )}
-      </td>
-    </tr>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Edit inline form
 // ---------------------------------------------------------------------------
 
@@ -290,10 +234,12 @@ interface EditFormProps {
 function EditForm({ entry, onClose }: EditFormProps) {
   const [entryDate, setEntryDate] = useState(formatDate(entry.start));
   const [customer, setCustomer] = useState(entry.customer);
+  const [contract, setContract] = useState(entry.contract ?? "");
   const [description, setDescription] = useState(entry.description);
   const [hours, setHours] = useState(minutesToDecimal(entry.duration_minutes));
   const [taskId, setTaskId] = useState<string | null>(entry.task_id);
   const { data: tasks = [] } = useTasks();
+  const { data: contracts = [] } = useContracts(customer || null);
   const initialTitle = entry.task_id
     ? (taskTitleById(tasks, entry.task_id) ?? "")
     : "";
@@ -307,6 +253,7 @@ function EditForm({ entry, onClose }: EditFormProps) {
       hours?: number;
       new_date?: string;
       task_id?: string;
+      contract?: string;
     } = {};
     if (entryDate !== formatDate(entry.start)) updates.new_date = entryDate;
     if (customer.trim() !== entry.customer) {
@@ -324,6 +271,9 @@ function EditForm({ entry, onClose }: EditFormProps) {
     if (newTaskId !== oldTaskId) {
       updates.task_id = newTaskId;
     }
+    if (contract !== (entry.contract ?? "")) {
+      updates.contract = contract;
+    }
     if (Object.keys(updates).length === 0) {
       onClose();
       return;
@@ -332,13 +282,15 @@ function EditForm({ entry, onClose }: EditFormProps) {
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") handleSave();
+    if (e.key === "Enter" || (e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      handleSave();
+    }
     if (e.key === "Escape") onClose();
   }
 
   return (
     <tr className="bg-surface-raised/40 border-b border-border-subtle">
-      <td colSpan={6} className="px-3 py-2">
+      <td colSpan={7} className="px-3 py-2">
         <div className="flex flex-wrap gap-2 items-center">
           <input
             autoFocus
@@ -350,11 +302,28 @@ function EditForm({ entry, onClose }: EditFormProps) {
           />
           <CustomerAutocomplete
             value={customer}
-            onChange={setCustomer}
+            onChange={(v) => {
+              setCustomer(v);
+              setContract("");
+            }}
             onKeyDown={handleKeyDown}
             inputClassName={smallInputCls}
             className="w-44"
           />
+          {contracts.length > 0 && (
+            <select
+              value={contract}
+              onChange={(e) => setContract(e.target.value)}
+              className={`${smallInputCls} w-36`}
+            >
+              <option value="">— no contract —</option>
+              {contracts.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}{c.end_date ? " (closed)" : ""}
+                </option>
+              ))}
+            </select>
+          )}
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -418,16 +387,12 @@ interface EntryRowProps {
 }
 
 function EntryRow({ entry, tasks }: EntryRowProps) {
-  const [mode, setMode] = useState<"view" | "edit" | "book">("view");
+  const [mode, setMode] = useState<"view" | "edit">("view");
   const remove = useDeleteClockEntry();
   const taskTitle = taskTitleById(tasks, entry.task_id);
 
   if (mode === "edit") {
     return <EditForm entry={entry} onClose={() => setMode("view")} />;
-  }
-
-  if (mode === "book") {
-    return <BookProjectForm entry={entry} onClose={() => setMode("view")} />;
   }
 
   return (
@@ -442,7 +407,12 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
         {entry.customer}
       </td>
       <td className="px-3 py-1.5 text-xs text-slate-400 w-full">
-        {entry.description}
+        <span className="inline-flex items-center gap-1">
+          {entry.description}
+          {entry.description.length > 40 && (
+            <ContentPopup content={entry.description} />
+          )}
+        </span>
       </td>
       <td className="px-3 py-1.5 text-xs text-slate-500 whitespace-nowrap max-w-32 truncate">
         {taskTitle && (
@@ -454,28 +424,19 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
           </span>
         )}
       </td>
-      <td className="px-3 py-1.5 text-xs text-slate-400 tabular-nums whitespace-nowrap text-right">
-        {entry.booked ? (
+      <td className="px-3 py-1.5 text-xs text-slate-500 whitespace-nowrap max-w-28 truncate">
+        {entry.contract && (
           <span
-            className="mr-2 inline-flex items-center gap-0.5 text-emerald-500"
-            title="Booked to project"
+            className="px-1 py-0.5 rounded text-[10px] bg-surface-overlay text-slate-400"
+            title={entry.contract}
           >
-            <CheckCircle2 size={11} />
-            <span>{formatHours(entry.duration_minutes)}</span>
+            {entry.contract}
           </span>
-        ) : (
-          <span className="mr-2">{formatHours(entry.duration_minutes)}</span>
         )}
+      </td>
+      <td className="px-3 py-1.5 text-xs text-slate-400 tabular-nums whitespace-nowrap text-right">
+        <span className="mr-2">{formatHours(entry.duration_minutes)}</span>
         <span className="inline-flex gap-0.5 opacity-0 group-hover:opacity-100">
-          {!entry.booked && (
-            <button
-              onClick={() => setMode("book")}
-              className="p-0.5 rounded text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10"
-              title="Book to project"
-            >
-              <SquareArrowUp size={11} />
-            </button>
-          )}
           <button
             onClick={() => setMode("edit")}
             className="p-0.5 rounded text-slate-500 hover:text-slate-200"
@@ -607,6 +568,9 @@ export function ClockView() {
                 </th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                   Task
+                </th>
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  Contract
                 </th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500 text-right">
                   Duration

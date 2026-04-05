@@ -7,6 +7,7 @@ import {
   deleteClockEntry,
   fetchActiveTimer,
   fetchClockEntries,
+  fetchCustomerClockEntries,
   fetchTaskClockEntries,
   fetchTodayEntries,
   quickBook,
@@ -42,6 +43,17 @@ export function useClockEntries(period: string, specificDate?: string) {
   });
 }
 
+
+export function useCustomerClockEntries(customer: string) {
+  return useQuery({
+    queryKey: ["clocks", "customer", customer],
+    queryFn: () => fetchCustomerClockEntries(customer),
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    enabled: !!customer,
+  });
+}
+
 export function useTaskClockEntries(taskId: string) {
   return useQuery({
     queryKey: ["clocks", "task", taskId],
@@ -59,11 +71,13 @@ export function useStartTimer() {
       customer,
       description,
       taskId,
+      contract,
     }: {
       customer: string;
       description: string;
       taskId?: string;
-    }) => startTimer(customer, description, taskId),
+      contract?: string;
+    }) => startTimer(customer, description, taskId, contract),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["clocks"] });
     },
@@ -88,12 +102,14 @@ export function useQuickBook() {
       customer,
       description,
       taskId,
+      contract,
     }: {
       duration: string;
       customer: string;
       description: string;
       taskId?: string;
-    }) => quickBook(duration, customer, description, taskId),
+      contract?: string;
+    }) => quickBook(duration, customer, description, taskId, contract),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["clocks"] });
     },
@@ -116,6 +132,7 @@ export function useUpdateClockEntry() {
         task_id?: string;
         booked?: boolean;
         notes?: string;
+        contract?: string;
       };
     }) => updateClockEntry(startIso, updates),
     onSuccess: () => {

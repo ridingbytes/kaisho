@@ -13,12 +13,14 @@ class QuickBookRequest(BaseModel):
     customer: str
     description: str
     task_id: str | None = None
+    contract: str | None = None
 
 
 class TimerStart(BaseModel):
     customer: str
     description: str
     task_id: str | None = None
+    contract: str | None = None
 
 
 class EntryUpdate(BaseModel):
@@ -29,6 +31,7 @@ class EntryUpdate(BaseModel):
     task_id: str | None = None
     booked: bool | None = None
     notes: str | None = None
+    contract: str | None = None
 
 
 @router.get("/entries")
@@ -64,6 +67,7 @@ def quick_book(body: QuickBookRequest):
             customer=body.customer,
             description=body.description,
             task_id=body.task_id,
+            contract=body.contract,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -76,6 +80,7 @@ def start_timer(body: TimerStart):
             customer=body.customer,
             description=body.description,
             task_id=body.task_id,
+            contract=body.contract,
         )
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
@@ -105,6 +110,7 @@ def update_entry(start: str, body: EntryUpdate):
         task_id=body.task_id,
         booked=body.booked,
         notes=body.notes,
+        contract=body.contract,
     )
     if result is None:
         raise HTTPException(status_code=404, detail="Entry not found")
