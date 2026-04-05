@@ -1,4 +1,11 @@
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import {
+  Check,
+  Download,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
@@ -13,6 +20,10 @@ import {
 } from "../../hooks/useClocks";
 import { useContracts } from "../../hooks/useContracts";
 import { useTasks } from "../../hooks/useTasks";
+import {
+  exportClocksCsv,
+  exportClocksExcel,
+} from "../../utils/exportClocks";
 import { registerPanelAction } from "../../utils/panelActions";
 import type { ClockEntry, Task } from "../../types";
 
@@ -526,6 +537,46 @@ export function ClockView() {
           <span className="text-xs text-slate-500">
             {filtered.length} entries · {totalHours(filtered)}h
           </span>
+        )}
+        {!isLoading && sorted.length > 0 && (
+          <>
+            <button
+              onClick={() =>
+                exportClocksCsv(
+                  sorted,
+                  `clock-entries-${period}.csv`
+                )
+              }
+              className={
+                "flex items-center gap-1 px-2 py-1 " +
+                "rounded text-[11px] text-slate-400 " +
+                "hover:text-accent hover:bg-accent-muted " +
+                "transition-colors"
+              }
+              title="Download CSV"
+            >
+              <Download size={11} />
+              CSV
+            </button>
+            <button
+              onClick={() =>
+                exportClocksExcel(
+                  sorted,
+                  `clock-entries-${period}.xls`
+                )
+              }
+              className={
+                "flex items-center gap-1 px-2 py-1 " +
+                "rounded text-[11px] text-slate-400 " +
+                "hover:text-accent hover:bg-accent-muted " +
+                "transition-colors"
+              }
+              title="Download Excel"
+            >
+              <Download size={11} />
+              XLS
+            </button>
+          </>
         )}
         <button
           onClick={() => setBooking((v) => !v)}

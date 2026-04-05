@@ -540,13 +540,6 @@ export function TaskCard({
                     )}
                     Description
                   </button>
-                  <span onPointerDown={(e) => e.stopPropagation()}>
-                    <ContentPopup
-                      content={task.body}
-                      title="Description"
-                      markdown
-                    />
-                  </span>
                   {bodyExpanded && (
                     <div
                       className="mt-1 pl-1 border-l border-border-subtle"
@@ -613,6 +606,16 @@ export function TaskCard({
         {/* Hover actions */}
         {!editing && !isDragOverlay && (
           <div className="flex flex-col items-center gap-1 px-1 py-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+            {task.body && (
+              <span onPointerDown={(e) => e.stopPropagation()}>
+                <ContentPopup
+                  content={task.body}
+                  title={stripCustomerPrefix(task.title)}
+                  markdown
+                  iconSize={11}
+                />
+              </span>
+            )}
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={startEdit}
