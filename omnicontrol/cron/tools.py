@@ -206,58 +206,156 @@ TOOL_DEFS: list[dict] = [
         },
     },
     {
-        "name": "execute_cli",
+        "name": "list_notes",
+        "description": "List all notes.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "add_note",
+        "description": "Create a new note.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "body": {
+                    "type": "string",
+                    "description": "Note body text (optional)",
+                },
+                "customer": {
+                    "type": "string",
+                    "description": "Customer name (optional)",
+                },
+            },
+            "required": ["title"],
+        },
+    },
+    {
+        "name": "set_task_tags",
+        "description": "Set tags on a task (replaces all).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string"},
+                "tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+            },
+            "required": ["task_id", "tags"],
+        },
+    },
+    {
+        "name": "archive_task",
+        "description": "Archive a task by ID.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string"},
+            },
+            "required": ["task_id"],
+        },
+    },
+    {
+        "name": "update_task",
+        "description": "Update a task's title, customer, or body.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string"},
+                "title": {
+                    "type": "string",
+                    "description": "New title (optional)",
+                },
+                "customer": {
+                    "type": "string",
+                    "description": "New customer (optional)",
+                },
+                "body": {
+                    "type": "string",
+                    "description": "New body text (optional)",
+                },
+            },
+            "required": ["task_id"],
+        },
+    },
+    {
+        "name": "delete_note",
+        "description": "Delete a note by ID.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "note_id": {"type": "string"},
+            },
+            "required": ["note_id"],
+        },
+    },
+    {
+        "name": "update_note",
+        "description": "Update a note's title, body, or tags.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "note_id": {"type": "string"},
+                "title": {
+                    "type": "string",
+                    "description": "New title (optional)",
+                },
+                "body": {
+                    "type": "string",
+                    "description": "New body (optional)",
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Replace all tags (optional)"
+                    ),
+                },
+            },
+            "required": ["note_id"],
+        },
+    },
+    {
+        "name": "start_clock",
         "description": (
-            "Execute an occontrol CLI command and return its output. "
-            "Use this to read or modify any data in the app. "
-            "Pass the subcommand and its arguments as a list.\n\n"
-            "Available subcommands (oc <sub> --help for details):\n"
-            "  task list [--customer C] [--status S] [--tag T]\n"
-            "  task add CUSTOMER TITLE [--status S] [--tag T]\n"
-            "  task move TASK_ID STATUS\n"
-            "  task done/next/wait/cancel TASK_ID\n"
-            "  task tag TASK_ID [+TAG|-TAG|TAG]\n"
-            "  task archive TASK_ID\n"
-            "  inbox list [--type TYPE]\n"
-            "  inbox add TEXT [--type TYPE] [--customer C]\n"
-            "  inbox promote ITEM_ID --customer CUSTOMER\n"
-            "  clock list [--week|--month] [--customer C]\n"
-            "  clock summary [--week]\n"
-            "  clock book DURATION CUSTOMER DESCRIPTION"
-            " [--contract N]\n"
-            "  clock start CUSTOMER DESCRIPTION"
-            " [--contract N]\n"
-            "  clock stop\n"
-            "  clock status\n"
-            "  customer list [--all]\n"
-            "  customer show NAME\n"
-            "  customer summary\n"
-            "  contract list CUSTOMER\n"
-            "  contract add CUSTOMER NAME --hours H\n"
-            "  contract edit CUSTOMER NAME [--hours H]"
-            " [--end DATE]\n"
-            "  contract close CUSTOMER NAME\n"
-            "  note list\n"
-            "  note add TITLE [--customer C] [--body B]\n"
-            "  cron list\n"
-            "  cron trigger JOB_ID\n"
-            "  briefing\n"
-            "  ask QUESTION [--model M]"
+            "Start a running clock timer for a customer."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
-                "args": {
-                    "type": "array",
-                    "items": {"type": "string"},
+                "customer": {"type": "string"},
+                "description": {"type": "string"},
+                "task_id": {
+                    "type": "string",
                     "description": (
-                        "Arguments for the oc command, e.g. "
-                        "[\"task\", \"add\", \"Acme\", \"Fix the login bug\"]"
+                        "Link to a task ID (optional)"
+                    ),
+                },
+                "contract": {
+                    "type": "string",
+                    "description": (
+                        "Contract name (optional)"
                     ),
                 },
             },
-            "required": ["args"],
+            "required": ["customer", "description"],
         },
+    },
+    {
+        "name": "stop_clock",
+        "description": (
+            "Stop the currently running clock timer."
+        ),
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "list_kb_files",
+        "description": (
+            "List all files in the knowledge base. "
+            "Returns path, label, name, and size "
+            "for each file."
+        ),
+        "input_schema": {"type": "object", "properties": {}},
     },
     {
         "name": "transcribe_youtube",
@@ -478,11 +576,68 @@ def _dispatch(name: str, args: dict) -> dict:
             args.get("languages", "en,de"),
         )
 
+    if name == "list_notes":
+        return {"notes": backend.notes.list_notes()}
+
+    if name == "add_note":
+        note = backend.notes.add_note(
+            title=args["title"],
+            body=args.get("body", ""),
+            customer=args.get("customer"),
+        )
+        return {"note": note}
+
+    if name == "set_task_tags":
+        task = backend.tasks.set_tags(
+            args["task_id"], args["tags"]
+        )
+        return {"task": task}
+
+    if name == "archive_task":
+        ok = backend.tasks.archive_task(args["task_id"])
+        return {"archived": ok}
+
+    if name == "update_task":
+        task = backend.tasks.update_task(
+            task_id=args["task_id"],
+            title=args.get("title"),
+            customer=args.get("customer"),
+            body=args.get("body"),
+        )
+        return {"task": task}
+
+    if name == "delete_note":
+        ok = backend.notes.delete_note(args["note_id"])
+        return {"deleted": ok}
+
+    if name == "update_note":
+        updates = {}
+        for k in ("title", "body", "tags"):
+            if k in args:
+                updates[k] = args[k]
+        note = backend.notes.update_note(
+            args["note_id"], updates,
+        )
+        return {"note": note}
+
+    if name == "start_clock":
+        entry = backend.clocks.start(
+            customer=args["customer"],
+            description=args["description"],
+            task_id=args.get("task_id"),
+            contract=args.get("contract"),
+        )
+        return {"entry": entry}
+
+    if name == "stop_clock":
+        entry = backend.clocks.stop()
+        return {"entry": entry}
+
+    if name == "list_kb_files":
+        return _list_kb_files()
+
     if name == "create_skill":
         return _create_skill(args["name"], args["content"])
-
-    if name == "execute_cli":
-        return _execute_cli(args.get("args", []))
 
     if name == "fetch_url":
         return _fetch_url(args["url"], args.get("accept", ""))
@@ -515,31 +670,6 @@ def _create_skill(name: str, content: str) -> dict:
     return {"skill": result}
 
 
-def _execute_cli(args: list) -> dict:
-    """Run 'oc <args>' via subprocess and return stdout/stderr."""
-    import subprocess
-
-    if not isinstance(args, list) or not args:
-        return {"error": "args must be a non-empty list"}
-
-    cmd = ["oc"] + [str(a) for a in args]
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-    except FileNotFoundError:
-        return {"error": "oc CLI not found in PATH"}
-    except subprocess.TimeoutExpired:
-        return {"error": "command timed out after 60 s"}
-
-    return {
-        "exit_code": result.returncode,
-        "stdout": result.stdout[:10_000],
-        "stderr": result.stderr[:2_000],
-    }
 
 
 def _extract_domain(url: str) -> str:
@@ -602,6 +732,12 @@ def _approve_url_domain(domain: str) -> dict:
     cfg = get_config()
     result = add_to_url_allowlist(cfg.SETTINGS_FILE, domain)
     return {"allowlist": result}
+
+
+def _list_kb_files() -> dict:
+    """List all knowledge base files."""
+    from ..services import knowledge as kb_svc
+    return {"files": kb_svc.file_tree(_kb_sources())}
 
 
 def _kb_sources() -> list[dict]:
