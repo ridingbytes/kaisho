@@ -5,7 +5,6 @@ import yaml
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Project root: parent of this file's parent directory
 _PROJECT_ROOT = Path(__file__).parent.parent
 
 
@@ -16,22 +15,47 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    # Core paths
     ORG_DIR: Path = Path("~/ownCloud/cowork/org")
     WISSEN_DIR: Path = Path("~/ownCloud/cowork/wissen")
     RESEARCH_DIR: Path = Path("~/ownCloud/cowork/research")
     KUNDEN_DIR: Path = Path("~/ownCloud/cowork/kunden")
-    DATA_DIR: Path = _PROJECT_ROOT / "data"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     HOST: str = "0.0.0.0"
     PORT: int = 8765
     MARKDOWN_DIR: Path = Path("data/markdown")
     BACKEND: str = "org"  # "org", "markdown", or "json"
+
+    # User/profile selection
+    OMNICONTROL_HOME: Path | None = None
+    OC_USER: str = "default"
     PROFILE: str = "default"
 
     @computed_field
     @property
+    def DATA_DIR(self) -> Path:
+        """Root data dir: OMNICONTROL_HOME > ~/.omnicontrol > ./data."""
+        if self.OMNICONTROL_HOME:
+            return self.OMNICONTROL_HOME.expanduser()
+        home_dir = Path.home() / ".omnicontrol"
+        if home_dir.is_dir():
+            return home_dir
+        return _PROJECT_ROOT / "data"
+
+    @computed_field
+    @property
+    def USER_DIR(self) -> Path:
+        return self.DATA_DIR / "users" / self.OC_USER
+
+    @computed_field
+    @property
+    def USER_FILE(self) -> Path:
+        return self.USER_DIR / "user.yaml"
+
+    @computed_field
+    @property
     def PROFILE_DIR(self) -> Path:
-        return self.DATA_DIR.expanduser() / self.PROFILE
+        return self.USER_DIR / "profiles" / self.PROFILE
 
     @computed_field
     @property
@@ -74,83 +98,172 @@ class Settings(BaseSettings):
         return self.ORG_DIR.expanduser() / "notes.org"
 
 
-
 @lru_cache(maxsize=1)
 def get_config() -> Settings:
     return Settings()
 
 
 def reset_config() -> Settings:
-    """Clear the cached config and return a fresh one."""
+    """Clear cached config and return a fresh one."""
     get_config.cache_clear()
     return get_config()
 
 
-def init_data_dir(cfg: Settings | None = None) -> None:
-    """Ensure the profile directory exists and is populated.
+# -------------------------------------------------------------------
+# User management
+# -------------------------------------------------------------------
 
-    1. Migrate legacy root-level files into the profile dir
-    2. Copy any missing template files
-    """
-    import shutil
+def _user_template() -> dict:
+    return {
+        "name": "",
+        "email": "",
+        "bio": "",
+        "created": "",
+    }
+
+
+def load_user_yaml(cfg: Settings | None = None) -> dict:
+    """Load user.yaml for the active user."""
     if cfg is None:
         cfg = get_config()
-    profile_dir = cfg.PROFILE_DIR
-    profile_dir.mkdir(parents=True, exist_ok=True)
-    data_dir = cfg.DATA_DIR.expanduser()
+    path = cfg.USER_FILE
+    if not path.exists():
+        return _user_template()
+    with open(path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    return {**_user_template(), **data}
 
-    # Migrate legacy files from data/ root into profile
-    _LEGACY = [
-        "settings.yaml", "jobs.yaml",
-        "SOUL.md", "USER.md",
-    ]
-    for name in _LEGACY:
-        src = data_dir / name
-        dst = profile_dir / name
-        if src.exists() and not dst.exists():
-            shutil.move(str(src), str(dst))
-    # Migrate SKILLS/ directory
-    legacy_skills = data_dir / "SKILLS"
-    profile_skills = profile_dir / "SKILLS"
-    if legacy_skills.is_dir() and not profile_skills.is_dir():
-        shutil.move(str(legacy_skills), str(profile_skills))
-    # Migrate root settings.yaml (project root)
-    root_settings = Path(__file__).parent.parent / "settings.yaml"
-    profile_settings = profile_dir / "settings.yaml"
-    if root_settings.exists() and not profile_settings.exists():
-        shutil.move(str(root_settings), str(profile_settings))
 
-    # Copy templates for missing files
-    tmpl = Path(__file__).parent.parent / "templates"
+def save_user_yaml(
+    cfg: Settings, data: dict
+) -> None:
+    """Write user.yaml."""
+    path = cfg.USER_FILE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        yaml.dump(
+            data, f,
+            default_flow_style=False,
+            allow_unicode=True,
+        )
+
+
+def list_users(cfg: Settings | None = None) -> list[dict]:
+    """Return list of users with their metadata."""
+    if cfg is None:
+        cfg = get_config()
+    users_dir = cfg.DATA_DIR / "users"
+    if not users_dir.is_dir():
+        return []
+    result = []
+    for d in sorted(users_dir.iterdir()):
+        if not d.is_dir():
+            continue
+        user_file = d / "user.yaml"
+        if user_file.exists():
+            with open(user_file, "r", encoding="utf-8") as f:
+                meta = yaml.safe_load(f) or {}
+        else:
+            meta = {}
+        result.append({
+            "username": d.name,
+            "name": meta.get("name", ""),
+            "email": meta.get("email", ""),
+            "bio": meta.get("bio", ""),
+        })
+    return result
+
+
+def list_profiles(cfg: Settings | None = None) -> list[str]:
+    """Return profile names for the active user."""
+    if cfg is None:
+        cfg = get_config()
+    profiles_dir = cfg.USER_DIR / "profiles"
+    if not profiles_dir.is_dir():
+        return []
+    return sorted(
+        d.name for d in profiles_dir.iterdir()
+        if d.is_dir()
+        and (d / "settings.yaml").exists()
+    )
+
+
+# -------------------------------------------------------------------
+# Init and migration
+# -------------------------------------------------------------------
+
+def init_data_dir(cfg: Settings | None = None) -> None:
+    """Ensure user/profile dirs exist with template files.
+
+    Also migrates legacy flat profiles if detected.
+    """
+    import shutil
+    from datetime import datetime, timezone
+    if cfg is None:
+        cfg = get_config()
+
+    # Migrate legacy flat profiles (data/{name}/ → data/users/default/profiles/{name}/)
+    _migrate_legacy(cfg)
+
+    # Ensure user dir and user.yaml
+    cfg.USER_DIR.mkdir(parents=True, exist_ok=True)
+    if not cfg.USER_FILE.exists():
+        save_user_yaml(cfg, {
+            **_user_template(),
+            "name": cfg.OC_USER,
+            "created": datetime.now(timezone.utc).isoformat(),
+        })
+
+    # Ensure profile dir with templates
+    cfg.PROFILE_DIR.mkdir(parents=True, exist_ok=True)
+    tmpl = _PROJECT_ROOT / "templates"
     if not tmpl.is_dir():
         return
     for src in tmpl.rglob("*"):
         if src.is_dir():
             continue
         rel = src.relative_to(tmpl)
-        dst = profile_dir / rel
+        dst = cfg.PROFILE_DIR / rel
         if dst.exists():
             continue
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)
 
+    # Migrate root settings.yaml
+    root_settings = _PROJECT_ROOT / "settings.yaml"
+    profile_settings = cfg.PROFILE_DIR / "settings.yaml"
+    if root_settings.exists() and not profile_settings.exists():
+        shutil.move(str(root_settings), str(profile_settings))
 
-def list_profiles(cfg: Settings | None = None) -> list[str]:
-    """Return available profile names."""
-    if cfg is None:
-        cfg = get_config()
-    data = cfg.DATA_DIR.expanduser()
-    if not data.is_dir():
-        return []
-    return sorted(
-        d.name for d in data.iterdir()
+
+def _migrate_legacy(cfg: Settings) -> None:
+    """Move old flat data/{profile}/ dirs into users/default/profiles/."""
+    import shutil
+    data_dir = cfg.DATA_DIR
+    if not data_dir.is_dir():
+        return
+    users_dir = data_dir / "users"
+    if users_dir.is_dir():
+        return  # already migrated
+    # Look for legacy profile dirs (contain settings.yaml)
+    legacy_dirs = [
+        d for d in data_dir.iterdir()
         if d.is_dir()
+        and d.name not in ("users", "markdown")
         and (d / "settings.yaml").exists()
-    )
+    ]
+    if not legacy_dirs:
+        return
+    default_profiles = users_dir / "default" / "profiles"
+    default_profiles.mkdir(parents=True, exist_ok=True)
+    for d in legacy_dirs:
+        dst = default_profiles / d.name
+        if not dst.exists():
+            shutil.move(str(d), str(dst))
 
 
 def load_settings_yaml() -> dict:
-    """Read settings.yaml and return full settings dict."""
+    """Read settings.yaml for the active profile."""
     cfg = get_config()
     path = cfg.SETTINGS_FILE
     if not path.exists():

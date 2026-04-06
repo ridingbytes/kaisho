@@ -15,21 +15,35 @@ from .inbox import inbox
 from .knowledge import knowledge
 from .tag import tag
 from .task import task
-from ..config import get_config, init_data_dir, list_profiles
+from ..config import (
+    get_config,
+    init_data_dir,
+    list_profiles,
+    list_users,
+    reset_config,
+)
 
 
 @click.group()
 @click.option(
+    "--user", "-u",
+    envvar="OC_USER",
+    default=None,
+    help="User name (default: $OC_USER or 'default')",
+)
+@click.option(
     "--profile", "-p",
     envvar="OC_PROFILE",
     default=None,
-    help="User profile name (default: $OC_PROFILE or 'default')",
+    help="Profile name (default: $OC_PROFILE or 'default')",
 )
-def cli(profile):
+def cli(user, profile):
     """OmniControl - Personal productivity system."""
+    if user:
+        os.environ["OC_USER"] = user
     if profile:
         os.environ["PROFILE"] = profile
-        from ..config import reset_config
+    if user or profile:
         reset_config()
     init_data_dir()
 
@@ -50,11 +64,21 @@ def serve(host, port, reload):
     )
 
 
+@cli.command("users")
+def users_cmd():
+    """List user accounts."""
+    for u in list_users():
+        marker = " *" if u["username"] == get_config().USER else ""
+        bio = f" ({u['bio']})" if u.get("bio") else ""
+        click.echo(f"  {u['username']}{marker}{bio}")
+
+
 @cli.command("profiles")
 def profiles_cmd():
-    """List available user profiles."""
+    """List profiles for the current user."""
     cfg = get_config()
     active = cfg.PROFILE
+    click.echo(f"User: {cfg.USER}")
     for name in list_profiles(cfg):
         marker = " *" if name == active else ""
         click.echo(f"  {name}{marker}")

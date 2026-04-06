@@ -40,6 +40,9 @@ def api_ask(body: AskRequest):
         settings_svc.load_settings(cfg.SETTINGS_FILE)
     )
 
+    from ...config import load_user_yaml
+    user_meta = load_user_yaml(cfg)
+
     try:
         answer = ask(
             question=body.question,
@@ -61,6 +64,7 @@ def api_ask(body: AskRequest):
             openai_base_url=ai.get("openai_url", ""),
             openai_api_key=ai.get("openai_api_key", ""),
             data_dir=str(cfg.PROFILE_DIR),
+            user_meta=user_meta,
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc))

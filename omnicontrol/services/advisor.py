@@ -203,9 +203,22 @@ _BASE_SYSTEM_PROMPT = (
 )
 
 
-def build_system_prompt(data_dir: Path) -> str:
-    """Build the full system prompt from base + soul + user."""
+def build_system_prompt(
+    data_dir: Path,
+    user_meta: dict | None = None,
+) -> str:
+    """Build system prompt from base + soul + user + skills.
+
+    user_meta: {"name": ..., "bio": ...} from user.yaml.
+    """
     parts = [_BASE_SYSTEM_PROMPT]
+    # Inject user identity
+    if user_meta and user_meta.get("name"):
+        bio = user_meta.get("bio", "")
+        identity = f"\n## Active User\nName: {user_meta['name']}"
+        if bio:
+            identity += f"\nBio: {bio}"
+        parts.append(identity)
     soul = load_soul(data_dir)
     if soul:
         parts.append(f"\n## Personality\n{soul}")
@@ -583,13 +596,14 @@ def ask(
     openai_base_url: str = "",
     openai_api_key: str = "",
     data_dir: str = "data",
+    user_meta: dict | None = None,
 ) -> str:
     """Assemble context, call model in agentic loop, return answer."""
     prompt = build_context_prompt(
         question, tasks, clock_entries, inbox_items,
         customers, github_issues,
     )
-    sp = build_system_prompt(Path(data_dir))
+    sp = build_system_prompt(Path(data_dir), user_meta)
     provider, model_name = _parse_model(model_str)
     if provider == "claude_cli":
         # CLI gets prompt + system prompt concatenated

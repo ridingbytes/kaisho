@@ -151,7 +151,41 @@ export function fetchPaths(): Promise<Record<string, string>> {
   return get("/settings/paths");
 }
 
+export function fetchCurrentUser(): Promise<{
+  username: string;
+  profile: string;
+  name: string;
+  email: string;
+  bio: string;
+  profiles: string[];
+}> {
+  return get("/settings/user");
+}
+
+export function fetchUsers(): Promise<
+  { username: string; name: string; bio: string }[]
+> {
+  return get("/settings/users");
+}
+
+export function switchUser(
+  username: string,
+  profile: string = "default"
+): Promise<{ username: string; profile: string }> {
+  return put("/settings/user", { username, profile });
+}
+
+export function createUser(data: {
+  username: string;
+  name?: string;
+  email?: string;
+  bio?: string;
+}): Promise<{ username: string }> {
+  return post("/settings/users", data);
+}
+
 export function fetchProfiles(): Promise<{
+  user: string;
   active: string;
   profiles: string[];
 }> {
@@ -160,7 +194,7 @@ export function fetchProfiles(): Promise<{
 
 export function switchProfile(
   profile: string
-): Promise<{ profile: string; message: string }> {
+): Promise<{ profile: string }> {
   return put("/settings/profile", { profile });
 }
 

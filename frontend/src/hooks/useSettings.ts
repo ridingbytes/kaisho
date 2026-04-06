@@ -8,6 +8,7 @@ import {
   addTag,
   createProfile,
   createSkill,
+  createUser,
   deleteCustomerType,
   deleteSkill,
   deleteTag,
@@ -16,15 +17,18 @@ import {
   fetchAiSettings,
   fetchAvailableModels,
   fetchClaudeCliStatus,
+  fetchCurrentUser,
   fetchGithubSettings,
   fetchKbSources,
   fetchPaths,
   fetchProfiles,
   fetchSettings,
   fetchUrlAllowlist,
+  fetchUsers,
   reorderStates,
   switchBackend,
   switchProfile,
+  switchUser,
   updateAdvisorFiles,
   updateAiSettings,
   updateGithubSettings,
@@ -392,6 +396,55 @@ export function useCreateProfile() {
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: ["settings", "profiles"],
+      });
+    },
+  });
+}
+
+export function useCurrentUser() {
+  return useQuery({
+    queryKey: ["settings", "user"],
+    queryFn: fetchCurrentUser,
+    staleTime: 60_000,
+  });
+}
+
+export function useUsers() {
+  return useQuery({
+    queryKey: ["settings", "users"],
+    queryFn: fetchUsers,
+    staleTime: 60_000,
+  });
+}
+
+export function useSwitchUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      username,
+      profile,
+    }: {
+      username: string;
+      profile?: string;
+    }) => switchUser(username, profile),
+    onSuccess: () => {
+      void qc.invalidateQueries();
+    },
+  });
+}
+
+export function useCreateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      username: string;
+      name?: string;
+      email?: string;
+      bio?: string;
+    }) => createUser(data),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings", "users"],
       });
     },
   });

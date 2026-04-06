@@ -21,8 +21,10 @@ import { useInboxItems } from "../../hooks/useInbox";
 import { useState } from "react";
 import {
   useCreateProfile,
-  useProfiles,
+  useCurrentUser,
   useSwitchProfile,
+  useSwitchUser,
+  useUsers,
 } from "../../hooks/useSettings";
 
 interface NavItem {
@@ -61,8 +63,10 @@ export function Sidebar({
   const { data: inboxItems } = useInboxItems();
   const inboxCount = inboxItems?.length ?? 0;
   const { config } = useShortcutsContext();
-  const { data: profileData } = useProfiles();
+  const { data: userData } = useCurrentUser();
+  const { data: users = [] } = useUsers();
   const switchProf = useSwitchProfile();
+  const switchUsr = useSwitchUser();
   const createProf = useCreateProfile();
   const [showNewProfile, setShowNewProfile] = useState(false);
   const [newProfileName, setNewProfileName] = useState("");
@@ -125,57 +129,74 @@ export function Sidebar({
         );
       })}
 
-      {/* Profile switcher */}
-      {profileData && (
-        <div className="mt-auto pt-2 border-t border-border-subtle mx-2">
-          {showNewProfile ? (
-            <div className="flex flex-col gap-1 py-1">
-              <input
-                autoFocus
-                type="text"
-                value={newProfileName}
-                onChange={(e) => setNewProfileName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newProfileName.trim()) {
-                    createProf.mutate(newProfileName.trim(), {
-                      onSuccess: () => {
-                        switchProf.mutate(newProfileName.trim(), {
-                          onSuccess: () => window.location.reload(),
-                        });
-                      },
-                    });
-                  }
-                  if (e.key === "Escape") setShowNewProfile(false);
-                }}
-                placeholder="Name"
-                className="w-full px-1 py-0.5 text-[9px] rounded bg-surface-raised border border-border text-slate-200 focus:outline-none focus:border-accent"
-              />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-1">
-              <select
-                value={profileData.active}
-                onChange={(e) => {
-                  if (e.target.value === "__new__") {
-                    setShowNewProfile(true);
-                    setNewProfileName("");
-                    return;
-                  }
-                  switchProf.mutate(e.target.value, {
-                    onSuccess: () => window.location.reload(),
-                  });
-                }}
-                className="w-full text-[9px] py-1 rounded bg-transparent text-slate-400 text-center cursor-pointer hover:text-slate-200"
-                title="Switch profile"
-              >
-                {profileData.profiles.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-                <option value="__new__">+ New profile</option>
-              </select>
-              <User size={10} className="text-slate-700" />
-            </div>
+      {/* User / profile switcher */}
+      {userData && (
+        <div className="mt-auto pt-2 border-t border-border-subtle mx-2 flex flex-col gap-1">
+          {/* User selector */}
+          {users.length > 1 && (
+            <select
+              value={userData.username}
+              onChange={(e) => {
+                switchUsr.mutate(
+                  { username: e.target.value },
+                  { onSuccess: () => window.location.reload() }
+                );
+              }}
+              className="w-full text-[8px] py-0.5 rounded bg-transparent text-slate-500 text-center cursor-pointer hover:text-slate-300"
+              title="Switch user"
+            >
+              {users.map((u) => (
+                <option key={u.username} value={u.username}>
+                  {u.name || u.username}
+                </option>
+              ))}
+            </select>
           )}
+          {/* Profile selector */}
+          {showNewProfile ? (
+            <input
+              autoFocus
+              type="text"
+              value={newProfileName}
+              onChange={(e) => setNewProfileName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newProfileName.trim()) {
+                  createProf.mutate(newProfileName.trim(), {
+                    onSuccess: () => {
+                      switchProf.mutate(newProfileName.trim(), {
+                        onSuccess: () => window.location.reload(),
+                      });
+                    },
+                  });
+                }
+                if (e.key === "Escape") setShowNewProfile(false);
+              }}
+              placeholder="New profile"
+              className="w-full px-1 py-0.5 text-[8px] rounded bg-surface-raised border border-border text-slate-200 focus:outline-none focus:border-accent"
+            />
+          ) : (
+            <select
+              value={userData.profile}
+              onChange={(e) => {
+                if (e.target.value === "__new__") {
+                  setShowNewProfile(true);
+                  setNewProfileName("");
+                  return;
+                }
+                switchProf.mutate(e.target.value, {
+                  onSuccess: () => window.location.reload(),
+                });
+              }}
+              className="w-full text-[8px] py-0.5 rounded bg-transparent text-slate-400 text-center cursor-pointer hover:text-slate-200"
+              title="Switch profile"
+            >
+              {(userData.profiles ?? []).map((p: string) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+              <option value="__new__">+ New profile</option>
+            </select>
+          )}
+          <User size={10} className="text-slate-700 mx-auto" />
         </div>
       )}
     </nav>

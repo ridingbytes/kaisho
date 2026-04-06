@@ -556,16 +556,112 @@ def set_url_allowlist(body: list[str] = Body(...)):
 
 
 # -------------------------------------------------------------------
-# User profiles
+# Users and profiles
 # -------------------------------------------------------------------
+
+
+@router.get("/user")
+def get_current_user():
+    """Return the active user and profile info."""
+    from ...config import (
+        list_profiles, list_users, load_user_yaml,
+    )
+    cfg = get_config()
+    meta = load_user_yaml(cfg)
+    return {
+        "username": cfg.USER,
+        "profile": cfg.PROFILE,
+        "name": meta.get("name", ""),
+        "email": meta.get("email", ""),
+        "bio": meta.get("bio", ""),
+        "profiles": list_profiles(cfg),
+    }
+
+
+@router.get("/users")
+def get_users():
+    """List all user accounts."""
+    from ...config import list_users
+    return list_users()
+
+
+class UserCreate(BaseModel):
+    username: str
+    name: str = ""
+    email: str = ""
+    bio: str = ""
+
+
+@router.post("/users", status_code=201)
+def create_user(body: UserCreate):
+    """Create a new user account with a default profile."""
+    import re
+    from ...config import (
+        init_data_dir, reset_config, save_user_yaml,
+    )
+    username = re.sub(
+        r"[^a-zA-Z0-9_-]", "", body.username.strip()
+    )
+    if not username:
+        raise HTTPException(
+            status_code=400, detail="Invalid username"
+        )
+    cfg = get_config()
+    user_dir = cfg.DATA_DIR / "users" / username
+    if user_dir.exists():
+        raise HTTPException(
+            status_code=409,
+            detail=f"User '{username}' already exists",
+        )
+    import os
+    from datetime import datetime, timezone
+    old_user = os.environ.get("OC_USER", "")
+    old_prof = os.environ.get("PROFILE", "")
+    os.environ["OC_USER"] = username
+    os.environ["PROFILE"] = "default"
+    new_cfg = reset_config()
+    save_user_yaml(new_cfg, {
+        "name": body.name or username,
+        "email": body.email,
+        "bio": body.bio,
+        "created": datetime.now(timezone.utc).isoformat(),
+    })
+    init_data_dir(new_cfg)
+    os.environ["OC_USER"] = old_user or "default"
+    os.environ["PROFILE"] = old_prof or "default"
+    reset_config()
+    return {"username": username}
+
+
+class UserSwitch(BaseModel):
+    username: str
+    profile: str = "default"
+
+
+@router.put("/user")
+def switch_user(body: UserSwitch):
+    """Switch active user and profile."""
+    import os
+    from ...backends import reset_backend
+    from ...config import init_data_dir, reset_config
+    os.environ["OC_USER"] = body.username
+    os.environ["PROFILE"] = body.profile
+    cfg = reset_config()
+    init_data_dir(cfg)
+    reset_backend()
+    return {
+        "username": cfg.USER,
+        "profile": cfg.PROFILE,
+    }
 
 
 @router.get("/profiles")
 def get_profiles():
-    """List available profiles and the active one."""
+    """List profiles for the active user."""
     from ...config import list_profiles
     cfg = get_config()
     return {
+        "user": cfg.USER,
         "active": cfg.PROFILE,
         "profiles": list_profiles(cfg),
     }
@@ -577,7 +673,7 @@ class ProfileSwitch(BaseModel):
 
 @router.put("/profile")
 def switch_profile(body: ProfileSwitch):
-    """Switch to a different user profile."""
+    """Switch to a different profile within the user."""
     import os
     from ...backends import reset_backend
     from ...config import init_data_dir, reset_config
@@ -587,7 +683,6 @@ def switch_profile(body: ProfileSwitch):
     reset_backend()
     return {
         "profile": cfg.PROFILE,
-        "message": f"Switched to profile '{cfg.PROFILE}'.",
     }
 
 
@@ -597,26 +692,27 @@ class ProfileCreate(BaseModel):
 
 @router.post("/profiles", status_code=201)
 def create_profile(body: ProfileCreate):
-    """Create a new user profile from templates."""
-    from ...config import init_data_dir
-    import re
-    name = re.sub(r"[^a-zA-Z0-9_-]", "", body.name.strip())
+    """Create a new profile for the active user."""
+    import os, re
+    from ...config import init_data_dir, reset_config
+    name = re.sub(
+        r"[^a-zA-Z0-9_-]", "", body.name.strip()
+    )
     if not name:
         raise HTTPException(
             status_code=400, detail="Invalid profile name"
         )
     cfg = get_config()
-    profile_dir = cfg.DATA_DIR.expanduser() / name
+    profile_dir = (
+        cfg.USER_DIR / "profiles" / name
+    )
     if profile_dir.exists():
         raise HTTPException(
             status_code=409,
             detail=f"Profile '{name}' already exists",
         )
-    # Temporarily set profile to create the dir
-    import os
     old = os.environ.get("PROFILE", "")
     os.environ["PROFILE"] = name
-    from ...config import reset_config
     new_cfg = reset_config()
     init_data_dir(new_cfg)
     os.environ["PROFILE"] = old or "default"
