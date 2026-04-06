@@ -694,3 +694,9 @@ export function askAdvisor(
 ): Promise<{ answer: string }> {
   return post<{ answer: string }>("/advisor/ask", { question, model });
 }
+
+export function fetchAdvisorSkills(): Promise<
+  { name: string; content: string }[]
+> {
+  return get("/advisor/skills");
+}

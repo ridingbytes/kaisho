@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from ...backends import get_backend
 from ...config import get_config
 from ...services import settings as settings_svc
-from ...services.advisor import ask
+from ...services.advisor import ask, list_skills
 from ...services.github import GhError, issues_for_customers
 
 router = APIRouter(prefix="/api/advisor", tags=["advisor"])
@@ -60,8 +60,17 @@ def api_ask(body: AskRequest):
             ),
             openai_base_url=ai.get("openai_url", ""),
             openai_api_key=ai.get("openai_api_key", ""),
+            data_dir=str(cfg.DATA_DIR.expanduser()),
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
 
     return {"answer": answer}
+
+
+@router.get("/skills")
+def get_skills():
+    """List available advisor skills."""
+    cfg = get_config()
+    from pathlib import Path
+    return list_skills(Path(str(cfg.DATA_DIR.expanduser())))

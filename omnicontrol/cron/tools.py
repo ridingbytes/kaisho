@@ -164,6 +164,48 @@ TOOL_DEFS: list[dict] = [
         },
     },
     {
+        "name": "search_knowledge",
+        "description": (
+            "Search the knowledge base (documentation, notes, "
+            "research files) for relevant information. Returns "
+            "matching snippets with file path and line number."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Search query",
+                },
+                "max_results": {
+                    "type": "integer",
+                    "description": "Max results (default 10)",
+                },
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "read_knowledge_file",
+        "description": (
+            "Read the full content of a knowledge base file "
+            "by its relative path."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": (
+                        "Relative file path as shown in search "
+                        "results"
+                    ),
+                },
+            },
+            "required": ["path"],
+        },
+    },
+    {
         "name": "execute_cli",
         "description": (
             "Execute an occontrol CLI command and return its output. "
@@ -378,6 +420,15 @@ def _dispatch(name: str, args: dict) -> dict:
         )
         return {"contracts": contracts}
 
+    if name == "search_knowledge":
+        return _search_knowledge(
+            args["query"],
+            args.get("max_results", 10),
+        )
+
+    if name == "read_knowledge_file":
+        return _read_knowledge_file(args["path"])
+
     if name == "transcribe_youtube":
         return _transcribe_youtube(
             args["url"],
@@ -454,3 +505,34 @@ def _fetch_url(url: str, accept: str = "") -> dict:
     except Exception as exc:
         return {"error": str(exc)}
     return {"body": body, "truncated": truncated}
+
+
+def _kb_sources() -> list[dict]:
+    """Load KB sources from settings."""
+    from ..config import get_config
+    from ..services.settings import get_kb_sources, load_settings
+    cfg = get_config()
+    data = load_settings(cfg.SETTINGS_FILE)
+    return get_kb_sources(data, cfg)
+
+
+def _search_knowledge(
+    query: str, max_results: int = 10
+) -> dict:
+    """Search the knowledge base."""
+    from ..services import knowledge as kb_svc
+    results = kb_svc.search(
+        _kb_sources(), query, max_results=max_results,
+    )
+    return {"results": results}
+
+
+def _read_knowledge_file(path: str) -> dict:
+    """Read a knowledge base file."""
+    from ..services import knowledge as kb_svc
+    content = kb_svc.read_file(_kb_sources(), path)
+    if content is None:
+        return {"error": f"File not found: {path}"}
+    if len(content) > 30_000:
+        content = content[:30_000] + "\n...(truncated)"
+    return {"content": content}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Send, Trash2 } from "lucide-react";
-import { askAdvisor } from "../../api/client";
+import { Send, Trash2, Zap } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { askAdvisor, fetchAdvisorSkills } from "../../api/client";
 import { useAiSettings, useAvailableModels } from "../../hooks/useSettings";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
@@ -66,6 +67,11 @@ interface AdvisorViewProps {
 export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
   const { data: aiSettings } = useAiSettings();
   const { data: models = [] } = useAvailableModels();
+  const { data: skills = [] } = useQuery({
+    queryKey: ["advisor", "skills"],
+    queryFn: fetchAdvisorSkills,
+    staleTime: 120_000,
+  });
 
   const [model, setModel] = useState("");
   const [input, setInput] = useState("");
@@ -180,6 +186,22 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
               Ask a question or pick a template:
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
+              {skills.length > 0 && skills.map((s) => (
+                <button
+                  key={s.name}
+                  onClick={() => { setInput(s.content); }}
+                  className={[
+                    "px-3 py-1.5 rounded-lg text-xs",
+                    "bg-accent/10 border border-accent/30",
+                    "text-accent hover:bg-accent/20",
+                    "transition-colors text-left",
+                    "flex items-center gap-1.5",
+                  ].join(" ")}
+                >
+                  <Zap size={10} />
+                  {s.name.replace(/-/g, " ")}
+                </button>
+              ))}
               {QUESTION_TEMPLATES.map((q) => (
                 <button
                   key={q}

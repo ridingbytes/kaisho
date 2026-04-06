@@ -7,11 +7,56 @@ All logic lives here; the CLI is a thin caller.
 The advisor uses an agentic loop: models that support tool calling can
 read and write app data (tasks, inbox, clocks, customers) while
 answering the question.
+
+Personality and user context are loaded from optional markdown files:
+  data/soul.md  -- advisor personality, tone, behavioral rules
+  data/user.md  -- user profile, role, preferences
+  data/skills/  -- reusable prompt templates (*.md)
 """
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 from ..cron.tools import TOOL_DEFS, execute_tool, openai_tools
+
+
+# ---------------------------------------------------------------------------
+# Personality, user profile, and skills
+# ---------------------------------------------------------------------------
+
+
+def _read_optional(path: Path) -> str:
+    """Read a file if it exists, return empty string otherwise."""
+    if path.exists():
+        return path.read_text(encoding="utf-8").strip()
+    return ""
+
+
+def load_soul(data_dir: Path) -> str:
+    """Load the advisor personality from SOUL.md."""
+    return _read_optional(data_dir / "SOUL.md")
+
+
+def load_user(data_dir: Path) -> str:
+    """Load the user profile from USER.md."""
+    return _read_optional(data_dir / "USER.md")
+
+
+def list_skills(data_dir: Path) -> list[dict]:
+    """List available skills from SKILLS/*.md.
+
+    Each dict: {"name": str, "content": str}.
+    """
+    skills_dir = data_dir / "SKILLS"
+    if not skills_dir.is_dir():
+        return []
+    return [
+        {
+            "name": f.stem,
+            "content": f.read_text(encoding="utf-8").strip(),
+        }
+        for f in sorted(skills_dir.glob("*.md"))
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -125,24 +170,42 @@ def build_context_prompt(
 # Model execution (same dispatch logic as cron/executor.py)
 # ---------------------------------------------------------------------------
 
-_SYSTEM_PROMPT = (
-    "You are OmniControl Advisor, a personal assistant with direct access "
-    "to the user's tasks, clock entries, inbox, customers, and other data "
-    "through the provided tools.\n\n"
-    "CRITICAL RULES — follow these without exception:\n"
-    "1. When the user asks you to perform an action (book time, add a task, "
-    "capture to inbox, move a task, etc.) you MUST call the appropriate tool "
-    "or execute_cli command FIRST. Only describe the result AFTER the tool "
-    "call has succeeded.\n"
-    "2. Never claim, imply, or summarise that you have performed an action "
-    "that you have not yet executed via a tool call. Saying 'I have booked "
-    "X hours' without a preceding tool call is forbidden.\n"
-    "3. If a tool call fails or returns an error, report the error honestly "
-    "instead of pretending the action succeeded.\n"
-    "4. For write actions (book time, add task, etc.) always confirm the "
-    "exact values you are about to write before or after the tool call, "
-    "so the user can verify correctness."
+_BASE_SYSTEM_PROMPT = (
+    "You are OmniControl Advisor, a personal assistant with direct "
+    "access to the user's tasks, clock entries, inbox, customers, "
+    "knowledge base, and other data through the provided tools.\n\n"
+    "CRITICAL RULES:\n"
+    "1. When asked to perform an action, call the appropriate tool "
+    "FIRST. Only describe the result AFTER the tool has succeeded.\n"
+    "2. Never claim you have performed an action without a preceding "
+    "tool call.\n"
+    "3. Report tool errors honestly.\n"
+    "4. For write actions, confirm the exact values.\n"
+    "5. Use search_knowledge and read_knowledge_file to look up "
+    "documentation, notes, and research when the question requires "
+    "domain knowledge beyond the structured data."
 )
+
+
+def build_system_prompt(data_dir: Path) -> str:
+    """Build the full system prompt from base + soul + user."""
+    parts = [_BASE_SYSTEM_PROMPT]
+    soul = load_soul(data_dir)
+    if soul:
+        parts.append(f"\n## Personality\n{soul}")
+    user = load_user(data_dir)
+    if user:
+        parts.append(f"\n## User Profile\n{user}")
+    skills = list_skills(data_dir)
+    if skills:
+        names = ", ".join(s["name"] for s in skills)
+        parts.append(
+            f"\n## Available Skills\n"
+            f"The user can invoke these skill templates: "
+            f"{names}. When a skill is invoked, follow its "
+            f"instructions precisely."
+        )
+    return "\n".join(parts)
 
 
 _MAX_TURNS = 10
@@ -185,13 +248,16 @@ def _parse_model(model_str: str) -> tuple[str, str]:
     return "ollama", model_str
 
 
-def ask_ollama(model: str, prompt: str, base_url: str) -> str:
+def ask_ollama(
+    model: str, prompt: str, base_url: str,
+    system_prompt: str = "",
+) -> str:
     """Run an agentic Ollama session with tools; return final text."""
     import urllib.request
 
     tools = openai_tools()
     messages: list[dict] = [
-        {"role": "system", "content": _SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
     ]
 
@@ -242,13 +308,16 @@ def ask_ollama(model: str, prompt: str, base_url: str) -> str:
     return messages[-1].get("content", "")
 
 
-def ask_lm_studio(model: str, prompt: str, base_url: str) -> str:
+def ask_lm_studio(
+    model: str, prompt: str, base_url: str,
+    system_prompt: str = "",
+) -> str:
     """Run an agentic LM Studio session with tools; return final text."""
     import urllib.request
 
     tools = openai_tools()
     messages: list[dict] = [
-        {"role": "system", "content": _SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
     ]
 
@@ -302,7 +371,8 @@ def ask_lm_studio(model: str, prompt: str, base_url: str) -> str:
 
 
 def ask_claude(
-    model: str, prompt: str, api_key: str = ""
+    model: str, prompt: str, api_key: str = "",
+    system_prompt: str = "",
 ) -> str:
     """Run an agentic Claude session with tools; return final text."""
     try:
@@ -320,7 +390,7 @@ def ask_claude(
         resp = client.messages.create(
             model=model,
             max_tokens=4096,
-            system=_SYSTEM_PROMPT,
+            system=system_prompt,
             tools=TOOL_DEFS,
             messages=messages,
         )
@@ -374,6 +444,7 @@ def ask_openai_compatible(
     prompt: str,
     base_url: str,
     api_key: str = "",
+    system_prompt: str = "",
 ) -> str:
     """Run an agentic OpenAI-compatible session with tools.
 
@@ -384,7 +455,7 @@ def ask_openai_compatible(
 
     tools = openai_tools()
     messages: list[dict] = [
-        {"role": "system", "content": _SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
     ]
 
@@ -492,33 +563,44 @@ def ask(
     openrouter_api_key: str = "",
     openai_base_url: str = "",
     openai_api_key: str = "",
+    data_dir: str = "data",
 ) -> str:
     """Assemble context, call model in agentic loop, return answer."""
     prompt = build_context_prompt(
         question, tasks, clock_entries, inbox_items,
         customers, github_issues,
     )
+    sp = build_system_prompt(Path(data_dir))
     provider, model_name = _parse_model(model_str)
     if provider == "claude_cli":
-        return ask_claude_cli(model_name, prompt)
+        # CLI gets prompt + system prompt concatenated
+        full = f"{sp}\n\n---\n\n{prompt}"
+        return ask_claude_cli(model_name, full)
     if provider == "claude":
         return ask_claude(
-            model_name, prompt, api_key=claude_api_key,
+            model_name, prompt,
+            api_key=claude_api_key, system_prompt=sp,
         )
     if provider == "lm_studio":
         return ask_lm_studio(
-            model_name, prompt, lm_studio_base_url,
+            model_name, prompt,
+            lm_studio_base_url, system_prompt=sp,
         )
     if provider == "openrouter":
         return ask_openai_compatible(
             model_name, prompt,
             base_url=openrouter_base_url,
             api_key=openrouter_api_key,
+            system_prompt=sp,
         )
     if provider == "openai":
         return ask_openai_compatible(
             model_name, prompt,
             base_url=openai_base_url,
             api_key=openai_api_key,
+            system_prompt=sp,
         )
-    return ask_ollama(model_name, prompt, ollama_base_url)
+    return ask_ollama(
+        model_name, prompt, ollama_base_url,
+        system_prompt=sp,
+    )
