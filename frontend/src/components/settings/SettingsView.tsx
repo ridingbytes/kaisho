@@ -1644,8 +1644,7 @@ function PathsSection() {
           </div>
         </div>
         <p className="text-[10px] text-slate-700 mb-6">
-          Switching reloads the app with the new backend.
-          Data is not migrated automatically.
+          Data is not migrated between backends.
         </p>
       </div>
 
@@ -1702,7 +1701,7 @@ function PathsSection() {
           </button>
           {saved && (
             <span className="text-xs text-green-400">
-              Saved. Restart server to apply.
+              Saved.
             </span>
           )}
         </div>

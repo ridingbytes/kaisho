@@ -362,7 +362,9 @@ def update_paths(body: PathsUpdate):
     _write_env_file(env_path, current)
     from ...config import reset_config
     reset_config()
-    return {"message": "Paths saved. Restart server to apply."}
+    from ...config import reset_config
+    reset_config()
+    return {"message": "Paths saved."}
 
 
 class BackendSwitch(BaseModel):
