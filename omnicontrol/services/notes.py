@@ -195,9 +195,30 @@ def move_to_kb(
 
     org_file, idx, heading = _load_heading(notes_file, note_id)
 
-    body = "\n".join(heading.body).strip()
+    props = heading.properties
     title = _strip_customer(heading.title.strip())
-    content = f"# {title}\n\n{body}\n" if body else f"# {title}\n"
+    customer = _extract_customer(heading.title.strip())
+    body = "\n".join(heading.body).strip()
+
+    meta_lines = []
+    if props.get("CREATED"):
+        meta_lines.append(
+            f"date: {props['CREATED'].strip('[]')}"
+        )
+    if customer:
+        meta_lines.append(f"customer: {customer}")
+    if heading.tags:
+        meta_lines.append(
+            f"tags: {', '.join(heading.tags)}"
+        )
+    if props.get("TASK_ID"):
+        meta_lines.append(f"task_id: {props['TASK_ID']}")
+
+    header = f"# {title}\n\n"
+    if meta_lines:
+        header += "\n".join(meta_lines) + "\n---\n\n"
+
+    content = header + body + "\n" if body else header
 
     kb_dir.mkdir(parents=True, exist_ok=True)
     dest = kb_dir / filename

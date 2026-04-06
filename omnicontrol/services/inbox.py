@@ -279,9 +279,36 @@ def move_to_kb(
 
     org_file, idx, heading = _load_heading(inbox_file, item_id)
 
-    body = "\n".join(heading.body).strip()
+    props = heading.properties
     title = re.sub(r"^\[[^\]]+\]\s*", "", heading.title.strip())
-    content = f"# {title}\n\n{body}\n" if body else f"# {title}\n"
+    customer = _extract_customer(heading)
+    body = "\n".join(heading.body).strip()
+
+    # Build metadata frontmatter
+    meta_lines = []
+    if props.get("CREATED"):
+        meta_lines.append(
+            f"date: {props['CREATED'].strip('[]')}"
+        )
+    if customer:
+        meta_lines.append(f"customer: {customer}")
+    item_type = _extract_type(heading)
+    if item_type:
+        meta_lines.append(f"type: {item_type}")
+    if props.get("CHANNEL"):
+        meta_lines.append(f"channel: {props['CHANNEL']}")
+    if props.get("DIRECTION"):
+        meta_lines.append(
+            f"direction: {props['DIRECTION']}"
+        )
+    if heading.keyword:
+        meta_lines.append(f"status: {heading.keyword}")
+
+    header = f"# {title}\n\n"
+    if meta_lines:
+        header += "\n".join(meta_lines) + "\n---\n\n"
+
+    content = header + body + "\n" if body else header
 
     kb_dir.mkdir(parents=True, exist_ok=True)
     dest = kb_dir / filename
