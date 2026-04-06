@@ -14,6 +14,7 @@ class QuickBookRequest(BaseModel):
     description: str
     task_id: str | None = None
     contract: str | None = None
+    date: str | None = None  # YYYY-MM-DD, defaults to today
 
 
 class TimerStart(BaseModel):
@@ -63,12 +64,19 @@ def get_active():
 @router.post("/quick-book", status_code=201)
 def quick_book(body: QuickBookRequest):
     try:
+        from datetime import date as date_cls
+        target_date = (
+            date_cls.fromisoformat(body.date)
+            if body.date
+            else None
+        )
         return get_backend().clocks.quick_book(
             duration_str=body.duration,
             customer=body.customer,
             description=body.description,
             task_id=body.task_id,
             contract=body.contract,
+            target_date=target_date,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

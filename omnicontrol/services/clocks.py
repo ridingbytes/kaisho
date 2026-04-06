@@ -214,17 +214,25 @@ def quick_book(
     description: str,
     task_id: str | None = None,
     contract: str | None = None,
+    target_date: date | None = None,
 ) -> dict:
-    """Book time: end=now, start=now-duration, clamped to today."""
+    """Book time on a specific date (or today)."""
     minutes = _parse_duration(duration_str)
     if minutes is None:
         raise ValueError(f"Invalid duration: {duration_str}")
 
-    end = datetime.now().replace(second=0, microsecond=0)
-    start = end - timedelta(minutes=minutes)
-    # Keep start on the same day as end
-    if start.date() < end.date():
-        start = end.replace(hour=0, minute=0)
+    if target_date:
+        # Book at noon on the target date
+        start = datetime(
+            target_date.year, target_date.month,
+            target_date.day, 12, 0, 0,
+        )
+        end = start + timedelta(minutes=minutes)
+    else:
+        end = datetime.now().replace(second=0, microsecond=0)
+        start = end - timedelta(minutes=minutes)
+        if start.date() < end.date():
+            start = end.replace(hour=0, minute=0)
     clock = Clock(start=start, end=end)
 
     _append_clock_entry(

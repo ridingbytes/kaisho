@@ -103,13 +103,17 @@ export function useQuickBook() {
       description,
       taskId,
       contract,
+      date,
     }: {
       duration: string;
       customer: string;
       description: string;
       taskId?: string;
       contract?: string;
-    }) => quickBook(duration, customer, description, taskId, contract),
+      date?: string;
+    }) => quickBook(
+      duration, customer, description, taskId, contract, date
+    ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["clocks"] });
     },

@@ -342,6 +342,7 @@ export function quickBook(
   description: string,
   taskId?: string,
   contract?: string,
+  date?: string,
 ): Promise<ClockEntry> {
   return post<ClockEntry>("/clocks/quick-book", {
     duration,
@@ -349,6 +350,7 @@ export function quickBook(
     description,
     task_id: taskId ?? null,
     contract: contract ?? null,
+    date: date ?? null,
   });
 }
 

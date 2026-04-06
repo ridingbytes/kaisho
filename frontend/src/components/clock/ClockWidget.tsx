@@ -3,6 +3,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 import { useActiveTimer } from "../../hooks/useClocks";
 import { ActiveTimer } from "./ActiveTimer";
@@ -12,8 +13,6 @@ import { QuickBookForm } from "./QuickBookForm";
 import { StartForm } from "./StartForm";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
-
-type ActionTab = "start" | "book";
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -35,7 +34,7 @@ interface ClockWidgetProps {
 
 export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
   const { data: timer } = useActiveTimer();
-  const [tab, setTab] = useState<ActionTab>("start");
+  const [booking, setBooking] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(
     () => localStorage.getItem("clock_calendar_open") !== "false"
   );
@@ -105,30 +104,8 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
         {/* Active timer */}
         {timer && <ActiveTimer timer={timer} />}
 
-        {/* Start/Book forms — always visible when no timer running */}
-        {!isRunning && (
-          <div>
-            <div className="flex rounded-lg bg-surface-raised border border-border p-0.5 mb-3">
-              {(["start", "book"] as ActionTab[]).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={[
-                    "flex-1 py-1.5 rounded-md text-xs font-semibold capitalize",
-                    "transition-colors",
-                    tab === t
-                      ? "bg-surface-overlay text-slate-200"
-                      : "text-slate-600 hover:text-slate-400",
-                  ].join(" ")}
-                >
-                  {t === "start" ? "Start" : "Quick Book"}
-                </button>
-              ))}
-            </div>
-
-            {tab === "start" ? <StartForm /> : <QuickBookForm />}
-          </div>
-        )}
+        {/* Start timer form */}
+        {!isRunning && <StartForm />}
 
         <div className="border-t border-border-subtle" />
 
@@ -158,11 +135,33 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
 
         {/* Entries for selected date */}
         <div>
-          <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-2">
-            {!selectedDate || selectedDate === todayIso()
-              ? "Today"
-              : formatDateHeading(selectedDate)}
-          </h3>
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 flex-1">
+              {!selectedDate || selectedDate === todayIso()
+                ? "Today"
+                : formatDateHeading(selectedDate)}
+            </h3>
+            <button
+              onClick={() => setBooking((v) => !v)}
+              className={[
+                "p-0.5 rounded transition-colors",
+                booking
+                  ? "text-accent bg-accent-muted"
+                  : "text-slate-600 hover:text-accent",
+              ].join(" ")}
+              title="Add time entry"
+            >
+              <Plus size={12} />
+            </button>
+          </div>
+          {booking && (
+            <div className="mb-3">
+              <QuickBookForm
+                defaultDate={selectedDate ?? todayIso()}
+                onDone={() => setBooking(false)}
+              />
+            </div>
+          )}
           <ClockList
             isRunning={isRunning}
             selectedDate={selectedDate}

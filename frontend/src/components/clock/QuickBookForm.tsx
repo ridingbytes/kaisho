@@ -4,7 +4,15 @@ import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { useContracts } from "../../hooks/useContracts";
 import { useQuickBook } from "../../hooks/useClocks";
 
-export function QuickBookForm() {
+interface QuickBookFormProps {
+  defaultDate?: string;
+  onDone?: () => void;
+}
+
+export function QuickBookForm({
+  defaultDate,
+  onDone,
+}: QuickBookFormProps = {}) {
   const [duration, setDuration] = useState("");
   const [customer, setCustomer] = useState("");
   const [contract, setContract] = useState("");
@@ -25,6 +33,7 @@ export function QuickBookForm() {
         description: description.trim(),
         contract: contract || undefined,
         taskId: taskId ?? undefined,
+        date: defaultDate || undefined,
       },
       {
         onSuccess: () => {
@@ -34,6 +43,7 @@ export function QuickBookForm() {
           setDescription("");
           setTaskId(null);
           setTaskTitle("");
+          onDone?.();
         },
       }
     );

@@ -803,14 +803,22 @@ class MarkdownClockBackend(ClockBackend):
         description,
         task_id=None,
         contract=None,
+        target_date=None,
     ) -> dict:
         minutes = _parse_duration_minutes(duration_str)
-        end = datetime.now().replace(
-            second=0, microsecond=0
-        )
-        start = end - timedelta(minutes=minutes)
-        if start.date() < end.date():
-            start = end.replace(hour=0, minute=0)
+        if target_date:
+            start = datetime(
+                target_date.year, target_date.month,
+                target_date.day, 12, 0, 0,
+            )
+            end = start + timedelta(minutes=minutes)
+        else:
+            end = datetime.now().replace(
+                second=0, microsecond=0
+            )
+            start = end - timedelta(minutes=minutes)
+            if start.date() < end.date():
+                start = end.replace(hour=0, minute=0)
         entries = self._load_entries()
         entry = {
             "customer": customer,
