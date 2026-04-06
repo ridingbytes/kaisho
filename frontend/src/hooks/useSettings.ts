@@ -11,11 +11,13 @@ import {
   fetchAiSettings,
   fetchAvailableModels,
   fetchGithubSettings,
+  fetchKbSources,
   fetchPaths,
   fetchSettings,
   reorderStates,
   updateAiSettings,
   updateGithubSettings,
+  updateKbSources,
   updatePaths,
   updateTag,
 } from "../api/client";
@@ -181,6 +183,31 @@ export function useUpdatePaths() {
     }) => updatePaths(updates),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["settings", "paths"] });
+    },
+  });
+}
+
+export function useKbSources() {
+  return useQuery({
+    queryKey: ["settings", "kb_sources"],
+    queryFn: fetchKbSources,
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateKbSources() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (
+      sources: { label: string; path: string }[]
+    ) => updateKbSources(sources),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings", "kb_sources"],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["knowledge"],
+      });
     },
   });
 }

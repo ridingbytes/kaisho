@@ -12,6 +12,8 @@ import {
   useAiSettings,
   useAvailableModels,
   useGithubSettings,
+  useKbSources,
+  useUpdateKbSources,
   usePaths,
   useSettings,
   useUpdateAiSettings,
@@ -956,126 +958,222 @@ function ShortcutsSection() {
 // Paths
 // ---------------------------------------------------------------------------
 
-const EDITABLE_PATH_KEYS = [
-  { key: "org_dir", label: "ORG_DIR" },
-  { key: "data_dir", label: "DATA_DIR" },
-  { key: "wissen_dir", label: "WISSEN_DIR" },
-  { key: "research_dir", label: "RESEARCH_DIR" },
-] as const;
-
-type EditablePathKey = (typeof EDITABLE_PATH_KEYS)[number]["key"];
-
 function PathsSection() {
   const { data: paths } = usePaths();
   const update = useUpdatePaths();
-  const [form, setForm] = useState<Record<EditablePathKey, string>>({
-    org_dir: "",
-    data_dir: "",
-    wissen_dir: "",
-    research_dir: "",
-  });
+  const { data: kbSources = [] } = useKbSources();
+  const updateKb = useUpdateKbSources();
+  const [orgDir, setOrgDir] = useState("");
+  const [dataDir, setDataDir] = useState("");
+  const [sources, setSources] = useState<
+    { label: string; path: string }[]
+  >([]);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (paths) {
-      setForm({
-        org_dir: paths.org_dir ?? "",
-        data_dir: paths.data_dir ?? "",
-        wissen_dir: paths.wissen_dir ?? "",
-        research_dir: paths.research_dir ?? "",
-      });
+      setOrgDir(paths.org_dir ?? "");
+      setDataDir(paths.data_dir ?? "");
     }
   }, [paths]);
 
+  useEffect(() => {
+    if (kbSources.length > 0) {
+      setSources(kbSources.map((s) => ({ ...s })));
+    }
+  }, [kbSources]);
+
   if (!paths) return null;
 
-  function handleSave() {
-    update.mutate(form, {
-      onSuccess: () => {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
-      },
-    });
+  function handleSavePaths() {
+    update.mutate(
+      { org_dir: orgDir, data_dir: dataDir },
+      {
+        onSuccess: () => {
+          setSaved(true);
+          setTimeout(() => setSaved(false), 3000);
+        },
+      }
+    );
   }
 
-  const readOnlyRows = [
-    { label: "Backend", value: paths.backend },
-    { label: "Settings file", value: paths.settings_file },
-  ];
+  function handleSaveKb() {
+    const valid = sources.filter(
+      (s) => s.label.trim() && s.path.trim()
+    );
+    updateKb.mutate(valid);
+  }
+
+  function addSource() {
+    setSources((prev) => [...prev, { label: "", path: "" }]);
+  }
+
+  function removeSource(idx: number) {
+    setSources((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function updateSource(
+    idx: number,
+    field: "label" | "path",
+    value: string
+  ) {
+    setSources((prev) =>
+      prev.map((s, i) =>
+        i === idx ? { ...s, [field]: value } : s
+      )
+    );
+  }
 
   return (
-    <section>
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
-        Paths
-      </h2>
-
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
-        {EDITABLE_PATH_KEYS.map(({ key, label }, i) => (
-          <label
-            key={key}
-            className={[
-              "flex items-center gap-3 px-4 py-2.5",
-              i < EDITABLE_PATH_KEYS.length - 1
-                ? "border-b border-border-subtle"
-                : "",
-            ].join(" ")}
-          >
+    <section className="space-y-8">
+      {/* Core paths */}
+      <div>
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+          Core Paths
+        </h2>
+        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
+          <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
             <span className="text-xs text-slate-400 w-32 shrink-0">
-              {label}
+              ORG_DIR
             </span>
             <input
               type="text"
-              value={form[key]}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, [key]: e.target.value }))
-              }
+              value={orgDir}
+              onChange={(e) => setOrgDir(e.target.value)}
               className={inputCls}
             />
           </label>
-        ))}
-      </div>
-
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={handleSave}
-          disabled={update.isPending}
-          className={saveBtnCls}
-        >
-          {update.isPending ? "Saving…" : "Save"}
-        </button>
-        {saved && (
-          <span className="text-xs text-green-400">
-            Saved. Restart the server to apply changes.
-          </span>
-        )}
-        {update.isError && (
-          <span className="text-xs text-red-400">Save failed.</span>
-        )}
-      </div>
-
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
-        {readOnlyRows.map((row, i) => (
-          <div
-            key={row.label}
-            className={[
-              "flex items-center gap-3 px-4 py-2.5",
-              i < readOnlyRows.length - 1
-                ? "border-b border-border-subtle"
-                : "",
-            ].join(" ")}
+          <label className="flex items-center gap-3 px-4 py-2.5">
+            <span className="text-xs text-slate-400 w-32 shrink-0">
+              DATA_DIR
+            </span>
+            <input
+              type="text"
+              value={dataDir}
+              onChange={(e) => setDataDir(e.target.value)}
+              className={inputCls}
+            />
+          </label>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSavePaths}
+            disabled={update.isPending}
+            className={saveBtnCls}
           >
-            <span className="text-xs text-slate-500 w-32 shrink-0">
-              {row.label}
+            {update.isPending ? "Saving…" : "Save"}
+          </button>
+          {saved && (
+            <span className="text-xs text-green-400">
+              Saved. Restart server to apply.
             </span>
-            <span className="text-xs font-mono text-slate-400 truncate flex-1">
-              {row.value}
-            </span>
-          </div>
-        ))}
+          )}
+        </div>
       </div>
-      <p className="mt-2 text-[10px] text-slate-700">
-        Path changes are written to .env and require a server restart.
-      </p>
+
+      {/* KB sources */}
+      <div>
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+          Knowledge Base Sources
+        </h2>
+        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
+          {sources.map((src, idx) => (
+            <div
+              key={idx}
+              className={[
+                "flex items-center gap-2 px-4 py-2.5",
+                idx < sources.length - 1
+                  ? "border-b border-border-subtle"
+                  : "",
+              ].join(" ")}
+            >
+              <input
+                type="text"
+                value={src.label}
+                onChange={(e) =>
+                  updateSource(idx, "label", e.target.value)
+                }
+                placeholder="Label"
+                className={[
+                  fieldCls, "w-28 shrink-0",
+                ].join(" ")}
+              />
+              <input
+                type="text"
+                value={src.path}
+                onChange={(e) =>
+                  updateSource(idx, "path", e.target.value)
+                }
+                placeholder="~/path/to/folder"
+                className={[inputCls].join(" ")}
+              />
+              <button
+                onClick={() => removeSource(idx)}
+                className="p-1 rounded text-slate-600 hover:text-red-400 transition-colors shrink-0"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+          {sources.length === 0 && (
+            <p className="px-4 py-3 text-xs text-slate-600">
+              No KB sources defined. Add one below.
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={addSource}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-slate-400 bg-surface-raised border border-border hover:text-accent hover:border-accent/40 transition-colors"
+          >
+            <Plus size={12} />
+            Add source
+          </button>
+          <button
+            onClick={handleSaveKb}
+            disabled={updateKb.isPending}
+            className={saveBtnCls}
+          >
+            {updateKb.isPending ? "Saving…" : "Save KB Sources"}
+          </button>
+        </div>
+      </div>
+
+      {/* Read-only info */}
+      <div>
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+          Info
+        </h2>
+        <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+          {[
+            { label: "Backend", value: paths.backend },
+            {
+              label: "Settings file",
+              value: paths.settings_file,
+            },
+          ].map((row, i, arr) => (
+            <div
+              key={row.label}
+              className={[
+                "flex items-center gap-3 px-4 py-2.5",
+                i < arr.length - 1
+                  ? "border-b border-border-subtle"
+                  : "",
+              ].join(" ")}
+            >
+              <span className="text-xs text-slate-500 w-32 shrink-0">
+                {row.label}
+              </span>
+              <span className="text-xs font-mono text-slate-400 truncate flex-1">
+                {row.value}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2 text-[10px] text-slate-700">
+          Set BACKEND=markdown in .env and restart to switch.
+        </p>
+      </div>
     </section>
   );
 }
