@@ -300,8 +300,10 @@ class CustomerBackend(ABC):
         self,
         name: str,
         status: str = "active",
+        customer_type: str = "",
         kontingent: float = 0,
         repo: str | None = None,
+        tags: list[str] | None = None,
     ) -> dict:
         """Create a new customer. Raises ValueError if name exists."""
 

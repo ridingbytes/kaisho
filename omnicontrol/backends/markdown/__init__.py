@@ -729,8 +729,10 @@ class MarkdownCustomerBackend(CustomerBackend):
         self,
         name,
         status="active",
+        customer_type="",
         kontingent=0,
         repo=None,
+        tags=None,
     ) -> dict:
         custs = _read_json(self._customers_file)
         for c in custs:
@@ -741,8 +743,12 @@ class MarkdownCustomerBackend(CustomerBackend):
         cust = {
             "name": name,
             "status": status,
+            "type": customer_type,
+            "tags": tags or [],
             "kontingent": kontingent,
             "repo": repo or "",
+            "verbraucht": 0,
+            "rest": kontingent,
             "properties": {},
             "contracts": [],
         }
