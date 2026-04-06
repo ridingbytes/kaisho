@@ -61,6 +61,7 @@ export function ActiveTimer({ timer }: Props) {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
       saveNotes(notes);
+      setNotesOpen(false);
     }
   }
 
