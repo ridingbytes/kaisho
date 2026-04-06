@@ -496,6 +496,63 @@ TOOL_DEFS: list[dict] = [
             "required": ["domain"],
         },
     },
+    {
+        "name": "list_github_projects",
+        "description": (
+            "List GitHub Projects v2 for all customers. "
+            "Returns each project with its items grouped by "
+            "status column (e.g. Prioritized, In Progress, Done). "
+            "Use this to read ticket backlogs, prioritized queues, "
+            "or any GitHub Project board data. "
+            "Optionally filter by customer name or status column."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "customer": {
+                    "type": "string",
+                    "description": (
+                        "Filter to a specific customer name "
+                        "(optional)"
+                    ),
+                },
+                "status": {
+                    "type": "string",
+                    "description": (
+                        "Only return items with this project "
+                        "status / column name, e.g. 'Prioritized' "
+                        "(optional, case-insensitive)"
+                    ),
+                },
+                "include_closed": {
+                    "type": "boolean",
+                    "description": (
+                        "Include closed projects (default false)"
+                    ),
+                },
+            },
+        },
+    },
+    {
+        "name": "list_github_issues",
+        "description": (
+            "List open GitHub issues for all customers "
+            "(or a specific customer). "
+            "Returns issue number, title, labels, and URL."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "customer": {
+                    "type": "string",
+                    "description": (
+                        "Filter to a specific customer name "
+                        "(optional)"
+                    ),
+                },
+            },
+        },
+    },
 ]
 
 
@@ -722,6 +779,18 @@ def _dispatch(name: str, args: dict) -> dict:
     if name == "approve_url_domain":
         return _approve_url_domain(args["domain"])
 
+    if name == "list_github_projects":
+        return _list_github_projects(
+            customer=args.get("customer"),
+            status_filter=args.get("status"),
+            include_closed=args.get("include_closed", False),
+        )
+
+    if name == "list_github_issues":
+        return _list_github_issues(
+            customer=args.get("customer"),
+        )
+
     return {"error": f"unknown tool: {name!r}"}
 
 
@@ -846,3 +915,97 @@ def _read_knowledge_file(path: str) -> dict:
     if len(content) > 30_000:
         content = content[:30_000] + "\n...(truncated)"
     return {"content": content}
+
+
+def _list_github_projects(
+    customer: str | None = None,
+    status_filter: str | None = None,
+    include_closed: bool = False,
+) -> dict:
+    """Fetch GitHub Projects v2 and return structured data."""
+    from ..backends import get_backend
+    from ..services.github import GhError, projects_for_customers
+    customers = get_backend().customers.list_customers()
+    try:
+        groups = projects_for_customers(customers)
+    except GhError as exc:
+        return {"error": str(exc)}
+
+    if customer:
+        groups = [
+            g for g in groups
+            if g["customer"].lower() == customer.lower()
+        ]
+
+    result = []
+    for group in groups:
+        projects = group["projects"]
+        if not include_closed:
+            projects = [p for p in projects if not p.get("closed")]
+        formatted_projects = []
+        for proj in projects:
+            items = proj.get("items", [])
+            if status_filter:
+                items = [
+                    i for i in items
+                    if (i.get("status") or "").lower()
+                    == status_filter.lower()
+                ]
+            # Group items by status preserving kanban order
+            status_order = proj.get("status_order", [])
+            by_status: dict[str, list[dict]] = {}
+            for item in items:
+                key = item.get("status") or "(no status)"
+                by_status.setdefault(key, []).append(item)
+            ordered_statuses = [
+                s for s in status_order if s in by_status
+            ] + [
+                s for s in by_status if s not in status_order
+            ]
+            columns = [
+                {
+                    "status": s,
+                    "items": [
+                        {
+                            "number": i.get("number"),
+                            "title": i.get("title"),
+                            "type": i.get("type"),
+                            "url": i.get("url"),
+                            "labels": i.get("labels", []),
+                        }
+                        for i in by_status[s]
+                    ],
+                }
+                for s in ordered_statuses
+            ]
+            formatted_projects.append({
+                "title": proj.get("title"),
+                "url": proj.get("url"),
+                "closed": proj.get("closed", False),
+                "columns": columns,
+            })
+        result.append({
+            "customer": group["customer"],
+            "repo": group["repo"],
+            "projects": formatted_projects,
+        })
+    return {"groups": result}
+
+
+def _list_github_issues(
+    customer: str | None = None,
+) -> dict:
+    """Fetch GitHub issues and return structured data."""
+    from ..backends import get_backend
+    from ..services.github import GhError, issues_for_customers
+    customers = get_backend().customers.list_customers()
+    try:
+        groups = issues_for_customers(customers)
+    except GhError as exc:
+        return {"error": str(exc)}
+    if customer:
+        groups = [
+            g for g in groups
+            if g["customer"].lower() == customer.lower()
+        ]
+    return {"groups": groups}
