@@ -1285,8 +1285,7 @@ class MarkdownCustomerBackend(CustomerBackend):
 
     def _load_clock_entries(self) -> list[dict]:
         text = _read_md(self._clocks_file)
-        sections = _parse_md_sections(text)
-        return [_section_to_clock(s) for s in sections]
+        return _load_clock_entries(text)
 
     # -- helpers -------------------------------------------------
 
