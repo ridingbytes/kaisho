@@ -97,7 +97,7 @@ function TabBar({ active, onChange }: TabBarProps) {
           className={[
             "px-4 py-2 text-sm font-medium transition-colors",
             active === tab.id
-              ? "text-white border-b-2 border-accent -mb-px"
+              ? "text-accent border-b-2 border-accent -mb-px"
               : "text-slate-500 hover:text-slate-300",
           ].join(" ")}
         >
@@ -1805,7 +1805,13 @@ function PathsSection() {
 // ---------------------------------------------------------------------------
 
 export function SettingsView() {
-  const [activeTab, setActiveTab] = useState<TabId>("general");
+  const [activeTab, setActiveTab] = useState<TabId>(
+    () => (localStorage.getItem("settings_tab") as TabId) || "general"
+  );
+  function changeTab(id: TabId) {
+    setActiveTab(id);
+    localStorage.setItem("settings_tab", id);
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -1819,7 +1825,7 @@ export function SettingsView() {
 
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-3xl">
-          <TabBar active={activeTab} onChange={setActiveTab} />
+          <TabBar active={activeTab} onChange={changeTab} />
 
           {activeTab === "general" && <GeneralTab />}
           {activeTab === "ai" && <AiSection />}
