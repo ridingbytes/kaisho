@@ -398,6 +398,32 @@ def reorder_states(body: list[str] = Body(...)):
     return data["task_states"]
 
 
+class StateUpdate(BaseModel):
+    label: str | None = None
+    color: str | None = None
+    done: bool | None = None
+
+
+@router.patch("/states/{name}", status_code=200)
+def update_state(name: str, body: StateUpdate):
+    """Update label, color, and/or done flag for a task state."""
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    states = data.get("task_states", [])
+    for state in states:
+        if state["name"] == name:
+            if body.label is not None:
+                state["label"] = body.label
+            if body.color is not None:
+                state["color"] = body.color
+            if body.done is not None:
+                state["done"] = body.done
+            data["task_states"] = states
+            settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+            return state
+    raise HTTPException(status_code=404, detail="State not found")
+
+
 @router.delete("/states/{name}", status_code=204)
 def remove_state(name: str):
     cfg = get_config()

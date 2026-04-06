@@ -44,6 +44,7 @@ import {
   useProfiles,
   useRenameProfile,
   useSwitchProfile,
+  useUpdateState,
 } from "../../hooks/useSettings";
 import { PixelAvatar } from "../common/PixelAvatar";
 import type { AiSettings, ConfigTag } from "../../types";
@@ -1040,6 +1041,60 @@ function AddTagForm({ onDone }: { onDone: () => void }) {
   );
 }
 
+function TaskStateRow({
+  state,
+  isLast,
+}: {
+  state: { name: string; label: string; color: string; done: boolean };
+  isLast: boolean;
+}) {
+  const update = useUpdateState();
+  const [label, setLabel] = useState(state.label);
+  const [color, setColor] = useState(state.color);
+
+  function save() {
+    const updates: { label?: string; color?: string } = {};
+    if (label !== state.label) updates.label = label;
+    if (color !== state.color) updates.color = color;
+    if (Object.keys(updates).length > 0) {
+      update.mutate({ name: state.name, updates });
+    }
+  }
+
+  return (
+    <div
+      className={[
+        "flex items-center gap-3 px-4 py-2",
+        !isLast ? "border-b border-border-subtle" : "",
+      ].join(" ")}
+    >
+      <input
+        type="color"
+        value={color}
+        onChange={(e) => setColor(e.target.value)}
+        onBlur={save}
+        className="w-5 h-5 rounded-full border-0 p-0 cursor-pointer bg-transparent shrink-0"
+        title="Color"
+      />
+      <span className="text-xs font-mono text-stone-600 w-28 shrink-0">
+        {state.name}
+      </span>
+      <input
+        className={inputCls + " flex-1 text-sm"}
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+      />
+      {state.done && (
+        <span className="text-[10px] font-semibold uppercase text-stone-500 bg-surface-raised px-1.5 py-0.5 rounded shrink-0">
+          done
+        </span>
+      )}
+    </div>
+  );
+}
+
 function TaskStatesSection({
   states,
 }: {
@@ -1052,34 +1107,11 @@ function TaskStatesSection({
       </h2>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         {states.map((state, i) => (
-          <div
+          <TaskStateRow
             key={state.name}
-            className={[
-              "flex items-center gap-3 px-4 py-2.5",
-              i < states.length - 1
-                ? "border-b border-border-subtle"
-                : "",
-            ].join(" ")}
-          >
-            <input
-              type="color"
-              value={state.color}
-              className="w-5 h-5 rounded-full border-0 p-0 cursor-pointer bg-transparent"
-              title="Color"
-              readOnly
-            />
-            <span className="text-xs font-mono text-stone-700 w-28">
-              {state.name}
-            </span>
-            <span className="text-sm text-stone-900 flex-1">
-              {state.label}
-            </span>
-            {state.done && (
-              <span className="text-[10px] font-semibold uppercase text-stone-500 bg-surface-raised px-1.5 py-0.5 rounded">
-                done
-              </span>
-            )}
-          </div>
+            state={state}
+            isLast={i === states.length - 1}
+          />
         ))}
       </div>
     </section>

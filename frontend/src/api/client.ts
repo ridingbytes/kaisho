@@ -351,6 +351,13 @@ export function deleteCustomerType(name: string): Promise<void> {
   return del(`/settings/customer_types/${encodeURIComponent(name)}`);
 }
 
+export function updateState(
+  name: string,
+  updates: { label?: string; color?: string; done?: boolean },
+): Promise<{ name: string; label: string; color: string; done: boolean }> {
+  return patch(`/settings/states/${encodeURIComponent(name)}`, updates);
+}
+
 export function reorderStates(names: string[]): Promise<unknown> {
   return fetch(`${BASE}/settings/states/order`, {
     method: "PUT",

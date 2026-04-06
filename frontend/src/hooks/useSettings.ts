@@ -29,6 +29,7 @@ import {
   fetchUrlAllowlist,
   fetchUsers,
   reorderStates,
+  updateState,
   switchBackend,
   switchProfile,
   updateAdvisorFiles,
@@ -175,6 +176,22 @@ export function useDeleteCustomerType() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (name: string) => deleteCustomerType(name),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useUpdateState() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      name,
+      updates,
+    }: {
+      name: string;
+      updates: { label?: string; color?: string; done?: boolean };
+    }) => updateState(name, updates),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["settings"] });
     },
@@ -449,10 +466,22 @@ export function useUpdateUserProfile() {
       bio?: string;
       avatar_seed?: string;
     }) => updateUserProfile(updates),
-    onSuccess: () => {
-      void qc.invalidateQueries({
-        queryKey: ["settings", "user"],
-      });
+    onMutate: async (updates) => {
+      await qc.cancelQueries({ queryKey: ["settings", "user"] });
+      const previous = qc.getQueryData(["settings", "user"]);
+      qc.setQueryData(["settings", "user"], (old: Record<string, unknown>) => ({
+        ...old,
+        ...updates,
+      }));
+      return { previous };
+    },
+    onError: (_err, _updates, context) => {
+      if (context?.previous !== undefined) {
+        qc.setQueryData(["settings", "user"], context.previous);
+      }
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ["settings", "user"] });
     },
   });
 }
