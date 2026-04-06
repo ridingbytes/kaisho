@@ -81,7 +81,7 @@ export function Sidebar({
       className={[
         "flex flex-col shrink-0 border-r border-border-subtle bg-surface-card",
         "transition-[width] duration-200 py-2 gap-0.5",
-        open ? "w-40" : "w-14 overflow-hidden",
+        open ? "w-40" : "w-14",
       ].join(" ")}
     >
       {/* Toggle button */}
