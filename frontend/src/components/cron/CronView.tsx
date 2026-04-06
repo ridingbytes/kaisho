@@ -8,11 +8,12 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
+import { useKbSources } from "../../hooks/useSettings";
 import {
   useAddCronJob,
   useCronHistory,
@@ -36,6 +37,30 @@ const fieldCls =
   "px-2 py-1 rounded text-xs bg-surface-raised border border-border " +
   "text-slate-200 placeholder-slate-600 focus:outline-none " +
   "focus:border-border-strong font-mono";
+
+function OutputSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const { data: sources = [] } = useKbSources();
+  return (
+    <select
+      className={fieldCls}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="inbox">Inbox</option>
+      {sources.map((s) => (
+        <option key={s.label} value={s.label}>
+          KB: {s.label}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 function StatusPill({ status }: { status: CronRun["status"] }) {
   const styles: Record<CronRun["status"], string> = {
@@ -253,11 +278,9 @@ function JobCard({ job }: { job: CronJob }) {
                   <span className="text-[10px] text-slate-600 uppercase tracking-wide">
                     Output
                   </span>
-                  <input
-                    className={fieldCls}
+                  <OutputSelect
                     value={editOutput}
-                    onChange={(e) => setEditOutput(e.target.value)}
-                    placeholder="inbox"
+                    onChange={setEditOutput}
                   />
                 </label>
                 <label className="flex flex-col gap-1">
@@ -447,11 +470,9 @@ function AddJobForm({ onClose }: { onClose: () => void }) {
           <span className="text-[10px] text-slate-600 uppercase tracking-wide">
             Output
           </span>
-          <input
-            className={fieldCls}
+          <OutputSelect
             value={output}
-            onChange={(e) => setOutput(e.target.value)}
-            placeholder="inbox or ~/path/to/file-{date}.md"
+            onChange={setOutput}
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -565,9 +586,8 @@ function HistoryTable({
             const hasOutput = !!run.output;
             const model = jobMap.get(run.job_id)?.model ?? "";
             return (
-              <>
+              <Fragment key={run.id}>
                 <tr
-                  key={run.id}
                   onClick={() =>
                     hasOutput
                       ? setExpandedId(
@@ -655,7 +675,7 @@ function HistoryTable({
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             );
           })}
         </tbody>

@@ -55,17 +55,19 @@ def _render_output_path(output: str) -> str:
 
 
 def write_output(
+    output_dest: str,
     content: str,
     inbox_file: Path,
     job_name: str = "AI Report",
-    model: str = "",
 ) -> None:
-    """Write cron output to the inbox.
+    """Write cron output to inbox or a named KB source.
 
-    All cron outputs go to inbox with channel=cron, direction=in.
-    The output is also preserved in cron_history.json.
+    output_dest: "inbox" or a KB source label (e.g. "research").
+    All outputs also go to inbox with channel=cron.
     """
     from ..services import inbox as inbox_svc
+
+    # Always create an inbox item
     inbox_svc.add_item(
         inbox_file=inbox_file,
         text=job_name,
@@ -74,6 +76,29 @@ def write_output(
         channel="cron",
         direction="in",
     )
+
+    # Optionally also write to a KB source
+    if output_dest and output_dest != "inbox":
+        from ..config import get_config
+        from ..services.settings import (
+            get_kb_sources, load_settings,
+        )
+        from ..services import knowledge as kb_svc
+        cfg = get_config()
+        data = load_settings(cfg.SETTINGS_FILE)
+        sources = get_kb_sources(data, cfg)
+        labels = {s["label"] for s in sources}
+        if output_dest in labels:
+            today = date.today().isoformat()
+            slug = (
+                job_name.lower()
+                .replace(" ", "-")
+                .replace("/", "-")
+            )
+            filename = f"{today}-{slug}.md"
+            kb_svc.write_file(
+                sources, output_dest, filename, content,
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -407,8 +432,8 @@ def execute_job(
             model_name, prompt, ollama_base_url
         )
     write_output(
+        job.get("output", "inbox"),
         output_text, inbox_file,
         job_name=job.get("name", "AI Report"),
-        model=job.get("model", ""),
     )
     return output_text

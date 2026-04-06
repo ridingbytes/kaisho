@@ -147,7 +147,7 @@ export function Sidebar({
           </button>
 
           {menuOpen && (
-            <div className="absolute bottom-full left-0 mb-1 w-44 rounded-lg bg-surface-overlay border border-border shadow-lg p-2 flex flex-col gap-1 z-50">
+            <div className="absolute bottom-full left-full ml-1 mb-0 w-44 rounded-lg bg-surface-overlay border border-border shadow-lg p-2 flex flex-col gap-1 z-50">
               <p className="text-[10px] text-slate-500 px-1 font-semibold">
                 {userData.name || userData.username}
               </p>

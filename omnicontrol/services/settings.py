@@ -99,11 +99,11 @@ def set_github_settings(path: Path, updates: dict) -> dict:
 
 
 def get_kb_sources(settings: dict, cfg=None) -> list[dict]:
-    """Return KB source list with defaults from config.
+    """Return KB source list with defaults.
 
     Each entry: {"label": str, "path": str}.
-    Falls back to WISSEN_DIR/RESEARCH_DIR from config if no
-    custom sources are defined in settings.
+    Default: a "knowledge" folder in the user's data dir,
+    plus WISSEN_DIR/RESEARCH_DIR from config.
     """
     sources = settings.get("kb_sources")
     if sources:
@@ -111,16 +111,27 @@ def get_kb_sources(settings: dict, cfg=None) -> list[dict]:
     if cfg is None:
         from ..config import get_config
         cfg = get_config()
-    return [
+    # Default KB in user's data dir (shared across profiles)
+    user_kb = cfg.USER_DIR / "knowledge"
+    user_kb.mkdir(parents=True, exist_ok=True)
+    defaults = [
         {
-            "label": "wissen",
-            "path": str(cfg.WISSEN_DIR),
-        },
-        {
-            "label": "research",
-            "path": str(cfg.RESEARCH_DIR),
+            "label": "knowledge",
+            "path": str(user_kb),
         },
     ]
+    # Add legacy dirs if they exist
+    for label, path_attr in [
+        ("wissen", cfg.WISSEN_DIR),
+        ("research", cfg.RESEARCH_DIR),
+    ]:
+        p = path_attr.expanduser()
+        if p.is_dir():
+            defaults.append({
+                "label": label,
+                "path": str(p),
+            })
+    return defaults
 
 
 def set_kb_sources(path: Path, sources: list[dict]) -> list[dict]:
