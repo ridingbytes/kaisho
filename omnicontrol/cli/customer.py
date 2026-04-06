@@ -10,12 +10,12 @@ from . import open_in_editor
 def _format_customer(customer: dict) -> str:
     """Format a customer for display."""
     name = customer["name"].ljust(15)
-    kontingent = customer.get("kontingent", 0)
+    budget = customer.get("budget", 0)
     rest = customer.get("rest", 0)
     status = customer.get("status", "active")
-    if kontingent > 0:
-        percent = round((rest / kontingent) * 100)
-        return f"{name}  {rest:>6.0f}h / {kontingent:>6.0f}h  ({percent}%)"
+    if budget > 0:
+        percent = round((rest / budget) * 100)
+        return f"{name}  {rest:>6.0f}h / {budget:>6.0f}h  ({percent}%)"
     return f"{name}  {status}"
 
 
@@ -57,8 +57,8 @@ def customer_show(name, as_json):
         return
     click.echo(f"Name:       {c['name']}")
     click.echo(f"Status:     {c['status']}")
-    click.echo(f"Kontingent: {c['kontingent']}h")
-    click.echo(f"Verbraucht: {c['verbraucht']}h")
+    click.echo(f"Budget:     {c['budget']}h")
+    click.echo(f"Used:       {c['used']}h")
     click.echo(f"Rest:       {c['rest']}h")
     if c.get("repo"):
         click.echo(f"Repo:       {c['repo']}")
@@ -84,7 +84,7 @@ def customer_summary(as_json):
     for s in summary:
         name = s["name"].ljust(15)
         rest = f"{s['rest']:.0f}h".rjust(8)
-        kontingent = f"{s['kontingent']:.0f}h".rjust(8)
+        kontingent = f"{s['budget']:.0f}h".rjust(8)
         percent = f"{s['percent']}%".rjust(5)
         click.echo(f"{name} {rest} {kontingent} {percent}")
 

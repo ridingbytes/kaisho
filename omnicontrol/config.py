@@ -55,8 +55,8 @@ class Settings(BaseSettings):
 
     @computed_field
     @property
-    def KUNDEN_FILE(self) -> Path:
-        return self.ORG_DIR.expanduser() / "kunden.org"
+    def CUSTOMERS_FILE(self) -> Path:
+        return self.ORG_DIR.expanduser() / "customers.org"
 
     @computed_field
     @property

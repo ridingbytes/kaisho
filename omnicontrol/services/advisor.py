@@ -123,11 +123,11 @@ def _format_inbox(items: list[dict]) -> str:
 def _format_budgets(customers: list[dict]) -> str:
     lines = []
     for c in customers:
-        k = c.get("kontingent", 0)
+        k = c.get("budget", 0)
         if not k:
             continue
         r = c.get("rest", 0)
-        v = c.get("verbraucht", 0)
+        v = c.get("used", 0)
         pct = c.get("percent", 0)
         lines.append(
             f"  {c['name']:<22} {v:.0f}h / {k:.0f}h"

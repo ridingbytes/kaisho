@@ -399,7 +399,7 @@ export function fetchCustomers(
 export function createCustomer(data: {
   name: string;
   status?: string;
-  kontingent?: number;
+  budget?: number;
   repo?: string | null;
 }): Promise<Customer> {
   return post<Customer>("/customers/", data);
@@ -410,7 +410,7 @@ export function updateCustomer(
   updates: Partial<
     Pick<
       Customer,
-      "name" | "status" | "kontingent" | "verbraucht" | "rest" | "repo"
+      "name" | "status" | "budget" | "used" | "rest" | "repo"
     >
   >
 ): Promise<Customer> {
@@ -432,7 +432,7 @@ export function addContract(
   customerName: string,
   data: {
     name: string;
-    kontingent: number;
+    budget: number;
     start_date: string;
     notes?: string;
   },
@@ -448,8 +448,8 @@ export function updateContract(
   contractName: string,
   updates: {
     name?: string;
-    kontingent?: number;
-    verbraucht_offset?: number;
+    budget?: number;
+    used_offset?: number;
     start_date?: string;
     end_date?: string | null;
     notes?: string;

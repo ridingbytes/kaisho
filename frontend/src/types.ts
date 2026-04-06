@@ -49,12 +49,12 @@ export interface AiSettings {
 export interface Contract {
   customer: string;
   name: string;
-  kontingent: number;
+  budget: number;
   start_date: string;
   end_date: string | null;
   notes: string;
-  verbraucht_offset: number;
-  verbraucht: number;
+  used_offset: number;
+  used: number;
   rest: number;
 }
 
@@ -95,8 +95,8 @@ export interface Customer {
   status: string;
   type: string;
   tags: string[];
-  kontingent: number;
-  verbraucht: number;
+  budget: number;
+  used: number;
   rest: number;
   repo: string | null;
   contracts: Contract[];
@@ -105,7 +105,7 @@ export interface Customer {
 
 export interface BudgetSummary {
   name: string;
-  kontingent: number;
+  budget: number;
   rest: number;
   percent: number;
 }

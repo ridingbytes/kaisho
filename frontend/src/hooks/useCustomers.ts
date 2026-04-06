@@ -22,7 +22,7 @@ export function useCreateCustomer() {
       name: string;
       status?: string;
       type?: string;
-      kontingent?: number;
+      budget?: number;
       repo?: string | null;
       tags?: string[];
     }) => createCustomer(data),
@@ -47,13 +47,13 @@ export function useUpdateCustomer() {
           | "name"
           | "status"
           | "type"
-          | "kontingent"
-          | "verbraucht"
+          | "budget"
+          | "used"
           | "rest"
           | "repo"
           | "tags"
         >
-      > & { verbraucht_offset?: number };
+      > & { used_offset?: number };
     }) => updateCustomer(name, updates),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customers"] });

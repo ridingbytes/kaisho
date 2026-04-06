@@ -22,7 +22,7 @@ def mock_config(tmp_path):
     org.mkdir()
     (org / "todos.org").write_text("", encoding="utf-8")
     (org / "clocks.org").write_text("", encoding="utf-8")
-    (org / "kunden.org").write_text("", encoding="utf-8")
+    (org / "customers.org").write_text("", encoding="utf-8")
     (org / "inbox.org").write_text("", encoding="utf-8")
     (org / "archive.org").write_text("", encoding="utf-8")
 
@@ -31,7 +31,7 @@ def mock_config(tmp_path):
         JOBS_FILE = jobs
         TODOS_FILE = org / "todos.org"
         CLOCKS_FILE = org / "clocks.org"
-        KUNDEN_FILE = org / "kunden.org"
+        CUSTOMERS_FILE = org / "customers.org"
         INBOX_FILE = org / "inbox.org"
         ARCHIVE_FILE = org / "archive.org"
         WISSEN_DIR = tmp_path / "wissen"

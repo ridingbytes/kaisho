@@ -24,18 +24,18 @@ def _extract_hours(value: str) -> float:
 def _heading_to_contract(heading: "Heading", customer_name: str) -> dict:
     """Convert a CONTRACT-keyword heading to a contract dict."""
     props = heading.properties
-    kontingent = _extract_hours(props.get("KONTINGENT", "0"))
-    verbraucht_offset = _extract_hours(props.get("VERBRAUCHT", "0"))
+    budget = _extract_hours(props.get("KONTINGENT", "0"))
+    used_offset = _extract_hours(props.get("VERBRAUCHT", "0"))
     return {
         "customer": customer_name,
         "name": heading.title.strip(),
-        "kontingent": kontingent,
+        "budget": budget,
         "start_date": props.get("START", ""),
         "end_date": props.get("END_DATE") or None,
         "notes": "\n".join(heading.body).strip(),
-        "verbraucht_offset": verbraucht_offset,
-        "verbraucht": 0.0,
-        "rest": kontingent,
+        "used_offset": used_offset,
+        "used": 0.0,
+        "rest": budget,
     }
 
 
@@ -51,21 +51,21 @@ def _heading_to_customer(heading: Heading) -> dict:
         active = next(
             (c for c in contracts if not c["end_date"]), None
         )
-        kontingent = active["kontingent"] if active else 0.0
-        verbraucht = active["verbraucht_offset"] if active else 0.0
-        rest = kontingent - verbraucht
+        budget = active["budget"] if active else 0.0
+        used = active["used_offset"] if active else 0.0
+        rest = budget - used
     else:
-        kontingent = _extract_hours(props.get("KONTINGENT", "0"))
-        verbraucht = _extract_hours(props.get("VERBRAUCHT", "0"))
-        rest = kontingent - verbraucht
+        budget = _extract_hours(props.get("KONTINGENT", "0"))
+        used = _extract_hours(props.get("VERBRAUCHT", "0"))
+        rest = budget - used
 
     return {
         "name": name,
         "status": props.get("STATUS", "active"),
         "type": props.get("TYPE", ""),
         "tags": list(heading.tags),
-        "kontingent": kontingent,
-        "verbraucht": verbraucht,
+        "budget": budget,
+        "used": used,
         "rest": rest,
         "repo": props.get("REPO", None),
         "contracts": contracts,
@@ -107,11 +107,11 @@ def _clock_hours_for_customer(
 
 
 def _enrich_customer(customer: dict, clocks_file: Path) -> dict:
-    """Add clock-derived hours to a customer's verbraucht and rest."""
+    """Add clock-derived hours to a customer's used and rest."""
     clock_h = _clock_hours_for_customer(clocks_file, customer["name"])
-    verbraucht = round(customer["verbraucht"] + clock_h, 2)
-    rest = round(customer["kontingent"] - verbraucht, 2)
-    return {**customer, "verbraucht": verbraucht, "rest": rest}
+    used = round(customer["used"] + clock_h, 2)
+    rest = round(customer["budget"] - used, 2)
+    return {**customer, "used": used, "rest": rest}
 
 
 def list_customers(
@@ -119,7 +119,7 @@ def list_customers(
     clocks_file: Path,
     include_inactive: bool = False,
 ) -> list[dict]:
-    """List customers from kunden.org, enriched with clock hours."""
+    """List customers from customers file, enriched with clock hours."""
     if not kunden_file.exists():
         return []
     org_file = parse_org_file(kunden_file, CUSTOMER_KEYWORDS)
@@ -149,8 +149,8 @@ def get_customer(
 _PROP_MAP = {
     "status": "STATUS",
     "type": "TYPE",
-    "kontingent": "KONTINGENT",
-    "verbraucht_offset": "VERBRAUCHT",
+    "budget": "KONTINGENT",
+    "used_offset": "VERBRAUCHT",
     "repo": "REPO",
 }
 
@@ -160,11 +160,11 @@ def add_customer(
     name: str,
     status: str = "active",
     customer_type: str = "",
-    kontingent: float = 0,
+    budget: float = 0,
     repo: str | None = None,
     tags: list[str] | None = None,
 ) -> dict:
-    """Add a new customer heading to kunden.org.
+    """Add a new customer heading to customers file.
 
     Appends under the first level-1 group heading, or creates one
     called 'Kunden' if the file is empty.
@@ -180,8 +180,8 @@ def add_customer(
     props: dict[str, str] = {"STATUS": status}
     if customer_type:
         props["TYPE"] = customer_type
-    if kontingent:
-        props["KONTINGENT"] = f"{kontingent}h"
+    if budget:
+        props["KONTINGENT"] = f"{budget}h"
     if repo:
         props["REPO"] = repo
 
@@ -212,7 +212,7 @@ def update_customer(
 ) -> dict | None:
     """Update a customer's fields and persist to disk.
 
-    Supported keys in *updates*: name, status, kontingent, repo.
+    Supported keys in *updates*: name, status, budget, repo.
     Returns the updated customer dict, or None if not found.
     """
     org_file = parse_org_file(kunden_file, CUSTOMER_KEYWORDS)
@@ -229,7 +229,7 @@ def update_customer(
                 if field not in updates:
                     continue
                 val = updates[field]
-                if field in ("kontingent", "verbraucht_offset"):
+                if field in ("budget", "used_offset"):
                     h2.properties[prop] = f"{val}h"
                 elif val:
                     h2.properties[prop] = str(val)
@@ -250,15 +250,15 @@ def get_budget_summary(
     )
     summaries = []
     for customer in customers:
-        kontingent = customer["kontingent"]
+        budget = customer["budget"]
         rest = customer["rest"]
-        if kontingent > 0:
-            percent = round((rest / kontingent) * 100)
+        if budget > 0:
+            percent = round((rest / budget) * 100)
         else:
             percent = 0
         summaries.append({
             "name": customer["name"],
-            "kontingent": kontingent,
+            "budget": budget,
             "rest": rest,
             "percent": percent,
         })
@@ -301,12 +301,12 @@ def list_contracts(
     enriched = []
     for contract in contracts:
         clock_h = hours_map.get(contract["name"], 0.0)
-        verbraucht = round(
-            contract["verbraucht_offset"] + clock_h, 2
+        used = round(
+            contract["used_offset"] + clock_h, 2
         )
-        rest = round(contract["kontingent"] - verbraucht, 2)
+        rest = round(contract["budget"] - used, 2)
         enriched.append(
-            {**contract, "verbraucht": verbraucht, "rest": rest}
+            {**contract, "used": used, "rest": rest}
         )
     return enriched
 
@@ -315,7 +315,7 @@ def add_contract(
     kunden_file: Path,
     customer_name: str,
     name: str,
-    kontingent: float,
+    budget: float,
     start_date: str,
     notes: str = "",
 ) -> dict:
@@ -332,7 +332,7 @@ def add_contract(
     if name.lower() in existing:
         raise ValueError(f"Contract already exists: {name}")
     props: dict[str, str] = {
-        "KONTINGENT": f"{kontingent}h",
+        "KONTINGENT": f"{budget}h",
         "START": start_date,
     }
     new_contract = Heading(
@@ -356,7 +356,7 @@ def update_contract(
     updates: dict,
 ) -> dict | None:
     """Update fields of a contract. Supported keys:
-    name, kontingent, start_date, end_date, notes.
+    name, budget, start_date, end_date, notes.
     """
     result = _find_customer_heading(kunden_file, customer_name)
     if result is None:
@@ -370,8 +370,8 @@ def update_contract(
             continue
         if "name" in updates:
             child.title = updates["name"]
-        if "kontingent" in updates:
-            child.properties["KONTINGENT"] = f"{updates['kontingent']}h"
+        if "budget" in updates:
+            child.properties["KONTINGENT"] = f"{updates['budget']}h"
         if "start_date" in updates:
             child.properties["START"] = updates["start_date"]
         if "end_date" in updates:
@@ -379,9 +379,9 @@ def update_contract(
                 child.properties["END_DATE"] = updates["end_date"]
             else:
                 child.properties.pop("END_DATE", None)
-        if "verbraucht_offset" in updates:
+        if "used_offset" in updates:
             child.properties["VERBRAUCHT"] = (
-                f"{updates['verbraucht_offset']}h"
+                f"{updates['used_offset']}h"
             )
         if "notes" in updates:
             child.body = (

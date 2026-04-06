@@ -280,7 +280,7 @@ class CustomerBackend(ABC):
     ) -> list[dict]:
         """Return customers.
 
-        Each dict: name, status, kontingent, verbraucht, rest,
+        Each dict: name, status, budget, used, rest,
                    repo, properties
         """
 
@@ -292,7 +292,7 @@ class CustomerBackend(ABC):
     def get_budget_summary(self) -> list[dict]:
         """Return budget summary for active customers.
 
-        Each dict: {"name": str, "kontingent": float,
+        Each dict: {"name": str, "budget": float,
                     "rest": float, "percent": int}
         """
 
@@ -302,7 +302,7 @@ class CustomerBackend(ABC):
         name: str,
         status: str = "active",
         customer_type: str = "",
-        kontingent: float = 0,
+        budget: float = 0,
         repo: str | None = None,
         tags: list[str] | None = None,
     ) -> dict:
@@ -314,7 +314,7 @@ class CustomerBackend(ABC):
     ) -> dict | None:
         """Update a customer's fields.
 
-        Supported keys: name, status, kontingent, repo.
+        Supported keys: name, status, budget, repo.
         Returns the updated customer dict, or None if not found.
         """
 
@@ -327,7 +327,7 @@ class CustomerBackend(ABC):
         self,
         name: str,
         contract_name: str,
-        kontingent: float,
+        budget: float,
         start_date: str,
         notes: str = "",
     ) -> dict:

@@ -1211,15 +1211,15 @@ def _section_to_customer(sec: dict) -> dict:
             cmeta = csec.get("meta", {})
             contracts.append({
                 "name": csec["heading"],
-                "kontingent": cmeta.get(
-                    "kontingent", 0
+                "budget": cmeta.get(
+                    "budget", 0
                 ),
                 "start_date": cmeta.get(
                     "start_date", ""
                 ),
                 "end_date": cmeta.get("end_date", ""),
-                "verbraucht_offset": cmeta.get(
-                    "verbraucht_offset", 0
+                "used_offset": cmeta.get(
+                    "used_offset", 0
                 ),
                 "notes": csec.get("body", ""),
             })
@@ -1227,9 +1227,9 @@ def _section_to_customer(sec: dict) -> dict:
         "name": sec["heading"],
         "status": meta.get("status", "active"),
         "type": meta.get("type", ""),
-        "kontingent": meta.get("kontingent", 0),
-        "verbraucht_offset": meta.get(
-            "verbraucht_offset", 0
+        "budget": meta.get("budget", 0),
+        "used_offset": meta.get(
+            "used_offset", 0
         ),
         "repo": meta.get("repo", ""),
         "tags": meta.get("tags", []),
@@ -1243,9 +1243,9 @@ def _customer_to_section(cust: dict) -> dict:
     meta = {
         "status": cust.get("status", "active"),
         "type": cust.get("type", ""),
-        "kontingent": cust.get("kontingent", 0),
-        "verbraucht_offset": cust.get(
-            "verbraucht_offset", 0
+        "budget": cust.get("budget", 0),
+        "used_offset": cust.get(
+            "used_offset", 0
         ),
         "repo": cust.get("repo", ""),
         "tags": cust.get("tags", []),
@@ -1257,11 +1257,11 @@ def _customer_to_section(cust: dict) -> dict:
     contract_parts = []
     for con in cust.get("contracts", []):
         cmeta = {
-            "kontingent": con.get("kontingent", 0),
+            "budget": con.get("budget", 0),
             "start_date": con.get("start_date", ""),
             "end_date": con.get("end_date", ""),
-            "verbraucht_offset": con.get(
-                "verbraucht_offset", 0
+            "used_offset": con.get(
+                "used_offset", 0
             ),
         }
         lines = [f"### {con['name']}"]
@@ -1366,23 +1366,23 @@ class MarkdownCustomerBackend(CustomerBackend):
         return round(total_min / 60, 2)
 
     def _enrich_customer(self, cust: dict) -> dict:
-        verbraucht = self._used_hours(cust["name"])
-        kontingent = cust.get("kontingent", 0)
-        cust["verbraucht"] = verbraucht
+        hours = self._used_hours(cust["name"])
+        budget = cust.get("budget", 0)
+        cust["used"] = hours
         cust["rest"] = round(
-            kontingent - verbraucht, 2
+            budget - hours, 2
         )
         return cust
 
     def _enrich_contract(
         self, cust_name: str, con: dict
     ) -> dict:
-        used = self._contract_used_hours(
+        hours = self._contract_used_hours(
             cust_name, con["name"]
         )
-        kontingent = con.get("kontingent", 0)
-        con["verbraucht"] = used
-        con["rest"] = round(kontingent - used, 2)
+        budget = con.get("budget", 0)
+        con["used"] = hours
+        con["rest"] = round(budget - hours, 2)
         return con
 
     # -- queries -------------------------------------------------
@@ -1414,16 +1414,16 @@ class MarkdownCustomerBackend(CustomerBackend):
         )
         result = []
         for c in custs:
-            kontingent = c.get("kontingent", 0)
+            budget = c.get("budget", 0)
             rest = c.get("rest", 0)
             percent = (
-                int((rest / kontingent) * 100)
-                if kontingent
+                int((rest / budget) * 100)
+                if budget
                 else 0
             )
             result.append({
                 "name": c["name"],
-                "kontingent": kontingent,
+                "budget": budget,
                 "rest": rest,
                 "percent": percent,
             })
@@ -1436,7 +1436,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         name,
         status="active",
         customer_type="",
-        kontingent=0,
+        budget=0,
         repo=None,
         tags=None,
     ) -> dict:
@@ -1451,10 +1451,10 @@ class MarkdownCustomerBackend(CustomerBackend):
             "status": status,
             "type": customer_type,
             "tags": tags or [],
-            "kontingent": kontingent,
+            "budget": budget,
             "repo": repo or "",
-            "verbraucht": 0,
-            "rest": kontingent,
+            "used": 0,
+            "rest": budget,
             "properties": {},
             "contracts": [],
         }
@@ -1471,7 +1471,7 @@ class MarkdownCustomerBackend(CustomerBackend):
             if c.get("name", "").lower() == low:
                 for key in (
                     "name", "status",
-                    "kontingent", "repo",
+                    "budget", "repo",
                 ):
                     if key in updates:
                         c[key] = updates[key]
@@ -1499,7 +1499,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         self,
         name,
         contract_name,
-        kontingent,
+        budget,
         start_date,
         notes="",
     ) -> dict:
@@ -1517,7 +1517,7 @@ class MarkdownCustomerBackend(CustomerBackend):
                     )
             contract = {
                 "name": contract_name,
-                "kontingent": kontingent,
+                "budget": budget,
                 "start_date": start_date,
                 "end_date": "",
                 "notes": notes,
@@ -1542,7 +1542,7 @@ class MarkdownCustomerBackend(CustomerBackend):
             for con in c.get("contracts", []):
                 if con["name"] == contract_name:
                     for key in (
-                        "name", "kontingent",
+                        "name", "budget",
                         "start_date", "end_date",
                         "notes",
                     ):

@@ -10,7 +10,7 @@ class CustomerCreate(BaseModel):
     name: str
     status: str = "active"
     type: str = ""
-    kontingent: float = 0
+    budget: float = 0
     repo: str | None = None
     tags: list[str] = []
 
@@ -22,7 +22,7 @@ def create_customer(body: CustomerCreate):
             name=body.name,
             status=body.status,
             customer_type=body.type,
-            kontingent=body.kontingent,
+            budget=body.budget,
             repo=body.repo,
             tags=body.tags,
         )
@@ -62,18 +62,18 @@ def update_customer(
 
 class ContractCreate(BaseModel):
     name: str
-    kontingent: float
+    budget: float
     start_date: str
     notes: str = ""
 
 
 class ContractUpdate(BaseModel):
     name: str | None = None
-    kontingent: float | None = None
+    budget: float | None = None
     start_date: str | None = None
     end_date: str | None = None
     notes: str | None = None
-    verbraucht_offset: float | None = None
+    used_offset: float | None = None
 
 
 @router.get("/{name}/contracts")
@@ -90,7 +90,7 @@ def list_contracts(name: str):
 def add_contract(name: str, body: ContractCreate):
     try:
         return get_backend().customers.add_contract(
-            name, body.name, body.kontingent,
+            name, body.name, body.budget,
             body.start_date, body.notes,
         )
     except ValueError as e:

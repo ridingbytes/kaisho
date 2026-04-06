@@ -11,7 +11,7 @@ _expected_writes: set[str] = set()
 _STEM_TO_RESOURCE: dict[str, str] = {
     "todos": "kanban",
     "clocks": "clocks",
-    "kunden": "customers",
+    "customers": "customers",
     "inbox": "inbox",
     "comms": "communications",
 }

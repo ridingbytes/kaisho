@@ -28,7 +28,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
       {
         name: name.trim(),
         type: type || undefined,
-        kontingent: kontingent ? parseFloat(kontingent) : 0,
+        budget: kontingent ? parseFloat(kontingent) : 0,
         repo: repo.trim() || null,
       },
       { onSuccess: onClose }
@@ -134,7 +134,7 @@ function sortAndFilter(
     : customers;
   return [...filtered].sort((a, b) => {
     if (sortBy === "name") return a.name.localeCompare(b.name);
-    return (b.kontingent ?? 0) - (a.kontingent ?? 0);
+    return (b.budget ?? 0) - (a.budget ?? 0);
   });
 }
 

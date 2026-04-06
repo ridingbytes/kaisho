@@ -18,7 +18,7 @@ def org_dir(tmp_path):
     d.mkdir()
     (d / "todos.org").write_text("", encoding="utf-8")
     (d / "clocks.org").write_text("", encoding="utf-8")
-    (d / "kunden.org").write_text("", encoding="utf-8")
+    (d / "customers.org").write_text("", encoding="utf-8")
     (d / "inbox.org").write_text("", encoding="utf-8")
     (d / "archive.org").write_text("", encoding="utf-8")
     return d

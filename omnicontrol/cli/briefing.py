@@ -59,7 +59,7 @@ def _print_budget_status(backend) -> None:
     for s in summary:
         name = s["name"].ljust(20)
         rest = s.get("rest", 0)
-        kontingent = s.get("kontingent", 0)
+        kontingent = s.get("budget", 0)
         percent = s.get("percent", 0)
         if kontingent > 0:
             warning = "  (!)" if percent < 10 else ""

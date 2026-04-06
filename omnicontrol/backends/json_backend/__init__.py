@@ -683,22 +683,22 @@ class JsonCustomerBackend(CustomerBackend):
 
     def _enrich_customer(self, cust: dict) -> dict:
         """Add computed budget fields."""
-        verbraucht = self._used_hours(cust["name"])
-        kontingent = cust.get("kontingent", 0)
-        cust["verbraucht"] = verbraucht
-        cust["rest"] = round(kontingent - verbraucht, 2)
+        hours = self._used_hours(cust["name"])
+        budget = cust.get("budget", 0)
+        cust["used"] = hours
+        cust["rest"] = round(budget - hours, 2)
         return cust
 
     def _enrich_contract(
         self, cust_name: str, con: dict
     ) -> dict:
         """Add computed budget fields to a contract."""
-        used = self._contract_used_hours(
+        hours = self._contract_used_hours(
             cust_name, con["name"]
         )
-        kontingent = con.get("kontingent", 0)
-        con["verbraucht"] = used
-        con["rest"] = round(kontingent - used, 2)
+        budget = con.get("budget", 0)
+        con["used"] = hours
+        con["rest"] = round(budget - hours, 2)
         return con
 
     # -- queries -------------------------------------------------
@@ -726,16 +726,16 @@ class JsonCustomerBackend(CustomerBackend):
         custs = self.list_customers(include_inactive=False)
         result = []
         for c in custs:
-            kontingent = c.get("kontingent", 0)
+            budget = c.get("budget", 0)
             rest = c.get("rest", 0)
             percent = (
-                int((rest / kontingent) * 100)
-                if kontingent
+                int((rest / budget) * 100)
+                if budget
                 else 0
             )
             result.append({
                 "name": c["name"],
-                "kontingent": kontingent,
+                "budget": budget,
                 "rest": rest,
                 "percent": percent,
             })
@@ -748,7 +748,7 @@ class JsonCustomerBackend(CustomerBackend):
         name,
         status="active",
         customer_type="",
-        kontingent=0,
+        budget=0,
         repo=None,
         tags=None,
     ) -> dict:
@@ -763,10 +763,10 @@ class JsonCustomerBackend(CustomerBackend):
             "status": status,
             "type": customer_type,
             "tags": tags or [],
-            "kontingent": kontingent,
+            "budget": budget,
             "repo": repo or "",
-            "verbraucht": 0,
-            "rest": kontingent,
+            "used": 0,
+            "rest": budget,
             "properties": {},
             "contracts": [],
         }
@@ -782,7 +782,7 @@ class JsonCustomerBackend(CustomerBackend):
         for c in custs:
             if c.get("name", "").lower() == low:
                 for key in (
-                    "name", "status", "kontingent", "repo"
+                    "name", "status", "budget", "repo"
                 ):
                     if key in updates:
                         c[key] = updates[key]
@@ -812,7 +812,7 @@ class JsonCustomerBackend(CustomerBackend):
         self,
         name,
         contract_name,
-        kontingent,
+        budget,
         start_date,
         notes="",
     ) -> dict:
@@ -830,7 +830,7 @@ class JsonCustomerBackend(CustomerBackend):
                     )
             contract = {
                 "name": contract_name,
-                "kontingent": kontingent,
+                "budget": budget,
                 "start_date": start_date,
                 "end_date": "",
                 "notes": notes,
@@ -853,7 +853,7 @@ class JsonCustomerBackend(CustomerBackend):
             for con in c.get("contracts", []):
                 if con["name"] == contract_name:
                     for key in (
-                        "name", "kontingent",
+                        "name", "budget",
                         "start_date", "end_date",
                         "notes",
                     ):

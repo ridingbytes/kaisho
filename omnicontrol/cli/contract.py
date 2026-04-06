@@ -9,15 +9,15 @@ from ..backends import get_backend
 
 def _format_contract(contract: dict) -> str:
     name = contract["name"].ljust(20)
-    kontingent = contract["kontingent"]
-    verbraucht = contract.get("verbraucht", 0.0)
-    rest = contract.get("rest", kontingent)
+    budget = contract["budget"]
+    used = contract.get("used", 0.0)
+    rest = contract.get("rest", budget)
     start = contract.get("start_date", "")
     end = contract.get("end_date") or "active"
-    if kontingent > 0:
-        pct = round((verbraucht / kontingent) * 100)
+    if budget > 0:
+        pct = round((used / budget) * 100)
         return (
-            f"{name}  {verbraucht:>6.1f}h / {kontingent:>6.0f}h"
+            f"{name}  {used:>6.1f}h / {budget:>6.0f}h"
             f"  ({pct}%)  {start} -> {end}"
         )
     return f"{name}  {start} -> {end}"
@@ -68,7 +68,7 @@ def contract_add(customer, name, hours, start, notes):
         sys.exit(1)
     click.echo(
         f"Added contract '{contract['name']}' to {customer} "
-        f"({contract['kontingent']:.0f}h, from {contract['start_date']})"
+        f"({contract['budget']:.0f}h, from {contract['start_date']})"
     )
 
 
@@ -105,7 +105,7 @@ def contract_edit(customer, name, rename, hours, start, end, notes):
     if rename is not None:
         updates["name"] = rename
     if hours is not None:
-        updates["kontingent"] = hours
+        updates["budget"] = hours
     if start is not None:
         updates["start_date"] = start
     if end is not None:
@@ -164,8 +164,8 @@ def contract_show(customer, name, as_json):
     status = "CLOSED" if contract["end_date"] else "ACTIVE"
     click.echo(f"Name:       {contract['name']}  [{status}]")
     click.echo(f"Customer:   {contract['customer']}")
-    click.echo(f"Budget:     {contract['kontingent']:.0f}h")
-    click.echo(f"Verbraucht: {contract['verbraucht']:.1f}h")
+    click.echo(f"Budget:     {contract['budget']:.0f}h")
+    click.echo(f"Used:       {contract['used']:.1f}h")
     click.echo(f"Rest:       {contract['rest']:.1f}h")
     click.echo(f"Start:      {contract['start_date']}")
     if contract["end_date"]:

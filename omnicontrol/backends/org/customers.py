@@ -42,7 +42,7 @@ class OrgCustomerBackend(CustomerBackend):
         name: str,
         status: str = "active",
         customer_type: str = "",
-        kontingent: float = 0,
+        budget: float = 0,
         repo: str | None = None,
         tags: list[str] | None = None,
     ) -> dict:
@@ -51,7 +51,7 @@ class OrgCustomerBackend(CustomerBackend):
             name=name,
             status=status,
             customer_type=customer_type,
-            kontingent=kontingent,
+            budget=budget,
             repo=repo,
             tags=tags,
         )
@@ -74,13 +74,13 @@ class OrgCustomerBackend(CustomerBackend):
         self,
         name: str,
         contract_name: str,
-        kontingent: float,
+        budget: float,
         start_date: str,
         notes: str = "",
     ) -> dict:
         return customers.add_contract(
             self._kunden_file, name, contract_name,
-            kontingent, start_date, notes,
+            budget, start_date, notes,
         )
 
     def update_contract(

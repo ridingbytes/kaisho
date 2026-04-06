@@ -412,7 +412,7 @@ function BudgetRow({
               "text-xs text-slate-500 tabular-nums"
             }
           >
-            {b.rest}h / {b.kontingent}h
+            {b.rest}h / {b.budget}h
           </span>
           <span
             className={
@@ -600,7 +600,7 @@ export function DashboardView() {
               Budget Status
             </h2>
             {data.budgets
-              .filter((b) => b.kontingent > 0)
+              .filter((b) => b.budget > 0)
               .map((b) => (
                 <BudgetRow
                   key={b.name}

@@ -26,7 +26,7 @@ export function useAddContract() {
       customerName: string;
       data: {
         name: string;
-        kontingent: number;
+        budget: number;
         start_date: string;
         notes?: string;
       };
@@ -52,8 +52,8 @@ export function useUpdateContract() {
       contractName: string;
       updates: {
         name?: string;
-        kontingent?: number;
-        verbraucht_offset?: number;
+        budget?: number;
+        used_offset?: number;
         start_date?: string;
         end_date?: string | null;
         notes?: string;

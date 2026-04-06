@@ -48,8 +48,8 @@ interface EditState {
   name: string;
   status: string;
   type: string;
-  kontingent: string;
-  verbraucht_offset: string;
+  budget: string;
+  used_offset: string;
   repo: string;
 }
 
@@ -60,8 +60,8 @@ function toEditState(c: Customer): EditState {
     name: c.name,
     status: c.status,
     type: c.type ?? "",
-    kontingent: String(c.kontingent),
-    verbraucht_offset: m ? m[1] : "0",
+    budget: String(c.budget),
+    used_offset: m ? m[1] : "0",
     repo: c.repo ?? "",
   };
 }
@@ -94,9 +94,9 @@ interface ContractRowProps {
 function ContractRow({ contract, customerName }: ContractRowProps) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(contract.name);
-  const [hours, setHours] = useState(String(contract.kontingent));
+  const [hours, setHours] = useState(String(contract.budget));
   const [offset, setOffset] = useState(
-    String(contract.verbraucht_offset ?? 0)
+    String(contract.used_offset ?? 0)
   );
   const [startDate, setStartDate] = useState(contract.start_date);
   const [endDate, setEndDate] = useState(contract.end_date ?? "");
@@ -106,9 +106,9 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
 
   const isActive = !contract.end_date;
   const pct =
-    contract.kontingent > 0
+    contract.budget > 0
       ? Math.min(
-          Math.round((contract.verbraucht / contract.kontingent) * 100),
+          Math.round((contract.used / contract.budget) * 100),
           100
         )
       : 0;
@@ -116,8 +116,8 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
 
   function startEdit() {
     setName(contract.name);
-    setHours(String(contract.kontingent));
-    setOffset(String(contract.verbraucht_offset ?? 0));
+    setHours(String(contract.budget));
+    setOffset(String(contract.used_offset ?? 0));
     setStartDate(contract.start_date);
     setEndDate(contract.end_date ?? "");
     setNotes(contract.notes);
@@ -134,8 +134,8 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
         contractName: contract.name,
         updates: {
           name: name.trim(),
-          kontingent: h,
-          verbraucht_offset: o,
+          budget: h,
+          used_offset: o,
           start_date: startDate,
           end_date: endDate || null,
           notes,
@@ -186,7 +186,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             onChange={(e) => setOffset(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Offset h"
-            title="Verbraucht offset (hours)"
+            title="Used offset (hours)"
             className="w-20 shrink-0 px-2 py-1 rounded-md text-xs tabular-nums bg-surface-overlay border border-border text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent"
           />
         </div>
@@ -248,8 +248,8 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
       {/* Row 2: hours + badge + actions */}
       <div className="flex items-center gap-1 mb-1">
         <span className="text-[10px] text-slate-500 tabular-nums">
-          {contract.verbraucht.toFixed(1)}h /{" "}
-          {contract.kontingent.toFixed(0)}h
+          {contract.used.toFixed(1)}h /{" "}
+          {contract.budget.toFixed(0)}h
         </span>
         {!isActive && (
           <span className="text-[9px] px-1 py-0.5 rounded bg-surface-overlay text-slate-600">
@@ -279,7 +279,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
           </button>
         </div>
       </div>
-      {contract.kontingent > 0 && (
+      {contract.budget > 0 && (
         <div className="h-1 rounded-full bg-surface-overlay overflow-hidden">
           <div
             className="h-full rounded-full transition-all"
@@ -316,7 +316,7 @@ function AddContractForm({
     addContract.mutate(
       {
         customerName,
-        data: { name: name.trim(), kontingent: h, start_date: startDate },
+        data: { name: name.trim(), budget: h, start_date: startDate },
       },
       { onSuccess: onDone }
     );
@@ -800,10 +800,10 @@ export function CustomerCard({ customer: c }: Props) {
     c.contracts.find((ct) => ct.end_date === null)?.name ?? "";
 
   const hasContracts = (c.contracts ?? []).length > 0;
-  const hasContingent = !hasContracts && c.kontingent > 0;
+  const hasContingent = !hasContracts && c.budget > 0;
   const usedPercent = hasContingent
     ? Math.min(
-        Math.round(((c.kontingent - c.rest) / c.kontingent) * 100),
+        Math.round(((c.budget - c.rest) / c.budget) * 100),
         100
       )
     : 0;
@@ -822,12 +822,12 @@ export function CustomerCard({ customer: c }: Props) {
       name: form.name.trim() || c.name,
       status: form.status,
       type: form.type,
-      kontingent: parseFloat(form.kontingent) || 0,
+      budget: parseFloat(form.budget) || 0,
       repo: form.repo.trim() || null,
     };
     if (!hasContracts) {
-      updates.verbraucht_offset =
-        parseFloat(form.verbraucht_offset) || 0;
+      updates.used_offset =
+        parseFloat(form.used_offset) || 0;
     }
     update.mutate(
       { name: c.name, updates },
@@ -900,8 +900,8 @@ export function CustomerCard({ customer: c }: Props) {
                   min="0"
                   step="0.5"
                   className={fieldClass("tabular-nums")}
-                  value={form.kontingent}
-                  onChange={set("kontingent")}
+                  value={form.budget}
+                  onChange={set("budget")}
                 />
               </label>
               <label className="flex flex-col gap-0.5 flex-1">
@@ -913,8 +913,8 @@ export function CustomerCard({ customer: c }: Props) {
                   min="0"
                   step="0.5"
                   className={fieldClass("tabular-nums")}
-                  value={form.verbraucht_offset}
-                  onChange={set("verbraucht_offset")}
+                  value={form.used_offset}
+                  onChange={set("used_offset")}
                 />
               </label>
             </div>
@@ -1006,7 +1006,7 @@ export function CustomerCard({ customer: c }: Props) {
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500">
-                  {c.verbraucht}h used · {c.rest}h left
+                  {c.used}h used · {c.rest}h left
                 </span>
                 <span
                   className="font-semibold tabular-nums"
