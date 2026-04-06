@@ -14,6 +14,8 @@ from collections import Counter
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+from ...time_utils import local_now_naive as _local_now
+
 from ..base import (
     ClockBackend,
     CustomerBackend,
@@ -314,7 +316,7 @@ class JsonClockBackend(ClockBackend):
         start = datetime.fromisoformat(entry["start"])
         end_str = entry.get("end")
         if not end_str:
-            end = datetime.now()
+            end = _local_now()
         else:
             end = datetime.fromisoformat(end_str)
         return max(
@@ -412,7 +414,7 @@ class JsonClockBackend(ClockBackend):
         entry = {
             "customer": customer,
             "description": description,
-            "start": datetime.now().isoformat(),
+            "start": _local_now().isoformat(),
             "end": None,
             "task_id": task_id or "",
             "contract": contract or "",
@@ -427,7 +429,7 @@ class JsonClockBackend(ClockBackend):
         entries = _read_json(self._clocks_file)
         for entry in entries:
             if entry.get("end") is None:
-                entry["end"] = datetime.now().isoformat()
+                entry["end"] = _local_now().isoformat()
                 _write_json(self._clocks_file, entries)
                 return self._enrich(entry)
         raise ValueError("No running clock entry")
@@ -449,7 +451,7 @@ class JsonClockBackend(ClockBackend):
             )
             end = start + timedelta(minutes=minutes)
         else:
-            end = datetime.now().replace(
+            end = _local_now().replace(
                 second=0, microsecond=0
             )
             start = end - timedelta(minutes=minutes)

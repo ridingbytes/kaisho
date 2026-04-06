@@ -280,3 +280,193 @@ def issues_for_customers(
             "issues": issues,
         })
     return results
+
+
+# ------------------------------------------------------------------
+# GitHub Projects v2 (GraphQL)
+# ------------------------------------------------------------------
+
+_PROJECTS_QUERY = """
+query($owner: String!, $first: Int!) {
+  repositoryOwner(login: $owner) {
+    ... on Organization {
+      projectsV2(first: $first) {
+        nodes {
+          id title url closed
+          items(first: 50) {
+            nodes {
+              id type
+              content {
+                ... on Issue {
+                  number title state url
+                  labels(first: 10) {
+                    nodes { name color }
+                  }
+                }
+                ... on PullRequest {
+                  number title state url
+                }
+                ... on DraftIssue { title }
+              }
+              fieldValues(first: 20) {
+                nodes {
+                  ... on ProjectV2ItemFieldSingleSelectValue {
+                    name
+                    field {
+                      ... on ProjectV2SingleSelectField { name }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ... on User {
+      projectsV2(first: $first) {
+        nodes {
+          id title url closed
+          items(first: 50) {
+            nodes {
+              id type
+              content {
+                ... on Issue {
+                  number title state url
+                  labels(first: 10) {
+                    nodes { name color }
+                  }
+                }
+                ... on PullRequest {
+                  number title state url
+                }
+                ... on DraftIssue { title }
+              }
+              fieldValues(first: 20) {
+                nodes {
+                  ... on ProjectV2ItemFieldSingleSelectValue {
+                    name
+                    field {
+                      ... on ProjectV2SingleSelectField { name }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+
+def _api_graphql(query: str, variables: dict) -> dict:
+    token = _require_token()
+    base = _base_url().rstrip("/")
+    url = base + "/graphql"
+    payload = json.dumps(
+        {"query": query, "variables": variables}
+    ).encode()
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={
+            **_api_headers(token),
+            "Content-Type": "application/json",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        raise GhError(
+            f"GitHub GraphQL error {exc.code}"
+        ) from exc
+    except urllib.error.URLError as exc:
+        raise GhError(
+            f"GitHub GraphQL request failed: {exc.reason}"
+        ) from exc
+
+
+def _item_status(item: dict) -> str | None:
+    """Extract Status field value from a project item."""
+    for fv in (item.get("fieldValues") or {}).get("nodes", []):
+        field = (fv.get("field") or {})
+        if field.get("name", "").lower() == "status":
+            return fv.get("name")
+    return None
+
+
+def _normalize_project_item(item: dict) -> dict:
+    content = item.get("content") or {}
+    labels = [
+        _normalize_label(lb)
+        for lb in (
+            content.get("labels") or {}
+        ).get("nodes", [])
+    ]
+    return {
+        "id": item.get("id", ""),
+        "type": item.get("type", ""),
+        "number": content.get("number"),
+        "title": content.get("title", ""),
+        "state": content.get("state", ""),
+        "url": content.get("url", ""),
+        "status": _item_status(item),
+        "labels": labels,
+    }
+
+
+def _normalize_project(project: dict) -> dict:
+    items = [
+        _normalize_project_item(i)
+        for i in (project.get("items") or {}).get("nodes", [])
+    ]
+    return {
+        "id": project.get("id", ""),
+        "title": project.get("title", ""),
+        "url": project.get("url", ""),
+        "closed": project.get("closed", False),
+        "items": items,
+    }
+
+
+def _fetch_projects(owner: str) -> list[dict]:
+    result = _api_graphql(
+        _PROJECTS_QUERY, {"owner": owner, "first": 20}
+    )
+    owner_data = (
+        (result.get("data") or {}).get("repositoryOwner") or {}
+    )
+    nodes = (owner_data.get("projectsV2") or {}).get("nodes") or []
+    return [_normalize_project(p) for p in nodes]
+
+
+def projects_for_customers(customers: list[dict]) -> list[dict]:
+    """Return GitHub Projects v2 grouped by customer."""
+    seen_owners: set[str] = set()
+    results = []
+    for c in customers:
+        raw = (
+            c.get("repo")
+            or c.get("properties", {}).get("REPO")
+        )
+        repo = _normalize_repo(raw or "")
+        if not repo:
+            continue
+        owner = repo.split("/")[0]
+        if owner in seen_owners:
+            continue
+        seen_owners.add(owner)
+        try:
+            projects = _fetch_projects(owner)
+        except GhError:
+            projects = []
+        results.append({
+            "customer": c["name"],
+            "repo": repo,
+            "projects": projects,
+        })
+    return results

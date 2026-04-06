@@ -3,13 +3,13 @@ import type {
   AiSettings,
   ArchivedTask,
   ClockEntry,
-
   Contract,
   CronJob,
   CronRun,
   Customer,
   Dashboard,
   GithubIssueGroup,
+  GithubProjectGroup,
   GithubSettings,
   InboxItem,
   KnowledgeFile,
@@ -849,6 +849,10 @@ export function fetchGithubIssues(): Promise<GithubIssueGroup[]> {
   return get<GithubIssueGroup[]>("/github/issues");
 }
 
+export function fetchGithubProjects(): Promise<GithubProjectGroup[]> {
+  return get<GithubProjectGroup[]>("/github/projects");
+}
+
 export function fetchGithubSettings(): Promise<GithubSettings> {
   return get<GithubSettings>("/settings/github");
 }
@@ -857,6 +861,16 @@ export function updateGithubSettings(
   updates: { token?: string; base_url?: string }
 ): Promise<GithubSettings> {
   return patch<GithubSettings>("/settings/github", updates);
+}
+
+export function fetchTimezone(): Promise<{ timezone: string }> {
+  return get<{ timezone: string }>("/settings/timezone");
+}
+
+export function updateTimezone(
+  timezone: string
+): Promise<{ timezone: string }> {
+  return patch<{ timezone: string }>("/settings/timezone", { timezone });
 }
 
 // Advisor

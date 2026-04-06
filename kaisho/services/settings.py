@@ -187,6 +187,22 @@ def set_path_settings(
     return get_path_settings(data)
 
 
+DEFAULT_TIMEZONE = "Europe/Berlin"
+
+
+def get_timezone(settings: dict) -> str:
+    """Return the configured timezone string."""
+    return settings.get("timezone", DEFAULT_TIMEZONE)
+
+
+def set_timezone(path: Path, tz: str) -> str:
+    """Persist timezone setting and return it."""
+    data = load_settings(path)
+    data["timezone"] = tz
+    save_settings(path, data)
+    return tz
+
+
 def get_url_allowlist(settings: dict) -> list[str]:
     """Return the URL allowlist (list of domain strings)."""
     return settings.get("url_allowlist", [])

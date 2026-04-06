@@ -5,6 +5,7 @@ from ...services.github import (
     GhError,
     issues_for_customers,
     list_issues,
+    projects_for_customers,
 )
 
 router = APIRouter(prefix="/api/github", tags=["github"])
@@ -22,6 +23,16 @@ def api_all_issues(state: str = "open", limit: int = 30):
         raise HTTPException(
             status_code=502, detail=str(e)
         )
+
+
+@router.get("/projects")
+def api_all_projects():
+    """Return GitHub Projects v2 grouped by customer."""
+    customers = get_backend().customers.list_customers()
+    try:
+        return projects_for_customers(customers)
+    except GhError as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 @router.get("/issues/{customer}")

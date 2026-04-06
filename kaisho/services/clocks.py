@@ -1,5 +1,7 @@
 import re
 from datetime import date, datetime, timedelta
+
+from ..time_utils import local_now_naive as local_now
 from pathlib import Path
 
 from ..org.models import Clock, Heading, OrgFile
@@ -229,7 +231,7 @@ def quick_book(
         )
         end = start + timedelta(minutes=minutes)
     else:
-        end = datetime.now().replace(second=0, microsecond=0)
+        end = local_now().replace(second=0, microsecond=0)
         start = end - timedelta(minutes=minutes)
         if start.date() < end.date():
             start = end.replace(hour=0, minute=0)
@@ -258,7 +260,7 @@ def start_timer(
             f"{active['description']}"
         )
 
-    start = datetime.now().replace(second=0, microsecond=0)
+    start = local_now().replace(second=0, microsecond=0)
     clock = Clock(start=start, end=None)
     _append_clock_entry(
         clocks_file, customer, description, clock, task_id, contract

@@ -29,6 +29,8 @@ import {
   useUpdateAdvisorFiles,
   useUpdateAiSettings,
   useUpdateGithubSettings,
+  useTimezone,
+  useUpdateTimezone,
   useUpdatePaths,
   useUpdateSkill,
   useUpdateUserProfile,
@@ -821,6 +823,23 @@ function GithubSection() {
             Authentication
           </p>
           <div className="flex flex-col gap-2">
+            <p className="text-xs text-stone-500 leading-relaxed mb-1">
+              A Personal Access Token (PAT) is a GitHub credential that
+              grants API access without a password. Create a classic PAT at{" "}
+              <a
+                href="https://github.com/settings/tokens"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cta hover:underline"
+              >
+                github.com/settings/tokens
+              </a>
+              {" "}with the following scopes:{" "}
+              <span className="font-mono text-[11px] text-stone-600">
+                repo, read:org, read:project, read:user, read:discussion,
+                read:packages
+              </span>
+            </p>
             {githubSettings?.token_set && (
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
@@ -1588,10 +1607,74 @@ function ProfilesTab() {
   );
 }
 
+function TimezoneSection() {
+  const { data } = useTimezone();
+  const update = useUpdateTimezone();
+  const [tz, setTz] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (data?.timezone) setTz(data.timezone);
+  }, [data]);
+
+  function handleSave() {
+    update.mutate(tz.trim(), {
+      onSuccess: () => {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      },
+    });
+  }
+
+  return (
+    <section>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+        Timezone
+      </p>
+      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        <div className="px-4 py-3">
+          <label className="flex items-center gap-3">
+            <span className="text-xs text-stone-700 w-32 shrink-0">
+              Timezone
+            </span>
+            <input
+              type="text"
+              value={tz}
+              onChange={(e) => setTz(e.target.value)}
+              placeholder="Europe/Berlin"
+              className={inputCls}
+            />
+          </label>
+          <p className="text-[11px] text-stone-400 mt-1.5 ml-[140px]">
+            IANA timezone name, e.g. Europe/Berlin, America/New_York,
+            UTC. Used for cron history and clock timestamps.
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={update.isPending}
+          className={saveBtnCls}
+        >
+          {update.isPending ? "Saving…" : "Save"}
+        </button>
+        {saved && (
+          <span className="text-xs text-green-400">Saved.</span>
+        )}
+        {update.isError && (
+          <span className="text-xs text-red-400">Save failed.</span>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function GeneralTab() {
   return (
     <div className="flex flex-col gap-8">
       <UserProfileSection />
+      <TimezoneSection />
       <ProfilesTab />
     </div>
   );

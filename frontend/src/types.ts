@@ -183,3 +183,28 @@ export interface GithubIssueGroup {
   repo: string;
   issues: GithubIssue[];
 }
+
+export interface GithubProjectItem {
+  id: string;
+  type: string;
+  number: number | null;
+  title: string;
+  state: string;
+  url: string;
+  status: string | null;
+  labels: { name: string; color: string }[];
+}
+
+export interface GithubProject {
+  id: string;
+  title: string;
+  url: string;
+  closed: boolean;
+  items: GithubProjectItem[];
+}
+
+export interface GithubProjectGroup {
+  customer: string;
+  repo: string;
+  projects: GithubProject[];
+}

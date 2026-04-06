@@ -137,7 +137,8 @@ def auth_login(body: LoginBody, request: Request):
     import os
     from ...backends import reset_backend
     from ...config import (
-        init_data_dir, list_users, reset_config,
+        init_data_dir, list_users, load_active_profile,
+        reset_config,
     )
     client = request.client.host if request.client else "unknown"
     _rate_limit_check(f"login:{client}")
@@ -161,8 +162,11 @@ def auth_login(body: LoginBody, request: Request):
                 status_code=401,
                 detail="Invalid password",
             )
+    base_cfg = get_config()
+    user_dir = base_cfg.DATA_DIR / "users" / body.username
+    saved_profile = load_active_profile(user_dir)
     os.environ["KAISHO_USER"] = body.username
-    os.environ["PROFILE"] = "default"
+    os.environ["PROFILE"] = saved_profile or "default"
     cfg = reset_config()
     init_data_dir(cfg)
     reset_backend()
@@ -697,6 +701,31 @@ def update_github(body: GithubSettingsUpdate):
     cfg = get_config()
     updates = body.model_dump(exclude_none=True)
     return settings_svc.set_github_settings(cfg.SETTINGS_FILE, updates)
+
+
+# ------------------------------------------------------------------
+# Timezone
+# ------------------------------------------------------------------
+
+
+@router.get("/timezone")
+def get_timezone_setting():
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    return {
+        "timezone": settings_svc.get_timezone(data),
+    }
+
+
+class TimezoneUpdate(BaseModel):
+    timezone: str
+
+
+@router.patch("/timezone")
+def update_timezone(body: TimezoneUpdate):
+    cfg = get_config()
+    tz = settings_svc.set_timezone(cfg.SETTINGS_FILE, body.timezone)
+    return {"timezone": tz}
 
 
 def _fetch_openai_compatible_models(

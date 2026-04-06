@@ -15,6 +15,8 @@ from collections import Counter
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+from ...time_utils import local_now_naive as _local_now
+
 from ..base import (
     ClockBackend,
     CustomerBackend,
@@ -677,7 +679,7 @@ class MarkdownClockBackend(ClockBackend):
         start = datetime.fromisoformat(entry["start"])
         end_str = entry.get("end")
         if not end_str:
-            end = datetime.now()
+            end = _local_now()
         else:
             end = datetime.fromisoformat(end_str)
         return max(
@@ -774,7 +776,7 @@ class MarkdownClockBackend(ClockBackend):
         entry = {
             "customer": customer,
             "description": description,
-            "start": datetime.now().isoformat(),
+            "start": _local_now().isoformat(),
             "end": None,
             "task_id": task_id or "",
             "contract": contract or "",
@@ -790,7 +792,7 @@ class MarkdownClockBackend(ClockBackend):
         for entry in entries:
             if entry.get("end") is None:
                 entry["end"] = (
-                    datetime.now().isoformat()
+                    _local_now().isoformat()
                 )
                 self._save_entries(entries)
                 return self._enrich(entry)
@@ -813,7 +815,7 @@ class MarkdownClockBackend(ClockBackend):
             )
             end = start + timedelta(minutes=minutes)
         else:
-            end = datetime.now().replace(
+            end = _local_now().replace(
                 second=0, microsecond=0
             )
             start = end - timedelta(minutes=minutes)

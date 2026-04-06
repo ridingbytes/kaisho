@@ -6,14 +6,15 @@ are thin callers.
 """
 import json
 import tempfile
-from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
 
+from ..time_utils import local_now_iso
+
 
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return local_now_iso(timespec="seconds")
 
 
 def _load_yaml(jobs_file: Path) -> dict:
