@@ -1646,9 +1646,11 @@ function TimezoneSection() {
               className={inputCls}
             />
             <datalist id="tz-list">
-              {Intl.supportedValuesOf("timeZone").map((z) => (
-                <option key={z} value={z} />
-              ))}
+              {(Intl as unknown as { supportedValuesOf(k: string): string[] })
+                .supportedValuesOf("timeZone")
+                .map((z) => (
+                  <option key={z} value={z} />
+                ))}
             </datalist>
           </label>
           <p className="text-[11px] text-stone-400 mt-1.5 ml-[140px]">
