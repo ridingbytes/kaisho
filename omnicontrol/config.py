@@ -16,10 +16,10 @@ class Settings(BaseSettings):
     )
 
     # Core paths
-    ORG_DIR: Path = Path("~/ownCloud/cowork/org")
-    WISSEN_DIR: Path = Path("~/ownCloud/cowork/wissen")
-    RESEARCH_DIR: Path = Path("~/ownCloud/cowork/research")
-    KUNDEN_DIR: Path = Path("~/ownCloud/cowork/kunden")
+    ORG_DIR: Path = Path("data/org")
+    WISSEN_DIR: Path = Path("data/knowledge")
+    RESEARCH_DIR: Path = Path("data/research")
+    KUNDEN_DIR: Path = Path("data/kunden")
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     HOST: str = "0.0.0.0"
     PORT: int = 8765

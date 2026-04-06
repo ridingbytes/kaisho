@@ -46,7 +46,6 @@ const NAV_ITEMS: NavItem[] = [
   { id: "github", label: "GitHub", icon: GitPullRequest },
   { id: "clocks", label: "Clocks", icon: History },
   { id: "cron", label: "Cron", icon: Clock4 },
-  { id: "settings", label: "Settings", icon: Settings },
   { id: "advisor", label: "Advisor", icon: Bot },
 ];
 
@@ -275,6 +274,20 @@ export function Sidebar({
                   ))}
                 </div>
               )}
+
+              {/* Settings */}
+              <div className="border-t border-border-subtle pt-1 mt-0.5">
+                <button
+                  onClick={() => {
+                    onChange("settings" as View);
+                    setMenuOpen(false);
+                  }}
+                  className="w-full text-left px-2 py-1 rounded text-xs text-slate-300 hover:bg-surface-raised transition-colors flex items-center gap-2"
+                >
+                  <Settings size={12} />
+                  Settings
+                </button>
+              </div>
             </div>
           )}
         </div>
