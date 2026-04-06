@@ -15,7 +15,7 @@ const inputCls =
 function AddCustomerForm({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
   const [type, setType] = useState("");
-  const [kontingent, setKontingent] = useState("");
+  const [budgetVal, setBudgetVal] = useState("");
   const [repo, setRepo] = useState("");
   const create = useCreateCustomer();
   const { data: settings } = useSettings();
@@ -28,7 +28,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
       {
         name: name.trim(),
         type: type || undefined,
-        budget: kontingent ? parseFloat(kontingent) : 0,
+        budget: budgetVal ? parseFloat(budgetVal) : 0,
         repo: repo.trim() || null,
       },
       { onSuccess: onClose }
@@ -81,8 +81,8 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
           type="number"
           min="0"
           step="0.5"
-          value={kontingent}
-          onChange={(e) => setKontingent(e.target.value)}
+          value={budgetVal}
+          onChange={(e) => setBudgetVal(e.target.value)}
         />
       </div>
       <div className="flex flex-col gap-1">

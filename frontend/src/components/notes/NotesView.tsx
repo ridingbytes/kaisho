@@ -752,7 +752,11 @@ export function NotesView() {
             key={note.id}
             note={note}
             allTags={allTags}
-            onDelete={() => deleteNote.mutate(note.id)}
+            onDelete={() => {
+              if (window.confirm(`Delete "${note.title}"?`)) {
+                deleteNote.mutate(note.id);
+              }
+            }}
             onTagClick={setTagFilter}
           />
         ))}
@@ -775,7 +779,11 @@ export function NotesView() {
                   <NoteRow
                     note={note}
                     allTags={allTags}
-                    onDelete={() => deleteNote.mutate(note.id)}
+                    onDelete={() => {
+                      if (window.confirm(`Delete "${note.title}"?`)) {
+                        deleteNote.mutate(note.id);
+                      }
+                    }}
                     onTagClick={setTagFilter}
                   />
                 </div>

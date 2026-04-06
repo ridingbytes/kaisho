@@ -171,7 +171,11 @@ function ClockEntryRow({
         <X size={9} />
       </button>
       <button
-        onClick={() => deleteEntry.mutate(entry.start)}
+        onClick={() => {
+          if (window.confirm("Delete this time entry?")) {
+            deleteEntry.mutate(entry.start);
+          }
+        }}
         disabled={deleteEntry.isPending}
         title="Delete entry"
         className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-slate-600 hover:text-red-400 disabled:opacity-40"
@@ -632,7 +636,11 @@ export function TaskCard({
             </button>
             <button
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => archiveTask.mutate(task.id)}
+              onClick={() => {
+                if (window.confirm(`Archive "${task.title}"?`)) {
+                  archiveTask.mutate(task.id);
+                }
+              }}
               disabled={archiveTask.isPending}
               className="p-1 rounded text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
               title="Archive"

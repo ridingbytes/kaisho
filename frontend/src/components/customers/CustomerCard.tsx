@@ -265,12 +265,14 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             <Pencil size={10} />
           </button>
           <button
-            onClick={() =>
-              deleteContract.mutate({
-                customerName,
-                contractName: contract.name,
-              })
-            }
+            onClick={() => {
+              if (window.confirm(`Delete contract "${contract.name}"?`)) {
+                deleteContract.mutate({
+                  customerName,
+                  contractName: contract.name,
+                });
+              }
+            }}
             disabled={deleteContract.isPending}
             className="p-0.5 rounded text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-colors"
             title="Delete"
@@ -615,7 +617,11 @@ function TimeEntryRow({
           <Pencil size={10} />
         </button>
         <button
-          onClick={() => deleteEntry.mutate(entry.start)}
+          onClick={() => {
+            if (window.confirm("Delete this time entry?")) {
+              deleteEntry.mutate(entry.start);
+            }
+          }}
           disabled={deleteEntry.isPending}
           className="p-0.5 rounded text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-colors"
           title="Delete"
