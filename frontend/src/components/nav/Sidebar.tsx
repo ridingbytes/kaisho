@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   NotebookPen,
   Settings,
+  User,
   Users,
 } from "lucide-react";
 import type { View } from "../../App";
@@ -17,6 +18,10 @@ import {
   useShortcutsContext,
 } from "../../context/ShortcutsContext";
 import { useInboxItems } from "../../hooks/useInbox";
+import {
+  useProfiles,
+  useSwitchProfile,
+} from "../../hooks/useSettings";
 
 interface NavItem {
   id: View;
@@ -54,6 +59,8 @@ export function Sidebar({
   const { data: inboxItems } = useInboxItems();
   const inboxCount = inboxItems?.length ?? 0;
   const { config } = useShortcutsContext();
+  const { data: profileData } = useProfiles();
+  const switchProf = useSwitchProfile();
 
   return (
     <nav
@@ -112,6 +119,29 @@ export function Sidebar({
           </button>
         );
       })}
+
+      {/* Profile switcher */}
+      {profileData && profileData.profiles.length > 0 && (
+        <div className="mt-auto pt-2 border-t border-border-subtle mx-2">
+          <button
+            className="w-full flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-surface-raised transition-colors"
+            title={`Profile: ${profileData.active}`}
+            onClick={() => {
+              const profiles = profileData.profiles;
+              const idx = profiles.indexOf(profileData.active);
+              const next = profiles[(idx + 1) % profiles.length];
+              switchProf.mutate(next, {
+                onSuccess: () => window.location.reload(),
+              });
+            }}
+          >
+            <User size={14} strokeWidth={1.5} />
+            <span className="text-[8px] font-semibold uppercase tracking-wider leading-none truncate w-full text-center">
+              {profileData.active}
+            </span>
+          </button>
+        </div>
+      )}
     </nav>
   );
 }

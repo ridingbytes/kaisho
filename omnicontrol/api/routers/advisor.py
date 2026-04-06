@@ -60,7 +60,7 @@ def api_ask(body: AskRequest):
             ),
             openai_base_url=ai.get("openai_url", ""),
             openai_api_key=ai.get("openai_api_key", ""),
-            data_dir=str(cfg.DATA_DIR.expanduser()),
+            data_dir=str(cfg.PROFILE_DIR),
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
@@ -73,7 +73,7 @@ def get_skills():
     """List available advisor skills."""
     cfg = get_config()
     from pathlib import Path
-    return list_skills(Path(str(cfg.DATA_DIR.expanduser())))
+    return list_skills(Path(str(cfg.PROFILE_DIR)))
 
 
 class SkillBody(BaseModel):
@@ -86,7 +86,7 @@ def create_skill(body: SkillBody):
     """Create a new advisor skill."""
     from pathlib import Path
     cfg = get_config()
-    data_dir = Path(str(cfg.DATA_DIR.expanduser()))
+    data_dir = Path(str(cfg.PROFILE_DIR))
     return save_skill(data_dir, body.name, body.content)
 
 
@@ -95,7 +95,7 @@ def update_skill(name: str, body: SkillBody):
     """Update an existing advisor skill."""
     from pathlib import Path
     cfg = get_config()
-    data_dir = Path(str(cfg.DATA_DIR.expanduser()))
+    data_dir = Path(str(cfg.PROFILE_DIR))
     skill_path = data_dir / "SKILLS" / f"{name}.md"
     if not skill_path.exists():
         raise HTTPException(
@@ -109,7 +109,7 @@ def remove_skill(name: str):
     """Delete an advisor skill."""
     from pathlib import Path
     cfg = get_config()
-    data_dir = Path(str(cfg.DATA_DIR.expanduser()))
+    data_dir = Path(str(cfg.PROFILE_DIR))
     skill_path = data_dir / "SKILLS" / f"{name}.md"
     if not skill_path.exists():
         raise HTTPException(

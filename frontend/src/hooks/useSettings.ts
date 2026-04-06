@@ -6,6 +6,7 @@ import {
 import {
   addCustomerType,
   addTag,
+  createProfile,
   createSkill,
   deleteCustomerType,
   deleteSkill,
@@ -18,10 +19,12 @@ import {
   fetchGithubSettings,
   fetchKbSources,
   fetchPaths,
+  fetchProfiles,
   fetchSettings,
   fetchUrlAllowlist,
   reorderStates,
   switchBackend,
+  switchProfile,
   updateAdvisorFiles,
   updateAiSettings,
   updateGithubSettings,
@@ -359,6 +362,36 @@ export function useDeleteSkill() {
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: ["advisor", "skills"],
+      });
+    },
+  });
+}
+
+export function useProfiles() {
+  return useQuery({
+    queryKey: ["settings", "profiles"],
+    queryFn: fetchProfiles,
+    staleTime: 60_000,
+  });
+}
+
+export function useSwitchProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (profile: string) => switchProfile(profile),
+    onSuccess: () => {
+      void qc.invalidateQueries();
+    },
+  });
+}
+
+export function useCreateProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => createProfile(name),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings", "profiles"],
       });
     },
   });

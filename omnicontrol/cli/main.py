@@ -1,3 +1,5 @@
+import os
+
 import click
 
 from .advisor import ask_cmd
@@ -13,13 +15,23 @@ from .inbox import inbox
 from .knowledge import knowledge
 from .tag import tag
 from .task import task
-from ..config import get_config, init_data_dir
+from ..config import get_config, init_data_dir, list_profiles
 
 
 @click.group()
-def cli():
-    init_data_dir()
+@click.option(
+    "--profile", "-p",
+    envvar="OC_PROFILE",
+    default=None,
+    help="User profile name (default: $OC_PROFILE or 'default')",
+)
+def cli(profile):
     """OmniControl - Personal productivity system."""
+    if profile:
+        os.environ["PROFILE"] = profile
+        from ..config import reset_config
+        reset_config()
+    init_data_dir()
 
 
 @cli.command("serve")
@@ -36,6 +48,16 @@ def serve(host, port, reload):
         port=port or cfg.PORT,
         reload=reload,
     )
+
+
+@cli.command("profiles")
+def profiles_cmd():
+    """List available user profiles."""
+    cfg = get_config()
+    active = cfg.PROFILE
+    for name in list_profiles(cfg):
+        marker = " *" if name == active else ""
+        click.echo(f"  {name}{marker}")
 
 
 cli.add_command(task)

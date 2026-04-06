@@ -300,8 +300,8 @@ _EDITABLE_PATH_KEYS = {"ORG_DIR", "DATA_DIR", "WISSEN_DIR", "RESEARCH_DIR"}
 
 
 def _env_file_path() -> "Path":
-    from pathlib import Path as _Path
-    return _Path(get_config().SETTINGS_FILE).parent / ".env"
+    from pathlib import Path as _P
+    return _P(__file__).parent.parent.parent.parent / ".env"
 
 
 def _read_env_file(path: "Path") -> dict[str, str]:
@@ -332,7 +332,9 @@ def get_paths():
         "org_dir": str(cfg.ORG_DIR.expanduser()),
         "markdown_dir": str(cfg.MARKDOWN_DIR.expanduser()),
         "data_dir": str(cfg.DATA_DIR.expanduser()),
-        "settings_file": str(cfg.SETTINGS_FILE.expanduser()),
+        "profile": cfg.PROFILE,
+        "profile_dir": str(cfg.PROFILE_DIR),
+        "settings_file": str(cfg.SETTINGS_FILE),
         "backend": cfg.BACKEND,
     }
 
@@ -495,9 +497,8 @@ class AdvisorFilesUpdate(BaseModel):
 
 
 def _advisor_file_path(filename: str) -> "Path":
-    from pathlib import Path as _P
     cfg = get_config()
-    return _P(cfg.DATA_DIR.expanduser()) / filename
+    return cfg.PROFILE_DIR / filename
 
 
 def _read_advisor_file(filename: str) -> str:
@@ -552,3 +553,72 @@ def set_url_allowlist(body: list[str] = Body(...)):
     data["url_allowlist"] = body
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
     return body
+
+
+# -------------------------------------------------------------------
+# User profiles
+# -------------------------------------------------------------------
+
+
+@router.get("/profiles")
+def get_profiles():
+    """List available profiles and the active one."""
+    from ...config import list_profiles
+    cfg = get_config()
+    return {
+        "active": cfg.PROFILE,
+        "profiles": list_profiles(cfg),
+    }
+
+
+class ProfileSwitch(BaseModel):
+    profile: str
+
+
+@router.put("/profile")
+def switch_profile(body: ProfileSwitch):
+    """Switch to a different user profile."""
+    import os
+    from ...backends import reset_backend
+    from ...config import init_data_dir, reset_config
+    os.environ["PROFILE"] = body.profile
+    cfg = reset_config()
+    init_data_dir(cfg)
+    reset_backend()
+    return {
+        "profile": cfg.PROFILE,
+        "message": f"Switched to profile '{cfg.PROFILE}'.",
+    }
+
+
+class ProfileCreate(BaseModel):
+    name: str
+
+
+@router.post("/profiles", status_code=201)
+def create_profile(body: ProfileCreate):
+    """Create a new user profile from templates."""
+    from ...config import init_data_dir
+    import re
+    name = re.sub(r"[^a-zA-Z0-9_-]", "", body.name.strip())
+    if not name:
+        raise HTTPException(
+            status_code=400, detail="Invalid profile name"
+        )
+    cfg = get_config()
+    profile_dir = cfg.DATA_DIR.expanduser() / name
+    if profile_dir.exists():
+        raise HTTPException(
+            status_code=409,
+            detail=f"Profile '{name}' already exists",
+        )
+    # Temporarily set profile to create the dir
+    import os
+    old = os.environ.get("PROFILE", "")
+    os.environ["PROFILE"] = name
+    from ...config import reset_config
+    new_cfg = reset_config()
+    init_data_dir(new_cfg)
+    os.environ["PROFILE"] = old or "default"
+    reset_config()
+    return {"name": name}

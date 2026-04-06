@@ -151,6 +151,25 @@ export function fetchPaths(): Promise<Record<string, string>> {
   return get("/settings/paths");
 }
 
+export function fetchProfiles(): Promise<{
+  active: string;
+  profiles: string[];
+}> {
+  return get("/settings/profiles");
+}
+
+export function switchProfile(
+  profile: string
+): Promise<{ profile: string; message: string }> {
+  return put("/settings/profile", { profile });
+}
+
+export function createProfile(
+  name: string
+): Promise<{ name: string }> {
+  return post("/settings/profiles", { name });
+}
+
 export function updatePaths(updates: {
   org_dir?: string;
   markdown_dir?: string;
