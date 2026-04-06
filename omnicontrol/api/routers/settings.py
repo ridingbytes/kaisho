@@ -569,7 +569,7 @@ def get_current_user():
     cfg = get_config()
     meta = load_user_yaml(cfg)
     return {
-        "username": cfg.USER,
+        "username": cfg.OC_USER,
         "profile": cfg.PROFILE,
         "name": meta.get("name", ""),
         "email": meta.get("email", ""),
@@ -650,7 +650,7 @@ def switch_user(body: UserSwitch):
     init_data_dir(cfg)
     reset_backend()
     return {
-        "username": cfg.USER,
+        "username": cfg.OC_USER,
         "profile": cfg.PROFILE,
     }
 
@@ -661,7 +661,7 @@ def get_profiles():
     from ...config import list_profiles
     cfg = get_config()
     return {
-        "user": cfg.USER,
+        "user": cfg.OC_USER,
         "active": cfg.PROFILE,
         "profiles": list_profiles(cfg),
     }

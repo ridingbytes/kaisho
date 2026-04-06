@@ -25,6 +25,7 @@ import {
   exportClocksExcel,
 } from "../../utils/exportClocks";
 import { registerPanelAction } from "../../utils/panelActions";
+import { useSetView } from "../../context/ViewContext";
 import type { ClockEntry, Task } from "../../types";
 
 type Period = "today" | "week" | "month";
@@ -398,41 +399,94 @@ interface EntryRowProps {
 }
 
 function EntryRow({ entry, tasks }: EntryRowProps) {
-  const [mode, setMode] = useState<"view" | "edit">("view");
+  const [mode, setMode] = useState<"view" | "edit">(
+    "view"
+  );
   const remove = useDeleteClockEntry();
+  const setView = useSetView();
   const taskTitle = taskTitleById(tasks, entry.task_id);
 
   if (mode === "edit") {
-    return <EditForm entry={entry} onClose={() => setMode("view")} />;
+    return (
+      <EditForm
+        entry={entry}
+        onClose={() => setMode("view")}
+      />
+    );
   }
 
   return (
-    <tr className="group hover:bg-surface-raised/30 border-b border-border-subtle last:border-0">
-      <td className="px-3 py-1.5 text-xs font-mono text-slate-500 whitespace-nowrap">
+    <tr
+      className={
+        "group hover:bg-surface-raised/30 " +
+        "border-b border-border-subtle last:border-0"
+      }
+    >
+      <td
+        className={
+          "px-3 py-1.5 text-xs font-mono " +
+          "text-slate-500 whitespace-nowrap"
+        }
+      >
         {formatDate(entry.start)}
       </td>
-      <td className="px-3 py-1.5 text-xs text-slate-500 whitespace-nowrap">
-        {formatTime(entry.start)}–{formatTime(entry.end)}
+      <td
+        className={
+          "px-3 py-1.5 text-xs text-slate-500 " +
+          "whitespace-nowrap"
+        }
+      >
+        {formatTime(entry.start)}–
+        {formatTime(entry.end)}
       </td>
-      <td className="px-3 py-1.5 text-xs text-slate-300 font-medium whitespace-nowrap">
-        {entry.customer}
+      <td
+        className={
+          "px-3 py-1.5 text-xs font-medium " +
+          "whitespace-nowrap"
+        }
+      >
+        <button
+          onClick={() => setView("customers")}
+          className={
+            "text-slate-300 hover:text-accent " +
+            "transition-colors"
+          }
+        >
+          {entry.customer}
+        </button>
       </td>
-      <td className="px-3 py-1.5 text-xs text-slate-400 w-full">
+      <td
+        className={
+          "px-3 py-1.5 text-xs text-slate-400 w-full"
+        }
+      >
         <span className="inline-flex items-center gap-1">
           {entry.description}
           {entry.description.length > 40 && (
-            <ContentPopup content={entry.description} />
+            <ContentPopup
+              content={entry.description}
+            />
           )}
         </span>
       </td>
-      <td className="px-3 py-1.5 text-xs text-slate-500 whitespace-nowrap max-w-32 truncate">
+      <td
+        className={
+          "px-3 py-1.5 text-xs text-slate-500 " +
+          "whitespace-nowrap max-w-32 truncate"
+        }
+      >
         {taskTitle && (
-          <span
-            className="px-1 py-0.5 rounded text-[10px] bg-accent-muted text-accent-hover"
+          <button
+            onClick={() => setView("board")}
+            className={
+              "px-1 py-0.5 rounded text-[10px] " +
+              "bg-accent-muted text-accent-hover " +
+              "hover:bg-accent/20 transition-colors"
+            }
             title={taskTitle}
           >
             {taskTitle}
-          </span>
+          </button>
         )}
       </td>
       <td className="px-3 py-1.5 text-xs text-slate-500 whitespace-nowrap max-w-28 truncate">

@@ -399,7 +399,7 @@ function ContractsSection({ customer }: ContractsSectionProps) {
       </button>
 
       {open && (
-        <div className="mt-2">
+        <div className="mt-2 ml-5">
           {contracts.map((c) => (
             <ContractRow
               key={c.name}

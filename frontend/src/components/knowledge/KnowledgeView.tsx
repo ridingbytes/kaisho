@@ -570,6 +570,26 @@ function TreeNodeRow({
   const indent = depth * 16;
   const [renaming, setRenaming] = useState(false);
   const [renamePath, setRenamePath] = useState("");
+  const [confirmingDelete, setConfirmingDelete] =
+    useState(false);
+  const deleteRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!confirmingDelete) return;
+    function handleClick(e: MouseEvent) {
+      if (
+        deleteRef.current &&
+        !deleteRef.current.contains(e.target as Node)
+      ) {
+        setConfirmingDelete(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () =>
+      document.removeEventListener(
+        "mousedown", handleClick
+      );
+  }, [confirmingDelete]);
 
   if (node.kind === "leaf") {
     const isSelected = selectedPath === node.path;
@@ -662,20 +682,61 @@ function TreeNodeRow({
                 ))}
             </select>
           )}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (window.confirm(
-                `Delete "${node.name}"? This cannot be undone.`
-              )) {
-                onDelete(node.path);
+          <div className="relative" ref={deleteRef}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmingDelete(true);
+              }}
+              className={
+                "p-0.5 rounded text-slate-700 " +
+                "hover:text-red-400 transition-colors"
               }
-            }}
-            className="p-0.5 rounded text-slate-700 hover:text-red-400 transition-colors"
-            title="Delete (irreversible)"
-          >
-            <Trash2 size={9} />
-          </button>
+              title="Delete (irreversible)"
+            >
+              <Trash2 size={9} />
+            </button>
+            {confirmingDelete && (
+              <div
+                className={
+                  "absolute right-0 top-full mt-1 " +
+                  "z-50 flex items-center gap-1 " +
+                  "px-2 py-1 rounded bg-surface-overlay " +
+                  "border border-border shadow-lg " +
+                  "whitespace-nowrap"
+                }
+              >
+                <span className="text-[10px] text-slate-400">
+                  Delete?
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(node.path);
+                    setConfirmingDelete(false);
+                  }}
+                  className={
+                    "p-0.5 rounded text-red-400 " +
+                    "hover:bg-red-500/10"
+                  }
+                >
+                  <Check size={10} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmingDelete(false);
+                  }}
+                  className={
+                    "p-0.5 rounded text-slate-500 " +
+                    "hover:text-slate-300"
+                  }
+                >
+                  <X size={10} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
