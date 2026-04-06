@@ -574,6 +574,7 @@ def get_current_user():
         "name": meta.get("name", ""),
         "email": meta.get("email", ""),
         "bio": meta.get("bio", ""),
+        "avatar_seed": meta.get("avatar_seed", ""),
         "profiles": list_profiles(cfg),
     }
 
@@ -582,6 +583,7 @@ class UserProfileUpdate(BaseModel):
     name: str | None = None
     email: str | None = None
     bio: str | None = None
+    avatar_seed: str | None = None
 
 
 @router.patch("/user/profile")
@@ -596,6 +598,8 @@ def update_user_profile(body: UserProfileUpdate):
         data["email"] = body.email
     if body.bio is not None:
         data["bio"] = body.bio
+    if body.avatar_seed is not None:
+        data["avatar_seed"] = body.avatar_seed
     save_user_yaml(cfg, data)
     return data
 

@@ -1166,6 +1166,7 @@ function UserProfileSection() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
+  const [avatarSeed, setAvatarSeed] = useState("");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -1173,14 +1174,23 @@ function UserProfileSection() {
       setName(userData.name ?? "");
       setEmail(userData.email ?? "");
       setBio(userData.bio ?? "");
+      setAvatarSeed(
+        userData.avatar_seed || userData.username
+      );
     }
   }, [userData]);
 
   if (!userData) return null;
 
+  function randomizeAvatar() {
+    const seed = Math.random().toString(36).slice(2, 10);
+    setAvatarSeed(seed);
+    update.mutate({ avatar_seed: seed });
+  }
+
   function handleSave() {
     update.mutate(
-      { name, email, bio },
+      { name, email, bio, avatar_seed: avatarSeed },
       {
         onSuccess: () => {
           setSaved(true);
@@ -1199,12 +1209,21 @@ function UserProfileSection() {
         {/* Avatar + username */}
         <div className="flex items-center gap-3">
           <PixelAvatar
-            seed={userData.username}
+            seed={avatarSeed}
             size={64}
           />
-          <span className="text-sm text-slate-500 font-mono">
-            {userData.username}
-          </span>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm text-slate-500 font-mono">
+              {userData.username}
+            </span>
+            <button
+              type="button"
+              onClick={randomizeAvatar}
+              className="text-[10px] text-slate-600 hover:text-accent transition-colors text-left"
+            >
+              Randomize avatar
+            </button>
+          </div>
         </div>
 
         {/* Full name */}

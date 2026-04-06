@@ -157,6 +157,7 @@ export function fetchCurrentUser(): Promise<{
   name: string;
   email: string;
   bio: string;
+  avatar_seed: string;
   profiles: string[];
 }> {
   return get("/settings/user");
@@ -208,6 +209,7 @@ export function updateUserProfile(updates: {
   name?: string;
   email?: string;
   bio?: string;
+  avatar_seed?: string;
 }): Promise<Record<string, string>> {
   return patch("/settings/user/profile", updates);
 }

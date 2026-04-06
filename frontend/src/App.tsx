@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Moon, Sun } from "lucide-react";
+import { useCurrentUser } from "./hooks/useSettings";
+import { PixelAvatar } from "./components/common/PixelAvatar";
 import { useEffect, useRef, useState } from "react";
 import type { AdvisorMessage } from "./components/advisor/AdvisorView";
 import { AdvisorView } from "./components/advisor/AdvisorView";
@@ -76,6 +78,7 @@ function AppShell() {
   const [view, setView] = useState<View>(viewFromHash);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { config } = useShortcutsContext();
+  const { data: currentUser } = useCurrentUser();
 
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem("theme") as Theme) ?? "dark"
@@ -201,7 +204,18 @@ function AppShell() {
         <span className="text-sm font-semibold text-slate-200">
           {VIEW_TITLES[view]}
         </span>
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-2">
+          {currentUser && (
+            <div className="flex items-center gap-1.5">
+              <PixelAvatar
+                seed={currentUser.avatar_seed || currentUser.username}
+                size={18}
+              />
+              <span className="text-[10px] text-slate-500 font-mono">
+                {currentUser.profile}
+              </span>
+            </div>
+          )}
           <button
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}

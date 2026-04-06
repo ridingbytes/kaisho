@@ -159,7 +159,7 @@ export function Sidebar({
             title={`${userData.name || userData.username} / ${userData.profile}`}
           >
             <PixelAvatar
-              seed={userData.username}
+              seed={userData.avatar_seed || userData.username}
               size={24}
               className="shrink-0"
             />

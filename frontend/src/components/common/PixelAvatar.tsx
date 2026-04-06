@@ -2,6 +2,7 @@ interface PixelAvatarProps {
   seed: string;
   size?: number;
   className?: string;
+  onClick?: () => void;
 }
 
 function hashCode(str: string): number {
@@ -21,7 +22,6 @@ function generateGrid(hash: number): boolean[] {
       grid[row * 5 + col] = bit === 1;
       grid[row * 5 + (4 - col)] = bit === 1;
     }
-    // Center column uses its own bit
     const centerBit = (hash >> (15 + row)) & 1;
     grid[row * 5 + 2] = centerBit === 1;
   }
@@ -32,11 +32,12 @@ export function PixelAvatar({
   seed,
   size = 32,
   className,
+  onClick,
 }: PixelAvatarProps) {
   const hash = hashCode(seed);
   const grid = generateGrid(hash);
   const hue = hash % 360;
-  const fill = `hsl(${hue}, 65%, 55%)`;
+  const fill = `hsl(${hue}, 60%, 55%)`;
   const cellSize = size / 5;
 
   return (
@@ -44,7 +45,13 @@ export function PixelAvatar({
       width={size}
       height={size}
       viewBox={`0 0 ${size} ${size}`}
-      className={className}
+      className={[
+        className,
+        onClick ? "cursor-pointer" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      onClick={onClick}
       role="img"
       aria-label={`Avatar for ${seed}`}
     >
@@ -52,7 +59,7 @@ export function PixelAvatar({
         width={size}
         height={size}
         rx={size * 0.15}
-        fill="hsl(0, 0%, 15%)"
+        fill="var(--surface-raised)"
       />
       {grid.map((on, i) => {
         if (!on) return null;

@@ -417,6 +417,7 @@ export function useUpdateUserProfile() {
       name?: string;
       email?: string;
       bio?: string;
+      avatar_seed?: string;
     }) => updateUserProfile(updates),
     onSuccess: () => {
       void qc.invalidateQueries({

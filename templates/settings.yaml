@@ -24,5 +24,40 @@ task_states:
   color: '#9ca3af'
   done: true
 
-tags: []
-customer_types: []
+tags:
+- name: '@email'
+  color: '#3b82f6'
+  description: Email-related task
+- name: '@phone'
+  color: '#8b5cf6'
+  description: Phone call
+- name: '@meeting'
+  color: '#8b5cf6'
+  description: Meeting or discussion
+- name: '@code'
+  color: '#06b6d4'
+  description: Programming task
+- name: '@issue'
+  color: '#ef4444'
+  description: Bug or issue
+- name: '@github'
+  color: '#171717'
+  description: GitHub related (PR, review)
+- name: '@prio-high'
+  color: '#dc2626'
+  description: High priority
+- name: '@prio-low'
+  color: '#9ca3af'
+  description: Low priority
+- name: '@idea'
+  color: '#a3e635'
+  description: Idea, not urgent
+- name: '@reminder'
+  color: '#f59e0b'
+  description: Follow-up reminder
+
+customer_types:
+- LEAD
+- CLIENT
+- PROSPECT
+- PARTNER
