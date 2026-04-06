@@ -5,7 +5,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..backends import get_backend
-from ..config import init_data_dir
+from ..config import (
+    get_config,
+    init_data_dir,
+    load_active_profile,
+    reset_config,
+)
 from .routers import (
     advisor,
     clocks,
@@ -25,6 +30,15 @@ from .watcher.service import watch_files
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import os
+    # Restore persisted profile selection so the server doesn't
+    # default back to "default" after a restart.
+    if not os.environ.get("PROFILE"):
+        cfg0 = get_config()
+        saved = load_active_profile(cfg0.USER_DIR)
+        if saved and saved != cfg0.PROFILE:
+            os.environ["PROFILE"] = saved
+            reset_config()
     init_data_dir()
     watch_paths = get_backend().watch_paths
     task = asyncio.create_task(watch_files(*watch_paths))

@@ -174,6 +174,24 @@ def list_users(cfg: Settings | None = None) -> list[dict]:
     return result
 
 
+def load_active_profile(user_dir: Path) -> str | None:
+    """Return the persisted active profile name, or None if not set."""
+    f = user_dir / ".active_profile"
+    if f.exists():
+        name = f.read_text(encoding="utf-8").strip()
+        if name:
+            return name
+    return None
+
+
+def save_active_profile(user_dir: Path, name: str) -> None:
+    """Persist the active profile selection to disk."""
+    user_dir.mkdir(parents=True, exist_ok=True)
+    (user_dir / ".active_profile").write_text(
+        name, encoding="utf-8"
+    )
+
+
 def list_profiles(cfg: Settings | None = None) -> list[str]:
     """Return profile names for the active user."""
     if cfg is None:

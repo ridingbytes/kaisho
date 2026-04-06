@@ -179,13 +179,13 @@ export function CalendarWidget({
               onClick={() => handleDayClick(date, isCurrentMonth)}
               className={[
                 "flex flex-col items-center justify-center h-8 cursor-pointer",
-                "text-[10px] leading-none transition-colors bg-surface-card",
+                "text-[10px] leading-none transition-colors",
                 isCurrentMonth ? "" : "opacity-25 pointer-events-none",
                 isSelected
-                  ? "bg-indigo-500/30 text-white"
-                  : isToday && !isSelected
-                    ? "bg-indigo-500/15 text-white hover:bg-indigo-500/25"
-                    : "text-stone-700 hover:bg-surface-raised",
+                  ? "bg-surface-overlay text-cta font-semibold rounded"
+                  : isToday
+                    ? "bg-cta/10 text-cta font-semibold rounded"
+                    : "bg-surface-card text-stone-700 hover:bg-surface-raised",
               ].join(" ")}
             >
               <span className={isToday ? "font-bold" : "font-medium"}>

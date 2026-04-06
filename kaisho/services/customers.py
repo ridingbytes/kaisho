@@ -242,6 +242,24 @@ def update_customer(
     return None
 
 
+def _enrich_contracts(
+    contracts: list[dict],
+    clocks_file: Path,
+    customer_name: str,
+) -> list[dict]:
+    """Add clock-derived hours to a list of contract dicts."""
+    if not contracts:
+        return contracts
+    hours_map = _clock_hours_by_contract(clocks_file, customer_name)
+    enriched = []
+    for c in contracts:
+        clock_h = hours_map.get(c["name"], 0.0)
+        used = round(c["used_offset"] + clock_h, 2)
+        rest = round(c["budget"] - used, 2)
+        enriched.append({**c, "used": used, "rest": rest})
+    return enriched
+
+
 def get_budget_summary(
     kunden_file: Path, clocks_file: Path
 ) -> list[dict]:
@@ -257,11 +275,17 @@ def get_budget_summary(
             percent = round((rest / budget) * 100)
         else:
             percent = 0
+        contracts = _enrich_contracts(
+            customer.get("contracts", []),
+            clocks_file,
+            customer["name"],
+        )
         summaries.append({
             "name": customer["name"],
             "budget": budget,
             "rest": rest,
             "percent": percent,
+            "contracts": contracts,
         })
     return summaries
 

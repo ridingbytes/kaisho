@@ -24,7 +24,8 @@ import {
 } from "../../hooks/useNotes";
 import { useSettings } from "../../hooks/useSettings";
 import { useTasks } from "../../hooks/useTasks";
-import { useSetView } from "../../context/ViewContext";
+import { usePendingSearch, useSetView } from "../../context/ViewContext";
+import { SearchInput } from "../common/SearchInput";
 import { registerPanelAction } from "../../utils/panelActions";
 import type { NoteItem } from "../../types";
 
@@ -201,7 +202,7 @@ function NoteRow({
           <span
             onClick={(e) => {
               e.stopPropagation();
-              setView("customers");
+              setView("customers", note.customer ?? "");
             }}
             className={[
               "inline-flex items-center",
@@ -224,7 +225,7 @@ function NoteRow({
             <span
               onClick={(e) => {
                 e.stopPropagation();
-                setView("board");
+                setView("board", t.title);
               }}
               className={[
                 "inline-flex items-center",
@@ -665,11 +666,19 @@ export function NotesView() {
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState("");
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const { pendingSearch, clearPendingSearch } = usePendingSearch();
 
   useEffect(
     () => registerPanelAction("notes", () => setShowForm(true)),
     []
   );
+
+  useEffect(() => {
+    if (pendingSearch) {
+      setSearch(pendingSearch);
+      clearPendingSearch();
+    }
+  }, [pendingSearch, clearPendingSearch]);
 
   const activeNotes = notes.filter(
     (n) => !(n as unknown as { archived?: string }).archived
@@ -700,12 +709,11 @@ export function NotesView() {
         <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
           Notes
         </h1>
-        <input
-          type="text"
-          placeholder="Search…"
+        <SearchInput
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="px-2 py-1 rounded-lg text-xs bg-surface-raised border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta w-40"
+          onChange={setSearch}
+          inputClassName="px-2 py-1 rounded-lg text-xs bg-surface-raised border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta w-40 pr-6"
+          className="w-40"
         />
         {tagFilter && (
           <button

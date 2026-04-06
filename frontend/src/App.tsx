@@ -87,6 +87,7 @@ function AppShell({
 }) {
   useWebSocket();
   const [view, setView] = useState<View>(viewFromHash);
+  const [pendingSearch, setPendingSearch] = useState("");
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { config } = useShortcutsContext();
   const { data: currentUser } = useCurrentUser();
@@ -354,7 +355,14 @@ function AppShell({
       </header>
 
       {/* Body */}
-      <ViewContext.Provider value={{ setView }}>
+      <ViewContext.Provider value={{
+        setView: (v, search = "") => {
+          setView(v);
+          setPendingSearch(search);
+        },
+        pendingSearch,
+        clearPendingSearch: () => setPendingSearch(""),
+      }}>
         <div className="flex flex-1 min-h-0">
           <Sidebar
             active={view}

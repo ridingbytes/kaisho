@@ -32,11 +32,6 @@ import type {
   Customer,
 } from "../../types";
 
-function usedColor(usedPercent: number): string {
-  if (usedPercent >= 100) return "#dc2626";
-  if (usedPercent >= 80) return "#d97706";
-  return "#16a34a";
-}
 
 const STATUS_OPTIONS = ["active", "inactive", "archiv"];
 
@@ -84,6 +79,64 @@ function contractBarColor(pct: number): string {
   if (pct >= 100) return "#dc2626";
   if (pct >= 80) return "#d97706";
   return "#16a34a";
+}
+
+function BudgetBar({
+  label,
+  used,
+  budget,
+  rest,
+  closed,
+}: {
+  label?: string;
+  used: number;
+  budget: number;
+  rest: number;
+  closed?: boolean;
+}) {
+  const pct =
+    budget > 0
+      ? Math.min(Math.round((used / budget) * 100), 100)
+      : 0;
+  const color = contractBarColor(pct);
+  return (
+    <div>
+      <div className="h-4 flex items-end pb-1">
+        {label !== undefined && (
+          <span
+            className={[
+              "text-[10px] leading-none",
+              closed ? "text-stone-400" : "text-stone-600",
+            ].join(" ")}
+          >
+            {label}
+            {closed && (
+              <span className="ml-1 text-stone-400">(closed)</span>
+            )}
+          </span>
+        )}
+      </div>
+      <div
+        className="h-1.5 rounded-full bg-surface-overlay overflow-hidden"
+      >
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${pct}%`, backgroundColor: color }}
+        />
+      </div>
+      <div className="flex items-center justify-between mt-0.5">
+        <span className="text-[10px] text-stone-600">
+          {used.toFixed(1)}h used · {rest.toFixed(1)}h left
+        </span>
+        <span
+          className="text-[10px] font-semibold tabular-nums"
+          style={{ color }}
+        >
+          {pct}%
+        </span>
+      </div>
+    </div>
+  );
 }
 
 interface ContractRowProps {
@@ -381,27 +434,42 @@ interface ContractsSectionProps {
 }
 
 function ContractsSection({ customer }: ContractsSectionProps) {
-  const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [adding, setAdding] = useState(false);
+  const hasContracts = customer.contracts.length > 0;
   const { data: contracts = [] } = useContracts(
-    open ? customer.name : null
+    hasContracts ? customer.name : null
   );
 
-  const hasContracts = customer.contracts.length > 0;
   if (!hasContracts) return null;
 
   return (
-    <div>
+    <div className="flex flex-col gap-1">
+      {/* Always-visible usage bars */}
+      {contracts.map((c) => (
+        <BudgetBar
+          key={c.name}
+          label={c.name}
+          used={c.used}
+          budget={c.budget}
+          rest={c.rest}
+          closed={!!c.end_date}
+        />
+      ))}
+
+      {/* Expand for editing */}
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-stone-500 hover:text-stone-700 transition-colors"
+        onClick={() => setEditOpen((v) => !v)}
+        className="flex items-center gap-1 mt-1 text-[10px] font-semibold uppercase tracking-wider text-stone-400 hover:text-stone-600 transition-colors self-start"
       >
-        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-        Contracts ({customer.contracts.length})
+        {editOpen
+          ? <ChevronDown size={10} />
+          : <ChevronRight size={10} />}
+        Edit contracts
       </button>
 
-      {open && (
-        <div className="mt-2 ml-5">
+      {editOpen && (
+        <div className="ml-3">
           {contracts.map((c) => (
             <ContractRow
               key={c.name}
@@ -695,7 +763,9 @@ function QuickBookForm({
   defaultContract: string;
   onDone: () => void;
 }) {
+  const today = new Date().toISOString().slice(0, 10);
   const [duration, setDuration] = useState("");
+  const [date, setDate] = useState(today);
   const [contract, setContract] = useState(defaultContract);
   const [description, setDescription] = useState("");
   const [taskId, setTaskId] = useState<string | null>(null);
@@ -716,6 +786,7 @@ function QuickBookForm({
         description: description.trim(),
         contract: contract || undefined,
         taskId: taskId ?? undefined,
+        date: date !== today ? date : undefined,
       },
       { onSuccess: onDone }
     );
@@ -738,7 +809,13 @@ function QuickBookForm({
           placeholder="Duration (e.g. 1h30m)"
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
-          className={`w-36 shrink-0 ${cls}`}
+          className={`w-32 shrink-0 ${cls}`}
+        />
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className={`w-32 shrink-0 ${cls}`}
         />
         <input
           type="text"
@@ -807,13 +884,6 @@ export function CustomerCard({ customer: c }: Props) {
 
   const hasContracts = (c.contracts ?? []).length > 0;
   const hasContingent = !hasContracts && c.budget > 0;
-  const usedPercent = hasContingent
-    ? Math.min(
-        Math.round(((c.budget - c.rest) / c.budget) * 100),
-        100
-      )
-    : 0;
-  const barColor = usedColor(usedPercent);
   const isArchived = ["inactive", "archiv", "archived"].includes(
     c.status.toLowerCase()
   );
@@ -956,7 +1026,7 @@ export function CustomerCard({ customer: c }: Props) {
         <>
           {/* Header */}
           <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
+            <div className="min-w-0 min-h-[36px] flex flex-col justify-start">
               <h3 className="text-sm font-semibold text-stone-900 truncate">
                 {c.name}
               </h3>
@@ -1000,28 +1070,11 @@ export function CustomerCard({ customer: c }: Props) {
 
           {/* Budget — legacy single bar when no contracts */}
           {hasContingent && (
-            <>
-              <div className="h-1.5 rounded-full bg-surface-overlay overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${usedPercent}%`,
-                    backgroundColor: barColor,
-                  }}
-                />
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-stone-600">
-                  {c.used}h used · {c.rest}h left
-                </span>
-                <span
-                  className="font-semibold tabular-nums"
-                  style={{ color: barColor }}
-                >
-                  {usedPercent}%
-                </span>
-              </div>
-            </>
+            <BudgetBar
+              used={c.used}
+              budget={c.budget}
+              rest={c.rest}
+            />
           )}
 
           {/* Contracts section */}

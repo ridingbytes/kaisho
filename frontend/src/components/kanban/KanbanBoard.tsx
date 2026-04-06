@@ -36,6 +36,7 @@ import { DOCS } from "../../docs/panelDocs";
 import { TaskCard } from "./TaskCard";
 import { KanbanColumn } from "./KanbanColumn";
 import { registerPanelAction } from "../../utils/panelActions";
+import { usePendingSearch } from "../../context/ViewContext";
 
 const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
 
@@ -169,11 +170,19 @@ export function KanbanBoard() {
   const searchRef = useRef<HTMLInputElement>(null);
   const { data: rawTasks = [], isLoading } = useTasks(showDone);
   const tasks = rawTasks.filter((t) => matchesSearch(t, search));
+  const { pendingSearch, clearPendingSearch } = usePendingSearch();
 
   useEffect(
     () => registerPanelAction("board", () => setOpenAddInFirst(true)),
     []
   );
+
+  useEffect(() => {
+    if (pendingSearch) {
+      setSearch(pendingSearch);
+      clearPendingSearch();
+    }
+  }, [pendingSearch, clearPendingSearch]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

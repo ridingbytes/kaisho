@@ -4,8 +4,10 @@ import { useSettings } from "../../hooks/useSettings";
 import { registerPanelAction } from "../../utils/panelActions";
 import { Toggle } from "../common/Toggle";
 import { HelpButton } from "../common/HelpButton";
+import { SearchInput } from "../common/SearchInput";
 import { DOCS } from "../../docs/panelDocs";
 import { CustomerCard } from "./CustomerCard";
+import { usePendingSearch } from "../../context/ViewContext";
 import type { Customer } from "../../types";
 
 const inputCls =
@@ -144,11 +146,19 @@ export function CustomersView() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("budget");
   const { data: customers = [], isLoading } = useCustomers(showInactive);
+  const { pendingSearch, clearPendingSearch } = usePendingSearch();
 
   useEffect(
     () => registerPanelAction("customers", () => setAdding(true)),
     []
   );
+
+  useEffect(() => {
+    if (pendingSearch) {
+      setSearch(pendingSearch);
+      clearPendingSearch();
+    }
+  }, [pendingSearch, clearPendingSearch]);
 
   const visible = sortAndFilter(customers, search, sortBy);
 
@@ -159,11 +169,11 @@ export function CustomersView() {
         <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
           Customers
         </h1>
-        <input
-          className={`${inputCls} w-44`}
-          placeholder="Search…"
+        <SearchInput
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={setSearch}
+          inputClassName={`${inputCls} w-44 pr-6`}
+          className="w-44"
         />
         <select
           className={`${inputCls} w-32`}

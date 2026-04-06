@@ -966,11 +966,16 @@ def switch_profile(body: ProfileSwitch):
     """Switch to a different profile within the user."""
     import os
     from ...backends import reset_backend
-    from ...config import init_data_dir, reset_config
+    from ...config import (
+        init_data_dir,
+        reset_config,
+        save_active_profile,
+    )
     os.environ["PROFILE"] = body.profile
     cfg = reset_config()
     init_data_dir(cfg)
     reset_backend()
+    save_active_profile(cfg.USER_DIR, cfg.PROFILE)
     return {
         "profile": cfg.PROFILE,
     }

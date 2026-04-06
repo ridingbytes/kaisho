@@ -108,6 +108,7 @@ export interface BudgetSummary {
   budget: number;
   rest: number;
   percent: number;
+  contracts: Contract[];
 }
 
 export interface Dashboard {

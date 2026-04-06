@@ -10,6 +10,7 @@ import {
 } from "../../hooks/useClocks";
 import { useContracts } from "../../hooks/useContracts";
 import { useTasks } from "../../hooks/useTasks";
+import { useSetView } from "../../context/ViewContext";
 import type { ClockEntry, Task } from "../../types";
 
 const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
@@ -106,6 +107,7 @@ interface SlotRowProps {
 function SlotRow({ entry, tasks }: SlotRowProps) {
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [editCustomer, setEditCustomer] = useState("");
+  const setView = useSetView();
   const [editContract, setEditContract] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editDate, setEditDate] = useState("");
@@ -282,12 +284,16 @@ function SlotRow({ entry, tasks }: SlotRowProps) {
         </span>
       )}
       {entry.task_id && (
-        <span
-          className="text-[9px] px-1 py-0.5 rounded bg-cta-muted text-cta/70 truncate max-w-[80px]"
+        <button
+          onClick={() => setView(
+            "board",
+            taskTitleById(tasks, entry.task_id) || ""
+          )}
+          className="text-[9px] px-1 py-0.5 rounded bg-cta-muted text-cta/70 truncate max-w-[80px] hover:bg-cta/20 transition-colors"
           title={taskTitleById(tasks, entry.task_id) || entry.task_id}
         >
           {taskTitleById(tasks, entry.task_id) || entry.task_id}
-        </span>
+        </button>
       )}
       <span className="text-[10px] text-stone-500 tabular-nums ml-auto">
         {entry.duration_minutes !== null
@@ -329,6 +335,7 @@ function TaskGroupRow({
   showResume,
 }: TaskGroupRowProps) {
   const resumeTimer = useStartTimer();
+  const setView = useSetView();
   const latest = group.entries[group.entries.length - 1];
 
   return (
@@ -336,9 +343,12 @@ function TaskGroupRow({
       {/* Header */}
       <div className="group flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-stone-800 truncate">
+          <button
+            onClick={() => setView("customers", group.customer)}
+            className="text-xs font-medium text-stone-800 truncate max-w-full hover:text-cta transition-colors text-left"
+          >
             {group.customer}
-          </p>
+          </button>
           <p className="text-[11px] text-stone-500 truncate mt-0.5">
             {group.description}
           </p>

@@ -11,7 +11,7 @@ import {
   ChevronRight,
   GitBranch,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
@@ -366,9 +366,25 @@ export function TaskCard({
   const [editBody, setEditBody] = useState("");
   const [editGithubUrl, setEditGithubUrl] = useState("");
   const [bodyExpanded, setBodyExpanded] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
+  const confirmRef = useRef<HTMLDivElement>(null);
   const updateTask = useUpdateTask();
   const setTaskTags = useSetTaskTags();
   const archiveTask = useArchiveTask();
+
+  useEffect(() => {
+    if (!confirmArchive) return;
+    function handleClick(e: MouseEvent) {
+      if (
+        confirmRef.current &&
+        !confirmRef.current.contains(e.target as Node)
+      ) {
+        setConfirmArchive(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [confirmArchive]);
   const { data: settings } = useSettings();
   const allTags = settings?.tags ?? [];
 
@@ -634,19 +650,46 @@ export function TaskCard({
             >
               <Pencil size={11} />
             </button>
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => {
-                if (window.confirm(`Archive "${task.title}"?`)) {
-                  archiveTask.mutate(task.id);
-                }
-              }}
-              disabled={archiveTask.isPending}
-              className="p-1 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
-              title="Archive"
-            >
-              <Trash2 size={11} />
-            </button>
+            <div className="relative" ref={confirmRef}>
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmArchive(true);
+                }}
+                disabled={archiveTask.isPending}
+                className="p-1 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+                title="Archive"
+              >
+                <Trash2 size={11} />
+              </button>
+              {confirmArchive && (
+                <div className="absolute right-0 top-full mt-1 z-50 flex items-center gap-1 px-2 py-1 rounded bg-surface-overlay border border-border shadow-lg whitespace-nowrap">
+                  <span className="text-[10px] text-stone-700">
+                    Archive?
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      archiveTask.mutate(task.id);
+                      setConfirmArchive(false);
+                    }}
+                    className="p-0.5 rounded text-red-400 hover:bg-red-500/10"
+                  >
+                    <Check size={10} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmArchive(false);
+                    }}
+                    className="p-0.5 rounded text-stone-600 hover:text-stone-900"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

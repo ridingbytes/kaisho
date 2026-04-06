@@ -46,7 +46,14 @@ async function post<T>(
     },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`POST ${path}: ${res.status}`);
+  if (!res.ok) {
+    let detail = `POST ${path}: ${res.status}`;
+    try {
+      const json = await res.json() as { detail?: string };
+      if (json.detail) detail = json.detail;
+    } catch { /* ignore */ }
+    throw new Error(detail);
+  }
   return res.json() as Promise<T>;
 }
 

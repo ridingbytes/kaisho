@@ -1445,13 +1445,13 @@ class MarkdownCustomerBackend(CustomerBackend):
         )
         result = []
         for c in custs:
-            contracts = c.get("contracts", [])
-            if contracts:
+            raw_contracts = c.get("contracts", [])
+            if raw_contracts:
                 enriched = [
                     self._enrich_contract(
                         c["name"], con
                     )
-                    for con in contracts
+                    for con in raw_contracts
                     if not con.get("end_date")
                 ]
                 budget = sum(
@@ -1463,6 +1463,7 @@ class MarkdownCustomerBackend(CustomerBackend):
                     for ct in enriched
                 )
             else:
+                enriched = []
                 budget = c.get("budget", 0)
                 rest = c.get("rest", 0)
             percent = (
@@ -1475,6 +1476,7 @@ class MarkdownCustomerBackend(CustomerBackend):
                 "budget": budget,
                 "rest": rest,
                 "percent": percent,
+                "contracts": enriched,
             })
         return result
 

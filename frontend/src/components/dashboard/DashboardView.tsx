@@ -45,6 +45,11 @@ function budgetBarColor(usedPercent: number): string {
   return "#16a34a";
 }
 
+function contractUsedPct(budget: number, used: number): number {
+  if (budget <= 0) return 0;
+  return Math.min(Math.round((used / budget) * 100), 100);
+}
+
 function formatHours(minutes: number): string {
   return (minutes / 60).toFixed(1) + "h";
 }
@@ -359,7 +364,16 @@ function BudgetRow({
   expanded: boolean;
   onToggle: () => void;
 }) {
-  const usedPercent = Math.min(100 - b.percent, 100);
+  const hasContracts = b.contracts.length > 0;
+  const displayBudget = hasContracts
+    ? b.contracts.reduce((s, c) => s + c.budget, 0)
+    : b.budget;
+  const displayUsed = hasContracts
+    ? b.contracts.reduce((s, c) => s + c.used, 0)
+    : b.budget - b.rest;
+  const usedPercent = hasContracts
+    ? contractUsedPct(displayBudget, displayUsed)
+    : Math.min(100 - b.percent, 100);
   const color = budgetBarColor(usedPercent);
   const warning = usedPercent >= 80;
   const ChevronIcon = expanded ? ChevronDown : ChevronRight;
@@ -412,7 +426,7 @@ function BudgetRow({
               "text-xs text-stone-600 tabular-nums"
             }
           >
-            {b.rest}h / {b.budget}h
+            {displayUsed.toFixed(1)}h / {displayBudget.toFixed(0)}h
           </span>
           <span
             className={
@@ -424,22 +438,56 @@ function BudgetRow({
           </span>
         </div>
       </div>
-      <div
-        className={
-          "h-1.5 rounded-full bg-surface-raised " +
-          "overflow-hidden"
-        }
-      >
+      {b.contracts.length > 0 ? (
+        <div className="flex flex-col gap-1.5 mt-1">
+          {b.contracts.map((c) => {
+            const pct = contractUsedPct(c.budget, c.used);
+            const cColor = budgetBarColor(pct);
+            return (
+              <div key={c.name}>
+                <span className="text-[9px] text-stone-500 truncate block mb-0.5">
+                  {c.name}
+                </span>
+                <div className="h-1.5 rounded-full bg-surface-raised overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${pct}%`,
+                      backgroundColor: cColor,
+                    }}
+                  />
+                </div>
+                <div className="flex items-baseline justify-between mt-0.5">
+                  <span className="text-[9px] text-stone-500 tabular-nums">
+                    {c.used.toFixed(1)}h used · {c.rest.toFixed(1)}h left
+                  </span>
+                  <span
+                    className="text-[9px] font-semibold tabular-nums shrink-0"
+                    style={{ color: cColor }}
+                  >
+                    {pct}%
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
         <div
           className={
-            "h-full rounded-full transition-all"
+            "h-1.5 rounded-full bg-surface-raised " +
+            "overflow-hidden"
           }
-          style={{
-            width: `${usedPercent}%`,
-            backgroundColor: color,
-          }}
-        />
-      </div>
+        >
+          <div
+            className="h-full rounded-full transition-all"
+            style={{
+              width: `${usedPercent}%`,
+              backgroundColor: color,
+            }}
+          />
+        </div>
+      )}
       {expanded && (
         <CustomerClockEntries customerName={b.name} />
       )}
@@ -606,7 +654,7 @@ export function DashboardView() {
                   key={b.name}
                   b={b}
                   onNameClick={() =>
-                    setView("customers")
+                    setView("customers", b.name)
                   }
                   expanded={expandedCustomers.has(
                     b.name

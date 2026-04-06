@@ -764,6 +764,7 @@ class JsonCustomerBackend(CustomerBackend):
                 "budget": budget,
                 "rest": rest,
                 "percent": percent,
+                "contracts": c.get("contracts", []),
             })
         return result
 

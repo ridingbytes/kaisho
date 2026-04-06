@@ -25,7 +25,8 @@ import {
   exportClocksExcel,
 } from "../../utils/exportClocks";
 import { registerPanelAction } from "../../utils/panelActions";
-import { useSetView } from "../../context/ViewContext";
+import { usePendingSearch, useSetView } from "../../context/ViewContext";
+import { SearchInput } from "../common/SearchInput";
 import type { ClockEntry, Task } from "../../types";
 
 type Period = "today" | "week" | "month";
@@ -458,7 +459,7 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
       </td>
       <td className="px-3 py-1.5 text-xs whitespace-nowrap">
         <button
-          onClick={() => setView("customers")}
+          onClick={() => setView("customers", entry.customer)}
           className="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-cta-muted text-cta-hover hover:bg-cta/20 transition-colors"
         >
           {entry.customer}
@@ -477,7 +478,7 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
       <td className="px-3 py-1.5 text-xs whitespace-nowrap max-w-32 truncate">
         {taskTitle && (
           <button
-            onClick={() => setView("board")}
+            onClick={() => setView("board", taskTitle ?? "")}
             className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-cta-muted text-cta hover:bg-cta/20 transition-colors"
             title={taskTitle}
           >
@@ -533,11 +534,19 @@ export function ClockView() {
     specificDate || undefined
   );
   const { data: tasks = [] } = useTasks();
+  const { pendingSearch, clearPendingSearch } = usePendingSearch();
 
   useEffect(
     () => registerPanelAction("clocks", () => setBooking(true)),
     []
   );
+
+  useEffect(() => {
+    if (pendingSearch) {
+      setSearch(pendingSearch);
+      clearPendingSearch();
+    }
+  }, [pendingSearch, clearPendingSearch]);
 
   const filtered = search
     ? entries.filter(
@@ -558,11 +567,12 @@ export function ClockView() {
         <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
           Clock Entries
         </h1>
-        <input
-          className={`${inputCls} w-52`}
-          placeholder="Search customer / description…"
+        <SearchInput
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={setSearch}
+          placeholder="Search customer / description…"
+          inputClassName={`${inputCls} w-52 pr-6`}
+          className="w-52"
         />
         <select
           className={`${inputCls} w-28`}

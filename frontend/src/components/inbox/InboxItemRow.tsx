@@ -220,7 +220,7 @@ export function InboxItemRow({ item }: Props) {
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  setView("customers");
+                  setView("customers", item.customer ?? "");
                 }}
                 className="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-cta-muted text-cta-hover cursor-pointer hover:bg-cta/20"
               >
