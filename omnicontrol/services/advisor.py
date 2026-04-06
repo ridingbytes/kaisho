@@ -198,13 +198,16 @@ def build_system_prompt(data_dir: Path) -> str:
         parts.append(f"\n## User Profile\n{user}")
     skills = list_skills(data_dir)
     if skills:
-        names = ", ".join(s["name"] for s in skills)
-        parts.append(
-            f"\n## Available Skills\n"
-            f"The user can invoke these skill templates: "
-            f"{names}. When a skill is invoked, follow its "
-            f"instructions precisely."
+        skill_block = "\n## Skills\n\n"
+        skill_block += (
+            "When the user's request matches one of these "
+            "skills, follow its instructions automatically. "
+            "The user does not need to name the skill "
+            "explicitly.\n\n"
         )
+        for s in skills:
+            skill_block += f"### {s['name']}\n{s['content']}\n\n"
+        parts.append(skill_block)
     return "\n".join(parts)
 
 
