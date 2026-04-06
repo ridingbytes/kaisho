@@ -212,32 +212,60 @@ def _guess_inbox_type(text: str) -> str:
     return "note"
 
 
+# -- Tag helpers (org-style :tag1:tag2: suffix) ----------------------
+
+_TAG_SUFFIX_RE = re.compile(
+    r"\s+(:[a-zA-Z0-9_@-]+(?::[a-zA-Z0-9_@-]+)*:)\s*$"
+)
+
+
+def _strip_tags(heading: str) -> tuple[str, list[str]]:
+    """Split heading into (text, tags) removing the tag suffix."""
+    m = _TAG_SUFFIX_RE.search(heading)
+    if not m:
+        return heading.strip(), []
+    tag_str = m.group(1)
+    text = heading[:m.start()].strip()
+    tags = [t for t in tag_str.split(":") if t]
+    return text, tags
+
+
+def _append_tags(heading: str, tags: list[str]) -> str:
+    """Append org-style tag suffix to a heading."""
+    if not tags:
+        return heading
+    tag_str = ":" + ":".join(tags) + ":"
+    return f"{heading}    {tag_str}"
+
+
 # -- Task heading helpers --------------------------------------------
 
 
 def _task_heading(task: dict) -> str:
-    """Build heading: STATUS [CUSTOMER] Title."""
+    """Build heading: STATUS [CUSTOMER] Title    :tags:."""
     customer = task.get("customer", "")
     status = task.get("status", "TODO")
     title = task.get("title", "")
-    return f"{status} [{customer}] {title}"
+    base = f"{status} [{customer}] {title}"
+    return _append_tags(base, task.get("tags", []))
 
 
 def _parse_task_heading(heading: str) -> dict:
-    """Extract status, customer, title from heading."""
-    m = re.match(
-        r"(\S+)\s+\[([^\]]*)\]\s+(.*)", heading
-    )
+    """Extract status, customer, title, tags from heading."""
+    text, tags = _strip_tags(heading)
+    m = re.match(r"(\S+)\s+\[([^\]]*)\]\s+(.*)", text)
     if not m:
         return {
             "status": "TODO",
             "customer": "",
-            "title": heading,
+            "title": text,
+            "tags": tags,
         }
     return {
         "status": m.group(1),
         "customer": m.group(2),
         "title": m.group(3),
+        "tags": tags,
     }
 
 
@@ -250,7 +278,7 @@ def _section_to_task(sec: dict) -> dict:
         "customer": parsed["customer"],
         "title": parsed["title"],
         "status": parsed["status"],
-        "tags": meta.get("tags", []),
+        "tags": parsed.get("tags", []),
         "body": sec.get("body", ""),
         "github_url": meta.get("github_url", ""),
         "properties": meta.get("properties", {}),
@@ -267,7 +295,6 @@ def _task_to_section(task: dict) -> dict:
     meta = {
         "id": task.get("id", ""),
         "created": task.get("created", ""),
-        "tags": task.get("tags", []),
         "github_url": task.get("github_url", ""),
     }
     if task.get("properties"):
@@ -1041,20 +1068,22 @@ class MarkdownInboxBackend(InboxBackend):
 
 
 def _note_heading(note: dict) -> str:
-    """Build heading: Title."""
-    return note.get("title", "Untitled")
+    """Build heading: Title    :tags:."""
+    base = note.get("title", "Untitled")
+    return _append_tags(base, note.get("tags", []))
 
 
 def _section_to_note(sec: dict) -> dict:
     """Convert a parsed section to a note dict."""
+    text, tags = _strip_tags(sec["heading"])
     meta = sec.get("meta", {})
     return {
         "id": meta.get("id", ""),
-        "title": sec["heading"],
+        "title": text,
         "body": sec.get("body", ""),
         "customer": meta.get("customer", ""),
         "task_id": meta.get("task_id") or None,
-        "tags": meta.get("tags", []),
+        "tags": tags,
         "created": meta.get("created", ""),
     }
 
@@ -1065,7 +1094,6 @@ def _note_to_section(note: dict) -> dict:
         "id": note.get("id", ""),
         "customer": note.get("customer", ""),
         "created": note.get("created", ""),
-        "tags": note.get("tags", []),
     }
     if note.get("task_id"):
         meta["task_id"] = note["task_id"]
