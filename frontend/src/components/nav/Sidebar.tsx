@@ -76,13 +76,21 @@ export function Sidebar({
     <nav
       className={[
         "flex flex-col shrink-0 border-r border-border-subtle bg-surface-card",
-        "overflow-hidden transition-[width] duration-200 py-3 gap-1",
-        open ? "w-14" : "w-0",
+        "transition-[width] duration-200 py-3 gap-1",
+        open ? "w-40" : "w-14 overflow-hidden",
       ].join(" ")}
     >
       {/* Logo dot */}
-      <div className="flex justify-center mb-3">
-        <div className="w-2 h-2 rounded-full bg-accent" />
+      <div className={[
+        "flex items-center mb-3",
+        open ? "px-4 gap-2" : "justify-center",
+      ].join(" ")}>
+        <div className="w-2 h-2 rounded-full bg-accent shrink-0" />
+        {open && (
+          <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">
+            OmniCtrl
+          </span>
+        )}
       </div>
 
       {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
@@ -96,16 +104,19 @@ export function Sidebar({
             }
             onClick={() => onChange(id)}
             className={[
-              "relative flex flex-col items-center justify-center",
-              "mx-2 h-10 rounded-lg transition-colors",
-              "text-[9px] font-semibold tracking-wider uppercase gap-1",
+              "relative flex items-center",
+              open ? "px-3 gap-2.5 h-8" : "flex-col justify-center mx-2 h-10 gap-1",
+              "rounded-lg transition-colors",
+              "text-[9px] font-semibold tracking-wider uppercase",
               isActive
                 ? "bg-accent-muted text-accent"
                 : "text-slate-400 hover:text-slate-200 hover:bg-surface-raised",
             ].join(" ")}
           >
-            <Icon size={16} strokeWidth={isActive ? 2 : 1.5} />
-            <span className="leading-none">{label.slice(0, 3)}</span>
+            <Icon size={open ? 14 : 16} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
+            <span className="leading-none truncate">
+              {open ? label : label.slice(0, 3)}
+            </span>
 
             {/* Inbox badge */}
             {id === "inbox" && inboxCount > 0 && (
