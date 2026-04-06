@@ -567,7 +567,7 @@ function TreeNodeRow({
             ? "text-accent bg-accent-muted"
             : "text-slate-300",
         ].join(" ")}
-        style={{ paddingLeft: indent + 20 }}
+        style={{ paddingLeft: indent + 16 }}
         title={node.name}
       >
         {node.name}
@@ -580,7 +580,7 @@ function TreeNodeRow({
       <button
         onClick={() => onToggle(node.path)}
         className="w-full text-left py-1 pr-2 text-xs text-slate-400 flex items-center gap-1 hover:bg-surface-raised transition-colors"
-        style={{ paddingLeft: indent + 4 }}
+        style={{ paddingLeft: indent }}
       >
         {node.expanded ? (
           <ChevronDown size={10} className="shrink-0" />
