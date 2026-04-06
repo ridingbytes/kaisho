@@ -286,79 +286,64 @@ def issues_for_customers(
 # GitHub Projects v2 (GraphQL)
 # ------------------------------------------------------------------
 
-_PROJECTS_QUERY = """
-query($owner: String!, $first: Int!) {
-  repositoryOwner(login: $owner) {
-    ... on Organization {
-      projectsV2(first: $first) {
-        nodes {
-          id title url closed
-          items(first: 50) {
-            nodes {
-              id type
-              content {
-                ... on Issue {
-                  number title state url
-                  labels(first: 10) {
-                    nodes { name color }
-                  }
-                }
-                ... on PullRequest {
-                  number title state url
-                }
-                ... on DraftIssue { title }
-              }
-              fieldValues(first: 20) {
-                nodes {
-                  ... on ProjectV2ItemFieldSingleSelectValue {
-                    name
-                    field {
-                      ... on ProjectV2SingleSelectField { name }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+_PROJECT_FIELDS = """
+  id title url closed
+  fields(first: 20) {
+    nodes {
+      ... on ProjectV2SingleSelectField {
+        name
+        options { id name }
       }
     }
-    ... on User {
-      projectsV2(first: $first) {
+  }
+  items(first: 50) {
+    nodes {
+      id type
+      content {
+        ... on Issue {
+          number title state url
+          labels(first: 10) {
+            nodes { name color }
+          }
+        }
+        ... on PullRequest {
+          number title state url
+        }
+        ... on DraftIssue { title }
+      }
+      fieldValues(first: 20) {
         nodes {
-          id title url closed
-          items(first: 50) {
-            nodes {
-              id type
-              content {
-                ... on Issue {
-                  number title state url
-                  labels(first: 10) {
-                    nodes { name color }
-                  }
-                }
-                ... on PullRequest {
-                  number title state url
-                }
-                ... on DraftIssue { title }
-              }
-              fieldValues(first: 20) {
-                nodes {
-                  ... on ProjectV2ItemFieldSingleSelectValue {
-                    name
-                    field {
-                      ... on ProjectV2SingleSelectField { name }
-                    }
-                  }
-                }
-              }
+          ... on ProjectV2ItemFieldSingleSelectValue {
+            name
+            field {
+              ... on ProjectV2SingleSelectField { name }
             }
           }
         }
       }
     }
   }
-}
+"""
+
+_PROJECTS_QUERY = f"""
+query($owner: String!, $first: Int!) {{
+  repositoryOwner(login: $owner) {{
+    ... on Organization {{
+      projectsV2(first: $first) {{
+        nodes {{
+          {_PROJECT_FIELDS}
+        }}
+      }}
+    }}
+    ... on User {{
+      projectsV2(first: $first) {{
+        nodes {{
+          {_PROJECT_FIELDS}
+        }}
+      }}
+    }}
+  }}
+}}
 """
 
 
@@ -419,6 +404,16 @@ def _normalize_project_item(item: dict) -> dict:
     }
 
 
+def _extract_status_order(project: dict) -> list[str]:
+    """Return the ordered status option names from the Status field."""
+    for field in (project.get("fields") or {}).get("nodes", []):
+        if not isinstance(field, dict):
+            continue
+        if field.get("name", "").lower() == "status":
+            return [o["name"] for o in field.get("options", [])]
+    return []
+
+
 def _normalize_project(project: dict) -> dict:
     items = [
         _normalize_project_item(i)
@@ -429,6 +424,7 @@ def _normalize_project(project: dict) -> dict:
         "title": project.get("title", ""),
         "url": project.get("url", ""),
         "closed": project.get("closed", False),
+        "status_order": _extract_status_order(project),
         "items": items,
     }
 
@@ -445,8 +441,12 @@ def _fetch_projects(owner: str) -> list[dict]:
 
 
 def projects_for_customers(customers: list[dict]) -> list[dict]:
-    """Return GitHub Projects v2 grouped by customer."""
-    seen_owners: set[str] = set()
+    """Return GitHub Projects v2 grouped by customer.
+
+    Caches project results per GitHub owner so shared orgs are only
+    fetched once, but each customer still appears in the result.
+    """
+    owner_cache: dict[str, list[dict]] = {}
     results = []
     for c in customers:
         raw = (
@@ -457,16 +457,14 @@ def projects_for_customers(customers: list[dict]) -> list[dict]:
         if not repo:
             continue
         owner = repo.split("/")[0]
-        if owner in seen_owners:
-            continue
-        seen_owners.add(owner)
-        try:
-            projects = _fetch_projects(owner)
-        except GhError:
-            projects = []
+        if owner not in owner_cache:
+            try:
+                owner_cache[owner] = _fetch_projects(owner)
+            except GhError:
+                owner_cache[owner] = []
         results.append({
             "customer": c["name"],
             "repo": repo,
-            "projects": projects,
+            "projects": owner_cache[owner],
         })
     return results

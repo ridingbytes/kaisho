@@ -200,6 +200,7 @@ export interface GithubProject {
   title: string;
   url: string;
   closed: boolean;
+  status_order: string[];
   items: GithubProjectItem[];
 }
 

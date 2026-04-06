@@ -63,11 +63,7 @@ function IssueRow({ issue }: { issue: GithubIssue }) {
   );
 }
 
-function IssuesPane({
-  customerFilter,
-}: {
-  customerFilter: string;
-}) {
+function IssuesPane({ customerFilter }: { customerFilter: string }) {
   const { data: groups = [], isLoading, error } = useGithubIssues();
   const filtered = customerFilter
     ? groups.filter((g) => g.customer === customerFilter)
@@ -152,17 +148,14 @@ function ProjectItemRow({ item }: { item: GithubProjectItem }) {
           <LabelPill key={l.name} label={l} />
         ))}
       </div>
-      {item.status && (
-        <span className="text-[10px] text-stone-500 shrink-0 border border-border rounded px-1.5 py-0.5">
-          {item.status}
-        </span>
-      )}
     </div>
   );
 }
 
+/** Group items by status, preserving the kanban column order. */
 function groupByStatus(
-  items: GithubProjectItem[]
+  items: GithubProjectItem[],
+  statusOrder: string[],
 ): [string, GithubProjectItem[]][] {
   const map = new Map<string, GithubProjectItem[]>();
   for (const item of items) {
@@ -170,12 +163,51 @@ function groupByStatus(
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(item);
   }
-  return Array.from(map.entries());
+  // Sort groups by the kanban field option order.
+  // Any status not in statusOrder goes to the end.
+  const orderedKeys = [
+    ...statusOrder.filter((s) => map.has(s)),
+    ...[...map.keys()].filter((k) => !statusOrder.includes(k)),
+  ];
+  return orderedKeys.map((k) => [k, map.get(k)!]);
+}
+
+function StatusGroup({
+  status,
+  items,
+}: {
+  status: string;
+  items: GithubProjectItem[];
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div>
+      <button
+        className="w-full flex items-center gap-2 px-4 py-1.5 bg-surface-raised border-b border-border-subtle text-left hover:bg-surface-overlay transition-colors"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 flex-1">
+          {status}
+          <span className="ml-1.5 font-normal text-stone-400">
+            ({items.length})
+          </span>
+        </span>
+        <span className="text-stone-400 text-[10px]">
+          {open ? "▴" : "▾"}
+        </span>
+      </button>
+      {open &&
+        items.map((item) => (
+          <ProjectItemRow key={item.id} item={item} />
+        ))}
+    </div>
+  );
 }
 
 function ProjectCard({ project }: { project: GithubProject }) {
   const [open, setOpen] = useState(!project.closed);
-  const groups = groupByStatus(project.items);
+  const groups = groupByStatus(project.items, project.status_order);
+
   return (
     <div className="mb-3 bg-surface-card rounded-xl border border-border overflow-hidden">
       <button
@@ -208,19 +240,7 @@ function ProjectCard({ project }: { project: GithubProject }) {
       {open && project.items.length > 0 && (
         <div>
           {groups.map(([status, groupItems]) => (
-            <div key={status}>
-              <div className="px-4 py-1.5 bg-surface-raised border-b border-border-subtle">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-                  {status}
-                  <span className="ml-1.5 font-normal text-stone-400">
-                    ({groupItems.length})
-                  </span>
-                </span>
-              </div>
-              {groupItems.map((item) => (
-                <ProjectItemRow key={item.id} item={item} />
-              ))}
-            </div>
+            <StatusGroup key={status} status={status} items={groupItems} />
           ))}
         </div>
       )}
@@ -242,9 +262,6 @@ function ProjectsPane({
   const filtered = customerFilter
     ? groups.filter((g) => g.customer === customerFilter)
     : groups;
-  const totalProjects = filtered.reduce(
-    (s, g) => s + g.projects.length, 0
-  );
 
   if (isLoading) return <p className="text-sm text-stone-500">Loading…</p>;
   if (error) {
@@ -254,9 +271,18 @@ function ProjectsPane({
       </p>
     );
   }
-  if (totalProjects === 0) {
-    return <p className="text-sm text-stone-500">No projects found.</p>;
+
+  const hasAny = filtered.some((g) =>
+    showClosed ? g.projects.length > 0 : g.projects.some((p) => !p.closed)
+  );
+  if (!hasAny) {
+    return (
+      <p className="text-sm text-stone-500">
+        {customerFilter ? "No projects for this customer." : "No projects found."}
+      </p>
+    );
   }
+
   return (
     <>
       {filtered.map((group) => {
@@ -299,10 +325,16 @@ export function GithubView() {
 
   const { data: issueGroups = [] } = useGithubIssues();
   const { data: projectGroups = [] } = useGithubProjects();
+
   const customers =
     tab === "issues"
       ? issueGroups.map((g) => g.customer)
       : projectGroups.map((g) => g.customer);
+
+  function switchTab(t: Tab) {
+    setTab(t);
+    setCustomerFilter("");
+  }
 
   function tabCls(t: Tab) {
     return [
@@ -321,17 +353,17 @@ export function GithubView() {
           GitHub
         </h1>
         <div className="flex items-center gap-1">
-          <button className={tabCls("issues")} onClick={() => { setTab("issues"); setCustomerFilter(""); }}>
+          <button className={tabCls("issues")} onClick={() => switchTab("issues")}>
             Issues
           </button>
           <button
             className={tabCls("projects")}
-            onClick={() => { setTab("projects"); setCustomerFilter(""); }}
+            onClick={() => switchTab("projects")}
           >
             Projects
           </button>
         </div>
-        {customers.length > 1 && (
+        {customers.length > 0 && (
           <select
             value={customerFilter}
             onChange={(e) => setCustomerFilter(e.target.value)}
