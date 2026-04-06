@@ -101,22 +101,35 @@ export interface AuthUser {
 
 export interface AuthResult {
   token: string;
+  password_set: boolean;
   user: AuthUser;
 }
 
 export function login(
   username: string,
+  password: string = "",
 ): Promise<AuthResult> {
-  return post<AuthResult>("/auth/login", { username });
+  return post<AuthResult>("/auth/login", {
+    username, password,
+  });
 }
 
 export function register(data: {
   username: string;
+  password?: string;
   name?: string;
   email?: string;
   bio?: string;
 }): Promise<AuthResult> {
   return post<AuthResult>("/auth/register", data);
+}
+
+export function setPassword(
+  password: string,
+): Promise<{ ok: boolean }> {
+  return post<{ ok: boolean }>("/auth/set-password", {
+    password,
+  });
 }
 
 export function logout(): Promise<{ ok: boolean }> {

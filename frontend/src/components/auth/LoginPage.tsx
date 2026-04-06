@@ -3,6 +3,7 @@ import { PixelAvatar } from "../common/PixelAvatar";
 import {
   login,
   register,
+  setPassword,
   type AuthUser,
 } from "../../api/client";
 
@@ -32,31 +33,61 @@ function sanitizeUsername(raw: string): string {
     .slice(0, 32);
 }
 
+type Mode = "login" | "register" | "set-password";
+
 export function LoginPage({ onAuth }: LoginPageProps) {
-  const [mode, setMode] = useState<"login" | "register">(
-    "login"
-  );
+  const [mode, setMode] = useState<Mode>("login");
   const [username, setUsername] = useState("");
+  const [password, setPasswordVal] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  // Stashed after passwordless login
+  const [stashedToken, setStashedToken] = useState("");
+  const [stashedUser, setStashedUser] = useState<AuthUser | null>(
+    null
+  );
 
   const validUsername =
     username.length >= 2 && USERNAME_RE.test(username);
+
+  function finishAuth(token: string, user: AuthUser) {
+    localStorage.setItem("oc_token", token);
+    onAuth(token, user);
+  }
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (!username.trim()) return;
     setPending(true);
     setError("");
-    login(username.trim())
+    login(username.trim(), password)
       .then((res) => {
-        localStorage.setItem("oc_token", res.token);
-        onAuth(res.token, res.user);
+        if (!res.password_set) {
+          // No password yet — prompt to set one
+          setStashedToken(res.token);
+          setStashedUser(res.user);
+          localStorage.setItem("oc_token", res.token);
+          setMode("set-password");
+          setPasswordVal("");
+        } else {
+          finishAuth(res.token, res.user);
+        }
       })
-      .catch(() => setError("User not found"))
+      .catch((err) => {
+        const msg = err instanceof Error
+          ? err.message
+          : "Login failed";
+        if (msg.includes("401")) {
+          setError("Invalid password");
+        } else if (msg.includes("404")) {
+          setError("User not found");
+        } else {
+          setError(msg);
+        }
+      })
       .finally(() => setPending(false));
   }
 
@@ -67,16 +98,38 @@ export function LoginPage({ onAuth }: LoginPageProps) {
     setError("");
     register({
       username,
+      password,
       name: name.trim(),
       email: email.trim(),
       bio: bio.trim(),
     })
-      .then((res) => {
-        localStorage.setItem("oc_token", res.token);
-        onAuth(res.token, res.user);
-      })
+      .then((res) => finishAuth(res.token, res.user))
       .catch(() => setError("Username already taken"))
       .finally(() => setPending(false));
+  }
+
+  function handleSetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (password.length < 4) {
+      setError("At least 4 characters");
+      return;
+    }
+    setPending(true);
+    setError("");
+    setPassword(password)
+      .then(() => {
+        if (stashedToken && stashedUser) {
+          finishAuth(stashedToken, stashedUser);
+        }
+      })
+      .catch(() => setError("Failed to set password"))
+      .finally(() => setPending(false));
+  }
+
+  function skipPassword() {
+    if (stashedToken && stashedUser) {
+      finishAuth(stashedToken, stashedUser);
+    }
   }
 
   return (
@@ -89,12 +142,14 @@ export function LoginPage({ onAuth }: LoginPageProps) {
           OmniControl
         </h1>
         <p className="text-xs text-slate-600 mb-6 text-center">
-          {mode === "login"
-            ? "Sign in to continue"
-            : "Create your account"}
+          {mode === "login" && "Sign in to continue"}
+          {mode === "register" && "Create your account"}
+          {mode === "set-password" &&
+            "Secure your account with a password"}
         </p>
 
-        {mode === "login" ? (
+        {/* Login */}
+        {mode === "login" && (
           <form
             onSubmit={handleLogin}
             className="flex flex-col gap-3"
@@ -107,6 +162,13 @@ export function LoginPage({ onAuth }: LoginPageProps) {
               className={inputCls}
               autoFocus
               required
+            />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPasswordVal(e.target.value)}
+              placeholder="Password"
+              className={inputCls}
             />
             {error && (
               <p className="text-xs text-red-400">{error}</p>
@@ -123,13 +185,17 @@ export function LoginPage({ onAuth }: LoginPageProps) {
               onClick={() => {
                 setMode("register");
                 setError("");
+                setPasswordVal("");
               }}
               className="text-xs text-slate-600 hover:text-slate-400 transition-colors"
             >
               Create a new account
             </button>
           </form>
-        ) : (
+        )}
+
+        {/* Register */}
+        {mode === "register" && (
           <form
             onSubmit={handleRegister}
             className="flex flex-col gap-3"
@@ -145,7 +211,9 @@ export function LoginPage({ onAuth }: LoginPageProps) {
                   type="text"
                   value={username}
                   onChange={(e) =>
-                    setUsername(sanitizeUsername(e.target.value))
+                    setUsername(
+                      sanitizeUsername(e.target.value)
+                    )
                   }
                   placeholder="Username"
                   className={inputCls}
@@ -154,7 +222,7 @@ export function LoginPage({ onAuth }: LoginPageProps) {
                 />
                 {username.length > 0 && !validUsername && (
                   <p className="text-[10px] text-amber-400 mt-0.5">
-                    Lowercase a-z, 0-9, - and _ only (min 2)
+                    a-z, 0-9, - and _ only (min 2)
                   </p>
                 )}
                 <p className="text-[10px] text-slate-700 mt-0.5">
@@ -162,6 +230,13 @@ export function LoginPage({ onAuth }: LoginPageProps) {
                 </p>
               </div>
             </div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPasswordVal(e.target.value)}
+              placeholder="Password"
+              className={inputCls}
+            />
             <input
               type="text"
               value={name}
@@ -198,10 +273,49 @@ export function LoginPage({ onAuth }: LoginPageProps) {
               onClick={() => {
                 setMode("login");
                 setError("");
+                setPasswordVal("");
               }}
               className="text-xs text-slate-600 hover:text-slate-400 transition-colors"
             >
               Already have an account? Sign in
+            </button>
+          </form>
+        )}
+
+        {/* Set password prompt (after passwordless login) */}
+        {mode === "set-password" && (
+          <form
+            onSubmit={handleSetPassword}
+            className="flex flex-col gap-3"
+          >
+            <p className="text-xs text-slate-400">
+              No password set yet. Set one to protect your
+              account, or skip for now.
+            </p>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPasswordVal(e.target.value)}
+              placeholder="Choose a password (min 4 chars)"
+              className={inputCls}
+              autoFocus
+            />
+            {error && (
+              <p className="text-xs text-red-400">{error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={password.length < 4 || pending}
+              className={btnCls}
+            >
+              {pending ? "Setting..." : "Set password"}
+            </button>
+            <button
+              type="button"
+              onClick={skipPassword}
+              className="text-xs text-slate-600 hover:text-slate-400 transition-colors"
+            >
+              Skip for now
             </button>
           </form>
         )}

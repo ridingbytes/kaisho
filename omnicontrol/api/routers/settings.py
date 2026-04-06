@@ -34,20 +34,75 @@ def _token_username(token: str) -> str | None:
 auth_router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
+def _htpasswd_path(username: str) -> "Path":
+    """Return path to user's .htpasswd file."""
+    from pathlib import Path as _P
+    cfg = get_config()
+    return cfg.DATA_DIR / "users" / username / ".htpasswd"
+
+
+def _hash_password(password: str) -> str:
+    """SHA-256 hash with a random salt (simple htpasswd style)."""
+    import hashlib
+    import secrets
+    salt = secrets.token_hex(8)
+    h = hashlib.sha256(
+        (salt + password).encode()
+    ).hexdigest()
+    return f"{salt}${h}"
+
+
+def _verify_password(password: str, stored: str) -> bool:
+    """Check password against stored salt$hash."""
+    import hashlib
+    if "$" not in stored:
+        return False
+    salt, h = stored.split("$", 1)
+    return hashlib.sha256(
+        (salt + password).encode()
+    ).hexdigest() == h
+
+
+def _read_htpasswd(path) -> str | None:
+    """Read the hash from .htpasswd, or None if missing."""
+    from pathlib import Path as _P
+    p = _P(path)
+    if not p.exists():
+        return None
+    return p.read_text(encoding="utf-8").strip()
+
+
+def _write_htpasswd(path, password: str) -> None:
+    """Write hashed password to .htpasswd."""
+    from pathlib import Path as _P
+    p = _P(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(
+        _hash_password(password) + "\n",
+        encoding="utf-8",
+    )
+
+
 class LoginBody(BaseModel):
     username: str
+    password: str = ""
 
 
 class RegisterBody(BaseModel):
     username: str
+    password: str = ""
     name: str = ""
     email: str = ""
     bio: str = ""
 
 
+class SetPasswordBody(BaseModel):
+    password: str
+
+
 @auth_router.post("/login")
 def auth_login(body: LoginBody):
-    """Log in as an existing user (no password)."""
+    """Log in. Checks .htpasswd if it exists."""
     import os
     from ...backends import reset_backend
     from ...config import (
@@ -58,6 +113,21 @@ def auth_login(body: LoginBody):
         raise HTTPException(
             status_code=404, detail="User not found",
         )
+    # Check password if .htpasswd exists
+    pw_path = _htpasswd_path(body.username)
+    stored = _read_htpasswd(pw_path)
+    password_required = stored is not None
+    if password_required:
+        if not body.password:
+            raise HTTPException(
+                status_code=401,
+                detail="Password required",
+            )
+        if not _verify_password(body.password, stored):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid password",
+            )
     os.environ["OC_USER"] = body.username
     os.environ["PROFILE"] = "default"
     cfg = reset_config()
@@ -69,6 +139,7 @@ def auth_login(body: LoginBody):
     meta = load_user_yaml(cfg)
     return {
         "token": token,
+        "password_set": password_required,
         "user": {
             "username": body.username,
             "name": meta.get("name", ""),
@@ -113,10 +184,16 @@ def auth_register(body: RegisterBody):
     })
     init_data_dir(new_cfg)
     reset_backend()
+    # Store password if provided
+    if body.password:
+        _write_htpasswd(
+            _htpasswd_path(username), body.password,
+        )
     token = _make_token(username)
     _sessions[token] = username
     return {
         "token": token,
+        "password_set": bool(body.password),
         "user": {
             "username": username,
             "name": body.name or username,
@@ -124,6 +201,27 @@ def auth_register(body: RegisterBody):
             "bio": body.bio,
         },
     }
+
+
+@auth_router.post("/set-password")
+def auth_set_password(request: Request, body: SetPasswordBody):
+    """Set or update the password for the logged-in user."""
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not logged in")
+    token = auth[7:]
+    username = _token_username(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    if not body.password or len(body.password) < 4:
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 4 characters",
+        )
+    _write_htpasswd(
+        _htpasswd_path(username), body.password,
+    )
+    return {"ok": True}
 
 
 @auth_router.post("/logout")
