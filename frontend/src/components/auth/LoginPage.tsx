@@ -67,6 +67,15 @@ function UserList({
   );
 }
 
+const USERNAME_RE = /^[a-z0-9][a-z0-9_-]*$/;
+
+function sanitizeUsername(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "")
+    .slice(0, 32);
+}
+
 function RegisterForm({
   onRegister,
   error,
@@ -86,11 +95,17 @@ function RegisterForm({
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
 
+  const valid =
+    username.length >= 2 && USERNAME_RE.test(username);
+  const hint = username.length > 0 && !valid
+    ? "Lowercase letters, numbers, - and _ only (min 2 chars)"
+    : "";
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!username.trim()) return;
+    if (!valid) return;
     onRegister({
-      username: username.trim(),
+      username,
       name: name.trim(),
       email: email.trim(),
       bio: bio.trim(),
@@ -105,15 +120,37 @@ function RegisterForm({
       <p className="text-xs text-slate-500 mb-1">
         Create your account
       </p>
-      <input
-        type="text"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        placeholder="Username"
-        className={inputCls}
-        autoFocus
-        required
-      />
+
+      {/* Username with avatar preview */}
+      <div className="flex items-center gap-3">
+        <PixelAvatar
+          seed={username || "?"}
+          size={48}
+          className="shrink-0"
+        />
+        <div className="flex-1 min-w-0">
+          <input
+            type="text"
+            value={username}
+            onChange={(e) =>
+              setUsername(sanitizeUsername(e.target.value))
+            }
+            placeholder="Username"
+            className={inputCls}
+            autoFocus
+            required
+          />
+          {hint && (
+            <p className="text-[10px] text-amber-400 mt-0.5">
+              {hint}
+            </p>
+          )}
+          <p className="text-[10px] text-slate-700 mt-0.5">
+            Cannot be changed later
+          </p>
+        </div>
+      </div>
+
       <input
         type="text"
         value={name}
@@ -140,7 +177,7 @@ function RegisterForm({
       )}
       <button
         type="submit"
-        disabled={!username.trim() || pending}
+        disabled={!valid || pending}
         className={btnCls}
       >
         {pending ? "Creating..." : "Create account"}
