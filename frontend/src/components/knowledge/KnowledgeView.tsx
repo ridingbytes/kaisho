@@ -922,7 +922,7 @@ export function KnowledgeView() {
                               : node.path + "/"
                           }
                           node={node}
-                          depth={0}
+                          depth={1}
                           selectedPath={selectedPath}
                           onSelect={selectFile}
                           onToggle={handleToggleFolder}
