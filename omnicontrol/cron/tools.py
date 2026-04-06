@@ -285,6 +285,33 @@ TOOL_DEFS: list[dict] = [
         },
     },
     {
+        "name": "create_skill",
+        "description": (
+            "Create a reusable advisor skill template. "
+            "The skill will be automatically applied when "
+            "the user's request matches."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": (
+                        "Skill name (kebab-case, "
+                        "e.g. email-draft)"
+                    ),
+                },
+                "content": {
+                    "type": "string",
+                    "description": (
+                        "Skill instructions as plain text"
+                    ),
+                },
+            },
+            "required": ["name", "content"],
+        },
+    },
+    {
         "name": "fetch_url",
         "description": (
             "Fetch the content of an HTTP/HTTPS URL and return it as text. "
@@ -451,6 +478,9 @@ def _dispatch(name: str, args: dict) -> dict:
             args.get("languages", "en,de"),
         )
 
+    if name == "create_skill":
+        return _create_skill(args["name"], args["content"])
+
     if name == "execute_cli":
         return _execute_cli(args.get("args", []))
 
@@ -472,6 +502,17 @@ def _transcribe_youtube(url: str, languages: str = "en,de") -> dict:
         return transcribe(url, languages=langs)
     except Exception as exc:
         return {"error": str(exc)}
+
+
+def _create_skill(name: str, content: str) -> dict:
+    """Create an advisor skill via the service layer."""
+    from pathlib import Path
+    from ..config import get_config
+    from ..services.advisor import save_skill
+    cfg = get_config()
+    data_dir = Path(str(cfg.DATA_DIR.expanduser()))
+    result = save_skill(data_dir, name, content)
+    return {"skill": result}
 
 
 def _execute_cli(args: list) -> dict:

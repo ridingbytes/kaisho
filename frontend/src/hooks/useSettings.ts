@@ -6,9 +6,12 @@ import {
 import {
   addCustomerType,
   addTag,
+  createSkill,
   deleteCustomerType,
+  deleteSkill,
   deleteTag,
   fetchAdvisorFiles,
+  fetchAdvisorSkills,
   fetchAiSettings,
   fetchAvailableModels,
   fetchClaudeCliStatus,
@@ -24,6 +27,7 @@ import {
   updateGithubSettings,
   updateKbSources,
   updatePaths,
+  updateSkill,
   updateTag,
   updateUrlAllowlist,
 } from "../api/client";
@@ -299,6 +303,62 @@ export function useUpdateUrlAllowlist() {
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: ["settings", "url_allowlist"],
+      });
+    },
+  });
+}
+
+export function useAdvisorSkills() {
+  return useQuery({
+    queryKey: ["advisor", "skills"],
+    queryFn: fetchAdvisorSkills,
+    staleTime: 60_000,
+  });
+}
+
+export function useCreateSkill() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      name,
+      content,
+    }: {
+      name: string;
+      content: string;
+    }) => createSkill(name, content),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["advisor", "skills"],
+      });
+    },
+  });
+}
+
+export function useUpdateSkill() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      name,
+      content,
+    }: {
+      name: string;
+      content: string;
+    }) => updateSkill(name, content),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["advisor", "skills"],
+      });
+    },
+  });
+}
+
+export function useDeleteSkill() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => deleteSkill(name),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["advisor", "skills"],
       });
     },
   });

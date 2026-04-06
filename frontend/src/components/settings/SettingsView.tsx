@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Check, Plus, Pencil, RotateCcw } from "lucide-react";
+import {
+  X, Check, Plus, Pencil, RotateCcw,
+  ChevronDown, ChevronRight, Trash2,
+} from "lucide-react";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
 import {
@@ -10,9 +13,12 @@ import {
 } from "../../context/ShortcutsContext";
 import {
   useAdvisorFiles,
+  useAdvisorSkills,
   useAiSettings,
   useAvailableModels,
   useClaudeCliStatus,
+  useCreateSkill,
+  useDeleteSkill,
   useGithubSettings,
   useKbSources,
   useUpdateKbSources,
@@ -23,6 +29,7 @@ import {
   useUpdateAiSettings,
   useUpdateGithubSettings,
   useUpdatePaths,
+  useUpdateSkill,
   useUrlAllowlist,
   useUpdateUrlAllowlist,
   useAddTag,
@@ -306,6 +313,186 @@ function UrlAllowlistSection() {
   );
 }
 
+function SkillCard({
+  skill,
+}: {
+  skill: { name: string; content: string };
+}) {
+  const [open, setOpen] = useState(false);
+  const [content, setContent] = useState(skill.content);
+  const [saved, setSaved] = useState(false);
+  const updateMut = useUpdateSkill();
+  const deleteMut = useDeleteSkill();
+
+  useEffect(() => {
+    setContent(skill.content);
+  }, [skill.content]);
+
+  function handleSave() {
+    updateMut.mutate(
+      { name: skill.name, content },
+      {
+        onSuccess: () => {
+          setSaved(true);
+          setTimeout(() => setSaved(false), 2000);
+        },
+      }
+    );
+  }
+
+  return (
+    <div className="border-b border-border-subtle last:border-0">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 w-full px-4 py-2.5 text-left hover:bg-surface-raised transition-colors"
+      >
+        {open
+          ? <ChevronDown size={12} className="text-slate-500" />
+          : <ChevronRight size={12} className="text-slate-500" />}
+        <span className="text-sm text-slate-200 font-mono">
+          {skill.name}
+        </span>
+      </button>
+      {open && (
+        <div className="px-4 pb-3">
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={6}
+            className={[
+              inputCls, "w-full resize-y mb-2",
+            ].join(" ")}
+          />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSave}
+              disabled={updateMut.isPending}
+              className={saveBtnCls}
+            >
+              {updateMut.isPending ? "Saving..." : "Save"}
+            </button>
+            <button
+              onClick={() => deleteMut.mutate(skill.name)}
+              disabled={deleteMut.isPending}
+              className="p-1.5 rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              title="Delete skill"
+            >
+              <Trash2 size={13} />
+            </button>
+            {saved && (
+              <span className="text-xs text-green-400">
+                Saved.
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddSkillForm({
+  onDone,
+}: {
+  onDone: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [content, setContent] = useState("");
+  const createMut = useCreateSkill();
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    createMut.mutate(
+      { name: name.trim(), content },
+      { onSuccess: onDone }
+    );
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="px-4 py-3 border-t border-border-subtle"
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <input
+          autoFocus
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className={[fieldCls, "flex-1"].join(" ")}
+          placeholder="skill-name (kebab-case)"
+        />
+        <button
+          type="button"
+          onClick={onDone}
+          className="p-1 text-slate-600 hover:text-slate-300 rounded"
+        >
+          <X size={12} />
+        </button>
+        <button
+          type="submit"
+          disabled={createMut.isPending || !name.trim()}
+          className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+        >
+          <Check size={12} />
+        </button>
+      </div>
+      <textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        rows={4}
+        className={[inputCls, "w-full resize-y"].join(" ")}
+        placeholder="Skill instructions..."
+      />
+    </form>
+  );
+}
+
+function SkillsSection() {
+  const { data: skills = [] } = useAdvisorSkills();
+  const [adding, setAdding] = useState(false);
+
+  return (
+    <div className="mt-6">
+      <div className="flex items-center gap-3 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500">
+          Skills
+        </h2>
+        <button
+          onClick={() => setAdding((v) => !v)}
+          className="ml-auto p-1 rounded text-slate-600 hover:text-accent hover:bg-accent-muted transition-colors"
+          title="Add skill"
+        >
+          <Plus size={12} />
+        </button>
+      </div>
+      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border-subtle">
+          <p className="text-[10px] text-slate-700">
+            Reusable prompt templates applied automatically
+            when the user&apos;s request matches. The
+            advisor can also create skills via tool call.
+          </p>
+        </div>
+        {skills.length === 0 && !adding && (
+          <p className="px-4 py-3 text-xs text-slate-600">
+            No skills defined yet.
+          </p>
+        )}
+        {skills.map((s) => (
+          <SkillCard key={s.name} skill={s} />
+        ))}
+        {adding && (
+          <AddSkillForm
+            onDone={() => setAdding(false)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AiSection() {
   const { data: aiSettings, isLoading } = useAiSettings();
   const { data: models = [] } = useAvailableModels();
@@ -561,6 +748,7 @@ function AiSection() {
       </div>
 
       <AdvisorPersonalitySection />
+      <SkillsSection />
       <UrlAllowlistSection />
     </section>
   );

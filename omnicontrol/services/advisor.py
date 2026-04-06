@@ -59,6 +59,22 @@ def list_skills(data_dir: Path) -> list[dict]:
     ]
 
 
+def save_skill(data_dir: Path, name: str, content: str) -> dict:
+    """Write a skill file to SKILLS/{name}.md."""
+    skills_dir = data_dir / "SKILLS"
+    skills_dir.mkdir(parents=True, exist_ok=True)
+    path = skills_dir / f"{name}.md"
+    path.write_text(content, encoding="utf-8")
+    return {"name": name, "content": content}
+
+
+def delete_skill(data_dir: Path, name: str) -> None:
+    """Delete SKILLS/{name}.md if it exists."""
+    path = data_dir / "SKILLS" / f"{name}.md"
+    if path.exists():
+        path.unlink()
+
+
 # ---------------------------------------------------------------------------
 # Context builders (pure functions: data in, text out)
 # ---------------------------------------------------------------------------

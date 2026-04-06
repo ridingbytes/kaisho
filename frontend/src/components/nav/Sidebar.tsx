@@ -42,9 +42,15 @@ interface SidebarProps {
   active: View;
   onChange: (v: View) => void;
   open: boolean;
+  advisorUnread?: boolean;
 }
 
-export function Sidebar({ active, onChange, open }: SidebarProps) {
+export function Sidebar({
+  active,
+  onChange,
+  open,
+  advisorUnread,
+}: SidebarProps) {
   const { data: inboxItems } = useInboxItems();
   const inboxCount = inboxItems?.length ?? 0;
   const { config } = useShortcutsContext();
@@ -95,6 +101,13 @@ export function Sidebar({ active, onChange, open }: SidebarProps) {
               >
                 {inboxCount > 99 ? "99+" : inboxCount}
               </span>
+            )}
+
+            {/* Advisor unread dot */}
+            {id === "advisor" && advisorUnread && (
+              <span
+                className="absolute top-1 right-1.5 w-2.5 h-2.5 rounded-full bg-accent"
+              />
             )}
           </button>
         );

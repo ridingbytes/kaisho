@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from ...backends import get_backend
 from ...config import get_config
 from ...services import settings as settings_svc
-from ...services.advisor import ask, list_skills
+from ...services.advisor import ask, delete_skill, list_skills, save_skill
 from ...services.github import GhError, issues_for_customers
 
 router = APIRouter(prefix="/api/advisor", tags=["advisor"])
@@ -74,3 +74,46 @@ def get_skills():
     cfg = get_config()
     from pathlib import Path
     return list_skills(Path(str(cfg.DATA_DIR.expanduser())))
+
+
+class SkillBody(BaseModel):
+    name: str
+    content: str
+
+
+@router.post("/skills")
+def create_skill(body: SkillBody):
+    """Create a new advisor skill."""
+    from pathlib import Path
+    cfg = get_config()
+    data_dir = Path(str(cfg.DATA_DIR.expanduser()))
+    return save_skill(data_dir, body.name, body.content)
+
+
+@router.put("/skills/{name}")
+def update_skill(name: str, body: SkillBody):
+    """Update an existing advisor skill."""
+    from pathlib import Path
+    cfg = get_config()
+    data_dir = Path(str(cfg.DATA_DIR.expanduser()))
+    skill_path = data_dir / "SKILLS" / f"{name}.md"
+    if not skill_path.exists():
+        raise HTTPException(
+            status_code=404, detail=f"Skill {name!r} not found"
+        )
+    return save_skill(data_dir, name, body.content)
+
+
+@router.delete("/skills/{name}")
+def remove_skill(name: str):
+    """Delete an advisor skill."""
+    from pathlib import Path
+    cfg = get_config()
+    data_dir = Path(str(cfg.DATA_DIR.expanduser()))
+    skill_path = data_dir / "SKILLS" / f"{name}.md"
+    if not skill_path.exists():
+        raise HTTPException(
+            status_code=404, detail=f"Skill {name!r} not found"
+        )
+    delete_skill(data_dir, name)
+    return {"ok": True}

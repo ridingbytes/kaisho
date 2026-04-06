@@ -701,6 +701,29 @@ export function fetchAdvisorSkills(): Promise<
   return get("/advisor/skills");
 }
 
+export function createSkill(
+  name: string,
+  content: string
+): Promise<{ name: string; content: string }> {
+  return post("/advisor/skills", { name, content });
+}
+
+export function updateSkill(
+  name: string,
+  content: string
+): Promise<{ name: string; content: string }> {
+  return put(`/advisor/skills/${encodeURIComponent(name)}`, {
+    name,
+    content,
+  });
+}
+
+export function deleteSkill(name: string): Promise<void> {
+  return del(
+    `/advisor/skills/${encodeURIComponent(name)}`
+  );
+}
+
 // Advisor personality files
 
 export function fetchAdvisorFiles(): Promise<{

@@ -99,6 +99,8 @@ function AppShell() {
       }
     }
   );
+  const [advisorUnread, setAdvisorUnread] = useState(false);
+  const prevMsgCountRef = useRef(advisorMessages.length);
 
   useEffect(() => {
     if (theme === "light") {
@@ -118,8 +120,24 @@ function AppShell() {
   }, [clockOpen]);
 
   useEffect(() => {
-    localStorage.setItem("advisor_messages", JSON.stringify(advisorMessages));
-  }, [advisorMessages]);
+    localStorage.setItem(
+      "advisor_messages",
+      JSON.stringify(advisorMessages),
+    );
+    const len = advisorMessages.length;
+    if (
+      len > prevMsgCountRef.current &&
+      advisorMessages[len - 1]?.role === "assistant" &&
+      view !== "advisor"
+    ) {
+      setAdvisorUnread(true);
+    }
+    prevMsgCountRef.current = len;
+  }, [advisorMessages, view]);
+
+  useEffect(() => {
+    if (view === "advisor") setAdvisorUnread(false);
+  }, [view]);
 
   useEffect(() => {
     window.location.hash = `/${view}`;
@@ -208,7 +226,12 @@ function AppShell() {
       {/* Body */}
       <ViewContext.Provider value={{ setView }}>
         <div className="flex flex-1 min-h-0">
-          <Sidebar active={view} onChange={setView} open={sidebarOpen} />
+          <Sidebar
+            active={view}
+            onChange={setView}
+            open={sidebarOpen}
+            advisorUnread={advisorUnread}
+          />
 
           <main className="flex-1 min-w-0 overflow-hidden relative">
             {view === "dashboard" && <DashboardView />}
