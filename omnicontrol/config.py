@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     WISSEN_DIR: Path = Path("~/ownCloud/cowork/wissen")
     RESEARCH_DIR: Path = Path("~/ownCloud/cowork/research")
     KUNDEN_DIR: Path = Path("~/ownCloud/cowork/kunden")
-    JOBS_FILE: Path = _PROJECT_ROOT / "jobs.yaml"
+    JOBS_FILE: Path = _PROJECT_ROOT / "data" / "jobs.yaml"
     DATA_DIR: Path = _PROJECT_ROOT / "data"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     HOST: str = "0.0.0.0"

@@ -25,7 +25,7 @@ jobs:
   timeout: 120
 - enabled: true
   id: hn-ai-daily
-  model: lm_studio:qwen/qwen3-coder-30b
+  model: claude_cli:claude-haiku-4-5-20251001
   name: HN KI-Digest
   output: inbox
   prompt_file: prompts/hn-ai-daily.md

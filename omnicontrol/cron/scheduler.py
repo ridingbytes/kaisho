@@ -26,11 +26,25 @@ def _run_job(job: dict) -> None:
     cfg = get_config()
     run_id = start_run(cfg.DB_FILE, job["id"])
     try:
+        from ..services.settings import (
+            get_ai_settings, load_settings,
+        )
+        ai = get_ai_settings(load_settings(cfg.SETTINGS_FILE))
         output = execute_job(
             job,
             project_root=_project_root(),
-            ollama_base_url=cfg.OLLAMA_BASE_URL,
+            ollama_base_url=ai["ollama_url"],
             inbox_file=cfg.INBOX_FILE,
+            lm_studio_base_url=ai.get("lm_studio_url", ""),
+            claude_api_key=ai.get("claude_api_key", ""),
+            openrouter_base_url=ai.get(
+                "openrouter_url", ""
+            ),
+            openrouter_api_key=ai.get(
+                "openrouter_api_key", ""
+            ),
+            openai_base_url=ai.get("openai_url", ""),
+            openai_api_key=ai.get("openai_api_key", ""),
         )
         finish_run(cfg.DB_FILE, run_id, "ok", output=output[:4000])
     except ExecutorError as exc:

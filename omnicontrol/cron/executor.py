@@ -92,7 +92,10 @@ def _parse_model(model_str: str) -> tuple[str, str]:
     """Return (provider, model_name) from model string."""
     if ":" in model_str:
         provider, name = model_str.split(":", 1)
-        if provider in ("ollama", "claude", "lm_studio"):
+        if provider in (
+            "ollama", "claude", "claude_cli",
+            "lm_studio", "openrouter", "openai",
+        ):
             return provider, name
     return "ollama", model_str
 
@@ -258,6 +261,48 @@ def run_prompt_lm_studio(
 # Main entry point
 # ---------------------------------------------------------------------------
 
+def _run_claude_cli(model: str, prompt: str) -> str:
+    """Call Claude CLI using subscription login token."""
+    import shutil
+    import subprocess
+
+    claude_bin = shutil.which("claude")
+    if not claude_bin:
+        raise ExecutorError("claude CLI not found")
+    result = subprocess.run(
+        [claude_bin, "-p", prompt, "--model", model],
+        capture_output=True, text=True, timeout=300,
+    )
+    if result.returncode != 0:
+        raise ExecutorError(
+            f"Claude CLI failed: {result.stderr.strip()}"
+        )
+    return result.stdout.strip()
+
+
+def _run_openai_compatible(
+    model: str, prompt: str, base_url: str, api_key: str,
+) -> str:
+    """Call an OpenAI-compatible API (OpenRouter, OpenAI)."""
+    import urllib.request
+    payload = json.dumps({
+        "model": model,
+        "messages": [
+            {"role": "user", "content": prompt},
+        ],
+    }).encode()
+    url = base_url.rstrip("/") + "/chat/completions"
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    req = urllib.request.Request(
+        url, data=payload, headers=headers,
+    )
+    with urllib.request.urlopen(req, timeout=300) as resp:
+        data = json.loads(resp.read())
+    return data["choices"][0]["message"]["content"]
+
+
 def execute_job(
     job: dict,
     project_root: Path,
@@ -265,11 +310,17 @@ def execute_job(
     inbox_file: Path,
     lm_studio_base_url: str = "",
     claude_api_key: str = "",
+    openrouter_base_url: str = "",
+    openrouter_api_key: str = "",
+    openai_base_url: str = "",
+    openai_api_key: str = "",
 ) -> str:
     """Run a job definition end-to-end. Returns the output text."""
     prompt = load_prompt(job["prompt_file"], project_root)
     provider, model_name = _parse_model(job.get("model", ""))
-    if provider == "claude":
+    if provider == "claude_cli":
+        output_text = _run_claude_cli(model_name, prompt)
+    elif provider == "claude":
         output_text = run_prompt_claude(
             model_name, prompt, api_key=claude_api_key
         )
@@ -277,9 +328,22 @@ def execute_job(
         output_text = run_prompt_lm_studio(
             model_name, prompt, lm_studio_base_url
         )
+    elif provider == "openrouter":
+        output_text = _run_openai_compatible(
+            model_name, prompt,
+            openrouter_base_url, openrouter_api_key,
+        )
+    elif provider == "openai":
+        output_text = _run_openai_compatible(
+            model_name, prompt,
+            openai_base_url, openai_api_key,
+        )
     else:
         output_text = run_prompt_ollama(
             model_name, prompt, ollama_base_url
         )
-    write_output(job["output"], output_text, inbox_file, job.get("name", "AI Report"))
+    write_output(
+        job["output"], output_text, inbox_file,
+        job.get("name", "AI Report"),
+    )
     return output_text

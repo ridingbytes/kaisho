@@ -178,6 +178,14 @@ def _run_job_bg(job: dict, run_id: int) -> None:
             inbox_file=cfg.INBOX_FILE,
             lm_studio_base_url=ai.get("lm_studio_url", ""),
             claude_api_key=ai.get("claude_api_key", ""),
+            openrouter_base_url=ai.get(
+                "openrouter_url", ""
+            ),
+            openrouter_api_key=ai.get(
+                "openrouter_api_key", ""
+            ),
+            openai_base_url=ai.get("openai_url", ""),
+            openai_api_key=ai.get("openai_api_key", ""),
         )
         finish_run(_db(), run_id, "ok", output=output[:4000])
     except ExecutorError as exc:
