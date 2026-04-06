@@ -29,8 +29,8 @@ import { DOCS } from "../../docs/panelDocs";
 
 const inputCls =
   "px-2 py-1 rounded text-xs bg-surface-raised border " +
-  "border-border text-slate-200 placeholder-slate-600 " +
-  "focus:outline-none focus:border-accent";
+  "border-border text-stone-900 placeholder-stone-500 " +
+  "focus:outline-none focus:border-cta";
 
 function elapsed(startIso: string): string {
   const diffMs = Date.now() - new Date(startIso).getTime();
@@ -40,9 +40,9 @@ function elapsed(startIso: string): string {
 }
 
 function budgetBarColor(usedPercent: number): string {
-  if (usedPercent >= 100) return "#ef4444";
-  if (usedPercent >= 80) return "#f59e0b";
-  return "#10b981";
+  if (usedPercent >= 100) return "#dc2626";
+  if (usedPercent >= 80) return "#d97706";
+  return "#16a34a";
 }
 
 function formatHours(minutes: number): string {
@@ -61,13 +61,13 @@ function StatCard({
   label,
   value,
   icon: Icon,
-  accent,
+  cta,
   onClick,
 }: {
   label: string;
   value: number | string;
   icon: React.ElementType;
-  accent?: string;
+  cta?: string;
   onClick?: () => void;
 }) {
   return (
@@ -88,26 +88,26 @@ function StatCard({
           "w-10 h-10 rounded-lg"
         }
         style={{
-          backgroundColor: accent
-            ? `${accent}20`
+          backgroundColor: cta
+            ? `${cta}20`
             : undefined,
         }}
       >
         <Icon
           size={20}
-          style={{ color: accent ?? "#64748b" }}
+          style={{ color: cta ?? "#64748b" }}
           strokeWidth={1.5}
         />
       </div>
       <div>
         <p
           className={
-            "text-2xl font-bold text-slate-100 tabular-nums"
+            "text-2xl font-bold text-stone-900 tabular-nums"
           }
         >
           {value}
         </p>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p className="text-xs text-stone-600 mt-0.5">
           {label}
         </p>
       </div>
@@ -168,7 +168,7 @@ function ClockEntryRow({
       >
         <span
           className={
-            "text-xs text-slate-600 tabular-nums shrink-0 " +
+            "text-xs text-stone-500 tabular-nums shrink-0 " +
             "w-10"
           }
         >
@@ -214,8 +214,8 @@ function ClockEntryRow({
         <button
           onClick={() => setEditing(false)}
           className={
-            "p-0.5 rounded text-slate-500 " +
-            "hover:text-slate-300 transition-colors"
+            "p-0.5 rounded text-stone-600 " +
+            "hover:text-stone-900 transition-colors"
           }
           title="Cancel"
         >
@@ -234,8 +234,8 @@ function ClockEntryRow({
     >
       <span
         className={
-          "text-xs text-slate-600 tabular-nums shrink-0 " +
-          "w-10 cursor-pointer hover:text-accent"
+          "text-xs text-stone-500 tabular-nums shrink-0 " +
+          "w-10 cursor-pointer hover:text-cta"
         }
         onClick={() =>
           navigateToClockDate(entry.start.slice(0, 10))
@@ -245,19 +245,19 @@ function ClockEntryRow({
       </span>
       <span
         className={
-          "text-xs text-slate-400 truncate " +
+          "text-xs text-stone-700 truncate " +
           "min-w-0 flex-1"
         }
       >
         {entry.description || (
-          <em className="text-slate-600">no description</em>
+          <em className="text-stone-500">no description</em>
         )}
       </span>
       {entry.contract && (
         <span
           className={
             "text-[10px] px-1.5 py-0.5 rounded " +
-            "bg-accent/10 text-accent shrink-0"
+            "bg-cta/10 text-cta shrink-0"
           }
         >
           {entry.contract}
@@ -265,7 +265,7 @@ function ClockEntryRow({
       )}
       <span
         className={
-          "text-xs text-slate-500 tabular-nums shrink-0"
+          "text-xs text-stone-600 tabular-nums shrink-0"
         }
       >
         {formatHours(minutes)}
@@ -280,8 +280,8 @@ function ClockEntryRow({
         <button
           onClick={() => setEditing(true)}
           className={
-            "p-0.5 rounded text-slate-600 " +
-            "hover:text-slate-300 transition-colors"
+            "p-0.5 rounded text-stone-500 " +
+            "hover:text-stone-900 transition-colors"
           }
           title="Edit"
         >
@@ -291,7 +291,7 @@ function ClockEntryRow({
           onClick={handleDelete}
           disabled={deleteEntry.isPending}
           className={
-            "p-0.5 rounded text-slate-600 " +
+            "p-0.5 rounded text-stone-500 " +
             "hover:text-red-400 transition-colors"
           }
           title="Delete"
@@ -315,7 +315,7 @@ function CustomerClockEntries({
 
   if (isLoading) {
     return (
-      <p className="text-xs text-slate-600 py-2 pl-1">
+      <p className="text-xs text-stone-500 py-2 pl-1">
         Loading...
       </p>
     );
@@ -327,7 +327,7 @@ function CustomerClockEntries({
 
   if (completed.length === 0) {
     return (
-      <p className="text-xs text-slate-600 py-2 pl-1">
+      <p className="text-xs text-stone-500 py-2 pl-1">
         No clock entries
       </p>
     );
@@ -379,8 +379,8 @@ function BudgetRow({
           <button
             onClick={onToggle}
             className={
-              "p-0.5 rounded text-slate-500 " +
-              "hover:text-slate-300 transition-colors"
+              "p-0.5 rounded text-stone-600 " +
+              "hover:text-stone-900 transition-colors"
             }
             aria-label={
               expanded ? "Collapse" : "Expand"
@@ -391,8 +391,8 @@ function BudgetRow({
           <button
             onClick={onNameClick}
             className={
-              "text-sm font-medium text-slate-300 " +
-              "hover:text-accent transition-colors " +
+              "text-sm font-medium text-stone-800 " +
+              "hover:text-cta transition-colors " +
               "text-left"
             }
           >
@@ -409,7 +409,7 @@ function BudgetRow({
           )}
           <span
             className={
-              "text-xs text-slate-500 tabular-nums"
+              "text-xs text-stone-600 tabular-nums"
             }
           >
             {b.rest}h / {b.budget}h
@@ -476,7 +476,7 @@ export function DashboardView() {
           "flex items-center justify-center h-full"
         }
       >
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-stone-500">
           Loading...
         </p>
       </div>
@@ -494,7 +494,7 @@ export function DashboardView() {
         <h1
           className={
             "text-xs font-semibold tracking-wider " +
-            "uppercase text-slate-400 flex-1"
+            "uppercase text-stone-700 flex-1"
           }
         >
           Dashboard
@@ -515,18 +515,18 @@ export function DashboardView() {
           <div
             className={
               "flex items-center gap-4 p-4 rounded-xl " +
-              "bg-accent-muted border border-accent/30"
+              "bg-cta-muted border border-cta/30"
             }
           >
             <Clock
               size={18}
-              className="text-accent shrink-0"
+              className="text-cta shrink-0"
               strokeWidth={1.5}
             />
             <div className="min-w-0 flex-1">
               <p
                 className={
-                  "text-sm font-semibold text-slate-200"
+                  "text-sm font-semibold text-stone-900"
                 }
               >
                 {timer.customer}
@@ -534,7 +534,7 @@ export function DashboardView() {
               {timer.description && (
                 <p
                   className={
-                    "text-xs text-slate-400 truncate"
+                    "text-xs text-stone-700 truncate"
                   }
                 >
                   {timer.description}
@@ -544,7 +544,7 @@ export function DashboardView() {
             <span
               className={
                 "text-lg font-mono font-semibold " +
-                "text-slate-200 tabular-nums shrink-0"
+                "text-stone-900 tabular-nums shrink-0"
               }
             >
               {elapsed(timer.start)}
@@ -553,7 +553,7 @@ export function DashboardView() {
               onClick={() => stopTimer.mutate()}
               disabled={stopTimer.isPending}
               className={
-                "p-1.5 rounded-lg text-slate-400 " +
+                "p-1.5 rounded-lg text-stone-700 " +
                 "hover:text-red-400 " +
                 "hover:bg-red-500/10 " +
                 "transition-colors disabled:opacity-40"
@@ -571,14 +571,14 @@ export function DashboardView() {
             label="Open tasks"
             value={data.open_task_count}
             icon={CheckSquare}
-            accent="#6366f1"
+            cta="#1e1e2e"
             onClick={() => setView("board")}
           />
           <StatCard
             label="Inbox items"
             value={data.inbox_count}
             icon={Inbox}
-            accent="#f59e0b"
+            cta="#d97706"
             onClick={() => setView("inbox")}
           />
         </div>
@@ -594,7 +594,7 @@ export function DashboardView() {
             <h2
               className={
                 "text-xs font-semibold tracking-wider " +
-                "uppercase text-slate-500 mb-4"
+                "uppercase text-stone-600 mb-4"
               }
             >
               Budget Status

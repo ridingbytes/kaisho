@@ -25,7 +25,7 @@ import type { KnowledgeFile } from "../../types";
 
 const inputCls =
   "bg-surface-raised border border-border rounded px-2 py-1 text-sm " +
-  "text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent";
+  "text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta";
 
 // ---------------------------------------------------------------------------
 // Tree data structures
@@ -174,7 +174,7 @@ const FILE_TYPE_COLORS: Record<FileType, string> = {
   md: "bg-blue-900/40 text-blue-300",
   org: "bg-emerald-900/40 text-emerald-300",
   rst: "bg-amber-900/40 text-amber-300",
-  txt: "bg-slate-700/40 text-slate-400",
+  txt: "bg-stone-700/40 text-stone-700",
 };
 
 // ---------------------------------------------------------------------------
@@ -304,7 +304,7 @@ function NewFileForm({ onCreated, onClose }: NewFileFormProps) {
       className="flex flex-wrap items-end gap-3 px-4 py-3 border-b border-border-subtle bg-surface-card/60 shrink-0"
     >
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+        <label className="text-[10px] text-stone-600 uppercase tracking-wider">
           Library
         </label>
         <select
@@ -319,7 +319,7 @@ function NewFileForm({ onCreated, onClose }: NewFileFormProps) {
         </select>
       </div>
       <div className="flex flex-col gap-1 flex-1 min-w-40">
-        <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+        <label className="text-[10px] text-stone-600 uppercase tracking-wider">
           Path *
         </label>
         <input
@@ -334,14 +334,14 @@ function NewFileForm({ onCreated, onClose }: NewFileFormProps) {
         <button
           type="submit"
           disabled={save.isPending || !path.trim()}
-          className="px-3 py-1.5 rounded bg-accent text-white text-xs font-semibold disabled:opacity-40"
+          className="px-3 py-1.5 rounded bg-cta text-white text-xs font-semibold disabled:opacity-40"
         >
           Create
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="px-3 py-1.5 rounded bg-surface-raised text-slate-400 text-xs"
+          className="px-3 py-1.5 rounded bg-surface-raised text-stone-700 text-xs"
         >
           Cancel
         </button>
@@ -404,7 +404,7 @@ function EditorPanel({
     <div className="flex flex-col h-full">
       {/* Editor toolbar */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border-subtle shrink-0">
-        <span className="text-xs text-slate-500 font-mono truncate">
+        <span className="text-xs text-stone-600 font-mono truncate">
           {file.label}/{file.path}
         </span>
         <span
@@ -427,8 +427,8 @@ function EditorPanel({
             className={[
               "px-2 py-0.5 rounded text-xs",
               preview
-                ? "bg-accent-muted text-accent"
-                : "text-slate-500 hover:text-slate-300",
+                ? "bg-cta-muted text-cta"
+                : "text-stone-600 hover:text-stone-900",
             ].join(" ")}
           >
             {preview ? "Edit" : "Preview"}
@@ -436,7 +436,7 @@ function EditorPanel({
           {!confirmDelete ? (
             <button
               onClick={() => setConfirmDelete(true)}
-              className="p-1 rounded text-slate-600 hover:text-red-400"
+              className="p-1 rounded text-stone-500 hover:text-red-400"
               title="Delete file"
             >
               <Trash2 size={13} />
@@ -455,7 +455,7 @@ function EditorPanel({
               </button>
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="p-1 rounded text-slate-500 hover:text-slate-300"
+                className="p-1 rounded text-stone-600 hover:text-stone-900"
               >
                 <X size={13} />
               </button>
@@ -463,7 +463,7 @@ function EditorPanel({
           )}
           <button
             onClick={onClose}
-            className="p-1 rounded text-slate-600 hover:text-slate-300"
+            className="p-1 rounded text-stone-500 hover:text-stone-900"
             title="Discard changes"
           >
             <X size={13} />
@@ -471,7 +471,7 @@ function EditorPanel({
           <button
             onClick={handleSave}
             disabled={save.isPending || !dirty}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent text-white text-xs font-semibold disabled:opacity-40"
+            className="flex items-center gap-1 px-2.5 py-1 rounded bg-cta text-white text-xs font-semibold disabled:opacity-40"
           >
             <Check size={11} />
             {save.isPending ? "Saving\u2026" : "Save"}
@@ -503,7 +503,7 @@ function EditorPanel({
                       setContent,
                     );
                   }}
-                  className="px-2 py-0.5 rounded text-xs font-mono text-slate-400 hover:text-slate-200 hover:bg-surface-raised transition-colors"
+                  className="px-2 py-0.5 rounded text-xs font-mono text-stone-700 hover:text-stone-900 hover:bg-surface-raised transition-colors"
                 >
                   {action.label}
                 </button>
@@ -517,8 +517,8 @@ function EditorPanel({
             className={[
               "flex-1 resize-none p-4 font-mono",
               "text-sm leading-relaxed",
-              "bg-surface-card text-slate-200",
-              "placeholder-slate-600",
+              "bg-surface-card text-stone-900",
+              "placeholder-stone-500",
               "focus:outline-none",
             ].join(" ")}
             placeholder="Write here\u2026"
@@ -612,7 +612,7 @@ function TreeNodeRow({
               }
               if (e.key === "Escape") setRenaming(false);
             }}
-            className="flex-1 min-w-0 px-1 py-0.5 text-xs rounded bg-surface-raised border border-border text-slate-200 focus:outline-none focus:border-accent"
+            className="flex-1 min-w-0 px-1 py-0.5 text-xs rounded bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
           />
           <button
             onClick={() => {
@@ -621,13 +621,13 @@ function TreeNodeRow({
               }
               setRenaming(false);
             }}
-            className="p-0.5 text-accent hover:bg-accent-muted rounded"
+            className="p-0.5 text-cta hover:bg-cta-muted rounded"
           >
             <Check size={10} />
           </button>
           <button
             onClick={() => setRenaming(false)}
-            className="p-0.5 text-slate-600 hover:text-slate-300 rounded"
+            className="p-0.5 text-stone-500 hover:text-stone-900 rounded"
           >
             <X size={10} />
           </button>
@@ -640,7 +640,7 @@ function TreeNodeRow({
         className={[
           "group/leaf flex items-center py-1 pr-1",
           "hover:bg-surface-raised transition-colors",
-          isSelected ? "text-accent bg-accent-muted" : "text-slate-300",
+          isSelected ? "text-cta bg-cta-muted" : "text-stone-800",
         ].join(" ")}
         style={{ paddingLeft: indent + 6 }}
       >
@@ -658,7 +658,7 @@ function TreeNodeRow({
               setRenamePath(node.path);
               setRenaming(true);
             }}
-            className="p-0.5 rounded text-slate-700 hover:text-accent transition-colors"
+            className="p-0.5 rounded text-stone-400 hover:text-cta transition-colors"
             title="Rename / move"
           >
             <Pencil size={9} />
@@ -671,7 +671,7 @@ function TreeNodeRow({
                   onMove(node.path, node.label, e.target.value);
                 }
               }}
-              className="w-12 text-[9px] bg-transparent text-slate-700 hover:text-slate-400 cursor-pointer"
+              className="w-12 text-[9px] bg-transparent text-stone-400 hover:text-stone-700 cursor-pointer"
               title="Move to source"
             >
               <option value="">To...</option>
@@ -689,7 +689,7 @@ function TreeNodeRow({
                 setConfirmingDelete(true);
               }}
               className={
-                "p-0.5 rounded text-slate-700 " +
+                "p-0.5 rounded text-stone-400 " +
                 "hover:text-red-400 transition-colors"
               }
               title="Delete (irreversible)"
@@ -706,7 +706,7 @@ function TreeNodeRow({
                   "whitespace-nowrap"
                 }
               >
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-stone-700">
                   Delete?
                 </span>
                 <button
@@ -728,8 +728,8 @@ function TreeNodeRow({
                     setConfirmingDelete(false);
                   }}
                   className={
-                    "p-0.5 rounded text-slate-500 " +
-                    "hover:text-slate-300"
+                    "p-0.5 rounded text-stone-600 " +
+                    "hover:text-stone-900"
                   }
                 >
                   <X size={10} />
@@ -746,7 +746,7 @@ function TreeNodeRow({
     <>
       <button
         onClick={() => onToggle(node.path)}
-        className="w-full text-left py-1 pr-2 text-xs text-slate-400 flex items-center gap-1 hover:bg-surface-raised transition-colors"
+        className="w-full text-left py-1 pr-2 text-xs text-stone-700 flex items-center gap-1 hover:bg-surface-raised transition-colors"
         style={{ paddingLeft: indent }}
       >
         {node.expanded ? (
@@ -988,7 +988,7 @@ export function KnowledgeView() {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
+        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
           Knowledge
         </h1>
         {!editing && (
@@ -999,15 +999,15 @@ export function KnowledgeView() {
             onChange={(e) => setSearchInput(e.target.value)}
             className={[
               "ml-auto w-56 px-3 py-1 rounded-lg text-sm",
-              "bg-surface-raised border border-border text-slate-200",
-              "placeholder-slate-600 focus:outline-none focus:border-border-strong",
+              "bg-surface-raised border border-border text-stone-900",
+              "placeholder-stone-500 focus:outline-none focus:border-border-strong",
             ].join(" ")}
           />
         )}
         {!editing && (
           <button
             onClick={() => setCreating((v) => !v)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted text-accent text-xs font-semibold hover:bg-accent hover:text-white transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1 rounded bg-cta-muted text-cta text-xs font-semibold hover:bg-cta hover:text-white transition-colors"
           >
             <FilePlus size={12} />
             New
@@ -1016,7 +1016,7 @@ export function KnowledgeView() {
         {!editing && selectedPath && !fileLoading && fileData && (
           <button
             onClick={() => setEditing(true)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded text-slate-400 text-xs hover:text-slate-200 hover:bg-surface-raised transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1 rounded text-stone-700 text-xs hover:text-stone-900 hover:bg-surface-raised transition-colors"
           >
             <Pencil size={12} />
             Edit
@@ -1064,12 +1064,12 @@ export function KnowledgeView() {
           >
             {/* Toggle button row */}
             <div className="flex items-center justify-between px-2 py-1.5 shrink-0 border-b border-border-subtle">
-              <span className="text-[10px] text-slate-600 uppercase tracking-wider">
+              <span className="text-[10px] text-stone-500 uppercase tracking-wider">
                 Files
               </span>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="p-0.5 rounded text-slate-600 hover:text-slate-300 transition-colors"
+                className="p-0.5 rounded text-stone-500 hover:text-stone-900 transition-colors"
                 title="Collapse sidebar"
               >
                 <ChevronLeft size={12} />
@@ -1080,11 +1080,11 @@ export function KnowledgeView() {
             <div className="flex-1 overflow-y-auto py-1">
               {isSearching ? (
                 searchLoading ? (
-                  <p className="text-xs text-slate-600 px-4 py-2">
+                  <p className="text-xs text-stone-500 px-4 py-2">
                     Loading…
                   </p>
                 ) : searchResults.length === 0 ? (
-                  <p className="text-xs text-slate-600 px-4 py-2">
+                  <p className="text-xs text-stone-500 px-4 py-2">
                     No results.
                   </p>
                 ) : (
@@ -1098,20 +1098,20 @@ export function KnowledgeView() {
                       }}
                       className="w-full text-left px-4 py-2 hover:bg-surface-raised transition-colors"
                     >
-                      <p className="text-xs text-slate-300 truncate">
+                      <p className="text-xs text-stone-800 truncate">
                         {r.label}/{r.path.split("/").pop()}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-stone-600">
                         Line {r.line_number}
                       </p>
-                      <p className="text-xs text-slate-400 truncate mt-0.5">
+                      <p className="text-xs text-stone-700 truncate mt-0.5">
                         {r.snippet}
                       </p>
                     </button>
                   ))
                 )
               ) : treeLoading ? (
-                <p className="text-xs text-slate-600 px-4 py-2">
+                <p className="text-xs text-stone-500 px-4 py-2">
                   Loading…
                 </p>
               ) : (
@@ -1124,15 +1124,15 @@ export function KnowledgeView() {
                       {collapsedLabels.has(label) ? (
                         <ChevronRight
                           size={10}
-                          className="shrink-0 text-slate-500"
+                          className="shrink-0 text-stone-600"
                         />
                       ) : (
                         <ChevronDown
                           size={10}
-                          className="shrink-0 text-slate-500"
+                          className="shrink-0 text-stone-600"
                         />
                       )}
-                      <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+                      <span className="text-[10px] text-stone-600 uppercase tracking-wider">
                         {label}
                       </span>
                     </button>
@@ -1164,13 +1164,13 @@ export function KnowledgeView() {
           {/* Resize handle + collapsed toggle */}
           <div className="relative flex flex-col shrink-0">
             <div
-              className="w-1 flex-1 bg-border-subtle cursor-col-resize hover:bg-accent/40 transition-colors"
+              className="w-1 flex-1 bg-border-subtle cursor-col-resize hover:bg-cta/40 transition-colors"
               onMouseDown={startResize}
             />
             {!sidebarOpen && (
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="absolute top-2 left-0 w-4 h-6 flex items-center justify-center rounded-r bg-surface-raised text-slate-500 hover:text-slate-300 transition-colors"
+                className="absolute top-2 left-0 w-4 h-6 flex items-center justify-center rounded-r bg-surface-raised text-stone-600 hover:text-stone-900 transition-colors"
                 title="Expand sidebar"
               >
                 <ChevronRight size={10} />
@@ -1181,10 +1181,10 @@ export function KnowledgeView() {
           {/* Right panel: file content */}
           <div className="flex-1 overflow-y-auto p-6">
             {fileLoading && (
-              <p className="text-sm text-slate-600">Loading…</p>
+              <p className="text-sm text-stone-500">Loading…</p>
             )}
             {!fileLoading && !fileData && !selectedPath && (
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-stone-500">
                 Select a file to view its contents.
               </p>
             )}

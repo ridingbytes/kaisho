@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
     task.cancel()
 
 
-app = FastAPI(title="OmniControl", lifespan=lifespan)
+app = FastAPI(title="Kaisho", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

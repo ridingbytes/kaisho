@@ -15,10 +15,10 @@ module.exports = {
           DEFAULT: "var(--border-default)",
           strong: "var(--border-strong)",
         },
-        accent: {
-          DEFAULT: "var(--accent)",
-          hover: "var(--accent-hover)",
-          muted: "var(--accent-muted)",
+        cta: {
+          DEFAULT: "var(--cta)",
+          hover: "var(--cta-hover)",
+          muted: "var(--cta-muted)",
         },
       },
       fontFamily: {

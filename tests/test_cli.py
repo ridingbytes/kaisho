@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from omnicontrol.cli.main import cli
+from kaisho.cli.main import cli
 
 
 @pytest.fixture
@@ -47,18 +47,18 @@ def mock_config(tmp_path):
 def test_cli_help(runner):
     result = runner.invoke(cli, ["--help"])
     assert result.exit_code == 0
-    assert "OmniControl" in result.output
+    assert "Kaisho" in result.output
 
 
 def test_cron_list_empty(runner, mock_config):
-    with patch("omnicontrol.cli.cron.get_config", return_value=mock_config):
+    with patch("kaisho.cli.cron.get_config", return_value=mock_config):
         result = runner.invoke(cli, ["cron", "list"])
     assert result.exit_code == 0
     assert "No jobs" in result.output
 
 
 def test_cron_add_and_list(runner, mock_config):
-    with patch("omnicontrol.cli.cron.get_config", return_value=mock_config):
+    with patch("kaisho.cli.cron.get_config", return_value=mock_config):
         add_result = runner.invoke(cli, [
             "cron", "add", "my-job", "My Job",
             "--schedule", "0 9 * * 1",

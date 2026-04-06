@@ -92,7 +92,7 @@ export function KanbanColumn({
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-slate-700 hover:text-slate-500 shrink-0 touch-none"
+          className="cursor-grab active:cursor-grabbing text-stone-400 hover:text-stone-600 shrink-0 touch-none"
           title="Drag to reorder column"
         >
           <GripVertical size={12} />
@@ -101,13 +101,13 @@ export function KanbanColumn({
           className="w-2 h-2 rounded-full shrink-0"
           style={{ backgroundColor: state.color }}
         />
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
           {state.label || state.name}
         </h2>
         <span
           className={[
             "ml-auto px-1.5 py-0.5 rounded text-[10px] font-semibold",
-            "bg-surface-raised text-slate-500 border border-border-subtle",
+            "bg-surface-raised text-stone-600 border border-border-subtle",
           ].join(" ")}
         >
           {tasks.length}
@@ -117,8 +117,8 @@ export function KanbanColumn({
           className={[
             "p-1 rounded-md transition-colors",
             adding
-              ? "text-accent bg-accent-muted"
-              : "text-slate-600 hover:text-accent hover:bg-accent-muted",
+              ? "text-cta bg-cta-muted"
+              : "text-stone-500 hover:text-cta hover:bg-cta-muted",
           ].join(" ")}
           title="Add task"
         >
@@ -132,7 +132,7 @@ export function KanbanColumn({
           "flex flex-col gap-2 min-h-32 p-2 rounded-xl",
           "border border-dashed transition-colors duration-150",
           isOver
-            ? "border-accent bg-accent-muted"
+            ? "border-cta bg-cta-muted"
             : "border-border-subtle bg-surface-card/30",
         ].join(" ")}
       >
@@ -152,7 +152,7 @@ export function KanbanColumn({
 
         {tasks.length === 0 && !adding && (
           <div className="flex items-center justify-center h-16">
-            <span className="text-xs text-slate-700">Empty</span>
+            <span className="text-xs text-stone-400">Empty</span>
           </div>
         )}
 
@@ -177,7 +177,7 @@ export function KanbanColumn({
             <div className="flex gap-1 justify-end">
               <button
                 onClick={() => setAdding(false)}
-                className="p-1 text-slate-600 hover:text-slate-300 rounded"
+                className="p-1 text-stone-500 hover:text-stone-900 rounded"
               >
                 <X size={13} />
               </button>
@@ -188,7 +188,7 @@ export function KanbanColumn({
                   !customer.trim() ||
                   !title.trim()
                 }
-                className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+                className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
               >
                 <Check size={13} />
               </button>
@@ -203,6 +203,6 @@ export function KanbanColumn({
 const inputCls = [
   "w-full px-2 py-1 rounded-md text-xs",
   "bg-surface-raised border border-border",
-  "text-slate-200 placeholder-slate-600",
-  "focus:outline-none focus:border-accent",
+  "text-stone-900 placeholder-stone-500",
+  "focus:outline-none focus:border-cta",
 ].join(" ");

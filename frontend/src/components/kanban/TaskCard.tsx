@@ -106,7 +106,7 @@ function ClockEntryRow({
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-1 min-w-0 px-1 py-0.5 rounded text-[10px] bg-surface-raised border border-border text-slate-200 focus:outline-none focus:border-accent"
+          className="flex-1 min-w-0 px-1 py-0.5 rounded text-[10px] bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
         />
         <input
           type="number"
@@ -115,18 +115,18 @@ function ClockEntryRow({
           value={hours}
           onChange={(e) => setHours(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-14 px-1 py-0.5 rounded text-[10px] tabular-nums bg-surface-raised border border-border text-slate-200 focus:outline-none focus:border-accent"
+          className="w-14 px-1 py-0.5 rounded text-[10px] tabular-nums bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
         />
         <button
           onClick={() => setEditing(false)}
-          className="p-0.5 rounded text-slate-600 hover:text-slate-300"
+          className="p-0.5 rounded text-stone-500 hover:text-stone-900"
         >
           <X size={9} />
         </button>
         <button
           onClick={handleSave}
           disabled={updateEntry.isPending}
-          className="p-0.5 rounded text-accent hover:bg-accent-muted disabled:opacity-40"
+          className="p-0.5 rounded text-cta hover:bg-cta-muted disabled:opacity-40"
         >
           <Check size={9} />
         </button>
@@ -137,23 +137,23 @@ function ClockEntryRow({
   return (
     <li className="flex items-center gap-1.5 text-[10px] group/entry">
       <span
-        className="font-mono text-slate-600 cursor-pointer hover:text-accent"
+        className="font-mono text-stone-500 cursor-pointer hover:text-cta"
         onClick={() =>
           navigateToClockDate(entry.start.slice(0, 10))
         }
       >
         {fmtDate(entry.start)}
       </span>
-      <span className="flex-1 truncate text-slate-500">
+      <span className="flex-1 truncate text-stone-600">
         {entry.description}
       </span>
-      <span className="tabular-nums text-slate-400">
+      <span className="tabular-nums text-stone-700">
         {fmtHours(entry.duration_minutes)}
       </span>
       <button
         onClick={startEdit}
         title="Edit entry"
-        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-slate-600 hover:text-slate-300"
+        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-stone-900"
       >
         <Pencil size={9} />
       </button>
@@ -166,7 +166,7 @@ function ClockEntryRow({
         }
         disabled={updateEntry.isPending}
         title="Detach from task"
-        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-slate-600 hover:text-slate-300 disabled:opacity-40"
+        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-stone-900 disabled:opacity-40"
       >
         <X size={9} />
       </button>
@@ -178,7 +178,7 @@ function ClockEntryRow({
         }}
         disabled={deleteEntry.isPending}
         title="Delete entry"
-        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-slate-600 hover:text-red-400 disabled:opacity-40"
+        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-red-400 disabled:opacity-40"
       >
         <Trash2 size={9} />
       </button>
@@ -201,10 +201,10 @@ function TaskClockSection({ task }: TaskClockSectionProps) {
       className="mt-2 border-t border-border-subtle pt-1.5"
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <div className="flex items-center gap-1 text-[10px] text-slate-500 w-full">
+      <div className="flex items-center gap-1 text-[10px] text-stone-600 w-full">
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1 hover:text-slate-300 flex-1 min-w-0"
+          className="flex items-center gap-1 hover:text-stone-900 flex-1 min-w-0"
         >
           {open ? (
             <ChevronDown size={10} />
@@ -291,7 +291,7 @@ function GithubIssueInput({
             onClick={fetchIssues}
             disabled={loading}
             title="Pick GitHub issue"
-            className="px-2 rounded bg-surface-raised border border-border text-slate-500 hover:text-accent hover:border-accent transition-colors disabled:opacity-40"
+            className="px-2 rounded bg-surface-raised border border-border text-stone-600 hover:text-cta hover:border-cta transition-colors disabled:opacity-40"
           >
             <GitBranch size={11} />
           </button>
@@ -304,9 +304,9 @@ function GithubIssueInput({
               <button
                 type="button"
                 onClick={() => { onChange(issue.url); setOpen(false); }}
-                className="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-accent-muted transition-colors flex items-center gap-2"
+                className="w-full text-left px-3 py-1.5 text-xs text-stone-800 hover:bg-cta-muted transition-colors flex items-center gap-2"
               >
-                <span className="text-slate-600 font-mono shrink-0">
+                <span className="text-stone-500 font-mono shrink-0">
                   #{issue.number}
                 </span>
                 <span className="truncate">{issue.title}</span>
@@ -317,7 +317,7 @@ function GithubIssueInput({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="w-full text-left px-3 py-1 text-[10px] text-slate-600 hover:text-slate-400"
+              className="w-full text-left px-3 py-1 text-[10px] text-stone-500 hover:text-stone-700"
             >
               Close
             </button>
@@ -449,7 +449,7 @@ export function TaskCard({
         {/* Drag handle */}
         <div
           {...listeners}
-          className="flex items-center pl-3 pr-1 cursor-grab active:cursor-grabbing text-slate-700 hover:text-slate-500 shrink-0"
+          className="flex items-center pl-3 pr-1 cursor-grab active:cursor-grabbing text-stone-400 hover:text-stone-600 shrink-0"
         >
           <GripVertical size={12} strokeWidth={2} />
         </div>
@@ -496,13 +496,13 @@ export function TaskCard({
                 />
               </div>
               <div className="flex gap-1 justify-end items-center">
-                <span className="text-[10px] text-slate-700 mr-auto">
+                <span className="text-[10px] text-stone-400 mr-auto">
                   ⌘↵ to save
                 </span>
                 <button
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => setEditing(false)}
-                  className="p-1 text-slate-600 hover:text-slate-300 rounded"
+                  className="p-1 text-stone-500 hover:text-stone-900 rounded"
                 >
                   <X size={12} />
                 </button>
@@ -512,7 +512,7 @@ export function TaskCard({
                   disabled={
                     updateTask.isPending || setTaskTags.isPending
                   }
-                  className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+                  className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
                 >
                   <Check size={12} />
                 </button>
@@ -526,14 +526,14 @@ export function TaskCard({
                     className={[
                       "inline-flex items-center px-1.5 py-0.5 rounded",
                       "text-[10px] font-semibold tracking-wider uppercase",
-                      "bg-accent-muted text-accent-hover",
+                      "bg-cta-muted text-cta-hover",
                     ].join(" ")}
                   >
                     {task.customer}
                   </span>
                 </div>
               )}
-              <p className="text-sm font-medium text-slate-200 leading-snug mb-1">
+              <p className="text-sm font-medium text-stone-900 leading-snug mb-1">
                 {stripCustomerPrefix(task.title)}
               </p>
               {task.body && (
@@ -541,7 +541,7 @@ export function TaskCard({
                   <button
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={() => setBodyExpanded((v) => !v)}
-                    className="flex items-center gap-1 text-[10px] text-slate-600 hover:text-slate-400 transition-colors"
+                    className="flex items-center gap-1 text-[10px] text-stone-500 hover:text-stone-700 transition-colors"
                   >
                     {bodyExpanded ? (
                       <ChevronDown size={10} />
@@ -555,7 +555,7 @@ export function TaskCard({
                       className="mt-1 pl-1 border-l border-border-subtle"
                       onPointerDown={(e) => e.stopPropagation()}
                     >
-                      <Markdown className="text-xs text-slate-400 [&_p]:mb-1 [&_p]:leading-relaxed">
+                      <Markdown className="text-xs text-stone-700 [&_p]:mb-1 [&_p]:leading-relaxed">
                         {task.body}
                       </Markdown>
                     </div>
@@ -582,9 +582,9 @@ export function TaskCard({
                       onClick={() => onTagClick?.(tagName)}
                       className={[
                         "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                        "bg-surface-overlay text-slate-400",
+                        "bg-surface-overlay text-stone-700",
                         "border border-border-subtle",
-                        "hover:border-accent hover:text-accent transition-colors",
+                        "hover:border-cta hover:text-cta transition-colors",
                       ].join(" ")}
                     >
                       {tagName}
@@ -597,14 +597,14 @@ export function TaskCard({
                     target="_blank"
                     rel="noopener noreferrer"
                     onPointerDown={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-overlay border border-border-subtle text-slate-400 hover:text-accent hover:border-accent transition-colors"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-overlay border border-border-subtle text-stone-700 hover:text-cta hover:border-cta transition-colors"
                     title={task.github_url}
                   >
                     <GitBranch size={10} />
                     #{extractIssueNumber(task.github_url)}
                   </a>
                 )}
-                <span className="ml-auto text-[10px] text-slate-600 shrink-0">
+                <span className="ml-auto text-[10px] text-stone-500 shrink-0">
                   {formatDate(task.created)}
                 </span>
               </div>
@@ -629,7 +629,7 @@ export function TaskCard({
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={startEdit}
-              className="p-1 rounded text-slate-700 hover:text-accent hover:bg-accent-muted transition-colors"
+              className="p-1 rounded text-stone-400 hover:text-cta hover:bg-cta-muted transition-colors"
               title="Edit"
             >
               <Pencil size={11} />
@@ -642,7 +642,7 @@ export function TaskCard({
                 }
               }}
               disabled={archiveTask.isPending}
-              className="p-1 rounded text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+              className="p-1 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
               title="Archive"
             >
               <Trash2 size={11} />
@@ -657,6 +657,6 @@ export function TaskCard({
 const editInputCls = [
   "w-full px-2 py-1 rounded text-xs",
   "bg-surface-raised border border-border",
-  "text-slate-200 placeholder-slate-600",
-  "focus:outline-none focus:border-accent",
+  "text-stone-900 placeholder-stone-500",
+  "focus:outline-none focus:border-cta",
 ].join(" ");

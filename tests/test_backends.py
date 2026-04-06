@@ -8,14 +8,14 @@ from pathlib import Path
 
 import pytest
 
-from omnicontrol.backends.json_backend import (
+from kaisho.backends.json_backend import (
     JsonClockBackend,
     JsonCustomerBackend,
     JsonInboxBackend,
     JsonNotesBackend,
     JsonTaskBackend,
 )
-from omnicontrol.backends.markdown import (
+from kaisho.backends.markdown import (
     MarkdownClockBackend,
     MarkdownCustomerBackend,
     MarkdownInboxBackend,

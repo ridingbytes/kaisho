@@ -74,7 +74,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
       <aside className="flex flex-col items-center shrink-0 border-l border-border-subtle bg-surface-card w-6">
         <button
           onClick={onToggle}
-          className="py-3 text-slate-600 hover:text-slate-300 transition-colors"
+          className="py-3 text-stone-500 hover:text-stone-900 transition-colors"
           title="Expand time tracking"
         >
           <ChevronLeft size={14} />
@@ -87,13 +87,13 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
     <aside className="flex flex-col shrink-0 border-l border-border-subtle bg-surface-card w-80">
       {/* Header */}
       <div className="flex items-center px-4 py-3 border-b border-border-subtle shrink-0">
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-400 flex-1">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-700 flex-1">
           Time Tracking
         </h2>
         <HelpButton title="Time Tracking" doc={DOCS.clock} />
         <button
           onClick={onToggle}
-          className="ml-1 p-0.5 rounded text-slate-600 hover:text-slate-300 transition-colors"
+          className="ml-1 p-0.5 rounded text-stone-500 hover:text-stone-900 transition-colors"
           title="Collapse"
         >
           <ChevronRight size={14} />
@@ -116,10 +116,10 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
             className="w-full flex items-center gap-1 group mb-1"
           >
             {calendarOpen
-              ? <ChevronDown size={10} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
-              : <ChevronRight size={10} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
+              ? <ChevronDown size={10} className="text-stone-500 group-hover:text-stone-700 transition-colors" />
+              : <ChevronRight size={10} className="text-stone-500 group-hover:text-stone-700 transition-colors" />
             }
-            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 group-hover:text-slate-400 transition-colors">
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 group-hover:text-stone-700 transition-colors">
               Calendar
             </h3>
           </button>
@@ -136,7 +136,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
         {/* Entries for selected date */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 flex-1">
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 flex-1">
               {!selectedDate || selectedDate === todayIso()
                 ? "Today"
                 : formatDateHeading(selectedDate)}
@@ -146,8 +146,8 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
               className={[
                 "p-0.5 rounded transition-colors",
                 booking
-                  ? "text-accent bg-accent-muted"
-                  : "text-slate-600 hover:text-accent",
+                  ? "text-cta bg-cta-muted"
+                  : "text-stone-500 hover:text-cta",
               ].join(" ")}
               title="Add time entry"
             >

@@ -3,8 +3,8 @@ import textwrap
 
 import pytest
 
-from omnicontrol.org.parser import parse_org_string
-from omnicontrol.org.models import Heading, OrgFile
+from kaisho.org.parser import parse_org_string
+from kaisho.org.models import Heading, OrgFile
 
 KEYWORDS = {"TODO", "NEXT", "IN-PROGRESS", "WAIT", "DONE", "CANCELLED"}
 

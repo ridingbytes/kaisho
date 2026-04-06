@@ -41,9 +41,9 @@ driver (`org` or `markdown`).
 ### CLI only
 
 ```bash
-oc briefing          # morning overview
-oc task list         # list open tasks
-oc clock status      # check active timer
+kai briefing          # morning overview
+kai task list         # list open tasks
+kai clock status      # check active timer
 ```
 
 ### API + frontend
@@ -51,7 +51,7 @@ oc clock status      # check active timer
 Terminal 1 — start the backend:
 
 ```bash
-oc serve
+kai serve
 # API available at http://localhost:8765
 # Docs at http://localhost:8765/docs
 ```
@@ -67,7 +67,7 @@ pnpm dev
 
 ## Task states
 
-Out of the box, OmniControl uses the built-in states:
+Out of the box, Kaisho uses the built-in states:
 `TODO`, `NEXT`, `IN-PROGRESS`, `WAIT`, `DONE`, `CANCELLED`.
 
 Customise them in `settings.yaml`:
@@ -91,7 +91,7 @@ task_states:
 Or use the CLI:
 
 ```bash
-oc config add-state REVIEW --label "In Review" --color "#8b5cf6" \
+kai config add-state REVIEW --label "In Review" --color "#8b5cf6" \
     --after IN-PROGRESS
 ```
 
@@ -110,5 +110,5 @@ tags:
 Or:
 
 ```bash
-oc tag add urgent --color "#ef4444" --description "Must ship this week"
+kai tag add urgent --color "#ef4444" --description "Must ship this week"
 ```

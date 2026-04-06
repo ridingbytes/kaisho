@@ -35,10 +35,10 @@ def _gather_github_issues(customers: list[dict]) -> list[dict]:
 )
 @click.option(
     "--no-context", is_flag=True, default=False,
-    help="Send question without OmniControl context",
+    help="Send question without Kaisho context",
 )
 def ask_cmd(question, model, no_github, no_context):
-    """Ask the AI advisor a question with full OmniControl context."""
+    """Ask the AI advisor a question with full Kaisho context."""
     q = " ".join(question)
     cfg = get_config()
     backend = get_backend()

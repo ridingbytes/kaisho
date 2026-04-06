@@ -33,9 +33,9 @@ import type {
 } from "../../types";
 
 function usedColor(usedPercent: number): string {
-  if (usedPercent >= 100) return "#ef4444";
-  if (usedPercent >= 80) return "#f59e0b";
-  return "#10b981";
+  if (usedPercent >= 100) return "#dc2626";
+  if (usedPercent >= 80) return "#d97706";
+  return "#16a34a";
 }
 
 const STATUS_OPTIONS = ["active", "inactive", "archiv"];
@@ -70,8 +70,8 @@ function fieldClass(base = "") {
   return [
     "w-full px-2 py-1 rounded-md text-xs",
     "bg-surface-overlay border border-border",
-    "text-slate-200 placeholder-slate-600",
-    "focus:outline-none focus:border-accent",
+    "text-stone-900 placeholder-stone-500",
+    "focus:outline-none focus:border-cta",
     base,
   ].join(" ");
 }
@@ -81,9 +81,9 @@ function fieldClass(base = "") {
 // ---------------------------------------------------------------------------
 
 function contractBarColor(pct: number): string {
-  if (pct >= 100) return "#ef4444";
-  if (pct >= 80) return "#f59e0b";
-  return "#10b981";
+  if (pct >= 100) return "#dc2626";
+  if (pct >= 80) return "#d97706";
+  return "#16a34a";
 }
 
 interface ContractRowProps {
@@ -166,7 +166,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             onChange={(e) => setName(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Contract name"
-            className="flex-1 min-w-0 px-2 py-1 rounded-md text-xs bg-surface-overlay border border-border text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent"
+            className="flex-1 min-w-0 px-2 py-1 rounded-md text-xs bg-surface-overlay border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta"
           />
           <input
             type="number"
@@ -176,7 +176,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             onChange={(e) => setHours(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Hours"
-            className="w-20 shrink-0 px-2 py-1 rounded-md text-xs tabular-nums bg-surface-overlay border border-border text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent"
+            className="w-20 shrink-0 px-2 py-1 rounded-md text-xs tabular-nums bg-surface-overlay border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta"
           />
           <input
             type="number"
@@ -187,7 +187,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             onKeyDown={handleKeyDown}
             placeholder="Offset h"
             title="Used offset (hours)"
-            className="w-20 shrink-0 px-2 py-1 rounded-md text-xs tabular-nums bg-surface-overlay border border-border text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent"
+            className="w-20 shrink-0 px-2 py-1 rounded-md text-xs tabular-nums bg-surface-overlay border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta"
           />
         </div>
         <div className="flex gap-1">
@@ -218,14 +218,14 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
         <div className="flex gap-1 justify-end">
           <button
             onClick={() => setEditing(false)}
-            className="p-1 text-slate-600 hover:text-slate-300 rounded"
+            className="p-1 text-stone-500 hover:text-stone-900 rounded"
           >
             <X size={11} />
           </button>
           <button
             onClick={handleSave}
             disabled={updateContract.isPending}
-            className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+            className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
           >
             <Check size={11} />
           </button>
@@ -240,26 +240,26 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
       <p
         className={[
           "text-xs font-medium truncate mb-1",
-          isActive ? "text-slate-300" : "text-slate-500",
+          isActive ? "text-stone-800" : "text-stone-600",
         ].join(" ")}
       >
         {contract.name}
       </p>
       {/* Row 2: hours + badge + actions */}
       <div className="flex items-center gap-1 mb-1">
-        <span className="text-[10px] text-slate-500 tabular-nums">
+        <span className="text-[10px] text-stone-600 tabular-nums">
           {contract.used.toFixed(1)}h /{" "}
           {contract.budget.toFixed(0)}h
         </span>
         {!isActive && (
-          <span className="text-[9px] px-1 py-0.5 rounded bg-surface-overlay text-slate-600">
+          <span className="text-[9px] px-1 py-0.5 rounded bg-surface-overlay text-stone-500">
             closed
           </span>
         )}
         <div className="hidden group-hover:flex gap-0.5 ml-auto">
           <button
             onClick={startEdit}
-            className="p-0.5 rounded text-slate-700 hover:text-accent hover:bg-accent-muted transition-colors"
+            className="p-0.5 rounded text-stone-400 hover:text-cta hover:bg-cta-muted transition-colors"
             title="Edit"
           >
             <Pencil size={10} />
@@ -274,7 +274,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
               }
             }}
             disabled={deleteContract.isPending}
-            className="p-0.5 rounded text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            className="p-0.5 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
             title="Delete"
           >
             <X size={10} />
@@ -290,7 +290,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
         </div>
       )}
       {contract.notes && (
-        <p className="text-[10px] text-slate-600 mt-0.5 truncate">
+        <p className="text-[10px] text-stone-500 mt-0.5 truncate">
           {contract.notes}
         </p>
       )}
@@ -336,7 +336,7 @@ function AddContractForm({
           placeholder="Contract name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="flex-1 min-w-0 px-2 py-1 rounded-md text-xs bg-surface-overlay border border-border text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent"
+          className="flex-1 min-w-0 px-2 py-1 rounded-md text-xs bg-surface-overlay border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta"
         />
         <input
           type="number"
@@ -345,7 +345,7 @@ function AddContractForm({
           placeholder="Hours"
           value={hours}
           onChange={(e) => setHours(e.target.value)}
-          className="w-20 shrink-0 px-2 py-1 rounded-md text-xs tabular-nums bg-surface-overlay border border-border text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent"
+          className="w-20 shrink-0 px-2 py-1 rounded-md text-xs tabular-nums bg-surface-overlay border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta"
         />
       </div>
       <input
@@ -358,7 +358,7 @@ function AddContractForm({
         <button
           type="button"
           onClick={onDone}
-          className="p-1 text-slate-600 hover:text-slate-300 rounded"
+          className="p-1 text-stone-500 hover:text-stone-900 rounded"
         >
           <X size={11} />
         </button>
@@ -367,7 +367,7 @@ function AddContractForm({
           disabled={
             addContract.isPending || !name.trim() || !hours.trim()
           }
-          className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+          className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
         >
           <Check size={11} />
         </button>
@@ -394,7 +394,7 @@ function ContractsSection({ customer }: ContractsSectionProps) {
     <div>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600 hover:text-slate-400 transition-colors"
+        className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-stone-500 hover:text-stone-700 transition-colors"
       >
         {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         Contracts ({customer.contracts.length})
@@ -417,7 +417,7 @@ function ContractsSection({ customer }: ContractsSectionProps) {
           ) : (
             <button
               onClick={() => setAdding(true)}
-              className="flex items-center gap-1 px-2 py-1 mt-1 rounded text-[10px] text-slate-600 hover:text-accent hover:bg-accent-muted transition-colors"
+              className="flex items-center gap-1 px-2 py-1 mt-1 rounded text-[10px] text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
             >
               <Plus size={10} />
               Add contract
@@ -443,7 +443,7 @@ function AddFirstContractInline({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-slate-600 hover:text-accent hover:bg-accent-muted transition-colors"
+        className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
       >
         <Plus size={10} />
         Add contract
@@ -562,14 +562,14 @@ function TimeEntryRow({
         <div className="flex gap-1 justify-end">
           <button
             onClick={() => setEditing(false)}
-            className="p-0.5 text-slate-600 hover:text-slate-300 rounded"
+            className="p-0.5 text-stone-500 hover:text-stone-900 rounded"
           >
             <X size={10} />
           </button>
           <button
             onClick={handleSave}
             disabled={updateEntry.isPending}
-            className="p-0.5 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+            className="p-0.5 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
           >
             <Check size={10} />
           </button>
@@ -581,22 +581,22 @@ function TimeEntryRow({
   return (
     <div className="group flex items-center gap-1.5 py-1 border-b border-border-subtle last:border-0">
       <span
-        className="text-[10px] text-slate-600 tabular-nums shrink-0 cursor-pointer hover:text-accent"
+        className="text-[10px] text-stone-500 tabular-nums shrink-0 cursor-pointer hover:text-cta"
         onClick={() =>
           navigateToClockDate(entry.start.slice(0, 10))
         }
       >
         {formatEntryDate(entry.start)}
       </span>
-      <span className="text-xs text-slate-300 truncate min-w-0 flex-1">
+      <span className="text-xs text-stone-800 truncate min-w-0 flex-1">
         {entry.description}
       </span>
       {entry.contract && (
-        <span className="text-[9px] px-1 py-0.5 rounded bg-surface-overlay text-slate-500 shrink-0 max-w-[6rem] truncate">
+        <span className="text-[9px] px-1 py-0.5 rounded bg-surface-overlay text-stone-600 shrink-0 max-w-[6rem] truncate">
           {entry.contract}
         </span>
       )}
-      <span className="text-[10px] text-slate-500 tabular-nums shrink-0">
+      <span className="text-[10px] text-stone-600 tabular-nums shrink-0">
         {formatHours(entry.duration_minutes)}
       </span>
       <div className="hidden group-hover:flex gap-0.5 shrink-0">
@@ -611,7 +611,7 @@ function TimeEntryRow({
             setContract(entry.contract ?? "");
             setEditing(true);
           }}
-          className="p-0.5 rounded text-slate-700 hover:text-accent hover:bg-accent-muted transition-colors"
+          className="p-0.5 rounded text-stone-400 hover:text-cta hover:bg-cta-muted transition-colors"
           title="Edit"
         >
           <Pencil size={10} />
@@ -623,7 +623,7 @@ function TimeEntryRow({
             }
           }}
           disabled={deleteEntry.isPending}
-          className="p-0.5 rounded text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          className="p-0.5 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
           title="Delete"
         >
           <Trash2 size={10} />
@@ -649,7 +649,7 @@ function TimeEntriesSection({
     <div>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600 hover:text-slate-400 transition-colors"
+        className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-stone-500 hover:text-stone-700 transition-colors"
       >
         {open ? (
           <ChevronDown size={10} />
@@ -662,7 +662,7 @@ function TimeEntriesSection({
       {open && (
         <div className="mt-1 ml-5 max-h-48 overflow-y-auto">
           {entries.length === 0 ? (
-            <p className="text-[10px] text-slate-600 py-1">
+            <p className="text-[10px] text-stone-500 py-1">
               No entries
             </p>
           ) : (
@@ -704,7 +704,7 @@ function QuickBookForm({
 
   const cls =
     "px-2 py-1 rounded-md text-xs bg-surface-raised border border-border " +
-    "text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent";
+    "text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta";
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -776,7 +776,7 @@ function QuickBookForm({
         <button
           type="button"
           onClick={onDone}
-          className="p-1 text-slate-600 hover:text-slate-300 rounded"
+          className="p-1 text-stone-500 hover:text-stone-900 rounded"
         >
           <X size={11} />
         </button>
@@ -785,7 +785,7 @@ function QuickBookForm({
           disabled={
             book.isPending || !duration.trim() || !description.trim()
           }
-          className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+          className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
         >
           <Check size={11} />
         </button>
@@ -898,7 +898,7 @@ export function CustomerCard({ customer: c }: Props) {
           {!hasContracts && (
             <div className="flex gap-2">
               <label className="flex flex-col gap-0.5 flex-1">
-                <span className="text-[10px] text-slate-600 uppercase tracking-wider">
+                <span className="text-[10px] text-stone-500 uppercase tracking-wider">
                   Budget h
                 </span>
                 <input
@@ -911,7 +911,7 @@ export function CustomerCard({ customer: c }: Props) {
                 />
               </label>
               <label className="flex flex-col gap-0.5 flex-1">
-                <span className="text-[10px] text-slate-600 uppercase tracking-wider">
+                <span className="text-[10px] text-stone-500 uppercase tracking-wider">
                   Offset h
                 </span>
                 <input
@@ -936,7 +936,7 @@ export function CustomerCard({ customer: c }: Props) {
           <div className="flex gap-2 justify-end mt-1">
             <button
               onClick={() => setEditing(false)}
-              className="p-1.5 rounded-md text-slate-600 hover:text-slate-300 transition-colors"
+              className="p-1.5 rounded-md text-stone-500 hover:text-stone-900 transition-colors"
               title="Cancel"
             >
               <X size={14} />
@@ -944,7 +944,7 @@ export function CustomerCard({ customer: c }: Props) {
             <button
               onClick={handleSave}
               disabled={update.isPending}
-              className="p-1.5 rounded-md text-accent hover:bg-accent-muted transition-colors disabled:opacity-40"
+              className="p-1.5 rounded-md text-cta hover:bg-cta-muted transition-colors disabled:opacity-40"
               title="Save"
             >
               <Check size={14} />
@@ -957,7 +957,7 @@ export function CustomerCard({ customer: c }: Props) {
           {/* Header */}
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-slate-200 truncate">
+              <h3 className="text-sm font-semibold text-stone-900 truncate">
                 {c.name}
               </h3>
               {c.repo && (
@@ -965,7 +965,7 @@ export function CustomerCard({ customer: c }: Props) {
                   href={c.repo}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[10px] text-slate-600 hover:text-accent mt-0.5 transition-colors"
+                  className="inline-flex items-center gap-1 text-[10px] text-stone-500 hover:text-cta mt-0.5 transition-colors"
                 >
                   <ExternalLink size={10} />
                   {c.repo.replace(/^https?:\/\//, "").slice(0, 30)}
@@ -974,7 +974,7 @@ export function CustomerCard({ customer: c }: Props) {
             </div>
             <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
               {c.type && (
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-overlay text-slate-400">
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-overlay text-stone-700">
                   {c.type}
                 </span>
               )}
@@ -982,7 +982,7 @@ export function CustomerCard({ customer: c }: Props) {
                 className={[
                   "px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider",
                   isArchived
-                    ? "bg-slate-500/10 text-slate-600"
+                    ? "bg-stone-500/10 text-stone-500"
                     : "bg-emerald-500/15 text-emerald-400",
                 ].join(" ")}
               >
@@ -990,7 +990,7 @@ export function CustomerCard({ customer: c }: Props) {
               </span>
               <button
                 onClick={startEdit}
-                className="p-1 rounded-md text-slate-700 hover:text-accent hover:bg-accent-muted transition-colors"
+                className="p-1 rounded-md text-stone-400 hover:text-cta hover:bg-cta-muted transition-colors"
                 title="Edit"
               >
                 <Pencil size={11} />
@@ -1011,7 +1011,7 @@ export function CustomerCard({ customer: c }: Props) {
                 />
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500">
+                <span className="text-stone-600">
                   {c.used}h used · {c.rest}h left
                 </span>
                 <span
@@ -1048,7 +1048,7 @@ export function CustomerCard({ customer: c }: Props) {
           ) : (
             <button
               onClick={() => setBooking(true)}
-              className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-slate-600 hover:text-accent hover:bg-accent-muted transition-colors"
+              className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
             >
               <Clock size={10} />
               Book time

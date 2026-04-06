@@ -54,20 +54,20 @@ const DATALIST_ID = "ai-model-list";
 
 const fieldCls = [
   "px-2 py-1 rounded-lg text-xs",
-  "bg-surface-raised border border-border text-slate-200",
-  "placeholder-slate-600 focus:outline-none focus:border-border-strong",
+  "bg-surface-raised border border-border text-stone-900",
+  "placeholder-stone-500 focus:outline-none focus:border-border-strong",
 ].join(" ");
 
 const inputCls = [
   "flex-1 px-3 py-1.5 rounded-lg text-sm font-mono",
-  "bg-surface-raised border border-border text-slate-200",
-  "placeholder-slate-600 focus:outline-none",
+  "bg-surface-raised border border-border text-stone-900",
+  "placeholder-stone-500 focus:outline-none",
   "focus:border-border-strong",
 ].join(" ");
 
 const saveBtnCls = [
   "px-4 py-1.5 rounded-lg text-sm",
-  "bg-accent text-white hover:bg-accent-hover",
+  "bg-cta text-white hover:bg-cta-hover",
   "transition-colors disabled:opacity-50",
 ].join(" ");
 
@@ -107,8 +107,8 @@ function TabBar({ active, onChange }: TabBarProps) {
           className={[
             "px-4 py-2 text-sm font-medium transition-colors",
             active === tab.id
-              ? "text-accent border-b-2 border-accent -mb-px"
-              : "text-slate-500 hover:text-slate-300",
+              ? "text-cta border-b-2 border-cta -mb-px"
+              : "text-stone-600 hover:text-stone-900",
           ].join(" ")}
         >
           {tab.label}
@@ -140,8 +140,8 @@ function ModelInput({
       placeholder={placeholder}
       className={[
         "w-full px-3 py-1.5 rounded-lg text-sm font-mono",
-        "bg-surface-raised border border-border text-slate-200",
-        "placeholder-slate-600 focus:outline-none",
+        "bg-surface-raised border border-border text-stone-900",
+        "placeholder-stone-500 focus:outline-none",
         "focus:border-border-strong",
       ].join(" ")}
     />
@@ -176,15 +176,15 @@ function AdvisorPersonalitySection() {
 
   return (
     <div className="mt-6">
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
         Advisor Personality
       </h2>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
             SOUL.md
           </p>
-          <p className="text-[10px] text-slate-700 mb-2">
+          <p className="text-[10px] text-stone-400 mb-2">
             Defines the advisor personality, tone, and
             behavioral guidelines.
           </p>
@@ -200,10 +200,10 @@ function AdvisorPersonalitySection() {
           />
         </div>
         <div className="px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
             USER.md
           </p>
-          <p className="text-[10px] text-slate-700 mb-2">
+          <p className="text-[10px] text-stone-400 mb-2">
             Personal context about the user (role, preferences,
             working style) that the advisor uses for tailored
             responses.
@@ -275,30 +275,30 @@ function UrlAllowlistSection() {
 
   return (
     <div className="mt-6">
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
         URL Allowlist
       </h2>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-3">
-          <p className="text-[10px] text-slate-700 mb-3">
+          <p className="text-[10px] text-stone-400 mb-3">
             Domains the advisor and cron jobs may fetch.
             Requests to unlisted domains require user approval.
           </p>
           <div className="flex flex-wrap gap-1.5 mb-3">
             {domains.length === 0 && (
-              <span className="text-xs text-slate-600">
+              <span className="text-xs text-stone-500">
                 No domains allowed yet.
               </span>
             )}
             {domains.map((d) => (
               <span
                 key={d}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-surface-raised border border-border text-slate-300"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-surface-raised border border-border text-stone-800"
               >
                 {d}
                 <button
                   onClick={() => handleRemove(d)}
-                  className="text-slate-600 hover:text-red-400 transition-colors"
+                  className="text-stone-500 hover:text-red-400 transition-colors"
                 >
                   <X size={10} />
                 </button>
@@ -364,9 +364,9 @@ function SkillCard({
         className="flex items-center gap-2 w-full px-4 py-2.5 text-left hover:bg-surface-raised transition-colors"
       >
         {open
-          ? <ChevronDown size={12} className="text-slate-500" />
-          : <ChevronRight size={12} className="text-slate-500" />}
-        <span className="text-sm text-slate-200 font-mono">
+          ? <ChevronDown size={12} className="text-stone-600" />
+          : <ChevronRight size={12} className="text-stone-600" />}
+        <span className="text-sm text-stone-900 font-mono">
           {skill.name}
         </span>
       </button>
@@ -391,7 +391,7 @@ function SkillCard({
             <button
               onClick={() => deleteMut.mutate(skill.name)}
               disabled={deleteMut.isPending}
-              className="p-1.5 rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              className="p-1.5 rounded text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
               title="Delete skill"
             >
               <Trash2 size={13} />
@@ -443,14 +443,14 @@ function AddSkillForm({
         <button
           type="button"
           onClick={onDone}
-          className="p-1 text-slate-600 hover:text-slate-300 rounded"
+          className="p-1 text-stone-500 hover:text-stone-900 rounded"
         >
           <X size={12} />
         </button>
         <button
           type="submit"
           disabled={createMut.isPending || !name.trim()}
-          className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+          className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
         >
           <Check size={12} />
         </button>
@@ -473,12 +473,12 @@ function SkillsSection() {
   return (
     <div className="mt-6">
       <div className="flex items-center gap-3 mb-3">
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
           Skills
         </h2>
         <button
           onClick={() => setAdding((v) => !v)}
-          className="ml-auto p-1 rounded text-slate-600 hover:text-accent hover:bg-accent-muted transition-colors"
+          className="ml-auto p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
           title="Add skill"
         >
           <Plus size={12} />
@@ -486,14 +486,14 @@ function SkillsSection() {
       </div>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] text-slate-700">
+          <p className="text-[10px] text-stone-400">
             Reusable prompt templates applied automatically
             when the user&apos;s request matches. The
             advisor can also create skills via tool call.
           </p>
         </div>
         {skills.length === 0 && !adding && (
-          <p className="px-4 py-3 text-xs text-slate-600">
+          <p className="px-4 py-3 text-xs text-stone-500">
             No skills defined yet.
           </p>
         )}
@@ -547,7 +547,7 @@ function AiSection() {
   }
 
   if (isLoading) {
-    return <p className="text-sm text-slate-600">Loading…</p>;
+    return <p className="text-sm text-stone-500">Loading…</p>;
   }
 
   return (
@@ -561,17 +561,17 @@ function AiSection() {
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         {/* Local / subscription providers */}
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
             Local / Subscription
           </p>
-          <p className="text-[10px] text-slate-700 mb-2">
+          <p className="text-[10px] text-stone-400 mb-2">
             No API key needed. Ollama and LM Studio run locally.
             Claude CLI uses your login token (run
             &quot;claude login&quot; once).
           </p>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
-              <span className="text-xs text-slate-400 w-32 shrink-0">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
                 Ollama URL
               </span>
               <input
@@ -583,7 +583,7 @@ function AiSection() {
               />
             </label>
             <label className="flex items-center gap-3">
-              <span className="text-xs text-slate-400 w-32 shrink-0">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
                 LM Studio URL
               </span>
               <input
@@ -600,7 +600,7 @@ function AiSection() {
         {/* Claude CLI status */}
         {cliStatus && (
           <div className="px-4 py-3 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
               Claude CLI (Subscription)
             </p>
             <div className="flex items-center gap-3 text-xs">
@@ -625,7 +625,7 @@ function AiSection() {
                 </span>
               )}
             </div>
-            <p className="text-[10px] text-slate-700 mt-1">
+            <p className="text-[10px] text-stone-400 mt-1">
               {cliStatus.installed
                 ? cliStatus.authenticated
                   ? "Use prefix claude_cli: for subscription-based models."
@@ -637,16 +637,16 @@ function AiSection() {
 
         {/* Cloud API keys */}
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
             Cloud API Keys
           </p>
-          <p className="text-[10px] text-slate-700 mb-2">
+          <p className="text-[10px] text-stone-400 mb-2">
             Billed per token. Set keys only for the providers
             you want to use.
           </p>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
-              <span className="text-xs text-slate-400 w-32 shrink-0">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
                 Claude API Key
               </span>
               <input
@@ -658,7 +658,7 @@ function AiSection() {
               />
             </label>
             <label className="flex items-center gap-3">
-              <span className="text-xs text-slate-400 w-32 shrink-0">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
                 OpenRouter URL
               </span>
               <input
@@ -670,7 +670,7 @@ function AiSection() {
               />
             </label>
             <label className="flex items-center gap-3">
-              <span className="text-xs text-slate-400 w-32 shrink-0">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
                 OpenRouter Key
               </span>
               <input
@@ -682,7 +682,7 @@ function AiSection() {
               />
             </label>
             <label className="flex items-center gap-3">
-              <span className="text-xs text-slate-400 w-32 shrink-0">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
                 OpenAI URL
               </span>
               <input
@@ -694,7 +694,7 @@ function AiSection() {
               />
             </label>
             <label className="flex items-center gap-3">
-              <span className="text-xs text-slate-400 w-32 shrink-0">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
                 OpenAI Key
               </span>
               <input
@@ -709,12 +709,12 @@ function AiSection() {
         </div>
 
         <div className="px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
             Default models
           </p>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
-              <span className="text-xs text-slate-400 w-32 shrink-0">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
                 Advisor
               </span>
               <div className="flex-1">
@@ -726,7 +726,7 @@ function AiSection() {
               </div>
             </label>
             <label className="flex items-center gap-3">
-              <span className="text-xs text-slate-400 w-32 shrink-0">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
                 Cron default
               </span>
               <div className="flex-1">
@@ -739,7 +739,7 @@ function AiSection() {
             </label>
           </div>
           {models.length > 0 && (
-            <p className="text-[10px] text-slate-700 mt-2">
+            <p className="text-[10px] text-stone-400 mt-2">
               {models.length} model
               {models.length !== 1 ? "s" : ""} available — type to
               filter or enter any model string.
@@ -807,14 +807,14 @@ function GithubSection() {
   }
 
   if (isLoading) {
-    return <p className="text-sm text-slate-600">Loading…</p>;
+    return <p className="text-sm text-stone-500">Loading…</p>;
   }
 
   return (
     <section>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
             Authentication
           </p>
           <div className="flex flex-col gap-2">
@@ -827,7 +827,7 @@ function GithubSection() {
               </div>
             )}
             <label className="flex items-center gap-3">
-              <span className="text-xs text-slate-400 w-32 shrink-0">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
                 Personal Access Token
               </span>
               <input
@@ -842,11 +842,11 @@ function GithubSection() {
         </div>
 
         <div className="px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
             API
           </p>
           <label className="flex items-center gap-3">
-            <span className="text-xs text-slate-400 w-32 shrink-0">
+            <span className="text-xs text-stone-700 w-32 shrink-0">
               Base URL
             </span>
             <input
@@ -875,7 +875,7 @@ function GithubSection() {
           <span className="text-xs text-red-400">Save failed.</span>
         )}
       </div>
-      <p className="mt-2 text-[10px] text-slate-700">
+      <p className="mt-2 text-[10px] text-stone-400">
         Token is stored in settings.yaml. It is never sent to the
         browser in full.
       </p>
@@ -914,7 +914,7 @@ function TagRow({ tag }: TagRowProps) {
           onChange={(e) => setColor(e.target.value)}
           className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent shrink-0"
         />
-        <span className="text-xs text-slate-400 w-24 shrink-0">
+        <span className="text-xs text-stone-700 w-24 shrink-0">
           {tag.name}
         </span>
         <input
@@ -931,14 +931,14 @@ function TagRow({ tag }: TagRowProps) {
         />
         <button
           onClick={() => setEditing(false)}
-          className="p-1 text-slate-600 hover:text-slate-300 rounded"
+          className="p-1 text-stone-500 hover:text-stone-900 rounded"
         >
           <X size={12} />
         </button>
         <button
           onClick={handleSave}
           disabled={updateTag.isPending}
-          className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+          className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
         >
           <Check size={12} />
         </button>
@@ -952,16 +952,16 @@ function TagRow({ tag }: TagRowProps) {
         className="w-3 h-3 rounded-full shrink-0"
         style={{ backgroundColor: tag.color }}
       />
-      <span className="text-sm text-slate-200 w-32 shrink-0">
+      <span className="text-sm text-stone-900 w-32 shrink-0">
         {tag.name}
       </span>
-      <span className="text-xs text-slate-500 flex-1">
+      <span className="text-xs text-stone-600 flex-1">
         {tag.description}
       </span>
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={() => setEditing(true)}
-          className="p-1 rounded text-slate-600 hover:text-accent hover:bg-accent-muted transition-colors"
+          className="p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
           title="Edit"
         >
           <Pencil size={11} />
@@ -969,7 +969,7 @@ function TagRow({ tag }: TagRowProps) {
         <button
           onClick={() => deleteTag.mutate(tag.name)}
           disabled={deleteTag.isPending}
-          className="p-1 rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          className="p-1 rounded text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
           title="Delete"
         >
           <X size={11} />
@@ -1023,14 +1023,14 @@ function AddTagForm({ onDone }: { onDone: () => void }) {
       <button
         type="button"
         onClick={onDone}
-        className="p-1 text-slate-600 hover:text-slate-300 rounded"
+        className="p-1 text-stone-500 hover:text-stone-900 rounded"
       >
         <X size={12} />
       </button>
       <button
         type="submit"
         disabled={addTag.isPending || !name.trim()}
-        className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+        className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
       >
         <Check size={12} />
       </button>
@@ -1045,7 +1045,7 @@ function TaskStatesSection({
 }) {
   return (
     <section>
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
         Task States
       </h2>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
@@ -1066,14 +1066,14 @@ function TaskStatesSection({
               title="Color"
               readOnly
             />
-            <span className="text-xs font-mono text-slate-400 w-28">
+            <span className="text-xs font-mono text-stone-700 w-28">
               {state.name}
             </span>
-            <span className="text-sm text-slate-200 flex-1">
+            <span className="text-sm text-stone-900 flex-1">
               {state.label}
             </span>
             {state.done && (
-              <span className="text-[10px] font-semibold uppercase text-slate-600 bg-surface-raised px-1.5 py-0.5 rounded">
+              <span className="text-[10px] font-semibold uppercase text-stone-500 bg-surface-raised px-1.5 py-0.5 rounded">
                 done
               </span>
             )}
@@ -1090,12 +1090,12 @@ function TagsSection({ tags }: { tags: ConfigTag[] }) {
   return (
     <section>
       <div className="flex items-center gap-3 mb-3">
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
           Tags
         </h2>
         <button
           onClick={() => setAdding((v) => !v)}
-          className="ml-auto p-1 rounded text-slate-600 hover:text-accent hover:bg-accent-muted transition-colors"
+          className="ml-auto p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
           title="Add tag"
         >
           <Plus size={12} />
@@ -1103,7 +1103,7 @@ function TagsSection({ tags }: { tags: ConfigTag[] }) {
       </div>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         {tags.length === 0 && !adding && (
-          <p className="px-4 py-3 text-xs text-slate-600">
+          <p className="px-4 py-3 text-xs text-stone-500">
             No tags defined.
           </p>
         )}
@@ -1142,12 +1142,12 @@ function CustomerTypesSection({ types }: { types: string[] }) {
   return (
     <section>
       <div className="flex items-center gap-3 mb-3">
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
           Customer Types
         </h2>
         <button
           onClick={() => setAdding((v) => !v)}
-          className="ml-auto p-1 rounded text-slate-600 hover:text-accent hover:bg-accent-muted transition-colors"
+          className="ml-auto p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
           title="Add type"
         >
           <Plus size={12} />
@@ -1155,7 +1155,7 @@ function CustomerTypesSection({ types }: { types: string[] }) {
       </div>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         {types.length === 0 && !adding && (
-          <p className="px-4 py-3 text-xs text-slate-600">
+          <p className="px-4 py-3 text-xs text-stone-500">
             No types defined.
           </p>
         )}
@@ -1169,13 +1169,13 @@ function CustomerTypesSection({ types }: { types: string[] }) {
                 : "",
             ].join(" ")}
           >
-            <span className="text-xs font-mono text-slate-200 flex-1">
+            <span className="text-xs font-mono text-stone-900 flex-1">
               {t}
             </span>
             <button
               onClick={() => deleteType.mutate(t)}
               disabled={deleteType.isPending}
-              className="p-1 rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
+              className="p-1 rounded text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
               title="Delete"
             >
               <X size={11} />
@@ -1198,14 +1198,14 @@ function CustomerTypesSection({ types }: { types: string[] }) {
             <button
               type="button"
               onClick={() => setAdding(false)}
-              className="p-1 text-slate-600 hover:text-slate-300 rounded"
+              className="p-1 text-stone-500 hover:text-stone-900 rounded"
             >
               <X size={12} />
             </button>
             <button
               type="submit"
               disabled={addType.isPending || !newType.trim()}
-              className="p-1 text-accent hover:bg-accent-muted rounded disabled:opacity-40"
+              className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
             >
               <Check size={12} />
             </button>
@@ -1262,7 +1262,7 @@ function UserProfileSection() {
 
   return (
     <section>
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
         User Profile
       </h2>
       <div className="bg-surface-card rounded-xl border border-border p-4 flex flex-col gap-4">
@@ -1273,13 +1273,13 @@ function UserProfileSection() {
             size={64}
           />
           <div className="flex flex-col gap-1">
-            <span className="text-sm text-slate-500 font-mono">
+            <span className="text-sm text-stone-600 font-mono">
               {userData.username}
             </span>
             <button
               type="button"
               onClick={randomizeAvatar}
-              className="text-[10px] text-slate-600 hover:text-accent transition-colors text-left"
+              className="text-[10px] text-stone-500 hover:text-cta transition-colors text-left"
             >
               Randomize avatar
             </button>
@@ -1288,7 +1288,7 @@ function UserProfileSection() {
 
         {/* Full name */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
             Full name
           </span>
           <input
@@ -1302,7 +1302,7 @@ function UserProfileSection() {
 
         {/* Email */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
             Email
           </span>
           <input
@@ -1316,7 +1316,7 @@ function UserProfileSection() {
 
         {/* Bio */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
             Bio
           </span>
           <textarea
@@ -1384,10 +1384,10 @@ function ProfilesTab() {
     <div className="flex flex-col gap-8">
       {/* Current profile */}
       <section>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
           Profiles
         </h2>
-        <p className="text-[10px] text-slate-600 mb-3">
+        <p className="text-[10px] text-stone-500 mb-3">
           User: {userData.name || userData.username}
           {" "} / Active: {userData.profile}
         </p>
@@ -1405,8 +1405,8 @@ function ProfilesTab() {
               <span className={[
                 "text-sm flex-1",
                 p === profileData.active
-                  ? "text-accent font-semibold"
-                  : "text-slate-300",
+                  ? "text-cta font-semibold"
+                  : "text-stone-800",
               ].join(" ")}>
                 {p}
               </span>
@@ -1418,13 +1418,13 @@ function ProfilesTab() {
                     })
                   }
                   disabled={switchProfile.isPending}
-                  className="px-2 py-1 rounded text-xs text-slate-500 hover:text-accent hover:bg-accent-muted transition-colors"
+                  className="px-2 py-1 rounded text-xs text-stone-600 hover:text-cta hover:bg-cta-muted transition-colors"
                 >
                   Switch
                 </button>
               )}
               {p === profileData.active && (
-                <span className="text-[10px] text-accent uppercase tracking-wider font-semibold">
+                <span className="text-[10px] text-cta uppercase tracking-wider font-semibold">
                   active
                 </span>
               )}
@@ -1470,7 +1470,7 @@ function TagsAndTypesTab() {
   const { data: settings, isLoading } = useSettings();
 
   if (isLoading) {
-    return <p className="text-sm text-slate-600">Loading…</p>;
+    return <p className="text-sm text-stone-500">Loading…</p>;
   }
   if (!settings) return null;
 
@@ -1534,7 +1534,7 @@ function KeyCapture({
     <span
       ref={ref}
       tabIndex={-1}
-      className="text-xs text-slate-500 italic focus:outline-none"
+      className="text-xs text-stone-600 italic focus:outline-none"
     >
       Press a key…
     </span>
@@ -1567,12 +1567,12 @@ function ShortcutsSection() {
   return (
     <section>
       <div className="flex items-center gap-3 mb-3">
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
           Keyboard Shortcuts
         </h2>
         <button
           onClick={resetToDefaults}
-          className="ml-auto flex items-center gap-1 text-xs text-slate-600 hover:text-slate-300 transition-colors"
+          className="ml-auto flex items-center gap-1 text-xs text-stone-500 hover:text-stone-900 transition-colors"
           title="Reset to defaults"
         >
           <RotateCcw size={11} />
@@ -1601,7 +1601,7 @@ function ShortcutsSection() {
                   : "",
               ].join(" ")}
             >
-              <span className="text-sm text-slate-300 flex-1">
+              <span className="text-sm text-stone-800 flex-1">
                 {row.label}
               </span>
               {!isDefault && (
@@ -1616,7 +1616,7 @@ function ShortcutsSection() {
                           DEFAULT_SHORTCUTS.views[row.key] ?? ""
                         )
                   }
-                  className="text-[10px] text-slate-700 hover:text-slate-400 transition-colors shrink-0"
+                  className="text-[10px] text-stone-400 hover:text-stone-700 transition-colors shrink-0"
                   title="Reset this shortcut"
                 >
                   reset
@@ -1633,12 +1633,12 @@ function ShortcutsSection() {
                   className="flex items-center gap-2 group/edit"
                   title="Click to reassign"
                 >
-                  <kbd className="text-[10px] font-mono text-slate-400 border border-border rounded px-1.5 py-0.5 group-hover/edit:border-accent group-hover/edit:text-accent transition-colors">
+                  <kbd className="text-[10px] font-mono text-stone-700 border border-border rounded px-1.5 py-0.5 group-hover/edit:border-cta group-hover/edit:text-cta transition-colors">
                     {current ? displayShortcut(current) : "—"}
                   </kbd>
                   <Pencil
                     size={10}
-                    className="text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity"
                   />
                 </button>
               )}
@@ -1646,7 +1646,7 @@ function ShortcutsSection() {
           );
         })}
       </div>
-      <p className="mt-2 text-[10px] text-slate-700">
+      <p className="mt-2 text-[10px] text-stone-400">
         Shortcuts fire when no text field is focused. Click a shortcut
         to reassign it by pressing any key.
       </p>
@@ -1737,12 +1737,12 @@ function PathsSection() {
     <section className="space-y-8">
       {/* Backend selector */}
       <div>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
           Storage Backend
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
           <div className="flex items-center gap-3 px-4 py-3">
-            <span className="text-xs text-slate-400 w-32 shrink-0">
+            <span className="text-xs text-stone-700 w-32 shrink-0">
               Backend
             </span>
             <select
@@ -1774,19 +1774,19 @@ function PathsSection() {
             </button>
           </div>
         </div>
-        <p className="text-[10px] text-slate-700 mb-6">
+        <p className="text-[10px] text-stone-400 mb-6">
           Data is not migrated between backends.
         </p>
       </div>
 
       {/* Data directories */}
       <div>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
           Data Directories
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
           <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
-            <span className="text-xs text-slate-400 w-32 shrink-0">
+            <span className="text-xs text-stone-700 w-32 shrink-0">
               ORG_DIR
             </span>
             <input
@@ -1798,7 +1798,7 @@ function PathsSection() {
             />
           </label>
           <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
-            <span className="text-xs text-slate-400 w-32 shrink-0">
+            <span className="text-xs text-stone-700 w-32 shrink-0">
               MARKDOWN_DIR
             </span>
             <input
@@ -1810,13 +1810,13 @@ function PathsSection() {
             />
           </label>
           <div className="flex items-center gap-3 px-4 py-2.5">
-            <span className="text-xs text-slate-400 w-32 shrink-0">
+            <span className="text-xs text-stone-700 w-32 shrink-0">
               DATA_DIR
             </span>
-            <span className="text-xs font-mono text-slate-500 truncate flex-1">
+            <span className="text-xs font-mono text-stone-600 truncate flex-1">
               {paths?.data_dir ?? "data"}
             </span>
-            <span className="text-[10px] text-slate-700">
+            <span className="text-[10px] text-stone-400">
               (global, set via .env)
             </span>
           </div>
@@ -1839,7 +1839,7 @@ function PathsSection() {
 
       {/* KB sources */}
       <div>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
           Knowledge Base Sources
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
@@ -1875,14 +1875,14 @@ function PathsSection() {
               />
               <button
                 onClick={() => removeSource(idx)}
-                className="p-1 rounded text-slate-600 hover:text-red-400 transition-colors shrink-0"
+                className="p-1 rounded text-stone-500 hover:text-red-400 transition-colors shrink-0"
               >
                 <X size={14} />
               </button>
             </div>
           ))}
           {sources.length === 0 && (
-            <p className="px-4 py-3 text-xs text-slate-600">
+            <p className="px-4 py-3 text-xs text-stone-500">
               No KB sources defined. Add one below.
             </p>
           )}
@@ -1890,7 +1890,7 @@ function PathsSection() {
         <div className="flex items-center gap-3">
           <button
             onClick={addSource}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-slate-400 bg-surface-raised border border-border hover:text-accent hover:border-accent/40 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-stone-700 bg-surface-raised border border-border hover:text-cta hover:border-cta/40 transition-colors"
           >
             <Plus size={12} />
             Add source
@@ -1907,20 +1907,20 @@ function PathsSection() {
 
       {/* Read-only info */}
       <div>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
           Info
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-2.5">
-            <span className="text-xs text-slate-500 w-32 shrink-0">
+            <span className="text-xs text-stone-600 w-32 shrink-0">
               Settings file
             </span>
-            <span className="text-xs font-mono text-slate-400 truncate flex-1">
+            <span className="text-xs font-mono text-stone-700 truncate flex-1">
               {paths?.settings_file}
             </span>
           </div>
         </div>
-        <p className="mt-2 text-[10px] text-slate-700">
+        <p className="mt-2 text-[10px] text-stone-400">
           Backend, ORG_DIR, and MARKDOWN_DIR are stored per profile.
           DATA_DIR, HOST, PORT are global (.env).
         </p>
@@ -1946,7 +1946,7 @@ export function SettingsView() {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
+        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
           Settings
         </h1>
         <HelpButton title="Settings" doc={DOCS.settings} view="settings" />

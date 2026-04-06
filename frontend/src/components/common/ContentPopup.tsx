@@ -33,7 +33,7 @@ export function ContentPopup({
         onClick={() => setOpen(true)}
         className={[
           "p-0.5 rounded",
-          "text-slate-600 hover:text-slate-300",
+          "text-stone-500 hover:text-stone-900",
           "transition-colors",
         ].join(" ")}
         title="View full content"
@@ -68,7 +68,7 @@ export function ContentPopup({
               ].join(" ")}
             >
               {title ? (
-                <h2 className="text-sm font-semibold text-slate-200 truncate">
+                <h2 className="text-sm font-semibold text-stone-900 truncate">
                   {title}
                 </h2>
               ) : (
@@ -78,7 +78,7 @@ export function ContentPopup({
                 onClick={() => setOpen(false)}
                 className={[
                   "p-1 rounded",
-                  "text-slate-500 hover:text-slate-200",
+                  "text-stone-600 hover:text-stone-900",
                   "transition-colors",
                 ].join(" ")}
               >
@@ -89,11 +89,11 @@ export function ContentPopup({
             {/* Content */}
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {markdown ? (
-                <Markdown className="text-sm text-slate-300">
+                <Markdown className="text-sm text-stone-800">
                   {content}
                 </Markdown>
               ) : (
-                <pre className="whitespace-pre-wrap text-sm text-slate-300">
+                <pre className="whitespace-pre-wrap text-sm text-stone-800">
                   {content}
                 </pre>
               )}

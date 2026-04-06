@@ -10,7 +10,7 @@ Describe your role and primary responsibilities here.
 ## Workflow
 
 - How you organize your work (e.g. weekly sprints, daily planning)
-- Tools you use alongside OmniControl (Emacs, IDE, etc.)
+- Tools you use alongside Kaisho (Emacs, IDE, etc.)
 - Preferred working hours or patterns
 
 ## Priorities

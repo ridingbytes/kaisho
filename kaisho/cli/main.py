@@ -27,20 +27,20 @@ from ..config import (
 @click.group()
 @click.option(
     "--user", "-u",
-    envvar="OC_USER",
+    envvar="KAISHO_USER",
     default=None,
-    help="User name (default: $OC_USER or 'default')",
+    help="User name (default: $KAISHO_USER or 'default')",
 )
 @click.option(
     "--profile", "-p",
-    envvar="OC_PROFILE",
+    envvar="KAISHO_PROFILE",
     default=None,
-    help="Profile name (default: $OC_PROFILE or 'default')",
+    help="Profile name (default: $KAISHO_PROFILE or 'default')",
 )
 def cli(user, profile):
-    """OmniControl - Personal productivity system."""
+    """Kaisho - Personal productivity system."""
     if user:
-        os.environ["OC_USER"] = user
+        os.environ["KAISHO_USER"] = user
     if profile:
         os.environ["PROFILE"] = profile
     if user or profile:
@@ -53,11 +53,11 @@ def cli(user, profile):
 @click.option("--port", default=None, type=int)
 @click.option("--reload", is_flag=True, default=False)
 def serve(host, port, reload):
-    """Start the OmniControl API server."""
+    """Start the Kaisho API server."""
     import uvicorn
     cfg = get_config()
     uvicorn.run(
-        "omnicontrol.api.app:app",
+        "kaisho.api.app:app",
         host=host or cfg.HOST,
         port=port or cfg.PORT,
         reload=reload,
@@ -78,7 +78,7 @@ def profiles_cmd():
     """List profiles for the current user."""
     cfg = get_config()
     active = cfg.PROFILE
-    click.echo(f"User: {cfg.OC_USER}")
+    click.echo(f"User: {cfg.KAISHO_USER}")
     for name in list_profiles(cfg):
         marker = " *" if name == active else ""
         click.echo(f"  {name}{marker}")

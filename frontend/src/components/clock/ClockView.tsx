@@ -32,11 +32,11 @@ type Period = "today" | "week" | "month";
 
 const inputCls =
   "bg-surface-raised border border-border rounded px-2 py-1 text-sm " +
-  "text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent";
+  "text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta";
 
 const smallInputCls =
   "bg-surface-raised border border-border rounded px-2 py-1 text-xs " +
-  "text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent";
+  "text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -128,7 +128,7 @@ function BookForm({ onClose }: { onClose: () => void }) {
       className="flex flex-wrap items-end gap-3 px-6 py-3 border-b border-border-subtle bg-surface-card/60"
     >
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+        <label className="text-[10px] text-stone-600 uppercase tracking-wider">
           Duration *
         </label>
         <input
@@ -140,7 +140,7 @@ function BookForm({ onClose }: { onClose: () => void }) {
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+        <label className="text-[10px] text-stone-600 uppercase tracking-wider">
           Customer *
         </label>
         <CustomerAutocomplete
@@ -155,7 +155,7 @@ function BookForm({ onClose }: { onClose: () => void }) {
       </div>
       {contracts.length > 0 && (
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+          <label className="text-[10px] text-stone-600 uppercase tracking-wider">
             Contract
           </label>
           <select
@@ -173,7 +173,7 @@ function BookForm({ onClose }: { onClose: () => void }) {
         </div>
       )}
       <div className="flex flex-col gap-1 flex-1 min-w-40">
-        <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+        <label className="text-[10px] text-stone-600 uppercase tracking-wider">
           Description *
         </label>
         <input
@@ -184,7 +184,7 @@ function BookForm({ onClose }: { onClose: () => void }) {
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+        <label className="text-[10px] text-stone-600 uppercase tracking-wider">
           Task
         </label>
         <TaskAutocomplete
@@ -213,14 +213,14 @@ function BookForm({ onClose }: { onClose: () => void }) {
             !customer.trim() ||
             !description.trim()
           }
-          className="px-3 py-1.5 rounded bg-accent text-white text-xs font-semibold disabled:opacity-40"
+          className="px-3 py-1.5 rounded bg-cta text-white text-xs font-semibold disabled:opacity-40"
         >
           {book.isPending ? "Booking…" : "Book"}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="px-3 py-1.5 rounded bg-surface-raised text-slate-400 text-xs"
+          className="px-3 py-1.5 rounded bg-surface-raised text-stone-700 text-xs"
         >
           Cancel
         </button>
@@ -389,14 +389,14 @@ function EditForm({ entry, onClose }: EditFormProps) {
           />
           <button
             onClick={onClose}
-            className="p-1 rounded text-slate-500 hover:text-slate-300"
+            className="p-1 rounded text-stone-600 hover:text-stone-900"
           >
             <X size={13} />
           </button>
           <button
             onClick={handleSave}
             disabled={update.isPending}
-            className="p-1 rounded text-accent hover:bg-accent-muted disabled:opacity-40"
+            className="p-1 rounded text-cta hover:bg-cta-muted disabled:opacity-40"
           >
             <Check size={13} />
           </button>
@@ -442,14 +442,14 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
       <td
         className={
           "px-3 py-1.5 text-xs font-mono " +
-          "text-slate-500 whitespace-nowrap"
+          "text-stone-600 whitespace-nowrap"
         }
       >
         {formatDate(entry.start)}
       </td>
       <td
         className={
-          "px-3 py-1.5 text-xs text-slate-500 " +
+          "px-3 py-1.5 text-xs text-stone-600 " +
           "whitespace-nowrap"
         }
       >
@@ -459,7 +459,7 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
       <td className="px-3 py-1.5 text-xs whitespace-nowrap">
         <button
           onClick={() => setView("customers")}
-          className="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-accent-muted text-accent-hover hover:bg-accent/20 transition-colors"
+          className="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-cta-muted text-cta-hover hover:bg-cta/20 transition-colors"
         >
           {entry.customer}
         </button>
@@ -467,7 +467,7 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
       <td className="px-3 py-1.5 text-xs whitespace-nowrap max-w-28 truncate">
         {entry.contract && (
           <span
-            className="px-1.5 py-0.5 rounded text-[10px] bg-surface-overlay text-slate-400"
+            className="px-1.5 py-0.5 rounded text-[10px] bg-surface-overlay text-stone-700"
             title={entry.contract}
           >
             {entry.contract}
@@ -478,14 +478,14 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
         {taskTitle && (
           <button
             onClick={() => setView("board")}
-            className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent-muted text-accent hover:bg-accent/20 transition-colors"
+            className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-cta-muted text-cta hover:bg-cta/20 transition-colors"
             title={taskTitle}
           >
             {taskTitle}
           </button>
         )}
       </td>
-      <td className="px-3 py-1.5 text-xs text-slate-400 w-full">
+      <td className="px-3 py-1.5 text-xs text-stone-700 w-full">
         <span className="inline-flex items-center gap-1">
           {entry.description}
           {entry.description.length > 40 && (
@@ -495,12 +495,12 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
           )}
         </span>
       </td>
-      <td className="px-3 py-1.5 text-xs text-slate-400 tabular-nums whitespace-nowrap text-right">
+      <td className="px-3 py-1.5 text-xs text-stone-700 tabular-nums whitespace-nowrap text-right">
         <span className="mr-2">{formatHours(entry.duration_minutes)}</span>
         <span className="inline-flex gap-0.5 opacity-0 group-hover:opacity-100">
           <button
             onClick={() => setMode("edit")}
-            className="p-0.5 rounded text-slate-500 hover:text-slate-200"
+            className="p-0.5 rounded text-stone-600 hover:text-stone-900"
             title="Edit"
           >
             <Pencil size={11} />
@@ -508,7 +508,7 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
           <button
             onClick={() => remove.mutate(entry.start)}
             disabled={remove.isPending}
-            className="p-0.5 rounded text-slate-500 hover:text-red-400 disabled:opacity-40"
+            className="p-0.5 rounded text-stone-600 hover:text-red-400 disabled:opacity-40"
             title="Delete"
           >
             <Trash2 size={11} />
@@ -555,7 +555,7 @@ export function ClockView() {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-border-subtle shrink-0 flex-wrap">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
+        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
           Clock Entries
         </h1>
         <input
@@ -584,7 +584,7 @@ export function ClockView() {
           onChange={(e) => setSpecificDate(e.target.value)}
         />
         {!isLoading && filtered.length > 0 && (
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-stone-600">
             {filtered.length} entries · {totalHours(filtered)}h
           </span>
         )}
@@ -599,8 +599,8 @@ export function ClockView() {
               }
               className={
                 "flex items-center gap-1 px-2 py-1 " +
-                "rounded text-[11px] text-slate-400 " +
-                "hover:text-accent hover:bg-accent-muted " +
+                "rounded text-[11px] text-stone-700 " +
+                "hover:text-cta hover:bg-cta-muted " +
                 "transition-colors"
               }
               title="Download CSV"
@@ -617,8 +617,8 @@ export function ClockView() {
               }
               className={
                 "flex items-center gap-1 px-2 py-1 " +
-                "rounded text-[11px] text-slate-400 " +
-                "hover:text-accent hover:bg-accent-muted " +
+                "rounded text-[11px] text-stone-700 " +
+                "hover:text-cta hover:bg-cta-muted " +
                 "transition-colors"
               }
               title="Download Excel"
@@ -630,7 +630,7 @@ export function ClockView() {
         )}
         <button
           onClick={() => setBooking((v) => !v)}
-          className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted text-accent text-xs font-semibold hover:bg-accent hover:text-white transition-colors"
+          className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded bg-cta-muted text-cta text-xs font-semibold hover:bg-cta hover:text-white transition-colors"
         >
           <Plus size={11} />
           Book
@@ -644,10 +644,10 @@ export function ClockView() {
       {/* Table */}
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
-          <p className="text-sm text-slate-600 text-center py-8">Loading…</p>
+          <p className="text-sm text-stone-500 text-center py-8">Loading…</p>
         )}
         {!isLoading && sorted.length === 0 && (
-          <p className="text-sm text-slate-600 text-center py-8">
+          <p className="text-sm text-stone-500 text-center py-8">
             No entries found.
           </p>
         )}
@@ -655,25 +655,25 @@ export function ClockView() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border text-left sticky top-0 bg-surface-card z-10">
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600">
                   Date
                 </th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600">
                   Time
                 </th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600">
                   Customer
                 </th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600">
                   Contract
                 </th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600">
                   Task
                 </th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600">
                   Description
                 </th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500 text-right">
+                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600 text-right">
                   Duration
                 </th>
               </tr>

@@ -2,7 +2,7 @@
 import pytest
 import yaml
 
-from omnicontrol.services.cron import (
+from kaisho.services.cron import (
     add_job,
     delete_job,
     finish_run,

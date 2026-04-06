@@ -1,4 +1,4 @@
-# OmniControl -- Architecture Concept
+# Kaisho -- Architecture Concept
 
 ## Context
 
@@ -7,7 +7,7 @@ parallel. Zeiterfassung, Tasks und Kundendaten liegen in org-mode
 Dateien, die sowohl ueber Doom Emacs als auch ueber Claude Code
 bearbeitet werden. Ein frueherer KI-Assistent (OpenClaw/Bruce) lief
 ueber OpenRouter mit 17+ Cron-Jobs, war aber zu teuer und
-inkonsistent. OmniControl ersetzt dieses System durch eine lokale
+inkonsistent. Kaisho ersetzt dieses System durch eine lokale
 App mit Python-Backend, CLI und React-Frontend.
 
 Ziel: Ein persoenliches Produktivitaets-System, das org-mode
@@ -23,19 +23,19 @@ Implementierung: Claude Sonnet anhand dieses Konzepts.
 Die Architektur folgt einem strikten Schichtenmodell:
 
 ```
-CLI (oc)  -->  Services  <--  FastAPI  <--  React Frontend
+CLI (kai)  -->  Services  <--  FastAPI  <--  React Frontend
                   |
               Org-Files
 ```
 
 1. **Services**: Reine Python-Funktionen die org-Dateien lesen/schreiben.
    Keine HTTP-Abhaengigkeit, kein Framework. Testbar ohne Server.
-2. **CLI (oc)**: Command-Line Tool das die Services direkt aufruft.
+2. **CLI (kai)**: Command-Line Tool das die Services direkt aufruft.
    Sofort nutzbar, kein Server noetig.
 3. **FastAPI**: Duenner HTTP-Layer ueber den Services. Kommt spaeter.
 4. **React Frontend**: Web-UI ueber die FastAPI Endpoints. Kommt zuletzt.
 
-Die CLI heisst `oc` (OmniControl) und wird als Python Entry Point
+Die CLI heisst `kai` (Kaisho) und wird als Python Entry Point
 installiert. Sie ist das primaere Interface neben Emacs.
 
 ---
@@ -48,7 +48,7 @@ installiert. Sie ist das primaere Interface neben Emacs.
   CONCEPT.md                       # Dieses Dokument
   docker-compose.yml
   Makefile
-  pyproject.toml                   # Projekt-Root, installiert `oc` CLI
+  pyproject.toml                   # Projekt-Root, installiert `kai` CLI
   .python-version                  # 3.12.12
   settings.yaml                    # Tags, States, Farben (editierbar)
 
@@ -78,19 +78,19 @@ installiert. Sie ist das primaere Interface neben Emacs.
 
     cli/                         # CLI Commands (Click)
       __init__.py
-      main.py                  # Click group, entry point `oc`
-      task.py                  # oc task add/list/move/done/archive
-      clock.py                 # oc clock book/start/stop/status/list
-      customer.py              # oc customer list/show/summary
-      inbox.py                 # oc inbox add/list/process
-      knowledge.py             # oc kb search/list/show
-      cron.py                  # oc cron list/trigger/history/add
-      briefing.py              # oc briefing (Morgen-Uebersicht)
-      gh.py                    # oc gh issues/pr/open
-      comm.py                  # oc comm list/search/show
-      tag.py                   # oc tag list/add/update/remove
-      config_cmd.py            # oc config states/add-state/...
-      advisor.py               # oc ask (AI Chat Advisor)
+      main.py                  # Click group, entry point `kai`
+      task.py                  # kai task add/list/move/done/archive
+      clock.py                 # kai clock book/start/stop/status/list
+      customer.py              # kai customer list/show/summary
+      inbox.py                 # kai inbox add/list/process
+      knowledge.py             # kai kb search/list/show
+      cron.py                  # kai cron list/trigger/history/add
+      briefing.py              # kai briefing (Morgen-Uebersicht)
+      gh.py                    # kai gh issues/pr/open
+      comm.py                  # kai comm list/search/show
+      tag.py                   # kai tag list/add/update/remove
+      config_cmd.py            # kai config states/add-state/...
+      advisor.py               # kai ask (AI Chat Advisor)
 
     api/                         # FastAPI (Phase 2, baut auf Services)
       __init__.py
@@ -260,9 +260,9 @@ installiert. Sie ist das primaere Interface neben Emacs.
 
 ---
 
-## 2. CLI (`oc`)
+## 2. CLI (`kai`)
 
-Die CLI wird ueber Click implementiert und als `oc` Entry Point
+Die CLI wird ueber Click implementiert und als `kai` Entry Point
 installiert (`pip install -e .`). Alle Commands rufen direkt die
 Services-Schicht auf -- kein HTTP, kein Server noetig.
 
@@ -271,43 +271,43 @@ Services-Schicht auf -- kein HTTP, kein Server noetig.
 pyproject.toml definiert den Entry Point:
 ```toml
 [project.scripts]
-oc = "omnicontrol.cli.main:cli"
+kai = "omnicontrol.cli.main:cli"
 ```
 
-Nach `pip install -e .` ist `oc` im Terminal verfuegbar.
+Nach `pip install -e .` ist `kai` im Terminal verfuegbar.
 
 ### 2.2 Commands
 
-#### Tasks (`oc task`)
+#### Tasks (`kai task`)
 
 ```bash
 # Task anlegen
-oc task add "CERMEL" "Geister-Samples loeschen" --tag issue
-oc task add "ISC" "Meeting vorbereiten" --status NEXT --tag meeting
-oc task add "SENAITE" "AT->DX Migration" --tag code --tag senaite
+kai task add "CERMEL" "Geister-Samples loeschen" --tag issue
+kai task add "ISC" "Meeting vorbereiten" --status NEXT --tag meeting
+kai task add "SENAITE" "AT->DX Migration" --tag code --tag senaite
 
 # Tasks auflisten
-oc task list                    # Alle offenen Tasks
-oc task list --customer CERMEL  # Nur CERMEL Tasks
-oc task list --status TODO      # Nur TODO
-oc task list --tag prio-high    # Nur prio-high
-oc task list --tag code --customer CERMEL  # Kombiniert
-oc task list --all              # Inkl. DONE und CANCELLED
+kai task list                    # Alle offenen Tasks
+kai task list --customer CERMEL  # Nur CERMEL Tasks
+kai task list --status TODO      # Nur TODO
+kai task list --tag prio-high    # Nur prio-high
+kai task list --tag code --customer CERMEL  # Kombiniert
+kai task list --all              # Inkl. DONE und CANCELLED
 
 # Task Status aendern
-oc task move <id-oder-text> IN-PROGRESS
-oc task done <id-oder-text>
-oc task next <id-oder-text>     # -> NEXT
-oc task wait <id-oder-text>     # -> WAIT
-oc task cancel <id-oder-text>   # -> CANCELLED
+kai task move <id-oder-text> IN-PROGRESS
+kai task done <id-oder-text>
+kai task next <id-oder-text>     # -> NEXT
+kai task wait <id-oder-text>     # -> WAIT
+kai task cancel <id-oder-text>   # -> CANCELLED
 
 # Tags aendern
-oc task tag <id> code issue          # Tags setzen
-oc task tag <id> +prio-high          # Tag hinzufuegen
-oc task tag <id> -prio-low           # Tag entfernen
+kai task tag <id> code issue          # Tags setzen
+kai task tag <id> +prio-high          # Tag hinzufuegen
+kai task tag <id> -prio-low           # Tag entfernen
 
 # Task archivieren (verschiebt nach archive.org)
-oc task archive <id-oder-text>
+kai task archive <id-oder-text>
 ```
 
 Ausgabeformat (Tabelle mit Rich oder einfach Text):
@@ -320,39 +320,39 @@ WAIT  [LUNG-MV]  Rueckmeldung Dr. Klonus       :@email:reminder: 2026-03-19
 Task-Identifikation: Entweder ueber die laufende Nummer in der
 Anzeige (#1, #2, ...) oder ueber einen eindeutigen Textmatch.
 
-#### Zeiterfassung (`oc clock`)
+#### Zeiterfassung (`kai clock`)
 
 ```bash
 # Nachbuchen (Quick-Book)
-oc clock book 2h CERMEL "Email Rueckmeldung"
-oc clock book 30min ISC "Meeting Nachbereitung"
-oc clock book 4h NRG-FMI "#15 Instrument setup"
+kai clock book 2h CERMEL "Email Rueckmeldung"
+kai clock book 30min ISC "Meeting Nachbereitung"
+kai clock book 4h NRG-FMI "#15 Instrument setup"
 
 # Timer starten/stoppen
-oc clock start CERMEL "Update vorbereiten"
-oc clock stop                   # Stoppt laufenden Timer
-oc clock status                 # Zeigt laufenden Timer
+kai clock start CERMEL "Update vorbereiten"
+kai clock stop                   # Stoppt laufenden Timer
+kai clock status                 # Zeigt laufenden Timer
 
 # Eintraege auflisten
-oc clock list                   # Heute
-oc clock list --week            # Diese Woche
-oc clock list --month           # Dieser Monat
-oc clock list --customer IAEA   # Nur IAEA
-oc clock list --from 2026-03-01 --to 2026-03-31
+kai clock list                   # Heute
+kai clock list --week            # Diese Woche
+kai clock list --month           # Dieser Monat
+kai clock list --customer IAEA   # Nur IAEA
+kai clock list --from 2026-03-01 --to 2026-03-31
 
 # Zusammenfassung pro Kunde
-oc clock summary                # Diesen Monat
-oc clock summary --week         # Diese Woche
+kai clock summary                # Diesen Monat
+kai clock summary --week         # Diese Woche
 ```
 
-Ausgabe `oc clock list`:
+Ausgabe `kai clock list`:
 ```
 2026-03-31  NRG       4:00  Issue #15
 2026-03-31  NRG       1:00  Issue #14
 2026-03-30  LISCON    3:00  Migration Testserver
 ```
 
-Ausgabe `oc clock summary`:
+Ausgabe `kai clock summary`:
 ```
 Kunde       Stunden   Budget   Rest
 IAEA          26h     100h     74h
@@ -363,85 +363,85 @@ ISC          295h       -       5h
 Gesamt:      378h
 ```
 
-#### Kunden (`oc customer`)
+#### Kunden (`kai customer`)
 
 ```bash
-oc customer list                # Alle aktiven Kunden
-oc customer list --all          # Inkl. Archiv
-oc customer show IAEA           # Details eines Kunden
-oc customer summary             # Budget-Uebersicht (wie oben)
+kai customer list                # Alle aktiven Kunden
+kai customer list --all          # Inkl. Archiv
+kai customer show IAEA           # Details eines Kunden
+kai customer summary             # Budget-Uebersicht (wie oben)
 ```
 
-#### Inbox (`oc inbox`)
+#### Inbox (`kai inbox`)
 
 ```bash
 # Eintrag hinzufuegen
-oc inbox add "Email von CERMEL: Update auf 2.6 gewuenscht"
-oc inbox add --type IDEE "SENAITE Marketplace fuer Add-ons"
-oc inbox add --type LEAD "Anfrage von Labor XY aus Belgien"
+kai inbox add "Email von CERMEL: Update auf 2.6 gewuenscht"
+kai inbox add --type IDEE "SENAITE Marketplace fuer Add-ons"
+kai inbox add --type LEAD "Anfrage von Labor XY aus Belgien"
 
 # Einfach per Pipe (Email reinpasten)
-echo "Von: Dr. Klonus ..." | oc inbox add -
+echo "Von: Dr. Klonus ..." | kai inbox add -
 
 # Auflisten
-oc inbox list
-oc inbox list --type EMAIL
+kai inbox list
+kai inbox list --type EMAIL
 
 # Inbox-Item zu Task machen
-oc inbox promote <id> --customer CERMEL
+kai inbox promote <id> --customer CERMEL
 ```
 
-Ausgabe `oc inbox list`:
+Ausgabe `kai inbox list`:
 ```
 #1  EMAIL  [CERMEL]  Update auf 2.6 gewuenscht    2026-04-01
 #2  IDEE   [-]       SENAITE Marketplace           2026-04-01
 #3  LEAD   [-]       Anfrage Labor XY              2026-04-01
 ```
 
-#### Wissensdatenbank (`oc kb`)
+#### Wissensdatenbank (`kai kb`)
 
 ```bash
-oc kb search "docker senaite"   # Volltextsuche
-oc kb list                      # Verzeichnisbaum
-oc kb show senaite/security.md  # Datei anzeigen
+kai kb search "docker senaite"   # Volltextsuche
+kai kb list                      # Verzeichnisbaum
+kai kb show senaite/security.md  # Datei anzeigen
 ```
 
-#### Cron Jobs (`oc cron`)
+#### Cron Jobs (`kai cron`)
 
 ```bash
-oc cron list                    # Alle Jobs
-oc cron trigger daily-briefing  # Manuell ausfuehren
-oc cron history                 # Letzte Ausfuehrungen
-oc cron history daily-briefing  # Fuer einen Job
-oc cron add                     # Interaktiv neuen Job anlegen
-oc cron enable/disable <id>
+kai cron list                    # Alle Jobs
+kai cron trigger daily-briefing  # Manuell ausfuehren
+kai cron history                 # Letzte Ausfuehrungen
+kai cron history daily-briefing  # Fuer einen Job
+kai cron add                     # Interaktiv neuen Job anlegen
+kai cron enable/disable <id>
 ```
 
-#### GitHub (`oc gh`)
+#### GitHub (`kai gh`)
 
 ```bash
 # Issues auflisten (aus kunden.org Repo lesen)
-oc gh issues CERMEL             # Offene Issues fuer CERMEL
-oc gh issues CERMEL --all       # Inkl. geschlossene
-oc gh issues --all-customers    # Alle Kunden-Repos
+kai gh issues CERMEL             # Offene Issues fuer CERMEL
+kai gh issues CERMEL --all       # Inkl. geschlossene
+kai gh issues --all-customers    # Alle Kunden-Repos
 
 # Issue-Details
-oc gh show CERMEL 42            # Issue #42 anzeigen
+kai gh show CERMEL 42            # Issue #42 anzeigen
 
 # Issue referenzieren in Task/Clock
-oc task add "CERMEL" "Fix #42 Geister-Samples" --issue 42
-oc clock book 2h CERMEL "#42 Debugging"
+kai task add "CERMEL" "Fix #42 Geister-Samples" --issue 42
+kai clock book 2h CERMEL "#42 Debugging"
 
 # PR Status
-oc gh prs CERMEL                # Offene PRs
-oc gh prs --mine                # Eigene PRs ueber alle Repos
+kai gh prs CERMEL                # Offene PRs
+kai gh prs --mine                # Eigene PRs ueber alle Repos
 
 # Im Browser oeffnen
-oc gh open CERMEL               # Repo im Browser
-oc gh open CERMEL 42            # Issue #42 im Browser
+kai gh open CERMEL               # Repo im Browser
+kai gh open CERMEL 42            # Issue #42 im Browser
 ```
 
-Ausgabe `oc gh issues CERMEL`:
+Ausgabe `kai gh issues CERMEL`:
 ```
 ridingbytes/cermel.lims
 #42  open   Geister-Samples bleiben sichtbar    2026-03-19
@@ -455,19 +455,19 @@ und cached Issues.
 
 Repo-Mapping: Der Kundenname wird ueber kunden.org auf das GitHub
 Repo aufgeloest (Property :REPO:). Kunden ohne :REPO: werden bei
-`oc gh` uebersprungen.
+`kai gh` uebersprungen.
 
-#### AI Advisor (`oc ask`)
+#### AI Advisor (`kai ask`)
 
 ```bash
 # Freie Frage an den KI-Advisor
-oc ask "Was sollte ich heute angehen?"
-oc ask "Welche CERMEL Issues haben Prioritaet?"
-oc ask "Fasse meine Woche zusammen"
+kai ask "Was sollte ich heute angehen?"
+kai ask "Welche CERMEL Issues haben Prioritaet?"
+kai ask "Fasse meine Woche zusammen"
 
 # Mit explizitem Modell
-oc ask --model ollama:qwen3:14b "Plane meinen Tag"
-oc ask --model claude:sonnet "Review meine offenen PRs"
+kai ask --model ollama:qwen3:14b "Plane meinen Tag"
+kai ask --model claude:sonnet "Review meine offenen PRs"
 ```
 
 Der Advisor hat vollen Zugriff auf:
@@ -478,10 +478,10 @@ Der Advisor hat vollen Zugriff auf:
 - GitHub Issues aller Kunden-Repos (via `gh`)
 - Knowledge Base (wissen/, research/)
 
-Er kann ausserdem `oc` CLI Commands ausfuehren:
-- Tasks anlegen/verschieben (`oc task add`, `oc task move`)
-- Zeitbuchungen vornehmen (`oc clock book`)
-- Inbox-Eintraege erstellen (`oc inbox add`)
+Er kann ausserdem `kai` CLI Commands ausfuehren:
+- Tasks anlegen/verschieben (`kai task add`, `kai task move`)
+- Zeitbuchungen vornehmen (`kai clock book`)
+- Inbox-Eintraege erstellen (`kai inbox add`)
 
 Ausgabe:
 ```
@@ -502,18 +502,18 @@ Soll ich die Top-3 als NEXT Tasks anlegen?
 ```
 
 Wenn der User bestaetigt, fuehrt der Advisor die entsprechenden
-`oc task` Commands aus und die Aenderungen erscheinen sofort
+`kai task` Commands aus und die Aenderungen erscheinen sofort
 im Frontend (via WebSocket file_changed Event).
 
-#### Briefing (`oc briefing`)
+#### Briefing (`kai briefing`)
 
 ```bash
-oc briefing                     # Morgen-Uebersicht
+kai briefing                     # Morgen-Uebersicht
 ```
 
 Ausgabe:
 ```
-=== OmniControl Briefing (2026-04-01, Di) ===
+=== Kaisho Briefing (2026-04-01, Di) ===
 
 --- Aktiver Timer ---
   (keiner)
@@ -544,39 +544,39 @@ Ausgabe:
   18:00  Business Scout (ollama:llama3.3)
 ```
 
-#### Konfiguration (`oc config`)
+#### Konfiguration (`kai config`)
 
 ```bash
 # Task States anzeigen
-oc config states
+kai config states
 # TODO -> NEXT -> IN-PROGRESS -> WAIT -> DONE -> CANCELLED
 
 # State hinzufuegen
-oc config add-state REVIEW --label "Review" \
+kai config add-state REVIEW --label "Review" \
     --color "#a855f7" --after IN-PROGRESS
 
 # State entfernen
-oc config remove-state REVIEW
+kai config remove-state REVIEW
 
 # State-Reihenfolge aendern
-oc config move-state WAIT --after NEXT
+kai config move-state WAIT --after NEXT
 ```
 
-#### Tags (`oc tag`)
+#### Tags (`kai tag`)
 
 ```bash
 # Alle Tags mit Farbe und Count
-oc tag list
+kai tag list
 
 # Tag zur Config hinzufuegen (Autocomplete-Vorschlag)
-oc tag add deployment --color "#10b981" \
+kai tag add deployment --color "#10b981" \
     --description "Deployment-bezogen"
 
 # Tag-Farbe/Beschreibung aendern
-oc tag update code --color "#0ea5e9"
+kai tag update code --color "#0ea5e9"
 
 # Tag aus Config entfernen (nicht aus org-Dateien)
-oc tag remove deployment
+kai tag remove deployment
 ```
 
 ### 2.3 Ausgabeformatierung
@@ -606,9 +606,9 @@ WISSEN_DIR=~/ownCloud/cowork/wissen
 
 Fuer schnellen Zugriff in der ZSH:
 ```bash
-alias t="oc task"
-alias c="oc clock"
-alias b="oc briefing"
+alias t="kai task"
+alias c="kai clock"
+alias b="kai briefing"
 ```
 
 ---
@@ -866,8 +866,8 @@ Zeiteintraege (Level-3-Headings im Format "YYYY-MM-DD: Beschreibung"
 mit :HOURS: Property) addieren sich zum VERBRAUCHT-Offset.
 REST = KONTINGENT - (VERBRAUCHT + Summe Zeiteintraege).
 Zeiteintraege werden ueber CLI und API verwaltet:
-  oc customer entries <NAME>
-  oc customer entry-add / entry-edit / entry-delete
+  kai customer entries <NAME>
+  kai customer entry-add / entry-edit / entry-delete
 Clock-Eintraege (clocks.org) bleiben davon getrennt und fliessen
 erst nach expliziter Buchung ("Book to project") in die
 Zeiteintraege ein.
@@ -987,9 +987,9 @@ Das Board unterstuetzt Filter, die kombinierbar sind:
 
 CLI-Aequivalent:
 ```bash
-oc task list --tag prio-high
-oc task list --tag code --customer CERMEL
-oc task list --tag @email --status TODO,NEXT
+kai task list --tag prio-high
+kai task list --tag code --customer CERMEL
+kai task list --tag @email --status TODO,NEXT
 ```
 
 ---
@@ -1107,17 +1107,17 @@ File Watcher erkannt und ans Frontend gepusht.
 **Via CLI:**
 ```bash
 # States auflisten
-oc config states
+kai config states
 
 # State hinzufuegen
-oc config add-state REVIEW --label "Review" \
+kai config add-state REVIEW --label "Review" \
     --color "#a855f7" --after IN-PROGRESS
 
 # State entfernen (nur wenn keine Tasks diesen Status haben)
-oc config remove-state REVIEW
+kai config remove-state REVIEW
 
 # State-Reihenfolge aendern
-oc config move-state WAIT --after NEXT
+kai config move-state WAIT --after NEXT
 ```
 
 **Via Web-UI (Settings Page):**
@@ -1145,25 +1145,25 @@ Org-mode Tags stehen am Zeilenende eines Headings:
 
 Tags werden mit Doppelpunkten getrennt, beginnen und enden
 mit Doppelpunkt. Das ist Standard-org-mode und funktioniert
-in Emacs (C-c C-c zum Taggen) und in OmniControl gleich.
+in Emacs (C-c C-c zum Taggen) und in Kaisho gleich.
 
 ### Tags konfigurieren
 
 **Via CLI:**
 ```bash
 # Bekannte Tags auflisten (konfigurierte + aus org-Dateien)
-oc tag list
+kai tag list
 
 # Tag zur Konfiguration hinzufuegen
-oc tag add deployment --color "#10b981" \
+kai tag add deployment --color "#10b981" \
     --description "Deployment-bezogen"
 
 # Tag-Farbe aendern
-oc tag update code --color "#0ea5e9"
+kai tag update code --color "#0ea5e9"
 
 # Tag aus Konfiguration entfernen
 # (loescht nicht aus org-Dateien, nur aus Vorschlagsliste)
-oc tag remove deployment
+kai tag remove deployment
 ```
 
 **Via Web-UI (Settings Page):**
@@ -1178,8 +1178,8 @@ oc tag remove deployment
 Tags sind nicht auf die konfigurierte Liste beschraenkt.
 Jeder beliebige String ist ein gueltiger Tag:
 ```bash
-oc task add CERMEL "Update planen" --tag deployment
-oc task add ISC "Review" --tag sprint-review --tag prio-high
+kai task add CERMEL "Update planen" --tag deployment
+kai task add ISC "Review" --tag sprint-review --tag prio-high
 ```
 
 Autocomplete-Reihenfolge:
@@ -1192,9 +1192,9 @@ Nicht-konfigurierte Tags bekommen eine automatische Farbe
 man ihnen nachtraeglich Farbe + Beschreibung geben.
 
 ```bash
-oc task add CERMEL "..." --tag pri<TAB>
+kai task add CERMEL "..." --tag pri<TAB>
 # -> prio-high, prio-low
-oc task add CERMEL "..." --tag dep<TAB>
+kai task add CERMEL "..." --tag dep<TAB>
 # -> deployment (wenn zuvor verwendet)
 ```
 
@@ -1202,17 +1202,17 @@ oc task add CERMEL "..." --tag dep<TAB>
 
 ```bash
 # Tags eines Tasks aendern
-oc task tag <id> code issue          # Tags setzen
-oc task tag <id> +prio-high          # Tag hinzufuegen
-oc task tag <id> -prio-low           # Tag entfernen
+kai task tag <id> code issue          # Tags setzen
+kai task tag <id> +prio-high          # Tag hinzufuegen
+kai task tag <id> -prio-low           # Tag entfernen
 
 # Tasks nach Tag filtern
-oc task list --tag prio-high
-oc task list --tag code --tag senaite  # AND
-oc task list --tag "code|meeting"      # OR
+kai task list --tag prio-high
+kai task list --tag code --tag senaite  # AND
+kai task list --tag "code|meeting"      # OR
 ```
 
-Ausgabe `oc tag list`:
+Ausgabe `kai tag list`:
 ```
 Tag           Color    Tasks  Beschreibung
 @email        #3b82f6    3   Email-bezogene Aufgabe
@@ -1305,14 +1305,14 @@ Zwei Tabs:
 
 ### Emacs-Kompatibilitaet
 
-Tags und States in OmniControl und Emacs sind unabhaengig
+Tags und States in Kaisho und Emacs sind unabhaengig
 konfiguriert. Die org-Dateien sind die gemeinsame Wahrheit:
 
 - Neue Tags in Emacs (C-c C-c) erscheinen automatisch in
-  OmniControl (als unkonfigurierte Tags mit Hash-Farbe)
-- Neue Tags in OmniControl erscheinen in Emacs beim
+  Kaisho (als unkonfigurierte Tags mit Hash-Farbe)
+- Neue Tags in Kaisho erscheinen in Emacs beim
   naechsten Oeffnen der Datei
-- Neue States in OmniControl erscheinen als Keywords in
+- Neue States in Kaisho erscheinen als Keywords in
   org-Dateien, Emacs erkennt sie automatisch
 - Kein Sync der Definitionen noetig
 - Empfehlung: org-tag-alist in config.el und settings.yaml
@@ -1422,8 +1422,8 @@ Ramon Bartl
 Soll ich daraus einen WAITING Task machen? [j/n]
 ```
 
-Das passiert in Claude Code (cowork), nicht in OmniControl.
-OmniControl speichert nur das Ergebnis (Inbox + Task + Comm).
+Das passiert in Claude Code (cowork), nicht in Kaisho.
+Kaisho speichert nur das Ergebnis (Inbox + Task + Comm).
 
 ---
 
@@ -1495,7 +1495,7 @@ CREATE TABLE cron_history (
 | Aktion                 | Was passiert                                |
 |------------------------+---------------------------------------------|
 | Email reinpaste        | Comm-Eintrag + Inbox-Eintrag + Attachments  |
-| `oc comm add`          | Manueller Comm-Eintrag (Telefonat, Meeting) |
+| `kai comm add`          | Manueller Comm-Eintrag (Telefonat, Meeting) |
 | Cron "Follow-Up Check" | Prueft ueberfaellige FOLLOW_UP Daten        |
 
 ### Speicher-Abgrenzung
@@ -1510,27 +1510,27 @@ CREATE TABLE cron_history (
 MEMORY.md bleibt klein (<200 Zeilen). Alles Faktische was wachsen
 kann geht in SQLite. Claude fragt die DB ab statt zu raten.
 
-### CLI (`oc comm`)
+### CLI (`kai comm`)
 
 ```bash
 # Kommunikation auflisten
-oc comm list LUNG-MV              # Alle Eintraege
-oc comm list LUNG-MV --type email # Nur Emails
-oc comm list --recent              # Letzte 10 ueber alle Kunden
+kai comm list LUNG-MV              # Alle Eintraege
+kai comm list LUNG-MV --type email # Nur Emails
+kai comm list --recent              # Letzte 10 ueber alle Kunden
 
 # Volltextsuche
-oc comm search "Angebot Klonus"
-oc comm search "SHAPTH" --customer LUNG-MV
+kai comm search "Angebot Klonus"
+kai comm search "SHAPTH" --customer LUNG-MV
 
 # Detail anzeigen (mit Attachment-Links)
-oc comm show 42
+kai comm show 42
 
 # Manuell eintragen (Telefonat, Meeting)
-oc comm add LUNG-MV --type call "Telefonat mit Dr. Klonus"
-oc comm add ISC --type meeting "Sprint Review"
+kai comm add LUNG-MV --type call "Telefonat mit Dr. Klonus"
+kai comm add ISC --type meeting "Sprint Review"
 ```
 
-Ausgabe `oc comm list LUNG-MV`:
+Ausgabe `kai comm list LUNG-MV`:
 ```
 #42  2026-04-01  email    Dr. Klonus    Angebot SHAPTH
 #38  2026-03-19  email    Dr. Klonus    Erste Anfrage
@@ -1791,22 +1791,22 @@ Tasks und Clock-Eintraege koennen Issues referenzieren:
 Das `#42` Pattern wird erkannt und mit dem Kunden-Repo verlinkt.
 Im Frontend wird `#42` als klickbarer Link dargestellt.
 
-Bei `oc clock book 2h CERMEL "#42 Debugging"` wird die Issue-Nummer
+Bei `kai clock book 2h CERMEL "#42 Debugging"` wird die Issue-Nummer
 in der Aufgabenbeschreibung gespeichert. Die Clock-Summary kann
 dann Stunden pro Issue aggregieren.
 
 ### Autocomplete
 
 Click Shell Completion fuer Issue-Nummern:
-1. Beim ersten `oc gh issues KUNDE` werden Issues gecacht
+1. Beim ersten `kai gh issues KUNDE` werden Issues gecacht
    (JSON in data/gh_cache/{repo}.json, TTL 5min)
 2. Tab-Completion liest aus dem Cache
 3. Kundennamen-Completion liest direkt aus kunden.org
 
 ```bash
-oc gh issues CER<TAB>          # -> CERMEL
-oc clock book 2h CERMEL "#<TAB>"  # -> #42, #38, #35
-oc task add CERMEL "#<TAB>"       # -> Issue-Titel als Vorschlag
+kai gh issues CER<TAB>          # -> CERMEL
+kai clock book 2h CERMEL "#<TAB>"  # -> #42, #38, #35
+kai task add CERMEL "#<TAB>"       # -> Issue-Titel als Vorschlag
 ```
 
 ### API Endpoints (/api/github)
@@ -1844,7 +1844,7 @@ Ollama (lokal, kostenlos). Kein Ersatz fuer Claude Code
 | **Antwortvorschlaege**        | Ja (Opus-Qualitaet)     | Nein                     |
 | **Code editieren**            | Ja                      | Nein                     |
 | **Komplexe Recherche**        | Ja                      | Nein                     |
-| **Tasks anlegen/verschieben** | Ja                      | Ja (via oc-Commands)     |
+| **Tasks anlegen/verschieben** | Ja                      | Ja (via kai-Commands)     |
 | **"Was steht heute an?"**     | Ja (ausfuehrlich)       | Ja (Quick-Check)         |
 | **Budget/Stunden-Fragen**     | Ja                      | Ja                       |
 | **GitHub Issues abfragen**    | Ja                      | Ja                       |
@@ -1858,7 +1858,7 @@ braucht -> Terminal. Alles was schnelle Daten-Abfrage ist
 ### Architektur
 
 ```
-User  -->  oc ask "..."  -->  Advisor Service
+User  -->  kai ask "..."  -->  Advisor Service
                                 |
                           Context aus DB/org:
                           - Tasks, Clocks, Budgets
@@ -1868,9 +1868,9 @@ User  -->  oc ask "..."  -->  Advisor Service
                                 |
                           Prompt + Context --> Ollama
                                 |
-                          Antwort + oc-Command Vorschlaege
+                          Antwort + kai-Command Vorschlaege
                                 |
-                          User bestaetigt  --> oc ausfuehren
+                          User bestaetigt  --> kai ausfuehren
 ```
 
 ### Kontext-Sammlung (services/advisor.py)
@@ -1896,16 +1896,16 @@ lokales Ollama-Modell.
 
 ### Tool-Use: CLI als Werkzeug
 
-Der Advisor kann `oc` Commands vorschlagen UND ausfuehren.
+Der Advisor kann `kai` Commands vorschlagen UND ausfuehren.
 Zwei Modi:
 
 **Interaktiv (CLI):** Advisor schlaegt Aktionen vor, User
 bestaetigt einzeln oder alle:
 ```
 Advisor: Soll ich folgendes anlegen?
-  1. oc task add CERMEL "Fix #42 Geister-Samples" --status NEXT
-  2. oc task add ISC "Rechnung vorbereiten" --status NEXT
-  3. oc clock book 30min RIDINGBYTES "Tagesplanung"
+  1. kai task add CERMEL "Fix #42 Geister-Samples" --status NEXT
+  2. kai task add ISC "Rechnung vorbereiten" --status NEXT
+  3. kai clock book 30min RIDINGBYTES "Tagesplanung"
 > [1,2,3/alle/nein]
 ```
 
@@ -1918,7 +1918,7 @@ kann der Advisor direkt handeln wenn in der Job-Config
   schedule: "0 8 * * 1-5"
   model: "ollama:qwen3:14b"
   prompt_file: "prompts/daily-triage.md"
-  auto_execute: true       # Advisor darf oc commands ausfuehren
+  auto_execute: true       # Advisor darf kai commands ausfuehren
   allowed_commands:         # Whitelist
     - "task add"
     - "task move"
@@ -1928,7 +1928,7 @@ kann der Advisor direkt handeln wenn in der Job-Config
 ### Prompt-Struktur
 
 ```markdown
-Du bist der OmniControl Advisor fuer Ramon Bartl (RIDING BYTES).
+Du bist der Kaisho Advisor fuer Ramon Bartl (RIDING BYTES).
 Du bist ein leichtgewichtiger Quick-Check Assistent.
 Fuer komplexe Aufgaben verweise auf das Terminal (cowork).
 
@@ -1936,11 +1936,11 @@ Fuer komplexe Aufgaben verweise auf das Terminal (cowork).
 {context}
 
 ## Verfuegbare Aktionen
-Du kannst folgende oc-Commands vorschlagen:
-- oc task add <kunde> "<beschreibung>" [--status NEXT]
-- oc task move <id> <status>
-- oc clock book <dauer> <kunde> "<beschreibung>"
-- oc inbox add "<text>"
+Du kannst folgende kai-Commands vorschlagen:
+- kai task add <kunde> "<beschreibung>" [--status NEXT]
+- kai task move <id> <status>
+- kai clock book <dauer> <kunde> "<beschreibung>"
+- kai inbox add "<text>"
 
 ## Aufgabe
 {user_question}
@@ -1948,7 +1948,7 @@ Du kannst folgende oc-Commands vorschlagen:
 Antworte kurz und strukturiert:
 1. Fakten (aus Kontext, nicht raten)
 2. Empfehlung
-3. oc-Commands (falls noetig)
+3. kai-Commands (falls noetig)
 ```
 
 ### API Endpoints (/api/advisor)
@@ -1975,7 +1975,7 @@ Tastenkuerzel `a`. Features:
 ```
 User klickt "Alle ausfuehren" im Chat Panel
   --> Frontend POST /api/advisor/execute
-  --> Backend fuehrt oc-Commands aus (subprocess)
+  --> Backend fuehrt kai-Commands aus (subprocess)
   --> org-Dateien werden geschrieben
   --> File Watcher erkennt Aenderung
   --> WebSocket: file_changed Events
@@ -2048,22 +2048,22 @@ die zugehoerigen docs/ aktualisieren (Definition of Done).
 8. docs/: quickstart.md, installation.md, contributing.md,
    architecture.md, reference/config.md, reference/org-format.md
 
-### Phase 2: CLI -- `oc` (Prio 1)
-1. Click CLI Skeleton mit Entry Point `oc`
-2. `oc task` -- Tasks aus todos.org (add/list/move/done)
-3. `oc clock` -- Zeitbuchung (book/start/stop/status/list)
-4. `oc customer` -- Kundenregister (list/show/summary)
-5. `oc inbox` -- Inbox (add/list/promote, Pipe-Support)
-6. `oc comm` -- Kommunikationshistorie (list/search/add)
-7. `oc kb` -- Knowledge Base Suche (search/list/show)
-8. `oc briefing` -- Morgen-Briefing (inkl. Follow-Ups)
+### Phase 2: CLI -- `kai` (Prio 1)
+1. Click CLI Skeleton mit Entry Point `kai`
+2. `kai task` -- Tasks aus todos.org (add/list/move/done)
+3. `kai clock` -- Zeitbuchung (book/start/stop/status/list)
+4. `kai customer` -- Kundenregister (list/show/summary)
+5. `kai inbox` -- Inbox (add/list/promote, Pipe-Support)
+6. `kai comm` -- Kommunikationshistorie (list/search/add)
+7. `kai kb` -- Knowledge Base Suche (search/list/show)
+8. `kai briefing` -- Morgen-Briefing (inkl. Follow-Ups)
 9. Tests fuer alle CLI Commands
 10. docs/cli/*.md fuer jeden Command (Syntax, Flags, Beispiele)
 11. docs/guides/time-tracking.md, email-workflow.md
 
 ### Phase 3: GitHub Integration (Prio 1)
 1. GitHub Service (gh CLI Wrapper, JSON-Parsing)
-2. `oc gh` -- Issues/PRs auflisten, oeffnen
+2. `kai gh` -- Issues/PRs auflisten, oeffnen
 3. Issue-Referenzen (#42) in Tasks und Clocks
 4. Tab-Completion fuer Kunden + Issue-Nummern
 5. Issue-Cache (data/gh_cache/, TTL 5min)
@@ -2072,9 +2072,9 @@ die zugehoerigen docs/ aktualisieren (Definition of Done).
 
 ### Phase 4: AI Advisor (Prio 2)
 1. Advisor Service (Kontext-Sammlung inkl. Comm-DB)
-2. `oc ask` -- Interaktiver KI-Advisor
+2. `kai ask` -- Interaktiver KI-Advisor
 3. Command-Vorschlaege + User-Bestaetigung
-4. Command-Execution (Advisor fuehrt oc-Commands aus)
+4. Command-Execution (Advisor fuehrt kai-Commands aus)
 5. Cron-Integration (auto_execute + allowed_commands)
 6. docs/cli/ask.md
 
@@ -2140,7 +2140,7 @@ die zugehoerigen docs/ aktualisieren (Definition of Done).
 | Hash-basierte Task IDs    | Stabil ueber Re-Reads       | Line-Numbers brechen            |
 | Kein In-Memory Cache      | Re-Parse pro Request        | Dateien unter 10KB              |
 | gh CLI statt GitHub API   | Kein Token-Management       | gh uebernimmt Auth + Pagination |
-| Advisor via oc CLI        | Einheitlicher Codepfad      | Gleiche Validierung wie manuell |
+| Advisor via kai CLI        | Einheitlicher Codepfad      | Gleiche Validierung wie manuell |
 | Issue-Cache mit TTL       | Schnelle Autocomplete       | gh API-Calls sparen             |
 | Eine SQLite-Datei         | Alles in omnicontrol.db     | Kein DB-Wildwuchs, ein Backup   |
 | Comm-DB statt Memory      | Nachschlagen statt Erinnern | Anti-Halluzination              |
@@ -2164,16 +2164,16 @@ Nachgedanke. Wird mit jeder Phase aktualisiert.
 
     cli/
       index.md                   # CLI Uebersicht, globale Flags
-      task.md                    # oc task -- alle Subcommands
-      clock.md                   # oc clock -- alle Subcommands
-      customer.md                # oc customer
-      inbox.md                   # oc inbox
-      comm.md                    # oc comm
-      gh.md                      # oc gh
-      kb.md                      # oc kb
-      cron.md                    # oc cron
-      briefing.md                # oc briefing
-      ask.md                     # oc ask (Advisor)
+      task.md                    # kai task -- alle Subcommands
+      clock.md                   # kai clock -- alle Subcommands
+      customer.md                # kai customer
+      inbox.md                   # kai inbox
+      comm.md                    # kai comm
+      gh.md                      # kai gh
+      kb.md                      # kai kb
+      cron.md                    # kai cron
+      briefing.md                # kai briefing
+      ask.md                     # kai ask (Advisor)
 
     guides/
       email-workflow.md          # Email reinpasten -> Inbox -> Task
@@ -2195,7 +2195,7 @@ Nachgedanke. Wird mit jeder Phase aktualisiert.
 
 ### Quickstart (docs/quickstart.md)
 
-Ziel: In 5 Minuten von null zum ersten `oc briefing`.
+Ziel: In 5 Minuten von null zum ersten `kai briefing`.
 
 ```markdown
 # Quickstart
@@ -2217,10 +2217,10 @@ cp .env.example .env
 # KUNDEN_DIR=~/ownCloud/cowork/kunden
 
 ## Erster Start
-oc briefing                  # Tagesuebersicht
-oc task list                 # Offene Tasks
-oc clock status              # Laufender Timer?
-oc customer summary          # Budget-Stand
+kai briefing                  # Tagesuebersicht
+kai task list                 # Offene Tasks
+kai clock status              # Laufender Timer?
+kai customer summary          # Budget-Stand
 ```
 
 ### Dev-Setup (docs/contributing.md)
@@ -2248,9 +2248,9 @@ cp ~/ownCloud/cowork/org/kunden.org tests/fixtures/
 pytest tests/ -v
 
 ## CLI testen
-oc --help
-oc task list
-oc clock status
+kai --help
+kai task list
+kai clock status
 
 ## Frontend (spaetere Phase)
 cd frontend
@@ -2269,7 +2269,7 @@ uvicorn omnicontrol.api.app:app --reload  # http://localhost:8000
 ## Systemd Service (Linux)
 # /etc/systemd/system/omnicontrol.service
 [Unit]
-Description=OmniControl Dashboard
+Description=Kaisho Dashboard
 After=network.target
 
 [Service]
@@ -2299,19 +2299,19 @@ docker compose up -d
 Jede CLI-Seite folgt dem gleichen Aufbau:
 
 ```markdown
-# oc clock
+# kai clock
 
 Zeiterfassung: Stunden buchen, Timer starten/stoppen,
 Eintraege auflisten.
 
 ## Commands
 
-### oc clock book
+### kai clock book
 
 Nachtraegliche Zeitbuchung.
 
 **Syntax:**
-  oc clock book <dauer> <kunde> "<beschreibung>"
+  kai clock book <dauer> <kunde> "<beschreibung>"
 
 **Argumente:**
 | Argument     | Beschreibung                   |
@@ -2329,13 +2329,13 @@ Nachtraegliche Zeitbuchung.
 
 **Beispiele:**
   # 2 Stunden auf CERMEL buchen
-  oc clock book 2h CERMEL "Email Rueckmeldung"
+  kai clock book 2h CERMEL "Email Rueckmeldung"
 
   # 30 Minuten mit Issue-Referenz
-  oc clock book 30min ISC "#18 Code Review"
+  kai clock book 30min ISC "#18 Code Review"
 
   # Buchung mit bestimmtem Endzeitpunkt
-  oc clock book 1h NRG-FMI "Meeting" --at 15:00
+  kai clock book 1h NRG-FMI "Meeting" --at 15:00
 
 **Ergebnis in clocks.org:**
   * CERMEL
@@ -2344,20 +2344,20 @@ Nachtraegliche Zeitbuchung.
   CLOCK: [2026-04-01 Tue 12:30]--[2026-04-01 Tue 14:30] => 2:00
   :END:
 
-### oc clock start / stop
+### kai clock start / stop
 ...
 
-### oc clock list
+### kai clock list
 ...
 
-### oc clock summary
+### kai clock summary
 ...
 ```
 
 ### Generierung
 
 CLI-Dokumentation wird teilweise aus Click-Dekoratoren
-generiert (`oc <command> --help`), dann manuell um Beispiele
+generiert (`kai <command> --help`), dann manuell um Beispiele
 und Ergebnis-Darstellungen ergaenzt.
 
 Makefile-Target:

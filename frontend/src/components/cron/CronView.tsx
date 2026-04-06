@@ -37,7 +37,7 @@ const MODEL_DATALIST = "cron-model-list";
 
 const fieldCls =
   "px-2 py-1 rounded text-xs bg-surface-raised border border-border " +
-  "text-slate-200 placeholder-slate-600 focus:outline-none " +
+  "text-stone-900 placeholder-stone-500 focus:outline-none " +
   "focus:border-border-strong font-mono";
 
 function CopyToInboxBtn({ runId }: { runId: number }) {
@@ -62,7 +62,7 @@ function CopyToInboxBtn({ runId }: { runId: number }) {
         "p-1 rounded transition-colors",
         done
           ? "text-green-400"
-          : "text-slate-600 hover:text-accent hover:bg-accent-muted",
+          : "text-stone-500 hover:text-cta hover:bg-cta-muted",
         "disabled:opacity-60",
       ].join(" ")}
       title="Copy to inbox"
@@ -216,20 +216,20 @@ function JobCard({ job }: { job: CronJob }) {
         className="flex items-center gap-3 px-4 py-3 cursor-pointer"
         onClick={handleExpand}
       >
-        <span className="text-slate-600 shrink-0">
+        <span className="text-stone-500 shrink-0">
           {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-slate-200 truncate">
+          <p className="text-sm font-semibold text-stone-900 truncate">
             {job.name}
           </p>
-          <p className="text-[10px] text-slate-600 font-mono">{job.id}</p>
+          <p className="text-[10px] text-stone-500 font-mono">{job.id}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <EnableToggle job={job} />
           <button
             onClick={startEdit}
-            className="text-slate-600 hover:text-accent transition-colors"
+            className="text-stone-500 hover:text-cta transition-colors"
             title="Edit fields"
           >
             <Pencil size={12} />
@@ -243,7 +243,7 @@ function JobCard({ job }: { job: CronJob }) {
             className={[
               "flex items-center gap-1 px-2 py-1 rounded-lg",
               "text-xs bg-surface-raised border border-border",
-              "text-slate-300 hover:bg-surface-overlay transition-colors",
+              "text-stone-800 hover:bg-surface-overlay transition-colors",
               "disabled:opacity-50",
             ].join(" ")}
           >
@@ -255,7 +255,7 @@ function JobCard({ job }: { job: CronJob }) {
               e.stopPropagation();
               handleDelete();
             }}
-            className="text-slate-600 hover:text-red-400 transition-colors"
+            className="text-stone-500 hover:text-red-400 transition-colors"
             title="Delete job"
           >
             <Trash2 size={12} />
@@ -265,13 +265,13 @@ function JobCard({ job }: { job: CronJob }) {
 
       {/* Summary pills */}
       <div
-        className="flex gap-3 px-4 pb-3 text-[10px] text-slate-500 font-mono cursor-pointer"
+        className="flex gap-3 px-4 pb-3 text-[10px] text-stone-600 font-mono cursor-pointer"
         onClick={handleExpand}
       >
         <span title="Schedule">{job.schedule}</span>
-        <span className="text-slate-700">|</span>
+        <span className="text-stone-400">|</span>
         <span title="Model">{job.model}</span>
-        <span className="text-slate-700">|</span>
+        <span className="text-stone-400">|</span>
         <span title="Output">{job.output}</span>
       </div>
 
@@ -286,7 +286,7 @@ function JobCard({ job }: { job: CronJob }) {
             <div className="flex flex-col gap-2">
               <div className="grid grid-cols-2 gap-2">
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] text-slate-600 uppercase tracking-wide">
+                  <span className="text-[10px] text-stone-500 uppercase tracking-wide">
                     Schedule
                   </span>
                   <input
@@ -297,7 +297,7 @@ function JobCard({ job }: { job: CronJob }) {
                   />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] text-slate-600 uppercase tracking-wide">
+                  <span className="text-[10px] text-stone-500 uppercase tracking-wide">
                     Model
                   </span>
                   <input
@@ -309,7 +309,7 @@ function JobCard({ job }: { job: CronJob }) {
                   />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] text-slate-600 uppercase tracking-wide">
+                  <span className="text-[10px] text-stone-500 uppercase tracking-wide">
                     Output
                   </span>
                   <OutputSelect
@@ -318,7 +318,7 @@ function JobCard({ job }: { job: CronJob }) {
                   />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] text-slate-600 uppercase tracking-wide">
+                  <span className="text-[10px] text-stone-500 uppercase tracking-wide">
                     Timeout (s)
                   </span>
                   <input
@@ -334,13 +334,13 @@ function JobCard({ job }: { job: CronJob }) {
                 <button
                   onClick={handleSaveFields}
                   disabled={updateJob.isPending}
-                  className="px-3 py-1 rounded-lg text-xs bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-50"
+                  className="px-3 py-1 rounded-lg text-xs bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-50"
                 >
                   {updateJob.isPending ? "Saving…" : "Save"}
                 </button>
                 <button
                   onClick={() => setEditing(false)}
-                  className="px-3 py-1 rounded-lg text-xs text-slate-400 hover:text-slate-200 transition-colors"
+                  className="px-3 py-1 rounded-lg text-xs text-stone-700 hover:text-stone-900 transition-colors"
                 >
                   Cancel
                 </button>
@@ -351,11 +351,11 @@ function JobCard({ job }: { job: CronJob }) {
           {/* Prompt editor */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-600 uppercase tracking-wide">
+              <span className="text-[10px] text-stone-500 uppercase tracking-wide">
                 Prompt
               </span>
               {promptData?.path && (
-                <span className="text-[10px] text-slate-700 font-mono">
+                <span className="text-[10px] text-stone-400 font-mono">
                   {promptData.path}
                 </span>
               )}
@@ -367,7 +367,7 @@ function JobCard({ job }: { job: CronJob }) {
               className={[
                 "w-full px-3 py-2 rounded-lg text-xs font-mono",
                 "bg-surface-raised border border-border",
-                "text-slate-200 placeholder-slate-600",
+                "text-stone-900 placeholder-stone-500",
                 "focus:outline-none focus:border-border-strong",
                 "resize-y min-h-[120px]",
               ].join(" ")}
@@ -379,7 +379,7 @@ function JobCard({ job }: { job: CronJob }) {
               <button
                 onClick={handleSavePrompt}
                 disabled={savePrompt.isPending}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-50"
               >
                 {savePrompt.isPending ? (
                   "Saving…"
@@ -438,13 +438,13 @@ function AddJobForm({ onClose }: { onClose: () => void }) {
       className="border-b border-border-subtle bg-surface-card px-6 py-4 flex flex-col gap-3"
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+        <span className="text-xs font-semibold text-stone-700 uppercase tracking-wide">
           New Cron Job
         </span>
         <button
           type="button"
           onClick={onClose}
-          className="text-slate-600 hover:text-slate-300 transition-colors"
+          className="text-stone-500 hover:text-stone-900 transition-colors"
         >
           <X size={14} />
         </button>
@@ -452,7 +452,7 @@ function AddJobForm({ onClose }: { onClose: () => void }) {
 
       <div className="grid grid-cols-2 gap-2">
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-slate-600 uppercase tracking-wide">
+          <span className="text-[10px] text-stone-500 uppercase tracking-wide">
             ID
           </span>
           <input
@@ -464,7 +464,7 @@ function AddJobForm({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-slate-600 uppercase tracking-wide">
+          <span className="text-[10px] text-stone-500 uppercase tracking-wide">
             Name
           </span>
           <input
@@ -476,7 +476,7 @@ function AddJobForm({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-slate-600 uppercase tracking-wide">
+          <span className="text-[10px] text-stone-500 uppercase tracking-wide">
             Schedule
           </span>
           <input
@@ -488,7 +488,7 @@ function AddJobForm({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-slate-600 uppercase tracking-wide">
+          <span className="text-[10px] text-stone-500 uppercase tracking-wide">
             Model
           </span>
           <input
@@ -501,7 +501,7 @@ function AddJobForm({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-slate-600 uppercase tracking-wide">
+          <span className="text-[10px] text-stone-500 uppercase tracking-wide">
             Output
           </span>
           <OutputSelect
@@ -510,7 +510,7 @@ function AddJobForm({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-slate-600 uppercase tracking-wide">
+          <span className="text-[10px] text-stone-500 uppercase tracking-wide">
             Timeout (s)
           </span>
           <input
@@ -524,14 +524,14 @@ function AddJobForm({ onClose }: { onClose: () => void }) {
       </div>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[10px] text-slate-600 uppercase tracking-wide">
+        <span className="text-[10px] text-stone-500 uppercase tracking-wide">
           Prompt
         </span>
         <textarea
           className={[
             "w-full px-3 py-2 rounded-lg text-xs font-mono",
             "bg-surface-raised border border-border",
-            "text-slate-200 placeholder-slate-600",
+            "text-stone-900 placeholder-stone-500",
             "focus:outline-none focus:border-border-strong",
             "resize-y min-h-[100px]",
           ].join(" ")}
@@ -545,14 +545,14 @@ function AddJobForm({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           onClick={onClose}
-          className="px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-slate-200 transition-colors"
+          className="px-3 py-1.5 rounded-lg text-sm text-stone-700 hover:text-stone-900 transition-colors"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={addJob.isPending}
-          className="px-4 py-1.5 rounded-lg text-sm bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-50"
+          className="px-4 py-1.5 rounded-lg text-sm bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-50"
         >
           {addJob.isPending ? "Creating…" : "Create"}
         </button>
@@ -578,7 +578,7 @@ function HistoryTable({
 
   if (runs.length === 0) {
     return (
-      <p className="text-sm text-slate-600 py-4">
+      <p className="text-sm text-stone-500 py-4">
         No history yet.
       </p>
     );
@@ -588,7 +588,7 @@ function HistoryTable({
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
-          <tr className="text-slate-600 border-b border-border-subtle">
+          <tr className="text-stone-500 border-b border-border-subtle">
             <th className="text-left py-2 pr-4 font-medium w-4" />
             <th className="text-left py-2 pr-4 font-medium">
               #
@@ -637,7 +637,7 @@ function HistoryTable({
                     isOpen ? "bg-surface-raised" : "",
                   ].join(" ")}
                 >
-                  <td className="py-2 pr-2 text-slate-600 w-4">
+                  <td className="py-2 pr-2 text-stone-500 w-4">
                     {hasOutput ? (
                       isOpen ? (
                         <ChevronDown size={10} />
@@ -646,10 +646,10 @@ function HistoryTable({
                       )
                     ) : null}
                   </td>
-                  <td className="py-2 pr-4 text-slate-600">
+                  <td className="py-2 pr-4 text-stone-500">
                     {run.id}
                   </td>
-                  <td className="py-2 pr-4 font-mono text-slate-400">
+                  <td className="py-2 pr-4 font-mono text-stone-700">
                     {run.job_id}
                   </td>
                   <td className="py-2 pr-4">
@@ -659,12 +659,12 @@ function HistoryTable({
                       </span>
                     )}
                   </td>
-                  <td className="py-2 pr-4 text-slate-400">
+                  <td className="py-2 pr-4 text-stone-700">
                     {run.started_at
                       .slice(0, 19)
                       .replace("T", " ")}
                   </td>
-                  <td className="py-2 pr-4 text-slate-400">
+                  <td className="py-2 pr-4 text-stone-700">
                     {run.finished_at
                       ? run.finished_at
                           .slice(0, 19)
@@ -685,7 +685,7 @@ function HistoryTable({
                         e.stopPropagation();
                         onDelete(run.id);
                       }}
-                      className="text-slate-700 hover:text-red-400 transition-colors"
+                      className="text-stone-400 hover:text-red-400 transition-colors"
                       title="Delete run"
                     >
                       <Trash2 size={11} />
@@ -738,13 +738,13 @@ export function CronView() {
 
       {/* Toolbar */}
       <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
+        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
           Cron
         </h1>
         <div className="ml-auto flex items-center gap-3">
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs bg-accent text-white hover:bg-accent-hover transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs bg-cta text-white hover:bg-cta-hover transition-colors"
           >
             <Plus size={12} />
             Add Job
@@ -760,14 +760,14 @@ export function CronView() {
       <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
         {/* Jobs section */}
         <section>
-          <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+          <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
             Jobs
           </h2>
           {jobsLoading && (
-            <p className="text-sm text-slate-600">Loading…</p>
+            <p className="text-sm text-stone-500">Loading…</p>
           )}
           {!jobsLoading && jobs.length === 0 && (
-            <p className="text-sm text-slate-600">No jobs configured.</p>
+            <p className="text-sm text-stone-500">No jobs configured.</p>
           )}
           <div className="flex flex-col gap-3">
             {jobs.map((job) => (
@@ -778,11 +778,11 @@ export function CronView() {
 
         {/* History section */}
         <section>
-          <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+          <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
             History
           </h2>
           {historyLoading ? (
-            <p className="text-sm text-slate-600">Loading…</p>
+            <p className="text-sm text-stone-500">Loading…</p>
           ) : (
             <HistoryTable
               runs={history}

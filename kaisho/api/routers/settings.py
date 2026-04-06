@@ -161,7 +161,7 @@ def auth_login(body: LoginBody, request: Request):
                 status_code=401,
                 detail="Invalid password",
             )
-    os.environ["OC_USER"] = body.username
+    os.environ["KAISHO_USER"] = body.username
     os.environ["PROFILE"] = "default"
     cfg = reset_config()
     init_data_dir(cfg)
@@ -208,7 +208,7 @@ def auth_register(body: RegisterBody, request: Request):
             status_code=409,
             detail=f"User '{username}' already exists",
         )
-    os.environ["OC_USER"] = username
+    os.environ["KAISHO_USER"] = username
     os.environ["PROFILE"] = "default"
     new_cfg = reset_config()
     save_user_yaml(new_cfg, {
@@ -285,8 +285,8 @@ def auth_session(request: Request):
         )
     from ...config import load_user_yaml, reset_config
     import os
-    if os.environ.get("OC_USER") != username:
-        os.environ["OC_USER"] = username
+    if os.environ.get("KAISHO_USER") != username:
+        os.environ["KAISHO_USER"] = username
         reset_config()
     cfg = get_config()
     meta = load_user_yaml(cfg)
@@ -828,7 +828,7 @@ def get_current_user():
     cfg = get_config()
     meta = load_user_yaml(cfg)
     return {
-        "username": cfg.OC_USER,
+        "username": cfg.KAISHO_USER,
         "profile": cfg.PROFILE,
         "name": meta.get("name", ""),
         "email": meta.get("email", ""),
@@ -900,9 +900,9 @@ def create_user(body: UserCreate):
         )
     import os
     from datetime import datetime, timezone
-    old_user = os.environ.get("OC_USER", "")
+    old_user = os.environ.get("KAISHO_USER", "")
     old_prof = os.environ.get("PROFILE", "")
-    os.environ["OC_USER"] = username
+    os.environ["KAISHO_USER"] = username
     os.environ["PROFILE"] = "default"
     new_cfg = reset_config()
     save_user_yaml(new_cfg, {
@@ -912,7 +912,7 @@ def create_user(body: UserCreate):
         "created": datetime.now(timezone.utc).isoformat(),
     })
     init_data_dir(new_cfg)
-    os.environ["OC_USER"] = old_user or "default"
+    os.environ["KAISHO_USER"] = old_user or "default"
     os.environ["PROFILE"] = old_prof or "default"
     reset_config()
     return {"username": username}
@@ -925,7 +925,7 @@ def get_profiles():
     from ...config import list_profiles
     cfg = get_config()
     return {
-        "user": cfg.OC_USER,
+        "user": cfg.KAISHO_USER,
         "active": cfg.PROFILE,
         "profiles": list_profiles(cfg),
     }

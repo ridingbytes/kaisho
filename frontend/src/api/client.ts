@@ -22,7 +22,7 @@ import type {
 const BASE = "/api";
 
 function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem("oc_token");
+  const token = localStorage.getItem("kai_token");
   if (token) return { Authorization: `Bearer ${token}` };
   return {};
 }

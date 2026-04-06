@@ -151,7 +151,7 @@ hook's `RESOURCE_TO_QUERY` map.
 The parser in `org/parser.py` produces a tree of `Heading` objects.
 Each heading tracks a `dirty: bool` flag. The writer uses the original
 `raw_lines` for clean headings and reconstructs text for dirty ones,
-preserving all formatting that OmniControl did not touch.
+preserving all formatting that Kaisho did not touch.
 
 `Heading.body` is a `list[str]` that holds all text lines below the
 properties/logbook block. State transition log lines (inserted by
@@ -182,7 +182,7 @@ pnpm build      # production build to frontend/dist/
 pnpm preview    # serve the production build locally
 ```
 
-The proxy is configured in `vite.config.ts`. Start `oc serve` first
+The proxy is configured in `vite.config.ts`. Start `kai serve` first
 so the backend is available.
 
 ### TanStack Query conventions
@@ -205,7 +205,7 @@ so the backend is available.
 ```bash
 # Backend (terminal 1)
 source .venv/bin/activate
-oc serve --reload
+kai serve --reload
 
 # Frontend (terminal 2)
 cd frontend

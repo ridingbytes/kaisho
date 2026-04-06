@@ -101,7 +101,7 @@ def _prefetch_urls(urls: list[str]) -> str:
             req = urllib.request.Request(
                 url,
                 headers={
-                    "User-Agent": "omnicontrol-cron/1.0",
+                    "User-Agent": "kaisho-cron/1.0",
                     "Accept": "application/json",
                 },
             )

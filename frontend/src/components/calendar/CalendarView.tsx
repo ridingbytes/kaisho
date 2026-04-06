@@ -116,10 +116,10 @@ function DayCell({
     "relative h-16 p-1 border border-transparent cursor-pointer",
     "flex flex-col transition-colors",
     isCurrentMonth
-      ? "text-slate-200"
-      : "text-slate-700",
+      ? "text-stone-900"
+      : "text-stone-400",
     isSelected
-      ? "bg-accent-muted border-accent"
+      ? "bg-cta-muted border-cta"
       : "hover:bg-surface-raised",
   ].join(" ");
 
@@ -130,19 +130,19 @@ function DayCell({
           className={[
             "text-xs font-medium leading-none",
             isToday
-              ? "text-accent font-semibold"
+              ? "text-cta font-semibold"
               : "",
           ].join(" ")}
         >
           {date.getDate()}
         </span>
         {isToday && (
-          <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+          <span className="w-1.5 h-1.5 rounded-full bg-cta shrink-0" />
         )}
       </div>
       {hasEntries && (
         <div className="mt-auto self-end">
-          <span className="text-[10px] font-mono text-slate-400 bg-surface-raised rounded px-1 py-0.5">
+          <span className="text-[10px] font-mono text-stone-700 bg-surface-raised rounded px-1 py-0.5">
             {formatHours(totalMinutes)}
           </span>
         </div>
@@ -159,7 +159,7 @@ interface EntryListProps {
 function EntryList({ entries, dateLabel }: EntryListProps) {
   if (entries.length === 0) {
     return (
-      <div className="px-4 py-3 text-xs text-slate-600">
+      <div className="px-4 py-3 text-xs text-stone-500">
         No entries for {dateLabel}.
       </div>
     );
@@ -174,13 +174,13 @@ function EntryList({ entries, dateLabel }: EntryListProps) {
             key={`${entry.start}-${i}`}
             className="flex items-center gap-3 px-4 py-2.5"
           >
-            <span className="text-xs font-medium text-slate-300 w-28 shrink-0 truncate">
+            <span className="text-xs font-medium text-stone-800 w-28 shrink-0 truncate">
               {entry.customer}
             </span>
-            <span className="text-xs text-slate-400 flex-1 truncate">
+            <span className="text-xs text-stone-700 flex-1 truncate">
               {entry.description}
             </span>
-            <span className="text-xs font-mono text-slate-500 shrink-0">
+            <span className="text-xs font-mono text-stone-600 shrink-0">
               {formatHours(mins)}
             </span>
           </div>
@@ -250,7 +250,7 @@ export function CalendarView() {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
+        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
           Calendar
         </h1>
       </div>
@@ -261,17 +261,17 @@ export function CalendarView() {
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={prevMonth}
-              className="p-1.5 rounded text-slate-500 hover:text-slate-200 hover:bg-surface-raised transition-colors"
+              className="p-1.5 rounded text-stone-600 hover:text-stone-900 hover:bg-surface-raised transition-colors"
               aria-label="Previous month"
             >
               <ChevronLeft size={16} />
             </button>
-            <h2 className="text-sm font-semibold text-slate-200">
+            <h2 className="text-sm font-semibold text-stone-900">
               {MONTH_NAMES[month - 1]} {year}
             </h2>
             <button
               onClick={nextMonth}
-              className="p-1.5 rounded text-slate-500 hover:text-slate-200 hover:bg-surface-raised transition-colors"
+              className="p-1.5 rounded text-stone-600 hover:text-stone-900 hover:bg-surface-raised transition-colors"
               aria-label="Next month"
             >
               <ChevronRight size={16} />
@@ -283,7 +283,7 @@ export function CalendarView() {
             {DAY_LABELS.map((label) => (
               <div
                 key={label}
-                className="text-center text-[10px] font-semibold uppercase tracking-wider text-slate-600 py-1"
+                className="text-center text-[10px] font-semibold uppercase tracking-wider text-stone-500 py-1"
               >
                 {label}
               </div>
@@ -292,7 +292,7 @@ export function CalendarView() {
 
           {/* Calendar grid */}
           {isLoading ? (
-            <div className="flex items-center justify-center h-48 text-sm text-slate-600">
+            <div className="flex items-center justify-center h-48 text-sm text-stone-500">
               Loading…
             </div>
           ) : (
@@ -324,11 +324,11 @@ export function CalendarView() {
           {selectedDate && (
             <div className="mt-4 bg-surface-card rounded-xl border border-border overflow-hidden">
               <div className="px-4 py-2.5 border-b border-border-subtle">
-                <p className="text-xs font-semibold text-slate-400">
+                <p className="text-xs font-semibold text-stone-700">
                   {selectedLabel}
                 </p>
                 {selectedEntries.length > 0 && (
-                  <p className="text-[10px] text-slate-600 mt-0.5">
+                  <p className="text-[10px] text-stone-500 mt-0.5">
                     {formatHours(sumMinutes(selectedEntries))} total
                   </p>
                 )}

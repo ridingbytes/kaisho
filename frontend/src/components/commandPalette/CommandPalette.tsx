@@ -133,7 +133,7 @@ export function CommandPalette({ onNavigate, onClose }: Props) {
         >
           {/* Search input */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle">
-            <Search size={14} className="text-slate-500 shrink-0" />
+            <Search size={14} className="text-stone-600 shrink-0" />
             <input
               ref={inputRef}
               type="text"
@@ -142,11 +142,11 @@ export function CommandPalette({ onNavigate, onClose }: Props) {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               className={[
-                "flex-1 bg-transparent text-sm text-slate-200",
-                "placeholder-slate-600 focus:outline-none",
+                "flex-1 bg-transparent text-sm text-stone-900",
+                "placeholder-stone-500 focus:outline-none",
               ].join(" ")}
             />
-            <kbd className="text-[10px] text-slate-600 border border-border rounded px-1 py-0.5 shrink-0">
+            <kbd className="text-[10px] text-stone-500 border border-border rounded px-1 py-0.5 shrink-0">
               ESC
             </kbd>
           </div>
@@ -154,7 +154,7 @@ export function CommandPalette({ onNavigate, onClose }: Props) {
           {/* Commands list */}
           <div ref={listRef} className="overflow-y-auto max-h-80 py-1">
             {filtered.length === 0 && (
-              <p className="text-sm text-slate-600 text-center py-6">
+              <p className="text-sm text-stone-500 text-center py-6">
                 No results.
               </p>
             )}
@@ -171,8 +171,8 @@ export function CommandPalette({ onNavigate, onClose }: Props) {
                     "w-full flex items-center gap-3 px-4 py-2.5 text-left",
                     "transition-colors",
                     isActive
-                      ? "bg-accent-muted text-accent"
-                      : "text-slate-300 hover:bg-surface-raised",
+                      ? "bg-cta-muted text-cta"
+                      : "text-stone-800 hover:bg-surface-raised",
                   ].join(" ")}
                   onClick={() => execute(cmd)}
                   onMouseEnter={() => setActiveIdx(idx)}
@@ -182,12 +182,12 @@ export function CommandPalette({ onNavigate, onClose }: Props) {
                     className="shrink-0"
                     strokeWidth={isActive ? 2 : 1.5}
                   />
-                  <span className="text-[10px] text-slate-500 w-10 shrink-0 text-right">
+                  <span className="text-[10px] text-stone-600 w-10 shrink-0 text-right">
                     {cmd.hint}
                   </span>
                   <span className="flex-1 text-sm">{cmd.label}</span>
                   {shortcut && (
-                    <kbd className="text-[10px] text-slate-600 border border-border rounded px-1 py-0.5 shrink-0 font-mono">
+                    <kbd className="text-[10px] text-stone-500 border border-border rounded px-1 py-0.5 shrink-0 font-mono">
                       {displayShortcut(shortcut)}
                     </kbd>
                   )}

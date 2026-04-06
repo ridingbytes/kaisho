@@ -136,16 +136,16 @@ export function CalendarWidget({
       <div className="flex items-center justify-between">
         <button
           onClick={prevMonth}
-          className="p-1 rounded text-slate-600 hover:text-slate-300 transition-colors"
+          className="p-1 rounded text-stone-500 hover:text-stone-900 transition-colors"
         >
           <ChevronLeft size={12} />
         </button>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-600">
           {MONTH_NAMES[month - 1]} {year}
         </span>
         <button
           onClick={nextMonth}
-          className="p-1 rounded text-slate-600 hover:text-slate-300 transition-colors"
+          className="p-1 rounded text-stone-500 hover:text-stone-900 transition-colors"
         >
           <ChevronRight size={12} />
         </button>
@@ -156,7 +156,7 @@ export function CalendarWidget({
         {DAY_LABELS.map((label, i) => (
           <div
             key={i}
-            className="text-center text-[9px] font-semibold uppercase text-slate-700 py-0.5"
+            className="text-center text-[9px] font-semibold uppercase text-stone-400 py-0.5"
           >
             {label}
           </div>
@@ -185,14 +185,14 @@ export function CalendarWidget({
                   ? "bg-indigo-500/30 text-white"
                   : isToday && !isSelected
                     ? "bg-indigo-500/15 text-white hover:bg-indigo-500/25"
-                    : "text-slate-400 hover:bg-surface-raised",
+                    : "text-stone-700 hover:bg-surface-raised",
               ].join(" ")}
             >
               <span className={isToday ? "font-bold" : "font-medium"}>
                 {date.getDate()}
               </span>
               {mins > 0 && (
-                <span className="text-[8px] text-slate-600 leading-none mt-0.5">
+                <span className="text-[8px] text-stone-500 leading-none mt-0.5">
                   {formatHours(mins)}
                 </span>
               )}

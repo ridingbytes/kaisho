@@ -29,7 +29,7 @@ export interface AdvisorMessage {
 function UserBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <div className="max-w-[70%] px-4 py-2.5 rounded-2xl rounded-tr-sm bg-accent text-white text-sm">
+      <div className="max-w-[70%] px-4 py-2.5 rounded-2xl rounded-tr-sm bg-cta text-white text-sm">
         {text}
       </div>
     </div>
@@ -49,7 +49,7 @@ function AssistantBubble({
         className={[
           "max-w-[80%] px-4 py-2.5 rounded-2xl rounded-tl-sm",
           "bg-surface-card border border-border",
-          thinking ? "text-sm text-slate-600 italic" : "",
+          thinking ? "text-sm text-stone-500 italic" : "",
         ].join(" ")}
       >
         {thinking ? (
@@ -176,14 +176,14 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
+        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
           Advisor
         </h1>
         {messages.length > 0 && (
           <button
             onClick={clearMessages}
             title="Clear chat (/reset)"
-            className="p-1 rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            className="p-1 rounded text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
           >
             <Trash2 size={13} />
           </button>
@@ -207,11 +207,11 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             placeholder="provider:model"
             className={[
               "w-64 px-2 py-1 rounded-lg text-xs font-mono",
-              "bg-surface-raised border border-border text-slate-300",
-              "placeholder-slate-600 focus:outline-none",
+              "bg-surface-raised border border-border text-stone-800",
+              "placeholder-stone-500 focus:outline-none",
             ].join(" ")}
           />
-          <span className="text-[9px] text-slate-700 font-mono">
+          <span className="text-[9px] text-stone-400 font-mono">
             ollama: | claude_cli: | claude: | openrouter: | openai:
           </span>
         </div>
@@ -222,7 +222,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
       <div className="flex-1 overflow-y-auto px-6 py-4">
         {messages.length === 0 && !loading && (
           <div className="mt-8 space-y-3">
-            <p className="text-sm text-slate-600 text-center">
+            <p className="text-sm text-stone-500 text-center">
               Ask a question or pick a template:
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
@@ -233,8 +233,8 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
                   className={[
                     "px-3 py-1.5 rounded-lg text-xs",
                     "bg-surface-raised border border-border",
-                    "text-slate-400 hover:text-accent",
-                    "hover:border-accent/40 transition-colors",
+                    "text-stone-700 hover:text-cta",
+                    "hover:border-cta/40 transition-colors",
                     "text-left",
                   ].join(" ")}
                 >
@@ -281,10 +281,10 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
                   }}
                   className="w-full text-left px-2 py-1 rounded text-xs hover:bg-surface-raised transition-colors flex items-center gap-2"
                 >
-                  <span className="font-mono text-accent">
+                  <span className="font-mono text-cta">
                     {cmd}
                   </span>
-                  <span className="text-slate-600">
+                  <span className="text-stone-500">
                     {desc}
                   </span>
                 </button>
@@ -300,8 +300,8 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
           placeholder="Ask anything… (/ for commands)"
           className={[
             "flex-1 px-3 py-2 rounded-xl resize-none",
-            "bg-surface-raised border border-border text-sm text-slate-200",
-            "placeholder-slate-600 focus:outline-none focus:border-border-strong",
+            "bg-surface-raised border border-border text-sm text-stone-900",
+            "placeholder-stone-500 focus:outline-none focus:border-border-strong",
           ].join(" ")}
         />
         <button
@@ -309,7 +309,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
           disabled={loading || !input.trim()}
           className={[
             "flex items-center gap-1.5 px-4 py-2 rounded-xl",
-            "bg-accent text-white text-sm hover:bg-accent-hover",
+            "bg-cta text-white text-sm hover:bg-cta-hover",
             "transition-colors disabled:opacity-50 shrink-0",
           ].join(" ")}
         >

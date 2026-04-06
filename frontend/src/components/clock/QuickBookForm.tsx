@@ -116,7 +116,7 @@ export function QuickBookForm({
         className={[
           "w-full py-2 rounded-lg text-xs font-semibold",
           "bg-surface-overlay border border-border",
-          "text-slate-300 hover:border-accent hover:text-accent",
+          "text-stone-800 hover:border-cta hover:text-cta",
           "transition-colors disabled:opacity-40",
           "disabled:cursor-not-allowed",
         ].join(" ")}
@@ -135,7 +135,7 @@ export function QuickBookForm({
 const inputCls = [
   "w-full px-3 py-2 rounded-lg text-sm",
   "bg-surface-raised border border-border",
-  "text-slate-200 placeholder-slate-600",
-  "focus:outline-none focus:border-accent",
+  "text-stone-900 placeholder-stone-500",
+  "focus:outline-none focus:border-cta",
   "transition-colors",
 ].join(" ");

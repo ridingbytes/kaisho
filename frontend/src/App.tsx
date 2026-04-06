@@ -99,13 +99,13 @@ function AppShell({
     apiLogout()
       .catch(() => {})
       .finally(() => {
-        localStorage.removeItem("oc_token");
+        localStorage.removeItem("kai_token");
         onLogout();
       });
   }
 
   const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem("theme") as Theme) ?? "dark"
+    () => (localStorage.getItem("theme") as Theme) ?? "light"
   );
   const [sidebarOpen, setSidebarOpen] = useState(
     () => localStorage.getItem("sidebar_open") !== "false"
@@ -130,8 +130,8 @@ function AppShell({
   const prevMsgCountRef = useRef(advisorMessages.length);
 
   useEffect(() => {
-    if (theme === "light") {
-      document.documentElement.dataset.theme = "light";
+    if (theme === "dark") {
+      document.documentElement.dataset.theme = "dark";
     } else {
       delete document.documentElement.dataset.theme;
     }
@@ -220,12 +220,20 @@ function AppShell({
       <header className="flex items-center gap-2 px-3 h-11 shrink-0 border-b border-border-subtle">
         <button
           onClick={() => setView("dashboard")}
-          className="text-xs font-semibold text-slate-500 tracking-widest uppercase hover:text-slate-300 transition-colors"
+          className="flex items-center opacity-80 hover:opacity-100 transition-opacity"
         >
-          OmniControl
+          <img
+            src={
+              theme === "dark"
+                ? "/kaisho-wordmark-light.svg"
+                : "/kaisho-wordmark.svg"
+            }
+            alt="Kaisho"
+            className="h-4"
+          />
         </button>
         <span className="text-border mx-0.5">·</span>
-        <span className="text-sm font-semibold text-slate-200">
+        <span className="text-sm font-semibold text-stone-900">
           {VIEW_TITLES[view]}
         </span>
         <div className="ml-auto flex items-center gap-2">
@@ -245,10 +253,10 @@ function AppShell({
                 className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-surface-raised transition-colors"
               >
                 <div className="flex flex-col items-end leading-none">
-                  <span className="text-[10px] font-semibold text-slate-300">
+                  <span className="text-[10px] font-semibold text-stone-800">
                     {currentUser.name || currentUser.username}
                   </span>
-                  <span className="text-[9px] text-slate-600">
+                  <span className="text-[9px] text-stone-500">
                     {currentUser.profile}
                   </span>
                 </div>
@@ -261,7 +269,7 @@ function AppShell({
               {userMenuOpen && (
                 <div className="absolute top-full right-0 mt-1 w-48 rounded-lg bg-surface-overlay border border-border shadow-lg p-2 flex flex-col gap-1 z-50">
                   {/* Profiles */}
-                  <p className="text-[9px] text-slate-600 px-1 uppercase tracking-wider">
+                  <p className="text-[9px] text-stone-500 px-1 uppercase tracking-wider">
                     Profile
                   </p>
                   {(currentUser.profiles ?? []).map((p: string) => (
@@ -278,8 +286,8 @@ function AppShell({
                       className={[
                         "w-full text-left px-2 py-1 rounded text-xs transition-colors",
                         p === currentUser.profile
-                          ? "text-accent bg-accent-muted"
-                          : "text-slate-300 hover:bg-surface-raised",
+                          ? "text-cta bg-cta-muted"
+                          : "text-stone-800 hover:bg-surface-raised",
                       ].join(" ")}
                     >
                       {p}
@@ -310,12 +318,12 @@ function AppShell({
                         if (e.key === "Escape") setNewProfInput("");
                       }}
                       placeholder="Profile name"
-                      className="w-full px-2 py-1 rounded text-xs bg-surface-raised border border-border text-slate-200 focus:outline-none focus:border-accent"
+                      className="w-full px-2 py-1 rounded text-xs bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
                     />
                   ) : (
                     <button
                       onClick={() => setNewProfInput(" ")}
-                      className="w-full text-left px-2 py-1 rounded text-xs text-slate-600 hover:text-slate-300 hover:bg-surface-raised"
+                      className="w-full text-left px-2 py-1 rounded text-xs text-stone-500 hover:text-stone-900 hover:bg-surface-raised"
                     >
                       + New profile
                     </button>
@@ -328,7 +336,7 @@ function AppShell({
                       setView("settings");
                       setUserMenuOpen(false);
                     }}
-                    className="w-full text-left px-2 py-1 rounded text-xs text-slate-300 hover:bg-surface-raised flex items-center gap-2"
+                    className="w-full text-left px-2 py-1 rounded text-xs text-stone-800 hover:bg-surface-raised flex items-center gap-2"
                   >
                     <Settings size={12} />
                     Settings
@@ -338,7 +346,7 @@ function AppShell({
                       setUserMenuOpen(false);
                       handleLogout();
                     }}
-                    className="w-full text-left px-2 py-1 rounded text-xs text-slate-300 hover:bg-surface-raised flex items-center gap-2"
+                    className="w-full text-left px-2 py-1 rounded text-xs text-stone-800 hover:bg-surface-raised flex items-center gap-2"
                   >
                     <LogOut size={12} />
                     Logout
@@ -400,7 +408,7 @@ function AppShell({
 
 export function App() {
   const [authed, setAuthed] = useState(
-    () => !!localStorage.getItem("oc_token"),
+    () => !!localStorage.getItem("kai_token"),
   );
 
   function handleAuth(_token: string, _user: AuthUser) {
@@ -429,7 +437,7 @@ export function App() {
 }
 
 const headerBtn = [
-  "p-1.5 rounded-md text-slate-500",
-  "hover:text-slate-300 hover:bg-surface-raised",
+  "p-1.5 rounded-md text-stone-600",
+  "hover:text-stone-900 hover:bg-surface-raised",
   "transition-colors",
 ].join(" ");

@@ -121,8 +121,8 @@ export function CustomerAutocomplete({
                   "w-full text-left px-2 py-1.5 text-xs truncate",
                   "transition-colors",
                   i === highlightIdx
-                    ? "bg-accent-muted text-slate-200"
-                    : "text-slate-300 hover:bg-surface-overlay",
+                    ? "bg-cta-muted text-stone-900"
+                    : "text-stone-800 hover:bg-surface-overlay",
                 ].join(" ")}
               >
                 {name}
@@ -141,8 +141,8 @@ export function CustomerAutocomplete({
                   "w-full text-left px-2 py-1.5 text-xs",
                   "transition-colors border-t border-border-subtle",
                   highlightIdx === filtered.length
-                    ? "bg-accent-muted text-accent"
-                    : "text-accent hover:bg-surface-overlay",
+                    ? "bg-cta-muted text-cta"
+                    : "text-cta hover:bg-surface-overlay",
                 ].join(" ")}
               >
                 + Create &quot;{trimmed}&quot;

@@ -4,7 +4,7 @@ from watchfiles import awatch
 
 from ..ws.manager import manager
 
-# Set of paths currently being written by OmniControl itself
+# Set of paths currently being written by Kaisho itself
 _expected_writes: set[str] = set()
 
 # Map data-file stem → WebSocket resource name

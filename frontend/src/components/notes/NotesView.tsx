@@ -30,12 +30,12 @@ import type { NoteItem } from "../../types";
 
 const fieldCls =
   "px-3 py-1.5 rounded-lg bg-surface-raised border border-border " +
-  "text-sm text-slate-200 placeholder-slate-600 " +
+  "text-sm text-stone-900 placeholder-stone-500 " +
   "focus:outline-none focus:border-border-strong";
 
 const smallFieldCls =
   "px-2 py-1 rounded-md bg-surface-overlay border border-border " +
-  "text-xs text-slate-200 placeholder-slate-600 " +
+  "text-xs text-stone-900 placeholder-stone-500 " +
   "focus:outline-none focus:border-border-strong";
 
 type MoveDest = "task" | "kb" | "archive";
@@ -194,7 +194,7 @@ function NoteRow({
         onClick={() => !editing && setExpanded((v) => !v)}
         onContextMenu={handleContextMenu}
       >
-        <span className="text-xs text-slate-500 w-20 shrink-0">
+        <span className="text-xs text-stone-600 w-20 shrink-0">
           {note.created.replace(/^\[/, "").slice(0, 10)}
         </span>
         {note.customer && (
@@ -208,8 +208,8 @@ function NoteRow({
               "px-1.5 py-0.5 rounded",
               "text-[10px] font-semibold",
               "tracking-wider uppercase",
-              "bg-accent-muted text-accent-hover",
-              "cursor-pointer hover:bg-accent/20",
+              "bg-cta-muted text-cta-hover",
+              "cursor-pointer hover:bg-cta/20",
               "shrink-0 max-w-[7rem] truncate",
             ].join(" ")}
           >
@@ -230,8 +230,8 @@ function NoteRow({
                 "inline-flex items-center",
                 "px-1.5 py-0.5 rounded",
                 "text-[10px] font-medium",
-                "bg-accent-muted text-accent",
-                "cursor-pointer hover:bg-accent/20",
+                "bg-cta-muted text-cta",
+                "cursor-pointer hover:bg-cta/20",
                 "shrink-0 max-w-[10rem] truncate",
               ].join(" ")}
               title={t.title}
@@ -239,12 +239,12 @@ function NoteRow({
               {t.title}
             </span>
           ) : (
-            <span className="text-[10px] text-slate-600 italic shrink-0">
+            <span className="text-[10px] text-stone-500 italic shrink-0">
               [deleted]
             </span>
           );
         })()}
-        <span className="text-sm text-slate-200 flex-1 truncate">
+        <span className="text-sm text-stone-900 flex-1 truncate">
           {note.title}
         </span>
         {note.body && (
@@ -277,7 +277,7 @@ function NoteRow({
         })}
         <button
           onClick={startEdit}
-          className="text-slate-700 hover:text-accent transition-colors shrink-0"
+          className="text-stone-400 hover:text-cta transition-colors shrink-0"
           title="Edit"
         >
           <Pencil size={12} />
@@ -289,8 +289,8 @@ function NoteRow({
             className={[
               "transition-colors",
               moving
-                ? "text-accent"
-                : "text-slate-700 hover:text-accent",
+                ? "text-cta"
+                : "text-stone-400 hover:text-cta",
             ].join(" ")}
           >
             <ArrowRightLeft size={13} strokeWidth={2} />
@@ -305,7 +305,7 @@ function NoteRow({
                   key={d}
                   onClick={() => selectDest(d)}
                   disabled={move.isPending}
-                  className="w-full text-left px-2 py-1 rounded text-xs text-slate-300 hover:bg-surface-raised transition-colors capitalize disabled:opacity-40"
+                  className="w-full text-left px-2 py-1 rounded text-xs text-stone-800 hover:bg-surface-raised transition-colors capitalize disabled:opacity-40"
                 >
                   {d === "kb" ? "Knowledge" : d}
                 </button>
@@ -315,7 +315,7 @@ function NoteRow({
                   e.stopPropagation();
                   setMoving(false);
                 }}
-                className="w-full text-left px-2 py-1 rounded text-[10px] text-slate-600 hover:text-slate-300"
+                className="w-full text-left px-2 py-1 rounded text-[10px] text-stone-500 hover:text-stone-900"
               >
                 Cancel
               </button>
@@ -327,7 +327,7 @@ function NoteRow({
             e.stopPropagation();
             onDelete();
           }}
-          className="text-slate-600 hover:text-red-400 transition-colors shrink-0"
+          className="text-stone-500 hover:text-red-400 transition-colors shrink-0"
           title="Delete"
         >
           <Trash2 size={13} />
@@ -393,7 +393,7 @@ function NoteRow({
                 className={`${smallFieldCls} w-full resize-none`}
               />
               <div className="flex items-center gap-2">
-                <span className="text-[9px] text-slate-700">
+                <span className="text-[9px] text-stone-400">
                   ⌘↵ save
                 </span>
                 <TagDropdown
@@ -404,14 +404,14 @@ function NoteRow({
                 <div className="ml-auto flex gap-2">
                   <button
                     onClick={cancelEdit}
-                    className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                    className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
                   >
                     <X size={11} /> Cancel
                   </button>
                   <button
                     onClick={handleSave}
                     disabled={updateNote.isPending}
-                    className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-accent text-white disabled:opacity-40"
+                    className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-cta text-white disabled:opacity-40"
                   >
                     <Check size={11} />
                     {updateNote.isPending ? "Saving…" : "Save"}
@@ -421,7 +421,7 @@ function NoteRow({
             </div>
           ) : (
             note.body && (
-              <Markdown className="text-sm text-slate-300">
+              <Markdown className="text-sm text-stone-800">
                 {note.body}
               </Markdown>
             )
@@ -449,13 +449,13 @@ function NoteRow({
                   disabled={
                     move.isPending || !targetCustomer.trim()
                   }
-                  className="px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
+                  className="px-2 py-1 rounded-md text-xs font-semibold bg-cta text-white disabled:opacity-40"
                 >
                   {move.isPending ? "…" : "Move"}
                 </button>
                 <button
                   onClick={() => { setMoveDest(null); setMoving(false); }}
-                  className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                  className="px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
                 >
                   <X size={11} />
                 </button>
@@ -484,13 +484,13 @@ function NoteRow({
                   disabled={
                     move.isPending || !targetFilename.trim()
                   }
-                  className="px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
+                  className="px-2 py-1 rounded-md text-xs font-semibold bg-cta text-white disabled:opacity-40"
                 >
                   {move.isPending ? "…" : "Move"}
                 </button>
                 <button
                   onClick={() => { setMoveDest(null); setMoving(false); }}
-                  className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                  className="px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
                 >
                   <X size={11} />
                 </button>
@@ -508,7 +508,7 @@ function NoteRow({
           onClick={(e) => e.stopPropagation()}
           onMouseLeave={() => setCtxMenu(null)}
         >
-          <p className="text-[9px] text-slate-600 px-2 uppercase tracking-wider">
+          <p className="text-[9px] text-stone-500 px-2 uppercase tracking-wider">
             Tags
           </p>
           {allTags.map((t) => {
@@ -522,7 +522,7 @@ function NoteRow({
                   "flex items-center gap-2 transition-colors",
                   active
                     ? "text-white"
-                    : "text-slate-400 hover:bg-surface-raised",
+                    : "text-stone-700 hover:bg-surface-raised",
                 ].join(" ")}
               >
                 <span
@@ -627,7 +627,7 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
         className={`${fieldCls} resize-none`}
       />
       <div className="flex items-center gap-2">
-        <span className="text-[9px] text-slate-700">
+        <span className="text-[9px] text-stone-400">
           ⌘↵ save
         </span>
         <TagDropdown
@@ -639,14 +639,14 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-slate-200 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-sm text-stone-700 hover:text-stone-900 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={addNote.isPending}
-            className="px-4 py-1.5 rounded-lg text-sm bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-50"
+            className="px-4 py-1.5 rounded-lg text-sm bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-50"
           >
             {addNote.isPending ? "Adding…" : "Add"}
           </button>
@@ -697,7 +697,7 @@ export function NotesView() {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-border-subtle shrink-0 flex-wrap">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
+        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
           Notes
         </h1>
         <input
@@ -705,7 +705,7 @@ export function NotesView() {
           placeholder="Search…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-2 py-1 rounded-lg text-xs bg-surface-raised border border-border text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent w-40"
+          className="px-2 py-1 rounded-lg text-xs bg-surface-raised border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta w-40"
         />
         {tagFilter && (
           <button
@@ -723,7 +723,7 @@ export function NotesView() {
         )}
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="ml-auto px-3 py-1 rounded-lg text-xs bg-accent text-white hover:bg-accent-hover transition-colors"
+          className="ml-auto px-3 py-1 rounded-lg text-xs bg-cta text-white hover:bg-cta-hover transition-colors"
         >
           + Add
         </button>
@@ -736,12 +736,12 @@ export function NotesView() {
 
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
-          <p className="text-sm text-slate-600 text-center py-8">
+          <p className="text-sm text-stone-500 text-center py-8">
             Loading…
           </p>
         )}
         {!isLoading && filtered.length === 0 && (
-          <p className="text-sm text-slate-600 text-center py-8">
+          <p className="text-sm text-stone-500 text-center py-8">
             {notes.length === 0
               ? "No notes yet."
               : "No matching notes."}
@@ -766,7 +766,7 @@ export function NotesView() {
           <div className="border-t border-border-subtle mt-2">
             <button
               onClick={() => setArchiveOpen((v) => !v)}
-              className="flex items-center gap-1 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-600 hover:text-slate-400 transition-colors w-full"
+              className="flex items-center gap-1 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-500 hover:text-stone-700 transition-colors w-full"
             >
               {archiveOpen
                 ? <ChevronDown size={10} />

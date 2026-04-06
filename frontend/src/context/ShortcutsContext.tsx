@@ -29,7 +29,7 @@ export const DEFAULT_SHORTCUTS: ShortcutsConfig = {
   },
 };
 
-const STORAGE_KEY = "omnicontrol_shortcuts";
+const STORAGE_KEY = "kaisho_shortcuts";
 
 function loadConfig(): ShortcutsConfig {
   try {

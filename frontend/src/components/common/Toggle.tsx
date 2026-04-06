@@ -17,10 +17,10 @@ export function Toggle({ checked, onChange, disabled }: ToggleProps) {
         "rounded-full border-2 border-transparent",
         "transition-colors duration-200 ease-in-out",
         "focus-visible:outline-none focus-visible:ring-2",
-        "focus-visible:ring-accent focus-visible:ring-offset-2",
+        "focus-visible:ring-cta focus-visible:ring-offset-2",
         "focus-visible:ring-offset-surface-card",
         "disabled:opacity-40 disabled:cursor-not-allowed",
-        checked ? "bg-accent" : "bg-surface-overlay",
+        checked ? "bg-cta" : "bg-surface-overlay",
       ].join(" ")}
     >
       <span

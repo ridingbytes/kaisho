@@ -37,7 +37,7 @@ const TYPE_STYLES: Record<string, string> = {
   EMAIL: "bg-sky-500/15 text-sky-400",
   LEAD: "bg-emerald-500/15 text-emerald-400",
   IDEE: "bg-violet-500/15 text-violet-400",
-  NOTIZ: "bg-slate-500/15 text-slate-400",
+  NOTIZ: "bg-stone-500/15 text-stone-700",
 };
 
 const TITLE_STRIP_RE = /^(?:EMAIL|LEAD|IDEE|NOTIZ|NOTE|IDEA)\s+/i;
@@ -62,8 +62,8 @@ function slugify(text: string): string {
 const fieldCls = [
   "px-2 py-1 rounded-md text-xs",
   "bg-surface-overlay border border-border",
-  "text-slate-200 placeholder-slate-600",
-  "focus:outline-none focus:border-accent",
+  "text-stone-900 placeholder-stone-500",
+  "focus:outline-none focus:border-cta",
 ].join(" ");
 
 const badgeCls =
@@ -222,12 +222,12 @@ export function InboxItemRow({ item }: Props) {
                   e.stopPropagation();
                   setView("customers");
                 }}
-                className="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-accent-muted text-accent-hover cursor-pointer hover:bg-accent/20"
+                className="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-cta-muted text-cta-hover cursor-pointer hover:bg-cta/20"
               >
                 {item.customer}
               </span>
             )}
-            <span className="text-sm text-slate-300 break-words">
+            <span className="text-sm text-stone-800 break-words">
               {cleanTitle(item.title)}
             </span>
             {item.body && (
@@ -238,7 +238,7 @@ export function InboxItemRow({ item }: Props) {
               />
             )}
           </div>
-          <p className="text-[10px] text-slate-600 mt-0.5">
+          <p className="text-[10px] text-stone-500 mt-0.5">
             {formatDate(item.created)}
           </p>
         </div>
@@ -248,7 +248,7 @@ export function InboxItemRow({ item }: Props) {
           <button
             title="Edit"
             onClick={startEdit}
-            className="p-1.5 rounded-md text-slate-600 hover:text-accent hover:bg-accent-muted transition-colors"
+            className="p-1.5 rounded-md text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
           >
             <Pencil size={13} strokeWidth={2} />
           </button>
@@ -259,8 +259,8 @@ export function InboxItemRow({ item }: Props) {
               className={[
                 "p-1.5 rounded-md transition-colors",
                 moving
-                  ? "text-accent bg-accent-muted"
-                  : "text-slate-600 hover:text-accent hover:bg-accent-muted",
+                  ? "text-cta bg-cta-muted"
+                  : "text-stone-500 hover:text-cta hover:bg-cta-muted",
               ].join(" ")}
             >
               <ArrowRightLeft size={14} strokeWidth={2} />
@@ -277,7 +277,7 @@ export function InboxItemRow({ item }: Props) {
                     key={d}
                     onClick={() => selectDest(d)}
                     disabled={move.isPending}
-                    className="w-full text-left px-2 py-1 rounded text-xs text-slate-300 hover:bg-surface-raised transition-colors capitalize disabled:opacity-40"
+                    className="w-full text-left px-2 py-1 rounded text-xs text-stone-800 hover:bg-surface-raised transition-colors capitalize disabled:opacity-40"
                   >
                     {d === "kb" ? "Knowledge" : d}
                   </button>
@@ -287,7 +287,7 @@ export function InboxItemRow({ item }: Props) {
                     e.stopPropagation();
                     setMoving(false);
                   }}
-                  className="w-full text-left px-2 py-1 rounded text-[10px] text-slate-600 hover:text-slate-300"
+                  className="w-full text-left px-2 py-1 rounded text-[10px] text-stone-500 hover:text-stone-900"
                 >
                   Cancel
                 </button>
@@ -305,7 +305,7 @@ export function InboxItemRow({ item }: Props) {
               }
             }}
             disabled={del.isPending}
-            className="p-1.5 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+            className="p-1.5 rounded-md text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
           >
             <Trash2 size={14} strokeWidth={2} />
           </button>
@@ -380,14 +380,14 @@ export function InboxItemRow({ item }: Props) {
                 <button
                   onClick={handleSave}
                   disabled={update.isPending}
-                  className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
+                  className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-cta text-white disabled:opacity-40"
                 >
                   <Check size={11} />
                   {update.isPending ? "Saving…" : "Save"}
                 </button>
                 <button
                   onClick={cancelEdit}
-                  className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                  className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
                 >
                   <X size={11} />
                   Cancel
@@ -397,7 +397,7 @@ export function InboxItemRow({ item }: Props) {
           ) : (
             <>
               {item.body && (
-                <Markdown className="text-sm text-slate-400">
+                <Markdown className="text-sm text-stone-700">
                   {item.body}
                 </Markdown>
               )}
@@ -426,13 +426,13 @@ export function InboxItemRow({ item }: Props) {
                   disabled={
                     move.isPending || !targetCustomer.trim()
                   }
-                  className="px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
+                  className="px-2 py-1 rounded-md text-xs font-semibold bg-cta text-white disabled:opacity-40"
                 >
                   {move.isPending ? "…" : "Move"}
                 </button>
                 <button
                   onClick={() => { setMoveDest(null); setMoving(false); }}
-                  className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                  className="px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
                 >
                   <X size={11} />
                 </button>
@@ -461,13 +461,13 @@ export function InboxItemRow({ item }: Props) {
                   disabled={
                     move.isPending || !targetFilename.trim()
                   }
-                  className="px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
+                  className="px-2 py-1 rounded-md text-xs font-semibold bg-cta text-white disabled:opacity-40"
                 >
                   {move.isPending ? "…" : "Move"}
                 </button>
                 <button
                   onClick={() => { setMoveDest(null); setMoving(false); }}
-                  className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                  className="px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
                 >
                   <X size={11} />
                 </button>

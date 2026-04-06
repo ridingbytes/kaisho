@@ -68,20 +68,20 @@ export function ActiveTimer({ timer }: Props) {
   if (!timer.active || !timer.start) return null;
 
   return (
-    <div className="rounded-xl border border-accent/30 bg-accent-muted p-4">
+    <div className="rounded-xl border border-cta/30 bg-cta-muted p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-            <span className="text-[10px] font-semibold tracking-widest uppercase text-accent">
+            <span className="w-1.5 h-1.5 rounded-full bg-cta animate-pulse" />
+            <span className="text-[10px] font-semibold tracking-widest uppercase text-cta">
               Running
             </span>
           </div>
-          <p className="text-sm font-semibold text-slate-200 truncate">
+          <p className="text-sm font-semibold text-stone-900 truncate">
             {timer.customer}
           </p>
           {timer.description && (
-            <p className="text-xs text-slate-400 truncate mt-0.5">
+            <p className="text-xs text-stone-700 truncate mt-0.5">
               {timer.description}
             </p>
           )}
@@ -91,7 +91,7 @@ export function ActiveTimer({ timer }: Props) {
           {/* Re-render on tick */}
           <div
             key={tick}
-            className="text-2xl font-mono font-semibold text-slate-200 tabular-nums"
+            className="text-2xl font-mono font-semibold text-stone-900 tabular-nums"
           >
             {elapsed(timer.start)}
           </div>
@@ -102,9 +102,9 @@ export function ActiveTimer({ timer }: Props) {
               className={[
                 "px-2 py-1 rounded-lg text-xs font-semibold transition-colors",
                 notesOpen || notes
-                  ? "bg-accent/20 text-accent border border-accent/30"
-                  : "bg-surface-overlay text-slate-500 border border-border-subtle",
-                "hover:text-accent hover:border-accent/30",
+                  ? "bg-cta/20 text-cta border border-cta/30"
+                  : "bg-surface-overlay text-stone-600 border border-border-subtle",
+                "hover:text-cta hover:border-cta/30",
               ].join(" ")}
             >
               <StickyNote size={12} />
@@ -126,7 +126,7 @@ export function ActiveTimer({ timer }: Props) {
       </div>
 
       {notesOpen && (
-        <div className="mt-3 pt-3 border-t border-accent/20">
+        <div className="mt-3 pt-3 border-t border-cta/20">
           <textarea
             value={notes}
             onChange={(e) => handleNotesChange(e.target.value)}
@@ -136,11 +136,11 @@ export function ActiveTimer({ timer }: Props) {
             className={[
               "w-full px-2 py-1.5 rounded-lg text-xs resize-none",
               "bg-surface-raised border border-border",
-              "text-slate-300 placeholder-slate-600",
-              "focus:outline-none focus:border-accent",
+              "text-stone-800 placeholder-stone-500",
+              "focus:outline-none focus:border-cta",
             ].join(" ")}
           />
-          <p className="text-[9px] text-slate-700 mt-1 text-right">
+          <p className="text-[9px] text-stone-400 mt-1 text-right">
             ⌘↵ save &amp; close
           </p>
         </div>

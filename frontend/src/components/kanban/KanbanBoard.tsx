@@ -60,7 +60,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
   return (
     <div className="border-t border-border-subtle bg-surface shrink-0">
       <button
-        className="flex items-center gap-2 w-full px-6 py-2.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+        className="flex items-center gap-2 w-full px-6 py-2.5 text-xs text-stone-600 hover:text-stone-900 transition-colors"
         onClick={() => setOpen((v) => !v)}
       >
         {open ? (
@@ -71,16 +71,16 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
         <span className="font-semibold uppercase tracking-wide">
           Archive
         </span>
-        <span className="ml-1 text-slate-600">({archived.length})</span>
+        <span className="ml-1 text-stone-500">({archived.length})</span>
       </button>
       {open && (
         <div className="px-6 pb-4 max-h-64 overflow-y-auto">
           {archived.length === 0 ? (
-            <p className="text-xs text-slate-600 py-2">No archived tasks.</p>
+            <p className="text-xs text-stone-500 py-2">No archived tasks.</p>
           ) : (
-            <table className="w-full text-xs text-slate-400 border-separate border-spacing-y-0.5">
+            <table className="w-full text-xs text-stone-700 border-separate border-spacing-y-0.5">
               <thead>
-                <tr className="text-[10px] uppercase tracking-wider text-slate-600">
+                <tr className="text-[10px] uppercase tracking-wider text-stone-500">
                   <th className="text-left pb-1 pr-3 font-medium w-20">
                     Archived
                   </th>
@@ -102,17 +102,17 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                       key={task.id}
                       className="group/row hover:bg-surface-overlay rounded"
                     >
-                      <td className="pr-3 py-1 font-mono text-slate-600 whitespace-nowrap">
+                      <td className="pr-3 py-1 font-mono text-stone-500 whitespace-nowrap">
                         {fmtArchiveDate(task.archived_at)}
                       </td>
                       <td className="pr-3 py-1 whitespace-nowrap">
                         {task.customer && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-accent-muted text-accent-hover">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-cta-muted text-cta-hover">
                             {task.customer}
                           </span>
                         )}
                       </td>
-                      <td className="pr-3 py-1 text-slate-300 truncate max-w-xs">
+                      <td className="pr-3 py-1 text-stone-800 truncate max-w-xs">
                         {stripCustomerPrefix(task.title)}
                       </td>
                       <td className="pr-3 py-1 whitespace-nowrap">
@@ -124,7 +124,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                             {task.archive_status}
                           </span>
                         ) : (
-                          <span className="text-slate-600">
+                          <span className="text-stone-500">
                             {task.archive_status}
                           </span>
                         )}
@@ -134,7 +134,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                           onClick={() => unarchive.mutate(task.id)}
                           disabled={unarchive.isPending}
                           title="Unarchive"
-                          className="opacity-0 group-hover/row:opacity-100 p-1 rounded text-slate-600 hover:text-accent hover:bg-accent-muted transition-all disabled:opacity-40"
+                          className="opacity-0 group-hover/row:opacity-100 p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-all disabled:opacity-40"
                         >
                           <ArchiveRestore size={11} />
                         </button>
@@ -286,7 +286,7 @@ export function KanbanBoard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-slate-600 text-sm">Loading tasks…</div>
+        <div className="text-stone-500 text-sm">Loading tasks…</div>
       </div>
     );
   }
@@ -299,12 +299,12 @@ export function KanbanBoard() {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
-        <h1 className="text-sm font-semibold text-slate-300 tracking-wide uppercase">
+        <h1 className="text-sm font-semibold text-stone-800 tracking-wide uppercase">
           Board
         </h1>
         <button
           onClick={() => setOpenAddInFirst(true)}
-          className="flex items-center gap-1 px-2 py-1 rounded text-xs text-slate-500 hover:text-accent hover:bg-accent-muted transition-colors"
+          className="flex items-center gap-1 px-2 py-1 rounded text-xs text-stone-600 hover:text-cta hover:bg-cta-muted transition-colors"
           title="New task (double-tap B)"
         >
           <Plus size={12} />
@@ -313,7 +313,7 @@ export function KanbanBoard() {
         <div className="relative flex items-center ml-2">
           <Search
             size={11}
-            className="absolute left-2 text-slate-600 pointer-events-none"
+            className="absolute left-2 text-stone-500 pointer-events-none"
           />
           <input
             ref={searchRef}
@@ -329,22 +329,22 @@ export function KanbanBoard() {
             className={[
               "pl-6 pr-6 py-1 text-xs rounded",
               "bg-surface-raised border border-border",
-              "text-slate-300 placeholder-slate-600",
-              "focus:outline-none focus:border-accent",
+              "text-stone-800 placeholder-stone-500",
+              "focus:outline-none focus:border-cta",
               "w-44",
             ].join(" ")}
           />
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="absolute right-1.5 text-slate-600 hover:text-slate-400"
+              className="absolute right-1.5 text-stone-500 hover:text-stone-700"
             >
               <X size={10} />
             </button>
           )}
         </div>
         <label className="flex items-center gap-2 ml-auto cursor-pointer">
-          <span className="text-xs text-slate-500">Show done</span>
+          <span className="text-xs text-stone-600">Show done</span>
           <Toggle
             checked={showDone}
             onChange={(v) => {

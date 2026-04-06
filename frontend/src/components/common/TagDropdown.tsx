@@ -71,8 +71,8 @@ export function TagDropdown({ selected, allTags, onChange }: Props) {
         className={[
           "p-1 rounded transition-colors",
           open
-            ? "text-accent bg-accent-muted"
-            : "text-slate-600 hover:text-slate-400",
+            ? "text-cta bg-cta-muted"
+            : "text-stone-500 hover:text-stone-700",
         ].join(" ")}
         title="Tags"
       >
@@ -91,8 +91,8 @@ export function TagDropdown({ selected, allTags, onChange }: Props) {
                   "w-full flex items-center gap-2 px-3 py-1.5 text-left",
                   "text-xs transition-colors",
                   active
-                    ? "text-slate-200 bg-surface-raised"
-                    : "text-slate-500 hover:text-slate-300 hover:bg-surface-raised",
+                    ? "text-stone-900 bg-surface-raised"
+                    : "text-stone-600 hover:text-stone-900 hover:bg-surface-raised",
                 ].join(" ")}
               >
                 <span
@@ -101,7 +101,7 @@ export function TagDropdown({ selected, allTags, onChange }: Props) {
                 />
                 {tag.name}
                 {active && (
-                  <span className="ml-auto text-accent">✓</span>
+                  <span className="ml-auto text-cta">✓</span>
                 )}
               </button>
             );

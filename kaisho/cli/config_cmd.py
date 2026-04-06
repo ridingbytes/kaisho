@@ -6,7 +6,7 @@ from ..services import settings as settings_svc
 
 @click.group("config")
 def config_cmd():
-    """Manage OmniControl configuration (task states, etc.)."""
+    """Manage Kaisho configuration (task states, etc.)."""
 
 
 @config_cmd.command("states")

@@ -71,7 +71,7 @@ export function Sidebar({
         title={open ? "Collapse" : "Expand"}
         className={[
           "flex items-center rounded-lg transition-colors",
-          "text-slate-600 hover:text-slate-300 hover:bg-surface-raised",
+          "text-stone-500 hover:text-stone-900 hover:bg-surface-raised",
           open ? "px-3 h-7 justify-end" : "mx-2 h-7 justify-center",
         ].join(" ")}
       >
@@ -100,8 +100,8 @@ export function Sidebar({
               "rounded-lg transition-colors",
               "text-[9px] font-semibold tracking-wider uppercase",
               isActive
-                ? "bg-accent-muted text-accent"
-                : "text-slate-400 hover:text-slate-200 hover:bg-surface-raised",
+                ? "bg-cta-muted text-cta"
+                : "text-stone-700 hover:text-stone-900 hover:bg-surface-raised",
             ].join(" ")}
           >
             <span className="relative shrink-0">
@@ -115,7 +115,7 @@ export function Sidebar({
                   className={[
                     "absolute -top-1.5 -right-2 min-w-[14px] h-3.5 px-0.5",
                     "flex items-center justify-center rounded-full",
-                    "text-[9px] font-bold bg-accent text-white",
+                    "text-[9px] font-bold bg-cta text-white",
                   ].join(" ")}
                 >
                   {inboxCount > 99 ? "99+" : inboxCount}
@@ -123,7 +123,7 @@ export function Sidebar({
               )}
               {/* Advisor unread dot */}
               {id === "advisor" && advisorUnread && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-cta" />
               )}
             </span>
             <span className="leading-none truncate">

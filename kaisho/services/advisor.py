@@ -1,6 +1,6 @@
 """AI Advisor service.
 
-Gathers context from all OmniControl data sources and assembles a
+Gathers context from all Kaisho data sources and assembles a
 prompt for a language model. Dispatches to Ollama or the Claude API.
 All logic lives here; the CLI is a thin caller.
 
@@ -163,7 +163,7 @@ def build_context_prompt(
 ) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     sections = [
-        f"# OmniControl Context  ({now})\n",
+        f"# Kaisho Context  ({now})\n",
         "## Open Tasks\n" + _format_tasks(tasks),
         "## Recent Clock Entries\n" + _format_clocks(clock_entries),
         "## Inbox\n" + _format_inbox(inbox_items),
@@ -187,7 +187,7 @@ def build_context_prompt(
 # ---------------------------------------------------------------------------
 
 _BASE_SYSTEM_PROMPT = (
-    "You are OmniControl Advisor, a personal assistant with direct "
+    "You are Kaisho Advisor, a personal assistant with direct "
     "access to the user's tasks, clock entries, inbox, customers, "
     "knowledge base, and other data through the provided tools.\n\n"
     "CRITICAL RULES:\n"

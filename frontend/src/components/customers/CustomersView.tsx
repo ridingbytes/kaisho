@@ -10,7 +10,7 @@ import type { Customer } from "../../types";
 
 const inputCls =
   "bg-surface-raised border border-border rounded px-2 py-1 text-sm " +
-  "text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent";
+  "text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta";
 
 function AddCustomerForm({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
@@ -41,7 +41,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
       className="flex flex-wrap items-end gap-3 px-6 py-3 border-b border-border-subtle bg-surface-card/60"
     >
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+        <label className="text-[10px] text-stone-600 uppercase tracking-wider">
           Name *
         </label>
         <input
@@ -54,7 +54,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
       </div>
       {customerTypes.length > 0 && (
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+          <label className="text-[10px] text-stone-600 uppercase tracking-wider">
             Type
           </label>
           <select
@@ -72,7 +72,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
         </div>
       )}
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+        <label className="text-[10px] text-stone-600 uppercase tracking-wider">
           Budget (h)
         </label>
         <input
@@ -86,7 +86,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-slate-500 uppercase tracking-wider">
+        <label className="text-[10px] text-stone-600 uppercase tracking-wider">
           GitHub repo
         </label>
         <input
@@ -100,14 +100,14 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
         <button
           type="submit"
           disabled={create.isPending || !name.trim()}
-          className="px-3 py-1.5 rounded bg-accent text-white text-xs font-semibold disabled:opacity-40"
+          className="px-3 py-1.5 rounded bg-cta text-white text-xs font-semibold disabled:opacity-40"
         >
           {create.isPending ? "Adding…" : "Add"}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="px-3 py-1.5 rounded bg-surface-raised text-slate-400 text-xs"
+          className="px-3 py-1.5 rounded bg-surface-raised text-stone-700 text-xs"
         >
           Cancel
         </button>
@@ -156,7 +156,7 @@ export function CustomersView() {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-border-subtle shrink-0 flex-wrap">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
+        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
           Customers
         </h1>
         <input
@@ -174,12 +174,12 @@ export function CustomersView() {
           <option value="name">Sort: Name</option>
         </select>
         <label className="flex items-center gap-2 ml-auto cursor-pointer">
-          <span className="text-xs text-slate-500">Show inactive</span>
+          <span className="text-xs text-stone-600">Show inactive</span>
           <Toggle checked={showInactive} onChange={setShowInactive} />
         </label>
         <button
           onClick={() => setAdding((v) => !v)}
-          className="px-2.5 py-1 rounded bg-accent-muted text-accent text-xs font-semibold hover:bg-accent hover:text-white transition-colors"
+          className="px-2.5 py-1 rounded bg-cta-muted text-cta text-xs font-semibold hover:bg-cta hover:text-white transition-colors"
         >
           + New
         </button>
@@ -192,12 +192,12 @@ export function CustomersView() {
       {/* Grid */}
       <div className="flex-1 overflow-y-auto p-6">
         {isLoading && (
-          <p className="text-sm text-slate-600 text-center py-8">
+          <p className="text-sm text-stone-500 text-center py-8">
             Loading…
           </p>
         )}
         {!isLoading && visible.length === 0 && (
-          <p className="text-sm text-slate-600 text-center py-8">
+          <p className="text-sm text-stone-500 text-center py-8">
             No customers found.
           </p>
         )}

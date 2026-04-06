@@ -81,7 +81,7 @@ def briefing():
     day = day_names[now.weekday()]
     date_str = now.strftime("%Y-%m-%d")
 
-    click.echo(f"=== OmniControl Briefing ({date_str}, {day}) ===")
+    click.echo(f"=== Kaisho Briefing ({date_str}, {day}) ===")
 
     _print_active_timer(backend)
     _print_open_tasks(backend)

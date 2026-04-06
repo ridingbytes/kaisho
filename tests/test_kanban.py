@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from omnicontrol.services import kanban as kanban_svc
+from kaisho.services import kanban as kanban_svc
 
 KEYWORDS = {"TODO", "NEXT", "IN-PROGRESS", "WAIT", "DONE", "CANCELLED"}
 DONE_STATES = {"DONE", "CANCELLED"}

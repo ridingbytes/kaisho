@@ -16,7 +16,7 @@ expand recent time entries.
 ## CLI equivalent
 
 \`\`\`bash
-oc briefing
+kai briefing
 \`\`\`
 
 Morning summary: active timer, up to 10 open tasks, inbox items, and
@@ -54,21 +54,21 @@ unarchive.
 ## CLI
 
 \`\`\`bash
-oc task list
-oc task list --customer ACME --tag urgent
-oc task add ACME Implement login --status NEXT
-oc task move 3 IN-PROGRESS
-oc task done 3
-oc task cancel 3
-oc task archive 3
+kai task list
+kai task list --customer ACME --tag urgent
+kai task add ACME Implement login --status NEXT
+kai task move 3 IN-PROGRESS
+kai task done 3
+kai task cancel 3
+kai task archive 3
 \`\`\`
 
 ### Tag a task
 
 \`\`\`bash
-oc task tag 3 bug urgent          # replace tags
-oc task tag 3 +review             # add one tag
-oc task tag 3 -urgent +shipped    # remove and add
+kai task tag 3 bug urgent          # replace tags
+kai task tag 3 +review             # add one tag
+kai task tag 3 -urgent +shipped    # remove and add
 \`\`\`
 `,
 
@@ -92,14 +92,14 @@ carried over to the new task.
 ## CLI
 
 \`\`\`bash
-oc inbox add Customer asked about pricing --customer ACME
-oc inbox add LEAD New contact from trade show
-echo "Idea: add dark mode" | oc inbox add -
+kai inbox add Customer asked about pricing --customer ACME
+kai inbox add LEAD New contact from trade show
+echo "Idea: add dark mode" | kai inbox add -
 
-oc inbox list
-oc inbox list --type LEAD
+kai inbox list
+kai inbox list --type LEAD
 
-oc inbox promote 2 --customer ACME
+kai inbox promote 2 --customer ACME
 \`\`\`
 
 Types: \`EMAIL\`, \`LEAD\`, \`IDEE\`, \`NOTIZ\`. Pass \`-\` as text to read
@@ -127,16 +127,16 @@ defined in Settings.
 ## CLI
 
 \`\`\`bash
-oc customer list
-oc customer list --all              # include inactive
-oc customer show ACME
-oc customer summary                 # budget overview
+kai customer list
+kai customer list --all              # include inactive
+kai customer show ACME
+kai customer summary                 # budget overview
 
-oc customer entries ACME
-oc customer entry-add ACME -d "Code review" -h 2.5
-oc customer entry-add CERMEL -d "Planning call" -h 1 --date 2026-04-01
-oc customer entry-edit ACME 3 -h 3.0
-oc customer entry-delete ACME 3
+kai customer entries ACME
+kai customer entry-add ACME -d "Code review" -h 2.5
+kai customer entry-add CERMEL -d "Planning call" -h 1 --date 2026-04-01
+kai customer entry-edit ACME 3 -h 3.0
+kai customer entry-delete ACME 3
 \`\`\`
 `,
 
@@ -157,9 +157,9 @@ with file path and snippet.
 ## CLI
 
 \`\`\`bash
-oc kb list
-oc kb show wissen/project-notes.md
-oc kb search API authentication --limit 10
+kai kb list
+kai kb show wissen/project-notes.md
+kai kb search API authentication --limit 10
 \`\`\`
 
 Environment variables:
@@ -188,14 +188,14 @@ Click an issue title to open it directly on GitHub.
 ## CLI
 
 \`\`\`bash
-oc gh issues ACME
-oc gh issues CERMEL --state closed --limit 10
-oc gh all-issues                    # all customers
+kai gh issues ACME
+kai gh issues CERMEL --state closed --limit 10
+kai gh all-issues                    # all customers
 
-oc gh show ACME 42                  # single issue details
-oc gh prs ACME                      # pull requests
-oc gh open ACME                     # open repo in browser
-oc gh open ACME 42                  # open issue in browser
+kai gh show ACME 42                  # single issue details
+kai gh prs ACME                      # pull requests
+kai gh open ACME                     # open repo in browser
+kai gh open ACME 42                  # open issue in browser
 \`\`\`
 
 Requires \`GITHUB_TOKEN\` (or gh CLI auth) to be configured. Set the
@@ -221,13 +221,13 @@ body text is carried over to the new task.
 ## CLI
 
 \`\`\`bash
-oc note list
-oc note add "Follow up on proposal" --customer ACME
-oc note add "Ideas for refactor" --body "Split into modules"
+kai note list
+kai note add "Follow up on proposal" --customer ACME
+kai note add "Ideas for refactor" --body "Split into modules"
 
-oc note show 3
-oc note delete 3
-oc note promote 3 --customer ACME
+kai note show 3
+kai note delete 3
+kai note promote 3 --customer ACME
 \`\`\`
 
 Notes are stored in \`notes.org\` in \`ORG_DIR\`.
@@ -263,14 +263,14 @@ dropdowns in the toolbar.
 ## CLI
 
 \`\`\`bash
-oc comm add "Pricing inquiry" --direction in --customer ACME
-oc comm add "Sent proposal" -d out -c email -k CERMEL
+kai comm add "Pricing inquiry" --direction in --customer ACME
+kai comm add "Sent proposal" -d out -c email -k CERMEL
 
-oc comm list
-oc comm list --customer ACME --channel email
-oc comm search "budget"
-oc comm show 12
-oc comm delete 12
+kai comm list
+kai comm list --customer ACME --channel email
+kai comm search "budget"
+kai comm show 12
+kai comm delete 12
 \`\`\`
 
 Data is stored in SQLite (\`DATA_DIR/omnicontrol.db\`).
@@ -313,19 +313,19 @@ values into the Add Job form. Example prompt:
 ## CLI
 
 \`\`\`bash
-oc cron list
-oc cron show daily-briefing
-oc cron enable daily-briefing
-oc cron disable daily-briefing
-oc cron trigger daily-briefing
-oc cron history                     # all jobs
-oc cron history daily-briefing      # single job
+kai cron list
+kai cron show daily-briefing
+kai cron enable daily-briefing
+kai cron disable daily-briefing
+kai cron trigger daily-briefing
+kai cron history                     # all jobs
+kai cron history daily-briefing      # single job
 \`\`\`
 
 ### Add a job
 
 \`\`\`bash
-oc cron add daily-briefing "Morning Brief" \\
+kai cron add daily-briefing "Morning Brief" \\
     --schedule "30 9 * * 1-5" \\
     --prompt-file prompts/briefing.md \\
     --output ~/reports/brief-{date}.md \\
@@ -344,7 +344,7 @@ cron syntax. \`{date}\` in output path is substituted with
 default models for the Advisor and Cron jobs.
 
 **Task States** — ordered list of kanban columns. Configured via CLI
-(\`oc config\`). States marked "done" are hidden from the board by
+(\`kai config\`). States marked "done" are hidden from the board by
 default.
 
 **Tags** — colored labels that can be attached to tasks and customers.
@@ -358,19 +358,19 @@ customers. Add or remove types here.
 ### Tags
 
 \`\`\`bash
-oc tag list
-oc tag add urgent --color "#ef4444" --description "Urgent items"
-oc tag update urgent --color "#f59e0b"
-oc tag remove urgent
+kai tag list
+kai tag add urgent --color "#ef4444" --description "Urgent items"
+kai tag update urgent --color "#f59e0b"
+kai tag remove urgent
 \`\`\`
 
 ### Task states
 
 \`\`\`bash
-oc config states
-oc config add-state REVIEW --label "In Review" --color "#8b5cf6"
-oc config remove-state REVIEW
-oc config move-state REVIEW --after IN-PROGRESS
+kai config states
+kai config add-state REVIEW --label "In Review" --color "#8b5cf6"
+kai config remove-state REVIEW
+kai config move-state REVIEW --after IN-PROGRESS
 \`\`\`
 
 Settings are stored in \`settings.yaml\` (path: \`SETTINGS_FILE\` env
@@ -380,7 +380,7 @@ var, default \`./settings.yaml\`).
   advisor: `
 # Advisor
 
-Ask the AI a question. Context from all OmniControl data sources
+Ask the AI a question. Context from all Kaisho data sources
 (tasks, clock entries, inbox, customer budgets, GitHub issues) is
 injected into the prompt automatically.
 
@@ -414,10 +414,10 @@ Models are auto-detected when the provider is reachable.
 ## CLI
 
 \`\`\`bash
-oc ask What should I focus on today?
-oc ask Which customer is closest to budget limit?
-oc ask Summarize open ACME issues --model claude:claude-opus-4-6
-oc ask What is 2+2? --no-context
+kai ask What should I focus on today?
+kai ask Which customer is closest to budget limit?
+kai ask Summarize open ACME issues --model claude:claude-opus-4-6
+kai ask What is 2+2? --no-context
 \`\`\`
 `,
 
@@ -465,15 +465,15 @@ click.
 ## CLI
 
 \`\`\`bash
-oc clock list
-oc clock list --week
-oc clock list --month --customer ACME
+kai clock list
+kai clock list --week
+kai clock list --month --customer ACME
 
-oc clock book 2h ACME "Code review"
-oc clock book 30min CERMEL "Planning call"
+kai clock book 2h ACME "Code review"
+kai clock book 30min CERMEL "Planning call"
 
-oc clock summary
-oc clock summary --week
+kai clock summary
+kai clock summary --week
 \`\`\`
 
 Clock data is stored in \`clocks.org\` in \`ORG_DIR\`.
@@ -503,17 +503,17 @@ Edit or delete individual slots with the icons that appear on hover.
 ## CLI
 
 \`\`\`bash
-oc clock start ACME "Implement search feature"
-oc clock stop
-oc clock status
+kai clock start ACME "Implement search feature"
+kai clock stop
+kai clock status
 
-oc clock book 2h ACME "Code review"
-oc clock book 30min CERMEL "Planning call"
+kai clock book 2h ACME "Code review"
+kai clock book 30min CERMEL "Planning call"
 
-oc clock list
-oc clock list --week --customer ACME
-oc clock summary                    # monthly total per customer
-oc clock summary --week
+kai clock list
+kai clock list --week --customer ACME
+kai clock summary                    # monthly total per customer
+kai clock summary --week
 \`\`\`
 
 Clock data is stored in \`clocks.org\` in \`ORG_DIR\`.

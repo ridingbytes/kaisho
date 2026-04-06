@@ -30,13 +30,13 @@ export function HelpButton({ title, doc, view }: Props) {
   return (
     <>
       {shortcut && (
-        <kbd className="text-[9px] font-mono text-slate-600 border border-border rounded px-1 py-0.5 leading-none">
+        <kbd className="text-[9px] font-mono text-stone-500 border border-border rounded px-1 py-0.5 leading-none">
           {displayShortcut(shortcut)}
         </kbd>
       )}
       <button
         onClick={() => setOpen(true)}
-        className="p-1 rounded text-slate-600 hover:text-slate-400 transition-colors"
+        className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
         title={shortcut ? `Help (${displayShortcut(shortcut)})` : "Help"}
         aria-label="Help"
       >
@@ -54,12 +54,12 @@ export function HelpButton({ title, doc, view }: Props) {
           {/* Panel */}
           <div className="fixed top-0 right-0 h-full w-[440px] max-w-full z-50 flex flex-col bg-surface-card border-l border-border shadow-[var(--shadow-card-drag)]">
             <div className="flex items-center justify-between px-5 py-3 border-b border-border-subtle shrink-0">
-              <h2 className="text-sm font-semibold text-slate-200">
+              <h2 className="text-sm font-semibold text-stone-900">
                 {title}
               </h2>
               <button
                 onClick={() => setOpen(false)}
-                className="p-1 rounded text-slate-600 hover:text-slate-300 transition-colors"
+                className="p-1 rounded text-stone-500 hover:text-stone-900 transition-colors"
                 aria-label="Close"
               >
                 <X size={15} />

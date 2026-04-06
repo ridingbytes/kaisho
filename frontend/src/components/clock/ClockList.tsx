@@ -250,19 +250,19 @@ function SlotRow({ entry, tasks }: SlotRowProps) {
           className={[inputCls, "resize-none"].join(" ")}
         />
         <div className="flex gap-1 justify-end items-center">
-          <span className="text-[9px] text-slate-700 mr-auto">
+          <span className="text-[9px] text-stone-400 mr-auto">
             ⌘↵ save
           </span>
           <button
             onClick={() => setMode("view")}
-            className="p-1 rounded text-slate-600 hover:text-slate-300"
+            className="p-1 rounded text-stone-500 hover:text-stone-900"
           >
             <X size={11} />
           </button>
           <button
             onClick={handleSave}
             disabled={updateEntry.isPending}
-            className="p-1 rounded text-accent hover:bg-accent-muted disabled:opacity-40"
+            className="p-1 rounded text-cta hover:bg-cta-muted disabled:opacity-40"
           >
             <Check size={11} />
           </button>
@@ -273,23 +273,23 @@ function SlotRow({ entry, tasks }: SlotRowProps) {
 
   return (
     <div className="group/slot flex items-center gap-2 pl-3 py-0.5">
-      <span className="text-[10px] font-mono text-slate-600 tabular-nums">
+      <span className="text-[10px] font-mono text-stone-500 tabular-nums">
         {timeLabel(entry.start)}–{timeLabel(entry.end)}
       </span>
       {entry.contract && (
-        <span className="text-[9px] px-1 py-0.5 rounded bg-surface-overlay text-slate-600 truncate max-w-[60px]">
+        <span className="text-[9px] px-1 py-0.5 rounded bg-surface-overlay text-stone-500 truncate max-w-[60px]">
           {entry.contract}
         </span>
       )}
       {entry.task_id && (
         <span
-          className="text-[9px] px-1 py-0.5 rounded bg-accent-muted text-accent/70 truncate max-w-[80px]"
+          className="text-[9px] px-1 py-0.5 rounded bg-cta-muted text-cta/70 truncate max-w-[80px]"
           title={taskTitleById(tasks, entry.task_id) || entry.task_id}
         >
           {taskTitleById(tasks, entry.task_id) || entry.task_id}
         </span>
       )}
-      <span className="text-[10px] text-slate-600 tabular-nums ml-auto">
+      <span className="text-[10px] text-stone-500 tabular-nums ml-auto">
         {entry.duration_minutes !== null
           ? formatDuration(entry.duration_minutes)
           : "…"}
@@ -336,10 +336,10 @@ function TaskGroupRow({
       {/* Header */}
       <div className="group flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-slate-300 truncate">
+          <p className="text-xs font-medium text-stone-800 truncate">
             {group.customer}
           </p>
-          <p className="text-[11px] text-slate-600 truncate mt-0.5">
+          <p className="text-[11px] text-stone-500 truncate mt-0.5">
             {group.description}
           </p>
         </div>
@@ -365,7 +365,7 @@ function TaskGroupRow({
               <RotateCw size={10} />
             </button>
           )}
-          <span className="text-[11px] font-semibold text-slate-500 tabular-nums ml-1">
+          <span className="text-[11px] font-semibold text-stone-600 tabular-nums ml-1">
             {formatDuration(group.totalMinutes)}
           </span>
         </div>
@@ -411,13 +411,13 @@ export function ClockList({
 
   if (isLoading) {
     return (
-      <p className="text-xs text-slate-700 text-center py-4">Loading…</p>
+      <p className="text-xs text-stone-400 text-center py-4">Loading…</p>
     );
   }
 
   if (groups.length === 0) {
     return (
-      <p className="text-xs text-slate-700 text-center py-4">
+      <p className="text-xs text-stone-400 text-center py-4">
         No entries
       </p>
     );
@@ -435,10 +435,10 @@ export function ClockList({
         />
       ))}
       <div className="flex justify-between pt-2 mt-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
           Total today
         </span>
-        <span className="text-[11px] font-semibold text-slate-400 tabular-nums">
+        <span className="text-[11px] font-semibold text-stone-700 tabular-nums">
           {totalH}h {totalM}m
         </span>
       </div>
@@ -449,12 +449,12 @@ export function ClockList({
 const inputCls = [
   "w-full px-2 py-1 rounded text-xs",
   "bg-surface-raised border border-border",
-  "text-slate-200 placeholder-slate-600",
-  "focus:outline-none focus:border-accent",
+  "text-stone-900 placeholder-stone-500",
+  "focus:outline-none focus:border-cta",
 ].join(" ");
 
 const actionBtn = [
-  "p-0.5 rounded text-slate-700",
-  "hover:text-accent hover:bg-accent-muted",
+  "p-0.5 rounded text-stone-400",
+  "hover:text-cta hover:bg-cta-muted",
   "transition-colors",
 ].join(" ");

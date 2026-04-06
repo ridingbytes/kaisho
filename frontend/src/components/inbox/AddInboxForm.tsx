@@ -71,7 +71,7 @@ export function AddInboxForm() {
           disabled={capture.isPending || !text.trim()}
           className={[
             "px-4 py-2 rounded-lg text-xs font-semibold shrink-0",
-            "bg-accent text-white hover:bg-accent-hover",
+            "bg-cta text-white hover:bg-cta-hover",
             "transition-colors disabled:opacity-40",
             "disabled:cursor-not-allowed",
           ].join(" ")}
@@ -138,7 +138,7 @@ export function AddInboxForm() {
 const inputCls = [
   "px-3 py-2 rounded-lg text-sm",
   "bg-surface-raised border border-border",
-  "text-slate-200 placeholder-slate-600",
-  "focus:outline-none focus:border-accent",
+  "text-stone-900 placeholder-stone-500",
+  "focus:outline-none focus:border-cta",
   "transition-colors",
 ].join(" ");

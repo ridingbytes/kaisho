@@ -1,7 +1,7 @@
 """Tests for the knowledge service."""
 from pathlib import Path
 
-from omnicontrol.services.knowledge import (
+from kaisho.services.knowledge import (
     file_tree, read_file, search,
 )
 

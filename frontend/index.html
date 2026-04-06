@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OmniControl</title>
+    <title>Kaisho</title>
+    <link rel="icon" type="image/svg+xml" href="/kaisho-logo.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,7 +14,7 @@
   </head>
   <body>
     <!-- Apply persisted theme before React mounts to prevent flash -->
-    <script>(function(){var t=localStorage.getItem("theme");if(t==="light")document.documentElement.dataset.theme="light";})()</script>
+    <script>(function(){var t=localStorage.getItem("theme");if(t==="dark")document.documentElement.dataset.theme="dark";})()</script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

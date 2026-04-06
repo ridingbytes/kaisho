@@ -27,17 +27,17 @@ class Settings(BaseSettings):
     BACKEND: str = "org"  # "org", "markdown", or "json"
 
     # User/profile selection
-    OMNICONTROL_HOME: Path | None = None
-    OC_USER: str = "default"
+    KAISHO_HOME: Path | None = None
+    KAISHO_USER: str = "default"
     PROFILE: str = "default"
 
     @computed_field
     @property
     def DATA_DIR(self) -> Path:
-        """Root data dir: OMNICONTROL_HOME > ~/.omnicontrol > ./data."""
-        if self.OMNICONTROL_HOME:
-            return self.OMNICONTROL_HOME.expanduser()
-        home_dir = Path.home() / ".omnicontrol"
+        """Root data dir: KAISHO_HOME > ~/.kaisho > ./data."""
+        if self.KAISHO_HOME:
+            return self.KAISHO_HOME.expanduser()
+        home_dir = Path.home() / ".kaisho"
         if home_dir.is_dir():
             return home_dir
         return _PROJECT_ROOT / "data"
@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def USER_DIR(self) -> Path:
-        return self.DATA_DIR / "users" / self.OC_USER
+        return self.DATA_DIR / "users" / self.KAISHO_USER
 
     @computed_field
     @property
@@ -210,7 +210,7 @@ def init_data_dir(cfg: Settings | None = None) -> None:
     if not cfg.USER_FILE.exists():
         save_user_yaml(cfg, {
             **_user_template(),
-            "name": cfg.OC_USER,
+            "name": cfg.KAISHO_USER,
             "created": datetime.now(timezone.utc).isoformat(),
         })
 

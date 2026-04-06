@@ -1,27 +1,27 @@
 task_states:
 - name: TODO
   label: To Do
-  color: '#8c8c8a'
+  color: '#64748b'
   done: false
 - name: NEXT
   label: Next
-  color: '#D97757'
+  color: '#2563eb'
   done: false
 - name: IN-PROGRESS
   label: In Progress
-  color: '#3b82f6'
+  color: '#d97706'
   done: false
 - name: WAIT
   label: Wait
-  color: '#f59e0b'
+  color: '#7c3aed'
   done: false
 - name: DONE
   label: Done
-  color: '#22c55e'
+  color: '#16a34a'
   done: true
 - name: CANCELLED
   label: Cancelled
-  color: '#9ca3af'
+  color: '#dc2626'
   done: true
 
 tags:
