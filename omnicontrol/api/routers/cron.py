@@ -28,8 +28,8 @@ def _jobs_file() -> Path:
     return get_config().JOBS_FILE
 
 
-def _db() -> Path:
-    return get_config().DB_FILE
+def _profile() -> Path:
+    return get_config().PROFILE_DIR
 
 
 def _project_root() -> Path:
@@ -187,11 +187,11 @@ def _run_job_bg(job: dict, run_id: int) -> None:
             openai_base_url=ai.get("openai_url", ""),
             openai_api_key=ai.get("openai_api_key", ""),
         )
-        finish_run(_db(), run_id, "ok", output=output[:4000])
+        finish_run(_profile(), run_id, "ok", output=output[:4000])
     except ExecutorError as exc:
-        finish_run(_db(), run_id, "error", error=str(exc))
+        finish_run(_profile(), run_id, "error", error=str(exc))
     except Exception as exc:
-        finish_run(_db(), run_id, "error", error=str(exc))
+        finish_run(_profile(), run_id, "error", error=str(exc))
         raise
 
 
@@ -200,7 +200,7 @@ def api_trigger_job(job_id: str, background_tasks: BackgroundTasks):
     job = get_job(_jobs_file(), job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
-    run_id = start_run(_db(), job_id)
+    run_id = start_run(_profile(), job_id)
     background_tasks.add_task(_run_job_bg, job, run_id)
     return {"run_id": run_id, "status": "running"}
 
@@ -211,12 +211,12 @@ def api_trigger_job(job_id: str, background_tasks: BackgroundTasks):
 
 @router.get("/history")
 def api_list_history(job_id: str | None = None, limit: int = 50):
-    return list_history(_db(), job_id=job_id, limit=limit)
+    return list_history(_profile(), job_id=job_id, limit=limit)
 
 
 @router.get("/history/{entry_id}")
 def api_get_history(entry_id: int):
-    record = get_history_entry(_db(), entry_id)
+    record = get_history_entry(_profile(), entry_id)
     if record is None:
         raise HTTPException(
             status_code=404, detail="History entry not found"
@@ -226,7 +226,7 @@ def api_get_history(entry_id: int):
 
 @router.delete("/history/{entry_id}", status_code=204)
 def api_delete_history(entry_id: int):
-    ok = delete_history_entry(_db(), entry_id)
+    ok = delete_history_entry(_profile(), entry_id)
     if not ok:
         raise HTTPException(
             status_code=404, detail="History entry not found"
@@ -252,7 +252,7 @@ def _build_title(run: dict) -> str:
 
 @router.post("/history/{entry_id}/move", status_code=201)
 def api_move_run_output(entry_id: int, body: MoveRunRequest):
-    run = get_history_entry(_db(), entry_id)
+    run = get_history_entry(_profile(), entry_id)
     if run is None:
         raise HTTPException(
             status_code=404, detail="History entry not found"

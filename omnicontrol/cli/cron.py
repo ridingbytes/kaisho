@@ -28,8 +28,8 @@ def _jobs_file():
     return _cfg().JOBS_FILE
 
 
-def _db():
-    return _cfg().DB_FILE
+def _profile():
+    return _cfg().PROFILE_DIR
 
 
 def _project_root():
@@ -111,7 +111,7 @@ def cron_trigger(job_id, as_json):
         click.echo(f"Job not found: {job_id}", err=True)
         sys.exit(1)
     cfg = _cfg()
-    run_id = start_run(_db(), job_id)
+    run_id = start_run(_profile(), job_id)
     click.echo(f"Running {job_id}...", err=True)
     try:
         output = execute_job(
@@ -120,9 +120,9 @@ def cron_trigger(job_id, as_json):
             ollama_base_url=cfg.OLLAMA_BASE_URL,
             inbox_file=cfg.INBOX_FILE,
         )
-        finish_run(_db(), run_id, "ok", output=output[:4000])
+        finish_run(_profile(), run_id, "ok", output=output[:4000])
     except ExecutorError as exc:
-        finish_run(_db(), run_id, "error", error=str(exc))
+        finish_run(_profile(), run_id, "error", error=str(exc))
         click.echo(f"Error: {exc}", err=True)
         sys.exit(1)
     if as_json:
@@ -137,7 +137,7 @@ def cron_trigger(job_id, as_json):
 @click.option("--json", "as_json", is_flag=True)
 def cron_history(job_id, limit, as_json):
     """Show execution history (optionally filtered by job id)."""
-    records = list_history(_db(), job_id=job_id, limit=limit)
+    records = list_history(_profile(), job_id=job_id, limit=limit)
     if as_json:
         click.echo(json.dumps(records, default=str))
         return

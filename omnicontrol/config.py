@@ -73,10 +73,6 @@ class Settings(BaseSettings):
     def NOTES_FILE(self) -> Path:
         return self.ORG_DIR.expanduser() / "notes.org"
 
-    @computed_field
-    @property
-    def DB_FILE(self) -> Path:
-        return self.DATA_DIR.expanduser() / "omnicontrol.db"
 
 
 @lru_cache(maxsize=1)

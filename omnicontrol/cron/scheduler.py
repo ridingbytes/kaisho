@@ -2,7 +2,7 @@
 
 Loads job definitions from jobs.yaml and schedules enabled jobs.
 Each job is executed via cron/executor.py and history is written
-to the SQLite cron_history table.
+to cron_history.json in the profile directory.
 """
 from pathlib import Path
 
@@ -24,18 +24,23 @@ def _project_root() -> Path:
 
 def _run_job(job: dict) -> None:
     cfg = get_config()
-    run_id = start_run(cfg.DB_FILE, job["id"])
+    profile = cfg.PROFILE_DIR
+    run_id = start_run(profile, job["id"])
     try:
         from ..services.settings import (
             get_ai_settings, load_settings,
         )
-        ai = get_ai_settings(load_settings(cfg.SETTINGS_FILE))
+        ai = get_ai_settings(
+            load_settings(cfg.SETTINGS_FILE)
+        )
         output = execute_job(
             job,
             project_root=_project_root(),
             ollama_base_url=ai["ollama_url"],
             inbox_file=cfg.INBOX_FILE,
-            lm_studio_base_url=ai.get("lm_studio_url", ""),
+            lm_studio_base_url=ai.get(
+                "lm_studio_url", ""
+            ),
             claude_api_key=ai.get("claude_api_key", ""),
             openrouter_base_url=ai.get(
                 "openrouter_url", ""
@@ -46,11 +51,17 @@ def _run_job(job: dict) -> None:
             openai_base_url=ai.get("openai_url", ""),
             openai_api_key=ai.get("openai_api_key", ""),
         )
-        finish_run(cfg.DB_FILE, run_id, "ok", output=output[:4000])
+        finish_run(
+            profile, run_id, "ok", output=output[:4000]
+        )
     except ExecutorError as exc:
-        finish_run(cfg.DB_FILE, run_id, "error", error=str(exc))
+        finish_run(
+            profile, run_id, "error", error=str(exc)
+        )
     except Exception as exc:
-        finish_run(cfg.DB_FILE, run_id, "error", error=str(exc))
+        finish_run(
+            profile, run_id, "error", error=str(exc)
+        )
         raise
 
 
@@ -58,7 +69,9 @@ def _cron_kwargs(schedule: str) -> dict:
     """Parse a 5-field cron string into APScheduler kwargs."""
     fields = schedule.strip().split()
     if len(fields) != 5:
-        raise ValueError(f"invalid cron schedule: {schedule!r}")
+        raise ValueError(
+            f"invalid cron schedule: {schedule!r}"
+        )
     minute, hour, day, month, day_of_week = fields
     return {
         "minute": minute,
@@ -70,7 +83,7 @@ def _cron_kwargs(schedule: str) -> dict:
 
 
 def build_scheduler(jobs_file: Path) -> BackgroundScheduler:
-    """Create and return a configured (not yet started) scheduler."""
+    """Create and return a configured scheduler."""
     scheduler = BackgroundScheduler()
     jobs = list_jobs(jobs_file)
     for job in jobs:
