@@ -152,18 +152,23 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             <option key={m} value={m} />
           ))}
         </datalist>
-        <input
-          type="text"
-          list="advisor-model-list"
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
-          placeholder="model string…"
-          className={[
-            "ml-auto w-64 px-2 py-1 rounded-lg text-xs font-mono",
-            "bg-surface-raised border border-border text-slate-300",
-            "placeholder-slate-600 focus:outline-none",
-          ].join(" ")}
-        />
+        <div className="ml-auto flex flex-col items-end gap-0.5">
+          <input
+            type="text"
+            list="advisor-model-list"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            placeholder="provider:model"
+            className={[
+              "w-64 px-2 py-1 rounded-lg text-xs font-mono",
+              "bg-surface-raised border border-border text-slate-300",
+              "placeholder-slate-600 focus:outline-none",
+            ].join(" ")}
+          />
+          <span className="text-[9px] text-slate-700 font-mono">
+            ollama: | claude: | openrouter: | openai: | lm_studio:
+          </span>
+        </div>
         <HelpButton title="Advisor" doc={DOCS.advisor} view="advisor" />
       </div>
 

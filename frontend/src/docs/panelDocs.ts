@@ -384,24 +384,31 @@ Ask the AI a question. Context from all OmniControl data sources
 (tasks, clock entries, inbox, customer budgets, GitHub issues) is
 injected into the prompt automatically.
 
-**Model** — select any configured model from the dropdown. Models are
-pulled from Ollama, LM Studio, and the Claude API.
+**Model** — type or select a model string. The dropdown lists all
+models detected from your configured providers. You can also type
+any valid model string directly.
 
-**No context** — disable automatic context injection for general
-questions.
+## Model prefixes
+
+| Prefix | Provider | Example |
+|--------|----------|---------|
+| \`ollama:\` | Local Ollama | \`ollama:qwen3:14b\` |
+| \`lm_studio:\` | Local LM Studio | \`lm_studio:qwen2.5-7b\` |
+| \`claude:\` | Anthropic API | \`claude:claude-sonnet-4-6\` |
+| \`openrouter:\` | OpenRouter | \`openrouter:anthropic/claude-3.5-sonnet\` |
+| \`openai:\` | OpenAI | \`openai:gpt-4o\` |
+
+Models are auto-detected when the provider is reachable (local
+server running, or API key configured in Settings > AI).
 
 ## CLI
 
 \`\`\`bash
 oc ask What should I focus on today?
-oc ask Which customer is closest to exceeding their budget?
+oc ask Which customer is closest to budget limit?
 oc ask Summarize open ACME issues --model claude:claude-opus-4-6
 oc ask What is 2+2? --no-context
-oc ask What is my status? --no-github
 \`\`\`
-
-Model format: \`ollama:<model>\`, \`lm_studio:<model>\`,
-\`claude:<model-id>\`.
 `,
 
   clocks: `
