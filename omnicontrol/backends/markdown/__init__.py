@@ -1053,6 +1053,7 @@ def _section_to_note(sec: dict) -> dict:
         "title": sec["heading"],
         "body": sec.get("body", ""),
         "customer": meta.get("customer", ""),
+        "task_id": meta.get("task_id") or None,
         "tags": meta.get("tags", []),
         "created": meta.get("created", ""),
     }
@@ -1066,6 +1067,8 @@ def _note_to_section(note: dict) -> dict:
         "created": note.get("created", ""),
         "tags": note.get("tags", []),
     }
+    if note.get("task_id"):
+        meta["task_id"] = note["task_id"]
     return {
         "heading": _note_heading(note),
         "meta": meta,
