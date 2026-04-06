@@ -211,7 +211,7 @@ function TaskClockSection({ task }: TaskClockSectionProps) {
         </button>
       </div>
       {open && (
-        <ul className="mt-1 space-y-0.5">
+        <ul className="mt-1 ml-5 space-y-0.5">
           {entries.map((e) => (
             <ClockEntryRow
               key={e.start}
