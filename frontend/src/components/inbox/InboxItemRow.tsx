@@ -298,7 +298,11 @@ export function InboxItemRow({ item }: Props) {
             title="Delete"
             onClick={(e) => {
               e.stopPropagation();
-              del.mutate(item.id);
+              const title = cleanTitle(item.title);
+              const msg = `Delete "${title}"?`;
+              if (window.confirm(msg)) {
+                del.mutate(item.id);
+              }
             }}
             disabled={del.isPending}
             className="p-1.5 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"

@@ -15,16 +15,47 @@ router = APIRouter(prefix="/api/settings", tags=["settings"])
 # In-memory session store (cleared on restart)
 # ------------------------------------------------------------------
 
-_sessions: dict[str, str] = {}  # token -> username
+_SESSION_TTL = 86400  # 24 hours
+_sessions: dict[str, dict] = {}  # token -> {username, created}
+
+# ------------------------------------------------------------------
+# Rate limiting for auth endpoints
+# ------------------------------------------------------------------
+
+_RATE_WINDOW = 300  # 5 minutes
+_RATE_MAX_ATTEMPTS = 10  # max attempts per window
+_rate_buckets: dict[str, list[float]] = {}  # key -> [timestamps]
+
+
+def _rate_limit_check(key: str) -> None:
+    """Raise 429 if key exceeded rate limit."""
+    now = time()
+    bucket = _rate_buckets.get(key, [])
+    bucket = [t for t in bucket if now - t < _RATE_WINDOW]
+    if len(bucket) >= _RATE_MAX_ATTEMPTS:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts. Try again later.",
+        )
+    bucket.append(now)
+    _rate_buckets[key] = bucket
 
 
 def _make_token(username: str) -> str:
+    """Create a session token and store it."""
     raw = f"{username}:{time()}"
     return b64encode(raw.encode()).decode()
 
 
 def _token_username(token: str) -> str | None:
-    return _sessions.get(token)
+    """Return the username for a valid, non-expired token."""
+    session = _sessions.get(token)
+    if not session:
+        return None
+    if time() - session["created"] > _SESSION_TTL:
+        _sessions.pop(token, None)
+        return None
+    return session["username"]
 
 
 # ------------------------------------------------------------------
@@ -101,13 +132,15 @@ class SetPasswordBody(BaseModel):
 
 
 @auth_router.post("/login")
-def auth_login(body: LoginBody):
+def auth_login(body: LoginBody, request: Request):
     """Log in. Checks .htpasswd if it exists."""
     import os
     from ...backends import reset_backend
     from ...config import (
         init_data_dir, list_users, reset_config,
     )
+    client = request.client.host if request.client else "unknown"
+    _rate_limit_check(f"login:{client}")
     users = list_users()
     if not any(u["username"] == body.username for u in users):
         raise HTTPException(
@@ -134,7 +167,7 @@ def auth_login(body: LoginBody):
     init_data_dir(cfg)
     reset_backend()
     token = _make_token(body.username)
-    _sessions[token] = body.username
+    _sessions[token] = {"username": body.username, "created": time()}
     from ...config import load_user_yaml
     meta = load_user_yaml(cfg)
     return {
@@ -150,7 +183,7 @@ def auth_login(body: LoginBody):
 
 
 @auth_router.post("/register")
-def auth_register(body: RegisterBody):
+def auth_register(body: RegisterBody, request: Request):
     """Register a new user and log in."""
     import os
     import re
@@ -159,6 +192,8 @@ def auth_register(body: RegisterBody):
     from ...config import (
         init_data_dir, reset_config, save_user_yaml,
     )
+    client = request.client.host if request.client else "unknown"
+    _rate_limit_check(f"register:{client}")
     username = re.sub(
         r"[^a-zA-Z0-9_-]", "", body.username.strip(),
     )
@@ -190,7 +225,7 @@ def auth_register(body: RegisterBody):
             _htpasswd_path(username), body.password,
         )
     token = _make_token(username)
-    _sessions[token] = username
+    _sessions[token] = {"username": username, "created": time()}
     return {
         "token": token,
         "password_set": bool(body.password),
@@ -206,6 +241,8 @@ def auth_register(body: RegisterBody):
 @auth_router.post("/set-password")
 def auth_set_password(request: Request, body: SetPasswordBody):
     """Set or update the password for the logged-in user."""
+    client = request.client.host if request.client else "unknown"
+    _rate_limit_check(f"set-password:{client}")
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not logged in")
@@ -547,93 +584,62 @@ def update_ai(body: AiSettingsUpdate):
     return settings_svc.set_ai_settings(cfg.SETTINGS_FILE, updates)
 
 
-_EDITABLE_PATH_KEYS = {"ORG_DIR", "DATA_DIR", "WISSEN_DIR", "RESEARCH_DIR"}
-
-
-def _env_file_path() -> "Path":
-    from pathlib import Path as _P
-    return _P(__file__).parent.parent.parent.parent / ".env"
-
-
-def _read_env_file(path: "Path") -> dict[str, str]:
-    if not path.exists():
-        return {}
-    result: dict[str, str] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, val = line.partition("=")
-        result[key.strip()] = val.strip()
-    return result
-
-
-def _write_env_file(path: "Path", data: dict[str, str]) -> None:
-    path.write_text(
-        "\n".join(f"{k}={v}" for k, v in data.items()) + "\n",
-        encoding="utf-8",
-    )
-
-
 @router.get("/paths")
 def get_paths():
-    """Return current file path configuration."""
+    """Return path and backend config for the active profile.
+
+    All values come from the profile's settings.yaml, falling
+    back to global config (.env) when not set.
+    """
     cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    paths = settings_svc.get_path_settings(data, cfg)
     return {
-        "org_dir": str(cfg.ORG_DIR.expanduser()),
-        "markdown_dir": str(cfg.MARKDOWN_DIR.expanduser()),
+        "org_dir": paths["org_dir"],
+        "markdown_dir": paths["markdown_dir"],
         "data_dir": str(cfg.DATA_DIR.expanduser()),
         "profile": cfg.PROFILE,
         "profile_dir": str(cfg.PROFILE_DIR),
         "settings_file": str(cfg.SETTINGS_FILE),
-        "backend": cfg.BACKEND,
+        "backend": paths["backend"],
     }
 
 
 class PathsUpdate(BaseModel):
     org_dir: str | None = None
     markdown_dir: str | None = None
-    data_dir: str | None = None
+    backend: str | None = None
 
 
 @router.patch("/paths")
 def update_paths(body: PathsUpdate):
-    """Write editable paths to .env and reload config."""
-    env_path = _env_file_path()
-    current = _read_env_file(env_path)
-    mapping = {
-        "org_dir": "ORG_DIR",
-        "markdown_dir": "MARKDOWN_DIR",
-        "data_dir": "DATA_DIR",
-    }
-    for field, env_key in mapping.items():
-        value = getattr(body, field)
-        if value is not None:
-            current[env_key] = value
-    _write_env_file(env_path, current)
-    from ...config import reset_config
-    reset_config()
-    from ...config import reset_config
-    reset_config()
+    """Save path/backend settings to the profile's settings.yaml."""
+    cfg = get_config()
+    updates = body.model_dump(exclude_none=True)
+    if not updates:
+        return {"message": "Nothing to update."}
+    settings_svc.set_path_settings(cfg.SETTINGS_FILE, updates)
+    from ...backends import reset_backend
+    reset_backend()
     return {"message": "Paths saved."}
 
 
 class BackendSwitch(BaseModel):
-    backend: str   # "org" or "markdown"
+    backend: str   # "org", "markdown", or "json"
 
 
 @router.put("/backend")
 def switch_backend(body: BackendSwitch):
-    """Switch the storage backend and reload immediately."""
-    if body.backend not in ("org", "markdown"):
+    """Switch the storage backend for this profile."""
+    if body.backend not in ("org", "markdown", "json"):
         raise HTTPException(
             status_code=400,
-            detail="backend must be 'org' or 'markdown'",
+            detail="backend must be 'org', 'markdown', or 'json'",
         )
-    env_path = _env_file_path()
-    current = _read_env_file(env_path)
-    current["BACKEND"] = body.backend
-    _write_env_file(env_path, current)
+    cfg = get_config()
+    settings_svc.set_path_settings(
+        cfg.SETTINGS_FILE, {"backend": body.backend},
+    )
     from ...backends import reset_backend
     reset_backend()
     return {

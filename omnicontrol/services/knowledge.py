@@ -10,6 +10,21 @@ from pathlib import Path
 KB_EXTENSIONS = {"*.md", "*.org", "*.rst", "*.txt"}
 
 
+def _safe_path(base: Path, rel_path: str) -> Path:
+    """Resolve rel_path under base and verify it stays inside.
+
+    Raises ValueError if the resolved path escapes the base
+    directory (path traversal attack).
+    """
+    candidate = (base / rel_path).resolve()
+    base_resolved = base.resolve()
+    if not str(candidate).startswith(str(base_resolved)):
+        raise ValueError(
+            f"Path traversal blocked: {rel_path!r}"
+        )
+    return candidate
+
+
 def _expand_sources(
     sources: list[dict],
 ) -> list[tuple[str, Path]]:
@@ -51,7 +66,10 @@ def read_file(
 ) -> str | None:
     """Return content of a KB file by relative path."""
     for _label, base in _expand_sources(sources):
-        candidate = base / rel_path
+        try:
+            candidate = _safe_path(base, rel_path)
+        except ValueError:
+            continue
         if candidate.exists() and candidate.is_file():
             return candidate.read_text(encoding="utf-8")
     return None
@@ -66,7 +84,7 @@ def write_file(
     """Write content to a KB file, creating it if needed."""
     for src_label, base in _expand_sources(sources):
         if src_label == label:
-            path = base / rel_path
+            path = _safe_path(base, rel_path)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content, encoding="utf-8")
             return {
@@ -83,7 +101,10 @@ def delete_file(
 ) -> bool:
     """Delete a KB file. Returns False if not found."""
     for _label, base in _expand_sources(sources):
-        candidate = base / rel_path
+        try:
+            candidate = _safe_path(base, rel_path)
+        except ValueError:
+            continue
         if candidate.exists() and candidate.is_file():
             candidate.unlink()
             return True
@@ -102,10 +123,13 @@ def rename_file(
     Returns the updated file dict.
     """
     for label, base in _expand_sources(sources):
-        src = base / old_path
+        try:
+            src = _safe_path(base, old_path)
+            dst = _safe_path(base, new_path)
+        except ValueError:
+            continue
         if not src.exists() or not src.is_file():
             continue
-        dst = base / new_path
         dst.parent.mkdir(parents=True, exist_ok=True)
         src.rename(dst)
         # Clean up empty parent dirs
@@ -145,10 +169,10 @@ def move_file(
         raise ValueError(f"Source not found: {old_label!r}")
     if dst_base is None:
         raise ValueError(f"Destination not found: {new_label!r}")
-    src = src_base / old_path
+    src = _safe_path(src_base, old_path)
     if not src.exists():
         raise ValueError(f"File not found: {old_path!r}")
-    dst = dst_base / dest_path
+    dst = _safe_path(dst_base, dest_path)
     dst.parent.mkdir(parents=True, exist_ok=True)
     content = src.read_text(encoding="utf-8")
     dst.write_text(content, encoding="utf-8")
