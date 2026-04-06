@@ -79,7 +79,7 @@ const saveBtnCls = [
 
 type TabId =
   | "general"
-  | "profiles"
+  | "tags"
   | "ai"
   | "github"
   | "shortcuts"
@@ -87,7 +87,7 @@ type TabId =
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "general", label: "General" },
-  { id: "profiles", label: "Profiles" },
+  { id: "tags", label: "Tags & Types" },
   { id: "ai", label: "AI" },
   { id: "github", label: "GitHub" },
   { id: "shortcuts", label: "Shortcuts" },
@@ -1528,26 +1528,30 @@ function ProfilesTab() {
 }
 
 function GeneralTab() {
+  return (
+    <div className="flex flex-col gap-8">
+      <UserProfileSection />
+      <ProfilesTab />
+    </div>
+  );
+}
+
+function TagsAndTypesTab() {
   const { data: settings, isLoading } = useSettings();
 
   if (isLoading) {
     return <p className="text-sm text-slate-600">Loading…</p>;
   }
-
   if (!settings) return null;
 
   return (
     <div className="flex flex-col gap-8">
-      <UserProfileSection />
-
       <CustomerTypesSection
         types={settings.customer_types ?? []}
       />
-
       <TaskStatesSection
         states={settings.task_states}
       />
-
       <TagsSection tags={settings.tags} />
     </div>
   );
@@ -2026,7 +2030,7 @@ export function SettingsView() {
           <TabBar active={activeTab} onChange={changeTab} />
 
           {activeTab === "general" && <GeneralTab />}
-          {activeTab === "profiles" && <ProfilesTab />}
+          {activeTab === "tags" && <TagsAndTypesTab />}
           {activeTab === "ai" && <AiSection />}
           {activeTab === "github" && <GithubSection />}
           {activeTab === "shortcuts" && <ShortcutsSection />}
