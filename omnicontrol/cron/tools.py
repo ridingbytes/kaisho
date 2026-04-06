@@ -289,7 +289,9 @@ TOOL_DEFS: list[dict] = [
         "description": (
             "Fetch the content of an HTTP/HTTPS URL and return it as text. "
             "Useful for reading web pages, JSON APIs, RSS feeds, etc. "
-            "Response is truncated to 50 000 characters."
+            "Response is truncated to 50 000 characters. "
+            "The domain must be in the URL allowlist; if not, a "
+            "pending_approval response is returned instead."
         ),
         "input_schema": {
             "type": "object",
@@ -304,6 +306,20 @@ TOOL_DEFS: list[dict] = [
                 },
             },
             "required": ["url"],
+        },
+    },
+    {
+        "name": "approve_url_domain",
+        "description": (
+            "Add a domain to the URL allowlist so fetch_url can "
+            "access it. Call this when the user approves a domain."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "domain": {"type": "string"},
+            },
+            "required": ["domain"],
         },
     },
 ]
@@ -441,6 +457,9 @@ def _dispatch(name: str, args: dict) -> dict:
     if name == "fetch_url":
         return _fetch_url(args["url"], args.get("accept", ""))
 
+    if name == "approve_url_domain":
+        return _approve_url_domain(args["domain"])
+
     return {"error": f"unknown tool: {name!r}"}
 
 
@@ -482,12 +501,40 @@ def _execute_cli(args: list) -> dict:
     }
 
 
+def _extract_domain(url: str) -> str:
+    """Extract the domain from a URL."""
+    from urllib.parse import urlparse
+    return urlparse(url).hostname or ""
+
+
+def _is_domain_allowed(domain: str) -> bool:
+    """Check if domain is in the URL allowlist."""
+    from ..config import get_config
+    from ..services.settings import get_url_allowlist, load_settings
+    cfg = get_config()
+    data = load_settings(cfg.SETTINGS_FILE)
+    allowlist = get_url_allowlist(data)
+    return domain in allowlist
+
+
 def _fetch_url(url: str, accept: str = "") -> dict:
-    """Fetch a URL and return its body text (truncated to 50 000 chars)."""
+    """Fetch a URL and return its body text (truncated to 50k chars).
+
+    The domain must be in the URL allowlist. If not, a
+    pending_approval response is returned instead of fetching.
+    """
     import urllib.request
 
     if not url.startswith(("http://", "https://")):
         return {"error": "only http/https URLs are supported"}
+
+    domain = _extract_domain(url)
+    if not _is_domain_allowed(domain):
+        return {
+            "pending_approval": True,
+            "domain": domain,
+            "url": url,
+        }
 
     headers = {"User-Agent": "occontrol-cron/1.0"}
     if accept:
@@ -505,6 +552,15 @@ def _fetch_url(url: str, accept: str = "") -> dict:
     except Exception as exc:
         return {"error": str(exc)}
     return {"body": body, "truncated": truncated}
+
+
+def _approve_url_domain(domain: str) -> dict:
+    """Add a domain to the URL allowlist."""
+    from ..config import get_config
+    from ..services.settings import add_to_url_allowlist
+    cfg = get_config()
+    result = add_to_url_allowlist(cfg.SETTINGS_FILE, domain)
+    return {"allowlist": result}
 
 
 def _kb_sources() -> list[dict]:

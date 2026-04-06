@@ -8,6 +8,7 @@ import {
   addTag,
   deleteCustomerType,
   deleteTag,
+  fetchAdvisorFiles,
   fetchAiSettings,
   fetchAvailableModels,
   fetchClaudeCliStatus,
@@ -15,13 +16,16 @@ import {
   fetchKbSources,
   fetchPaths,
   fetchSettings,
+  fetchUrlAllowlist,
   reorderStates,
   switchBackend,
+  updateAdvisorFiles,
   updateAiSettings,
   updateGithubSettings,
   updateKbSources,
   updatePaths,
   updateTag,
+  updateUrlAllowlist,
 } from "../api/client";
 import type { AiSettings, TaskState } from "../types";
 
@@ -248,6 +252,53 @@ export function useUpdateGithubSettings() {
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: ["settings", "github"],
+      });
+    },
+  });
+}
+
+export function useAdvisorFiles() {
+  return useQuery({
+    queryKey: ["settings", "advisor_files"],
+    queryFn: fetchAdvisorFiles,
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateAdvisorFiles() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      soul,
+      user,
+    }: {
+      soul: string;
+      user: string;
+    }) => updateAdvisorFiles(soul, user),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings", "advisor_files"],
+      });
+    },
+  });
+}
+
+export function useUrlAllowlist() {
+  return useQuery({
+    queryKey: ["settings", "url_allowlist"],
+    queryFn: fetchUrlAllowlist,
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateUrlAllowlist() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (domains: string[]) =>
+      updateUrlAllowlist(domains),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings", "url_allowlist"],
       });
     },
   });

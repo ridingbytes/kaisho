@@ -9,6 +9,7 @@ import {
   useShortcutsContext,
 } from "../../context/ShortcutsContext";
 import {
+  useAdvisorFiles,
   useAiSettings,
   useAvailableModels,
   useClaudeCliStatus,
@@ -18,9 +19,12 @@ import {
   usePaths,
   useSettings,
   useSwitchBackend,
+  useUpdateAdvisorFiles,
   useUpdateAiSettings,
   useUpdateGithubSettings,
   useUpdatePaths,
+  useUrlAllowlist,
+  useUpdateUrlAllowlist,
   useAddTag,
   useUpdateTag,
   useDeleteTag,
@@ -121,6 +125,184 @@ function ModelInput({
         "focus:border-border-strong",
       ].join(" ")}
     />
+  );
+}
+
+function AdvisorPersonalitySection() {
+  const { data: files } = useAdvisorFiles();
+  const update = useUpdateAdvisorFiles();
+  const [soul, setSoul] = useState("");
+  const [user, setUser] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (files) {
+      setSoul(files.soul);
+      setUser(files.user);
+    }
+  }, [files]);
+
+  function handleSave() {
+    update.mutate(
+      { soul, user },
+      {
+        onSuccess: () => {
+          setSaved(true);
+          setTimeout(() => setSaved(false), 2000);
+        },
+      }
+    );
+  }
+
+  return (
+    <div className="mt-6">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+        Advisor Personality
+      </h2>
+      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border-subtle">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+            SOUL.md
+          </p>
+          <p className="text-[10px] text-slate-700 mb-2">
+            Defines the advisor personality, tone, and
+            behavioral guidelines.
+          </p>
+          <textarea
+            value={soul}
+            onChange={(e) => setSoul(e.target.value)}
+            rows={6}
+            className={[
+              inputCls,
+              "w-full resize-y",
+            ].join(" ")}
+            placeholder="# Advisor Personality&#10;..."
+          />
+        </div>
+        <div className="px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+            USER.md
+          </p>
+          <p className="text-[10px] text-slate-700 mb-2">
+            Personal context about the user (role, preferences,
+            working style) that the advisor uses for tailored
+            responses.
+          </p>
+          <textarea
+            value={user}
+            onChange={(e) => setUser(e.target.value)}
+            rows={6}
+            className={[
+              inputCls,
+              "w-full resize-y",
+            ].join(" ")}
+            placeholder="# About Me&#10;..."
+          />
+        </div>
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={update.isPending}
+          className={saveBtnCls}
+        >
+          {update.isPending ? "Saving…" : "Save"}
+        </button>
+        {saved && (
+          <span className="text-xs text-green-400">
+            Saved.
+          </span>
+        )}
+        {update.isError && (
+          <span className="text-xs text-red-400">
+            Save failed.
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function UrlAllowlistSection() {
+  const { data: allowlist = [] } = useUrlAllowlist();
+  const update = useUpdateUrlAllowlist();
+  const [domains, setDomains] = useState<string[]>([]);
+  const [newDomain, setNewDomain] = useState("");
+
+  useEffect(() => {
+    setDomains(allowlist);
+  }, [allowlist]);
+
+  function handleRemove(domain: string) {
+    const next = domains.filter((d) => d !== domain);
+    setDomains(next);
+    update.mutate(next);
+  }
+
+  function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    const d = newDomain.trim().toLowerCase();
+    if (!d || domains.includes(d)) return;
+    const next = [...domains, d];
+    setDomains(next);
+    setNewDomain("");
+    update.mutate(next);
+  }
+
+  return (
+    <div className="mt-6">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+        URL Allowlist
+      </h2>
+      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        <div className="px-4 py-3">
+          <p className="text-[10px] text-slate-700 mb-3">
+            Domains the advisor and cron jobs may fetch.
+            Requests to unlisted domains require user approval.
+          </p>
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {domains.length === 0 && (
+              <span className="text-xs text-slate-600">
+                No domains allowed yet.
+              </span>
+            )}
+            {domains.map((d) => (
+              <span
+                key={d}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-surface-raised border border-border text-slate-300"
+              >
+                {d}
+                <button
+                  onClick={() => handleRemove(d)}
+                  className="text-slate-600 hover:text-red-400 transition-colors"
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            ))}
+          </div>
+          <form
+            onSubmit={handleAdd}
+            className="flex items-center gap-2"
+          >
+            <input
+              type="text"
+              value={newDomain}
+              onChange={(e) => setNewDomain(e.target.value)}
+              placeholder="example.com"
+              className={[inputCls, "flex-1"].join(" ")}
+            />
+            <button
+              type="submit"
+              disabled={!newDomain.trim()}
+              className={saveBtnCls}
+            >
+              Add
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -377,6 +559,9 @@ function AiSection() {
           <span className="text-xs text-red-400">Save failed.</span>
         )}
       </div>
+
+      <AdvisorPersonalitySection />
+      <UrlAllowlistSection />
     </section>
   );
 }

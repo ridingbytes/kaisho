@@ -129,3 +129,19 @@ def set_kb_sources(path: Path, sources: list[dict]) -> list[dict]:
     data["kb_sources"] = sources
     save_settings(path, data)
     return sources
+
+
+def get_url_allowlist(settings: dict) -> list[str]:
+    """Return the URL allowlist (list of domain strings)."""
+    return settings.get("url_allowlist", [])
+
+
+def add_to_url_allowlist(path: Path, domain: str) -> list[str]:
+    """Add a domain to the URL allowlist and return the list."""
+    data = load_settings(path)
+    allowlist = data.get("url_allowlist", [])
+    if domain not in allowlist:
+        allowlist.append(domain)
+    data["url_allowlist"] = allowlist
+    save_settings(path, data)
+    return allowlist

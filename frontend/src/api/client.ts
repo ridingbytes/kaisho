@@ -700,3 +700,31 @@ export function fetchAdvisorSkills(): Promise<
 > {
   return get("/advisor/skills");
 }
+
+// Advisor personality files
+
+export function fetchAdvisorFiles(): Promise<{
+  soul: string;
+  user: string;
+}> {
+  return get("/settings/advisor_files");
+}
+
+export function updateAdvisorFiles(
+  soul: string,
+  user: string
+): Promise<{ soul: string; user: string }> {
+  return put("/settings/advisor_files", { soul, user });
+}
+
+// URL allowlist
+
+export function fetchUrlAllowlist(): Promise<string[]> {
+  return get<string[]>("/settings/url_allowlist");
+}
+
+export function updateUrlAllowlist(
+  domains: string[]
+): Promise<string[]> {
+  return put<string[]>("/settings/url_allowlist", domains);
+}

@@ -482,3 +482,73 @@ def set_kb_sources(body: list[dict] = Body(...)):
     return settings_svc.set_kb_sources(
         cfg.SETTINGS_FILE, body,
     )
+
+
+# -------------------------------------------------------------------
+# Advisor personality files (SOUL.md / USER.md)
+# -------------------------------------------------------------------
+
+
+class AdvisorFilesUpdate(BaseModel):
+    soul: str | None = None
+    user: str | None = None
+
+
+def _advisor_file_path(filename: str) -> "Path":
+    from pathlib import Path as _P
+    cfg = get_config()
+    return _P(cfg.DATA_DIR.expanduser()) / filename
+
+
+def _read_advisor_file(filename: str) -> str:
+    path = _advisor_file_path(filename)
+    if not path.exists():
+        return ""
+    return path.read_text(encoding="utf-8")
+
+
+def _write_advisor_file(filename: str, content: str) -> None:
+    path = _advisor_file_path(filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+
+
+@router.get("/advisor_files")
+def get_advisor_files():
+    return {
+        "soul": _read_advisor_file("SOUL.md"),
+        "user": _read_advisor_file("USER.md"),
+    }
+
+
+@router.put("/advisor_files")
+def put_advisor_files(body: AdvisorFilesUpdate):
+    if body.soul is not None:
+        _write_advisor_file("SOUL.md", body.soul)
+    if body.user is not None:
+        _write_advisor_file("USER.md", body.user)
+    return {
+        "soul": _read_advisor_file("SOUL.md"),
+        "user": _read_advisor_file("USER.md"),
+    }
+
+
+# -------------------------------------------------------------------
+# URL allowlist
+# -------------------------------------------------------------------
+
+
+@router.get("/url_allowlist")
+def get_url_allowlist():
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    return settings_svc.get_url_allowlist(data)
+
+
+@router.put("/url_allowlist")
+def set_url_allowlist(body: list[str] = Body(...)):
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    data["url_allowlist"] = body
+    settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+    return body
