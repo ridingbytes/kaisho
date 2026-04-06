@@ -289,18 +289,69 @@ def _parse_model(model_str: str) -> tuple[str, str]:
     return "ollama", model_str
 
 
+def _execute_tool_calls(
+    tool_calls: list[dict], include_id: bool = True,
+) -> list[dict]:
+    """Execute tool calls and return tool-result messages."""
+    results = []
+    for call in tool_calls:
+        fn = call.get("function", {})
+        result = execute_tool(
+            fn.get("name", ""),
+            fn.get("arguments", {}),
+        )
+        msg: dict = {
+            "role": "tool",
+            "content": json.dumps(result, default=str),
+        }
+        if include_id:
+            msg["tool_call_id"] = call.get("id", "")
+        results.append(msg)
+    return results
+
+
+def _check_hallucination(
+    content: str,
+    tools_called: bool,
+    messages: list[dict],
+) -> bool:
+    """Return True if the response claims an action without tools.
+
+    Appends a reminder to messages so the model retries.
+    """
+    if not tools_called and _claims_action(content):
+        messages.append(
+            {"role": "assistant", "content": content}
+        )
+        messages.append(
+            {"role": "user", "content": _TOOL_REMINDER}
+        )
+        return True
+    return False
+
+
+def _http_post(url: str, payload: bytes, headers: dict) -> dict:
+    """POST JSON and return parsed response."""
+    import urllib.request
+    req = urllib.request.Request(
+        url, data=payload, headers=headers,
+    )
+    with urllib.request.urlopen(req, timeout=300) as resp:
+        return json.loads(resp.read())
+
+
 def ask_ollama(
     model: str, prompt: str, base_url: str,
     system_prompt: str = "",
 ) -> str:
-    """Run an agentic Ollama session with tools; return final text."""
-    import urllib.request
-
+    """Run an agentic Ollama session with tools."""
     tools = openai_tools()
     messages: list[dict] = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
     ]
+    url = base_url.rstrip("/") + "/api/chat"
+    headers = {"Content-Type": "application/json"}
 
     tools_called = False
     for _ in range(_MAX_TURNS):
@@ -311,173 +362,31 @@ def ask_ollama(
             "think": False,
             "stream": False,
         }).encode()
-        url = base_url.rstrip("/") + "/api/chat"
-        req = urllib.request.Request(
-            url,
-            data=payload,
-            headers={"Content-Type": "application/json"},
-        )
         try:
-            with urllib.request.urlopen(req, timeout=300) as resp:
-                data = json.loads(resp.read())
+            data = _http_post(url, payload, headers)
         except Exception as exc:
-            raise RuntimeError(f"Ollama request failed: {exc}") from exc
+            raise RuntimeError(
+                f"Ollama request failed: {exc}"
+            ) from exc
 
         msg = data.get("message", {})
         tool_calls = msg.get("tool_calls") or []
 
         if not tool_calls:
             content = msg.get("content", "")
-            if not tools_called and _claims_action(content):
-                messages.append({"role": "assistant", "content": content})
-                messages.append({"role": "user", "content": _TOOL_REMINDER})
+            if _check_hallucination(
+                content, tools_called, messages
+            ):
                 continue
             return content
 
         tools_called = True
         messages.append(msg)
-        for call in tool_calls:
-            fn = call.get("function", {})
-            result = execute_tool(
-                fn.get("name", ""), fn.get("arguments", {})
-            )
-            messages.append({
-                "role": "tool",
-                "content": json.dumps(result, default=str),
-            })
-
-    return messages[-1].get("content", "")
-
-
-def ask_lm_studio(
-    model: str, prompt: str, base_url: str,
-    system_prompt: str = "",
-) -> str:
-    """Run an agentic LM Studio session with tools; return final text."""
-    import urllib.request
-
-    tools = openai_tools()
-    messages: list[dict] = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": prompt},
-    ]
-
-    tools_called = False
-    for _ in range(_MAX_TURNS):
-        payload = json.dumps({
-            "model": model,
-            "messages": messages,
-            "tools": tools,
-        }).encode()
-        url = base_url.rstrip("/") + "/v1/chat/completions"
-        req = urllib.request.Request(
-            url,
-            data=payload,
-            headers={"Content-Type": "application/json"},
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=300) as resp:
-                data = json.loads(resp.read())
-        except Exception as exc:
-            raise RuntimeError(
-                f"LM Studio request failed: {exc}"
-            ) from exc
-
-        choice = data["choices"][0]
-        msg = choice["message"]
-        tool_calls = msg.get("tool_calls") or []
-
-        if not tool_calls:
-            content = msg.get("content", "")
-            if not tools_called and _claims_action(content):
-                messages.append({"role": "assistant", "content": content})
-                messages.append({"role": "user", "content": _TOOL_REMINDER})
-                continue
-            return content
-
-        tools_called = True
-        messages.append(msg)
-        for call in tool_calls:
-            fn = call.get("function", {})
-            result = execute_tool(
-                fn.get("name", ""), fn.get("arguments", "{}")
-            )
-            messages.append({
-                "role": "tool",
-                "tool_call_id": call.get("id", ""),
-                "content": json.dumps(result, default=str),
-            })
-
-    return messages[-1].get("content", "")
-
-
-def ask_claude(
-    model: str, prompt: str, api_key: str = "",
-    system_prompt: str = "",
-) -> str:
-    """Run an agentic Claude session with tools; return final text."""
-    try:
-        import anthropic
-    except ImportError as exc:
-        raise RuntimeError(
-            "anthropic package not installed"
-        ) from exc
-
-    client = anthropic.Anthropic(api_key=api_key or None)
-    messages: list[dict] = [{"role": "user", "content": prompt}]
-    tools_called = False
-
-    while True:
-        resp = client.messages.create(
-            model=model,
-            max_tokens=4096,
-            system=system_prompt,
-            tools=TOOL_DEFS,
-            messages=messages,
+        messages.extend(
+            _execute_tool_calls(tool_calls, include_id=False)
         )
 
-        if resp.stop_reason == "end_turn":
-            for block in resp.content:
-                if hasattr(block, "text"):
-                    content = block.text
-                    if not tools_called and _claims_action(content):
-                        messages.append({
-                            "role": "assistant",
-                            "content": resp.content,
-                        })
-                        messages.append({
-                            "role": "user",
-                            "content": _TOOL_REMINDER,
-                        })
-                        break
-                    return content
-            else:
-                return ""
-            continue
-
-        messages.append({
-            "role": "assistant",
-            "content": resp.content,
-        })
-        tools_called = True
-        tool_results = []
-        for block in resp.content:
-            if block.type != "tool_use":
-                continue
-            result = execute_tool(block.name, block.input)
-            tool_results.append({
-                "type": "tool_result",
-                "tool_use_id": block.id,
-                "content": json.dumps(result, default=str),
-            })
-        if not tool_results:
-            for block in resp.content:
-                if hasattr(block, "text"):
-                    return block.text
-            return ""
-        messages.append({"role": "user", "content": tool_results})
-
-    return ""
+    return messages[-1].get("content", "")
 
 
 def ask_openai_compatible(
@@ -489,17 +398,15 @@ def ask_openai_compatible(
 ) -> str:
     """Run an agentic OpenAI-compatible session with tools.
 
-    Works with OpenRouter, OpenAI, and any provider that implements
-    the /v1/chat/completions endpoint.
+    Works with LM Studio, OpenRouter, OpenAI, and any provider
+    that implements the /v1/chat/completions endpoint.
     """
-    import urllib.request
-
     tools = openai_tools()
     messages: list[dict] = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
     ]
-
+    url = base_url.rstrip("/") + "/chat/completions"
     headers: dict[str, str] = {
         "Content-Type": "application/json",
     }
@@ -513,49 +420,111 @@ def ask_openai_compatible(
             "messages": messages,
             "tools": tools,
         }).encode()
-        url = base_url.rstrip("/") + "/chat/completions"
-        req = urllib.request.Request(
-            url, data=payload, headers=headers,
-        )
         try:
-            with urllib.request.urlopen(req, timeout=300) as resp:
-                data = json.loads(resp.read())
+            data = _http_post(url, payload, headers)
         except Exception as exc:
             raise RuntimeError(
-                f"OpenAI-compatible request failed: {exc}"
+                f"Request to {base_url} failed: {exc}"
             ) from exc
 
-        choice = data["choices"][0]
-        msg = choice["message"]
+        msg = data["choices"][0]["message"]
         tool_calls = msg.get("tool_calls") or []
 
         if not tool_calls:
             content = msg.get("content", "")
-            if not tools_called and _claims_action(content):
-                messages.append(
-                    {"role": "assistant", "content": content}
-                )
-                messages.append(
-                    {"role": "user", "content": _TOOL_REMINDER}
-                )
+            if _check_hallucination(
+                content, tools_called, messages
+            ):
                 continue
             return content
 
         tools_called = True
         messages.append(msg)
-        for call in tool_calls:
-            fn = call.get("function", {})
-            result = execute_tool(
-                fn.get("name", ""),
-                fn.get("arguments", "{}"),
-            )
-            messages.append({
-                "role": "tool",
-                "tool_call_id": call.get("id", ""),
-                "content": json.dumps(result, default=str),
-            })
+        messages.extend(
+            _execute_tool_calls(tool_calls, include_id=True)
+        )
 
     return messages[-1].get("content", "")
+
+
+def ask_claude(
+    model: str, prompt: str, api_key: str = "",
+    system_prompt: str = "",
+) -> str:
+    """Run an agentic Claude session with tools."""
+    try:
+        import anthropic
+    except ImportError as exc:
+        raise RuntimeError(
+            "anthropic package not installed"
+        ) from exc
+
+    client = anthropic.Anthropic(api_key=api_key or None)
+    messages: list[dict] = [
+        {"role": "user", "content": prompt},
+    ]
+    tools_called = False
+
+    for _ in range(_MAX_TURNS):
+        resp = client.messages.create(
+            model=model,
+            max_tokens=4096,
+            system=system_prompt,
+            tools=TOOL_DEFS,
+            messages=messages,
+        )
+
+        if resp.stop_reason == "end_turn":
+            text = _extract_claude_text(resp.content)
+            if _check_hallucination(
+                text, tools_called, messages
+            ):
+                # Fix up: replace last assistant msg with
+                # actual response content
+                messages[-2] = {
+                    "role": "assistant",
+                    "content": resp.content,
+                }
+                continue
+            return text
+
+        messages.append({
+            "role": "assistant",
+            "content": resp.content,
+        })
+        tools_called = True
+        tool_results = _execute_claude_tools(resp.content)
+        if not tool_results:
+            return _extract_claude_text(resp.content)
+        messages.append({
+            "role": "user",
+            "content": tool_results,
+        })
+
+    return ""
+
+
+def _extract_claude_text(content) -> str:
+    """Extract text from Claude response content blocks."""
+    for block in content:
+        if hasattr(block, "text"):
+            return block.text
+    return ""
+
+
+def _execute_claude_tools(content) -> list[dict]:
+    """Execute tool_use blocks and return tool_result dicts."""
+    results = []
+    for block in content:
+        if block.type != "tool_use":
+            continue
+        result = execute_tool(block.name, block.input)
+        results.append({
+            "type": "tool_result",
+            "tool_use_id": block.id,
+            "content": json.dumps(result, default=str),
+        })
+    return results
 
 
 def ask_claude_cli(model: str, prompt: str) -> str:
@@ -625,9 +594,10 @@ def ask(
             api_key=claude_api_key, system_prompt=sp,
         )
     if provider == "lm_studio":
-        return ask_lm_studio(
+        url = lm_studio_base_url.rstrip("/") + "/v1"
+        return ask_openai_compatible(
             model_name, prompt,
-            lm_studio_base_url, system_prompt=sp,
+            base_url=url, system_prompt=sp,
         )
     if provider == "openrouter":
         return ask_openai_compatible(

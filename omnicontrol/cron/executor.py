@@ -194,13 +194,56 @@ def _parse_model(model_str: str) -> tuple[str, str]:
 
 
 # ---------------------------------------------------------------------------
+# Agentic loop helpers
+# ---------------------------------------------------------------------------
+
+def _http_post(url: str, payload: bytes, headers: dict) -> dict:
+    """POST JSON and return parsed response."""
+    import urllib.request
+    req = urllib.request.Request(
+        url, data=payload, headers=headers,
+    )
+    with urllib.request.urlopen(req, timeout=600) as resp:
+        return json.loads(resp.read())
+
+
+def _execute_tool_calls(
+    tool_calls: list[dict], include_id: bool = True,
+) -> list[dict]:
+    """Execute tool calls and return tool-result messages."""
+    results = []
+    for call in tool_calls:
+        fn = call.get("function", {})
+        result = execute_tool(
+            fn.get("name", ""),
+            fn.get("arguments", {}),
+        )
+        msg: dict = {
+            "role": "tool",
+            "content": json.dumps(result, default=str),
+        }
+        if include_id:
+            msg["tool_call_id"] = call.get("id", "")
+        results.append(msg)
+    return results
+
+
+def _extract_claude_text(content) -> str:
+    """Extract text from Claude response content blocks."""
+    for block in content:
+        if hasattr(block, "text"):
+            return block.text
+    return ""
+
+
+# ---------------------------------------------------------------------------
 # Claude agentic loop
 # ---------------------------------------------------------------------------
 
 def run_prompt_claude(
     model: str, prompt: str, api_key: str = ""
 ) -> str:
-    """Run an agentic Claude session with tools; return final text."""
+    """Run an agentic Claude session with tools."""
     try:
         import anthropic
     except ImportError as exc:
@@ -209,7 +252,9 @@ def run_prompt_claude(
         ) from exc
 
     client = anthropic.Anthropic(api_key=api_key or None)
-    messages: list[dict] = [{"role": "user", "content": prompt}]
+    messages: list[dict] = [
+        {"role": "user", "content": prompt},
+    ]
 
     while True:
         resp = client.messages.create(
@@ -220,12 +265,8 @@ def run_prompt_claude(
         )
 
         if resp.stop_reason == "end_turn":
-            for block in resp.content:
-                if hasattr(block, "text"):
-                    return block.text
-            return ""
+            return _extract_claude_text(resp.content)
 
-        # Collect tool calls and execute them
         messages.append({
             "role": "assistant",
             "content": resp.content,
@@ -241,28 +282,26 @@ def run_prompt_claude(
                 "content": json.dumps(result, default=str),
             })
         if not tool_results:
-            # No tool calls despite non-end_turn; extract whatever text exists
-            for block in resp.content:
-                if hasattr(block, "text"):
-                    return block.text
-            return ""
-        messages.append({"role": "user", "content": tool_results})
+            return _extract_claude_text(resp.content)
+        messages.append({
+            "role": "user", "content": tool_results,
+        })
 
 
 # ---------------------------------------------------------------------------
 # Ollama agentic loop  (uses /api/chat with tools)
 # ---------------------------------------------------------------------------
 
-def run_prompt_ollama(model: str, prompt: str, base_url: str) -> str:
-    """Run an agentic Ollama session with tools; return final text.
-
-    Uses the /api/chat endpoint so tool calling is supported.
-    Falls back gracefully if the model does not emit tool calls.
-    """
-    import urllib.request
-
+def run_prompt_ollama(
+    model: str, prompt: str, base_url: str,
+) -> str:
+    """Run an agentic Ollama session with tools."""
     tools = openai_tools()
-    messages: list[dict] = [{"role": "user", "content": prompt}]
+    messages: list[dict] = [
+        {"role": "user", "content": prompt},
+    ]
+    url = base_url.rstrip("/") + "/api/chat"
+    headers = {"Content-Type": "application/json"}
 
     while True:
         payload = json.dumps({
@@ -271,46 +310,45 @@ def run_prompt_ollama(model: str, prompt: str, base_url: str) -> str:
             "tools": tools,
             "stream": False,
         }).encode()
-        url = base_url.rstrip("/") + "/api/chat"
-        req = urllib.request.Request(
-            url,
-            data=payload,
-            headers={"Content-Type": "application/json"},
-        )
         try:
-            with urllib.request.urlopen(req, timeout=600) as resp:
-                data = json.loads(resp.read())
+            data = _http_post(url, payload, headers)
         except Exception as exc:
-            raise ExecutorError(f"Ollama request failed: {exc}") from exc
+            raise ExecutorError(
+                f"Ollama request failed: {exc}"
+            ) from exc
 
         msg = data.get("message", {})
         tool_calls = msg.get("tool_calls") or []
-
         if not tool_calls:
             return msg.get("content", "")
 
         messages.append(msg)
-        for call in tool_calls:
-            fn = call.get("function", {})
-            result = execute_tool(fn.get("name", ""), fn.get("arguments", {}))
-            messages.append({
-                "role": "tool",
-                "content": json.dumps(result, default=str),
-            })
+        messages.extend(
+            _execute_tool_calls(tool_calls, include_id=False)
+        )
 
 
 # ---------------------------------------------------------------------------
-# LM Studio agentic loop  (OpenAI-compatible)
+# OpenAI-compatible agentic loop (LM Studio, OpenRouter, OpenAI)
 # ---------------------------------------------------------------------------
 
-def run_prompt_lm_studio(
-    model: str, prompt: str, base_url: str
+def run_prompt_openai_compatible(
+    model: str,
+    prompt: str,
+    base_url: str,
+    api_key: str = "",
 ) -> str:
-    """Run an agentic LM Studio session with tools; return final text."""
-    import urllib.request
-
+    """Run an agentic OpenAI-compatible session with tools."""
     tools = openai_tools()
-    messages: list[dict] = [{"role": "user", "content": prompt}]
+    messages: list[dict] = [
+        {"role": "user", "content": prompt},
+    ]
+    url = base_url.rstrip("/") + "/chat/completions"
+    headers: dict[str, str] = {
+        "Content-Type": "application/json",
+    }
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
 
     while True:
         payload = json.dumps({
@@ -318,36 +356,22 @@ def run_prompt_lm_studio(
             "messages": messages,
             "tools": tools,
         }).encode()
-        url = base_url.rstrip("/") + "/v1/chat/completions"
-        req = urllib.request.Request(
-            url,
-            data=payload,
-            headers={"Content-Type": "application/json"},
-        )
         try:
-            with urllib.request.urlopen(req, timeout=600) as resp:
-                data = json.loads(resp.read())
+            data = _http_post(url, payload, headers)
         except Exception as exc:
             raise ExecutorError(
-                f"LM Studio request failed: {exc}"
+                f"Request to {base_url} failed: {exc}"
             ) from exc
 
-        choice = data["choices"][0]
-        msg = choice["message"]
+        msg = data["choices"][0]["message"]
         tool_calls = msg.get("tool_calls") or []
-
         if not tool_calls:
             return msg.get("content", "")
 
         messages.append(msg)
-        for call in tool_calls:
-            fn = call.get("function", {})
-            result = execute_tool(fn.get("name", ""), fn.get("arguments", "{}"))
-            messages.append({
-                "role": "tool",
-                "tool_call_id": call.get("id", ""),
-                "content": json.dumps(result, default=str),
-            })
+        messages.extend(
+            _execute_tool_calls(tool_calls, include_id=True)
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -373,28 +397,6 @@ def _run_claude_cli(model: str, prompt: str) -> str:
         )
     return result.stdout.strip()
 
-
-def _run_openai_compatible(
-    model: str, prompt: str, base_url: str, api_key: str,
-) -> str:
-    """Call an OpenAI-compatible API (OpenRouter, OpenAI)."""
-    import urllib.request
-    payload = json.dumps({
-        "model": model,
-        "messages": [
-            {"role": "user", "content": prompt},
-        ],
-    }).encode()
-    url = base_url.rstrip("/") + "/chat/completions"
-    headers = {"Content-Type": "application/json"}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-    req = urllib.request.Request(
-        url, data=payload, headers=headers,
-    )
-    with urllib.request.urlopen(req, timeout=300) as resp:
-        data = json.loads(resp.read())
-    return data["choices"][0]["message"]["content"]
 
 
 def verify_model(
@@ -487,25 +489,28 @@ def execute_job(
         output_text = _run_claude_cli(model_name, prompt)
     elif provider == "claude":
         output_text = run_prompt_claude(
-            model_name, prompt, api_key=claude_api_key
+            model_name, prompt, api_key=claude_api_key,
         )
     elif provider == "lm_studio":
-        output_text = run_prompt_lm_studio(
-            model_name, prompt, lm_studio_base_url
+        url = lm_studio_base_url.rstrip("/") + "/v1"
+        output_text = run_prompt_openai_compatible(
+            model_name, prompt, url,
         )
-    elif provider == "openrouter":
-        output_text = _run_openai_compatible(
-            model_name, prompt,
-            openrouter_base_url, openrouter_api_key,
+    elif provider in ("openrouter", "openai"):
+        base = (
+            openrouter_base_url if provider == "openrouter"
+            else openai_base_url
         )
-    elif provider == "openai":
-        output_text = _run_openai_compatible(
-            model_name, prompt,
-            openai_base_url, openai_api_key,
+        key = (
+            openrouter_api_key if provider == "openrouter"
+            else openai_api_key
+        )
+        output_text = run_prompt_openai_compatible(
+            model_name, prompt, base, key,
         )
     else:
         output_text = run_prompt_ollama(
-            model_name, prompt, ollama_base_url
+            model_name, prompt, ollama_base_url,
         )
     write_output(
         job.get("output", "inbox"),
