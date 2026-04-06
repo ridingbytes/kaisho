@@ -340,6 +340,7 @@ def update_clock_entry(
     description: str | None = None,
     hours: float | None = None,
     new_date: date | None = None,
+    start_time: str | None = None,
     task_id: str | None = None,
     booked: bool | None = None,
     notes: str | None = None,
@@ -368,6 +369,19 @@ def update_clock_entry(
         clock.start = clock.start + delta
         if clock.end is not None:
             clock.end = clock.end + delta
+        heading.dirty = True
+    if start_time is not None:
+        h, m = (int(x) for x in start_time.split(":"))
+        duration = (
+            (clock.end - clock.start)
+            if clock.end
+            else timedelta()
+        )
+        clock.start = clock.start.replace(
+            hour=h, minute=m, second=0
+        )
+        if clock.end is not None:
+            clock.end = clock.start + duration
         heading.dirty = True
     if hours is not None:
         minutes = int(hours * 60)

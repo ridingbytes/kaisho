@@ -28,6 +28,7 @@ class EntryUpdate(BaseModel):
     description: str | None = None
     hours: float | None = None
     new_date: date | None = None
+    start_time: str | None = None
     task_id: str | None = None
     booked: bool | None = None
     notes: str | None = None
@@ -107,6 +108,7 @@ def update_entry(start: str, body: EntryUpdate):
         description=body.description,
         hours=body.hours,
         new_date=body.new_date,
+        start_time=body.start_time,
         task_id=body.task_id,
         booked=body.booked,
         notes=body.notes,

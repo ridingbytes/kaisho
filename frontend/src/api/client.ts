@@ -349,6 +349,7 @@ export function updateClockEntry(
     description?: string;
     hours?: number;
     new_date?: string;
+    start_time?: string;
     task_id?: string;
     booked?: boolean;
     notes?: string;

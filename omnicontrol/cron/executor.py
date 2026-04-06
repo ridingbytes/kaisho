@@ -295,6 +295,67 @@ def _run_openai_compatible(
     return data["choices"][0]["message"]["content"]
 
 
+def verify_model(
+    model_str: str,
+    ollama_base_url: str = "",
+    lm_studio_base_url: str = "",
+    claude_api_key: str = "",
+    openrouter_api_key: str = "",
+    openai_api_key: str = "",
+) -> str | None:
+    """Check if the model provider is reachable.
+
+    Returns None if OK, or an error message string.
+    """
+    import shutil
+    import urllib.request
+
+    provider, _name = _parse_model(model_str)
+
+    if provider == "ollama":
+        url = ollama_base_url.rstrip("/") + "/api/tags"
+        try:
+            with urllib.request.urlopen(url, timeout=3):
+                return None
+        except Exception:
+            return f"Ollama not reachable at {ollama_base_url}"
+
+    if provider == "lm_studio":
+        if not lm_studio_base_url:
+            return "LM Studio URL not configured"
+        url = lm_studio_base_url.rstrip("/") + "/v1/models"
+        try:
+            with urllib.request.urlopen(url, timeout=3):
+                return None
+        except Exception:
+            return (
+                f"LM Studio not reachable at "
+                f"{lm_studio_base_url}"
+            )
+
+    if provider == "claude_cli":
+        if not shutil.which("claude"):
+            return "Claude CLI not installed"
+        return None
+
+    if provider == "claude":
+        if not claude_api_key:
+            return "Claude API key not configured"
+        return None
+
+    if provider == "openrouter":
+        if not openrouter_api_key:
+            return "OpenRouter API key not configured"
+        return None
+
+    if provider == "openai":
+        if not openai_api_key:
+            return "OpenAI API key not configured"
+        return None
+
+    return f"Unknown provider: {provider}"
+
+
 def execute_job(
     job: dict,
     project_root: Path,
@@ -308,6 +369,17 @@ def execute_job(
     openai_api_key: str = "",
 ) -> str:
     """Run a job definition end-to-end. Returns the output text."""
+    # Verify model is accessible
+    err = verify_model(
+        job.get("model", ""),
+        ollama_base_url=ollama_base_url,
+        lm_studio_base_url=lm_studio_base_url,
+        claude_api_key=claude_api_key,
+        openrouter_api_key=openrouter_api_key,
+        openai_api_key=openai_api_key,
+    )
+    if err:
+        raise ExecutorError(f"Model not accessible: {err}")
     prompt = load_prompt(job["prompt_file"], project_root)
     provider, model_name = _parse_model(job.get("model", ""))
     if provider == "claude_cli":

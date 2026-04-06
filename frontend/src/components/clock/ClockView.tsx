@@ -245,6 +245,9 @@ interface EditFormProps {
 
 function EditForm({ entry, onClose }: EditFormProps) {
   const [entryDate, setEntryDate] = useState(formatDate(entry.start));
+  const [startTime, setStartTime] = useState(
+    entry.start ? entry.start.slice(11, 16) : ""
+  );
   const [customer, setCustomer] = useState(entry.customer);
   const [contract, setContract] = useState(entry.contract ?? "");
   const [description, setDescription] = useState(entry.description);
@@ -264,10 +267,16 @@ function EditForm({ entry, onClose }: EditFormProps) {
       description?: string;
       hours?: number;
       new_date?: string;
+      start_time?: string;
       task_id?: string;
       contract?: string;
     } = {};
-    if (entryDate !== formatDate(entry.start)) updates.new_date = entryDate;
+    const origDate = formatDate(entry.start);
+    const origTime = entry.start.slice(11, 16);
+    if (entryDate !== origDate || startTime !== origTime) {
+      updates.new_date = entryDate;
+      updates.start_time = startTime;
+    }
     if (customer.trim() !== entry.customer) {
       updates.customer = customer.trim();
     }
@@ -311,6 +320,14 @@ function EditForm({ entry, onClose }: EditFormProps) {
             onChange={(e) => setEntryDate(e.target.value)}
             onKeyDown={handleKeyDown}
             className={`${smallInputCls} w-32`}
+          />
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className={`${smallInputCls} w-24`}
+            title="Start time"
           />
           <CustomerAutocomplete
             value={customer}
@@ -439,27 +456,36 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
         {formatTime(entry.start)}–
         {formatTime(entry.end)}
       </td>
-      <td
-        className={
-          "px-3 py-1.5 text-xs font-medium " +
-          "whitespace-nowrap"
-        }
-      >
+      <td className="px-3 py-1.5 text-xs whitespace-nowrap">
         <button
           onClick={() => setView("customers")}
-          className={
-            "text-slate-300 hover:text-accent " +
-            "transition-colors"
-          }
+          className="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-accent-muted text-accent-hover hover:bg-accent/20 transition-colors"
         >
           {entry.customer}
         </button>
       </td>
-      <td
-        className={
-          "px-3 py-1.5 text-xs text-slate-400 w-full"
-        }
-      >
+      <td className="px-3 py-1.5 text-xs whitespace-nowrap max-w-28 truncate">
+        {entry.contract && (
+          <span
+            className="px-1.5 py-0.5 rounded text-[10px] bg-surface-overlay text-slate-400"
+            title={entry.contract}
+          >
+            {entry.contract}
+          </span>
+        )}
+      </td>
+      <td className="px-3 py-1.5 text-xs whitespace-nowrap max-w-32 truncate">
+        {taskTitle && (
+          <button
+            onClick={() => setView("board")}
+            className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent-muted text-accent hover:bg-accent/20 transition-colors"
+            title={taskTitle}
+          >
+            {taskTitle}
+          </button>
+        )}
+      </td>
+      <td className="px-3 py-1.5 text-xs text-slate-400 w-full">
         <span className="inline-flex items-center gap-1">
           {entry.description}
           {entry.description.length > 40 && (
@@ -468,36 +494,6 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
             />
           )}
         </span>
-      </td>
-      <td
-        className={
-          "px-3 py-1.5 text-xs text-slate-500 " +
-          "whitespace-nowrap max-w-32 truncate"
-        }
-      >
-        {taskTitle && (
-          <button
-            onClick={() => setView("board")}
-            className={
-              "px-1 py-0.5 rounded text-[10px] " +
-              "bg-accent-muted text-accent-hover " +
-              "hover:bg-accent/20 transition-colors"
-            }
-            title={taskTitle}
-          >
-            {taskTitle}
-          </button>
-        )}
-      </td>
-      <td className="px-3 py-1.5 text-xs text-slate-500 whitespace-nowrap max-w-28 truncate">
-        {entry.contract && (
-          <span
-            className="px-1 py-0.5 rounded text-[10px] bg-surface-overlay text-slate-400"
-            title={entry.contract}
-          >
-            {entry.contract}
-          </span>
-        )}
       </td>
       <td className="px-3 py-1.5 text-xs text-slate-400 tabular-nums whitespace-nowrap text-right">
         <span className="mr-2">{formatHours(entry.duration_minutes)}</span>
@@ -669,13 +665,13 @@ export function ClockView() {
                   Customer
                 </th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                  Description
+                  Contract
                 </th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                   Task
                 </th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                  Contract
+                  Description
                 </th>
                 <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500 text-right">
                   Duration

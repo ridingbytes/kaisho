@@ -78,7 +78,7 @@ def profiles_cmd():
     """List profiles for the current user."""
     cfg = get_config()
     active = cfg.PROFILE
-    click.echo(f"User: {cfg.USER}")
+    click.echo(f"User: {cfg.OC_USER}")
     for name in list_profiles(cfg):
         marker = " *" if name == active else ""
         click.echo(f"  {name}{marker}")
