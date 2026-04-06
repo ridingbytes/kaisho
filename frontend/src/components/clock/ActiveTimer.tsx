@@ -131,7 +131,7 @@ export function ActiveTimer({ timer }: Props) {
             value={notes}
             onChange={(e) => handleNotesChange(e.target.value)}
             onKeyDown={handleNotesKeyDown}
-            placeholder="Session notes… (Cmd+Enter to save)"
+            placeholder="Session notes…"
             rows={3}
             className={[
               "w-full px-2 py-1.5 rounded-lg text-xs resize-none",
@@ -140,6 +140,9 @@ export function ActiveTimer({ timer }: Props) {
               "focus:outline-none focus:border-accent",
             ].join(" ")}
           />
+          <p className="text-[9px] text-slate-700 mt-1 text-right">
+            ⌘↵ save &amp; close
+          </p>
         </div>
       )}
     </div>

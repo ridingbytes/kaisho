@@ -245,11 +245,14 @@ function SlotRow({ entry, tasks }: SlotRowProps) {
           value={editNotes}
           onChange={(e) => setEditNotes(e.target.value)}
           onKeyDown={handleTextareaKeyDown}
-          placeholder="Notes (Cmd+Enter to save)"
+          placeholder="Notes"
           rows={2}
           className={[inputCls, "resize-none"].join(" ")}
         />
-        <div className="flex gap-1 justify-end">
+        <div className="flex gap-1 justify-end items-center">
+          <span className="text-[9px] text-slate-700 mr-auto">
+            ⌘↵ save
+          </span>
           <button
             onClick={() => setMode("view")}
             className="p-1 rounded text-slate-600 hover:text-slate-300"
