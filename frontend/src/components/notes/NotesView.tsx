@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import {
   ArrowRightLeft,
   Check,
+  ChevronDown,
+  ChevronRight,
   Pencil,
   Trash2,
   X,
@@ -662,13 +664,21 @@ export function NotesView() {
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState("");
+  const [archiveOpen, setArchiveOpen] = useState(false);
 
   useEffect(
     () => registerPanelAction("notes", () => setShowForm(true)),
     []
   );
 
-  const filtered = notes.filter((n) => {
+  const activeNotes = notes.filter(
+    (n) => !(n as unknown as { archived?: string }).archived
+  );
+  const archivedNotes = notes.filter(
+    (n) => (n as unknown as { archived?: string }).archived === "true"
+  );
+
+  const filtered = activeNotes.filter((n) => {
     if (tagFilter && !(n.tags ?? []).includes(tagFilter)) {
       return false;
     }
@@ -746,6 +756,32 @@ export function NotesView() {
             onTagClick={setTagFilter}
           />
         ))}
+
+        {/* Archive drawer */}
+        {archivedNotes.length > 0 && (
+          <div className="border-t border-border-subtle mt-2">
+            <button
+              onClick={() => setArchiveOpen((v) => !v)}
+              className="flex items-center gap-1 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-600 hover:text-slate-400 transition-colors w-full"
+            >
+              {archiveOpen
+                ? <ChevronDown size={10} />
+                : <ChevronRight size={10} />}
+              Archive ({archivedNotes.length})
+            </button>
+            {archiveOpen &&
+              archivedNotes.map((note) => (
+                <div key={note.id} className="opacity-60">
+                  <NoteRow
+                    note={note}
+                    allTags={allTags}
+                    onDelete={() => deleteNote.mutate(note.id)}
+                    onTagClick={setTagFilter}
+                  />
+                </div>
+              ))}
+          </div>
+        )}
       </div>
     </div>
   );

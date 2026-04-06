@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useInboxItems } from "../../hooks/useInbox";
 import { AddInboxForm } from "./AddInboxForm";
 import { InboxItemRow } from "./InboxItemRow";
@@ -6,6 +8,14 @@ import { DOCS } from "../../docs/panelDocs";
 
 export function InboxView() {
   const { data: items = [], isLoading } = useInboxItems();
+  const [archiveOpen, setArchiveOpen] = useState(false);
+
+  const active = items.filter(
+    (i) => i.properties?.ARCHIVED !== "true"
+  );
+  const archived = items.filter(
+    (i) => i.properties?.ARCHIVED === "true"
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -23,7 +33,7 @@ export function InboxView() {
             Loading…
           </p>
         )}
-        {!isLoading && items.length === 0 && (
+        {!isLoading && active.length === 0 && archived.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <p className="text-slate-600 text-sm">Inbox is empty</p>
             <p className="text-slate-700 text-xs">
@@ -31,9 +41,30 @@ export function InboxView() {
             </p>
           </div>
         )}
-        {items.map((item) => (
+        {active.map((item) => (
           <InboxItemRow key={item.id} item={item} />
         ))}
+
+        {/* Archive drawer */}
+        {archived.length > 0 && (
+          <div className="border-t border-border-subtle mt-2">
+            <button
+              onClick={() => setArchiveOpen((v) => !v)}
+              className="flex items-center gap-1 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-600 hover:text-slate-400 transition-colors w-full"
+            >
+              {archiveOpen
+                ? <ChevronDown size={10} />
+                : <ChevronRight size={10} />}
+              Archive ({archived.length})
+            </button>
+            {archiveOpen &&
+              archived.map((item) => (
+                <div key={item.id} className="opacity-60">
+                  <InboxItemRow item={item} />
+                </div>
+              ))}
+          </div>
+        )}
       </div>
     </div>
   );

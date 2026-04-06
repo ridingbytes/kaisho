@@ -121,12 +121,14 @@ def move_note(note_id: str, body: MoveRequest):
             )
 
     if body.destination == "archive":
-        ok = backend.notes.delete_note(note_id)
-        if not ok:
-            raise HTTPException(
-                status_code=404, detail="Note not found"
+        try:
+            return backend.notes.update_note(
+                note_id, {"archived": "true"}
             )
-        return {"ok": True}
+        except ValueError as e:
+            raise HTTPException(
+                status_code=404, detail=str(e)
+            )
 
     raise HTTPException(
         status_code=400,

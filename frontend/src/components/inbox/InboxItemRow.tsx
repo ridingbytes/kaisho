@@ -14,6 +14,7 @@ import {
   useMoveItem,
   useUpdateItem,
 } from "../../hooks/useInbox";
+import { useSetView } from "../../context/ViewContext";
 import type { InboxItem } from "../../types";
 
 const TYPES = ["NOTIZ", "EMAIL", "LEAD", "IDEE"] as const;
@@ -75,6 +76,7 @@ interface Props {
 }
 
 export function InboxItemRow({ item }: Props) {
+  const setView = useSetView();
   const [expanded, setExpanded] = useState(false);
   const [moving, setMoving] = useState(false);
   const [moveDest, setMoveDest] = useState<MoveDestination | null>(null);
@@ -215,7 +217,13 @@ export function InboxItemRow({ item }: Props) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             {item.customer && (
-              <span className="text-[10px] font-semibold text-accent uppercase tracking-wider">
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setView("customers");
+                }}
+                className="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-accent-muted text-accent-hover cursor-pointer hover:bg-accent/20"
+              >
                 {item.customer}
               </span>
             )}

@@ -127,10 +127,22 @@ def move_item(item_id: str, body: MoveRequest):
                 status_code=400,
                 detail="filename is required for destination=kb",
             )
+        from ...services.settings import (
+            get_kb_sources, load_settings,
+        )
+        data = load_settings(cfg.SETTINGS_FILE)
+        sources = get_kb_sources(data, cfg)
+        if not sources:
+            raise HTTPException(
+                status_code=400,
+                detail="No KB sources configured",
+            )
+        from pathlib import Path
+        kb_dir = Path(sources[0]["path"]).expanduser()
         try:
             return inbox_service.move_to_kb(
                 inbox_file=backend.inbox.data_file,
-                kb_dir=cfg.WISSEN_DIR.expanduser(),
+                kb_dir=kb_dir,
                 item_id=item_id,
                 filename=body.filename,
             )
@@ -138,12 +150,14 @@ def move_item(item_id: str, body: MoveRequest):
             raise HTTPException(status_code=400, detail=str(e))
 
     if body.destination == "archive":
-        ok = backend.inbox.remove_item(item_id)
-        if not ok:
-            raise HTTPException(
-                status_code=404, detail="Item not found"
+        try:
+            return backend.inbox.update_item(
+                item_id, {"archived": "true"}
             )
-        return {"ok": True}
+        except ValueError as e:
+            raise HTTPException(
+                status_code=404, detail=str(e)
+            )
 
     raise HTTPException(
         status_code=400,
