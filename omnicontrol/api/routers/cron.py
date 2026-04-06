@@ -237,7 +237,7 @@ def api_delete_history(entry_id: int):
 # -------------------------------------------------------------------
 
 class MoveRunRequest(BaseModel):
-    destination: str  # "todo" | "note" | "kb"
+    destination: str  # "inbox" | "todo" | "note" | "kb"
     customer: str | None = None
     filename: str | None = None
 
@@ -260,6 +260,16 @@ def api_move_run_output(entry_id: int, body: MoveRunRequest):
     output = run.get("output", "") or ""
     title = _build_title(run)
     cfg = get_config()
+
+    if body.destination == "inbox":
+        item = get_backend().inbox.add_item(
+            text=title,
+            item_type="AI",
+            body=output,
+            channel="cron",
+            direction="in",
+        )
+        return item
 
     if body.destination == "todo":
         if not body.customer:

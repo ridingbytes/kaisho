@@ -726,7 +726,7 @@ export function fetchCronHistory(jobId?: string): Promise<CronRun[]> {
 
 export function moveCronOutput(
   runId: number,
-  destination: "todo" | "note" | "kb",
+  destination: "inbox" | "todo" | "note" | "kb",
   opts: { customer?: string; filename?: string } = {}
 ): Promise<unknown> {
   return post<unknown>(`/cron/history/${runId}/move`, {

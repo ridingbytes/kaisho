@@ -129,12 +129,13 @@ export function useMoveCronOutput() {
       filename,
     }: {
       runId: number;
-      destination: "todo" | "note" | "kb";
+      destination: "inbox" | "todo" | "note" | "kb";
       customer?: string;
       filename?: string;
     }) => moveCronOutput(runId, destination, { customer, filename }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["cron"] });
+      void qc.invalidateQueries({ queryKey: ["inbox"] });
       void qc.invalidateQueries({ queryKey: ["tasks"] });
       void qc.invalidateQueries({ queryKey: ["notes"] });
     },

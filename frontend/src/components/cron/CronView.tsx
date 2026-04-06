@@ -2,6 +2,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Inbox,
   Pencil,
   Play,
   Plus,
@@ -23,6 +24,7 @@ import {
   useDisableCronJob,
   useEnableCronJob,
   useJobPrompt,
+  useMoveCronOutput,
   useSaveJobPrompt,
   useTriggerCronJob,
   useUpdateCronJob,
@@ -37,6 +39,38 @@ const fieldCls =
   "px-2 py-1 rounded text-xs bg-surface-raised border border-border " +
   "text-slate-200 placeholder-slate-600 focus:outline-none " +
   "focus:border-border-strong font-mono";
+
+function CopyToInboxBtn({ runId }: { runId: number }) {
+  const moveOutput = useMoveCronOutput();
+  const [done, setDone] = useState(false);
+
+  return (
+    <button
+      onClick={() => {
+        moveOutput.mutate(
+          { runId, destination: "inbox" },
+          {
+            onSuccess: () => {
+              setDone(true);
+              setTimeout(() => setDone(false), 2000);
+            },
+          }
+        );
+      }}
+      disabled={moveOutput.isPending || done}
+      className={[
+        "p-1 rounded transition-colors",
+        done
+          ? "text-green-400"
+          : "text-slate-600 hover:text-accent hover:bg-accent-muted",
+        "disabled:opacity-60",
+      ].join(" ")}
+      title="Copy to inbox"
+    >
+      {done ? <Check size={12} /> : <Inbox size={12} />}
+    </button>
+  );
+}
 
 function OutputSelect({
   value,
@@ -664,7 +698,8 @@ function HistoryTable({
                     className="border-b border-border-subtle bg-surface-card"
                   >
                     <td colSpan={9} className="px-4 py-4 relative">
-                      <div className="absolute top-2 right-2">
+                      <div className="absolute top-2 right-2 flex items-center gap-1">
+                        <CopyToInboxBtn runId={run.id} />
                         <ContentPopup
                           content={run.output}
                           title="Run Output"
