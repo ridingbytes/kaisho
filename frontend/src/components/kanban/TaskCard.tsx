@@ -12,6 +12,7 @@ import {
   GitBranch,
 } from "lucide-react";
 import { useState } from "react";
+import { navigateToClockDate } from "../../utils/clockNavigation";
 import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { Markdown } from "../common/Markdown";
@@ -135,7 +136,12 @@ function ClockEntryRow({
 
   return (
     <li className="flex items-center gap-1.5 text-[10px] group/entry">
-      <span className="font-mono text-slate-600">
+      <span
+        className="font-mono text-slate-600 cursor-pointer hover:text-accent"
+        onClick={() =>
+          navigateToClockDate(entry.start.slice(0, 10))
+        }
+      >
         {fmtDate(entry.start)}
       </span>
       <span className="flex-1 truncate text-slate-500">

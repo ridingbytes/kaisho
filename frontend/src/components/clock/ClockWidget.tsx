@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useActiveTimer } from "../../hooks/useClocks";
 import { ActiveTimer } from "./ActiveTimer";
@@ -37,6 +37,23 @@ export function ClockWidget({ open }: ClockWidgetProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(
     null
   );
+
+  useEffect(() => {
+    function handler(e: Event) {
+      const date = (e as CustomEvent<string>).detail;
+      setSelectedDate(date);
+      setCalendarOpen(true);
+    }
+    window.addEventListener(
+      "navigate-clock-date",
+      handler
+    );
+    return () =>
+      window.removeEventListener(
+        "navigate-clock-date",
+        handler
+      );
+  }, []);
 
   const isRunning = timer?.active === true;
 

@@ -10,6 +10,7 @@ import {
   Check,
 } from "lucide-react";
 import { useState } from "react";
+import { navigateToClockDate } from "../../utils/clockNavigation";
 import { useUpdateCustomer } from "../../hooks/useCustomers";
 import {
   useContracts,
@@ -577,7 +578,12 @@ function TimeEntryRow({
 
   return (
     <div className="group flex items-center gap-1.5 py-1 border-b border-border-subtle last:border-0">
-      <span className="text-[10px] text-slate-600 tabular-nums shrink-0">
+      <span
+        className="text-[10px] text-slate-600 tabular-nums shrink-0 cursor-pointer hover:text-accent"
+        onClick={() =>
+          navigateToClockDate(entry.start.slice(0, 10))
+        }
+      >
         {formatEntryDate(entry.start)}
       </span>
       <span className="text-xs text-slate-300 truncate min-w-0 flex-1">

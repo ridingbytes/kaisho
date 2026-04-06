@@ -21,6 +21,8 @@ import {
   useUpdateNote,
 } from "../../hooks/useNotes";
 import { useSettings } from "../../hooks/useSettings";
+import { useTasks } from "../../hooks/useTasks";
+import { useSetView } from "../../context/ViewContext";
 import { registerPanelAction } from "../../utils/panelActions";
 import type { NoteItem } from "../../types";
 
@@ -53,6 +55,8 @@ function NoteRow({
   allTags: { name: string; color: string }[];
   onDelete: () => void;
 }) {
+  const setView = useSetView();
+  const { data: tasks = [] } = useTasks();
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [moving, setMoving] = useState(false);
@@ -167,10 +171,52 @@ function NoteRow({
           {note.created.replace(/^\[/, "").slice(0, 10)}
         </span>
         {note.customer && (
-          <span className="text-xs text-slate-400 w-24 shrink-0 truncate">
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              setView("customers");
+            }}
+            className={[
+              "inline-flex items-center",
+              "px-1.5 py-0.5 rounded",
+              "text-[10px] font-semibold",
+              "tracking-wider uppercase",
+              "bg-accent-muted text-accent-hover",
+              "cursor-pointer hover:bg-accent/20",
+              "shrink-0 max-w-[7rem] truncate",
+            ].join(" ")}
+          >
             {note.customer}
           </span>
         )}
+        {note.task_id && (() => {
+          const t = tasks.find(
+            (tk) => tk.id === note.task_id
+          );
+          return t ? (
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                setView("board");
+              }}
+              className={[
+                "inline-flex items-center",
+                "px-1.5 py-0.5 rounded",
+                "text-[10px] font-medium",
+                "bg-accent-muted text-accent",
+                "cursor-pointer hover:bg-accent/20",
+                "shrink-0 max-w-[10rem] truncate",
+              ].join(" ")}
+              title={t.title}
+            >
+              {t.title}
+            </span>
+          ) : (
+            <span className="text-[10px] text-slate-600 italic shrink-0">
+              [deleted]
+            </span>
+          );
+        })()}
         <span className="text-sm text-slate-200 flex-1 truncate">
           {note.title}
         </span>

@@ -22,6 +22,7 @@ import {
 import { useContracts } from "../../hooks/useContracts";
 import { useDashboard } from "../../hooks/useDashboard";
 import { useSetView } from "../../context/ViewContext";
+import { navigateToClockDate } from "../../utils/clockNavigation";
 import type { BudgetSummary, ClockEntry } from "../../types";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
@@ -234,7 +235,10 @@ function ClockEntryRow({
       <span
         className={
           "text-xs text-slate-600 tabular-nums shrink-0 " +
-          "w-10"
+          "w-10 cursor-pointer hover:text-accent"
+        }
+        onClick={() =>
+          navigateToClockDate(entry.start.slice(0, 10))
         }
       >
         {formatDate(entry.start)}
