@@ -1212,14 +1212,16 @@ def _section_to_customer(sec: dict) -> dict:
             contracts.append({
                 "name": csec["heading"],
                 "budget": cmeta.get(
-                    "budget", 0
+                    "budget",
+                    cmeta.get("kontingent", 0),
                 ),
                 "start_date": cmeta.get(
                     "start_date", ""
                 ),
                 "end_date": cmeta.get("end_date", ""),
                 "used_offset": cmeta.get(
-                    "used_offset", 0
+                    "used_offset",
+                    cmeta.get("verbraucht_offset", 0),
                 ),
                 "notes": csec.get("body", ""),
             })
@@ -1227,9 +1229,12 @@ def _section_to_customer(sec: dict) -> dict:
         "name": sec["heading"],
         "status": meta.get("status", "active"),
         "type": meta.get("type", ""),
-        "budget": meta.get("budget", 0),
+        "budget": meta.get(
+            "budget", meta.get("kontingent", 0)
+        ),
         "used_offset": meta.get(
-            "used_offset", 0
+            "used_offset",
+            meta.get("verbraucht_offset", 0),
         ),
         "repo": meta.get("repo", ""),
         "tags": meta.get("tags", []),
