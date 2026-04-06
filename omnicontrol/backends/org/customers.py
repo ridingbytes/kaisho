@@ -41,15 +41,19 @@ class OrgCustomerBackend(CustomerBackend):
         self,
         name: str,
         status: str = "active",
+        customer_type: str = "",
         kontingent: float = 0,
         repo: str | None = None,
+        tags: list[str] | None = None,
     ) -> dict:
         return customers.add_customer(
             kunden_file=self._kunden_file,
             name=name,
             status=status,
+            customer_type=customer_type,
             kontingent=kontingent,
             repo=repo,
+            tags=tags,
         )
 
     def update_customer(
