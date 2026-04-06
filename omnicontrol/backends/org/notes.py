@@ -23,6 +23,7 @@ class OrgNotesBackend(NotesBackend):
         body: str = "",
         customer: str | None = None,
         tags: list[str] | None = None,
+        task_id: str | None = None,
     ) -> dict:
         return notes_service.add_note(
             notes_file=self._notes_file,
@@ -30,6 +31,7 @@ class OrgNotesBackend(NotesBackend):
             body=body,
             customer=customer,
             tags=tags,
+            task_id=task_id,
         )
 
     def delete_note(self, note_id: str) -> bool:

@@ -12,6 +12,7 @@ class NoteCreate(BaseModel):
     title: str
     body: str = ""
     customer: str | None = None
+    task_id: str | None = None
     tags: list[str] = []
 
 
@@ -31,6 +32,7 @@ def add_note(body: NoteCreate):
         body=body.body,
         customer=body.customer or None,
         tags=body.tags or None,
+        task_id=body.task_id or None,
     )
 
 

@@ -32,6 +32,7 @@ def _heading_to_note(heading: Heading, note_id: str) -> dict:
         "id": note_id,
         "title": title,
         "customer": customer,
+        "task_id": heading.properties.get("TASK_ID") or None,
         "body": body,
         "tags": list(heading.tags),
         "created": heading.properties.get("CREATED", ""),
@@ -55,6 +56,7 @@ def add_note(
     body: str = "",
     customer: str | None = None,
     tags: list[str] | None = None,
+    task_id: str | None = None,
 ) -> dict:
     """Append a new note to notes.org and return its dict."""
     now = datetime.now()
@@ -63,12 +65,16 @@ def add_note(
     heading_title = f"[{customer}] {title}" if customer else title
     body_lines: list[str] = ([""] + body.splitlines()) if body else []
 
+    props: dict[str, str] = {"CREATED": f"[{created_str}]"}
+    if task_id:
+        props["TASK_ID"] = task_id
+
     new_heading = Heading(
         level=1,
         keyword=None,
         title=heading_title,
         tags=tags or [],
-        properties={"CREATED": f"[{created_str}]"},
+        properties=props,
         body=body_lines,
         dirty=True,
     )
@@ -129,6 +135,12 @@ def update_note(
         )
     if "tags" in updates:
         heading.tags = list(updates["tags"])
+    if "task_id" in updates:
+        tid = updates["task_id"]
+        if tid:
+            heading.properties["TASK_ID"] = tid
+        else:
+            heading.properties.pop("TASK_ID", None)
     write_org_file(notes_file, org_file)
     return _heading_to_note(heading, note_id)
 

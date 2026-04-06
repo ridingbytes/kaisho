@@ -10,6 +10,7 @@ import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
 import { TagDropdown } from "../common/TagDropdown";
+import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { DOCS } from "../../docs/panelDocs";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import {
@@ -64,6 +65,10 @@ function NoteRow({
   const [editTags, setEditTags] = useState<string[]>(
     note.tags ?? []
   );
+  const [editTaskId, setEditTaskId] = useState<string | null>(
+    note.task_id ?? null
+  );
+  const [editTaskTitle, setEditTaskTitle] = useState("");
   const [targetCustomer, setTargetCustomer] = useState(
     note.customer ?? ""
   );
@@ -77,12 +82,13 @@ function NoteRow({
     setEditBody(note.body ?? "");
     setEditCustomer(note.customer ?? "");
     setEditTags([...(note.tags ?? [])]);
+    setEditTaskId(note.task_id ?? null);
+    setEditTaskTitle("");
     setEditing(true);
     setExpanded(true);
   }
 
-  function handleSave(e: React.MouseEvent) {
-    e.stopPropagation();
+  function doSave() {
     updateNote.mutate(
       {
         noteId: note.id,
@@ -90,11 +96,17 @@ function NoteRow({
           title: editTitle.trim(),
           body: editBody,
           customer: editCustomer.trim() || null,
+          task_id: editTaskId,
           tags: editTags,
         },
       },
       { onSuccess: () => setEditing(false) }
     );
+  }
+
+  function handleSave(e: React.MouseEvent) {
+    e.stopPropagation();
+    doSave();
   }
 
   function cancelEdit(e: React.MouseEvent) {
@@ -151,11 +163,8 @@ function NoteRow({
         className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-surface-raised transition-colors"
         onClick={() => !editing && setExpanded((v) => !v)}
       >
-        <span className="text-xs text-slate-600 w-10 shrink-0">
-          #{note.id}
-        </span>
-        <span className="text-xs text-slate-500 w-24 shrink-0">
-          {note.created.slice(1, 11)}
+        <span className="text-xs text-slate-500 w-20 shrink-0">
+          {note.created.replace(/^\[/, "").slice(0, 10)}
         </span>
         {note.customer && (
           <span className="text-xs text-slate-400 w-24 shrink-0 truncate">
@@ -231,6 +240,12 @@ function NoteRow({
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                      e.preventDefault();
+                      doSave();
+                    }
+                  }}
                   placeholder="Title"
                   className={`${smallFieldCls} flex-1`}
                   autoFocus
@@ -239,18 +254,42 @@ function NoteRow({
                   value={editCustomer}
                   onChange={setEditCustomer}
                   placeholder="Customer"
-                  className="w-36 shrink-0"
+                  className="w-32 shrink-0"
                   inputClassName={`w-full ${smallFieldCls}`}
                 />
               </div>
+              <TaskAutocomplete
+                taskId={editTaskId}
+                value={editTaskTitle}
+                onChange={setEditTaskTitle}
+                onSelect={(id, label) => {
+                  setEditTaskId(id);
+                  setEditTaskTitle(label);
+                }}
+                onClear={() => {
+                  setEditTaskId(null);
+                  setEditTaskTitle("");
+                }}
+                customer={editCustomer}
+                inputClassName={smallFieldCls}
+              />
               <textarea
                 value={editBody}
                 onChange={(e) => setEditBody(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                    e.preventDefault();
+                    doSave();
+                  }
+                }}
                 placeholder="Body (optional)"
                 rows={4}
                 className={`${smallFieldCls} w-full resize-none`}
               />
               <div className="flex items-center gap-2">
+                <span className="text-[9px] text-slate-700">
+                  ⌘↵ save
+                </span>
                 <TagDropdown
                   selected={editTags}
                   allTags={allTags}
@@ -394,14 +433,34 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [customer, setCustomer] = useState("");
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [taskTitle, setTaskTitle] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+
+  function doSubmit() {
+    if (!title.trim()) return;
+    addNote.mutate(
+      {
+        title,
+        body,
+        customer: customer || null,
+        task_id: taskId,
+        tags,
+      },
+      { onSuccess: onClose }
+    );
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    addNote.mutate(
-      { title, body, customer: customer || null, tags },
-      { onSuccess: onClose }
-    );
+    doSubmit();
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      doSubmit();
+    }
   }
 
   return (
@@ -415,6 +474,7 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
           placeholder="Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={handleKeyDown}
           required
           autoFocus
           className={`flex-1 ${fieldCls}`}
@@ -422,40 +482,59 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
         <CustomerAutocomplete
           value={customer}
           onChange={setCustomer}
-          placeholder="Customer (optional)"
-          className="w-44 shrink-0"
+          placeholder="Customer"
+          className="w-36 shrink-0"
           inputClassName={`w-full ${fieldCls}`}
         />
       </div>
+      <TaskAutocomplete
+        taskId={taskId}
+        value={taskTitle}
+        onChange={setTaskTitle}
+        onSelect={(id, label) => {
+          setTaskId(id);
+          setTaskTitle(label);
+        }}
+        onClear={() => {
+          setTaskId(null);
+          setTaskTitle("");
+        }}
+        customer={customer}
+        inputClassName={fieldCls}
+      />
+      <textarea
+        placeholder="Body (optional)"
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        onKeyDown={handleKeyDown}
+        rows={3}
+        className={`${fieldCls} resize-none`}
+      />
       <div className="flex items-center gap-2">
+        <span className="text-[9px] text-slate-700">
+          ⌘↵ save
+        </span>
         <TagDropdown
           selected={tags}
           allTags={allTags}
           onChange={setTags}
         />
-      </div>
-      <textarea
-        placeholder="Body (optional)"
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        rows={3}
-        className={`${fieldCls} resize-none`}
-      />
-      <div className="flex gap-2 justify-end">
-        <button
-          type="button"
-          onClick={onClose}
-          className="px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-slate-200 transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={addNote.isPending}
-          className="px-4 py-1.5 rounded-lg text-sm bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-50"
-        >
-          {addNote.isPending ? "Adding…" : "Add"}
-        </button>
+        <div className="ml-auto flex gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-slate-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={addNote.isPending}
+            className="px-4 py-1.5 rounded-lg text-sm bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-50"
+          >
+            {addNote.isPending ? "Adding…" : "Add"}
+          </button>
+        </div>
       </div>
     </form>
   );

@@ -523,6 +523,7 @@ export function addNote(data: {
   title: string;
   body?: string;
   customer?: string | null;
+  task_id?: string | null;
   tags?: string[];
 }): Promise<NoteItem> {
   return post<NoteItem>("/notes/", data);
@@ -538,6 +539,7 @@ export function updateNote(
     title?: string;
     body?: string;
     customer?: string | null;
+    task_id?: string | null;
     tags?: string[];
   }
 ): Promise<NoteItem> {

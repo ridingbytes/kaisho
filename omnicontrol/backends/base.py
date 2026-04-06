@@ -244,6 +244,7 @@ class NotesBackend(ABC):
         body: str = "",
         customer: str | None = None,
         tags: list[str] | None = None,
+        task_id: str | None = None,
     ) -> dict:
         """Add a new note, return its dict."""
 

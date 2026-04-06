@@ -23,6 +23,7 @@ export function useAddNote() {
       title: string;
       body?: string;
       customer?: string | null;
+      task_id?: string | null;
       tags?: string[];
     }) => addNote(data),
     onSuccess: () => {
@@ -43,6 +44,7 @@ export function useUpdateNote() {
         title?: string;
         body?: string;
         customer?: string | null;
+        task_id?: string | null;
         tags?: string[];
       };
     }) => updateNote(noteId, updates),

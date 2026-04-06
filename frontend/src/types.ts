@@ -135,6 +135,7 @@ export interface NoteItem {
   id: string;
   title: string;
   customer: string | null;
+  task_id: string | null;
   body: string;
   tags: string[];
   created: string;
