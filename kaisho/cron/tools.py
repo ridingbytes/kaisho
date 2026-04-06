@@ -982,6 +982,7 @@ def _list_github_projects(
                 "title": proj.get("title"),
                 "url": proj.get("url"),
                 "closed": proj.get("closed", False),
+                "repo": group["repo"],
                 "columns": columns,
             })
         result.append({

@@ -302,12 +302,14 @@ _PROJECT_FIELDS = """
       content {
         ... on Issue {
           number title state url
+          repository { nameWithOwner }
           labels(first: 10) {
             nodes { name color }
           }
         }
         ... on PullRequest {
           number title state url
+          repository { nameWithOwner }
         }
         ... on DraftIssue { title }
       }
@@ -392,6 +394,7 @@ def _normalize_project_item(item: dict) -> dict:
             content.get("labels") or {}
         ).get("nodes", [])
     ]
+    repo_data = content.get("repository") or {}
     return {
         "id": item.get("id", ""),
         "type": item.get("type", ""),
@@ -401,6 +404,7 @@ def _normalize_project_item(item: dict) -> dict:
         "url": content.get("url", ""),
         "status": _item_status(item),
         "labels": labels,
+        "item_repo": repo_data.get("nameWithOwner", ""),
     }
 
 
@@ -414,11 +418,23 @@ def _extract_status_order(project: dict) -> list[str]:
     return []
 
 
-def _normalize_project(project: dict) -> dict:
-    items = [
+def _normalize_project(
+    project: dict, customer_repo: str = ""
+) -> dict:
+    all_items = [
         _normalize_project_item(i)
         for i in (project.get("items") or {}).get("nodes", [])
     ]
+    if customer_repo:
+        # Keep items that belong to this customer's repo, plus
+        # draft issues (which have no repo).
+        items = [
+            i for i in all_items
+            if not i["item_repo"]
+            or i["item_repo"].lower() == customer_repo.lower()
+        ]
+    else:
+        items = all_items
     return {
         "id": project.get("id", ""),
         "title": project.get("title", ""),
@@ -429,24 +445,26 @@ def _normalize_project(project: dict) -> dict:
     }
 
 
-def _fetch_projects(owner: str) -> list[dict]:
+def _fetch_raw_project_nodes(owner: str) -> list[dict]:
+    """Fetch raw project nodes for an org/user owner."""
     result = _api_graphql(
         _PROJECTS_QUERY, {"owner": owner, "first": 20}
     )
     owner_data = (
         (result.get("data") or {}).get("repositoryOwner") or {}
     )
-    nodes = (owner_data.get("projectsV2") or {}).get("nodes") or []
-    return [_normalize_project(p) for p in nodes]
+    return (owner_data.get("projectsV2") or {}).get("nodes") or []
 
 
 def projects_for_customers(customers: list[dict]) -> list[dict]:
     """Return GitHub Projects v2 grouped by customer.
 
-    Caches project results per GitHub owner so shared orgs are only
-    fetched once, but each customer still appears in the result.
+    Fetches projects once per GitHub org (owner), then normalizes
+    each customer's view with items filtered to their specific repo.
+    This makes the customer filter meaningful even when multiple
+    customers share the same org-level project board.
     """
-    owner_cache: dict[str, list[dict]] = {}
+    raw_cache: dict[str, list[dict]] = {}
     results = []
     for c in customers:
         raw = (
@@ -457,14 +475,18 @@ def projects_for_customers(customers: list[dict]) -> list[dict]:
         if not repo:
             continue
         owner = repo.split("/")[0]
-        if owner not in owner_cache:
+        if owner not in raw_cache:
             try:
-                owner_cache[owner] = _fetch_projects(owner)
+                raw_cache[owner] = _fetch_raw_project_nodes(owner)
             except GhError:
-                owner_cache[owner] = []
+                raw_cache[owner] = []
+        projects = [
+            _normalize_project(p, customer_repo=repo)
+            for p in raw_cache[owner]
+        ]
         results.append({
             "customer": c["name"],
             "repo": repo,
-            "projects": owner_cache[owner],
+            "projects": projects,
         })
     return results

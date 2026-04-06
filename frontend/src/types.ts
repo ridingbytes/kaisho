@@ -193,6 +193,7 @@ export interface GithubProjectItem {
   url: string;
   status: string | null;
   labels: { name: string; color: string }[];
+  item_repo: string;
 }
 
 export interface GithubProject {
