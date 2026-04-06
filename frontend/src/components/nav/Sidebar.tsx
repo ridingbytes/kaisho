@@ -201,9 +201,16 @@ export function Sidebar({
                     onChange={(e) => setNewProfileName(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && newProfileName.trim()) {
-                        createProf.mutate(newProfileName.trim(), {
+                        const name = newProfileName.trim();
+                        createProf.mutate(name, {
                           onSuccess: () => {
-                            switchProf.mutate(newProfileName.trim(), {
+                            switchProf.mutate(name, {
+                              onSuccess: () => window.location.reload(),
+                            });
+                          },
+                          onError: () => {
+                            // Profile exists — just switch to it
+                            switchProf.mutate(name, {
                               onSuccess: () => window.location.reload(),
                             });
                           },
