@@ -55,33 +55,25 @@ def _render_output_path(output: str) -> str:
 
 
 def write_output(
-    output_dest: str,
     content: str,
     inbox_file: Path,
     job_name: str = "AI Report",
-) -> str:
-    """Write content to the resolved destination.
+    model: str = "",
+) -> None:
+    """Write cron output to the inbox.
 
-    If output_dest is "inbox", add a structured inbox item (type AI)
-    via the inbox service so it appears in the inbox panel.
-    Otherwise write to the (possibly date-interpolated) file path.
-
-    Returns a description of where output was written.
+    All cron outputs go to inbox with channel=cron, direction=in.
+    The output is also preserved in cron_history.json.
     """
-    dest = _render_output_path(output_dest)
-    if dest == "inbox":
-        from ..services import inbox as inbox_svc
-        inbox_svc.add_item(
-            inbox_file=inbox_file,
-            text=job_name,
-            item_type="AI",
-            body=content.strip(),
-        )
-        return str(inbox_file)
-    out_path = _resolve_path(dest)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(content, encoding="utf-8")
-    return str(out_path)
+    from ..services import inbox as inbox_svc
+    inbox_svc.add_item(
+        inbox_file=inbox_file,
+        text=job_name,
+        item_type="AI",
+        body=content.strip(),
+        channel="cron",
+        direction="in",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -343,7 +335,8 @@ def execute_job(
             model_name, prompt, ollama_base_url
         )
     write_output(
-        job["output"], output_text, inbox_file,
-        job.get("name", "AI Report"),
+        output_text, inbox_file,
+        job_name=job.get("name", "AI Report"),
+        model=job.get("model", ""),
     )
     return output_text

@@ -553,6 +553,7 @@ interface TreeNodeRowProps {
     oldLabel: string,
     newLabel: string
   ) => void;
+  onDelete: (path: string) => void;
 }
 
 function TreeNodeRow({
@@ -564,6 +565,7 @@ function TreeNodeRow({
   onToggle,
   onRename,
   onMove,
+  onDelete,
 }: TreeNodeRowProps) {
   const indent = depth * 16;
   const [renaming, setRenaming] = useState(false);
@@ -660,6 +662,16 @@ function TreeNodeRow({
                 ))}
             </select>
           )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(node.path);
+            }}
+            className="p-0.5 rounded text-slate-700 hover:text-red-400 transition-colors"
+            title="Delete"
+          >
+            <Trash2 size={9} />
+          </button>
         </div>
       </div>
     );
@@ -695,6 +707,7 @@ function TreeNodeRow({
             onToggle={onToggle}
             onRename={onRename}
             onMove={onMove}
+            onDelete={onDelete}
           />
         ))}
     </>
@@ -888,6 +901,19 @@ export function KnowledgeView() {
     );
   }
 
+  const deleteFile = useDeleteKnowledgeFile();
+
+  function handleDeleteFile(path: string) {
+    deleteFile.mutate(path, {
+      onSuccess: () => {
+        if (selectedPath === path) {
+          setSelectedPath(null);
+          setEditing(false);
+        }
+      },
+    });
+  }
+
   const showEditor =
     editing && fileData && selectedPath && !fileLoading;
 
@@ -1061,6 +1087,7 @@ export function KnowledgeView() {
                           onToggle={handleToggleFolder}
                           onRename={handleRename}
                           onMove={handleMove}
+                          onDelete={handleDeleteFile}
                         />
                       ))}
                   </div>
