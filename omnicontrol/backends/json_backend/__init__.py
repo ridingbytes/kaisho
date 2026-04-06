@@ -91,7 +91,7 @@ def _period_range(period: str) -> tuple[date, date]:
     if period == "month":
         start = today.replace(day=1)
         return start, today
-    return today, today
+    return date.min, date.max
 
 
 def _entry_in_range(
