@@ -138,6 +138,15 @@ export function fetchAvailableModels(): Promise<{ models: string[] }> {
   return get<{ models: string[] }>("/settings/ai/models");
 }
 
+export function fetchClaudeCliStatus(): Promise<{
+  installed: boolean;
+  authenticated: boolean;
+  version: string;
+  path: string;
+}> {
+  return get("/settings/ai/claude_cli");
+}
+
 export function fetchPaths(): Promise<Record<string, string>> {
   return get("/settings/paths");
 }

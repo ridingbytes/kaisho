@@ -201,6 +201,36 @@ def remove_customer_type(name: str):
 # AI settings
 # ---------------------------------------------------------------------------
 
+def _claude_cli_status() -> dict:
+    """Check if claude CLI is installed and authenticated."""
+    import shutil
+    import subprocess
+    path = shutil.which("claude")
+    if not path:
+        return {"installed": False, "authenticated": False,
+                "version": "", "path": ""}
+    try:
+        result = subprocess.run(
+            [path, "--version"],
+            capture_output=True, text=True, timeout=5,
+        )
+        version = result.stdout.strip().split("\n")[0]
+    except Exception:
+        version = "unknown"
+    # Check auth by looking for credentials
+    from pathlib import Path as _P
+    creds = _P.home() / ".claude"
+    authenticated = creds.is_dir() and any(
+        creds.iterdir()
+    )
+    return {
+        "installed": True,
+        "authenticated": authenticated,
+        "version": version,
+        "path": path,
+    }
+
+
 _CLAUDE_API_MODELS = [
     "claude:claude-opus-4-6",
     "claude:claude-sonnet-4-6",
@@ -426,6 +456,12 @@ def list_models():
         + _CLAUDE_API_MODELS
     )
     return {"models": models}
+
+
+@router.get("/ai/claude_cli")
+def get_claude_cli_status():
+    """Check if the Claude CLI is installed and logged in."""
+    return _claude_cli_status()
 
 
 # ---------------------------------------------------------------------------

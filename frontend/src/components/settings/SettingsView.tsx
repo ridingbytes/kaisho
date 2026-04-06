@@ -11,6 +11,7 @@ import {
 import {
   useAiSettings,
   useAvailableModels,
+  useClaudeCliStatus,
   useGithubSettings,
   useKbSources,
   useUpdateKbSources,
@@ -126,6 +127,7 @@ function ModelInput({
 function AiSection() {
   const { data: aiSettings, isLoading } = useAiSettings();
   const { data: models = [] } = useAvailableModels();
+  const { data: cliStatus } = useClaudeCliStatus();
   const update = useUpdateAiSettings();
 
   const [form, setForm] = useState<AiSettings>({
@@ -208,6 +210,44 @@ function AiSection() {
             </label>
           </div>
         </div>
+
+        {/* Claude CLI status */}
+        {cliStatus && (
+          <div className="px-4 py-3 border-b border-border-subtle">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+              Claude CLI (Subscription)
+            </p>
+            <div className="flex items-center gap-3 text-xs">
+              <span className={
+                cliStatus.installed
+                  ? "text-emerald-400"
+                  : "text-red-400"
+              }>
+                {cliStatus.installed
+                  ? `Installed (${cliStatus.version})`
+                  : "Not installed"}
+              </span>
+              {cliStatus.installed && (
+                <span className={
+                  cliStatus.authenticated
+                    ? "text-emerald-400"
+                    : "text-amber-400"
+                }>
+                  {cliStatus.authenticated
+                    ? "Logged in"
+                    : "Not logged in"}
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] text-slate-700 mt-1">
+              {cliStatus.installed
+                ? cliStatus.authenticated
+                  ? "Use prefix claude_cli: for subscription-based models."
+                  : "Run 'claude login' in the terminal to authenticate."
+                : "Install Claude Code CLI and run 'claude login'."}
+            </p>
+          </div>
+        )}
 
         {/* Cloud API keys */}
         <div className="px-4 py-3 border-b border-border-subtle">

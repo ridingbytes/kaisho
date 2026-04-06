@@ -10,6 +10,7 @@ import {
   deleteTag,
   fetchAiSettings,
   fetchAvailableModels,
+  fetchClaudeCliStatus,
   fetchGithubSettings,
   fetchKbSources,
   fetchPaths,
@@ -79,6 +80,14 @@ export function useUpdateAiSettings() {
         queryKey: ["settings", "ai", "models"],
       });
     },
+  });
+}
+
+export function useClaudeCliStatus() {
+  return useQuery({
+    queryKey: ["settings", "ai", "claude_cli"],
+    queryFn: fetchClaudeCliStatus,
+    staleTime: 120_000,
   });
 }
 
