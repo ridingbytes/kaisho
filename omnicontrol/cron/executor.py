@@ -57,19 +57,17 @@ def _render_output_path(output: str) -> str:
 def write_output(
     output_dest: str,
     content: str,
-    inbox_file: Path,
     job_name: str = "AI Report",
 ) -> None:
-    """Write cron output to inbox or a named KB source.
+    """Write cron output to the active backend's inbox.
 
-    output_dest: "inbox" or a KB source label (e.g. "research").
-    All outputs also go to inbox with channel=cron.
+    output_dest: "inbox" or a KB source label. All outputs go
+    to inbox via the backend (respects org/markdown/json).
     """
-    from ..services import inbox as inbox_svc
+    from ..backends import get_backend
 
-    # Always create an inbox item
-    inbox_svc.add_item(
-        inbox_file=inbox_file,
+    # Always create an inbox item via the active backend
+    get_backend().inbox.add_item(
         text=job_name,
         item_type="AI",
         body=content.strip(),
@@ -385,7 +383,6 @@ def execute_job(
     job: dict,
     project_root: Path,
     ollama_base_url: str,
-    inbox_file: Path,
     lm_studio_base_url: str = "",
     claude_api_key: str = "",
     openrouter_base_url: str = "",
@@ -433,7 +430,7 @@ def execute_job(
         )
     write_output(
         job.get("output", "inbox"),
-        output_text, inbox_file,
+        output_text,
         job_name=job.get("name", "AI Report"),
     )
     return output_text

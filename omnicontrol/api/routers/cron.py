@@ -175,7 +175,6 @@ def _run_job_bg(job: dict, run_id: int) -> None:
             job,
             project_root=_project_root(),
             ollama_base_url=ai["ollama_url"],
-            inbox_file=cfg.INBOX_FILE,
             lm_studio_base_url=ai.get("lm_studio_url", ""),
             claude_api_key=ai.get("claude_api_key", ""),
             openrouter_base_url=ai.get(

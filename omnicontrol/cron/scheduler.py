@@ -37,7 +37,6 @@ def _run_job(job: dict) -> None:
             job,
             project_root=_project_root(),
             ollama_base_url=ai["ollama_url"],
-            inbox_file=cfg.INBOX_FILE,
             lm_studio_base_url=ai.get(
                 "lm_studio_url", ""
             ),
