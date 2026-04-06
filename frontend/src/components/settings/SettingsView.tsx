@@ -1639,11 +1639,17 @@ function TimezoneSection() {
             </span>
             <input
               type="text"
+              list="tz-list"
               value={tz}
               onChange={(e) => setTz(e.target.value)}
               placeholder="Europe/Berlin"
               className={inputCls}
             />
+            <datalist id="tz-list">
+              {Intl.supportedValuesOf("timeZone").map((z) => (
+                <option key={z} value={z} />
+              ))}
+            </datalist>
           </label>
           <p className="text-[11px] text-stone-400 mt-1.5 ml-[140px]">
             IANA timezone name, e.g. Europe/Berlin, America/New_York,
