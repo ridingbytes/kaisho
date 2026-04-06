@@ -39,6 +39,11 @@ import {
   useDeleteTag,
   useAddCustomerType,
   useDeleteCustomerType,
+  useCreateProfile,
+  useProfiles,
+  useSwitchProfile,
+  useCreateUser,
+  useUsers,
 } from "../../hooks/useSettings";
 import { PixelAvatar } from "../common/PixelAvatar";
 import type { AiSettings, ConfigTag } from "../../types";
@@ -72,10 +77,17 @@ const saveBtnCls = [
 // Tab bar
 // ---------------------------------------------------------------------------
 
-type TabId = "general" | "ai" | "github" | "shortcuts" | "paths";
+type TabId =
+  | "general"
+  | "profiles"
+  | "ai"
+  | "github"
+  | "shortcuts"
+  | "paths";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "general", label: "General" },
+  { id: "profiles", label: "Profiles" },
   { id: "ai", label: "AI" },
   { id: "github", label: "GitHub" },
   { id: "shortcuts", label: "Shortcuts" },
@@ -1339,6 +1351,182 @@ function UserProfileSection() {
 }
 
 
+// ---------------------------------------------------------------------------
+// Profiles tab
+// ---------------------------------------------------------------------------
+
+function ProfilesTab() {
+  const { data: userData } = useCurrentUser();
+  const { data: profileData } = useProfiles();
+  const { data: users = [] } = useUsers();
+  const switchProfile = useSwitchProfile();
+  const createProfile = useCreateProfile();
+  const createUser = useCreateUser();
+  const [newProfile, setNewProfile] = useState("");
+  const [newUser, setNewUser] = useState("");
+
+  if (!userData || !profileData) return null;
+
+  function handleCreateProfile(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newProfile.trim()) return;
+    createProfile.mutate(newProfile.trim(), {
+      onSuccess: () => {
+        setNewProfile("");
+        switchProfile.mutate(newProfile.trim(), {
+          onSuccess: () => window.location.reload(),
+        });
+      },
+      onError: () => {
+        switchProfile.mutate(newProfile.trim(), {
+          onSuccess: () => window.location.reload(),
+        });
+      },
+    });
+  }
+
+  function handleCreateUser(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newUser.trim()) return;
+    createUser.mutate(
+      { username: newUser.trim() },
+      { onSuccess: () => setNewUser("") }
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+      {/* Current profile */}
+      <section>
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+          Profiles
+        </h2>
+        <p className="text-[10px] text-slate-600 mb-3">
+          User: {userData.name || userData.username}
+          {" "} / Active: {userData.profile}
+        </p>
+        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
+          {(profileData.profiles ?? []).map((p, i, arr) => (
+            <div
+              key={p}
+              className={[
+                "flex items-center gap-3 px-4 py-2.5",
+                i < arr.length - 1
+                  ? "border-b border-border-subtle"
+                  : "",
+              ].join(" ")}
+            >
+              <span className={[
+                "text-sm flex-1",
+                p === profileData.active
+                  ? "text-accent font-semibold"
+                  : "text-slate-300",
+              ].join(" ")}>
+                {p}
+              </span>
+              {p !== profileData.active && (
+                <button
+                  onClick={() =>
+                    switchProfile.mutate(p, {
+                      onSuccess: () => window.location.reload(),
+                    })
+                  }
+                  disabled={switchProfile.isPending}
+                  className="px-2 py-1 rounded text-xs text-slate-500 hover:text-accent hover:bg-accent-muted transition-colors"
+                >
+                  Switch
+                </button>
+              )}
+              {p === profileData.active && (
+                <span className="text-[10px] text-accent uppercase tracking-wider font-semibold">
+                  active
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+        <form
+          onSubmit={handleCreateProfile}
+          className="flex gap-2"
+        >
+          <input
+            type="text"
+            value={newProfile}
+            onChange={(e) => setNewProfile(e.target.value)}
+            placeholder="New profile name"
+            className={inputCls}
+          />
+          <button
+            type="submit"
+            disabled={!newProfile.trim()}
+            className={saveBtnCls}
+          >
+            Create
+          </button>
+        </form>
+      </section>
+
+      {/* Users */}
+      <section>
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+          Users
+        </h2>
+        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
+          {users.map((u, i) => (
+            <div
+              key={u.username}
+              className={[
+                "flex items-center gap-3 px-4 py-2.5",
+                i < users.length - 1
+                  ? "border-b border-border-subtle"
+                  : "",
+              ].join(" ")}
+            >
+              <span className={[
+                "text-sm flex-1",
+                u.username === userData.username
+                  ? "text-accent font-semibold"
+                  : "text-slate-300",
+              ].join(" ")}>
+                {u.name || u.username}
+                {u.username !== (u.name || u.username) && (
+                  <span className="text-xs text-slate-600 ml-2 font-mono">
+                    {u.username}
+                  </span>
+                )}
+              </span>
+              {u.bio && (
+                <span className="text-[10px] text-slate-600 truncate max-w-48">
+                  {u.bio}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+        <form
+          onSubmit={handleCreateUser}
+          className="flex gap-2"
+        >
+          <input
+            type="text"
+            value={newUser}
+            onChange={(e) => setNewUser(e.target.value)}
+            placeholder="New username"
+            className={inputCls}
+          />
+          <button
+            type="submit"
+            disabled={!newUser.trim()}
+            className={saveBtnCls}
+          >
+            Create user
+          </button>
+        </form>
+      </section>
+    </div>
+  );
+}
+
 function GeneralTab() {
   const { data: settings, isLoading } = useSettings();
 
@@ -1838,6 +2026,7 @@ export function SettingsView() {
           <TabBar active={activeTab} onChange={changeTab} />
 
           {activeTab === "general" && <GeneralTab />}
+          {activeTab === "profiles" && <ProfilesTab />}
           {activeTab === "ai" && <AiSection />}
           {activeTab === "github" && <GithubSection />}
           {activeTab === "shortcuts" && <ShortcutsSection />}
