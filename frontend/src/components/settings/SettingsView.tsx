@@ -171,9 +171,15 @@ function AiSection() {
       </datalist>
 
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        {/* Local / subscription providers */}
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-2">
-            Endpoints
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+            Local / Subscription
+          </p>
+          <p className="text-[10px] text-slate-700 mb-2">
+            No API key needed. Ollama and LM Studio run locally.
+            Claude CLI uses your login token (run
+            &quot;claude login&quot; once).
           </p>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
@@ -196,10 +202,23 @@ function AiSection() {
                 type="text"
                 value={form.lm_studio_url}
                 onChange={(e) => set("lm_studio_url", e.target.value)}
-                placeholder="http://localhost:1234 (default)"
+                placeholder="http://localhost:1234"
                 className={inputCls}
               />
             </label>
+          </div>
+        </div>
+
+        {/* Cloud API keys */}
+        <div className="px-4 py-3 border-b border-border-subtle">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+            Cloud API Keys
+          </p>
+          <p className="text-[10px] text-slate-700 mb-2">
+            Billed per token. Set keys only for the providers
+            you want to use.
+          </p>
+          <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
               <span className="text-xs text-slate-400 w-32 shrink-0">
                 Claude API Key
@@ -208,7 +227,7 @@ function AiSection() {
                 type="password"
                 value={form.claude_api_key}
                 onChange={(e) => set("claude_api_key", e.target.value)}
-                placeholder="sk-ant-… (or set ANTHROPIC_API_KEY)"
+                placeholder="sk-ant-…"
                 className={inputCls}
               />
             </label>
@@ -226,7 +245,7 @@ function AiSection() {
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-slate-400 w-32 shrink-0">
-                OpenRouter API Key
+                OpenRouter Key
               </span>
               <input
                 type="password"
@@ -250,7 +269,7 @@ function AiSection() {
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-slate-400 w-32 shrink-0">
-                OpenAI API Key
+                OpenAI Key
               </span>
               <input
                 type="password"

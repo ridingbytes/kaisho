@@ -166,7 +166,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             ].join(" ")}
           />
           <span className="text-[9px] text-slate-700 font-mono">
-            ollama: | claude: | openrouter: | openai: | lm_studio:
+            ollama: | claude_cli: | claude: | openrouter: | openai:
           </span>
         </div>
         <HelpButton title="Advisor" doc={DOCS.advisor} view="advisor" />

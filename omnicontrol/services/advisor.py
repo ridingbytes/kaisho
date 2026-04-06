@@ -178,7 +178,7 @@ def _parse_model(model_str: str) -> tuple[str, str]:
     if ":" in model_str:
         provider, name = model_str.split(":", 1)
         if provider in (
-            "ollama", "claude", "lm_studio",
+            "ollama", "claude", "claude_cli", "lm_studio",
             "openrouter", "openai",
         ):
             return provider, name
@@ -446,6 +446,37 @@ def ask_openai_compatible(
     return messages[-1].get("content", "")
 
 
+def ask_claude_cli(model: str, prompt: str) -> str:
+    """Call the Claude CLI using the local login token.
+
+    Requires ``claude login`` to have been run. Uses the user's
+    Anthropic subscription, no API key needed.
+    """
+    import shutil
+    import subprocess
+
+    claude_bin = shutil.which("claude")
+    if not claude_bin:
+        raise RuntimeError(
+            "claude CLI not found. Install it and run "
+            "'claude login' first."
+        )
+    cmd = [claude_bin, "-p", prompt, "--model", model]
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("Claude CLI timed out after 300s")
+    if result.returncode != 0:
+        err = result.stderr.strip() or "unknown error"
+        raise RuntimeError(f"Claude CLI failed: {err}")
+    return result.stdout.strip()
+
+
 def ask(
     question: str,
     model_str: str,
@@ -468,6 +499,8 @@ def ask(
         customers, github_issues,
     )
     provider, model_name = _parse_model(model_str)
+    if provider == "claude_cli":
+        return ask_claude_cli(model_name, prompt)
     if provider == "claude":
         return ask_claude(
             model_name, prompt, api_key=claude_api_key,

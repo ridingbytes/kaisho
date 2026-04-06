@@ -201,10 +201,16 @@ def remove_customer_type(name: str):
 # AI settings
 # ---------------------------------------------------------------------------
 
-_CLAUDE_MODELS = [
+_CLAUDE_API_MODELS = [
     "claude:claude-opus-4-6",
     "claude:claude-sonnet-4-6",
     "claude:claude-haiku-4-5-20251001",
+]
+
+_CLAUDE_CLI_MODELS = [
+    "claude_cli:claude-opus-4-6",
+    "claude_cli:claude-sonnet-4-6",
+    "claude_cli:claude-haiku-4-5-20251001",
 ]
 
 
@@ -416,7 +422,8 @@ def list_models():
             ai.get("openai_api_key", ""),
             "openai",
         )
-        + _CLAUDE_MODELS
+        + _CLAUDE_CLI_MODELS
+        + _CLAUDE_API_MODELS
     )
     return {"models": models}
 

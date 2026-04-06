@@ -390,16 +390,26 @@ any valid model string directly.
 
 ## Model prefixes
 
+**Local (no key needed):**
+
 | Prefix | Provider | Example |
 |--------|----------|---------|
 | \`ollama:\` | Local Ollama | \`ollama:qwen3:14b\` |
 | \`lm_studio:\` | Local LM Studio | \`lm_studio:qwen2.5-7b\` |
+| \`claude_cli:\` | Claude CLI (subscription) | \`claude_cli:claude-sonnet-4-6\` |
+
+**Cloud (API key in Settings > AI):**
+
+| Prefix | Provider | Example |
+|--------|----------|---------|
 | \`claude:\` | Anthropic API | \`claude:claude-sonnet-4-6\` |
 | \`openrouter:\` | OpenRouter | \`openrouter:anthropic/claude-3.5-sonnet\` |
 | \`openai:\` | OpenAI | \`openai:gpt-4o\` |
 
-Models are auto-detected when the provider is reachable (local
-server running, or API key configured in Settings > AI).
+\`claude_cli:\` uses your Claude Code login token (run
+\`claude login\` once). No API key or separate billing needed.
+
+Models are auto-detected when the provider is reachable.
 
 ## CLI
 
