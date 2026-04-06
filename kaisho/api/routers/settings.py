@@ -982,3 +982,34 @@ def create_profile(body: ProfileCreate):
     os.environ["PROFILE"] = old or "default"
     reset_config()
     return {"name": name}
+
+
+class ProfileRename(BaseModel):
+    new_name: str
+
+
+@router.put("/profiles/{name}")
+def rename_profile_endpoint(name: str, body: ProfileRename):
+    """Rename a profile.
+
+    The active profile cannot be renamed. Returns the new name.
+    """
+    from ...config import rename_profile
+    try:
+        rename_profile(name, body.new_name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"name": body.new_name}
+
+
+@router.delete("/profiles/{name}", status_code=204)
+def delete_profile_endpoint(name: str):
+    """Delete a profile and all its data.
+
+    The active profile cannot be deleted.
+    """
+    from ...config import delete_profile
+    try:
+        delete_profile(name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))

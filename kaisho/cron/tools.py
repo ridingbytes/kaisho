@@ -410,6 +410,55 @@ TOOL_DEFS: list[dict] = [
         },
     },
     {
+        "name": "list_profiles",
+        "description": (
+            "List all profiles for the active user. "
+            "Returns the active profile name and all available profiles."
+        ),
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "rename_profile",
+        "description": (
+            "Rename a profile. The active profile cannot be renamed."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "old_name": {
+                    "type": "string",
+                    "description": "Current profile name",
+                },
+                "new_name": {
+                    "type": "string",
+                    "description": (
+                        "New profile name "
+                        "(alphanumeric, dash, underscore only)"
+                    ),
+                },
+            },
+            "required": ["old_name", "new_name"],
+        },
+    },
+    {
+        "name": "delete_profile",
+        "description": (
+            "Delete a profile and all its data. "
+            "The active profile cannot be deleted. "
+            "This is irreversible — confirm with the user before calling."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the profile to delete",
+                },
+            },
+            "required": ["name"],
+        },
+    },
+    {
         "name": "fetch_url",
         "description": (
             "Fetch the content of an HTTP/HTTPS URL and return it as text. "
@@ -635,6 +684,34 @@ def _dispatch(name: str, args: dict) -> dict:
 
     if name == "list_kb_files":
         return _list_kb_files()
+
+    if name == "list_profiles":
+        from ..config import get_config, list_profiles
+        cfg = get_config()
+        return {
+            "active": cfg.PROFILE,
+            "profiles": list_profiles(cfg),
+        }
+
+    if name == "rename_profile":
+        from ..config import rename_profile
+        try:
+            rename_profile(args["old_name"], args["new_name"])
+            return {
+                "renamed": True,
+                "old_name": args["old_name"],
+                "new_name": args["new_name"],
+            }
+        except ValueError as exc:
+            return {"error": str(exc)}
+
+    if name == "delete_profile":
+        from ..config import delete_profile
+        try:
+            delete_profile(args["name"])
+            return {"deleted": True, "name": args["name"]}
+        except ValueError as exc:
+            return {"error": str(exc)}
 
     if name == "create_skill":
         return _create_skill(args["name"], args["content"])

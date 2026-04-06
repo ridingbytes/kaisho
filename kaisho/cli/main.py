@@ -16,10 +16,12 @@ from .knowledge import knowledge
 from .tag import tag
 from .task import task
 from ..config import (
+    delete_profile,
     get_config,
     init_data_dir,
     list_profiles,
     list_users,
+    rename_profile,
     reset_config,
 )
 
@@ -73,15 +75,68 @@ def users_cmd():
         click.echo(f"  {u['username']}{marker}{bio}")
 
 
-@cli.command("profiles")
-def profiles_cmd():
-    """List profiles for the current user."""
+@cli.group("profiles", invoke_without_command=True)
+@click.pass_context
+def profiles_cmd(ctx):
+    """Manage profiles for the current user."""
+    if ctx.invoked_subcommand is None:
+        cfg = get_config()
+        active = cfg.PROFILE
+        click.echo(f"User: {cfg.KAISHO_USER}")
+        for name in list_profiles(cfg):
+            marker = " *" if name == active else ""
+            click.echo(f"  {name}{marker}")
+
+
+@profiles_cmd.command("list")
+def profiles_list():
+    """List all profiles for the current user."""
     cfg = get_config()
     active = cfg.PROFILE
     click.echo(f"User: {cfg.KAISHO_USER}")
     for name in list_profiles(cfg):
         marker = " *" if name == active else ""
         click.echo(f"  {name}{marker}")
+
+
+@profiles_cmd.command("delete")
+@click.argument("name")
+@click.option(
+    "--yes", "-y", is_flag=True,
+    help="Skip confirmation prompt.",
+)
+def profiles_delete(name, yes):
+    """Delete a profile and all its data.
+
+    NAME is the profile to delete. The active profile cannot be
+    deleted. This action is irreversible.
+    """
+    if not yes:
+        click.confirm(
+            f"Delete profile '{name}' and all its data?",
+            abort=True,
+        )
+    try:
+        delete_profile(name)
+        click.echo(f"Deleted profile '{name}'.")
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+
+@profiles_cmd.command("rename")
+@click.argument("old_name")
+@click.argument("new_name")
+def profiles_rename(old_name, new_name):
+    """Rename a profile.
+
+    OLD_NAME is the current profile name; NEW_NAME is the target.
+    The active profile cannot be renamed.
+    """
+    try:
+        rename_profile(old_name, new_name)
+        click.echo(f"Renamed profile '{old_name}' → '{new_name}'.")
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
 
 
 cli.add_command(task)

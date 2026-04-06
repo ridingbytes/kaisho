@@ -276,6 +276,20 @@ export function createProfile(
   return post("/settings/profiles", { name });
 }
 
+export function renameProfile(
+  oldName: string,
+  newName: string
+): Promise<{ name: string }> {
+  return put(
+    `/settings/profiles/${encodeURIComponent(oldName)}`,
+    { new_name: newName },
+  );
+}
+
+export function deleteProfile(name: string): Promise<void> {
+  return del(`/settings/profiles/${encodeURIComponent(name)}`);
+}
+
 export function updateUserProfile(updates: {
   name?: string;
   email?: string;

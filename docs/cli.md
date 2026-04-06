@@ -627,6 +627,30 @@ List available transcript languages for a video.
 
 ---
 
+## kai profiles
+
+```bash
+kai profiles                      # list profiles (default)
+kai profiles list                 # same as above
+kai profiles rename OLD NEW       # rename a non-active profile
+kai profiles delete NAME          # delete a non-active profile
+kai profiles delete NAME --yes    # skip confirmation prompt
+```
+
+Manage profiles for the active user. The active profile (marked with
+`*`) cannot be renamed or deleted. Profile names may only contain
+letters, digits, hyphens, and underscores.
+
+Examples:
+
+```bash
+kai profiles                      # → lists default *, work, client-x
+kai profiles rename client-x acme
+kai profiles delete work --yes
+```
+
+---
+
 ## kai serve
 
 ```bash

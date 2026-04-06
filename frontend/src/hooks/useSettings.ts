@@ -10,6 +10,8 @@ import {
   createSkill,
   createUser,
   deleteCustomerType,
+  deleteProfile,
+  renameProfile,
   updateUserProfile,
   deleteSkill,
   deleteTag,
@@ -392,6 +394,36 @@ export function useCreateProfile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (name: string) => createProfile(name),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings", "profiles"],
+      });
+    },
+  });
+}
+
+export function useRenameProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      oldName,
+      newName,
+    }: {
+      oldName: string;
+      newName: string;
+    }) => renameProfile(oldName, newName),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings", "profiles"],
+      });
+    },
+  });
+}
+
+export function useDeleteProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => deleteProfile(name),
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: ["settings", "profiles"],

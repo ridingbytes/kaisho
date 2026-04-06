@@ -10,6 +10,7 @@ import {
   Inbox,
   LayoutDashboard,
   NotebookPen,
+  Settings,
   Users,
 } from "lucide-react";
 import type { View } from "../../App";
@@ -36,6 +37,10 @@ const NAV_ITEMS: NavItem[] = [
   { id: "clocks", label: "Clocks", icon: History },
   { id: "cron", label: "Cron", icon: Clock4 },
   { id: "advisor", label: "Advisor", icon: Bot },
+];
+
+const BOTTOM_NAV: NavItem[] = [
+  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 interface SidebarProps {
@@ -126,6 +131,44 @@ export function Sidebar({
                 <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-cta" />
               )}
             </span>
+            <span className="leading-none truncate">
+              {open ? label : label.slice(0, 3)}
+            </span>
+          </button>
+        );
+      })}
+
+      {/* Spacer pushes settings to the bottom */}
+      <div className="flex-1" />
+
+      {/* Bottom nav (settings) */}
+      {BOTTOM_NAV.map(({ id, label, icon: Icon }) => {
+        const isActive = active === id;
+        return (
+          <button
+            key={id}
+            title={
+              config.views[id]
+                ? `${label} (${displayShortcut(config.views[id])})`
+                : label
+            }
+            onClick={() => onChange(id)}
+            className={[
+              "relative flex items-center",
+              open
+                ? "px-3 gap-2.5 h-8"
+                : "flex-col justify-center mx-2 h-10 gap-1",
+              "rounded-lg transition-colors",
+              "text-[9px] font-semibold tracking-wider uppercase",
+              isActive
+                ? "bg-cta-muted text-cta"
+                : "text-stone-700 hover:text-stone-900 hover:bg-surface-raised",
+            ].join(" ")}
+          >
+            <Icon
+              size={open ? 14 : 16}
+              strokeWidth={isActive ? 2 : 1.5}
+            />
             <span className="leading-none truncate">
               {open ? label : label.slice(0, 3)}
             </span>

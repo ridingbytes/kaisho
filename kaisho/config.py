@@ -188,6 +188,54 @@ def list_profiles(cfg: Settings | None = None) -> list[str]:
     )
 
 
+def delete_profile(name: str, cfg: Settings | None = None) -> None:
+    """Delete a profile directory.
+
+    Raises ValueError if *name* is the currently active profile or
+    does not exist.
+    """
+    import shutil
+    if cfg is None:
+        cfg = get_config()
+    if name == cfg.PROFILE:
+        raise ValueError(
+            f"Cannot delete the active profile '{name}'"
+        )
+    profile_dir = cfg.USER_DIR / "profiles" / name
+    if not profile_dir.is_dir():
+        raise ValueError(f"Profile '{name}' does not exist")
+    shutil.rmtree(profile_dir)
+
+
+def rename_profile(
+    old_name: str,
+    new_name: str,
+    cfg: Settings | None = None,
+) -> None:
+    """Rename a profile directory.
+
+    Raises ValueError if *old_name* is the active profile, does not
+    exist, or *new_name* already exists.
+    """
+    import re
+    if cfg is None:
+        cfg = get_config()
+    if old_name == cfg.PROFILE:
+        raise ValueError(
+            f"Cannot rename the active profile '{old_name}'"
+        )
+    new_name = re.sub(r"[^a-zA-Z0-9_-]", "", new_name.strip())
+    if not new_name:
+        raise ValueError("New profile name is invalid")
+    src = cfg.USER_DIR / "profiles" / old_name
+    dst = cfg.USER_DIR / "profiles" / new_name
+    if not src.is_dir():
+        raise ValueError(f"Profile '{old_name}' does not exist")
+    if dst.exists():
+        raise ValueError(f"Profile '{new_name}' already exists")
+    src.rename(dst)
+
+
 # -------------------------------------------------------------------
 # Init and migration
 # -------------------------------------------------------------------

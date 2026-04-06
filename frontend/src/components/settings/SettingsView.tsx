@@ -40,7 +40,9 @@ import {
   useAddCustomerType,
   useDeleteCustomerType,
   useCreateProfile,
+  useDeleteProfile,
   useProfiles,
+  useRenameProfile,
   useSwitchProfile,
 } from "../../hooks/useSettings";
 import { PixelAvatar } from "../common/PixelAvatar";
@@ -1358,7 +1360,12 @@ function ProfilesTab() {
   const { data: profileData } = useProfiles();
   const switchProfile = useSwitchProfile();
   const createProfile = useCreateProfile();
+  const renameProfile = useRenameProfile();
+  const deleteProfile = useDeleteProfile();
   const [newProfile, setNewProfile] = useState("");
+  const [renamingProfile, setRenamingProfile] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   if (!userData || !profileData) return null;
 
@@ -1380,56 +1387,150 @@ function ProfilesTab() {
     });
   }
 
+  function startRename(p: string) {
+    setRenamingProfile(p);
+    setRenameValue(p);
+  }
+
+  function commitRename(p: string) {
+    const newName = renameValue.trim();
+    if (!newName || newName === p) {
+      setRenamingProfile(null);
+      return;
+    }
+    renameProfile.mutate(
+      { oldName: p, newName },
+      { onSettled: () => setRenamingProfile(null) },
+    );
+  }
+
+  function handleDelete(p: string) {
+    deleteProfile.mutate(p, {
+      onSettled: () => setConfirmDelete(null),
+    });
+  }
+
   return (
     <div className="flex flex-col gap-8">
-      {/* Current profile */}
       <section>
         <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
           Profiles
         </h2>
         <p className="text-[10px] text-stone-500 mb-3">
           User: {userData.name || userData.username}
-          {" "} / Active: {userData.profile}
+          {" "}&middot; Active: {userData.profile}
         </p>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
-          {(profileData.profiles ?? []).map((p, i, arr) => (
-            <div
-              key={p}
-              className={[
-                "flex items-center gap-3 px-4 py-2.5",
-                i < arr.length - 1
-                  ? "border-b border-border-subtle"
-                  : "",
-              ].join(" ")}
-            >
-              <span className={[
-                "text-sm flex-1",
-                p === profileData.active
-                  ? "text-cta font-semibold"
-                  : "text-stone-800",
-              ].join(" ")}>
-                {p}
-              </span>
-              {p !== profileData.active && (
-                <button
-                  onClick={() =>
-                    switchProfile.mutate(p, {
-                      onSuccess: () => window.location.reload(),
-                    })
-                  }
-                  disabled={switchProfile.isPending}
-                  className="px-2 py-1 rounded text-xs text-stone-600 hover:text-cta hover:bg-cta-muted transition-colors"
-                >
-                  Switch
-                </button>
-              )}
-              {p === profileData.active && (
-                <span className="text-[10px] text-cta uppercase tracking-wider font-semibold">
-                  active
-                </span>
-              )}
-            </div>
-          ))}
+          {(profileData.profiles ?? []).map((p, i, arr) => {
+            const isActive = p === profileData.active;
+            const isRenaming = renamingProfile === p;
+            const isConfirmingDelete = confirmDelete === p;
+            return (
+              <div
+                key={p}
+                className={[
+                  "flex items-center gap-2 px-4 py-2.5",
+                  i < arr.length - 1
+                    ? "border-b border-border-subtle"
+                    : "",
+                ].join(" ")}
+              >
+                {isRenaming ? (
+                  <>
+                    <input
+                      autoFocus
+                      className={inputCls + " flex-1 text-sm"}
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitRename(p);
+                        if (e.key === "Escape") setRenamingProfile(null);
+                      }}
+                    />
+                    <button
+                      onClick={() => commitRename(p)}
+                      disabled={renameProfile.isPending}
+                      className="p-1 rounded text-green-500 hover:text-green-400 transition-colors"
+                      title="Save rename"
+                    >
+                      <Check size={13} strokeWidth={2} />
+                    </button>
+                    <button
+                      onClick={() => setRenamingProfile(null)}
+                      className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
+                      title="Cancel"
+                    >
+                      <X size={13} strokeWidth={2} />
+                    </button>
+                  </>
+                ) : isConfirmingDelete ? (
+                  <>
+                    <span className="text-xs text-stone-600 flex-1">
+                      Delete <strong className="text-stone-800">{p}</strong>?
+                      {" "}All data will be lost.
+                    </span>
+                    <button
+                      onClick={() => handleDelete(p)}
+                      disabled={deleteProfile.isPending}
+                      className="px-2 py-1 rounded text-xs bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(null)}
+                      className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
+                    >
+                      <X size={13} strokeWidth={2} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className={[
+                      "text-sm flex-1",
+                      isActive
+                        ? "text-cta font-semibold"
+                        : "text-stone-800",
+                    ].join(" ")}>
+                      {p}
+                    </span>
+                    {isActive ? (
+                      <span className="text-[10px] text-cta uppercase tracking-wider font-semibold">
+                        active
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() =>
+                            switchProfile.mutate(p, {
+                              onSuccess: () => window.location.reload(),
+                            })
+                          }
+                          disabled={switchProfile.isPending}
+                          className="px-2 py-1 rounded text-xs text-stone-600 hover:text-cta hover:bg-cta-muted transition-colors"
+                        >
+                          Switch
+                        </button>
+                        <button
+                          onClick={() => startRename(p)}
+                          className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
+                          title="Rename profile"
+                        >
+                          <Pencil size={12} strokeWidth={2} />
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(p)}
+                          className="p-1 rounded text-stone-500 hover:text-red-500 transition-colors"
+                          title="Delete profile"
+                        >
+                          <Trash2 size={12} strokeWidth={2} />
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
         <form
           onSubmit={handleCreateProfile}
@@ -1451,8 +1552,6 @@ function ProfilesTab() {
           </button>
         </form>
       </section>
-
-      {/* Users are managed via login/register */}
     </div>
   );
 }
