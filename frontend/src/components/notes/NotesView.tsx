@@ -50,10 +50,12 @@ function NoteRow({
   note,
   allTags,
   onDelete,
+  onTagClick,
 }: {
   note: NoteItem;
   allTags: { name: string; color: string }[];
   onDelete: () => void;
+  onTagClick: (tag: string) => void;
 }) {
   const setView = useSetView();
   const { data: tasks = [] } = useTasks();
@@ -77,6 +79,9 @@ function NoteRow({
     note.customer ?? ""
   );
   const [targetFilename, setTargetFilename] = useState("");
+  const [ctxMenu, setCtxMenu] = useState<{
+    x: number; y: number;
+  } | null>(null);
   const updateNote = useUpdateNote();
   const move = useMoveNote();
 
@@ -116,6 +121,24 @@ function NoteRow({
   function cancelEdit(e: React.MouseEvent) {
     e.stopPropagation();
     setEditing(false);
+  }
+
+  function handleContextMenu(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setCtxMenu({ x: e.clientX, y: e.clientY });
+  }
+
+  function toggleTag(tagName: string) {
+    const current = note.tags ?? [];
+    const next = current.includes(tagName)
+      ? current.filter((t) => t !== tagName)
+      : [...current, tagName];
+    updateNote.mutate({
+      noteId: note.id,
+      updates: { tags: next },
+    });
+    setCtxMenu(null);
   }
 
   function openMovePanel(e: React.MouseEvent) {
@@ -167,6 +190,7 @@ function NoteRow({
       <div
         className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-surface-raised transition-colors"
         onClick={() => !editing && setExpanded((v) => !v)}
+        onContextMenu={handleContextMenu}
       >
         <span className="text-xs text-slate-500 w-20 shrink-0">
           {note.created.replace(/^\[/, "").slice(0, 10)}
@@ -233,15 +257,20 @@ function NoteRow({
         {note.tags?.map((tagName) => {
           const def = allTags.find((t) => t.name === tagName);
           return (
-            <span
+            <button
               key={tagName}
-              className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTagClick(tagName);
+              }}
+              className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white shrink-0 hover:opacity-80 transition-opacity"
               style={{
                 backgroundColor: def?.color ?? "#64748b",
               }}
+              title={`Filter by ${tagName}`}
             >
               {tagName}
-            </span>
+            </button>
           );
         })}
         <button
@@ -468,6 +497,45 @@ function NoteRow({
           )}
         </div>
       )}
+
+      {/* Right-click tag menu */}
+      {ctxMenu && (
+        <div
+          className="fixed z-50 w-36 rounded-lg bg-surface-overlay border border-border shadow-lg p-1 flex flex-col gap-0.5"
+          style={{ left: ctxMenu.x, top: ctxMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+          onMouseLeave={() => setCtxMenu(null)}
+        >
+          <p className="text-[9px] text-slate-600 px-2 uppercase tracking-wider">
+            Tags
+          </p>
+          {allTags.map((t) => {
+            const active = (note.tags ?? []).includes(t.name);
+            return (
+              <button
+                key={t.name}
+                onClick={() => toggleTag(t.name)}
+                className={[
+                  "w-full text-left px-2 py-1 rounded text-xs",
+                  "flex items-center gap-2 transition-colors",
+                  active
+                    ? "text-white"
+                    : "text-slate-400 hover:bg-surface-raised",
+                ].join(" ")}
+              >
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: t.color }}
+                />
+                {t.name}
+                {active && (
+                  <Check size={10} className="ml-auto" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -592,19 +660,57 @@ export function NotesView() {
   const allTags = settings?.tags ?? [];
   const deleteNote = useDeleteNote();
   const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState("");
+  const [tagFilter, setTagFilter] = useState("");
 
   useEffect(
     () => registerPanelAction("notes", () => setShowForm(true)),
     []
   );
 
+  const filtered = notes.filter((n) => {
+    if (tagFilter && !(n.tags ?? []).includes(tagFilter)) {
+      return false;
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      return (
+        n.title.toLowerCase().includes(q) ||
+        (n.customer ?? "").toLowerCase().includes(q) ||
+        (n.body ?? "").toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-6 py-3 border-b border-border-subtle shrink-0">
+      <div className="flex items-center gap-3 px-6 py-3 border-b border-border-subtle shrink-0 flex-wrap">
         <h1 className="text-xs font-semibold tracking-wider uppercase text-slate-400">
           Notes
         </h1>
+        <input
+          type="text"
+          placeholder="Search…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-2 py-1 rounded-lg text-xs bg-surface-raised border border-border text-slate-200 placeholder-slate-600 focus:outline-none focus:border-accent w-40"
+        />
+        {tagFilter && (
+          <button
+            onClick={() => setTagFilter("")}
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold text-white hover:opacity-80"
+            style={{
+              backgroundColor:
+                allTags.find((t) => t.name === tagFilter)?.color
+                ?? "#64748b",
+            }}
+          >
+            {tagFilter}
+            <X size={10} />
+          </button>
+        )}
         <button
           onClick={() => setShowForm((v) => !v)}
           className="ml-auto px-3 py-1 rounded-lg text-xs bg-accent text-white hover:bg-accent-hover transition-colors"
@@ -624,17 +730,20 @@ export function NotesView() {
             Loading…
           </p>
         )}
-        {!isLoading && notes.length === 0 && (
+        {!isLoading && filtered.length === 0 && (
           <p className="text-sm text-slate-600 text-center py-8">
-            No notes yet.
+            {notes.length === 0
+              ? "No notes yet."
+              : "No matching notes."}
           </p>
         )}
-        {notes.map((note) => (
+        {filtered.map((note) => (
           <NoteRow
             key={note.id}
             note={note}
             allTags={allTags}
             onDelete={() => deleteNote.mutate(note.id)}
+            onTagClick={setTagFilter}
           />
         ))}
       </div>

@@ -147,6 +147,9 @@ export function InboxItemRow({ item }: Props) {
         { onSuccess: () => setMoving(false) }
       );
     }
+    if (dest === "todo" || dest === "kb") {
+      setExpanded(true);
+    }
   }
 
   function handleMoveTodo() {
