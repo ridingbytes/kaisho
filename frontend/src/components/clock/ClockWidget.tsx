@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useActiveTimer } from "../../hooks/useClocks";
 import { ActiveTimer } from "./ActiveTimer";
 import { CalendarWidget } from "./CalendarWidget";
@@ -26,9 +30,10 @@ function formatDateHeading(iso: string): string {
 
 interface ClockWidgetProps {
   open: boolean;
+  onToggle: () => void;
 }
 
-export function ClockWidget({ open }: ClockWidgetProps) {
+export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
   const { data: timer } = useActiveTimer();
   const [tab, setTab] = useState<ActionTab>("start");
   const [calendarOpen, setCalendarOpen] = useState(
@@ -65,20 +70,35 @@ export function ClockWidget({ open }: ClockWidgetProps) {
     });
   }
 
+  if (!open) {
+    return (
+      <aside className="flex flex-col items-center shrink-0 border-l border-border-subtle bg-surface-card w-6">
+        <button
+          onClick={onToggle}
+          className="py-3 text-slate-600 hover:text-slate-300 transition-colors"
+          title="Expand time tracking"
+        >
+          <ChevronLeft size={14} />
+        </button>
+      </aside>
+    );
+  }
+
   return (
-    <aside
-      className={[
-        "flex flex-col shrink-0 border-l border-border-subtle bg-surface-card",
-        "overflow-hidden transition-[width] duration-200",
-        open ? "w-80" : "w-0",
-      ].join(" ")}
-    >
+    <aside className="flex flex-col shrink-0 border-l border-border-subtle bg-surface-card w-80">
       {/* Header */}
       <div className="flex items-center px-4 py-3 border-b border-border-subtle shrink-0">
         <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-400 flex-1">
           Time Tracking
         </h2>
         <HelpButton title="Time Tracking" doc={DOCS.clock} />
+        <button
+          onClick={onToggle}
+          className="ml-1 p-0.5 rounded text-slate-600 hover:text-slate-300 transition-colors"
+          title="Collapse"
+        >
+          <ChevronRight size={14} />
+        </button>
       </div>
 
       <div className="flex flex-col gap-4 p-4 overflow-y-auto flex-1">

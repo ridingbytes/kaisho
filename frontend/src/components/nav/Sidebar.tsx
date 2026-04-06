@@ -1,6 +1,8 @@
 import {
   Bot,
   BookOpen,
+  ChevronsLeft,
+  ChevronsRight,
   Clock4,
   Columns2,
   GitPullRequest,
@@ -51,6 +53,7 @@ interface SidebarProps {
   active: View;
   onChange: (v: View) => void;
   open: boolean;
+  onToggle: () => void;
   advisorUnread?: boolean;
 }
 
@@ -58,6 +61,7 @@ export function Sidebar({
   active,
   onChange,
   open,
+  onToggle,
   advisorUnread,
 }: SidebarProps) {
   const { data: inboxItems } = useInboxItems();
@@ -76,10 +80,22 @@ export function Sidebar({
     <nav
       className={[
         "flex flex-col shrink-0 border-r border-border-subtle bg-surface-card",
-        "transition-[width] duration-200 py-3 gap-1",
+        "transition-[width] duration-200 py-2 gap-0.5",
         open ? "w-40" : "w-14 overflow-hidden",
       ].join(" ")}
     >
+      {/* Toggle button */}
+      <button
+        onClick={onToggle}
+        title={open ? "Collapse" : "Expand"}
+        className={[
+          "flex items-center rounded-lg transition-colors",
+          "text-slate-600 hover:text-slate-300 hover:bg-surface-raised",
+          open ? "px-3 h-7 justify-end" : "mx-2 h-7 justify-center",
+        ].join(" ")}
+      >
+        {open ? <ChevronsLeft size={14} /> : <ChevronsRight size={14} />}
+      </button>
 
       {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
         const isActive = active === id;

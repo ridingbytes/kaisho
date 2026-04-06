@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Moon, PanelRight, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { AdvisorMessage } from "./components/advisor/AdvisorView";
 import { AdvisorView } from "./components/advisor/AdvisorView";
@@ -192,13 +192,6 @@ function AppShell() {
       {/* Header */}
       <header className="flex items-center gap-2 px-3 h-11 shrink-0 border-b border-border-subtle">
         <button
-          onClick={() => setSidebarOpen((v) => !v)}
-          title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          className="p-1 rounded-md hover:bg-surface-raised transition-colors"
-        >
-          <div className="w-2.5 h-2.5 rounded-full bg-accent" />
-        </button>
-        <button
           onClick={() => setView("dashboard")}
           className="text-xs font-semibold text-slate-500 tracking-widest uppercase hover:text-slate-300 transition-colors"
         >
@@ -216,13 +209,6 @@ function AppShell() {
           >
             {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
           </button>
-          <button
-            onClick={() => setClockOpen((v) => !v)}
-            title={clockOpen ? "Collapse time tracking" : "Expand time tracking"}
-            className={headerBtn}
-          >
-            <PanelRight size={14} />
-          </button>
         </div>
       </header>
 
@@ -233,6 +219,7 @@ function AppShell() {
             active={view}
             onChange={setView}
             open={sidebarOpen}
+            onToggle={() => setSidebarOpen((v) => !v)}
             advisorUnread={advisorUnread}
           />
 
@@ -256,7 +243,10 @@ function AppShell() {
             </div>
           </main>
 
-          <ClockWidget open={clockOpen} />
+          <ClockWidget
+            open={clockOpen}
+            onToggle={() => setClockOpen((v) => !v)}
+          />
         </div>
       </ViewContext.Provider>
 
