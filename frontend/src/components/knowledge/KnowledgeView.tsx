@@ -553,7 +553,7 @@ function TreeNodeRow({
   onSelect,
   onToggle,
 }: TreeNodeRowProps) {
-  const indent = depth * 12;
+  const indent = depth * 16;
 
   if (node.kind === "leaf") {
     const isSelected = selectedPath === node.path;
@@ -567,7 +567,7 @@ function TreeNodeRow({
             ? "text-accent bg-accent-muted"
             : "text-slate-300",
         ].join(" ")}
-        style={{ paddingLeft: indent + 16 }}
+        style={{ paddingLeft: indent + 20 }}
         title={node.name}
       >
         {node.name}
