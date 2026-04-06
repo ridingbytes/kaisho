@@ -665,10 +665,14 @@ function TreeNodeRow({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onDelete(node.path);
+              if (window.confirm(
+                `Delete "${node.name}"? This cannot be undone.`
+              )) {
+                onDelete(node.path);
+              }
             }}
             className="p-0.5 rounded text-slate-700 hover:text-red-400 transition-colors"
-            title="Delete"
+            title="Delete (irreversible)"
           >
             <Trash2 size={9} />
           </button>
