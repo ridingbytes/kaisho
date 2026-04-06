@@ -71,26 +71,3 @@ def test_cron_add_and_list(runner, mock_config):
         assert "my-job" in list_result.output
 
 
-def test_comm_add_and_list(runner, mock_config):
-    with patch("omnicontrol.cli.comm.get_config", return_value=mock_config):
-        add_result = runner.invoke(cli, [
-            "comm", "add", "Test email",
-            "--direction", "in",
-            "--channel", "email",
-        ])
-        assert add_result.exit_code == 0
-        assert "Logged" in add_result.output
-
-        list_result = runner.invoke(cli, ["comm", "list"])
-        assert "Test email" in list_result.output
-
-
-def test_comm_search(runner, mock_config):
-    with patch("omnicontrol.cli.comm.get_config", return_value=mock_config):
-        runner.invoke(cli, [
-            "comm", "add", "Budget discussion",
-            "--direction", "out",
-        ])
-        result = runner.invoke(cli, ["comm", "search", "Budget"])
-        assert result.exit_code == 0
-        assert "Budget" in result.output

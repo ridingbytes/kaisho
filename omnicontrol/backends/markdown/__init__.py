@@ -836,15 +836,16 @@ class MarkdownClockBackend(ClockBackend):
 
     def update_entry(
         self,
-        start_iso,
-        customer=None,
-        description=None,
-        hours=None,
+        start_iso: str,
+        customer: str | None = None,
+        description: str | None = None,
+        hours: float | None = None,
         new_date=None,
-        task_id=None,
-        booked=None,
-        notes=None,
-        contract=None,
+        start_time: str | None = None,
+        task_id: str | None = None,
+        booked: bool | None = None,
+        notes: str | None = None,
+        contract: str | None = None,
     ) -> dict | None:
         entries = self._load_entries()
         for entry in entries:
@@ -862,6 +863,23 @@ class MarkdownClockBackend(ClockBackend):
                 entry["notes"] = notes
             if contract is not None:
                 entry["contract"] = contract
+            if start_time is not None:
+                old_start = datetime.fromisoformat(
+                    entry["start"]
+                )
+                h, m = (int(x) for x in start_time.split(":"))
+                new_start = old_start.replace(
+                    hour=h, minute=m,
+                )
+                delta = new_start - old_start
+                entry["start"] = new_start.isoformat()
+                if entry.get("end"):
+                    old_end = datetime.fromisoformat(
+                        entry["end"]
+                    )
+                    entry["end"] = (
+                        old_end + delta
+                    ).isoformat()
             if hours is not None:
                 start_dt = datetime.fromisoformat(
                     entry["start"]
