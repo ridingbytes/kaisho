@@ -654,7 +654,7 @@ function TimeEntriesSection({
       </button>
 
       {open && (
-        <div className="mt-1 max-h-48 overflow-y-auto">
+        <div className="mt-1 ml-5 max-h-48 overflow-y-auto">
           {entries.length === 0 ? (
             <p className="text-[10px] text-slate-600 py-1">
               No entries

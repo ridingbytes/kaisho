@@ -89,14 +89,50 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
     setError(null);
   }
 
+  const SLASH_COMMANDS: Record<string, {
+    desc: string;
+    action: (arg: string) => void;
+  }> = {
+    "/reset": {
+      desc: "Clear the chat",
+      action: () => clearMessages(),
+    },
+    "/model": {
+      desc: "Switch model (e.g. /model ollama:qwen3:14b)",
+      action: (arg) => {
+        if (arg) setModel(arg);
+        else setError("Usage: /model provider:name");
+      },
+    },
+    "/help": {
+      desc: "Show available commands",
+      action: () => {
+        const lines = Object.entries(SLASH_COMMANDS)
+          .map(([cmd, { desc }]) => `**${cmd}** — ${desc}`)
+          .join("\n\n");
+        onMessagesChange((prev) => [
+          ...prev,
+          { role: "assistant", text: lines },
+        ]);
+      },
+    },
+  };
+
+  function handleSlashCommand(text: string): boolean {
+    const [cmd, ...rest] = text.split(" ");
+    const handler = SLASH_COMMANDS[cmd];
+    if (!handler) return false;
+    handler.action(rest.join(" ").trim());
+    setInput("");
+    return true;
+  }
+
   function sendMessage() {
     const question = input.trim();
     if (!question || loading) return;
 
-    if (question === "/reset") {
-      setInput("");
-      clearMessages();
-      return;
+    if (question.startsWith("/")) {
+      if (handleSlashCommand(question)) return;
     }
 
     setInput("");
@@ -217,14 +253,41 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
       {/* Input */}
       <form
         onSubmit={handleSubmit}
-        className="shrink-0 px-6 pb-4 flex gap-3 items-end border-t border-border-subtle pt-3"
+        className="shrink-0 px-6 pb-4 border-t border-border-subtle pt-3"
       >
+        {/* Slash command popup */}
+        {input.startsWith("/") && !input.includes(" ") && (
+          <div className="mb-2 rounded-lg bg-surface-overlay border border-border p-1">
+            {Object.entries(SLASH_COMMANDS)
+              .filter(([cmd]) =>
+                cmd.startsWith(input.toLowerCase())
+              )
+              .map(([cmd, { desc }]) => (
+                <button
+                  key={cmd}
+                  type="button"
+                  onClick={() => {
+                    setInput(cmd + " ");
+                  }}
+                  className="w-full text-left px-2 py-1 rounded text-xs hover:bg-surface-raised transition-colors flex items-center gap-2"
+                >
+                  <span className="font-mono text-accent">
+                    {cmd}
+                  </span>
+                  <span className="text-slate-600">
+                    {desc}
+                  </span>
+                </button>
+              ))}
+          </div>
+        )}
+        <div className="flex gap-3 items-end">
         <textarea
           rows={3}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask anything… (Enter to send, Shift+Enter for newline)"
+          placeholder="Ask anything… (/ for commands)"
           className={[
             "flex-1 px-3 py-2 rounded-xl resize-none",
             "bg-surface-raised border border-border text-sm text-slate-200",
@@ -243,6 +306,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
           <Send size={14} />
           Send
         </button>
+        </div>
       </form>
     </div>
   );
