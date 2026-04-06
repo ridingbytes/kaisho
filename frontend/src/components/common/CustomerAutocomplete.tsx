@@ -1,19 +1,17 @@
 import { useState } from "react";
-import { useCustomers } from "../../hooks/useCustomers";
+import { useCustomers, useCreateCustomer } from "../../hooks/useCustomers";
 
 interface Props {
   value: string;
   onChange: (value: string) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  /** Extra classes on the wrapper div — use for layout (flex-1, etc.) */
   className?: string;
-  /** Classes on the inner input element */
   inputClassName?: string;
   placeholder?: string;
   autoFocus?: boolean;
 }
 
-const MAX_UNFILITERED = 8;
+const MAX_UNFILTERED = 8;
 
 export function CustomerAutocomplete({
   value,
@@ -25,15 +23,22 @@ export function CustomerAutocomplete({
   autoFocus,
 }: Props) {
   const { data: customers = [] } = useCustomers(true);
+  const createCustomer = useCreateCustomer();
   const [open, setOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(-1);
 
   const allNames = customers.map((c) => c.name);
-  const filtered = value.trim()
+  const trimmed = value.trim();
+  const filtered = trimmed
     ? allNames.filter((n) =>
-        n.toLowerCase().includes(value.toLowerCase())
+        n.toLowerCase().includes(trimmed.toLowerCase())
       )
-    : allNames.slice(0, MAX_UNFILITERED);
+    : allNames.slice(0, MAX_UNFILTERED);
+
+  const exactMatch = allNames.some(
+    (n) => n.toLowerCase() === trimmed.toLowerCase()
+  );
+  const showCreate = trimmed.length > 0 && !exactMatch;
 
   function select(name: string) {
     onChange(name);
@@ -41,20 +46,39 @@ export function CustomerAutocomplete({
     setHighlightIdx(-1);
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (filtered.length > 0 && e.key === "ArrowDown") {
+  function handleCreate() {
+    createCustomer.mutate(
+      { name: trimmed },
+      {
+        onSuccess: () => {
+          onChange(trimmed);
+          setOpen(false);
+        },
+      }
+    );
+  }
+
+  function handleKeyDown(
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) {
+    const total = filtered.length + (showCreate ? 1 : 0);
+    if (total > 0 && e.key === "ArrowDown") {
       e.preventDefault();
-      setHighlightIdx((i) => Math.min(i + 1, filtered.length - 1));
+      setHighlightIdx((i) => Math.min(i + 1, total - 1));
       return;
     }
-    if (filtered.length > 0 && e.key === "ArrowUp") {
+    if (total > 0 && e.key === "ArrowUp") {
       e.preventDefault();
       setHighlightIdx((i) => Math.max(i - 1, -1));
       return;
     }
-    if (e.key === "Enter" && highlightIdx >= 0 && filtered[highlightIdx]) {
+    if (e.key === "Enter" && highlightIdx >= 0) {
       e.preventDefault();
-      select(filtered[highlightIdx]);
+      if (highlightIdx < filtered.length) {
+        select(filtered[highlightIdx]);
+      } else if (showCreate) {
+        handleCreate();
+      }
       return;
     }
     if (e.key === "Escape" && open) {
@@ -76,14 +100,14 @@ export function CustomerAutocomplete({
           setHighlightIdx(-1);
         }}
         onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 100)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         autoFocus={autoFocus}
         autoComplete="off"
         className={`w-full ${inputClassName}`}
       />
-      {open && filtered.length > 0 && (
+      {open && (filtered.length > 0 || showCreate) && (
         <ul className="absolute z-50 left-0 right-0 top-full mt-0.5 max-h-48 overflow-y-auto rounded-md border border-border bg-surface-raised shadow-card-hover">
           {filtered.map((name, i) => (
             <li key={name}>
@@ -105,6 +129,26 @@ export function CustomerAutocomplete({
               </button>
             </li>
           ))}
+          {showCreate && (
+            <li>
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleCreate();
+                }}
+                className={[
+                  "w-full text-left px-2 py-1.5 text-xs",
+                  "transition-colors border-t border-border-subtle",
+                  highlightIdx === filtered.length
+                    ? "bg-accent-muted text-accent"
+                    : "text-accent hover:bg-surface-overlay",
+                ].join(" ")}
+              >
+                + Create &quot;{trimmed}&quot;
+              </button>
+            </li>
+          )}
         </ul>
       )}
     </div>
