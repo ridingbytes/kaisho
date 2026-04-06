@@ -1028,11 +1028,57 @@ function AddTagForm({ onDone }: { onDone: () => void }) {
   );
 }
 
+function TaskStatesSection({
+  states,
+}: {
+  states: { name: string; label: string; color: string; done: boolean }[];
+}) {
+  return (
+    <section>
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+        Task States
+      </h2>
+      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        {states.map((state, i) => (
+          <div
+            key={state.name}
+            className={[
+              "flex items-center gap-3 px-4 py-2.5",
+              i < states.length - 1
+                ? "border-b border-border-subtle"
+                : "",
+            ].join(" ")}
+          >
+            <input
+              type="color"
+              value={state.color}
+              className="w-5 h-5 rounded-full border-0 p-0 cursor-pointer bg-transparent"
+              title="Color"
+              readOnly
+            />
+            <span className="text-xs font-mono text-slate-400 w-28">
+              {state.name}
+            </span>
+            <span className="text-sm text-slate-200 flex-1">
+              {state.label}
+            </span>
+            {state.done && (
+              <span className="text-[10px] font-semibold uppercase text-slate-600 bg-surface-raised px-1.5 py-0.5 rounded">
+                done
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function TagsSection({ tags }: { tags: ConfigTag[] }) {
   const [adding, setAdding] = useState(false);
 
   return (
-    <section className="flex-1">
+    <section>
       <div className="flex items-center gap-3 mb-3">
         <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500">
           Tags
@@ -1306,54 +1352,15 @@ function GeneralTab() {
     <div className="flex flex-col gap-8">
       <UserProfileSection />
 
-      <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
-        {/* Task States */}
-        <section className="flex-1">
-          <div className="flex items-baseline gap-3 mb-3">
-            <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500">
-              Task States
-            </h2>
-            <span className="text-xs text-slate-700">
-              Edit via oc config
-            </span>
-          </div>
-          <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
-            {settings.task_states.map((state, i) => (
-              <div
-                key={state.name}
-                className={[
-                  "flex items-center gap-3 px-4 py-2.5",
-                  i < settings.task_states.length - 1
-                    ? "border-b border-border-subtle"
-                    : "",
-                ].join(" ")}
-              >
-                <span
-                  className="w-3 h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: state.color }}
-                />
-                <span className="text-xs font-mono text-slate-400 w-28">
-                  {state.name}
-                </span>
-                <span className="text-sm text-slate-200 flex-1">
-                  {state.label}
-                </span>
-                {state.done && (
-                  <span className="text-[10px] font-semibold uppercase text-slate-600 bg-surface-raised px-1.5 py-0.5 rounded">
-                    done
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <TagsSection tags={settings.tags} />
-      </div>
-
       <CustomerTypesSection
         types={settings.customer_types ?? []}
       />
+
+      <TaskStatesSection
+        states={settings.task_states}
+      />
+
+      <TagsSection tags={settings.tags} />
     </div>
   );
 }

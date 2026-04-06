@@ -104,32 +104,31 @@ export function Sidebar({
                 : "text-slate-400 hover:text-slate-200 hover:bg-surface-raised",
             ].join(" ")}
           >
-            <Icon
-              size={open ? 14 : 16}
-              strokeWidth={isActive ? 2 : 1.5}
-              className="shrink-0"
-            />
+            <span className="relative shrink-0">
+              <Icon
+                size={open ? 14 : 16}
+                strokeWidth={isActive ? 2 : 1.5}
+              />
+              {/* Inbox badge */}
+              {id === "inbox" && inboxCount > 0 && (
+                <span
+                  className={[
+                    "absolute -top-1.5 -right-2 min-w-[14px] h-3.5 px-0.5",
+                    "flex items-center justify-center rounded-full",
+                    "text-[9px] font-bold bg-accent text-white",
+                  ].join(" ")}
+                >
+                  {inboxCount > 99 ? "99+" : inboxCount}
+                </span>
+              )}
+              {/* Advisor unread dot */}
+              {id === "advisor" && advisorUnread && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent" />
+              )}
+            </span>
             <span className="leading-none truncate">
               {open ? label : label.slice(0, 3)}
             </span>
-
-            {/* Inbox badge */}
-            {id === "inbox" && inboxCount > 0 && (
-              <span
-                className={[
-                  "absolute top-1 right-1.5 min-w-[14px] h-3.5 px-0.5",
-                  "flex items-center justify-center rounded-full",
-                  "text-[9px] font-bold bg-accent text-white",
-                ].join(" ")}
-              >
-                {inboxCount > 99 ? "99+" : inboxCount}
-              </span>
-            )}
-
-            {/* Advisor unread dot */}
-            {id === "advisor" && advisorUnread && (
-              <span className="absolute top-1 right-1.5 w-2.5 h-2.5 rounded-full bg-accent" />
-            )}
           </button>
         );
       })}
