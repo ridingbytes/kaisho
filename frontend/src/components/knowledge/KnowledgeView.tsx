@@ -14,6 +14,8 @@ import {
   useKnowledgeFile,
   useKnowledgeSearch,
   useKnowledgeTree,
+  useMoveKnowledgeFile,
+  useRenameKnowledgeFile,
   useSaveKnowledgeFile,
 } from "../../hooks/useKnowledge";
 import { HelpButton } from "../common/HelpButton";
@@ -542,36 +544,124 @@ interface TreeNodeRowProps {
   node: TreeNode;
   depth: number;
   selectedPath: string | null;
+  labels: string[];
   onSelect: (path: string, label: string) => void;
   onToggle: (path: string) => void;
+  onRename: (oldPath: string, newPath: string) => void;
+  onMove: (
+    oldPath: string,
+    oldLabel: string,
+    newLabel: string
+  ) => void;
 }
 
 function TreeNodeRow({
   node,
   depth,
   selectedPath,
+  labels,
   onSelect,
   onToggle,
+  onRename,
+  onMove,
 }: TreeNodeRowProps) {
   const indent = depth * 16;
+  const [renaming, setRenaming] = useState(false);
+  const [renamePath, setRenamePath] = useState("");
 
   if (node.kind === "leaf") {
     const isSelected = selectedPath === node.path;
+
+    if (renaming) {
+      return (
+        <div
+          className="flex items-center gap-1 py-0.5 pr-2"
+          style={{ paddingLeft: indent + 6 }}
+        >
+          <input
+            autoFocus
+            type="text"
+            value={renamePath}
+            onChange={(e) => setRenamePath(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && renamePath.trim()) {
+                onRename(node.path, renamePath.trim());
+                setRenaming(false);
+              }
+              if (e.key === "Escape") setRenaming(false);
+            }}
+            className="flex-1 min-w-0 px-1 py-0.5 text-xs rounded bg-surface-raised border border-border text-slate-200 focus:outline-none focus:border-accent"
+          />
+          <button
+            onClick={() => {
+              if (renamePath.trim()) {
+                onRename(node.path, renamePath.trim());
+              }
+              setRenaming(false);
+            }}
+            className="p-0.5 text-accent hover:bg-accent-muted rounded"
+          >
+            <Check size={10} />
+          </button>
+          <button
+            onClick={() => setRenaming(false)}
+            className="p-0.5 text-slate-600 hover:text-slate-300 rounded"
+          >
+            <X size={10} />
+          </button>
+        </div>
+      );
+    }
+
     return (
-      <button
-        onClick={() => onSelect(node.path, node.label)}
+      <div
         className={[
-          "w-full text-left py-1 pr-2 text-xs truncate transition-colors",
-          "hover:bg-surface-raised",
-          isSelected
-            ? "text-accent bg-accent-muted"
-            : "text-slate-300",
+          "group/leaf flex items-center py-1 pr-1",
+          "hover:bg-surface-raised transition-colors",
+          isSelected ? "text-accent bg-accent-muted" : "text-slate-300",
         ].join(" ")}
         style={{ paddingLeft: indent + 6 }}
-        title={node.name}
       >
-        {node.name}
-      </button>
+        <button
+          onClick={() => onSelect(node.path, node.label)}
+          className="flex-1 min-w-0 text-left text-xs truncate"
+          title={node.path}
+        >
+          {node.name}
+        </button>
+        <div className="hidden group-hover/leaf:flex items-center gap-0.5 shrink-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setRenamePath(node.path);
+              setRenaming(true);
+            }}
+            className="p-0.5 rounded text-slate-700 hover:text-accent transition-colors"
+            title="Rename / move"
+          >
+            <Pencil size={9} />
+          </button>
+          {labels.length > 1 && (
+            <select
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  onMove(node.path, node.label, e.target.value);
+                }
+              }}
+              className="w-12 text-[9px] bg-transparent text-slate-700 hover:text-slate-400 cursor-pointer"
+              title="Move to source"
+            >
+              <option value="">To...</option>
+              {labels
+                .filter((l) => l !== node.label)
+                .map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+            </select>
+          )}
+        </div>
+      </div>
     );
   }
 
@@ -592,12 +682,19 @@ function TreeNodeRow({
       {node.expanded &&
         node.children.map((child) => (
           <TreeNodeRow
-            key={child.kind === "leaf" ? child.path : child.path + "/"}
+            key={
+              child.kind === "leaf"
+                ? child.path
+                : child.path + "/"
+            }
             node={child}
             depth={depth + 1}
             selectedPath={selectedPath}
+            labels={labels}
             onSelect={onSelect}
             onToggle={onToggle}
+            onRename={onRename}
+            onMove={onMove}
           />
         ))}
     </>
@@ -754,6 +851,41 @@ export function KnowledgeView() {
       }
       return next;
     });
+  }
+
+  const renameFile = useRenameKnowledgeFile();
+  const moveFile = useMoveKnowledgeFile();
+
+  function handleRename(oldPath: string, newPath: string) {
+    if (oldPath === newPath) return;
+    renameFile.mutate(
+      { oldPath, newPath },
+      {
+        onSuccess: (f) => {
+          if (selectedPath === oldPath) {
+            setSelectedPath(f.path);
+          }
+        },
+      }
+    );
+  }
+
+  function handleMove(
+    oldPath: string,
+    oldLabel: string,
+    newLabel: string
+  ) {
+    moveFile.mutate(
+      { oldPath, oldLabel, newLabel },
+      {
+        onSuccess: (f) => {
+          if (selectedPath === oldPath) {
+            setSelectedPath(f.path);
+            setSelectedLabel(f.label);
+          }
+        },
+      }
+    );
   }
 
   const showEditor =
@@ -924,8 +1056,11 @@ export function KnowledgeView() {
                           node={node}
                           depth={1}
                           selectedPath={selectedPath}
+                          labels={labels}
                           onSelect={selectFile}
                           onToggle={handleToggleFolder}
+                          onRename={handleRename}
+                          onMove={handleMove}
                         />
                       ))}
                   </div>

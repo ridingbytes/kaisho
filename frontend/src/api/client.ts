@@ -489,6 +489,30 @@ export function deleteKnowledgeFile(path: string): Promise<void> {
   return del(`/knowledge/file?path=${encodeURIComponent(path)}`);
 }
 
+export function renameKnowledgeFile(
+  oldPath: string,
+  newPath: string,
+): Promise<KnowledgeFile> {
+  return post<KnowledgeFile>("/knowledge/rename", {
+    old_path: oldPath,
+    new_path: newPath,
+  });
+}
+
+export function moveKnowledgeFile(
+  oldPath: string,
+  oldLabel: string,
+  newLabel: string,
+  newPath?: string,
+): Promise<KnowledgeFile> {
+  return post<KnowledgeFile>("/knowledge/move", {
+    old_path: oldPath,
+    old_label: oldLabel,
+    new_label: newLabel,
+    new_path: newPath ?? null,
+  });
+}
+
 // Notes
 
 export function fetchNotes(): Promise<NoteItem[]> {

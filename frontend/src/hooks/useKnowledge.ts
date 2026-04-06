@@ -3,6 +3,8 @@ import {
   deleteKnowledgeFile,
   fetchKnowledgeFile,
   fetchKnowledgeTree,
+  moveKnowledgeFile,
+  renameKnowledgeFile,
   saveKnowledgeFile,
   searchKnowledge,
 } from "../api/client";
@@ -59,7 +61,43 @@ export function useDeleteKnowledgeFile() {
   return useMutation({
     mutationFn: (path: string) => deleteKnowledgeFile(path),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["knowledge", "tree"] });
+      void qc.invalidateQueries({ queryKey: ["knowledge"] });
+    },
+  });
+}
+
+export function useRenameKnowledgeFile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      oldPath,
+      newPath,
+    }: {
+      oldPath: string;
+      newPath: string;
+    }) => renameKnowledgeFile(oldPath, newPath),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["knowledge"] });
+    },
+  });
+}
+
+export function useMoveKnowledgeFile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      oldPath,
+      oldLabel,
+      newLabel,
+      newPath,
+    }: {
+      oldPath: string;
+      oldLabel: string;
+      newLabel: string;
+      newPath?: string;
+    }) => moveKnowledgeFile(oldPath, oldLabel, newLabel, newPath),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["knowledge"] });
     },
   });
 }

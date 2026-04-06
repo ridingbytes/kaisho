@@ -56,6 +56,41 @@ def write_file(body: FileWrite):
     )
 
 
+class FileRename(BaseModel):
+    old_path: str
+    new_path: str
+
+
+class FileMove(BaseModel):
+    old_path: str
+    old_label: str
+    new_label: str
+    new_path: str | None = None
+
+
+@router.post("/rename", status_code=200)
+def rename_file(body: FileRename):
+    """Rename or move a file within its source."""
+    try:
+        return kb_service.rename_file(
+            _sources(), body.old_path, body.new_path,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/move", status_code=200)
+def move_file(body: FileMove):
+    """Move a file between KB sources."""
+    try:
+        return kb_service.move_file(
+            _sources(), body.old_path, body.old_label,
+            body.new_label, body.new_path,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @router.delete("/file", status_code=204)
 def delete_file(path: str):
     found = kb_service.delete_file(_sources(), path)

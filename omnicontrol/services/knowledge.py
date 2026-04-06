@@ -90,6 +90,77 @@ def delete_file(
     return False
 
 
+def rename_file(
+    sources: list[dict],
+    old_path: str,
+    new_path: str,
+) -> dict:
+    """Rename or move a KB file within its source.
+
+    old_path and new_path are relative to the source root.
+    Creates parent directories for new_path if needed.
+    Returns the updated file dict.
+    """
+    for label, base in _expand_sources(sources):
+        src = base / old_path
+        if not src.exists() or not src.is_file():
+            continue
+        dst = base / new_path
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        src.rename(dst)
+        # Clean up empty parent dirs
+        for parent in src.parents:
+            if parent == base:
+                break
+            if parent.exists() and not any(parent.iterdir()):
+                parent.rmdir()
+        return {
+            "path": new_path,
+            "label": label,
+            "name": dst.stem,
+            "size": dst.stat().st_size,
+        }
+    raise ValueError(f"File not found: {old_path!r}")
+
+
+def move_file(
+    sources: list[dict],
+    old_path: str,
+    old_label: str,
+    new_label: str,
+    new_path: str | None = None,
+) -> dict:
+    """Move a KB file from one source to another.
+
+    If new_path is None, keeps the same relative path.
+    """
+    dest_path = new_path or old_path
+    src_base = dst_base = None
+    for lbl, base in _expand_sources(sources):
+        if lbl == old_label:
+            src_base = base
+        if lbl == new_label:
+            dst_base = base
+    if src_base is None:
+        raise ValueError(f"Source not found: {old_label!r}")
+    if dst_base is None:
+        raise ValueError(f"Destination not found: {new_label!r}")
+    src = src_base / old_path
+    if not src.exists():
+        raise ValueError(f"File not found: {old_path!r}")
+    dst = dst_base / dest_path
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    content = src.read_text(encoding="utf-8")
+    dst.write_text(content, encoding="utf-8")
+    src.unlink()
+    return {
+        "path": dest_path,
+        "label": new_label,
+        "name": dst.stem,
+        "size": dst.stat().st_size,
+    }
+
+
 def search(
     sources: list[dict],
     query: str,
