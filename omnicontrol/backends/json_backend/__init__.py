@@ -1,11 +1,10 @@
-"""Markdown backend using real .md files as storage.
+"""JSON backend using JSON files as storage.
 
-Each domain gets its own Markdown file inside a configurable
-directory (default: data/markdown/). Data is stored as proper
-markdown with level-2 headings and JSON metadata in fenced
-code blocks.
+Each domain gets its own JSON file inside a configurable directory
+(default: data/markdown/). The backend stores data as JSON arrays
+for simpler parsing and writing.
 
-Set BACKEND=markdown in .env to activate.
+Set BACKEND=json in .env to activate.
 """
 import hashlib
 import json
@@ -24,110 +23,28 @@ from ..base import (
 )
 
 
-# -- Markdown parsing helpers ----------------------------------------
-
-JSON_BLOCK_RE = re.compile(
-    r"^```json\s*\n(.*?)\n```", re.MULTILINE | re.DOTALL
-)
+# -- JSON helpers ----------------------------------------------------
 
 
-def _parse_md_sections(
-    text: str, level: int = 2
-) -> list[dict]:
-    """Split markdown into sections by heading level.
-
-    Returns list of dicts with keys:
-      heading  -- text after the ## marker
-      meta     -- parsed dict from first fenced json block
-      body     -- everything after the json block
-      raw      -- original full section text
-    """
-    prefix = "#" * level + " "
-    pattern = re.compile(
-        r"^" + re.escape(prefix), re.MULTILINE
-    )
-    splits = list(pattern.finditer(text))
-    if not splits:
-        return []
-
-    sections = []
-    for i, match in enumerate(splits):
-        start = match.start()
-        end = (
-            splits[i + 1].start()
-            if i + 1 < len(splits)
-            else len(text)
-        )
-        raw = text[start:end]
-        first_newline = raw.find("\n")
-        heading = (
-            raw[len(prefix):first_newline].strip()
-            if first_newline != -1
-            else raw[len(prefix):].strip()
-        )
-        after_heading = (
-            raw[first_newline + 1:]
-            if first_newline != -1
-            else ""
-        )
-        meta = {}
-        body = after_heading
-        json_match = JSON_BLOCK_RE.search(after_heading)
-        if json_match:
-            meta = json.loads(json_match.group(1))
-            body = after_heading[
-                json_match.end():
-            ].strip("\n")
-        sections.append({
-            "heading": heading,
-            "meta": meta,
-            "body": body,
-            "raw": raw,
-        })
-    return sections
-
-
-def _render_md_sections(
-    sections: list[dict], level: int = 2
-) -> str:
-    """Render sections back to markdown text."""
-    prefix = "#" * level
-    parts = []
-    for sec in sections:
-        lines = [f"{prefix} {sec['heading']}"]
-        if sec.get("meta"):
-            lines.append("```json")
-            lines.append(json.dumps(
-                sec["meta"], ensure_ascii=False
-            ))
-            lines.append("```")
-        if sec.get("body"):
-            lines.append("")
-            lines.append(sec["body"])
-        parts.append("\n".join(lines))
-    return "\n\n".join(parts) + "\n" if parts else ""
-
-
-# -- File I/O helpers ------------------------------------------------
-
-
-def _read_md(path: Path) -> str:
-    """Read text from *path*, returning '' if missing."""
+def _read_json(path: Path) -> list[dict]:
+    """Read a JSON array from *path*, returning [] if missing."""
     if not path.exists():
-        return ""
+        return []
     with open(path, "r", encoding="utf-8") as fh:
-        return fh.read()
+        data = json.load(fh)
+    return data if isinstance(data, list) else []
 
 
-def _write_md(path: Path, text: str) -> None:
-    """Atomically write *text* to *path*."""
+def _write_json(path: Path, data: list[dict]) -> None:
+    """Atomically write *data* as a JSON array to *path*."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_fd, tmp_path = tempfile.mkstemp(
         dir=path.parent, suffix=".tmp"
     )
     try:
         with open(tmp_fd, "w", encoding="utf-8") as fh:
-            fh.write(text)
+            json.dump(data, fh, indent=2, ensure_ascii=False)
+            fh.write("\n")
         Path(tmp_path).replace(path)
     except BaseException:
         Path(tmp_path).unlink(missing_ok=True)
@@ -178,7 +95,9 @@ def _period_range(period: str) -> tuple[date, date]:
 
 
 def _entry_in_range(
-    entry: dict, start: date, end: date
+    entry: dict,
+    start: date,
+    end: date,
 ) -> bool:
     """Check if a clock entry falls within [start, end]."""
     entry_start = entry.get("start", "")
@@ -194,93 +113,13 @@ def _entry_in_range(
 def _guess_inbox_type(text: str) -> str:
     """Simple heuristic to categorise inbox items."""
     lower = text.lower()
-    if any(
-        w in lower
-        for w in ("bug", "fix", "error", "broken")
-    ):
+    if any(w in lower for w in ("bug", "fix", "error", "broken")):
         return "bug"
-    if any(
-        w in lower
-        for w in ("idea", "feature", "request")
-    ):
+    if any(w in lower for w in ("idea", "feature", "request")):
         return "feature"
-    if any(
-        w in lower
-        for w in ("call", "meet", "email", "mail")
-    ):
+    if any(w in lower for w in ("call", "meet", "email", "mail")):
         return "communication"
     return "note"
-
-
-# -- Task heading helpers --------------------------------------------
-
-
-def _task_heading(task: dict) -> str:
-    """Build heading: STATUS [CUSTOMER] Title."""
-    customer = task.get("customer", "")
-    status = task.get("status", "TODO")
-    title = task.get("title", "")
-    return f"{status} [{customer}] {title}"
-
-
-def _parse_task_heading(heading: str) -> dict:
-    """Extract status, customer, title from heading."""
-    m = re.match(
-        r"(\S+)\s+\[([^\]]*)\]\s+(.*)", heading
-    )
-    if not m:
-        return {
-            "status": "TODO",
-            "customer": "",
-            "title": heading,
-        }
-    return {
-        "status": m.group(1),
-        "customer": m.group(2),
-        "title": m.group(3),
-    }
-
-
-def _section_to_task(sec: dict) -> dict:
-    """Convert a parsed section to a task dict."""
-    parsed = _parse_task_heading(sec["heading"])
-    meta = sec.get("meta", {})
-    return {
-        "id": meta.get("id", ""),
-        "customer": parsed["customer"],
-        "title": parsed["title"],
-        "status": parsed["status"],
-        "tags": meta.get("tags", []),
-        "body": sec.get("body", ""),
-        "github_url": meta.get("github_url", ""),
-        "properties": meta.get("properties", {}),
-        "created": meta.get("created", ""),
-        "archived_at": meta.get("archived_at", ""),
-        "archive_status": meta.get(
-            "archive_status", ""
-        ),
-    }
-
-
-def _task_to_section(task: dict) -> dict:
-    """Convert a task dict to a section dict."""
-    meta = {
-        "id": task.get("id", ""),
-        "created": task.get("created", ""),
-        "tags": task.get("tags", []),
-        "github_url": task.get("github_url", ""),
-    }
-    if task.get("properties"):
-        meta["properties"] = task["properties"]
-    if task.get("archived_at"):
-        meta["archived_at"] = task["archived_at"]
-    if task.get("archive_status"):
-        meta["archive_status"] = task["archive_status"]
-    return {
-        "heading": _task_heading(task),
-        "meta": meta,
-        "body": task.get("body", ""),
-    }
 
 
 # ====================================================================
@@ -288,40 +127,14 @@ def _task_to_section(task: dict) -> dict:
 # ====================================================================
 
 
-class MarkdownTaskBackend(TaskBackend):
-    def __init__(
-        self, tasks_file: Path, archive_file: Path
-    ):
+class JsonTaskBackend(TaskBackend):
+    def __init__(self, tasks_file: Path, archive_file: Path):
         self._tasks_file = tasks_file
         self._archive_file = archive_file
 
     @property
     def data_file(self) -> Path:
         return self._tasks_file
-
-    def _load_tasks(self) -> list[dict]:
-        text = _read_md(self._tasks_file)
-        sections = _parse_md_sections(text)
-        return [_section_to_task(s) for s in sections]
-
-    def _save_tasks(self, tasks: list[dict]) -> None:
-        sections = [_task_to_section(t) for t in tasks]
-        _write_md(
-            self._tasks_file,
-            _render_md_sections(sections),
-        )
-
-    def _load_archive(self) -> list[dict]:
-        text = _read_md(self._archive_file)
-        sections = _parse_md_sections(text)
-        return [_section_to_task(s) for s in sections]
-
-    def _save_archive(self, tasks: list[dict]) -> None:
-        sections = [_task_to_section(t) for t in tasks]
-        _write_md(
-            self._archive_file,
-            _render_md_sections(sections),
-        )
 
     # -- queries -------------------------------------------------
 
@@ -332,7 +145,7 @@ class MarkdownTaskBackend(TaskBackend):
         tag=None,
         include_done=False,
     ) -> list[dict]:
-        tasks = self._load_tasks()
+        tasks = _read_json(self._tasks_file)
         if not include_done:
             tasks = [
                 t for t in tasks
@@ -361,7 +174,7 @@ class MarkdownTaskBackend(TaskBackend):
         return tasks
 
     def list_all_tags(self) -> list[dict]:
-        tasks = self._load_tasks()
+        tasks = _read_json(self._tasks_file)
         counter: Counter = Counter()
         for t in tasks:
             for tg in t.get("tags", []):
@@ -372,7 +185,7 @@ class MarkdownTaskBackend(TaskBackend):
         ]
 
     def list_archived(self) -> list[dict]:
-        return self._load_archive()
+        return _read_json(self._archive_file)
 
     # -- mutations -----------------------------------------------
 
@@ -385,7 +198,7 @@ class MarkdownTaskBackend(TaskBackend):
         body=None,
         github_url=None,
     ) -> dict:
-        tasks = self._load_tasks()
+        tasks = _read_json(self._tasks_file)
         task = {
             "id": _generate_id(title),
             "customer": customer,
@@ -398,24 +211,24 @@ class MarkdownTaskBackend(TaskBackend):
             "created": datetime.now().isoformat(),
         }
         tasks.append(task)
-        self._save_tasks(tasks)
+        _write_json(self._tasks_file, tasks)
         return task
 
     def move_task(self, task_id, new_status) -> dict:
-        tasks = self._load_tasks()
+        tasks = _read_json(self._tasks_file)
         for t in tasks:
             if t["id"] == task_id:
                 t["status"] = new_status
-                self._save_tasks(tasks)
+                _write_json(self._tasks_file, tasks)
                 return t
         raise ValueError(f"Task not found: {task_id}")
 
     def set_tags(self, task_id, tags) -> dict:
-        tasks = self._load_tasks()
+        tasks = _read_json(self._tasks_file)
         for t in tasks:
             if t["id"] == task_id:
                 t["tags"] = list(tags)
-                self._save_tasks(tasks)
+                _write_json(self._tasks_file, tasks)
                 return t
         raise ValueError(f"Task not found: {task_id}")
 
@@ -427,7 +240,7 @@ class MarkdownTaskBackend(TaskBackend):
         body=None,
         github_url=None,
     ) -> dict:
-        tasks = self._load_tasks()
+        tasks = _read_json(self._tasks_file)
         for t in tasks:
             if t["id"] == task_id:
                 if title is not None:
@@ -438,12 +251,12 @@ class MarkdownTaskBackend(TaskBackend):
                     t["body"] = body
                 if github_url is not None:
                     t["github_url"] = github_url
-                self._save_tasks(tasks)
+                _write_json(self._tasks_file, tasks)
                 return t
         raise ValueError(f"Task not found: {task_id}")
 
     def archive_task(self, task_id) -> bool:
-        tasks = self._load_tasks()
+        tasks = _read_json(self._tasks_file)
         target = None
         remaining = []
         for t in tasks:
@@ -453,20 +266,16 @@ class MarkdownTaskBackend(TaskBackend):
                 remaining.append(t)
         if target is None:
             return False
-        archive = self._load_archive()
-        target["archived_at"] = (
-            datetime.now().isoformat()
-        )
-        target["archive_status"] = target.get(
-            "status", ""
-        )
+        archive = _read_json(self._archive_file)
+        target["archived_at"] = datetime.now().isoformat()
+        target["archive_status"] = target.get("status", "")
         archive.append(target)
-        self._save_tasks(remaining)
-        self._save_archive(archive)
+        _write_json(self._tasks_file, remaining)
+        _write_json(self._archive_file, archive)
         return True
 
     def unarchive_task(self, task_id: str) -> bool:
-        archive = self._load_archive()
+        archive = _read_json(self._archive_file)
         target = None
         remaining = []
         for t in archive:
@@ -478,65 +287,11 @@ class MarkdownTaskBackend(TaskBackend):
             return False
         target.pop("archived_at", None)
         target.pop("archive_status", None)
-        tasks = self._load_tasks()
+        tasks = _read_json(self._tasks_file)
         tasks.append(target)
-        self._save_archive(remaining)
-        self._save_tasks(tasks)
+        _write_json(self._archive_file, remaining)
+        _write_json(self._tasks_file, tasks)
         return True
-
-
-# -- Clock heading helpers -------------------------------------------
-
-
-def _clock_heading(entry: dict) -> str:
-    """Build heading: CUSTOMER -- Description."""
-    customer = entry.get("customer", "")
-    desc = entry.get("description", "")
-    return f"{customer} \u2014 {desc}"
-
-
-def _parse_clock_heading(heading: str) -> dict:
-    """Extract customer and description from heading."""
-    parts = heading.split(" \u2014 ", 1)
-    if len(parts) == 2:
-        return {
-            "customer": parts[0].strip(),
-            "description": parts[1].strip(),
-        }
-    return {"customer": heading.strip(), "description": ""}
-
-
-def _section_to_clock(sec: dict) -> dict:
-    """Convert a parsed section to a clock dict."""
-    parsed = _parse_clock_heading(sec["heading"])
-    meta = sec.get("meta", {})
-    return {
-        "customer": parsed["customer"],
-        "description": parsed["description"],
-        "start": meta.get("start", ""),
-        "end": meta.get("end"),
-        "task_id": meta.get("task_id", ""),
-        "contract": meta.get("contract", ""),
-        "booked": meta.get("booked", False),
-        "notes": meta.get("notes", ""),
-    }
-
-
-def _clock_to_section(entry: dict) -> dict:
-    """Convert a clock dict to a section dict."""
-    meta = {
-        "start": entry.get("start", ""),
-        "end": entry.get("end"),
-        "task_id": entry.get("task_id", ""),
-        "contract": entry.get("contract", ""),
-        "booked": entry.get("booked", False),
-        "notes": entry.get("notes", ""),
-    }
-    return {
-        "heading": _clock_heading(entry),
-        "meta": meta,
-        "body": "",
-    }
 
 
 # ====================================================================
@@ -544,7 +299,7 @@ def _clock_to_section(entry: dict) -> dict:
 # ====================================================================
 
 
-class MarkdownClockBackend(ClockBackend):
+class JsonClockBackend(ClockBackend):
     def __init__(self, clocks_file: Path) -> None:
         self._clocks_file = clocks_file
 
@@ -552,25 +307,10 @@ class MarkdownClockBackend(ClockBackend):
     def data_file(self) -> Path:
         return self._clocks_file
 
-    def _load_entries(self) -> list[dict]:
-        text = _read_md(self._clocks_file)
-        sections = _parse_md_sections(text)
-        return [_section_to_clock(s) for s in sections]
-
-    def _save_entries(
-        self, entries: list[dict]
-    ) -> None:
-        sections = [
-            _clock_to_section(e) for e in entries
-        ]
-        _write_md(
-            self._clocks_file,
-            _render_md_sections(sections),
-        )
-
     # -- helpers -------------------------------------------------
 
     def _duration_minutes(self, entry: dict) -> int:
+        """Compute duration in minutes for a finished entry."""
         start = datetime.fromisoformat(entry["start"])
         end_str = entry.get("end")
         if not end_str:
@@ -582,6 +322,7 @@ class MarkdownClockBackend(ClockBackend):
         )
 
     def _enrich(self, entry: dict) -> dict:
+        """Add computed duration_minutes field."""
         entry["duration_minutes"] = (
             self._duration_minutes(entry)
         )
@@ -598,7 +339,7 @@ class MarkdownClockBackend(ClockBackend):
         task_id=None,
         contract=None,
     ) -> list[dict]:
-        entries = self._load_entries()
+        entries = _read_json(self._clocks_file)
         if task_id:
             entries = [
                 e for e in entries
@@ -631,7 +372,7 @@ class MarkdownClockBackend(ClockBackend):
         return [self._enrich(e) for e in entries]
 
     def get_active(self) -> dict | None:
-        for entry in self._load_entries():
+        for entry in _read_json(self._clocks_file):
             if entry.get("end") is None:
                 return self._enrich(entry)
         return None
@@ -667,7 +408,7 @@ class MarkdownClockBackend(ClockBackend):
             raise ValueError(
                 "A clock entry is already running"
             )
-        entries = self._load_entries()
+        entries = _read_json(self._clocks_file)
         entry = {
             "customer": customer,
             "description": description,
@@ -679,17 +420,15 @@ class MarkdownClockBackend(ClockBackend):
             "notes": "",
         }
         entries.append(entry)
-        self._save_entries(entries)
+        _write_json(self._clocks_file, entries)
         return self._enrich(entry)
 
     def stop(self) -> dict:
-        entries = self._load_entries()
+        entries = _read_json(self._clocks_file)
         for entry in entries:
             if entry.get("end") is None:
-                entry["end"] = (
-                    datetime.now().isoformat()
-                )
-                self._save_entries(entries)
+                entry["end"] = datetime.now().isoformat()
+                _write_json(self._clocks_file, entries)
                 return self._enrich(entry)
         raise ValueError("No running clock entry")
 
@@ -708,7 +447,7 @@ class MarkdownClockBackend(ClockBackend):
         start = end - timedelta(minutes=minutes)
         if start.date() < end.date():
             start = end.replace(hour=0, minute=0)
-        entries = self._load_entries()
+        entries = _read_json(self._clocks_file)
         entry = {
             "customer": customer,
             "description": description,
@@ -720,7 +459,7 @@ class MarkdownClockBackend(ClockBackend):
             "notes": "",
         }
         entries.append(entry)
-        self._save_entries(entries)
+        _write_json(self._clocks_file, entries)
         return self._enrich(entry)
 
     def update_entry(
@@ -735,7 +474,7 @@ class MarkdownClockBackend(ClockBackend):
         notes=None,
         contract=None,
     ) -> dict | None:
-        entries = self._load_entries()
+        entries = _read_json(self._clocks_file)
         for entry in entries:
             if entry.get("start") != start_iso:
                 continue
@@ -768,9 +507,7 @@ class MarkdownClockBackend(ClockBackend):
                     day=new_date.day,
                 )
                 delta = new_start - old_start
-                entry["start"] = (
-                    new_start.isoformat()
-                )
+                entry["start"] = new_start.isoformat()
                 if entry.get("end"):
                     old_end = datetime.fromisoformat(
                         entry["end"]
@@ -778,83 +515,20 @@ class MarkdownClockBackend(ClockBackend):
                     entry["end"] = (
                         old_end + delta
                     ).isoformat()
-            self._save_entries(entries)
+            _write_json(self._clocks_file, entries)
             return self._enrich(entry)
         return None
 
     def delete_entry(self, start_iso) -> bool:
-        entries = self._load_entries()
+        entries = _read_json(self._clocks_file)
         new = [
             e for e in entries
             if e.get("start") != start_iso
         ]
         if len(new) == len(entries):
             return False
-        self._save_entries(new)
+        _write_json(self._clocks_file, new)
         return True
-
-
-# -- Inbox heading helpers -------------------------------------------
-
-
-def _inbox_heading(item: dict) -> str:
-    """Build heading: TYPE [CUSTOMER] Title."""
-    itype = item.get("type", "note")
-    customer = item.get("customer", "")
-    title = item.get("title", "")
-    return f"{itype} [{customer}] {title}"
-
-
-def _parse_inbox_heading(heading: str) -> dict:
-    """Extract type, customer, title from heading."""
-    m = re.match(
-        r"(\S+)\s+\[([^\]]*)\]\s+(.*)", heading
-    )
-    if not m:
-        return {
-            "type": "note",
-            "customer": "",
-            "title": heading,
-        }
-    return {
-        "type": m.group(1),
-        "customer": m.group(2),
-        "title": m.group(3),
-    }
-
-
-def _section_to_inbox(sec: dict) -> dict:
-    """Convert a parsed section to an inbox dict."""
-    parsed = _parse_inbox_heading(sec["heading"])
-    meta = sec.get("meta", {})
-    return {
-        "id": meta.get("id", ""),
-        "type": parsed["type"],
-        "customer": parsed["customer"],
-        "title": parsed["title"],
-        "body": sec.get("body", ""),
-        "channel": meta.get("channel", ""),
-        "direction": meta.get("direction", ""),
-        "created": meta.get("created", ""),
-        "properties": meta.get("properties", {}),
-    }
-
-
-def _inbox_to_section(item: dict) -> dict:
-    """Convert an inbox dict to a section dict."""
-    meta = {
-        "id": item.get("id", ""),
-        "created": item.get("created", ""),
-        "channel": item.get("channel", ""),
-        "direction": item.get("direction", ""),
-    }
-    if item.get("properties"):
-        meta["properties"] = item["properties"]
-    return {
-        "heading": _inbox_heading(item),
-        "meta": meta,
-        "body": item.get("body", ""),
-    }
 
 
 # ====================================================================
@@ -862,7 +536,7 @@ def _inbox_to_section(item: dict) -> dict:
 # ====================================================================
 
 
-class MarkdownInboxBackend(InboxBackend):
+class JsonInboxBackend(InboxBackend):
     def __init__(self, inbox_file: Path) -> None:
         self._inbox_file = inbox_file
 
@@ -870,24 +544,11 @@ class MarkdownInboxBackend(InboxBackend):
     def data_file(self) -> Path:
         return self._inbox_file
 
-    def _load_items(self) -> list[dict]:
-        text = _read_md(self._inbox_file)
-        sections = _parse_md_sections(text)
-        items = [_section_to_inbox(s) for s in sections]
-        for idx, item in enumerate(items, 1):
-            if not item.get("id"):
-                item["id"] = str(idx)
-        return items
-
-    def _save_items(self, items: list[dict]) -> None:
-        sections = [_inbox_to_section(i) for i in items]
-        _write_md(
-            self._inbox_file,
-            _render_md_sections(sections),
-        )
-
     def list_items(self) -> list[dict]:
-        return self._load_items()
+        items = _read_json(self._inbox_file)
+        for idx, item in enumerate(items, 1):
+            item.setdefault("id", str(idx))
+        return items
 
     def add_item(
         self,
@@ -898,12 +559,10 @@ class MarkdownInboxBackend(InboxBackend):
         channel=None,
         direction=None,
     ) -> dict:
-        items = self._load_items()
+        items = _read_json(self._inbox_file)
         item = {
             "id": _generate_id(text),
-            "type": (
-                item_type or _guess_inbox_type(text)
-            ),
+            "type": item_type or _guess_inbox_type(text),
             "customer": customer or "",
             "title": text,
             "body": body or "",
@@ -913,25 +572,23 @@ class MarkdownInboxBackend(InboxBackend):
             "properties": {},
         }
         items.append(item)
-        self._save_items(items)
+        _write_json(self._inbox_file, items)
         return item
 
     def remove_item(self, item_id) -> bool:
-        items = self._load_items()
-        new = [
-            i for i in items if i.get("id") != item_id
-        ]
+        items = _read_json(self._inbox_file)
+        new = [i for i in items if i.get("id") != item_id]
         if len(new) == len(items):
             return False
-        self._save_items(new)
+        _write_json(self._inbox_file, new)
         return True
 
     def update_item(self, item_id, updates) -> dict:
-        items = self._load_items()
+        items = _read_json(self._inbox_file)
         for item in items:
             if item.get("id") == item_id:
                 item.update(updates)
-                self._save_items(items)
+                _write_json(self._inbox_file, items)
                 return item
         raise ValueError(
             f"Inbox item not found: {item_id}"
@@ -940,7 +597,7 @@ class MarkdownInboxBackend(InboxBackend):
     def promote_to_task(
         self, item_id, tasks, customer
     ) -> dict:
-        items = self._load_items()
+        items = _read_json(self._inbox_file)
         target = None
         remaining = []
         for item in items:
@@ -958,220 +615,8 @@ class MarkdownInboxBackend(InboxBackend):
             status="TODO",
             body=target.get("body") or None,
         )
-        self._save_items(remaining)
+        _write_json(self._inbox_file, remaining)
         return task
-
-
-# -- Note heading helpers --------------------------------------------
-
-
-def _note_heading(note: dict) -> str:
-    """Build heading: Title."""
-    return note.get("title", "Untitled")
-
-
-def _section_to_note(sec: dict) -> dict:
-    """Convert a parsed section to a note dict."""
-    meta = sec.get("meta", {})
-    return {
-        "id": meta.get("id", ""),
-        "title": sec["heading"],
-        "body": sec.get("body", ""),
-        "customer": meta.get("customer", ""),
-        "tags": meta.get("tags", []),
-        "created": meta.get("created", ""),
-    }
-
-
-def _note_to_section(note: dict) -> dict:
-    """Convert a note dict to a section dict."""
-    meta = {
-        "id": note.get("id", ""),
-        "customer": note.get("customer", ""),
-        "created": note.get("created", ""),
-        "tags": note.get("tags", []),
-    }
-    return {
-        "heading": _note_heading(note),
-        "meta": meta,
-        "body": note.get("body", ""),
-    }
-
-
-# ====================================================================
-#  NotesBackend
-# ====================================================================
-
-
-class MarkdownNotesBackend(NotesBackend):
-    def __init__(self, notes_file: Path) -> None:
-        self._notes_file = notes_file
-
-    @property
-    def data_file(self) -> Path:
-        return self._notes_file
-
-    def _load_notes(self) -> list[dict]:
-        text = _read_md(self._notes_file)
-        sections = _parse_md_sections(text)
-        return [_section_to_note(s) for s in sections]
-
-    def _save_notes(self, notes: list[dict]) -> None:
-        sections = [_note_to_section(n) for n in notes]
-        _write_md(
-            self._notes_file,
-            _render_md_sections(sections),
-        )
-
-    def list_notes(self) -> list[dict]:
-        return self._load_notes()
-
-    def add_note(
-        self, title, body="", customer=None, tags=None
-    ) -> dict:
-        notes = self._load_notes()
-        note = {
-            "id": _generate_id(title),
-            "title": title,
-            "body": body,
-            "customer": customer or "",
-            "tags": tags or [],
-            "created": datetime.now().isoformat(),
-        }
-        notes.append(note)
-        self._save_notes(notes)
-        return note
-
-    def delete_note(self, note_id) -> bool:
-        notes = self._load_notes()
-        new = [
-            n for n in notes if n.get("id") != note_id
-        ]
-        if len(new) == len(notes):
-            return False
-        self._save_notes(new)
-        return True
-
-    def update_note(self, note_id, updates) -> dict:
-        notes = self._load_notes()
-        for note in notes:
-            if note.get("id") == note_id:
-                note.update(updates)
-                self._save_notes(notes)
-                return note
-        raise ValueError(f"Note not found: {note_id}")
-
-    def promote_to_task(
-        self, note_id, tasks, customer
-    ) -> dict:
-        notes = self._load_notes()
-        target = None
-        remaining = []
-        for note in notes:
-            if note.get("id") == note_id:
-                target = note
-            else:
-                remaining.append(note)
-        if target is None:
-            raise ValueError(
-                f"Note not found: {note_id}"
-            )
-        task = tasks.add_task(
-            customer=customer,
-            title=target.get("title", ""),
-            status="TODO",
-            tags=target.get("tags") or None,
-            body=target.get("body") or None,
-        )
-        self._save_notes(remaining)
-        return task
-
-
-# -- Customer heading helpers ----------------------------------------
-
-
-def _section_to_customer(sec: dict) -> dict:
-    """Convert a level-2 section to a customer dict."""
-    meta = sec.get("meta", {})
-    # Parse level-3 subsections for contracts
-    body = sec.get("body", "")
-    contracts = []
-    if body:
-        contract_secs = _parse_md_sections(body, level=3)
-        for csec in contract_secs:
-            cmeta = csec.get("meta", {})
-            contracts.append({
-                "name": csec["heading"],
-                "kontingent": cmeta.get(
-                    "kontingent", 0
-                ),
-                "start_date": cmeta.get(
-                    "start_date", ""
-                ),
-                "end_date": cmeta.get("end_date", ""),
-                "verbraucht_offset": cmeta.get(
-                    "verbraucht_offset", 0
-                ),
-                "notes": csec.get("body", ""),
-            })
-    return {
-        "name": sec["heading"],
-        "status": meta.get("status", "active"),
-        "type": meta.get("type", ""),
-        "kontingent": meta.get("kontingent", 0),
-        "verbraucht_offset": meta.get(
-            "verbraucht_offset", 0
-        ),
-        "repo": meta.get("repo", ""),
-        "tags": meta.get("tags", []),
-        "properties": meta.get("properties", {}),
-        "contracts": contracts,
-    }
-
-
-def _customer_to_section(cust: dict) -> dict:
-    """Convert a customer dict to a section dict."""
-    meta = {
-        "status": cust.get("status", "active"),
-        "type": cust.get("type", ""),
-        "kontingent": cust.get("kontingent", 0),
-        "verbraucht_offset": cust.get(
-            "verbraucht_offset", 0
-        ),
-        "repo": cust.get("repo", ""),
-        "tags": cust.get("tags", []),
-    }
-    if cust.get("properties"):
-        meta["properties"] = cust["properties"]
-
-    # Render contracts as level-3 subsections
-    contract_parts = []
-    for con in cust.get("contracts", []):
-        cmeta = {
-            "kontingent": con.get("kontingent", 0),
-            "start_date": con.get("start_date", ""),
-            "end_date": con.get("end_date", ""),
-            "verbraucht_offset": con.get(
-                "verbraucht_offset", 0
-            ),
-        }
-        lines = [f"### {con['name']}"]
-        lines.append("```json")
-        lines.append(json.dumps(
-            cmeta, ensure_ascii=False
-        ))
-        lines.append("```")
-        if con.get("notes"):
-            lines.append("")
-            lines.append(con["notes"])
-        contract_parts.append("\n".join(lines))
-
-    body = "\n\n".join(contract_parts)
-    return {
-        "heading": cust.get("name", ""),
-        "meta": meta,
-        "body": body,
-    }
 
 
 # ====================================================================
@@ -1179,7 +624,7 @@ def _customer_to_section(cust: dict) -> dict:
 # ====================================================================
 
 
-class MarkdownCustomerBackend(CustomerBackend):
+class JsonCustomerBackend(CustomerBackend):
     def __init__(
         self, customers_file: Path, clocks_file: Path
     ) -> None:
@@ -1190,33 +635,11 @@ class MarkdownCustomerBackend(CustomerBackend):
     def data_file(self) -> Path:
         return self._customers_file
 
-    def _load_customers(self) -> list[dict]:
-        text = _read_md(self._customers_file)
-        sections = _parse_md_sections(text)
-        return [
-            _section_to_customer(s) for s in sections
-        ]
-
-    def _save_customers(
-        self, custs: list[dict]
-    ) -> None:
-        sections = [
-            _customer_to_section(c) for c in custs
-        ]
-        _write_md(
-            self._customers_file,
-            _render_md_sections(sections),
-        )
-
-    def _load_clock_entries(self) -> list[dict]:
-        text = _read_md(self._clocks_file)
-        sections = _parse_md_sections(text)
-        return [_section_to_clock(s) for s in sections]
-
     # -- helpers -------------------------------------------------
 
     def _used_hours(self, customer_name: str) -> float:
-        entries = self._load_clock_entries()
+        """Sum booked hours from clocks."""
+        entries = _read_json(self._clocks_file)
         total_min = 0
         low = customer_name.lower()
         for e in entries:
@@ -1237,7 +660,8 @@ class MarkdownCustomerBackend(CustomerBackend):
     def _contract_used_hours(
         self, customer_name: str, contract_name: str
     ) -> float:
-        entries = self._load_clock_entries()
+        """Sum hours for a specific contract."""
+        entries = _read_json(self._clocks_file)
         total_min = 0
         low = customer_name.lower()
         for e in entries:
@@ -1258,17 +682,17 @@ class MarkdownCustomerBackend(CustomerBackend):
         return round(total_min / 60, 2)
 
     def _enrich_customer(self, cust: dict) -> dict:
+        """Add computed budget fields."""
         verbraucht = self._used_hours(cust["name"])
         kontingent = cust.get("kontingent", 0)
         cust["verbraucht"] = verbraucht
-        cust["rest"] = round(
-            kontingent - verbraucht, 2
-        )
+        cust["rest"] = round(kontingent - verbraucht, 2)
         return cust
 
     def _enrich_contract(
         self, cust_name: str, con: dict
     ) -> dict:
+        """Add computed budget fields to a contract."""
         used = self._contract_used_hours(
             cust_name, con["name"]
         )
@@ -1282,18 +706,16 @@ class MarkdownCustomerBackend(CustomerBackend):
     def list_customers(
         self, include_inactive=False
     ) -> list[dict]:
-        custs = self._load_customers()
+        custs = _read_json(self._customers_file)
         if not include_inactive:
             custs = [
                 c for c in custs
                 if c.get("status", "active") == "active"
             ]
-        return [
-            self._enrich_customer(c) for c in custs
-        ]
+        return [self._enrich_customer(c) for c in custs]
 
     def get_customer(self, name) -> dict | None:
-        custs = self._load_customers()
+        custs = _read_json(self._customers_file)
         low = name.lower()
         for c in custs:
             if c.get("name", "").lower() == low:
@@ -1301,9 +723,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         return None
 
     def get_budget_summary(self) -> list[dict]:
-        custs = self.list_customers(
-            include_inactive=False
-        )
+        custs = self.list_customers(include_inactive=False)
         result = []
         for c in custs:
             kontingent = c.get("kontingent", 0)
@@ -1332,7 +752,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         repo=None,
         tags=None,
     ) -> dict:
-        custs = self._load_customers()
+        custs = _read_json(self._customers_file)
         for c in custs:
             if c.get("name", "").lower() == name.lower():
                 raise ValueError(
@@ -1351,30 +771,31 @@ class MarkdownCustomerBackend(CustomerBackend):
             "contracts": [],
         }
         custs.append(cust)
-        self._save_customers(custs)
+        _write_json(self._customers_file, custs)
         return self._enrich_customer(cust)
 
     def update_customer(
         self, name, updates
     ) -> dict | None:
-        custs = self._load_customers()
+        custs = _read_json(self._customers_file)
         low = name.lower()
         for c in custs:
             if c.get("name", "").lower() == low:
                 for key in (
-                    "name", "status",
-                    "kontingent", "repo",
+                    "name", "status", "kontingent", "repo"
                 ):
                     if key in updates:
                         c[key] = updates[key]
-                self._save_customers(custs)
+                _write_json(
+                    self._customers_file, custs
+                )
                 return self._enrich_customer(c)
         return None
 
     # -- contracts -----------------------------------------------
 
     def list_contracts(self, name) -> list[dict]:
-        custs = self._load_customers()
+        custs = _read_json(self._customers_file)
         low = name.lower()
         for c in custs:
             if c.get("name", "").lower() == low:
@@ -1395,7 +816,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         start_date,
         notes="",
     ) -> dict:
-        custs = self._load_customers()
+        custs = _read_json(self._customers_file)
         low = name.lower()
         for c in custs:
             if c.get("name", "").lower() != low:
@@ -1404,7 +825,7 @@ class MarkdownCustomerBackend(CustomerBackend):
             for con in contracts:
                 if con["name"] == contract_name:
                     raise ValueError(
-                        "Contract already exists: "
+                        f"Contract already exists: "
                         f"{contract_name}"
                     )
             contract = {
@@ -1415,18 +836,16 @@ class MarkdownCustomerBackend(CustomerBackend):
                 "notes": notes,
             }
             contracts.append(contract)
-            self._save_customers(custs)
+            _write_json(self._customers_file, custs)
             return self._enrich_contract(
                 c["name"], contract
             )
-        raise ValueError(
-            f"Customer not found: {name}"
-        )
+        raise ValueError(f"Customer not found: {name}")
 
     def update_contract(
         self, name, contract_name, updates
     ) -> dict | None:
-        custs = self._load_customers()
+        custs = _read_json(self._customers_file)
         low = name.lower()
         for c in custs:
             if c.get("name", "").lower() != low:
@@ -1440,7 +859,9 @@ class MarkdownCustomerBackend(CustomerBackend):
                     ):
                         if key in updates:
                             con[key] = updates[key]
-                    self._save_customers(custs)
+                    _write_json(
+                        self._customers_file, custs
+                    )
                     return self._enrich_contract(
                         c["name"], con
                     )
@@ -1451,14 +872,13 @@ class MarkdownCustomerBackend(CustomerBackend):
         self, name, contract_name, end_date
     ) -> dict | None:
         return self.update_contract(
-            name, contract_name,
-            {"end_date": end_date},
+            name, contract_name, {"end_date": end_date}
         )
 
     def delete_contract(
         self, name, contract_name
     ) -> bool:
-        custs = self._load_customers()
+        custs = _read_json(self._customers_file)
         low = name.lower()
         for c in custs:
             if c.get("name", "").lower() != low:
@@ -1471,9 +891,86 @@ class MarkdownCustomerBackend(CustomerBackend):
             if len(new) == len(contracts):
                 return False
             c["contracts"] = new
-            self._save_customers(custs)
+            _write_json(self._customers_file, custs)
             return True
         return False
+
+
+# ====================================================================
+#  NotesBackend
+# ====================================================================
+
+
+class JsonNotesBackend(NotesBackend):
+    def __init__(self, notes_file: Path) -> None:
+        self._notes_file = notes_file
+
+    @property
+    def data_file(self) -> Path:
+        return self._notes_file
+
+    def list_notes(self) -> list[dict]:
+        return _read_json(self._notes_file)
+
+    def add_note(
+        self, title, body="", customer=None, tags=None
+    ) -> dict:
+        notes = _read_json(self._notes_file)
+        note = {
+            "id": _generate_id(title),
+            "title": title,
+            "body": body,
+            "customer": customer or "",
+            "tags": tags or [],
+            "created": datetime.now().isoformat(),
+        }
+        notes.append(note)
+        _write_json(self._notes_file, notes)
+        return note
+
+    def delete_note(self, note_id) -> bool:
+        notes = _read_json(self._notes_file)
+        new = [
+            n for n in notes if n.get("id") != note_id
+        ]
+        if len(new) == len(notes):
+            return False
+        _write_json(self._notes_file, new)
+        return True
+
+    def update_note(self, note_id, updates) -> dict:
+        notes = _read_json(self._notes_file)
+        for note in notes:
+            if note.get("id") == note_id:
+                note.update(updates)
+                _write_json(self._notes_file, notes)
+                return note
+        raise ValueError(f"Note not found: {note_id}")
+
+    def promote_to_task(
+        self, note_id, tasks, customer
+    ) -> dict:
+        notes = _read_json(self._notes_file)
+        target = None
+        remaining = []
+        for note in notes:
+            if note.get("id") == note_id:
+                target = note
+            else:
+                remaining.append(note)
+        if target is None:
+            raise ValueError(
+                f"Note not found: {note_id}"
+            )
+        task = tasks.add_task(
+            customer=customer,
+            title=target.get("title", ""),
+            status="TODO",
+            tags=target.get("tags") or None,
+            body=target.get("body") or None,
+        )
+        _write_json(self._notes_file, remaining)
+        return task
 
 
 # ====================================================================
@@ -1481,27 +978,25 @@ class MarkdownCustomerBackend(CustomerBackend):
 # ====================================================================
 
 
-def make_markdown_backend(cfg) -> tuple[
+def make_json_backend(cfg) -> tuple[
     TaskBackend, ClockBackend, InboxBackend,
     CustomerBackend, NotesBackend, list[Path],
 ]:
-    """Build markdown backends from config paths."""
+    """Build JSON backends from config paths."""
     md_dir = cfg.MARKDOWN_DIR.expanduser()
     md_dir.mkdir(parents=True, exist_ok=True)
 
-    tasks = MarkdownTaskBackend(
-        md_dir / "todos.md",
-        md_dir / "archive.md",
+    tasks = JsonTaskBackend(
+        md_dir / "tasks.json",
+        md_dir / "archive.json",
     )
-    clocks = MarkdownClockBackend(
-        md_dir / "clocks.md"
+    clocks = JsonClockBackend(md_dir / "clocks.json")
+    inbox = JsonInboxBackend(md_dir / "inbox.json")
+    cust = JsonCustomerBackend(
+        md_dir / "customers.json",
+        md_dir / "clocks.json",
     )
-    inbox = MarkdownInboxBackend(md_dir / "inbox.md")
-    cust = MarkdownCustomerBackend(
-        md_dir / "customers.md",
-        md_dir / "clocks.md",
-    )
-    notes = MarkdownNotesBackend(md_dir / "notes.md")
+    notes = JsonNotesBackend(md_dir / "notes.json")
     watch_paths = [
         md_dir, cfg.SETTINGS_FILE.expanduser()
     ]

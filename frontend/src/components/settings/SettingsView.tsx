@@ -1059,7 +1059,10 @@ function PathsSection() {
                 Org-mode (*.org files)
               </option>
               <option value="markdown">
-                Markdown / JSON (*.json files)
+                Markdown (*.md files)
+              </option>
+              <option value="json">
+                JSON (*.json files)
               </option>
             </select>
             <button

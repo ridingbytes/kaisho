@@ -48,8 +48,15 @@ def get_backend() -> Backend:
         tasks, clocks, inbox, customers, notes, watch = (
             make_markdown_backend(cfg)
         )
+    elif backend_type == "json":
+        from .json_backend import make_json_backend
+        tasks, clocks, inbox, customers, notes, watch = (
+            make_json_backend(cfg)
+        )
     else:
-        raise ValueError(f"Unknown backend: {backend_type!r}")
+        raise ValueError(
+            f"Unknown backend: {backend_type!r}"
+        )
 
     return Backend(
         tasks=tasks,

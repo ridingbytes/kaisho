@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8765
     MARKDOWN_DIR: Path = Path("data/markdown")
-    BACKEND: str = "org"
+    BACKEND: str = "org"  # "org", "markdown", or "json"
     SETTINGS_FILE: Path = _PROJECT_ROOT / "settings.yaml"
 
     @computed_field
