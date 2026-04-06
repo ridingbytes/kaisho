@@ -42,8 +42,6 @@ import {
   useCreateProfile,
   useProfiles,
   useSwitchProfile,
-  useCreateUser,
-  useUsers,
 } from "../../hooks/useSettings";
 import { PixelAvatar } from "../common/PixelAvatar";
 import type { AiSettings, ConfigTag } from "../../types";
@@ -1358,12 +1356,9 @@ function UserProfileSection() {
 function ProfilesTab() {
   const { data: userData } = useCurrentUser();
   const { data: profileData } = useProfiles();
-  const { data: users = [] } = useUsers();
   const switchProfile = useSwitchProfile();
   const createProfile = useCreateProfile();
-  const createUser = useCreateUser();
   const [newProfile, setNewProfile] = useState("");
-  const [newUser, setNewUser] = useState("");
 
   if (!userData || !profileData) return null;
 
@@ -1383,15 +1378,6 @@ function ProfilesTab() {
         });
       },
     });
-  }
-
-  function handleCreateUser(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newUser.trim()) return;
-    createUser.mutate(
-      { username: newUser.trim() },
-      { onSuccess: () => setNewUser("") }
-    );
   }
 
   return (
@@ -1466,63 +1452,7 @@ function ProfilesTab() {
         </form>
       </section>
 
-      {/* Users */}
-      <section>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
-          Users
-        </h2>
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
-          {users.map((u, i) => (
-            <div
-              key={u.username}
-              className={[
-                "flex items-center gap-3 px-4 py-2.5",
-                i < users.length - 1
-                  ? "border-b border-border-subtle"
-                  : "",
-              ].join(" ")}
-            >
-              <span className={[
-                "text-sm flex-1",
-                u.username === userData.username
-                  ? "text-accent font-semibold"
-                  : "text-slate-300",
-              ].join(" ")}>
-                {u.name || u.username}
-                {u.username !== (u.name || u.username) && (
-                  <span className="text-xs text-slate-600 ml-2 font-mono">
-                    {u.username}
-                  </span>
-                )}
-              </span>
-              {u.bio && (
-                <span className="text-[10px] text-slate-600 truncate max-w-48">
-                  {u.bio}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-        <form
-          onSubmit={handleCreateUser}
-          className="flex gap-2"
-        >
-          <input
-            type="text"
-            value={newUser}
-            onChange={(e) => setNewUser(e.target.value)}
-            placeholder="New username"
-            className={inputCls}
-          />
-          <button
-            type="submit"
-            disabled={!newUser.trim()}
-            className={saveBtnCls}
-          >
-            Create user
-          </button>
-        </form>
-      </section>
+      {/* Users are managed via login/register */}
     </div>
   );
 }

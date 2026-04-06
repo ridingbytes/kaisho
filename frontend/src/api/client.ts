@@ -21,36 +21,59 @@ import type {
 
 const BASE = "/api";
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("oc_token");
+  if (token) return { Authorization: `Bearer ${token}` };
+  return {};
+}
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`);
+  const res = await fetch(`${BASE}${path}`, {
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error(`GET ${path}: ${res.status}`);
   return res.json() as Promise<T>;
 }
 
-async function post<T>(path: string, body: unknown): Promise<T> {
+async function post<T>(
+  path: string, body: unknown,
+): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+    },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`POST ${path}: ${res.status}`);
   return res.json() as Promise<T>;
 }
 
-async function patch<T>(path: string, body: unknown): Promise<T> {
+async function patch<T>(
+  path: string, body: unknown,
+): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+    },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`PATCH ${path}: ${res.status}`);
   return res.json() as Promise<T>;
 }
 
-async function put<T>(path: string, body: unknown): Promise<T> {
+async function put<T>(
+  path: string, body: unknown,
+): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+    },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`PUT ${path}: ${res.status}`);
@@ -58,8 +81,50 @@ async function put<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function del(path: string): Promise<void> {
-  const res = await fetch(`${BASE}${path}`, { method: "DELETE" });
+  const res = await fetch(`${BASE}${path}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error(`DELETE ${path}: ${res.status}`);
+}
+
+// -----------------------------------------------------------------
+// Auth
+// -----------------------------------------------------------------
+
+export interface AuthUser {
+  username: string;
+  name: string;
+  email: string;
+  bio: string;
+}
+
+export interface AuthResult {
+  token: string;
+  user: AuthUser;
+}
+
+export function login(
+  username: string,
+): Promise<AuthResult> {
+  return post<AuthResult>("/auth/login", { username });
+}
+
+export function register(data: {
+  username: string;
+  name?: string;
+  email?: string;
+  bio?: string;
+}): Promise<AuthResult> {
+  return post<AuthResult>("/auth/register", data);
+}
+
+export function logout(): Promise<{ ok: boolean }> {
+  return post<{ ok: boolean }>("/auth/logout", {});
+}
+
+export function checkSession(): Promise<AuthUser> {
+  return get<AuthUser>("/auth/session");
 }
 
 // Tasks
@@ -169,13 +234,6 @@ export function fetchUsers(): Promise<
   return get("/settings/users");
 }
 
-export function switchUser(
-  username: string,
-  profile: string = "default"
-): Promise<{ username: string; profile: string }> {
-  return put("/settings/user", { username, profile });
-}
-
 export function createUser(data: {
   username: string;
   name?: string;
@@ -270,7 +328,10 @@ export function deleteCustomerType(name: string): Promise<void> {
 export function reorderStates(names: string[]): Promise<unknown> {
   return fetch(`${BASE}/settings/states/order`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+    },
     body: JSON.stringify(names),
   }).then((r) => {
     if (!r.ok) throw new Error(`PUT /settings/states/order: ${r.status}`);
@@ -552,7 +613,10 @@ export function saveKnowledgeFile(
 ): Promise<KnowledgeFile> {
   return fetch(`${BASE}/knowledge/file`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+    },
     body: JSON.stringify({ label, path, content }),
   }).then((res) => {
     if (!res.ok) throw new Error(`PUT /knowledge/file: ${res.status}`);
@@ -682,7 +746,10 @@ export function saveJobPrompt(
 ): Promise<{ content: string; path: string }> {
   return fetch(`/api/cron/jobs/${encodeURIComponent(jobId)}/prompt`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+    },
     body: JSON.stringify({ content }),
   }).then((r) => {
     if (!r.ok) throw new Error(`PUT prompt: ${r.status}`);

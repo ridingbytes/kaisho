@@ -1,13 +1,166 @@
 import json
 import urllib.request
+from base64 import b64decode, b64encode
+from time import time
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Request
 from pydantic import BaseModel
 
 from ...config import get_config
 from ...services import settings as settings_svc
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
+
+# ------------------------------------------------------------------
+# In-memory session store (cleared on restart)
+# ------------------------------------------------------------------
+
+_sessions: dict[str, str] = {}  # token -> username
+
+
+def _make_token(username: str) -> str:
+    raw = f"{username}:{time()}"
+    return b64encode(raw.encode()).decode()
+
+
+def _token_username(token: str) -> str | None:
+    return _sessions.get(token)
+
+
+# ------------------------------------------------------------------
+# Auth router (mounted at /api/auth)
+# ------------------------------------------------------------------
+
+auth_router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+
+class LoginBody(BaseModel):
+    username: str
+
+
+class RegisterBody(BaseModel):
+    username: str
+    name: str = ""
+    email: str = ""
+    bio: str = ""
+
+
+@auth_router.post("/login")
+def auth_login(body: LoginBody):
+    """Log in as an existing user (no password)."""
+    import os
+    from ...backends import reset_backend
+    from ...config import (
+        init_data_dir, list_users, reset_config,
+    )
+    users = list_users()
+    if not any(u["username"] == body.username for u in users):
+        raise HTTPException(
+            status_code=404, detail="User not found",
+        )
+    os.environ["OC_USER"] = body.username
+    os.environ["PROFILE"] = "default"
+    cfg = reset_config()
+    init_data_dir(cfg)
+    reset_backend()
+    token = _make_token(body.username)
+    _sessions[token] = body.username
+    from ...config import load_user_yaml
+    meta = load_user_yaml(cfg)
+    return {
+        "token": token,
+        "user": {
+            "username": body.username,
+            "name": meta.get("name", ""),
+            "email": meta.get("email", ""),
+            "bio": meta.get("bio", ""),
+        },
+    }
+
+
+@auth_router.post("/register")
+def auth_register(body: RegisterBody):
+    """Register a new user and log in."""
+    import os
+    import re
+    from datetime import datetime, timezone
+    from ...backends import reset_backend
+    from ...config import (
+        init_data_dir, reset_config, save_user_yaml,
+    )
+    username = re.sub(
+        r"[^a-zA-Z0-9_-]", "", body.username.strip(),
+    )
+    if not username:
+        raise HTTPException(
+            status_code=400, detail="Invalid username",
+        )
+    cfg = get_config()
+    user_dir = cfg.DATA_DIR / "users" / username
+    if user_dir.exists():
+        raise HTTPException(
+            status_code=409,
+            detail=f"User '{username}' already exists",
+        )
+    os.environ["OC_USER"] = username
+    os.environ["PROFILE"] = "default"
+    new_cfg = reset_config()
+    save_user_yaml(new_cfg, {
+        "name": body.name or username,
+        "email": body.email,
+        "bio": body.bio,
+        "created": datetime.now(timezone.utc).isoformat(),
+    })
+    init_data_dir(new_cfg)
+    reset_backend()
+    token = _make_token(username)
+    _sessions[token] = username
+    return {
+        "token": token,
+        "user": {
+            "username": username,
+            "name": body.name or username,
+            "email": body.email,
+            "bio": body.bio,
+        },
+    }
+
+
+@auth_router.post("/logout")
+def auth_logout(request: Request):
+    """Clear the session for the given token."""
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        token = auth[7:]
+        _sessions.pop(token, None)
+    return {"ok": True}
+
+
+@auth_router.get("/session")
+def auth_session(request: Request):
+    """Return current user if token is valid."""
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No token")
+    token = auth[7:]
+    username = _token_username(token)
+    if not username:
+        raise HTTPException(
+            status_code=401, detail="Invalid token",
+        )
+    from ...config import load_user_yaml, reset_config
+    import os
+    if os.environ.get("OC_USER") != username:
+        os.environ["OC_USER"] = username
+        reset_config()
+    cfg = get_config()
+    meta = load_user_yaml(cfg)
+    return {
+        "username": username,
+        "name": meta.get("name", ""),
+        "email": meta.get("email", ""),
+        "bio": meta.get("bio", ""),
+    }
 
 
 class StateCreate(BaseModel):
@@ -660,27 +813,6 @@ def create_user(body: UserCreate):
     reset_config()
     return {"username": username}
 
-
-class UserSwitch(BaseModel):
-    username: str
-    profile: str = "default"
-
-
-@router.put("/user")
-def switch_user(body: UserSwitch):
-    """Switch active user and profile."""
-    import os
-    from ...backends import reset_backend
-    from ...config import init_data_dir, reset_config
-    os.environ["OC_USER"] = body.username
-    os.environ["PROFILE"] = body.profile
-    cfg = reset_config()
-    init_data_dir(cfg)
-    reset_backend()
-    return {
-        "username": cfg.OC_USER,
-        "profile": cfg.PROFILE,
-    }
 
 
 @router.get("/profiles")

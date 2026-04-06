@@ -29,7 +29,6 @@ import {
   reorderStates,
   switchBackend,
   switchProfile,
-  switchUser,
   updateAdvisorFiles,
   updateAiSettings,
   updateGithubSettings,
@@ -432,22 +431,6 @@ export function useUsers() {
     queryKey: ["settings", "users"],
     queryFn: fetchUsers,
     staleTime: 60_000,
-  });
-}
-
-export function useSwitchUser() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      username,
-      profile,
-    }: {
-      username: string;
-      profile?: string;
-    }) => switchUser(username, profile),
-    onSuccess: () => {
-      void qc.invalidateQueries();
-    },
   });
 }
 

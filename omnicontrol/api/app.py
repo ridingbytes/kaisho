@@ -54,6 +54,7 @@ app.include_router(knowledge.router)
 
 app.include_router(cron.router)
 app.include_router(settings_router.router)
+app.include_router(settings_router.auth_router)
 app.include_router(github.router)
 app.include_router(advisor.router)
 app.include_router(dashboard.router)

@@ -1,14 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Moon, Settings, Sun } from "lucide-react";
+import { LogOut, Moon, Settings, Sun } from "lucide-react";
 import {
   useCreateProfile,
   useCurrentUser,
   useSwitchProfile,
-  useSwitchUser,
-  useUsers,
 } from "./hooks/useSettings";
 import { PixelAvatar } from "./components/common/PixelAvatar";
 import { useEffect, useRef, useState } from "react";
+import { LoginPage } from "./components/auth/LoginPage";
+import { logout as apiLogout } from "./api/client";
+import type { AuthUser } from "./api/client";
 import type { AdvisorMessage } from "./components/advisor/AdvisorView";
 import { AdvisorView } from "./components/advisor/AdvisorView";
 import { CommandPalette } from "./components/commandPalette/CommandPalette";
@@ -79,18 +80,29 @@ const queryClient = new QueryClient({
 
 type Theme = "dark" | "light";
 
-function AppShell() {
+function AppShell({
+  onLogout,
+}: {
+  onLogout: () => void;
+}) {
   useWebSocket();
   const [view, setView] = useState<View>(viewFromHash);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { config } = useShortcutsContext();
   const { data: currentUser } = useCurrentUser();
-  const { data: allUsers = [] } = useUsers();
   const switchProf = useSwitchProfile();
-  const switchUsr = useSwitchUser();
   const createProf = useCreateProfile();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [newProfInput, setNewProfInput] = useState("");
+
+  function handleLogout() {
+    apiLogout()
+      .catch(() => {})
+      .finally(() => {
+        localStorage.removeItem("oc_token");
+        onLogout();
+      });
+  }
 
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem("theme") as Theme) ?? "dark"
@@ -309,35 +321,6 @@ function AppShell() {
                     </button>
                   )}
 
-                  {/* Users (if multiple) */}
-                  {allUsers.length > 1 && (
-                    <>
-                      <div className="border-t border-border-subtle my-0.5" />
-                      <p className="text-[9px] text-slate-600 px-1 uppercase tracking-wider">
-                        Switch user
-                      </p>
-                      {allUsers.map((u) => (
-                        <button
-                          key={u.username}
-                          onClick={() => {
-                            switchUsr.mutate(
-                              { username: u.username },
-                              { onSuccess: () => window.location.reload() }
-                            );
-                          }}
-                          className={[
-                            "w-full text-left px-2 py-1 rounded text-xs transition-colors",
-                            u.username === currentUser.username
-                              ? "text-accent bg-accent-muted"
-                              : "text-slate-300 hover:bg-surface-raised",
-                          ].join(" ")}
-                        >
-                          {u.name || u.username}
-                        </button>
-                      ))}
-                    </>
-                  )}
-
                   {/* Settings */}
                   <div className="border-t border-border-subtle my-0.5" />
                   <button
@@ -349,6 +332,16 @@ function AppShell() {
                   >
                     <Settings size={12} />
                     Settings
+                  </button>
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="w-full text-left px-2 py-1 rounded text-xs text-slate-300 hover:bg-surface-raised flex items-center gap-2"
+                  >
+                    <LogOut size={12} />
+                    Logout
                   </button>
                 </div>
               )}
@@ -406,10 +399,30 @@ function AppShell() {
 }
 
 export function App() {
+  const [authed, setAuthed] = useState(
+    () => !!localStorage.getItem("oc_token"),
+  );
+
+  function handleAuth(_token: string, _user: AuthUser) {
+    setAuthed(true);
+  }
+
+  function handleLogout() {
+    setAuthed(false);
+  }
+
+  if (!authed) {
+    return (
+      <div className="h-full">
+        <LoginPage onAuth={handleAuth} />
+      </div>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <ShortcutsProvider>
-        <AppShell />
+        <AppShell onLogout={handleLogout} />
       </ShortcutsProvider>
     </QueryClientProvider>
   );
