@@ -16,6 +16,7 @@ import {
   useUpdateKbSources,
   usePaths,
   useSettings,
+  useSwitchBackend,
   useUpdateAiSettings,
   useUpdateGithubSettings,
   useUpdatePaths,
@@ -961,10 +962,13 @@ function ShortcutsSection() {
 function PathsSection() {
   const { data: paths } = usePaths();
   const update = useUpdatePaths();
+  const switchBe = useSwitchBackend();
   const { data: kbSources = [] } = useKbSources();
   const updateKb = useUpdateKbSources();
   const [orgDir, setOrgDir] = useState("");
+  const [mdDir, setMdDir] = useState("");
   const [dataDir, setDataDir] = useState("");
+  const [backend, setBackend] = useState("org");
   const [sources, setSources] = useState<
     { label: string; path: string }[]
   >([]);
@@ -973,7 +977,9 @@ function PathsSection() {
   useEffect(() => {
     if (paths) {
       setOrgDir(paths.org_dir ?? "");
+      setMdDir(paths.markdown_dir ?? "");
       setDataDir(paths.data_dir ?? "");
+      setBackend(paths.backend ?? "org");
     }
   }, [paths]);
 
@@ -987,7 +993,7 @@ function PathsSection() {
 
   function handleSavePaths() {
     update.mutate(
-      { org_dir: orgDir, data_dir: dataDir },
+      { org_dir: orgDir, markdown_dir: mdDir, data_dir: dataDir },
       {
         onSuccess: () => {
           setSaved(true);
@@ -995,6 +1001,12 @@ function PathsSection() {
         },
       }
     );
+  }
+
+  function handleSwitchBackend() {
+    switchBe.mutate(backend, {
+      onSuccess: () => window.location.reload(),
+    });
   }
 
   function handleSaveKb() {
@@ -1026,10 +1038,52 @@ function PathsSection() {
 
   return (
     <section className="space-y-8">
-      {/* Core paths */}
+      {/* Backend selector */}
       <div>
         <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
-          Core Paths
+          Storage Backend
+        </h2>
+        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <span className="text-xs text-slate-400 w-32 shrink-0">
+              Backend
+            </span>
+            <select
+              value={backend}
+              onChange={(e) => setBackend(e.target.value)}
+              className={[
+                fieldCls, "flex-1",
+              ].join(" ")}
+            >
+              <option value="org">
+                Org-mode (*.org files)
+              </option>
+              <option value="markdown">
+                Markdown / JSON (*.json files)
+              </option>
+            </select>
+            <button
+              onClick={handleSwitchBackend}
+              disabled={
+                switchBe.isPending ||
+                backend === paths?.backend
+              }
+              className={saveBtnCls}
+            >
+              {switchBe.isPending ? "Switching…" : "Switch"}
+            </button>
+          </div>
+        </div>
+        <p className="text-[10px] text-slate-700 mb-6">
+          Switching reloads the app with the new backend.
+          Data is not migrated automatically.
+        </p>
+      </div>
+
+      {/* Data directories */}
+      <div>
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+          Data Directories
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
           <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
@@ -1041,6 +1095,19 @@ function PathsSection() {
               value={orgDir}
               onChange={(e) => setOrgDir(e.target.value)}
               className={inputCls}
+              placeholder="~/ownCloud/cowork/org"
+            />
+          </label>
+          <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
+            <span className="text-xs text-slate-400 w-32 shrink-0">
+              MARKDOWN_DIR
+            </span>
+            <input
+              type="text"
+              value={mdDir}
+              onChange={(e) => setMdDir(e.target.value)}
+              className={inputCls}
+              placeholder="data/markdown"
             />
           </label>
           <label className="flex items-center gap-3 px-4 py-2.5">
@@ -1052,6 +1119,7 @@ function PathsSection() {
               value={dataDir}
               onChange={(e) => setDataDir(e.target.value)}
               className={inputCls}
+              placeholder="data"
             />
           </label>
         </div>
@@ -1061,7 +1129,7 @@ function PathsSection() {
             disabled={update.isPending}
             className={saveBtnCls}
           >
-            {update.isPending ? "Saving…" : "Save"}
+            {update.isPending ? "Saving…" : "Save Paths"}
           </button>
           {saved && (
             <span className="text-xs text-green-400">
@@ -1145,33 +1213,18 @@ function PathsSection() {
           Info
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
-          {[
-            { label: "Backend", value: paths.backend },
-            {
-              label: "Settings file",
-              value: paths.settings_file,
-            },
-          ].map((row, i, arr) => (
-            <div
-              key={row.label}
-              className={[
-                "flex items-center gap-3 px-4 py-2.5",
-                i < arr.length - 1
-                  ? "border-b border-border-subtle"
-                  : "",
-              ].join(" ")}
-            >
-              <span className="text-xs text-slate-500 w-32 shrink-0">
-                {row.label}
-              </span>
-              <span className="text-xs font-mono text-slate-400 truncate flex-1">
-                {row.value}
-              </span>
-            </div>
-          ))}
+          <div className="flex items-center gap-3 px-4 py-2.5">
+            <span className="text-xs text-slate-500 w-32 shrink-0">
+              Settings file
+            </span>
+            <span className="text-xs font-mono text-slate-400 truncate flex-1">
+              {paths?.settings_file}
+            </span>
+          </div>
         </div>
         <p className="mt-2 text-[10px] text-slate-700">
-          Set BACKEND=markdown in .env and restart to switch.
+          All env vars (ORG_DIR, MARKDOWN_DIR, DATA_DIR, BACKEND,
+          HOST, PORT) can be set in .env for Docker deployments.
         </p>
       </div>
     </section>

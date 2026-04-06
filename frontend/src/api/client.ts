@@ -144,11 +144,16 @@ export function fetchPaths(): Promise<Record<string, string>> {
 
 export function updatePaths(updates: {
   org_dir?: string;
+  markdown_dir?: string;
   data_dir?: string;
-  wissen_dir?: string;
-  research_dir?: string;
 }): Promise<{ message: string }> {
   return patch<{ message: string }>("/settings/paths", updates);
+}
+
+export function switchBackend(
+  backend: string
+): Promise<{ backend: string; message: string }> {
+  return put("/settings/backend", { backend });
 }
 
 export function fetchKbSources(): Promise<

@@ -294,14 +294,7 @@ def get_paths():
     cfg = get_config()
     return {
         "org_dir": str(cfg.ORG_DIR.expanduser()),
-        "todos_file": str(cfg.TODOS_FILE),
-        "clocks_file": str(cfg.CLOCKS_FILE),
-        "inbox_file": str(cfg.INBOX_FILE),
-        "notes_file": str(cfg.NOTES_FILE),
-        "archive_file": str(cfg.ARCHIVE_FILE),
-        "kunden_file": str(cfg.KUNDEN_FILE),
-        "wissen_dir": str(cfg.WISSEN_DIR.expanduser()),
-        "research_dir": str(cfg.RESEARCH_DIR.expanduser()),
+        "markdown_dir": str(cfg.MARKDOWN_DIR.expanduser()),
         "data_dir": str(cfg.DATA_DIR.expanduser()),
         "settings_file": str(cfg.SETTINGS_FILE.expanduser()),
         "backend": cfg.BACKEND,
@@ -310,31 +303,51 @@ def get_paths():
 
 class PathsUpdate(BaseModel):
     org_dir: str | None = None
+    markdown_dir: str | None = None
     data_dir: str | None = None
-    wissen_dir: str | None = None
-    research_dir: str | None = None
 
 
 @router.patch("/paths")
 def update_paths(body: PathsUpdate):
-    """Write editable paths to .env; server restart required."""
+    """Write editable paths to .env and reload config."""
     env_path = _env_file_path()
     current = _read_env_file(env_path)
     mapping = {
         "org_dir": "ORG_DIR",
+        "markdown_dir": "MARKDOWN_DIR",
         "data_dir": "DATA_DIR",
-        "wissen_dir": "WISSEN_DIR",
-        "research_dir": "RESEARCH_DIR",
     }
     for field, env_key in mapping.items():
         value = getattr(body, field)
         if value is not None:
             current[env_key] = value
     _write_env_file(env_path, current)
-    return {
-        "message": (
-            "Paths saved to .env. Restart the server to apply changes."
+    from ...config import reset_config
+    reset_config()
+    return {"message": "Paths saved. Restart server to apply."}
+
+
+class BackendSwitch(BaseModel):
+    backend: str   # "org" or "markdown"
+
+
+@router.put("/backend")
+def switch_backend(body: BackendSwitch):
+    """Switch the storage backend and reload immediately."""
+    if body.backend not in ("org", "markdown"):
+        raise HTTPException(
+            status_code=400,
+            detail="backend must be 'org' or 'markdown'",
         )
+    env_path = _env_file_path()
+    current = _read_env_file(env_path)
+    current["BACKEND"] = body.backend
+    _write_env_file(env_path, current)
+    from ...backends import reset_backend
+    reset_backend()
+    return {
+        "backend": body.backend,
+        "message": f"Switched to {body.backend} backend.",
     }
 
 

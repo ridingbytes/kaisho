@@ -22,6 +22,17 @@ class Backend:
     watch_paths: list[Path] = field(default_factory=list)
 
 
+def reset_backend() -> Backend:
+    """Clear the cached backend and return a fresh one.
+
+    Also resets the config cache so .env changes take effect.
+    """
+    from ..config import reset_config
+    reset_config()
+    get_backend.cache_clear()
+    return get_backend()
+
+
 @lru_cache(maxsize=1)
 def get_backend() -> Backend:
     """Return the singleton Backend for the configured backend type."""

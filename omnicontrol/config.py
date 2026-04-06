@@ -61,11 +61,6 @@ class Settings(BaseSettings):
 
     @computed_field
     @property
-    def COMMS_FILE(self) -> Path:
-        return self.ORG_DIR.expanduser() / "comms.org"
-
-    @computed_field
-    @property
     def DB_FILE(self) -> Path:
         return self.DATA_DIR.expanduser() / "omnicontrol.db"
 
@@ -73,6 +68,12 @@ class Settings(BaseSettings):
 @lru_cache(maxsize=1)
 def get_config() -> Settings:
     return Settings()
+
+
+def reset_config() -> Settings:
+    """Clear the cached config and return a fresh one."""
+    get_config.cache_clear()
+    return get_config()
 
 
 def load_settings_yaml() -> dict:

@@ -15,6 +15,7 @@ import {
   fetchPaths,
   fetchSettings,
   reorderStates,
+  switchBackend,
   updateAiSettings,
   updateGithubSettings,
   updateKbSources,
@@ -172,14 +173,23 @@ export function usePaths() {
   });
 }
 
+export function useSwitchBackend() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (backend: string) => switchBackend(backend),
+    onSuccess: () => {
+      void qc.invalidateQueries();
+    },
+  });
+}
+
 export function useUpdatePaths() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (updates: {
       org_dir?: string;
+      markdown_dir?: string;
       data_dir?: string;
-      wissen_dir?: string;
-      research_dir?: string;
     }) => updatePaths(updates),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["settings", "paths"] });
