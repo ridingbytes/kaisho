@@ -567,7 +567,7 @@ function TreeNodeRow({
             ? "text-accent bg-accent-muted"
             : "text-slate-300",
         ].join(" ")}
-        style={{ paddingLeft: indent + 16 }}
+        style={{ paddingLeft: indent + 6 }}
         title={node.name}
       >
         {node.name}
