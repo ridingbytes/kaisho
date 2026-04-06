@@ -18,6 +18,7 @@ import {
   useAvailableModels,
   useClaudeCliStatus,
   useCreateSkill,
+  useCurrentUser,
   useDeleteSkill,
   useGithubSettings,
   useKbSources,
@@ -30,6 +31,7 @@ import {
   useUpdateGithubSettings,
   useUpdatePaths,
   useUpdateSkill,
+  useUpdateUserProfile,
   useUrlAllowlist,
   useUpdateUrlAllowlist,
   useAddTag,
@@ -38,6 +40,7 @@ import {
   useAddCustomerType,
   useDeleteCustomerType,
 } from "../../hooks/useSettings";
+import { PixelAvatar } from "../common/PixelAvatar";
 import type { AiSettings, ConfigTag } from "../../types";
 
 // ---------------------------------------------------------------------------
@@ -1157,6 +1160,116 @@ function CustomerTypesSection({ types }: { types: string[] }) {
 // General tab
 // ---------------------------------------------------------------------------
 
+function UserProfileSection() {
+  const { data: userData } = useCurrentUser();
+  const update = useUpdateUserProfile();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [bio, setBio] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (userData) {
+      setName(userData.name ?? "");
+      setEmail(userData.email ?? "");
+      setBio(userData.bio ?? "");
+    }
+  }, [userData]);
+
+  if (!userData) return null;
+
+  function handleSave() {
+    update.mutate(
+      { name, email, bio },
+      {
+        onSuccess: () => {
+          setSaved(true);
+          setTimeout(() => setSaved(false), 2000);
+        },
+      }
+    );
+  }
+
+  return (
+    <section>
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-slate-500 mb-3">
+        User Profile
+      </h2>
+      <div className="bg-surface-card rounded-xl border border-border p-4 flex flex-col gap-4">
+        {/* Avatar + username */}
+        <div className="flex items-center gap-3">
+          <PixelAvatar
+            seed={userData.username}
+            size={64}
+          />
+          <span className="text-sm text-slate-500 font-mono">
+            {userData.username}
+          </span>
+        </div>
+
+        {/* Full name */}
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+            Full name
+          </span>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Full name"
+            className={inputCls}
+          />
+        </label>
+
+        {/* Email */}
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+            Email
+          </span>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className={inputCls}
+          />
+        </label>
+
+        {/* Bio */}
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+            Bio
+          </span>
+          <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            rows={2}
+            placeholder="Short bio"
+            className={[inputCls, "resize-y"].join(" ")}
+          />
+        </label>
+
+        {/* Save */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSave}
+            disabled={update.isPending}
+            className={saveBtnCls}
+          >
+            {update.isPending ? "Saving…" : "Save"}
+          </button>
+          {saved && (
+            <span className="text-xs text-green-400">
+              Saved
+            </span>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
 function GeneralTab() {
   const { data: settings, isLoading } = useSettings();
 
@@ -1168,6 +1281,8 @@ function GeneralTab() {
 
   return (
     <div className="flex flex-col gap-8">
+      <UserProfileSection />
+
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
         {/* Task States */}
         <section className="flex-1">

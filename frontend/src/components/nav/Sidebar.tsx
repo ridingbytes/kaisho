@@ -28,6 +28,7 @@ import {
   useSwitchUser,
   useUsers,
 } from "../../hooks/useSettings";
+import { PixelAvatar } from "../common/PixelAvatar";
 
 interface NavItem {
   id: View;
@@ -150,15 +151,28 @@ export function Sidebar({
         <div className="mt-auto pt-2 border-t border-border-subtle mx-2 relative">
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="w-full flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-surface-raised transition-colors"
+            className={[
+              "w-full flex items-center gap-2 py-1.5 rounded-lg",
+              "text-slate-500 hover:text-slate-300",
+              "hover:bg-surface-raised transition-colors",
+              open ? "px-2" : "flex-col px-0",
+            ].join(" ")}
             title={`${userData.name || userData.username} / ${userData.profile}`}
           >
-            <div className="w-6 h-6 rounded-full bg-accent/20 text-accent flex items-center justify-center text-[10px] font-bold uppercase">
-              {(userData.name || userData.username).charAt(0)}
-            </div>
-            <span className="text-[7px] font-semibold uppercase tracking-wider leading-none text-slate-600 truncate w-full text-center">
-              {userData.profile}
-            </span>
+            <PixelAvatar
+              seed={userData.username}
+              size={24}
+              className="shrink-0"
+            />
+            {open ? (
+              <span className="text-[10px] font-semibold text-slate-400 truncate leading-none">
+                {userData.name || userData.username}
+              </span>
+            ) : (
+              <span className="text-[7px] font-semibold uppercase tracking-wider leading-none text-slate-600 truncate w-full text-center">
+                {userData.profile}
+              </span>
+            )}
           </button>
 
           {menuOpen && (

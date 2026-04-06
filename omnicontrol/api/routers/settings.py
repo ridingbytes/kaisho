@@ -578,6 +578,28 @@ def get_current_user():
     }
 
 
+class UserProfileUpdate(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    bio: str | None = None
+
+
+@router.patch("/user/profile")
+def update_user_profile(body: UserProfileUpdate):
+    """Update name, email, bio in user.yaml."""
+    from ...config import load_user_yaml, save_user_yaml
+    cfg = get_config()
+    data = load_user_yaml(cfg)
+    if body.name is not None:
+        data["name"] = body.name
+    if body.email is not None:
+        data["email"] = body.email
+    if body.bio is not None:
+        data["bio"] = body.bio
+    save_user_yaml(cfg, data)
+    return data
+
+
 @router.get("/users")
 def get_users():
     """List all user accounts."""

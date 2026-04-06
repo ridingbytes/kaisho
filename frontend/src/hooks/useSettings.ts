@@ -10,6 +10,7 @@ import {
   createSkill,
   createUser,
   deleteCustomerType,
+  updateUserProfile,
   deleteSkill,
   deleteTag,
   fetchAdvisorFiles,
@@ -406,6 +407,22 @@ export function useCurrentUser() {
     queryKey: ["settings", "user"],
     queryFn: fetchCurrentUser,
     staleTime: 60_000,
+  });
+}
+
+export function useUpdateUserProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (updates: {
+      name?: string;
+      email?: string;
+      bio?: string;
+    }) => updateUserProfile(updates),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings", "user"],
+      });
+    },
   });
 }
 

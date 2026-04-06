@@ -204,6 +204,14 @@ export function createProfile(
   return post("/settings/profiles", { name });
 }
 
+export function updateUserProfile(updates: {
+  name?: string;
+  email?: string;
+  bio?: string;
+}): Promise<Record<string, string>> {
+  return patch("/settings/user/profile", updates);
+}
+
 export function updatePaths(updates: {
   org_dir?: string;
   markdown_dir?: string;
