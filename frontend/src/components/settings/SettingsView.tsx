@@ -1666,7 +1666,6 @@ function PathsSection() {
   const updateKb = useUpdateKbSources();
   const [orgDir, setOrgDir] = useState("");
   const [mdDir, setMdDir] = useState("");
-  const [dataDir, setDataDir] = useState("");
   const [backend, setBackend] = useState("org");
   const [sources, setSources] = useState<
     { label: string; path: string }[]
@@ -1677,7 +1676,6 @@ function PathsSection() {
     if (paths) {
       setOrgDir(paths.org_dir ?? "");
       setMdDir(paths.markdown_dir ?? "");
-      setDataDir(paths.data_dir ?? "");
       setBackend(paths.backend ?? "org");
     }
   }, [paths]);
@@ -1692,7 +1690,7 @@ function PathsSection() {
 
   function handleSavePaths() {
     update.mutate(
-      { org_dir: orgDir, markdown_dir: mdDir, data_dir: dataDir },
+      { org_dir: orgDir, markdown_dir: mdDir },
       {
         onSuccess: () => {
           setSaved(true);
@@ -1811,18 +1809,17 @@ function PathsSection() {
               placeholder="data/markdown"
             />
           </label>
-          <label className="flex items-center gap-3 px-4 py-2.5">
+          <div className="flex items-center gap-3 px-4 py-2.5">
             <span className="text-xs text-slate-400 w-32 shrink-0">
               DATA_DIR
             </span>
-            <input
-              type="text"
-              value={dataDir}
-              onChange={(e) => setDataDir(e.target.value)}
-              className={inputCls}
-              placeholder="data"
-            />
-          </label>
+            <span className="text-xs font-mono text-slate-500 truncate flex-1">
+              {paths?.data_dir ?? "data"}
+            </span>
+            <span className="text-[10px] text-slate-700">
+              (global, set via .env)
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -1924,8 +1921,8 @@ function PathsSection() {
           </div>
         </div>
         <p className="mt-2 text-[10px] text-slate-700">
-          All env vars (ORG_DIR, MARKDOWN_DIR, DATA_DIR, BACKEND,
-          HOST, PORT) can be set in .env for Docker deployments.
+          Backend, ORG_DIR, and MARKDOWN_DIR are stored per profile.
+          DATA_DIR, HOST, PORT are global (.env).
         </p>
       </div>
     </section>

@@ -288,7 +288,6 @@ export function updateUserProfile(updates: {
 export function updatePaths(updates: {
   org_dir?: string;
   markdown_dir?: string;
-  data_dir?: string;
 }): Promise<{ message: string }> {
   return patch<{ message: string }>("/settings/paths", updates);
 }

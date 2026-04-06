@@ -213,7 +213,6 @@ export function useUpdatePaths() {
     mutationFn: (updates: {
       org_dir?: string;
       markdown_dir?: string;
-      data_dir?: string;
     }) => updatePaths(updates),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["settings", "paths"] });

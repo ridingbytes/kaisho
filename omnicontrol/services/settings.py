@@ -142,6 +142,51 @@ def set_kb_sources(path: Path, sources: list[dict]) -> list[dict]:
     return sources
 
 
+DEFAULT_PATHS: dict = {
+    "backend": "org",
+    "org_dir": "",
+    "markdown_dir": "",
+}
+
+
+def get_path_settings(settings: dict, cfg=None) -> dict:
+    """Return backend/path settings with defaults from config.
+
+    Keys: backend, org_dir, markdown_dir.
+    Falls back to config (env/.env) values when not set in
+    the profile's settings.yaml.
+    """
+    if cfg is None:
+        from ..config import get_config
+        cfg = get_config()
+    stored = settings.get("paths", {})
+    return {
+        "backend": stored.get("backend") or cfg.BACKEND,
+        "org_dir": (
+            stored.get("org_dir")
+            or str(cfg.ORG_DIR.expanduser())
+        ),
+        "markdown_dir": (
+            stored.get("markdown_dir")
+            or str(cfg.MARKDOWN_DIR.expanduser())
+        ),
+    }
+
+
+def set_path_settings(
+    path: Path, updates: dict
+) -> dict:
+    """Persist path/backend settings into settings.yaml."""
+    data = load_settings(path)
+    paths = data.get("paths", {})
+    for key in ("backend", "org_dir", "markdown_dir"):
+        if key in updates and updates[key] is not None:
+            paths[key] = updates[key]
+    data["paths"] = paths
+    save_settings(path, data)
+    return get_path_settings(data)
+
+
 def get_url_allowlist(settings: dict) -> list[str]:
     """Return the URL allowlist (list of domain strings)."""
     return settings.get("url_allowlist", [])
