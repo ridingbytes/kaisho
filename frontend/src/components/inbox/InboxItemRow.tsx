@@ -137,7 +137,6 @@ export function InboxItemRow({ item }: Props) {
     setMoveDest(null);
     setTargetCustomer(item.customer ?? "");
     setTargetFilename(slugify(cleanTitle(item.title)) + ".md");
-    setExpanded(true);
   }
 
   function selectDest(dest: MoveDestination) {
@@ -242,18 +241,48 @@ export function InboxItemRow({ item }: Props) {
           >
             <Pencil size={13} strokeWidth={2} />
           </button>
-          <button
-            title="Move"
-            onClick={openMovePanel}
-            className={[
-              "p-1.5 rounded-md transition-colors",
-              moving
-                ? "text-accent bg-accent-muted"
-                : "text-slate-600 hover:text-accent hover:bg-accent-muted",
-            ].join(" ")}
-          >
-            <ArrowRightLeft size={14} strokeWidth={2} />
-          </button>
+          <div className="relative">
+            <button
+              title="Move"
+              onClick={openMovePanel}
+              className={[
+                "p-1.5 rounded-md transition-colors",
+                moving
+                  ? "text-accent bg-accent-muted"
+                  : "text-slate-600 hover:text-accent hover:bg-accent-muted",
+              ].join(" ")}
+            >
+              <ArrowRightLeft size={14} strokeWidth={2} />
+            </button>
+            {moving && !moveDest && (
+              <div
+                className="absolute right-0 top-full mt-1 z-50 w-32 rounded-lg bg-surface-overlay border border-border shadow-lg p-1 flex flex-col gap-0.5"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {(
+                  ["todo", "note", "kb", "archive"] as MoveDestination[]
+                ).map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => selectDest(d)}
+                    disabled={move.isPending}
+                    className="w-full text-left px-2 py-1 rounded text-xs text-slate-300 hover:bg-surface-raised transition-colors capitalize disabled:opacity-40"
+                  >
+                    {d === "kb" ? "Knowledge" : d}
+                  </button>
+                ))}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMoving(false);
+                  }}
+                  className="w-full text-left px-2 py-1 rounded text-[10px] text-slate-600 hover:text-slate-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
           <button
             title="Delete"
             onClick={(e) => {
@@ -360,106 +389,74 @@ export function InboxItemRow({ item }: Props) {
             </>
           )}
 
-          {/* Move panel */}
-          {moving && !editing && (
-            <div className="flex flex-col gap-2 mt-1 p-2 rounded-md bg-surface-overlay border border-border">
-              {!moveDest && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => selectDest("todo")}
-                    className="flex-1 px-2 py-1 rounded-md text-xs font-semibold bg-accent/20 text-accent hover:bg-accent/30 transition-colors"
-                  >
-                    Todo
-                  </button>
-                  <button
-                    onClick={() => selectDest("note")}
-                    disabled={move.isPending}
-                    className="flex-1 px-2 py-1 rounded-md text-xs font-semibold bg-accent/20 text-accent hover:bg-accent/30 transition-colors disabled:opacity-40"
-                  >
-                    {move.isPending ? "…" : "Note"}
-                  </button>
-                  <button
-                    onClick={() => selectDest("kb")}
-                    className="flex-1 px-2 py-1 rounded-md text-xs font-semibold bg-accent/20 text-accent hover:bg-accent/30 transition-colors"
-                  >
-                    Knowledge
-                  </button>
-                  <button
-                    onClick={() => selectDest("archive")}
-                    disabled={move.isPending}
-                    className="flex-1 px-2 py-1 rounded-md text-xs font-semibold bg-accent/20 text-accent hover:bg-accent/30 transition-colors disabled:opacity-40"
-                  >
-                    {move.isPending ? "…" : "Archive"}
-                  </button>
-                  <button
-                    onClick={() => setMoving(false)}
-                    className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-
-              {moveDest === "todo" && (
-                <div className="flex gap-2">
-                  <CustomerAutocomplete
-                    autoFocus
-                    value={targetCustomer}
-                    onChange={setTargetCustomer}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && handleMoveTodo()
-                    }
-                    className="flex-1 min-w-0"
-                    inputClassName={fieldCls}
-                  />
-                  <button
-                    onClick={handleMoveTodo}
-                    disabled={
-                      move.isPending || !targetCustomer.trim()
-                    }
-                    className="px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
-                  >
-                    {move.isPending ? "…" : "Move"}
-                  </button>
-                  <button
-                    onClick={() => setMoveDest(null)}
-                    className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
-                  >
-                    Back
-                  </button>
-                </div>
-              )}
-
-              {moveDest === "kb" && (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    autoFocus
-                    value={targetFilename}
-                    onChange={(e) => setTargetFilename(e.target.value)}
-                    placeholder="filename.md"
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && handleMoveKb()
-                    }
-                    className={`${fieldCls} flex-1`}
-                  />
-                  <button
-                    onClick={handleMoveKb}
-                    disabled={
-                      move.isPending || !targetFilename.trim()
-                    }
-                    className="px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
-                  >
-                    {move.isPending ? "…" : "Move"}
-                  </button>
-                  <button
-                    onClick={() => setMoveDest(null)}
-                    className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
-                  >
-                    Back
-                  </button>
-                </div>
-              )}
+          {/* Move sub-panel (todo/kb need input) */}
+          {moving && moveDest === "todo" && (
+            <div
+              className="mt-1 p-2 rounded-md bg-surface-overlay border border-border"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex gap-2">
+                <CustomerAutocomplete
+                  autoFocus
+                  value={targetCustomer}
+                  onChange={setTargetCustomer}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && handleMoveTodo()
+                  }
+                  className="flex-1 min-w-0"
+                  inputClassName={fieldCls}
+                />
+                <button
+                  onClick={handleMoveTodo}
+                  disabled={
+                    move.isPending || !targetCustomer.trim()
+                  }
+                  className="px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
+                >
+                  {move.isPending ? "…" : "Move"}
+                </button>
+                <button
+                  onClick={() => { setMoveDest(null); setMoving(false); }}
+                  className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            </div>
+          )}
+          {moving && moveDest === "kb" && (
+            <div
+              className="mt-1 p-2 rounded-md bg-surface-overlay border border-border"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  autoFocus
+                  value={targetFilename}
+                  onChange={(e) => setTargetFilename(e.target.value)}
+                  placeholder="filename.md"
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && handleMoveKb()
+                  }
+                  className={`${fieldCls} flex-1`}
+                />
+                <button
+                  onClick={handleMoveKb}
+                  disabled={
+                    move.isPending || !targetFilename.trim()
+                  }
+                  className="px-2 py-1 rounded-md text-xs font-semibold bg-accent text-white disabled:opacity-40"
+                >
+                  {move.isPending ? "…" : "Move"}
+                </button>
+                <button
+                  onClick={() => { setMoveDest(null); setMoving(false); }}
+                  className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-300"
+                >
+                  <X size={11} />
+                </button>
+              </div>
             </div>
           )}
         </div>
