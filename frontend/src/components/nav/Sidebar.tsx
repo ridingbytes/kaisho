@@ -80,18 +80,6 @@ export function Sidebar({
         open ? "w-40" : "w-14 overflow-hidden",
       ].join(" ")}
     >
-      {/* Logo dot */}
-      <div className={[
-        "flex items-center mb-3",
-        open ? "px-4 gap-2" : "justify-center",
-      ].join(" ")}>
-        <div className="w-2 h-2 rounded-full bg-accent shrink-0" />
-        {open && (
-          <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">
-            OmniCtrl
-          </span>
-        )}
-      </div>
 
       {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
         const isActive = active === id;

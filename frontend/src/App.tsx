@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Moon, PanelLeft, PanelRight, Sun } from "lucide-react";
+import { Moon, PanelRight, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { AdvisorMessage } from "./components/advisor/AdvisorView";
 import { AdvisorView } from "./components/advisor/AdvisorView";
@@ -194,13 +194,16 @@ function AppShell() {
         <button
           onClick={() => setSidebarOpen((v) => !v)}
           title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          className={headerBtn}
+          className="p-1 rounded-md hover:bg-surface-raised transition-colors"
         >
-          <PanelLeft size={14} />
+          <div className="w-2.5 h-2.5 rounded-full bg-accent" />
         </button>
-        <span className="text-xs font-semibold text-slate-500 tracking-widest uppercase">
+        <button
+          onClick={() => setView("dashboard")}
+          className="text-xs font-semibold text-slate-500 tracking-widest uppercase hover:text-slate-300 transition-colors"
+        >
           OmniControl
-        </span>
+        </button>
         <span className="text-border mx-0.5">·</span>
         <span className="text-sm font-semibold text-slate-200">
           {VIEW_TITLES[view]}
