@@ -37,16 +37,31 @@ export function ActiveTimer({ timer }: Props) {
     setNotes(timer.notes ?? "");
   }, [timer.notes]);
 
+  function saveNotes(value: string) {
+    if (!timer.start) return;
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    updateEntry.mutate({
+      startIso: timer.start!,
+      updates: { notes: value },
+    });
+  }
+
   function handleNotesChange(value: string) {
     setNotes(value);
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
     if (!timer.start) return;
-    saveTimeout.current = setTimeout(() => {
-      updateEntry.mutate({
-        startIso: timer.start!,
-        updates: { notes: value },
-      });
-    }, 800);
+    saveTimeout.current = setTimeout(
+      () => saveNotes(value), 800
+    );
+  }
+
+  function handleNotesKeyDown(
+    e: React.KeyboardEvent<HTMLTextAreaElement>
+  ) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      saveNotes(notes);
+    }
   }
 
   if (!timer.active || !timer.start) return null;
@@ -114,7 +129,8 @@ export function ActiveTimer({ timer }: Props) {
           <textarea
             value={notes}
             onChange={(e) => handleNotesChange(e.target.value)}
-            placeholder="Session notes…"
+            onKeyDown={handleNotesKeyDown}
+            placeholder="Session notes… (Cmd+Enter to save)"
             rows={3}
             className={[
               "w-full px-2 py-1.5 rounded-lg text-xs resize-none",
