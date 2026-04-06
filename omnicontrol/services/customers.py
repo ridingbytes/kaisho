@@ -187,6 +187,7 @@ def add_customer(
 
     new_heading = Heading(
         level=2,
+        keyword=None,
         title=name,
         tags=tags or [],
         properties=props,
