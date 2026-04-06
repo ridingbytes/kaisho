@@ -517,8 +517,8 @@ def _section_to_clock(sec: dict) -> dict:
         "end": meta.get("end"),
         "task_id": meta.get("task_id", ""),
         "contract": meta.get("contract", ""),
-        "booked": meta.get("booked", False),
-        "notes": meta.get("notes", ""),
+        "booked": False,
+        "notes": sec.get("body", "").strip(),
     }
 
 
@@ -529,13 +529,11 @@ def _clock_to_section(entry: dict) -> dict:
         "end": entry.get("end"),
         "task_id": entry.get("task_id", ""),
         "contract": entry.get("contract", ""),
-        "booked": entry.get("booked", False),
-        "notes": entry.get("notes", ""),
     }
     return {
         "heading": _clock_heading(entry),
         "meta": meta,
-        "body": "",
+        "body": entry.get("notes", ""),
     }
 
 
