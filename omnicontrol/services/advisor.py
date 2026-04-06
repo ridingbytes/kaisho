@@ -199,7 +199,16 @@ _BASE_SYSTEM_PROMPT = (
     "4. For write actions, confirm the exact values.\n"
     "5. Use search_knowledge and read_knowledge_file to look up "
     "documentation, notes, and research when the question requires "
-    "domain knowledge beyond the structured data."
+    "domain knowledge beyond the structured data.\n"
+    "6. Cron prompt files support YAML frontmatter with a 'fetch' "
+    "key listing URLs to pre-fetch before sending to the model:\n"
+    "   ---\n"
+    "   fetch:\n"
+    "     - https://example.com/api/data\n"
+    "   ---\n"
+    "   Analyze: {fetch_results}\n\n"
+    "   Domains must be in the URL allowlist (Settings > AI). "
+    "   Use approve_url_domain to add missing domains."
 )
 
 

@@ -34,14 +34,92 @@ def _resolve_path(path_str: str) -> Path:
 
 
 def load_prompt(prompt_file: str, project_root: Path) -> str:
-    """Read prompt file, resolve relative to project root."""
+    """Read prompt file, resolve relative to project root.
+
+    Supports YAML frontmatter with a ``fetch`` key listing URLs
+    to pre-fetch. The fetched content is injected as
+    ``{fetch_results}`` into the prompt body::
+
+        ---
+        fetch:
+          - https://hn.algolia.com/api/v1/search_by_date?...
+          - https://example.com/data.json
+        ---
+        Analyze the following data:
+        {fetch_results}
+    """
+    import yaml as _yaml
     p = Path(prompt_file)
     if not p.is_absolute():
         p = project_root / p
     p = p.expanduser()
     if not p.exists():
         raise ExecutorError(f"prompt file not found: {p}")
-    return p.read_text(encoding="utf-8")
+    raw = p.read_text(encoding="utf-8")
+
+    # Parse optional YAML frontmatter
+    body = raw
+    urls: list[str] = []
+    if raw.startswith("---"):
+        parts = raw.split("---", 2)
+        if len(parts) >= 3:
+            try:
+                fm = _yaml.safe_load(parts[1]) or {}
+                urls = fm.get("fetch", [])
+                body = parts[2].strip()
+            except _yaml.YAMLError:
+                pass
+
+    # Pre-fetch URLs
+    if urls:
+        fetch_results = _prefetch_urls(urls)
+        body = body.replace("{fetch_results}", fetch_results)
+
+    # Replace {date} placeholder
+    today = date.today().isoformat()
+    body = body.replace("{date}", today)
+    return body
+
+
+def _prefetch_urls(urls: list[str]) -> str:
+    """Fetch each URL and return combined content."""
+    import urllib.request
+    from .tools import _is_domain_allowed, _extract_domain
+
+    parts = []
+    for url in urls:
+        domain = _extract_domain(url)
+        if not _is_domain_allowed(domain):
+            parts.append(
+                f"--- {url} ---\n"
+                f"[BLOCKED: domain '{domain}' not in URL "
+                f"allowlist. Add it in Settings > AI > "
+                f"URL Allowlist]\n"
+            )
+            continue
+        try:
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "omnicontrol-cron/1.0",
+                    "Accept": "application/json",
+                },
+            )
+            with urllib.request.urlopen(
+                req, timeout=15
+            ) as resp:
+                raw = resp.read(100_000)
+                charset = (
+                    resp.headers.get_content_charset()
+                    or "utf-8"
+                )
+                text = raw.decode(charset, errors="replace")
+            parts.append(f"--- {url} ---\n{text}\n")
+        except Exception as exc:
+            parts.append(
+                f"--- {url} ---\n[ERROR: {exc}]\n"
+            )
+    return "\n".join(parts)
 
 
 # ---------------------------------------------------------------------------
