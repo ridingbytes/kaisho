@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..backends import get_backend
+from ..config import init_data_dir
 from .routers import (
     advisor,
     clocks,
@@ -24,6 +25,7 @@ from .watcher.service import watch_files
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    init_data_dir()
     watch_paths = get_backend().watch_paths
     task = asyncio.create_task(watch_files(*watch_paths))
     yield

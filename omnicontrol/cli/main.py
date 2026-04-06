@@ -13,11 +13,12 @@ from .inbox import inbox
 from .knowledge import knowledge
 from .tag import tag
 from .task import task
-from ..config import get_config
+from ..config import get_config, init_data_dir
 
 
 @click.group()
 def cli():
+    init_data_dir()
     """OmniControl - Personal productivity system."""
 
 

@@ -76,6 +76,27 @@ def reset_config() -> Settings:
     return get_config()
 
 
+def init_data_dir(cfg: Settings | None = None) -> None:
+    """Copy template files into data/ if they don't exist yet."""
+    import shutil
+    if cfg is None:
+        cfg = get_config()
+    data = cfg.DATA_DIR.expanduser()
+    data.mkdir(parents=True, exist_ok=True)
+    tmpl = Path(__file__).parent.parent / "templates"
+    if not tmpl.is_dir():
+        return
+    for src in tmpl.rglob("*"):
+        if src.is_dir():
+            continue
+        rel = src.relative_to(tmpl)
+        dst = data / rel
+        if dst.exists():
+            continue
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+
+
 def load_settings_yaml() -> dict:
     """Read settings.yaml and return full settings dict."""
     cfg = get_config()
