@@ -913,7 +913,8 @@ class JsonNotesBackend(NotesBackend):
         return _read_json(self._notes_file)
 
     def add_note(
-        self, title, body="", customer=None, tags=None
+        self, title, body="", customer=None,
+        tags=None, task_id=None,
     ) -> dict:
         notes = _read_json(self._notes_file)
         note = {
@@ -921,6 +922,7 @@ class JsonNotesBackend(NotesBackend):
             "title": title,
             "body": body,
             "customer": customer or "",
+            "task_id": task_id or None,
             "tags": tags or [],
             "created": datetime.now().isoformat(),
         }

@@ -1102,7 +1102,8 @@ class MarkdownNotesBackend(NotesBackend):
         return self._load_notes()
 
     def add_note(
-        self, title, body="", customer=None, tags=None
+        self, title, body="", customer=None,
+        tags=None, task_id=None,
     ) -> dict:
         notes = self._load_notes()
         note = {
@@ -1110,6 +1111,7 @@ class MarkdownNotesBackend(NotesBackend):
             "title": title,
             "body": body,
             "customer": customer or "",
+            "task_id": task_id or None,
             "tags": tags or [],
             "created": datetime.now().isoformat(),
         }
