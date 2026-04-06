@@ -46,6 +46,7 @@ def delete_note(note_id: str):
 class NoteUpdate(BaseModel):
     title: str | None = None
     customer: str | None = None
+    task_id: str | None = None
     body: str | None = None
     tags: list[str] | None = None
 
@@ -53,7 +54,8 @@ class NoteUpdate(BaseModel):
 @router.patch("/{note_id}")
 def update_note(note_id: str, body: NoteUpdate):
     updates = {
-        k: v for k, v in body.model_dump().items() if v is not None
+        k: v
+        for k, v in body.model_dump(exclude_unset=True).items()
     }
     try:
         return get_backend().notes.update_note(note_id, updates)
