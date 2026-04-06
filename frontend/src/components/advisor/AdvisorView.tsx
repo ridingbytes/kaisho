@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Trash2 } from "lucide-react";
 import { askAdvisor } from "../../api/client";
-import { useAiSettings, useAvailableModels } from "../../hooks/useSettings";
+import {
+  useAiSettings,
+  useAvailableModels,
+  useUpdateAiSettings,
+} from "../../hooks/useSettings";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
@@ -66,6 +70,7 @@ interface AdvisorViewProps {
 export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
   const { data: aiSettings } = useAiSettings();
   const { data: models = [] } = useAvailableModels();
+  const updateAi = useUpdateAiSettings();
 
   const [model, setModel] = useState("");
   const [input, setInput] = useState("");
@@ -194,6 +199,11 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             list="advisor-model-list"
             value={model}
             onChange={(e) => setModel(e.target.value)}
+            onBlur={() => {
+              if (model && model !== aiSettings?.advisor_model) {
+                updateAi.mutate({ advisor_model: model });
+              }
+            }}
             placeholder="provider:model"
             className={[
               "w-64 px-2 py-1 rounded-lg text-xs font-mono",

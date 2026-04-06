@@ -57,7 +57,7 @@ export function eventToShortcut(e: KeyboardEvent): string {
   if (e.metaKey || e.ctrlKey) parts.push("mod");
   if (e.shiftKey) parts.push("shift");
   if (e.altKey) parts.push("alt");
-  const key = e.key.toLowerCase();
+  const key = (e.key ?? "").toLowerCase();
   if (!["meta", "control", "shift", "alt"].includes(key)) {
     parts.push(key);
   }

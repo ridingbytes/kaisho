@@ -234,13 +234,17 @@ function AdvisorPersonalitySection() {
 }
 
 function UrlAllowlistSection() {
-  const { data: allowlist = [] } = useUrlAllowlist();
+  const { data: allowlist } = useUrlAllowlist();
   const update = useUpdateUrlAllowlist();
   const [domains, setDomains] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState("");
+  const initialized = useRef(false);
 
   useEffect(() => {
-    setDomains(allowlist);
+    if (allowlist && !initialized.current) {
+      setDomains(allowlist);
+      initialized.current = true;
+    }
   }, [allowlist]);
 
   function handleRemove(domain: string) {

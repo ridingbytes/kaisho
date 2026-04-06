@@ -363,7 +363,8 @@ def _run_claude_cli(model: str, prompt: str) -> str:
     if not claude_bin:
         raise ExecutorError("claude CLI not found")
     result = subprocess.run(
-        [claude_bin, "-p", prompt, "--model", model],
+        [claude_bin, "-p", "-", "--model", model],
+        input=prompt,
         capture_output=True, text=True, timeout=300,
     )
     if result.returncode != 0:
