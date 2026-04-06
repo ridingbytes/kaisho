@@ -10,8 +10,6 @@ import {
   Inbox,
   LayoutDashboard,
   NotebookPen,
-  Settings,
-
   Users,
 } from "lucide-react";
 import type { View } from "../../App";
@@ -20,15 +18,6 @@ import {
   useShortcutsContext,
 } from "../../context/ShortcutsContext";
 import { useInboxItems } from "../../hooks/useInbox";
-import { useState } from "react";
-import {
-  useCreateProfile,
-  useCurrentUser,
-  useSwitchProfile,
-  useSwitchUser,
-  useUsers,
-} from "../../hooks/useSettings";
-import { PixelAvatar } from "../common/PixelAvatar";
 
 interface NavItem {
   id: View;
@@ -67,14 +56,6 @@ export function Sidebar({
   const { data: inboxItems } = useInboxItems();
   const inboxCount = inboxItems?.length ?? 0;
   const { config } = useShortcutsContext();
-  const { data: userData } = useCurrentUser();
-  const { data: users = [] } = useUsers();
-  const switchProf = useSwitchProfile();
-  const switchUsr = useSwitchUser();
-  const createProf = useCreateProfile();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [showNewProfile, setShowNewProfile] = useState(false);
-  const [newProfileName, setNewProfileName] = useState("");
 
   return (
     <nav
@@ -84,7 +65,7 @@ export function Sidebar({
         open ? "w-40" : "w-14",
       ].join(" ")}
     >
-      {/* Toggle button */}
+      {/* Toggle */}
       <button
         onClick={onToggle}
         title={open ? "Collapse" : "Expand"}
@@ -94,22 +75,28 @@ export function Sidebar({
           open ? "px-3 h-7 justify-end" : "mx-2 h-7 justify-center",
         ].join(" ")}
       >
-        {open ? <ChevronsLeft size={14} /> : <ChevronsRight size={14} />}
+        {open
+          ? <ChevronsLeft size={14} />
+          : <ChevronsRight size={14} />}
       </button>
 
+      {/* Nav items */}
       {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
         const isActive = active === id;
         return (
           <button
             key={id}
-            title={config.views[id]
-              ? `${label} (${displayShortcut(config.views[id])})`
-              : label
+            title={
+              config.views[id]
+                ? `${label} (${displayShortcut(config.views[id])})`
+                : label
             }
             onClick={() => onChange(id)}
             className={[
               "relative flex items-center",
-              open ? "px-3 gap-2.5 h-8" : "flex-col justify-center mx-2 h-10 gap-1",
+              open
+                ? "px-3 gap-2.5 h-8"
+                : "flex-col justify-center mx-2 h-10 gap-1",
               "rounded-lg transition-colors",
               "text-[9px] font-semibold tracking-wider uppercase",
               isActive
@@ -117,7 +104,11 @@ export function Sidebar({
                 : "text-slate-400 hover:text-slate-200 hover:bg-surface-raised",
             ].join(" ")}
           >
-            <Icon size={open ? 14 : 16} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
+            <Icon
+              size={open ? 14 : 16}
+              strokeWidth={isActive ? 2 : 1.5}
+              className="shrink-0"
+            />
             <span className="leading-none truncate">
               {open ? label : label.slice(0, 3)}
             </span>
@@ -137,161 +128,11 @@ export function Sidebar({
 
             {/* Advisor unread dot */}
             {id === "advisor" && advisorUnread && (
-              <span
-                className="absolute top-1 right-1.5 w-2.5 h-2.5 rounded-full bg-accent"
-              />
+              <span className="absolute top-1 right-1.5 w-2.5 h-2.5 rounded-full bg-accent" />
             )}
           </button>
         );
       })}
-
-      {/* User menu */}
-      {userData && (
-        <div className="mt-auto pt-2 border-t border-border-subtle mx-2 relative">
-          <button
-            onClick={() => setMenuOpen((v) => !v)}
-            className={[
-              "w-full flex items-center gap-2 py-1.5 rounded-lg",
-              "text-slate-500 hover:text-slate-300",
-              "hover:bg-surface-raised transition-colors",
-              open ? "px-2" : "flex-col px-0",
-            ].join(" ")}
-            title={`${userData.name || userData.username} / ${userData.profile}`}
-          >
-            <PixelAvatar
-              seed={userData.avatar_seed || userData.username}
-              size={24}
-              className="shrink-0"
-            />
-            {open ? (
-              <span className="text-[10px] font-semibold text-slate-400 truncate leading-none">
-                {userData.name || userData.username}
-              </span>
-            ) : (
-              <span className="text-[7px] font-semibold uppercase tracking-wider leading-none text-slate-600 truncate w-full text-center">
-                {userData.profile}
-              </span>
-            )}
-          </button>
-
-          {menuOpen && (
-            <div className="absolute bottom-full left-full ml-1 mb-0 w-44 rounded-lg bg-surface-overlay border border-border shadow-lg p-2 flex flex-col gap-1 z-50">
-              <p className="text-[10px] text-slate-500 px-1 font-semibold">
-                {userData.name || userData.username}
-              </p>
-
-              {/* Profile selector */}
-              <div className="border-t border-border-subtle pt-1 mt-0.5">
-                <p className="text-[9px] text-slate-600 px-1 mb-1 uppercase tracking-wider">
-                  Profile
-                </p>
-                {(userData.profiles ?? []).map((p: string) => (
-                  <button
-                    key={p}
-                    onClick={() => {
-                      if (p !== userData.profile) {
-                        switchProf.mutate(p, {
-                          onSuccess: () => window.location.reload(),
-                        });
-                      }
-                      setMenuOpen(false);
-                    }}
-                    className={[
-                      "w-full text-left px-2 py-1 rounded text-xs transition-colors",
-                      p === userData.profile
-                        ? "text-accent bg-accent-muted"
-                        : "text-slate-300 hover:bg-surface-raised",
-                    ].join(" ")}
-                  >
-                    {p}
-                  </button>
-                ))}
-                {showNewProfile ? (
-                  <input
-                    autoFocus
-                    type="text"
-                    value={newProfileName}
-                    onChange={(e) => setNewProfileName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && newProfileName.trim()) {
-                        const name = newProfileName.trim();
-                        createProf.mutate(name, {
-                          onSuccess: () => {
-                            switchProf.mutate(name, {
-                              onSuccess: () => window.location.reload(),
-                            });
-                          },
-                          onError: () => {
-                            // Profile exists — just switch to it
-                            switchProf.mutate(name, {
-                              onSuccess: () => window.location.reload(),
-                            });
-                          },
-                        });
-                      }
-                      if (e.key === "Escape") setShowNewProfile(false);
-                    }}
-                    placeholder="New profile name"
-                    className="w-full mt-1 px-2 py-1 rounded text-xs bg-surface-raised border border-border text-slate-200 focus:outline-none focus:border-accent"
-                  />
-                ) : (
-                  <button
-                    onClick={() => {
-                      setShowNewProfile(true);
-                      setNewProfileName("");
-                    }}
-                    className="w-full text-left px-2 py-1 rounded text-xs text-slate-600 hover:text-slate-300 hover:bg-surface-raised transition-colors"
-                  >
-                    + New profile
-                  </button>
-                )}
-              </div>
-
-              {/* User switcher (only if >1 user) */}
-              {users.length > 1 && (
-                <div className="border-t border-border-subtle pt-1 mt-0.5">
-                  <p className="text-[9px] text-slate-600 px-1 mb-1 uppercase tracking-wider">
-                    Switch user
-                  </p>
-                  {users.map((u) => (
-                    <button
-                      key={u.username}
-                      onClick={() => {
-                        switchUsr.mutate(
-                          { username: u.username },
-                          { onSuccess: () => window.location.reload() }
-                        );
-                      }}
-                      className={[
-                        "w-full text-left px-2 py-1 rounded text-xs transition-colors",
-                        u.username === userData.username
-                          ? "text-accent bg-accent-muted"
-                          : "text-slate-300 hover:bg-surface-raised",
-                      ].join(" ")}
-                    >
-                      {u.name || u.username}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Settings */}
-              <div className="border-t border-border-subtle pt-1 mt-0.5">
-                <button
-                  onClick={() => {
-                    onChange("settings" as View);
-                    setMenuOpen(false);
-                  }}
-                  className="w-full text-left px-2 py-1 rounded text-xs text-slate-300 hover:bg-surface-raised transition-colors flex items-center gap-2"
-                >
-                  <Settings size={12} />
-                  Settings
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </nav>
   );
 }

@@ -1,6 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Moon, Sun } from "lucide-react";
-import { useCurrentUser } from "./hooks/useSettings";
+import { Moon, Settings, Sun } from "lucide-react";
+import {
+  useCreateProfile,
+  useCurrentUser,
+  useSwitchProfile,
+  useSwitchUser,
+  useUsers,
+} from "./hooks/useSettings";
 import { PixelAvatar } from "./components/common/PixelAvatar";
 import { useEffect, useRef, useState } from "react";
 import type { AdvisorMessage } from "./components/advisor/AdvisorView";
@@ -79,6 +85,12 @@ function AppShell() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { config } = useShortcutsContext();
   const { data: currentUser } = useCurrentUser();
+  const { data: allUsers = [] } = useUsers();
+  const switchProf = useSwitchProfile();
+  const switchUsr = useSwitchUser();
+  const createProf = useCreateProfile();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [newProfInput, setNewProfInput] = useState("");
 
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem("theme") as Theme) ?? "dark"
@@ -205,17 +217,6 @@ function AppShell() {
           {VIEW_TITLES[view]}
         </span>
         <div className="ml-auto flex items-center gap-2">
-          {currentUser && (
-            <div className="flex items-center gap-1.5">
-              <PixelAvatar
-                seed={currentUser.avatar_seed || currentUser.username}
-                size={18}
-              />
-              <span className="text-[10px] text-slate-500 font-mono">
-                {currentUser.profile}
-              </span>
-            </div>
-          )}
           <button
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
@@ -223,6 +224,136 @@ function AppShell() {
           >
             {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
           </button>
+
+          {/* User menu */}
+          {currentUser && (
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen((v) => !v)}
+                className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-surface-raised transition-colors"
+              >
+                <div className="flex flex-col items-end leading-none">
+                  <span className="text-[10px] font-semibold text-slate-300">
+                    {currentUser.name || currentUser.username}
+                  </span>
+                  <span className="text-[9px] text-slate-600">
+                    {currentUser.profile}
+                  </span>
+                </div>
+                <PixelAvatar
+                  seed={currentUser.avatar_seed || currentUser.username}
+                  size={22}
+                />
+              </button>
+
+              {userMenuOpen && (
+                <div className="absolute top-full right-0 mt-1 w-48 rounded-lg bg-surface-overlay border border-border shadow-lg p-2 flex flex-col gap-1 z-50">
+                  {/* Profiles */}
+                  <p className="text-[9px] text-slate-600 px-1 uppercase tracking-wider">
+                    Profile
+                  </p>
+                  {(currentUser.profiles ?? []).map((p: string) => (
+                    <button
+                      key={p}
+                      onClick={() => {
+                        if (p !== currentUser.profile) {
+                          switchProf.mutate(p, {
+                            onSuccess: () => window.location.reload(),
+                          });
+                        }
+                        setUserMenuOpen(false);
+                      }}
+                      className={[
+                        "w-full text-left px-2 py-1 rounded text-xs transition-colors",
+                        p === currentUser.profile
+                          ? "text-accent bg-accent-muted"
+                          : "text-slate-300 hover:bg-surface-raised",
+                      ].join(" ")}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  {newProfInput !== null && newProfInput !== "" ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={newProfInput}
+                      onChange={(e) => setNewProfInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && newProfInput.trim()) {
+                          const n = newProfInput.trim();
+                          createProf.mutate(n, {
+                            onSuccess: () => {
+                              switchProf.mutate(n, {
+                                onSuccess: () => window.location.reload(),
+                              });
+                            },
+                            onError: () => {
+                              switchProf.mutate(n, {
+                                onSuccess: () => window.location.reload(),
+                              });
+                            },
+                          });
+                        }
+                        if (e.key === "Escape") setNewProfInput("");
+                      }}
+                      placeholder="Profile name"
+                      className="w-full px-2 py-1 rounded text-xs bg-surface-raised border border-border text-slate-200 focus:outline-none focus:border-accent"
+                    />
+                  ) : (
+                    <button
+                      onClick={() => setNewProfInput(" ")}
+                      className="w-full text-left px-2 py-1 rounded text-xs text-slate-600 hover:text-slate-300 hover:bg-surface-raised"
+                    >
+                      + New profile
+                    </button>
+                  )}
+
+                  {/* Users (if multiple) */}
+                  {allUsers.length > 1 && (
+                    <>
+                      <div className="border-t border-border-subtle my-0.5" />
+                      <p className="text-[9px] text-slate-600 px-1 uppercase tracking-wider">
+                        Switch user
+                      </p>
+                      {allUsers.map((u) => (
+                        <button
+                          key={u.username}
+                          onClick={() => {
+                            switchUsr.mutate(
+                              { username: u.username },
+                              { onSuccess: () => window.location.reload() }
+                            );
+                          }}
+                          className={[
+                            "w-full text-left px-2 py-1 rounded text-xs transition-colors",
+                            u.username === currentUser.username
+                              ? "text-accent bg-accent-muted"
+                              : "text-slate-300 hover:bg-surface-raised",
+                          ].join(" ")}
+                        >
+                          {u.name || u.username}
+                        </button>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Settings */}
+                  <div className="border-t border-border-subtle my-0.5" />
+                  <button
+                    onClick={() => {
+                      setView("settings");
+                      setUserMenuOpen(false);
+                    }}
+                    className="w-full text-left px-2 py-1 rounded text-xs text-slate-300 hover:bg-surface-raised flex items-center gap-2"
+                  >
+                    <Settings size={12} />
+                    Settings
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
