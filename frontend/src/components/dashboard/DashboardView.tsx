@@ -445,9 +445,17 @@ function BudgetRow({
             const cColor = budgetBarColor(pct);
             return (
               <div key={c.name}>
-                <span className="text-[9px] text-stone-500 truncate block mb-0.5">
-                  {c.name}
-                </span>
+                <div className="flex items-baseline justify-between mb-0.5">
+                  <span className="text-[9px] text-stone-500 truncate">
+                    {c.name}
+                  </span>
+                  <span
+                    className="text-[9px] tabular-nums shrink-0 ml-2"
+                    style={{ color: cColor }}
+                  >
+                    {c.used.toFixed(1)}h used · {c.rest.toFixed(1)}h left · {pct}%
+                  </span>
+                </div>
                 <div className="h-1.5 rounded-full bg-surface-raised overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
@@ -457,35 +465,29 @@ function BudgetRow({
                     }}
                   />
                 </div>
-                <div className="flex items-baseline justify-between mt-0.5">
-                  <span className="text-[9px] text-stone-500 tabular-nums">
-                    {c.used.toFixed(1)}h used · {c.rest.toFixed(1)}h left
-                  </span>
-                  <span
-                    className="text-[9px] font-semibold tabular-nums shrink-0"
-                    style={{ color: cColor }}
-                  >
-                    {pct}%
-                  </span>
-                </div>
               </div>
             );
           })}
         </div>
       ) : (
-        <div
-          className={
-            "h-1.5 rounded-full bg-surface-raised " +
-            "overflow-hidden"
-          }
-        >
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${usedPercent}%`,
-              backgroundColor: color,
-            }}
-          />
+        <div>
+          <div className="flex justify-end mb-0.5">
+            <span
+              className="text-[9px] tabular-nums"
+              style={{ color }}
+            >
+              {displayUsed.toFixed(1)}h used · {(displayBudget - displayUsed).toFixed(1)}h left · {usedPercent}%
+            </span>
+          </div>
+          <div className="h-1.5 rounded-full bg-surface-raised overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${usedPercent}%`,
+                backgroundColor: color,
+              }}
+            />
+          </div>
         </div>
       )}
       {expanded && (
