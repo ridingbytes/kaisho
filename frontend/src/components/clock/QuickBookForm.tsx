@@ -51,24 +51,14 @@ export function QuickBookForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <div className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Duration (e.g. 2h, 30min)"
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-          className={[inputCls, "w-36 shrink-0"].join(" ")}
-        />
-        <CustomerAutocomplete
-          value={customer}
-          onChange={(v) => {
-            setCustomer(v);
-            setContract("");
-          }}
-          className="flex-1 min-w-0"
-          inputClassName={inputCls}
-        />
-      </div>
+      <CustomerAutocomplete
+        value={customer}
+        onChange={(v) => {
+          setCustomer(v);
+          setContract("");
+        }}
+        inputClassName={inputCls}
+      />
       {contracts.length > 0 && (
         <select
           value={contract}
@@ -90,22 +80,31 @@ export function QuickBookForm({
         onChange={(e) => setDescription(e.target.value)}
         className={inputCls}
       />
-      <TaskAutocomplete
-        taskId={taskId}
-        value={taskTitle}
-        onChange={setTaskTitle}
-        onSelect={(id, label) => {
-          setTaskId(id);
-          setTaskTitle(label);
-        }}
-        onClear={() => {
-          setTaskId(null);
-          setTaskTitle("");
-        }}
-        customer={customer}
-        inputClassName={inputCls}
-        className="w-full"
-      />
+      <div className="flex gap-2">
+        <input
+          type="text"
+          placeholder="Duration (2h, 30m)"
+          value={duration}
+          onChange={(e) => setDuration(e.target.value)}
+          className={[inputCls, "w-28 shrink-0"].join(" ")}
+        />
+        <TaskAutocomplete
+          taskId={taskId}
+          value={taskTitle}
+          onChange={setTaskTitle}
+          onSelect={(id, label) => {
+            setTaskId(id);
+            setTaskTitle(label);
+          }}
+          onClear={() => {
+            setTaskId(null);
+            setTaskTitle("");
+          }}
+          customer={customer}
+          inputClassName={inputCls}
+          className="flex-1 min-w-0"
+        />
+      </div>
       <button
         type="submit"
         disabled={
@@ -122,7 +121,7 @@ export function QuickBookForm({
           "disabled:cursor-not-allowed",
         ].join(" ")}
       >
-        {book.isPending ? "Booking…" : "Quick Book"}
+        {book.isPending ? "Booking…" : "Book"}
       </button>
       {book.isError && (
         <p className="text-xs text-red-400">
