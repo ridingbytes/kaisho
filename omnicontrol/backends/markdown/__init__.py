@@ -487,54 +487,138 @@ class MarkdownTaskBackend(TaskBackend):
 
 # -- Clock heading helpers -------------------------------------------
 
-
-def _clock_heading(entry: dict) -> str:
-    """Build heading: CUSTOMER -- Description."""
-    customer = entry.get("customer", "")
-    desc = entry.get("description", "")
-    return f"{customer} \u2014 {desc}"
+_TIME_HEADING_RE = re.compile(
+    r"^(\d{4}-\d{2}-\d{2})\s+"
+    r"(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2}|running)$"
+)
 
 
-def _parse_clock_heading(heading: str) -> dict:
-    """Extract customer and description from heading."""
-    parts = heading.split(" \u2014 ", 1)
-    if len(parts) == 2:
+def _group_key(entry: dict) -> str:
+    """Key for grouping entries: [customer] - description."""
+    return (
+        f"[{entry.get('customer', '')}] - "
+        f"{entry.get('description', '')}"
+    )
+
+
+def _parse_group_heading(heading: str) -> dict:
+    """Parse '[CUSTOMER] - Description' heading."""
+    m = re.match(r"^\[([^\]]*)\]\s*-\s*(.*)", heading)
+    if m:
         return {
-            "customer": parts[0].strip(),
-            "description": parts[1].strip(),
+            "customer": m.group(1).strip(),
+            "description": m.group(2).strip(),
         }
     return {"customer": heading.strip(), "description": ""}
 
 
-def _section_to_clock(sec: dict) -> dict:
-    """Convert a parsed section to a clock dict."""
-    parsed = _parse_clock_heading(sec["heading"])
-    meta = sec.get("meta", {})
-    return {
-        "customer": parsed["customer"],
-        "description": parsed["description"],
-        "start": meta.get("start", ""),
-        "end": meta.get("end"),
-        "task_id": meta.get("task_id", ""),
-        "contract": meta.get("contract", ""),
-        "booked": False,
-        "notes": sec.get("body", "").strip(),
-    }
+def _time_heading(entry: dict) -> str:
+    """Build level-3 heading: 2026-04-06 10:00 - 11:00."""
+    start = entry.get("start", "")
+    end = entry.get("end")
+    s_dt = datetime.fromisoformat(start) if start else None
+    if s_dt is None:
+        return "unknown"
+    date_str = s_dt.strftime("%Y-%m-%d")
+    start_time = s_dt.strftime("%H:%M")
+    if end:
+        e_dt = datetime.fromisoformat(end)
+        end_time = e_dt.strftime("%H:%M")
+    else:
+        end_time = "running"
+    return f"{date_str} {start_time} - {end_time}"
 
 
-def _clock_to_section(entry: dict) -> dict:
-    """Convert a clock dict to a section dict."""
-    meta = {
-        "start": entry.get("start", ""),
-        "end": entry.get("end"),
-        "task_id": entry.get("task_id", ""),
-        "contract": entry.get("contract", ""),
-    }
-    return {
-        "heading": _clock_heading(entry),
-        "meta": meta,
-        "body": entry.get("notes", ""),
-    }
+def _parse_time_heading(heading: str) -> dict:
+    """Parse '2026-04-06 10:00 - 11:00' heading."""
+    m = _TIME_HEADING_RE.match(heading.strip())
+    if not m:
+        return {"start": "", "end": None}
+    d, st, et = m.group(1), m.group(2), m.group(3)
+    start = f"{d}T{st}:00"
+    end = f"{d}T{et}:00" if et != "running" else None
+    return {"start": start, "end": end}
+
+
+def _load_clock_entries(text: str) -> list[dict]:
+    """Parse grouped clock markdown into flat entry list.
+
+    Uses raw splitting by heading level to avoid the generic
+    parser consuming sub-headings as JSON metadata.
+    """
+    entries = []
+    # Split into level-2 groups by "## " prefix
+    group_chunks = re.split(r"(?m)^## ", text)
+    for chunk in group_chunks:
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        first_nl = chunk.find("\n")
+        heading = (
+            chunk[:first_nl].strip()
+            if first_nl != -1
+            else chunk.strip()
+        )
+        parsed = _parse_group_heading(heading)
+        rest = chunk[first_nl + 1:] if first_nl != -1 else ""
+        # Split into level-3 sub-entries by "### "
+        sub_chunks = re.split(r"(?m)^### ", rest)
+        for sc in sub_chunks:
+            sc = sc.strip()
+            if not sc:
+                continue
+            sub_secs = _parse_md_sections(
+                f"### {sc}", level=3
+            )
+            for sub in sub_secs:
+                times = _parse_time_heading(sub["heading"])
+                if not times["start"]:
+                    continue
+                meta = sub.get("meta", {})
+                entries.append({
+                    "customer": parsed["customer"],
+                    "description": parsed["description"],
+                    "start": times["start"],
+                    "end": times["end"],
+                    "task_id": meta.get("task_id", ""),
+                    "contract": meta.get("contract", ""),
+                    "booked": False,
+                    "notes": sub.get("body", "").strip(),
+                })
+    return entries
+
+
+def _save_clock_entries(
+    path: Path, entries: list[dict]
+) -> None:
+    """Write entries grouped by customer/description."""
+    groups: dict[str, list[dict]] = {}
+    for e in entries:
+        key = _group_key(e)
+        groups.setdefault(key, []).append(e)
+
+    parts = []
+    for key, group_entries in groups.items():
+        lines = [f"## {key}"]
+        for e in group_entries:
+            lines.append("")
+            lines.append(f"### {_time_heading(e)}")
+            meta: dict = {}
+            if e.get("task_id"):
+                meta["task_id"] = e["task_id"]
+            if e.get("contract"):
+                meta["contract"] = e["contract"]
+            if meta:
+                lines.append("```json")
+                lines.append(json.dumps(
+                    meta, ensure_ascii=False
+                ))
+                lines.append("```")
+            if e.get("notes"):
+                lines.append("")
+                lines.append(e["notes"])
+        parts.append("\n".join(lines))
+    _write_md(path, "\n\n".join(parts) + "\n" if parts else "")
 
 
 # ====================================================================
@@ -552,19 +636,12 @@ class MarkdownClockBackend(ClockBackend):
 
     def _load_entries(self) -> list[dict]:
         text = _read_md(self._clocks_file)
-        sections = _parse_md_sections(text)
-        return [_section_to_clock(s) for s in sections]
+        return _load_clock_entries(text)
 
     def _save_entries(
         self, entries: list[dict]
     ) -> None:
-        sections = [
-            _clock_to_section(e) for e in entries
-        ]
-        _write_md(
-            self._clocks_file,
-            _render_md_sections(sections),
-        )
+        _save_clock_entries(self._clocks_file, entries)
 
     # -- helpers -------------------------------------------------
 
