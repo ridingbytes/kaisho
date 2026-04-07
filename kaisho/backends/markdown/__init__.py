@@ -124,7 +124,20 @@ def _parse_md_sections(
             "body": body,
             "raw": raw,
         })
-    return sections
+    # Merge sections without metadata into the
+    # previous section's body. A ## line without a
+    # <!-- --> block is body content, not a new entry.
+    merged = []
+    for sec in sections:
+        if not sec["meta"] and merged:
+            merged[-1]["body"] += (
+                "\n" + prefix + sec["heading"]
+                + "\n" + sec["body"]
+            )
+            merged[-1]["raw"] += sec["raw"]
+        else:
+            merged.append(sec)
+    return merged
 
 
 def _render_md_sections(
@@ -1042,27 +1055,47 @@ class MarkdownClockBackend(ClockBackend):
 
 def _inbox_heading(item: dict) -> str:
     """Build heading: TYPE [CUSTOMER] Title."""
-    itype = item.get("type", "note")
-    customer = item.get("customer", "")
+    itype = item.get("type") or "note"
+    customer = item.get("customer") or ""
     title = item.get("title", "")
-    return f"{itype} [{customer}] {title}"
+    if customer:
+        return f"{itype} [{customer}] {title}"
+    return f"{itype} {title}"
+
+
+_INBOX_TYPES = {
+    "NOTIZ", "NOTE", "EMAIL", "IDEE", "IDEA",
+    "LEAD", "BUG", "FEATURE", "COMMUNICATION",
+    "note", "email", "lead", "bug", "feature",
+    "communication",
+}
 
 
 def _parse_inbox_heading(heading: str) -> dict:
     """Extract type, customer, title from heading."""
+    # With customer: TYPE [CUSTOMER] Title
     m = re.match(
-        r"(\S+)\s+\[([^\]]*)\]\s+(.*)", heading
+        r"(\S+)\s+\[([^\]]*)\]\s+(.*)", heading,
     )
-    if not m:
+    if m:
         return {
-            "type": "note",
+            "type": m.group(1),
+            "customer": m.group(2),
+            "title": m.group(3),
+        }
+    # Without customer: TYPE Title
+    parts = heading.split(None, 1)
+    if (len(parts) == 2
+            and parts[0] in _INBOX_TYPES):
+        return {
+            "type": parts[0],
             "customer": "",
-            "title": heading,
+            "title": parts[1],
         }
     return {
-        "type": m.group(1),
-        "customer": m.group(2),
-        "title": m.group(3),
+        "type": "note",
+        "customer": "",
+        "title": heading,
     }
 
 

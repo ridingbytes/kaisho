@@ -15,6 +15,12 @@ _STATUS_KEYWORDS = {
     "TODO", "NEXT", "IN-PROGRESS", "WAIT",
     "DONE", "CANCELLED",
 }
+_INBOX_TYPES = {
+    "NOTIZ", "NOTE", "EMAIL", "IDEE", "IDEA",
+    "LEAD", "BUG", "FEATURE", "COMMUNICATION",
+    "note", "email", "lead", "bug", "feature",
+    "communication",
+}
 
 
 def convert_backend(
@@ -170,6 +176,14 @@ def _convert_clocks(
     return count
 
 
+def _clean_inbox_title(title: str) -> str:
+    """Strip leading type keyword from inbox title."""
+    parts = title.split(None, 1)
+    if len(parts) == 2 and parts[0] in _INBOX_TYPES:
+        return parts[1]
+    return title
+
+
 def _convert_inbox(
     source: Backend, target: Backend,
 ) -> int:
@@ -177,13 +191,16 @@ def _convert_inbox(
     items = source.inbox.list_items()
     count = 0
     for item in items:
+        title = _clean_inbox_title(
+            _clean_title(item["title"]),
+        )
         target.inbox.add_item(
-            text=item["title"],
-            item_type=item.get("type"),
-            customer=item.get("customer"),
-            body=item.get("body"),
-            channel=item.get("channel"),
-            direction=item.get("direction"),
+            text=title,
+            item_type=item.get("type") or None,
+            customer=item.get("customer") or None,
+            body=item.get("body") or None,
+            channel=item.get("channel") or None,
+            direction=item.get("direction") or None,
         )
         count += 1
     return count
