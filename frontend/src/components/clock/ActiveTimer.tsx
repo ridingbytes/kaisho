@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Square, StickyNote } from "lucide-react";
+import { Pencil, Square } from "lucide-react";
 import { useStopTimer, useUpdateClockEntry } from "../../hooks/useClocks";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
 import type { ActiveTimer as ActiveTimerType } from "../../types";
@@ -76,61 +76,14 @@ export function ActiveTimer({ timer }: Props) {
 
   return (
     <div className="rounded-xl border border-border bg-surface-card p-4 shadow-card text-center">
-      {/* Timer digits */}
-      <div
-        key={tick}
-        className="text-3xl font-light font-mono text-stone-900 tabular-nums tracking-wide"
-      >
-        {elapsed(timer.start)}
-      </div>
-
-      {/* Active badge */}
-      <div className="flex items-center justify-center mt-2">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-500/10">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-          <span className="text-[10px] font-semibold tracking-wider uppercase text-green-600">
-            Active
-          </span>
-        </div>
-      </div>
-
-      {/* Customer and description */}
-      <p className="text-xs text-stone-500 mt-2 truncate flex items-center justify-center gap-1">
-        <span
-          className="w-1.5 h-1.5 rounded-full shrink-0"
-          style={{
-            background: custColor || "#a1a1aa",
-          }}
-        />
-        <span className="text-stone-700">
-          {timer.customer}
-        </span>
-        {timer.description && (
-          <>
-            <span className="font-bold text-stone-400">
-              &middot;
-            </span>
-            <span className="truncate">
-              {timer.description}
-            </span>
-          </>
-        )}
-      </p>
-
-      {/* Controls — icon-only */}
-      <div className="flex items-center justify-center gap-2 mt-3">
-        <button
-          onClick={() => setNotesOpen((v) => !v)}
-          title="Notes"
-          className={[
-            "p-1.5 rounded-lg transition-colors",
-            notesOpen || notes
-              ? "text-cta bg-cta/10"
-              : "text-stone-400 hover:text-stone-700",
-          ].join(" ")}
+      {/* Timer digits + stop button */}
+      <div className="flex items-center justify-center gap-3">
+        <div
+          key={tick}
+          className="text-3xl font-light font-mono text-stone-900 tabular-nums tracking-wide"
         >
-          <StickyNote size={14} />
-        </button>
+          {elapsed(timer.start)}
+        </div>
         <button
           onClick={() => stop.mutate()}
           disabled={stop.isPending}
@@ -143,6 +96,53 @@ export function ActiveTimer({ timer }: Props) {
           ].join(" ")}
         >
           <Square size={14} fill="currentColor" />
+        </button>
+      </div>
+
+      {/* Active badge */}
+      <div className="flex items-center justify-center mt-2">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-500/10">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-[10px] font-semibold tracking-wider uppercase text-green-600">
+            Active
+          </span>
+        </div>
+      </div>
+
+      {/* Customer · description + edit pen */}
+      <div className="flex items-center justify-center gap-1 mt-2">
+        <p className="text-xs text-stone-500 truncate flex items-center gap-1">
+          <span
+            className="w-1.5 h-1.5 rounded-full shrink-0"
+            style={{
+              background: custColor || "#a1a1aa",
+            }}
+          />
+          <span className="text-stone-700">
+            {timer.customer}
+          </span>
+          {timer.description && (
+            <>
+              <span className="font-bold text-stone-400">
+                &middot;
+              </span>
+              <span className="truncate">
+                {timer.description}
+              </span>
+            </>
+          )}
+        </p>
+        <button
+          onClick={() => setNotesOpen((v) => !v)}
+          title="Edit description and notes"
+          className={[
+            "p-1 rounded transition-colors shrink-0",
+            notesOpen
+              ? "text-cta"
+              : "text-stone-400 hover:text-stone-700",
+          ].join(" ")}
+        >
+          <Pencil size={10} />
         </button>
       </div>
 
