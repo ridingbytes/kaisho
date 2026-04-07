@@ -24,8 +24,8 @@ def _extract_hours(value: str) -> float:
 def _heading_to_contract(heading: "Heading", customer_name: str) -> dict:
     """Convert a CONTRACT-keyword heading to a contract dict."""
     props = heading.properties
-    budget = _extract_hours(props.get("KONTINGENT", "0"))
-    used_offset = _extract_hours(props.get("VERBRAUCHT", "0"))
+    budget = _extract_hours(props.get("BUDGET", "0"))
+    used_offset = _extract_hours(props.get("USED", "0"))
     return {
         "customer": customer_name,
         "name": heading.title.strip(),
@@ -55,8 +55,8 @@ def _heading_to_customer(heading: Heading) -> dict:
         used = active["used_offset"] if active else 0.0
         rest = budget - used
     else:
-        budget = _extract_hours(props.get("KONTINGENT", "0"))
-        used = _extract_hours(props.get("VERBRAUCHT", "0"))
+        budget = _extract_hours(props.get("BUDGET", "0"))
+        used = _extract_hours(props.get("USED", "0"))
         rest = budget - used
 
     return {
@@ -149,8 +149,8 @@ def get_customer(
 _PROP_MAP = {
     "status": "STATUS",
     "type": "TYPE",
-    "budget": "KONTINGENT",
-    "used_offset": "VERBRAUCHT",
+    "budget": "BUDGET",
+    "used_offset": "USED",
     "repo": "REPO",
 }
 
@@ -181,7 +181,7 @@ def add_customer(
     if customer_type:
         props["TYPE"] = customer_type
     if budget:
-        props["KONTINGENT"] = f"{budget}h"
+        props["BUDGET"] = f"{budget}h"
     if repo:
         props["REPO"] = repo
 
@@ -357,7 +357,7 @@ def add_contract(
     if name.lower() in existing:
         raise ValueError(f"Contract already exists: {name}")
     props: dict[str, str] = {
-        "KONTINGENT": f"{budget}h",
+        "BUDGET": f"{budget}h",
         "START": start_date,
     }
     new_contract = Heading(
@@ -396,7 +396,7 @@ def update_contract(
         if "name" in updates:
             child.title = updates["name"]
         if "budget" in updates:
-            child.properties["KONTINGENT"] = f"{updates['budget']}h"
+            child.properties["BUDGET"] = f"{updates['budget']}h"
         if "start_date" in updates:
             child.properties["START"] = updates["start_date"]
         if "end_date" in updates:
@@ -405,7 +405,7 @@ def update_contract(
             else:
                 child.properties.pop("END_DATE", None)
         if "used_offset" in updates:
-            child.properties["VERBRAUCHT"] = (
+            child.properties["USED"] = (
                 f"{updates['used_offset']}h"
             )
         if "notes" in updates:
