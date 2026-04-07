@@ -4,10 +4,13 @@ Reads all entities from a source backend and writes them
 to a target backend. Handles dependency ordering:
 customers first, then tasks, clocks, inbox, notes.
 """
+import re
 from datetime import date
 from pathlib import Path
 
 from ..backends import Backend
+
+_CUSTOMER_PREFIX_RE = re.compile(r"^\[[^\]]+\]:\s*")
 
 
 def convert_backend(
@@ -79,6 +82,16 @@ def _convert_customers(
     return count
 
 
+def _clean_title(title: str) -> str:
+    """Strip [CUSTOMER]: prefix from a task title.
+
+    Org backend includes the prefix in the title field.
+    Other backends store customer separately, so the
+    prefix must be removed to avoid duplication.
+    """
+    return _CUSTOMER_PREFIX_RE.sub("", title).strip()
+
+
 def _convert_tasks(
     source: Backend, target: Backend,
 ) -> int:
@@ -87,8 +100,8 @@ def _convert_tasks(
     count = 0
     for t in tasks:
         target.tasks.add_task(
-            customer=t.get("customer", ""),
-            title=t["title"],
+            customer=t.get("customer") or "",
+            title=_clean_title(t["title"]),
             status=t.get("status", "TODO"),
             tags=t.get("tags"),
             body=t.get("body"),
@@ -99,8 +112,8 @@ def _convert_tasks(
     archived = source.tasks.list_archived()
     for a in archived:
         added = target.tasks.add_task(
-            customer=a.get("customer", ""),
-            title=a["title"],
+            customer=a.get("customer") or "",
+            title=_clean_title(a["title"]),
             status=a.get("archive_status", "DONE"),
             tags=a.get("tags"),
             body=a.get("body"),

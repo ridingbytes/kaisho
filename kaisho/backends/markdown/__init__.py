@@ -281,10 +281,13 @@ def _append_tags(heading: str, tags: list[str]) -> str:
 
 def _task_heading(task: dict) -> str:
     """Build heading: STATUS [CUSTOMER] Title    :tags:."""
-    customer = task.get("customer", "")
+    customer = task.get("customer") or ""
     status = task.get("status", "TODO")
     title = task.get("title", "")
-    base = f"{status} [{customer}] {title}"
+    if customer:
+        base = f"{status} [{customer}] {title}"
+    else:
+        base = f"{status} {title}"
     return _append_tags(base, task.get("tags", []))
 
 
