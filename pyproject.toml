@@ -27,6 +27,9 @@ dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
 ]
+postgres = [
+    "psycopg2-binary>=2.9",
+]
 
 [project.scripts]
 kai = "kaisho.cli.main:cli"

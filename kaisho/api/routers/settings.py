@@ -738,7 +738,10 @@ def switch_backend(body: BackendSwitch):
     if body.backend not in ("org", "markdown", "json"):
         raise HTTPException(
             status_code=400,
-            detail="backend must be 'org', 'markdown', or 'json'",
+            detail=(
+            "backend must be 'org', 'markdown',"
+            " 'json', or 'sql'"
+        ),
         )
     cfg = get_config()
     settings_svc.set_path_settings(
@@ -750,6 +753,33 @@ def switch_backend(body: BackendSwitch):
         "backend": body.backend,
         "message": f"Switched to {body.backend} backend.",
     }
+
+
+class ImportData(BaseModel):
+    source_format: str
+    source_path: str
+
+
+@router.post("/import-data")
+def import_data(body: ImportData):
+    """Import data from another backend into the current one."""
+    valid = ("org", "markdown", "json", "sql")
+    if body.source_format not in valid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Format must be one of: {valid}",
+        )
+    from ...backends import get_backend
+    from ...services.convert import (
+        convert_backend,
+        make_backend_from_spec,
+    )
+    source = make_backend_from_spec(
+        body.source_format, body.source_path,
+    )
+    target = get_backend()
+    summary = convert_backend(source, target)
+    return {"summary": summary}
 
 
 @router.get("/github")

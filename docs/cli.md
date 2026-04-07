@@ -651,6 +651,40 @@ kai profiles delete work --yes
 
 ---
 
+## kai convert
+
+```bash
+kai convert --from FORMAT --to FORMAT \
+    --source PATH --target PATH
+```
+
+Convert data between backends. Supported formats:
+`org`, `markdown`, `json`, `sql`.
+
+For file-based backends (org, markdown, json), the path
+is a directory. For SQL, it is a DSN string.
+
+```bash
+# Org to markdown
+kai convert --from org --to markdown \
+    --source ~/data/org --target ~/data/md
+
+# Markdown to SQLite
+kai convert --from markdown --to sql \
+    --source ~/data/md \
+    --target sqlite:///~/data/kaisho.db
+
+# JSON to PostgreSQL
+kai convert --from json --to sql \
+    --source ~/data/json \
+    --target postgresql://user:pass@host/db
+```
+
+Conversion order: customers, tasks, clocks, inbox, notes.
+Active timers are skipped (only completed entries).
+
+---
+
 ## kai serve
 
 ```bash
@@ -671,7 +705,8 @@ development. Interactive API docs available at `/docs`.
 | `WISSEN_DIR`       | `~/ownCloud/cowork/wissen`   | Knowledge base directory                           |
 | `RESEARCH_DIR`     | `~/ownCloud/cowork/research` | Research / AI output directory                     |
 | `KUNDEN_DIR`       | `~/ownCloud/cowork/kunden`   | Customer markdown files (markdown backend)         |
-| `BACKEND`          | `org`                        | Storage driver: `org` or `markdown`                |
+| `BACKEND`          | `org`                        | Storage driver: `org`, `markdown`, `json`, or `sql`|
+| `SQL_DSN`          |                              | SQL DSN (sqlite:/// or postgresql://)              |
 | `JOBS_FILE`        | `./jobs.yaml`                | Cron job definitions                               |
 | `DATA_DIR`         | `./data`                     | SQLite database directory (cron history)            |
 | `OLLAMA_BASE_URL`  | `http://localhost:11434`     | Ollama API base URL                                |
