@@ -316,8 +316,8 @@ customers. Add or remove types here.
 
 \`\`\`bash
 kai tag list
-kai tag add urgent --color "#ef4444" --description "Urgent items"
-kai tag update urgent --color "#f59e0b"
+kai tag add urgent --color "#dc2626" --description "Urgent items"
+kai tag update urgent --color "#d97706"
 kai tag remove urgent
 \`\`\`
 
@@ -325,7 +325,7 @@ kai tag remove urgent
 
 \`\`\`bash
 kai config states
-kai config add-state REVIEW --label "In Review" --color "#8b5cf6"
+kai config add-state REVIEW --label "In Review" --color "#7c3aed"
 kai config remove-state REVIEW
 kai config move-state REVIEW --after IN-PROGRESS
 \`\`\`

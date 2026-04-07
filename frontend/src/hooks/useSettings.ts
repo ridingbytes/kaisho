@@ -48,19 +48,19 @@ import type { AiSettings, TaskState } from "../types";
 
 const DEFAULT_STATES: TaskState[] = [
   { name: "TODO", label: "To Do", color: "#64748b", done: false },
-  { name: "NEXT", label: "Next", color: "#3b82f6", done: false },
+  { name: "NEXT", label: "Next", color: "#2563eb", done: false },
   {
     name: "IN-PROGRESS",
     label: "In Progress",
-    color: "#f59e0b",
+    color: "#d97706",
     done: false,
   },
-  { name: "WAIT", label: "Waiting", color: "#8b5cf6", done: false },
-  { name: "DONE", label: "Done", color: "#10b981", done: true },
+  { name: "WAIT", label: "Waiting", color: "#7c3aed", done: false },
+  { name: "DONE", label: "Done", color: "#16a34a", done: true },
   {
     name: "CANCELLED",
     label: "Cancelled",
-    color: "#ef4444",
+    color: "#dc2626",
     done: true,
   },
 ];
