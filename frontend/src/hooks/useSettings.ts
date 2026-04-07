@@ -5,11 +5,15 @@ import {
 } from "@tanstack/react-query";
 import {
   addCustomerType,
+  addInboxType,
+  addInboxChannel,
   addTag,
   copyProfile,
   createProfile,
   createSkill,
   deleteCustomerType,
+  deleteInboxType,
+  deleteInboxChannel,
   deleteProfile,
   renameProfile,
   updateUserProfile,
@@ -179,6 +183,57 @@ export function useDeleteCustomerType() {
     mutationFn: (name: string) => deleteCustomerType(name),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useAddInboxType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => addInboxType(name),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings"],
+      });
+    },
+  });
+}
+
+export function useDeleteInboxType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) =>
+      deleteInboxType(name),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings"],
+      });
+    },
+  });
+}
+
+export function useAddInboxChannel() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) =>
+      addInboxChannel(name),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings"],
+      });
+    },
+  });
+}
+
+export function useDeleteInboxChannel() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) =>
+      deleteInboxChannel(name),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings"],
+      });
     },
   });
 }

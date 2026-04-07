@@ -42,6 +42,10 @@ import {
   useDeleteTag,
   useAddCustomerType,
   useDeleteCustomerType,
+  useAddInboxType,
+  useDeleteInboxType,
+  useAddInboxChannel,
+  useDeleteInboxChannel,
   useCopyProfile,
   useCreateProfile,
   useDeleteProfile,
@@ -1174,52 +1178,61 @@ function TagsSection({ tags }: { tags: ConfigTag[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Customer Types
+// Reusable string list section
 // ---------------------------------------------------------------------------
 
-function CustomerTypesSection({ types }: { types: string[] }) {
+function StringListSection({
+  title,
+  items,
+  onAdd,
+  onDelete,
+  addPending,
+  deletePending,
+}: {
+  title: string;
+  items: string[];
+  onAdd: (name: string) => void;
+  onDelete: (name: string) => void;
+  addPending: boolean;
+  deletePending: boolean;
+}) {
   const [adding, setAdding] = useState(false);
-  const [newType, setNewType] = useState("");
-  const addType = useAddCustomerType();
-  const deleteType = useDeleteCustomerType();
+  const [newItem, setNewItem] = useState("");
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!newType.trim()) return;
-    addType.mutate(newType.trim(), {
-      onSuccess: () => {
-        setNewType("");
-        setAdding(false);
-      },
-    });
+    if (!newItem.trim()) return;
+    onAdd(newItem.trim());
+    setNewItem("");
+    setAdding(false);
   }
 
   return (
     <section>
       <div className="flex items-center gap-3 mb-3">
         <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
-          Customer Types
+          {title}
         </h2>
         <button
           onClick={() => setAdding((v) => !v)}
           className="ml-auto p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
-          title="Add type"
+          title={`Add ${title.toLowerCase()}`}
         >
           <Plus size={12} />
         </button>
       </div>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
-        {types.length === 0 && !adding && (
+        {items.length === 0 && !adding && (
           <p className="px-4 py-3 text-xs text-stone-500">
-            No types defined.
+            No entries defined.
           </p>
         )}
-        {types.map((t, i) => (
+        {items.map((t, i) => (
           <div
             key={t}
             className={[
               "group flex items-center gap-3 px-4 py-2.5",
-              i < types.length - 1
+              i < items.length - 1
                 ? "border-b border-border-subtle"
                 : "",
             ].join(" ")}
@@ -1228,8 +1241,8 @@ function CustomerTypesSection({ types }: { types: string[] }) {
               {t}
             </span>
             <button
-              onClick={() => deleteType.mutate(t)}
-              disabled={deleteType.isPending}
+              onClick={() => onDelete(t)}
+              disabled={deletePending}
               className="p-1 rounded text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
               title="Delete"
             >
@@ -1245,10 +1258,10 @@ function CustomerTypesSection({ types }: { types: string[] }) {
             <input
               autoFocus
               type="text"
-              value={newType}
-              onChange={(e) => setNewType(e.target.value)}
+              value={newItem}
+              onChange={(e) => setNewItem(e.target.value)}
               className={`${fieldCls} flex-1`}
-              placeholder="TYPE NAME"
+              placeholder="New entry"
             />
             <button
               type="button"
@@ -1259,7 +1272,7 @@ function CustomerTypesSection({ types }: { types: string[] }) {
             </button>
             <button
               type="submit"
-              disabled={addType.isPending || !newType.trim()}
+              disabled={addPending || !newItem.trim()}
               className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
             >
               <Check size={12} />
@@ -1766,10 +1779,38 @@ function TagsAndTypesTab() {
   }
   if (!settings) return null;
 
+  const addCustType = useAddCustomerType();
+  const delCustType = useDeleteCustomerType();
+  const addInbType = useAddInboxType();
+  const delInbType = useDeleteInboxType();
+  const addInbChan = useAddInboxChannel();
+  const delInbChan = useDeleteInboxChannel();
+
   return (
     <div className="flex flex-col gap-8">
-      <CustomerTypesSection
-        types={settings.customer_types ?? []}
+      <StringListSection
+        title="Customer Types"
+        items={settings.customer_types ?? []}
+        onAdd={(n) => addCustType.mutate(n)}
+        onDelete={(n) => delCustType.mutate(n)}
+        addPending={addCustType.isPending}
+        deletePending={delCustType.isPending}
+      />
+      <StringListSection
+        title="Inbox Types"
+        items={settings.inbox_types ?? []}
+        onAdd={(n) => addInbType.mutate(n)}
+        onDelete={(n) => delInbType.mutate(n)}
+        addPending={addInbType.isPending}
+        deletePending={delInbType.isPending}
+      />
+      <StringListSection
+        title="Inbox Channels"
+        items={settings.inbox_channels ?? []}
+        onAdd={(n) => addInbChan.mutate(n)}
+        onDelete={(n) => delInbChan.mutate(n)}
+        addPending={addInbChan.isPending}
+        deletePending={delInbChan.isPending}
       />
       <TaskStatesSection
         states={settings.task_states}

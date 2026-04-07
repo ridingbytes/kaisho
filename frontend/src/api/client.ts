@@ -299,6 +299,22 @@ export function deleteCustomerType(name: string): Promise<void> {
   return del(`/settings/customer_types/${encodeURIComponent(name)}`);
 }
 
+export function addInboxType(name: string): Promise<void> {
+  return post("/settings/inbox_types", { name });
+}
+
+export function deleteInboxType(name: string): Promise<void> {
+  return del(`/settings/inbox_types/${encodeURIComponent(name)}`);
+}
+
+export function addInboxChannel(name: string): Promise<void> {
+  return post("/settings/inbox_channels", { name });
+}
+
+export function deleteInboxChannel(name: string): Promise<void> {
+  return del(`/settings/inbox_channels/${encodeURIComponent(name)}`);
+}
+
 export function updateState(
   name: string,
   updates: { label?: string; color?: string; done?: boolean },
