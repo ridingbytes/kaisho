@@ -341,6 +341,10 @@ function TaskGroupRow({
   const setView = useSetView();
   const latest = group.entries[group.entries.length - 1];
 
+  const isActive = group.entries.some(
+    (e) => e.end === null
+  );
+
   return (
     <div className="border-b border-border-subtle last:border-0 py-2">
       {/* Header */}
@@ -360,9 +364,19 @@ function TaskGroupRow({
             />
             {group.customer}
           </button>
-          <p className="text-[11px] text-stone-500 truncate mt-0.5">
-            {group.description}
-          </p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            {isActive && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-px rounded-full bg-green-500/10">
+                <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-[9px] font-semibold tracking-wider uppercase text-green-600">
+                  Active
+                </span>
+              </span>
+            )}
+            <p className="text-[11px] text-stone-500 truncate">
+              {group.description}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-0.5 shrink-0">
           {showResume && (
