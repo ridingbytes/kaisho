@@ -779,21 +779,15 @@ class SqlClockBackend(ClockBackend):
         target_date=None,
     ) -> dict:
         minutes = _parse_duration_minutes(duration_str)
-        if target_date:
-            start = datetime(
-                target_date.year,
-                target_date.month,
-                target_date.day,
-                12, 0, 0,
-            )
-            end = start + timedelta(minutes=minutes)
-        else:
-            end = _local_now().replace(
-                second=0, microsecond=0
-            )
-            start = end - timedelta(minutes=minutes)
-            if start.date() < end.date():
-                start = end.replace(hour=0, minute=0)
+        if not target_date:
+            target_date = date.today()
+        start = datetime(
+            target_date.year,
+            target_date.month,
+            target_date.day,
+            12, 0, 0,
+        )
+        end = start + timedelta(minutes=minutes)
         row = ClockRow(
             customer=customer,
             description=description,
