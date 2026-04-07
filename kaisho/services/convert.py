@@ -77,6 +77,13 @@ def _convert_customers(
                 start_date=ct.get("start_date", ""),
                 notes=ct.get("notes", ""),
             )
+            used = ct.get("used_offset", 0)
+            if used:
+                target.customers.update_contract(
+                    name=c["name"],
+                    contract_name=ct["name"],
+                    updates={"used_offset": used},
+                )
             if ct.get("end_date"):
                 target.customers.close_contract(
                     name=c["name"],
