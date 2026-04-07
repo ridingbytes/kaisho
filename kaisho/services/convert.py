@@ -269,7 +269,12 @@ def make_backend_from_spec(
         cfg = get_config()
 
         class _OrgCfg:
-            """Minimal config pointing to a custom dir."""
+            """Config overlay pointing to a custom dir.
+
+            Delegates unknown attributes to the real
+            config so make_org_backend can access
+            WISSEN_DIR, RESEARCH_DIR, etc.
+            """
             ORG_DIR = directory
             TODOS_FILE = directory / "todos.org"
             ARCHIVE_FILE = directory / "archive.org"
@@ -278,6 +283,9 @@ def make_backend_from_spec(
             INBOX_FILE = directory / "inbox.org"
             NOTES_FILE = directory / "notes.org"
             SETTINGS_FILE = cfg.SETTINGS_FILE
+
+            def __getattr__(self, name):
+                return getattr(cfg, name)
 
         result = make_org_backend(_OrgCfg())
         return Backend(
