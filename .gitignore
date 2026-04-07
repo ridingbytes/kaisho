@@ -12,3 +12,4 @@ build/
 .python-version
 node_modules/
 frontend/dist/
+/CLAUDE.md
