@@ -378,6 +378,42 @@ def run_prompt_openai_compatible(
 # Main entry point
 # ---------------------------------------------------------------------------
 
+def _inject_context(prompt: str) -> str:
+    """Prepend business data context to a prompt.
+
+    Claude CLI runs in a sandbox and cannot read org
+    files directly. This injects the current state of
+    tasks, clocks, customers, and inbox so the prompt
+    has all the data it needs.
+    """
+    from ..backends import get_backend
+    from ..services.advisor import (
+        _format_budgets,
+        _format_clocks,
+        _format_tasks,
+    )
+    from datetime import datetime, timezone
+
+    backend = get_backend()
+    now = datetime.now(timezone.utc).strftime(
+        "%Y-%m-%d %H:%M UTC"
+    )
+    tasks = backend.tasks.list_tasks(include_done=True)
+    clocks = backend.clocks.list_entries(period="week")
+    customers = backend.customers.list_customers()
+
+    context = (
+        f"# Current Data ({now})\n\n"
+        f"## Tasks\n{_format_tasks(tasks)}\n\n"
+        f"## Clock Entries (This Week)\n"
+        f"{_format_clocks(clocks)}\n\n"
+        f"## Customer Budgets\n"
+        f"{_format_budgets(customers)}\n\n"
+        f"---\n\n"
+    )
+    return context + prompt
+
+
 def _run_claude_cli(model: str, prompt: str) -> str:
     """Call Claude CLI using subscription login token."""
     import shutil
@@ -486,6 +522,7 @@ def execute_job(
     prompt = load_prompt(job["prompt_file"], project_root)
     provider, model_name = _parse_model(job.get("model", ""))
     if provider == "claude_cli":
+        prompt = _inject_context(prompt)
         output_text = _run_claude_cli(model_name, prompt)
     elif provider == "claude":
         output_text = run_prompt_claude(

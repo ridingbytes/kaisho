@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
+import { RelDate } from "../common/RelDate";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
@@ -333,11 +334,6 @@ function stripCustomerPrefix(title: string): string {
   return title.replace(CUSTOMER_PREFIX_RE, "");
 }
 
-function formatDate(dateStr: string): string {
-  if (!dateStr) return "";
-  return dateStr.replace(/^\[/, "").replace(/\]$/, "").slice(0, 10);
-}
-
 interface TaskCardProps {
   task: Task;
   statusColor: string;
@@ -628,9 +624,10 @@ export function TaskCard({
                     #{extractIssueNumber(task.github_url)}
                   </a>
                 )}
-                <span className="ml-auto text-[10px] text-stone-500 shrink-0">
-                  {formatDate(task.created)}
-                </span>
+                <RelDate
+                  date={task.created}
+                  className="ml-auto text-[10px] text-stone-500 shrink-0"
+                />
               </div>
               <TaskClockSection task={task} />
             </>

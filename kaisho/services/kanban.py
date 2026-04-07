@@ -12,12 +12,34 @@ CREATED_FMT = "%Y-%m-%d %a %H:%M"
 _WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 ARCHIVE_HEADING = "Archiv"
 _STATE_LOG_RE = re.compile(r'^- State "')
+_STATE_CHANGE_RE = re.compile(
+    r'^- State "([^"]+)"\s+from "([^"]+)"\s+'
+    r'\[([^\]]+)\]'
+)
 
 
 def _extract_customer(title: str) -> str | None:
     """Extract [CUSTOMER] prefix from task title."""
     m = CUSTOMER_RE.match(title)
     return m.group(1) if m else None
+
+
+def _state_history(heading: Heading) -> list[dict]:
+    """Extract state change history from body lines.
+
+    Returns list of dicts with keys: to, from, timestamp,
+    ordered newest first.
+    """
+    history = []
+    for line in heading.body:
+        m = _STATE_CHANGE_RE.match(line.strip())
+        if m:
+            history.append({
+                "to": m.group(1),
+                "from": m.group(2),
+                "timestamp": m.group(3),
+            })
+    return history
 
 
 def _user_body(heading: Heading) -> str:
@@ -46,7 +68,10 @@ def _heading_to_task(heading: Heading, task_id: str) -> dict:
         "properties": dict(heading.properties),
         "created": created,
         "body": _user_body(heading),
-        "github_url": heading.properties.get("GITHUB_URL", ""),
+        "github_url": heading.properties.get(
+            "GITHUB_URL", ""
+        ),
+        "state_history": _state_history(heading),
     }
 
 
