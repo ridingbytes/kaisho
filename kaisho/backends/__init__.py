@@ -63,6 +63,13 @@ def get_backend() -> Backend:
     elif backend_type == "json":
         from .json_backend import make_json_backend
         result = make_json_backend(cfg_overlay)
+    elif backend_type == "sql":
+        from .sql import make_sql_backend
+        dsn = getattr(
+            cfg_overlay, "SQL_DSN",
+            f"sqlite:///{cfg.PROFILE_DIR / 'kaisho.db'}",
+        )
+        result = make_sql_backend(dsn)
     else:
         raise ValueError(
             f"Unknown backend: {backend_type!r}"

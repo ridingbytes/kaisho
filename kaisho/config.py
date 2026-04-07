@@ -24,7 +24,8 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8765
     MARKDOWN_DIR: Path = Path("data/markdown")
-    BACKEND: str = "org"  # "org", "markdown", or "json"
+    BACKEND: str = "org"  # "org", "markdown", "json", "sql"
+    SQL_DSN: str = ""  # e.g. sqlite:///path or postgresql://...
 
     # User/profile selection
     KAISHO_HOME: Path | None = None
