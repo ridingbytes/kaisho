@@ -405,11 +405,19 @@ def _task_meta_to_props(meta: dict) -> dict:
 
 
 def _section_to_task(sec: dict) -> dict:
-    """Convert a parsed section to a task dict."""
+    """Convert a parsed section to a task dict.
+
+    Auto-generates an ID if missing (manually added).
+    """
     parsed = _parse_task_heading(sec["heading"])
     meta = _props_to_task_meta(sec.get("meta", {}))
+    tid = meta.get("id", "")
+    if not tid:
+        tid = _generate_id(parsed["title"])
+        meta["id"] = tid
+        sec["meta"] = _task_meta_to_props(meta)
     return {
-        "id": meta.get("id", ""),
+        "id": tid,
         "customer": parsed["customer"],
         "title": parsed["title"],
         "status": parsed["status"],
@@ -466,7 +474,14 @@ class MarkdownTaskBackend(TaskBackend):
     def _load_tasks(self) -> list[dict]:
         text = _read_md(self._tasks_file)
         sections = _parse_md_sections(text)
-        return [_section_to_task(s) for s in sections]
+        had_missing = any(
+            not s.get("meta", {}).get("id")
+            for s in sections
+        )
+        tasks = [_section_to_task(s) for s in sections]
+        if had_missing and tasks:
+            self._save_tasks(tasks)
+        return tasks
 
     def _save_tasks(self, tasks: list[dict]) -> None:
         sections = [_task_to_section(t) for t in tasks]
@@ -1160,11 +1175,19 @@ def _inbox_meta_to_props(meta: dict) -> dict:
 
 
 def _section_to_inbox(sec: dict) -> dict:
-    """Convert a parsed section to an inbox dict."""
+    """Convert a parsed section to an inbox dict.
+
+    Auto-generates an ID if missing (manually added).
+    """
     parsed = _parse_inbox_heading(sec["heading"])
     meta = _props_to_inbox_meta(sec.get("meta", {}))
+    iid = meta.get("id", "")
+    if not iid:
+        iid = _generate_id(parsed["title"])
+        meta["id"] = iid
+        sec["meta"] = _inbox_meta_to_props(meta)
     return {
-        "id": meta.get("id", ""),
+        "id": iid,
         "type": parsed["type"],
         "customer": parsed["customer"],
         "title": parsed["title"],
@@ -1210,12 +1233,15 @@ class MarkdownInboxBackend(InboxBackend):
     def _load_items(self) -> list[dict]:
         text = _read_md(self._inbox_file)
         sections = _parse_md_sections(text)
+        had_missing = any(
+            not s.get("meta", {}).get("id")
+            for s in sections
+        )
         items = [
             _section_to_inbox(s) for s in sections
         ]
-        for idx, item in enumerate(items, 1):
-            if not item.get("id"):
-                item["id"] = str(idx)
+        if had_missing and items:
+            self._save_items(items)
         return items
 
     def _save_items(self, items: list[dict]) -> None:
@@ -1314,11 +1340,20 @@ def _note_heading(note: dict) -> str:
 
 
 def _section_to_note(sec: dict) -> dict:
-    """Convert a parsed section to a note dict."""
+    """Convert a parsed section to a note dict.
+
+    Auto-generates an ID if the metadata block has none
+    (e.g. for manually created notes).
+    """
     text, tags = _strip_tags(sec["heading"])
     meta = sec.get("meta", {})
+    nid = meta.get("id", "")
+    if not nid:
+        nid = _generate_id(text)
+        meta["id"] = nid
+        sec["meta"] = meta
     return {
-        "id": meta.get("id", ""),
+        "id": nid,
         "title": text,
         "body": sec.get("body", ""),
         "customer": meta.get("customer", ""),
@@ -1360,7 +1395,14 @@ class MarkdownNotesBackend(NotesBackend):
     def _load_notes(self) -> list[dict]:
         text = _read_md(self._notes_file)
         sections = _parse_md_sections(text)
-        return [_section_to_note(s) for s in sections]
+        had_missing = any(
+            not s.get("meta", {}).get("id")
+            for s in sections
+        )
+        notes = [_section_to_note(s) for s in sections]
+        if had_missing and notes:
+            self._save_notes(notes)
+        return notes
 
     def _save_notes(self, notes: list[dict]) -> None:
         sections = [
