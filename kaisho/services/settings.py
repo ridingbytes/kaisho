@@ -112,7 +112,7 @@ def get_kb_sources(settings: dict, cfg=None) -> list[dict]:
         from ..config import get_config
         cfg = get_config()
     # Default KB in user's data dir (shared across profiles)
-    user_kb = cfg.USER_DIR / "knowledge"
+    user_kb = cfg.DATA_DIR / "knowledge"
     user_kb.mkdir(parents=True, exist_ok=True)
     defaults = [
         {

@@ -9,7 +9,6 @@ import {
   copyProfile,
   createProfile,
   createSkill,
-  createUser,
   deleteCustomerType,
   deleteProfile,
   renameProfile,
@@ -29,7 +28,6 @@ import {
   fetchProfiles,
   fetchSettings,
   fetchUrlAllowlist,
-  fetchUsers,
   reorderStates,
   updateState,
   switchBackend,
@@ -527,27 +525,3 @@ export function useUpdateUserProfile() {
   });
 }
 
-export function useUsers() {
-  return useQuery({
-    queryKey: ["settings", "users"],
-    queryFn: fetchUsers,
-    staleTime: 60_000,
-  });
-}
-
-export function useCreateUser() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: {
-      username: string;
-      name?: string;
-      email?: string;
-      bio?: string;
-    }) => createUser(data),
-    onSuccess: () => {
-      void qc.invalidateQueries({
-        queryKey: ["settings", "users"],
-      });
-    },
-  });
-}

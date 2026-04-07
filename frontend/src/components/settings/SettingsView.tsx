@@ -1289,7 +1289,7 @@ function UserProfileSection() {
       setEmail(userData.email ?? "");
       setBio(userData.bio ?? "");
       setAvatarSeed(
-        userData.avatar_seed || userData.username
+        userData.avatar_seed || userData.name || "kaisho"
       );
     }
   }, [userData]);
@@ -1328,7 +1328,7 @@ function UserProfileSection() {
           />
           <div className="flex flex-col gap-1">
             <span className="text-sm text-stone-600 font-mono">
-              {userData.username}
+              {userData.name || "kaisho"}
             </span>
             <button
               type="button"
@@ -1489,7 +1489,7 @@ function ProfilesTab() {
           Profiles
         </h2>
         <p className="text-[10px] text-stone-500 mb-3">
-          User: {userData.name || userData.username}
+          User: {userData.name || userData.name || "kaisho"}
           {" "}&middot; Active: {userData.profile}
         </p>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">

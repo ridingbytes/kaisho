@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { LogOut, Moon, Settings, Sun } from "lucide-react";
+import { Moon, Settings, Sun } from "lucide-react";
 import {
   useCreateProfile,
   useCurrentUser,
@@ -7,9 +7,6 @@ import {
 } from "./hooks/useSettings";
 import { PixelAvatar } from "./components/common/PixelAvatar";
 import { useEffect, useRef, useState } from "react";
-import { LoginPage } from "./components/auth/LoginPage";
-import { logout as apiLogout } from "./api/client";
-import type { AuthUser } from "./api/client";
 import type { AdvisorMessage } from "./components/advisor/AdvisorView";
 import { AdvisorView } from "./components/advisor/AdvisorView";
 import { CommandPalette } from "./components/commandPalette/CommandPalette";
@@ -80,11 +77,7 @@ const queryClient = new QueryClient({
 
 type Theme = "dark" | "light";
 
-function AppShell({
-  onLogout,
-}: {
-  onLogout: () => void;
-}) {
+function AppShell() {
   useWebSocket();
   const [view, setView] = useState<View>(viewFromHash);
   const [pendingSearch, setPendingSearch] = useState("");
@@ -95,15 +88,6 @@ function AppShell({
   const createProf = useCreateProfile();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [newProfInput, setNewProfInput] = useState("");
-
-  function handleLogout() {
-    apiLogout()
-      .catch(() => {})
-      .finally(() => {
-        localStorage.removeItem("kai_token");
-        onLogout();
-      });
-  }
 
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem("theme") as Theme) ?? "light"
@@ -254,10 +238,10 @@ function AppShell({
                 className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-surface-raised transition-colors"
               >
                 <span className="text-sm font-semibold text-stone-900">
-                  {currentUser.name || currentUser.username}
+                  {currentUser.name || "User"}
                 </span>
                 <PixelAvatar
-                  seed={currentUser.avatar_seed || currentUser.username}
+                  seed={currentUser.avatar_seed || "kaisho"}
                   size={22}
                 />
               </button>
@@ -337,16 +321,6 @@ function AppShell({
                     <Settings size={12} />
                     Settings
                   </button>
-                  <button
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      handleLogout();
-                    }}
-                    className="w-full text-left px-2 py-1 rounded text-xs text-stone-800 hover:bg-surface-raised flex items-center gap-2"
-                  >
-                    <LogOut size={12} />
-                    Logout
-                  </button>
                 </div>
               )}
             </div>
@@ -410,30 +384,10 @@ function AppShell({
 }
 
 export function App() {
-  const [authed, setAuthed] = useState(
-    () => !!localStorage.getItem("kai_token"),
-  );
-
-  function handleAuth(_token: string, _user: AuthUser) {
-    setAuthed(true);
-  }
-
-  function handleLogout() {
-    setAuthed(false);
-  }
-
-  if (!authed) {
-    return (
-      <div className="h-full">
-        <LoginPage onAuth={handleAuth} />
-      </div>
-    );
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <ShortcutsProvider>
-        <AppShell onLogout={handleLogout} />
+        <AppShell />
       </ShortcutsProvider>
     </QueryClientProvider>
   );

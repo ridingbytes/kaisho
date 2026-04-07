@@ -21,16 +21,8 @@ import type {
 
 const BASE = "/api";
 
-function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem("kai_token");
-  if (token) return { Authorization: `Bearer ${token}` };
-  return {};
-}
-
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: authHeaders(),
-  });
+  const res = await fetch(`${BASE}${path}`);
   if (!res.ok) throw new Error(`GET ${path}: ${res.status}`);
   return res.json() as Promise<T>;
 }
@@ -42,7 +34,6 @@ async function post<T>(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders(),
     },
     body: JSON.stringify(body),
   });
@@ -64,7 +55,6 @@ async function patch<T>(
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders(),
     },
     body: JSON.stringify(body),
   });
@@ -79,7 +69,6 @@ async function put<T>(
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders(),
     },
     body: JSON.stringify(body),
   });
@@ -90,61 +79,8 @@ async function put<T>(
 async function del(path: string): Promise<void> {
   const res = await fetch(`${BASE}${path}`, {
     method: "DELETE",
-    headers: authHeaders(),
   });
   if (!res.ok) throw new Error(`DELETE ${path}: ${res.status}`);
-}
-
-// -----------------------------------------------------------------
-// Auth
-// -----------------------------------------------------------------
-
-export interface AuthUser {
-  username: string;
-  name: string;
-  email: string;
-  bio: string;
-}
-
-export interface AuthResult {
-  token: string;
-  password_set: boolean;
-  user: AuthUser;
-}
-
-export function login(
-  username: string,
-  password: string = "",
-): Promise<AuthResult> {
-  return post<AuthResult>("/auth/login", {
-    username, password,
-  });
-}
-
-export function register(data: {
-  username: string;
-  password?: string;
-  name?: string;
-  email?: string;
-  bio?: string;
-}): Promise<AuthResult> {
-  return post<AuthResult>("/auth/register", data);
-}
-
-export function setPassword(
-  password: string,
-): Promise<{ ok: boolean }> {
-  return post<{ ok: boolean }>("/auth/set-password", {
-    password,
-  });
-}
-
-export function logout(): Promise<{ ok: boolean }> {
-  return post<{ ok: boolean }>("/auth/logout", {});
-}
-
-export function checkSession(): Promise<AuthUser> {
-  return get<AuthUser>("/auth/session");
 }
 
 // Tasks
@@ -237,7 +173,6 @@ export function fetchPaths(): Promise<Record<string, string>> {
 }
 
 export function fetchCurrentUser(): Promise<{
-  username: string;
   profile: string;
   name: string;
   email: string;
@@ -248,23 +183,7 @@ export function fetchCurrentUser(): Promise<{
   return get("/settings/user");
 }
 
-export function fetchUsers(): Promise<
-  { username: string; name: string; bio: string }[]
-> {
-  return get("/settings/users");
-}
-
-export function createUser(data: {
-  username: string;
-  name?: string;
-  email?: string;
-  bio?: string;
-}): Promise<{ username: string }> {
-  return post("/settings/users", data);
-}
-
 export function fetchProfiles(): Promise<{
-  user: string;
   active: string;
   profiles: string[];
 }> {
@@ -380,7 +299,6 @@ export function reorderStates(names: string[]): Promise<unknown> {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders(),
     },
     body: JSON.stringify(names),
   }).then((r) => {
@@ -665,7 +583,6 @@ export function saveKnowledgeFile(
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders(),
     },
     body: JSON.stringify({ label, path, content }),
   }).then((res) => {
@@ -798,7 +715,6 @@ export function saveJobPrompt(
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders(),
     },
     body: JSON.stringify({ content }),
   }).then((r) => {

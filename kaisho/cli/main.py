@@ -22,7 +22,6 @@ from ..config import (
     get_config,
     init_data_dir,
     list_profiles,
-    list_users,
     rename_profile,
     reset_config,
 )
@@ -30,24 +29,15 @@ from ..config import (
 
 @click.group()
 @click.option(
-    "--user", "-u",
-    envvar="KAISHO_USER",
-    default=None,
-    help="User name (default: $KAISHO_USER or 'default')",
-)
-@click.option(
     "--profile", "-p",
-    envvar="KAISHO_PROFILE",
+    envvar="PROFILE",
     default=None,
-    help="Profile name (default: $KAISHO_PROFILE or 'default')",
+    help="Profile name (default: $PROFILE)",
 )
-def cli(user, profile):
+def cli(profile):
     """Kaisho - Personal productivity system."""
-    if user:
-        os.environ["KAISHO_USER"] = user
     if profile:
         os.environ["PROFILE"] = profile
-    if user or profile:
         reset_config()
     init_data_dir()
 
@@ -68,23 +58,15 @@ def serve(host, port, reload):
     )
 
 
-@cli.command("users")
-def users_cmd():
-    """List user accounts."""
-    for u in list_users():
-        marker = " *" if u["username"] == get_config().USER else ""
-        bio = f" ({u['bio']})" if u.get("bio") else ""
-        click.echo(f"  {u['username']}{marker}{bio}")
-
-
-@cli.group("profiles", invoke_without_command=True)
+@cli.group(
+    "profiles", invoke_without_command=True,
+)
 @click.pass_context
 def profiles_cmd(ctx):
-    """Manage profiles for the current user."""
+    """Manage profiles."""
     if ctx.invoked_subcommand is None:
         cfg = get_config()
         active = cfg.PROFILE
-        click.echo(f"User: {cfg.KAISHO_USER}")
         for name in list_profiles(cfg):
             marker = " *" if name == active else ""
             click.echo(f"  {name}{marker}")
@@ -92,10 +74,9 @@ def profiles_cmd(ctx):
 
 @profiles_cmd.command("list")
 def profiles_list():
-    """List all profiles for the current user."""
+    """List all profiles."""
     cfg = get_config()
     active = cfg.PROFILE
-    click.echo(f"User: {cfg.KAISHO_USER}")
     for name in list_profiles(cfg):
         marker = " *" if name == active else ""
         click.echo(f"  {name}{marker}")
@@ -108,14 +89,11 @@ def profiles_list():
     help="Skip confirmation prompt.",
 )
 def profiles_delete(name, yes):
-    """Delete a profile and all its data.
-
-    NAME is the profile to delete. The active profile cannot be
-    deleted. This action is irreversible.
-    """
+    """Delete a profile and all its data."""
     if not yes:
         click.confirm(
-            f"Delete profile '{name}' and all its data?",
+            f"Delete profile '{name}'"
+            " and all its data?",
             abort=True,
         )
     try:
@@ -129,14 +107,12 @@ def profiles_delete(name, yes):
 @click.argument("old_name")
 @click.argument("new_name")
 def profiles_rename(old_name, new_name):
-    """Rename a profile.
-
-    OLD_NAME is the current profile name; NEW_NAME is the target.
-    The active profile cannot be renamed.
-    """
+    """Rename a profile."""
     try:
         rename_profile(old_name, new_name)
-        click.echo(f"Renamed profile '{old_name}' → '{new_name}'.")
+        click.echo(
+            f"Renamed '{old_name}' -> '{new_name}'."
+        )
     except ValueError as exc:
         raise click.ClickException(str(exc)) from exc
 

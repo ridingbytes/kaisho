@@ -1,390 +1,16 @@
-import hashlib
-import hmac
 import json
-import secrets
 import urllib.request
-from base64 import b64decode, b64encode
 from pathlib import Path
-from time import time
 
-from fastapi import APIRouter, Body, HTTPException, Request
+from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 
 from ...config import get_config
 from ...services import settings as settings_svc
 
-router = APIRouter(prefix="/api/settings", tags=["settings"])
-
-# ------------------------------------------------------------------
-# Persistent session store (survives server restarts)
-# ------------------------------------------------------------------
-
-_SESSION_TTL = 86400  # 24 hours
-_sessions: dict[str, dict] = {}  # token -> {username, created}
-
-
-def _sessions_path() -> Path:
-    """Path to the sessions persistence file."""
-    return get_config().DATA_DIR / ".sessions.json"
-
-
-def _load_sessions() -> None:
-    """Load sessions from disk, pruning expired ones."""
-    global _sessions
-    path = _sessions_path()
-    if not path.exists():
-        return
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return
-    now = time()
-    _sessions = {
-        k: v for k, v in data.items()
-        if now - v.get("created", 0) < _SESSION_TTL
-    }
-
-
-def _save_sessions() -> None:
-    """Persist sessions to disk."""
-    path = _sessions_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(_sessions), encoding="utf-8",
-    )
-
-
-def _server_secret() -> str:
-    """Return the server signing secret, creating if needed."""
-    cfg = get_config()
-    path = cfg.DATA_DIR / ".server_secret"
-    if path.exists():
-        return path.read_text(encoding="utf-8").strip()
-    secret = secrets.token_hex(32)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(secret, encoding="utf-8")
-    return secret
-
-
-# Load persisted sessions on module import
-_load_sessions()
-
-# ------------------------------------------------------------------
-# Rate limiting for auth endpoints
-# ------------------------------------------------------------------
-
-_RATE_WINDOW = 300  # 5 minutes
-_RATE_MAX_ATTEMPTS = 10  # max attempts per window
-_rate_buckets: dict[str, list[float]] = {}  # key -> [timestamps]
-
-
-def _rate_limit_check(key: str) -> None:
-    """Raise 429 if key exceeded rate limit."""
-    now = time()
-    bucket = _rate_buckets.get(key, [])
-    bucket = [t for t in bucket if now - t < _RATE_WINDOW]
-    if len(bucket) >= _RATE_MAX_ATTEMPTS:
-        raise HTTPException(
-            status_code=429,
-            detail="Too many attempts. Try again later.",
-        )
-    bucket.append(now)
-    _rate_buckets[key] = bucket
-
-
-def _sign(payload: str) -> str:
-    """Create HMAC-SHA256 signature for a payload."""
-    return hmac.new(
-        _server_secret().encode(),
-        payload.encode(),
-        hashlib.sha256,
-    ).hexdigest()
-
-
-def _make_token(username: str) -> str:
-    """Create a signed session token."""
-    payload = f"{username}:{time()}"
-    encoded = b64encode(payload.encode()).decode()
-    signature = _sign(encoded)
-    return f"{encoded}.{signature}"
-
-
-def _token_username(token: str) -> str | None:
-    """Return the username for a valid, non-expired token."""
-    session = _sessions.get(token)
-    if not session:
-        return None
-    if time() - session["created"] > _SESSION_TTL:
-        _sessions.pop(token, None)
-        _save_sessions()
-        return None
-    # Verify signature
-    if "." in token:
-        encoded, sig = token.rsplit(".", 1)
-        if not hmac.compare_digest(sig, _sign(encoded)):
-            return None
-    return session["username"]
-
-
-# ------------------------------------------------------------------
-# Auth router (mounted at /api/auth)
-# ------------------------------------------------------------------
-
-auth_router = APIRouter(prefix="/api/auth", tags=["auth"])
-
-
-def _htpasswd_path(username: str) -> "Path":
-    """Return path to user's .htpasswd file."""
-    from pathlib import Path as _P
-    cfg = get_config()
-    return cfg.DATA_DIR / "users" / username / ".htpasswd"
-
-
-def _hash_password(password: str) -> str:
-    """SHA-256 hash with a random salt (simple htpasswd style)."""
-    import hashlib
-    import secrets
-    salt = secrets.token_hex(8)
-    h = hashlib.sha256(
-        (salt + password).encode()
-    ).hexdigest()
-    return f"{salt}${h}"
-
-
-def _verify_password(password: str, stored: str) -> bool:
-    """Check password against stored salt$hash."""
-    import hashlib
-    if "$" not in stored:
-        return False
-    salt, h = stored.split("$", 1)
-    return hashlib.sha256(
-        (salt + password).encode()
-    ).hexdigest() == h
-
-
-def _read_htpasswd(path) -> str | None:
-    """Read the hash from .htpasswd, or None if missing."""
-    from pathlib import Path as _P
-    p = _P(path)
-    if not p.exists():
-        return None
-    return p.read_text(encoding="utf-8").strip()
-
-
-def _write_htpasswd(path, password: str) -> None:
-    """Write hashed password to .htpasswd."""
-    from pathlib import Path as _P
-    p = _P(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(
-        _hash_password(password) + "\n",
-        encoding="utf-8",
-    )
-
-
-class LoginBody(BaseModel):
-    username: str
-    password: str = ""
-
-
-class RegisterBody(BaseModel):
-    username: str
-    password: str = ""
-    name: str = ""
-    email: str = ""
-    bio: str = ""
-
-
-class SetPasswordBody(BaseModel):
-    password: str
-
-
-@auth_router.post("/login")
-def auth_login(body: LoginBody, request: Request):
-    """Log in. Checks .htpasswd if it exists."""
-    import os
-    from ...backends import reset_backend
-    from ...config import (
-        init_data_dir, list_users, resolve_active_profile,
-        reset_config,
-    )
-    client = request.client.host if request.client else "unknown"
-    _rate_limit_check(f"login:{client}")
-    users = list_users()
-    if not any(u["username"] == body.username for u in users):
-        raise HTTPException(
-            status_code=404, detail="User not found",
-        )
-    # Check password if .htpasswd exists
-    pw_path = _htpasswd_path(body.username)
-    stored = _read_htpasswd(pw_path)
-    password_required = stored is not None
-    if password_required:
-        if not body.password:
-            raise HTTPException(
-                status_code=401,
-                detail="Password required",
-            )
-        if not _verify_password(body.password, stored):
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid password",
-            )
-    base_cfg = get_config()
-    user_dir = base_cfg.DATA_DIR / "users" / body.username
-    os.environ["KAISHO_USER"] = body.username
-    os.environ["PROFILE"] = resolve_active_profile(user_dir)
-    # Persist active user so server restarts resume here
-    marker = base_cfg.DATA_DIR / ".active_user"
-    marker.parent.mkdir(parents=True, exist_ok=True)
-    marker.write_text(
-        body.username, encoding="utf-8",
-    )
-    cfg = reset_config()
-    init_data_dir(cfg)
-    reset_backend()
-    token = _make_token(body.username)
-    _sessions[token] = {
-        "username": body.username, "created": time(),
-    }
-    _save_sessions()
-    from ...config import load_user_yaml
-    meta = load_user_yaml(cfg)
-    return {
-        "token": token,
-        "password_set": password_required,
-        "user": {
-            "username": body.username,
-            "name": meta.get("name", ""),
-            "email": meta.get("email", ""),
-            "bio": meta.get("bio", ""),
-        },
-    }
-
-
-@auth_router.post("/register")
-def auth_register(body: RegisterBody, request: Request):
-    """Register a new user and log in."""
-    import os
-    import re
-    from datetime import datetime, timezone
-    from ...backends import reset_backend
-    from ...config import (
-        init_data_dir, reset_config, save_user_yaml,
-    )
-    client = request.client.host if request.client else "unknown"
-    _rate_limit_check(f"register:{client}")
-    username = re.sub(
-        r"[^a-zA-Z0-9_-]", "", body.username.strip(),
-    )
-    if not username:
-        raise HTTPException(
-            status_code=400, detail="Invalid username",
-        )
-    cfg = get_config()
-    user_dir = cfg.DATA_DIR / "users" / username
-    if user_dir.exists():
-        raise HTTPException(
-            status_code=409,
-            detail=f"User '{username}' already exists",
-        )
-    os.environ["KAISHO_USER"] = username
-    os.environ["PROFILE"] = "default"
-    new_cfg = reset_config()
-    save_user_yaml(new_cfg, {
-        "name": body.name or username,
-        "email": body.email,
-        "bio": body.bio,
-        "created": datetime.now(timezone.utc).isoformat(),
-    })
-    init_data_dir(new_cfg)
-    reset_backend()
-    # Store password if provided
-    if body.password:
-        _write_htpasswd(
-            _htpasswd_path(username), body.password,
-        )
-    token = _make_token(username)
-    _sessions[token] = {
-        "username": username, "created": time(),
-    }
-    _save_sessions()
-    return {
-        "token": token,
-        "password_set": bool(body.password),
-        "user": {
-            "username": username,
-            "name": body.name or username,
-            "email": body.email,
-            "bio": body.bio,
-        },
-    }
-
-
-@auth_router.post("/set-password")
-def auth_set_password(request: Request, body: SetPasswordBody):
-    """Set or update the password for the logged-in user."""
-    client = request.client.host if request.client else "unknown"
-    _rate_limit_check(f"set-password:{client}")
-    auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Not logged in")
-    token = auth[7:]
-    username = _token_username(token)
-    if not username:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    if not body.password or len(body.password) < 4:
-        raise HTTPException(
-            status_code=400,
-            detail="Password must be at least 4 characters",
-        )
-    _write_htpasswd(
-        _htpasswd_path(username), body.password,
-    )
-    return {"ok": True}
-
-
-@auth_router.post("/logout")
-def auth_logout(request: Request):
-    """Clear the session for the given token."""
-    auth = request.headers.get("Authorization", "")
-    if auth.startswith("Bearer "):
-        token = auth[7:]
-        _sessions.pop(token, None)
-        _save_sessions()
-    return {"ok": True}
-
-
-@auth_router.get("/session")
-def auth_session(request: Request):
-    """Return current user if token is valid."""
-    auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="No token")
-    token = auth[7:]
-    username = _token_username(token)
-    if not username:
-        raise HTTPException(
-            status_code=401, detail="Invalid token",
-        )
-    from ...config import load_user_yaml, reset_config
-    import os
-    if os.environ.get("KAISHO_USER") != username:
-        os.environ["KAISHO_USER"] = username
-        cfg_tmp = reset_config()
-        # Update persisted active user
-        marker = cfg_tmp.DATA_DIR / ".active_user"
-        marker.write_text(
-            username, encoding="utf-8",
-        )
-    cfg = get_config()
-    meta = load_user_yaml(cfg)
-    return {
-        "username": username,
-        "name": meta.get("name", ""),
-        "email": meta.get("email", ""),
-        "bio": meta.get("bio", ""),
-    }
+router = APIRouter(
+    prefix="/api/settings", tags=["settings"],
+)
 
 
 class StateCreate(BaseModel):
@@ -411,7 +37,9 @@ def get_settings():
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     merged = dict(data)
-    merged["customer_types"] = settings_svc.get_customer_types(data)
+    merged["customer_types"] = (
+        settings_svc.get_customer_types(data)
+    )
     return merged
 
 
@@ -422,7 +50,8 @@ def add_state(body: StateCreate):
     states = data.get("task_states", [])
     if any(s["name"] == body.name for s in states):
         raise HTTPException(
-            status_code=409, detail="State already exists"
+            status_code=409,
+            detail="State already exists",
         )
     new_state = {
         "name": body.name,
@@ -453,10 +82,10 @@ def add_state(body: StateCreate):
 def reorder_states(body: list[str] = Body(...)):
     """Reorder a subset of task_states.
 
-    States not present in body keep their position relative to each
-    other and are interleaved with the reordered states in-place.
-    This preserves hidden states (e.g. done=true) when reordering
-    the visible subset.
+    States not present in body keep their position relative
+    to each other and are interleaved with the reordered
+    states in-place. This preserves hidden states (e.g.
+    done=true) when reordering the visible subset.
     """
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
@@ -464,20 +93,24 @@ def reorder_states(body: list[str] = Body(...)):
     state_map = {s["name"]: s for s in all_states}
     body_set = set(body)
 
-    # States not in body stay at their original indices, interleaved
-    others = [s for s in all_states if s["name"] not in body_set]
-    reordered = [state_map[n] for n in body if n in state_map]
+    others = [
+        s for s in all_states
+        if s["name"] not in body_set
+    ]
+    reordered = [
+        state_map[n] for n in body if n in state_map
+    ]
 
-    # Reconstruct: fill slots occupied by body states with reordered,
-    # keep other states in their original relative order
     body_positions = sorted(
-        i for i, s in enumerate(all_states) if s["name"] in body_set
+        i for i, s in enumerate(all_states)
+        if s["name"] in body_set
     )
     result: list[dict] = list(all_states)
     for pos, state in zip(body_positions, reordered):
         result[pos] = state
     other_positions = [
-        i for i, s in enumerate(all_states) if s["name"] not in body_set
+        i for i, s in enumerate(all_states)
+        if s["name"] not in body_set
     ]
     for pos, state in zip(other_positions, others):
         result[pos] = state
@@ -495,7 +128,7 @@ class StateUpdate(BaseModel):
 
 @router.patch("/states/{name}", status_code=200)
 def update_state(name: str, body: StateUpdate):
-    """Update label, color, and/or done flag for a task state."""
+    """Update label, color, and/or done flag for a state."""
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     states = data.get("task_states", [])
@@ -508,9 +141,13 @@ def update_state(name: str, body: StateUpdate):
             if body.done is not None:
                 state["done"] = body.done
             data["task_states"] = states
-            settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+            settings_svc.save_settings(
+                cfg.SETTINGS_FILE, data,
+            )
             return state
-    raise HTTPException(status_code=404, detail="State not found")
+    raise HTTPException(
+        status_code=404, detail="State not found",
+    )
 
 
 @router.delete("/states/{name}", status_code=204)
@@ -518,7 +155,9 @@ def remove_state(name: str):
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     states = data.get("task_states", [])
-    data["task_states"] = [s for s in states if s["name"] != name]
+    data["task_states"] = [
+        s for s in states if s["name"] != name
+    ]
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
 
 
@@ -529,7 +168,8 @@ def add_tag(body: TagCreate):
     tags = data.get("tags", [])
     if any(t["name"] == body.name for t in tags):
         raise HTTPException(
-            status_code=409, detail="Tag already exists"
+            status_code=409,
+            detail="Tag already exists",
         )
     new_tag = {
         "name": body.name,
@@ -547,10 +187,12 @@ def update_tag(name: str, body: TagUpdate):
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     tags = data.get("tags", [])
-    tag = next((t for t in tags if t["name"] == name), None)
+    tag = next(
+        (t for t in tags if t["name"] == name), None,
+    )
     if tag is None:
         raise HTTPException(
-            status_code=404, detail="Tag not found"
+            status_code=404, detail="Tag not found",
         )
     if body.color is not None:
         tag["color"] = body.color
@@ -565,26 +207,32 @@ def remove_tag(name: str):
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     data["tags"] = [
-        t for t in data.get("tags", []) if t["name"] != name
+        t for t in data.get("tags", [])
+        if t["name"] != name
     ]
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
 
 
-# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------
 # Customer types
-# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------
 
 
 @router.post("/customer_types", status_code=201)
 def add_customer_type(body: dict = Body(...)):
     name = body.get("name", "").strip().upper()
     if not name:
-        raise HTTPException(status_code=400, detail="name required")
+        raise HTTPException(
+            status_code=400, detail="name required",
+        )
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     types = settings_svc.get_customer_types(data)
     if name in types:
-        raise HTTPException(status_code=409, detail="Type already exists")
+        raise HTTPException(
+            status_code=409,
+            detail="Type already exists",
+        )
     types.append(name)
     data["customer_types"] = types
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
@@ -596,13 +244,16 @@ def remove_customer_type(name: str):
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     types = settings_svc.get_customer_types(data)
-    data["customer_types"] = [t for t in types if t != name.upper()]
+    data["customer_types"] = [
+        t for t in types if t != name.upper()
+    ]
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
 
 
-# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------
 # AI settings
-# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------
+
 
 def _claude_cli_status() -> dict:
     """Check if claude CLI is installed and authenticated."""
@@ -610,8 +261,12 @@ def _claude_cli_status() -> dict:
     import subprocess
     path = shutil.which("claude")
     if not path:
-        return {"installed": False, "authenticated": False,
-                "version": "", "path": ""}
+        return {
+            "installed": False,
+            "authenticated": False,
+            "version": "",
+            "path": "",
+        }
     try:
         result = subprocess.run(
             [path, "--version"],
@@ -620,9 +275,7 @@ def _claude_cli_status() -> dict:
         version = result.stdout.strip().split("\n")[0]
     except Exception:
         version = "unknown"
-    # Check auth by looking for credentials
-    from pathlib import Path as _P
-    creds = _P.home() / ".claude"
+    creds = Path.home() / ".claude"
     authenticated = creds.is_dir() and any(
         creds.iterdir()
     )
@@ -650,24 +303,56 @@ _CLAUDE_CLI_MODELS = [
 def _fetch_ollama_models(base_url: str) -> list[str]:
     url = base_url.rstrip("/") + "/api/tags"
     try:
-        with urllib.request.urlopen(url, timeout=3) as resp:
+        with urllib.request.urlopen(
+            url, timeout=3,
+        ) as resp:
             data = json.loads(resp.read())
         return [
-            f"ollama:{m['name']}" for m in data.get("models", [])
+            f"ollama:{m['name']}"
+            for m in data.get("models", [])
         ]
     except Exception:
         return []
 
 
-def _fetch_lm_studio_models(base_url: str) -> list[str]:
+def _fetch_lm_studio_models(
+    base_url: str,
+) -> list[str]:
     if not base_url:
         return []
     url = base_url.rstrip("/") + "/v1/models"
     try:
-        with urllib.request.urlopen(url, timeout=3) as resp:
+        with urllib.request.urlopen(
+            url, timeout=3,
+        ) as resp:
             data = json.loads(resp.read())
         return [
-            f"lm_studio:{m['id']}" for m in data.get("data", [])
+            f"lm_studio:{m['id']}"
+            for m in data.get("data", [])
+        ]
+    except Exception:
+        return []
+
+
+def _fetch_openai_compatible_models(
+    base_url: str, api_key: str, prefix: str,
+) -> list[str]:
+    """Fetch models from an OpenAI-compatible endpoint."""
+    if not base_url:
+        return []
+    url = base_url.rstrip("/") + "/models"
+    headers: dict[str, str] = {}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(
+            req, timeout=5,
+        ) as resp:
+            data = json.loads(resp.read())
+        return [
+            f"{prefix}:{m['id']}"
+            for m in data.get("data", [])
         ]
     except Exception:
         return []
@@ -696,15 +381,54 @@ def get_ai():
 def update_ai(body: AiSettingsUpdate):
     cfg = get_config()
     updates = body.model_dump(exclude_none=True)
-    return settings_svc.set_ai_settings(cfg.SETTINGS_FILE, updates)
+    return settings_svc.set_ai_settings(
+        cfg.SETTINGS_FILE, updates,
+    )
+
+
+@router.get("/ai/models")
+def list_models():
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    ai = settings_svc.get_ai_settings(data)
+    models = (
+        _fetch_ollama_models(ai["ollama_url"])
+        + _fetch_lm_studio_models(
+            ai.get("lm_studio_url", ""),
+        )
+        + _fetch_openai_compatible_models(
+            ai.get("openrouter_url", ""),
+            ai.get("openrouter_api_key", ""),
+            "openrouter",
+        )
+        + _fetch_openai_compatible_models(
+            ai.get("openai_url", ""),
+            ai.get("openai_api_key", ""),
+            "openai",
+        )
+        + _CLAUDE_CLI_MODELS
+        + _CLAUDE_API_MODELS
+    )
+    return {"models": models}
+
+
+@router.get("/ai/claude_cli")
+def get_claude_cli_status():
+    """Check if the Claude CLI is installed."""
+    return _claude_cli_status()
+
+
+# ---------------------------------------------------------------
+# Paths and backend
+# ---------------------------------------------------------------
 
 
 @router.get("/paths")
 def get_paths():
     """Return path and backend config for the active profile.
 
-    All values come from the profile's settings.yaml, falling
-    back to global config (.env) when not set.
+    All values come from the profile's settings.yaml,
+    falling back to global config (.env) when not set.
     """
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
@@ -728,12 +452,14 @@ class PathsUpdate(BaseModel):
 
 @router.patch("/paths")
 def update_paths(body: PathsUpdate):
-    """Save path/backend settings to the profile's settings.yaml."""
+    """Save path/backend settings to settings.yaml."""
     cfg = get_config()
     updates = body.model_dump(exclude_none=True)
     if not updates:
         return {"message": "Nothing to update."}
-    settings_svc.set_path_settings(cfg.SETTINGS_FILE, updates)
+    settings_svc.set_path_settings(
+        cfg.SETTINGS_FILE, updates,
+    )
     from ...backends import reset_backend
     reset_backend()
     return {"message": "Paths saved."}
@@ -750,20 +476,28 @@ def switch_backend(body: BackendSwitch):
         raise HTTPException(
             status_code=400,
             detail=(
-            "backend must be 'org', 'markdown',"
-            " 'json', or 'sql'"
-        ),
+                "backend must be 'org', 'markdown',"
+                " 'json', or 'sql'"
+            ),
         )
     cfg = get_config()
     settings_svc.set_path_settings(
-        cfg.SETTINGS_FILE, {"backend": body.backend},
+        cfg.SETTINGS_FILE,
+        {"backend": body.backend},
     )
     from ...backends import reset_backend
     reset_backend()
     return {
         "backend": body.backend,
-        "message": f"Switched to {body.backend} backend.",
+        "message": (
+            f"Switched to {body.backend} backend."
+        ),
     }
+
+
+# ---------------------------------------------------------------
+# Import data
+# ---------------------------------------------------------------
 
 
 class ImportData(BaseModel):
@@ -773,7 +507,7 @@ class ImportData(BaseModel):
 
 @router.post("/import-data")
 def import_data(body: ImportData):
-    """Import data from another backend into the current one."""
+    """Import data from another backend."""
     valid = ("org", "markdown", "json", "sql")
     if body.source_format not in valid:
         raise HTTPException(
@@ -793,12 +527,16 @@ def import_data(body: ImportData):
     return {"summary": summary}
 
 
+# ---------------------------------------------------------------
+# GitHub
+# ---------------------------------------------------------------
+
+
 @router.get("/github")
 def get_github():
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     result = settings_svc.get_github_settings(data)
-    # Mask token for display — show only last 4 chars
     token = result.get("token", "")
     result["token_set"] = bool(token)
     if token:
@@ -815,12 +553,14 @@ class GithubSettingsUpdate(BaseModel):
 def update_github(body: GithubSettingsUpdate):
     cfg = get_config()
     updates = body.model_dump(exclude_none=True)
-    return settings_svc.set_github_settings(cfg.SETTINGS_FILE, updates)
+    return settings_svc.set_github_settings(
+        cfg.SETTINGS_FILE, updates,
+    )
 
 
-# ------------------------------------------------------------------
+# ---------------------------------------------------------------
 # Timezone
-# ------------------------------------------------------------------
+# ---------------------------------------------------------------
 
 
 @router.get("/timezone")
@@ -839,65 +579,15 @@ class TimezoneUpdate(BaseModel):
 @router.patch("/timezone")
 def update_timezone(body: TimezoneUpdate):
     cfg = get_config()
-    tz = settings_svc.set_timezone(cfg.SETTINGS_FILE, body.timezone)
+    tz = settings_svc.set_timezone(
+        cfg.SETTINGS_FILE, body.timezone,
+    )
     return {"timezone": tz}
 
 
-def _fetch_openai_compatible_models(
-    base_url: str, api_key: str, prefix: str,
-) -> list[str]:
-    """Fetch models from an OpenAI-compatible /v1/models endpoint."""
-    if not base_url:
-        return []
-    url = base_url.rstrip("/") + "/models"
-    headers: dict[str, str] = {}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-    req = urllib.request.Request(url, headers=headers)
-    try:
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            data = json.loads(resp.read())
-        return [
-            f"{prefix}:{m['id']}"
-            for m in data.get("data", [])
-        ]
-    except Exception:
-        return []
-
-
-@router.get("/ai/models")
-def list_models():
-    cfg = get_config()
-    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
-    ai = settings_svc.get_ai_settings(data)
-    models = (
-        _fetch_ollama_models(ai["ollama_url"])
-        + _fetch_lm_studio_models(ai.get("lm_studio_url", ""))
-        + _fetch_openai_compatible_models(
-            ai.get("openrouter_url", ""),
-            ai.get("openrouter_api_key", ""),
-            "openrouter",
-        )
-        + _fetch_openai_compatible_models(
-            ai.get("openai_url", ""),
-            ai.get("openai_api_key", ""),
-            "openai",
-        )
-        + _CLAUDE_CLI_MODELS
-        + _CLAUDE_API_MODELS
-    )
-    return {"models": models}
-
-
-@router.get("/ai/claude_cli")
-def get_claude_cli_status():
-    """Check if the Claude CLI is installed and logged in."""
-    return _claude_cli_status()
-
-
-# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------
 # Knowledge base sources
-# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------
 
 
 @router.get("/kb_sources")
@@ -915,9 +605,9 @@ def set_kb_sources(body: list[dict] = Body(...)):
     )
 
 
-# -------------------------------------------------------------------
+# ---------------------------------------------------------------
 # Advisor personality files (SOUL.md / USER.md)
-# -------------------------------------------------------------------
+# ---------------------------------------------------------------
 
 
 class AdvisorFilesUpdate(BaseModel):
@@ -925,7 +615,7 @@ class AdvisorFilesUpdate(BaseModel):
     user: str | None = None
 
 
-def _advisor_file_path(filename: str) -> "Path":
+def _advisor_file_path(filename: str) -> Path:
     cfg = get_config()
     return cfg.PROFILE_DIR / filename
 
@@ -937,7 +627,9 @@ def _read_advisor_file(filename: str) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def _write_advisor_file(filename: str, content: str) -> None:
+def _write_advisor_file(
+    filename: str, content: str,
+) -> None:
     path = _advisor_file_path(filename)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
@@ -963,9 +655,9 @@ def put_advisor_files(body: AdvisorFilesUpdate):
     }
 
 
-# -------------------------------------------------------------------
+# ---------------------------------------------------------------
 # URL allowlist
-# -------------------------------------------------------------------
+# ---------------------------------------------------------------
 
 
 @router.get("/url_allowlist")
@@ -984,21 +676,18 @@ def set_url_allowlist(body: list[str] = Body(...)):
     return body
 
 
-# -------------------------------------------------------------------
-# Users and profiles
-# -------------------------------------------------------------------
+# ---------------------------------------------------------------
+# User and profiles
+# ---------------------------------------------------------------
 
 
 @router.get("/user")
 def get_current_user():
-    """Return the active user and profile info."""
-    from ...config import (
-        list_profiles, list_users, load_user_yaml,
-    )
+    """Return the active profile info."""
+    from ...config import list_profiles, load_user_yaml
     cfg = get_config()
     meta = load_user_yaml(cfg)
     return {
-        "username": cfg.KAISHO_USER,
         "profile": cfg.PROFILE,
         "name": meta.get("name", ""),
         "email": meta.get("email", ""),
@@ -1033,75 +722,12 @@ def update_user_profile(body: UserProfileUpdate):
     return data
 
 
-@router.get("/users")
-def get_users():
-    """List all user accounts."""
-    from ...config import list_users
-    return list_users()
-
-
-class UserCreate(BaseModel):
-    username: str
-    name: str = ""
-    email: str = ""
-    bio: str = ""
-
-
-@router.post("/users", status_code=201)
-def create_user(body: UserCreate):
-    """Create a new user account with a default profile."""
-    import re
-    from ...config import (
-        init_data_dir, reset_config, save_user_yaml,
-    )
-    username = re.sub(
-        r"[^a-zA-Z0-9_-]", "", body.username.strip()
-    )
-    if not username:
-        raise HTTPException(
-            status_code=400, detail="Invalid username"
-        )
-    cfg = get_config()
-    user_dir = cfg.DATA_DIR / "users" / username
-    if user_dir.exists():
-        raise HTTPException(
-            status_code=409,
-            detail=f"User '{username}' already exists",
-        )
-    import os
-    from datetime import datetime, timezone
-    old_user = os.environ.get("KAISHO_USER")
-    old_prof = os.environ.get("PROFILE")
-    os.environ["KAISHO_USER"] = username
-    os.environ["PROFILE"] = "default"
-    new_cfg = reset_config()
-    save_user_yaml(new_cfg, {
-        "name": body.name or username,
-        "email": body.email,
-        "bio": body.bio,
-        "created": datetime.now(timezone.utc).isoformat(),
-    })
-    init_data_dir(new_cfg)
-    if old_user is not None:
-        os.environ["KAISHO_USER"] = old_user
-    else:
-        os.environ.pop("KAISHO_USER", None)
-    if old_prof is not None:
-        os.environ["PROFILE"] = old_prof
-    else:
-        os.environ.pop("PROFILE", None)
-    reset_config()
-    return {"username": username}
-
-
-
 @router.get("/profiles")
 def get_profiles():
-    """List profiles for the active user."""
+    """List profiles."""
     from ...config import list_profiles
     cfg = get_config()
     return {
-        "user": cfg.KAISHO_USER,
         "active": cfg.PROFILE,
         "profiles": list_profiles(cfg),
     }
@@ -1113,7 +739,7 @@ class ProfileSwitch(BaseModel):
 
 @router.put("/profile")
 def switch_profile(body: ProfileSwitch):
-    """Switch to a different profile within the user."""
+    """Switch to a different profile."""
     import os
     from ...backends import reset_backend
     from ...config import (
@@ -1125,7 +751,7 @@ def switch_profile(body: ProfileSwitch):
     cfg = reset_config()
     init_data_dir(cfg)
     reset_backend()
-    save_active_profile(cfg.USER_DIR, cfg.PROFILE)
+    save_active_profile(cfg.DATA_DIR, cfg.PROFILE)
     return {
         "profile": cfg.PROFILE,
     }
@@ -1137,19 +763,21 @@ class ProfileCreate(BaseModel):
 
 @router.post("/profiles", status_code=201)
 def create_profile(body: ProfileCreate):
-    """Create a new profile for the active user."""
-    import os, re
+    """Create a new profile."""
+    import os
+    import re
     from ...config import init_data_dir, reset_config
     name = re.sub(
-        r"[^a-zA-Z0-9_-]", "", body.name.strip()
+        r"[^a-zA-Z0-9_-]", "", body.name.strip(),
     )
     if not name:
         raise HTTPException(
-            status_code=400, detail="Invalid profile name"
+            status_code=400,
+            detail="Invalid profile name",
         )
     cfg = get_config()
     profile_dir = (
-        cfg.USER_DIR / "profiles" / name
+        cfg.DATA_DIR / "profiles" / name
     )
     if profile_dir.exists():
         raise HTTPException(
@@ -1173,16 +801,20 @@ class ProfileRename(BaseModel):
 
 
 @router.put("/profiles/{name}")
-def rename_profile_endpoint(name: str, body: ProfileRename):
+def rename_profile_endpoint(
+    name: str, body: ProfileRename,
+):
     """Rename a profile.
 
-    The active profile cannot be renamed. Returns the new name.
+    The active profile cannot be renamed.
     """
     from ...config import rename_profile
     try:
         rename_profile(name, body.new_name)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(
+            status_code=400, detail=str(exc),
+        )
     return {"name": body.new_name}
 
 
@@ -1190,14 +822,20 @@ class ProfileCopy(BaseModel):
     target: str
 
 
-@router.post("/profiles/{name}/copy", status_code=201)
-def copy_profile_endpoint(name: str, body: ProfileCopy):
+@router.post(
+    "/profiles/{name}/copy", status_code=201,
+)
+def copy_profile_endpoint(
+    name: str, body: ProfileCopy,
+):
     """Copy a profile to a new name."""
     from ...config import copy_profile
     try:
         copy_profile(name, body.target)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(
+            status_code=400, detail=str(exc),
+        )
     return {"name": body.target}
 
 
@@ -1211,4 +849,6 @@ def delete_profile_endpoint(name: str):
     try:
         delete_profile(name)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(
+            status_code=400, detail=str(exc),
+        )
