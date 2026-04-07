@@ -273,22 +273,38 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "update_task",
-        "description": "Update a task's title, customer, or body.",
+        "description": (
+            "Update a task's title, customer, body, "
+            "or GitHub URL."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
                 "task_id": {"type": "string"},
                 "title": {
                     "type": "string",
-                    "description": "New title (optional)",
+                    "description": (
+                        "New title (optional)"
+                    ),
                 },
                 "customer": {
                     "type": "string",
-                    "description": "New customer (optional)",
+                    "description": (
+                        "New customer (optional)"
+                    ),
                 },
                 "body": {
                     "type": "string",
-                    "description": "New body text (optional)",
+                    "description": (
+                        "New body text (optional)"
+                    ),
+                },
+                "github_url": {
+                    "type": "string",
+                    "description": (
+                        "GitHub issue/PR URL "
+                        "(optional)"
+                    ),
                 },
             },
             "required": ["task_id"],
@@ -756,6 +772,7 @@ def _dispatch(name: str, args: dict) -> dict:
             title=args.get("title"),
             customer=args.get("customer"),
             body=args.get("body"),
+            github_url=args.get("github_url"),
         )
         return {"task": task}
 
