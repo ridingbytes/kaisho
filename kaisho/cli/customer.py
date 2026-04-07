@@ -89,6 +89,36 @@ def customer_summary(as_json):
         click.echo(f"{name} {rest} {kontingent} {percent}")
 
 
+@customer.command("add")
+@click.argument("name")
+@click.option("--status", "-s", default="active",
+              help="Customer status (default: active)")
+@click.option("--type", "-t", "customer_type", default="",
+              help="Customer type (e.g. agency, startup)")
+@click.option("--budget", "-b", type=float, default=0,
+              help="Hour budget (e.g. 80)")
+@click.option("--repo", default=None,
+              help="GitHub repository (owner/repo)")
+@click.option("--tag", "tags", multiple=True,
+              help="Tags (repeatable)")
+def customer_add(name, status, customer_type, budget,
+                 repo, tags):
+    """Add a new customer."""
+    try:
+        c = get_backend().customers.add_customer(
+            name=name,
+            status=status,
+            customer_type=customer_type,
+            budget=budget,
+            repo=repo,
+            tags=list(tags) if tags else None,
+        )
+    except ValueError as e:
+        click.echo(str(e), err=True)
+        sys.exit(1)
+    click.echo(f"Added customer: {c['name']}")
+
+
 @customer.command("edit")
 def customer_edit():
     """Open the customers file in $EDITOR."""
