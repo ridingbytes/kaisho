@@ -1,25 +1,52 @@
 /**
  * Format a date string as a relative time label
  * (GitHub-style), e.g. "just now", "yesterday",
- * "3 days ago", "2 weeks ago", "Jan 15".
+ * "3 days ago", "2 weeks ago".
  *
- * Returns an object with `label` (display text) and
- * `full` (ISO date for title/tooltip).
+ * Returns { label, full } where full is the date
+ * string for tooltip display.
  */
-export function relativeDate(
-  isoOrOrg: string,
-): { label: string; full: string } {
-  if (!isoOrOrg) return { label: "", full: "" };
 
-  // Strip org-mode brackets: [2026-04-07 Mon 14:30]
-  const clean = isoOrOrg
+const ORG_DATE_RE =
+  /^(\d{4}-\d{2}-\d{2})\s+\w{3}\s+(\d{2}:\d{2})/;
+
+function parseDate(raw: string): Date | null {
+  const s = raw.replace(/^\[/, "").replace(/\]$/, "");
+
+  // Org format: "2026-04-05 Sat 09:00"
+  const m = ORG_DATE_RE.test(s)
+    ? s.match(ORG_DATE_RE)
+    : null;
+  if (m) {
+    return new Date(`${m[1]}T${m[2]}:00`);
+  }
+
+  // ISO or other parseable format
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d;
+
+  // Date part only
+  const dateOnly = s.slice(0, 10);
+  const d2 = new Date(dateOnly + "T00:00:00");
+  if (!isNaN(d2.getTime())) return d2;
+
+  return null;
+}
+
+
+export function relativeDate(
+  raw: string,
+): { label: string; full: string } {
+  if (!raw) return { label: "", full: "" };
+
+  const clean = raw
     .replace(/^\[/, "")
     .replace(/\]$/, "");
-  const full = clean.slice(0, 16); // YYYY-MM-DD HH:MM
+  const full = clean.slice(0, 16);
 
-  const date = new Date(clean);
-  if (isNaN(date.getTime())) {
-    return { label: isoOrOrg.slice(0, 10), full };
+  const date = parseDate(raw);
+  if (!date) {
+    return { label: raw.slice(0, 10), full };
   }
 
   const now = new Date();
@@ -29,12 +56,15 @@ export function relativeDate(
   const diffH = Math.floor(diffMin / 60);
   const diffD = Math.floor(diffH / 24);
 
-  if (diffSec < 60) return { label: "just now", full };
+  if (diffSec < 0) return { label: full, full };
+  if (diffSec < 60) {
+    return { label: "just now", full };
+  }
   if (diffMin < 60) {
     return {
       label: diffMin === 1
-        ? "1 minute ago"
-        : `${diffMin} minutes ago`,
+        ? "1 min ago"
+        : `${diffMin} min ago`,
       full,
     };
   }
@@ -46,7 +76,9 @@ export function relativeDate(
       full,
     };
   }
-  if (diffD === 1) return { label: "yesterday", full };
+  if (diffD === 1) {
+    return { label: "yesterday", full };
+  }
   if (diffD < 7) {
     return { label: `${diffD} days ago`, full };
   }
@@ -60,11 +92,11 @@ export function relativeDate(
     };
   }
   if (diffD < 365) {
-    const m = Math.floor(diffD / 30);
+    const mo = Math.floor(diffD / 30);
     return {
-      label: m === 1
+      label: mo === 1
         ? "1 month ago"
-        : `${m} months ago`,
+        : `${mo} months ago`,
       full,
     };
   }

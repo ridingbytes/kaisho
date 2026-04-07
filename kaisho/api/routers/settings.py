@@ -234,6 +234,12 @@ def auth_login(body: LoginBody, request: Request):
     user_dir = base_cfg.DATA_DIR / "users" / body.username
     os.environ["KAISHO_USER"] = body.username
     os.environ["PROFILE"] = resolve_active_profile(user_dir)
+    # Persist active user so server restarts resume here
+    marker = base_cfg.DATA_DIR / ".active_user"
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text(
+        body.username, encoding="utf-8",
+    )
     cfg = reset_config()
     init_data_dir(cfg)
     reset_backend()
@@ -365,7 +371,12 @@ def auth_session(request: Request):
     import os
     if os.environ.get("KAISHO_USER") != username:
         os.environ["KAISHO_USER"] = username
-        reset_config()
+        cfg_tmp = reset_config()
+        # Update persisted active user
+        marker = cfg_tmp.DATA_DIR / ".active_user"
+        marker.write_text(
+            username, encoding="utf-8",
+        )
     cfg = get_config()
     meta = load_user_yaml(cfg)
     return {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RelDate } from "../common/RelDate";
 import {
   ArrowRightLeft,
   Check,
@@ -195,9 +196,10 @@ function NoteRow({
         onClick={() => !editing && setExpanded((v) => !v)}
         onContextMenu={handleContextMenu}
       >
-        <span className="text-xs text-stone-600 w-20 shrink-0">
-          {note.created.replace(/^\[/, "").slice(0, 10)}
-        </span>
+        <RelDate
+          date={note.created}
+          className="text-xs text-stone-600 w-20 shrink-0"
+        />
         {note.customer && (
           <span
             onClick={(e) => {

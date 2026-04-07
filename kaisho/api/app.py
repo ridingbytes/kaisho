@@ -28,20 +28,47 @@ from .routers import settings as settings_router
 from .watcher.service import watch_files
 
 
+def _restore_active_user() -> None:
+    """Restore the last active user on server start.
+
+    Reads .active_user from the data directory. If the
+    user dir exists, sets KAISHO_USER and PROFILE env
+    vars so the server resumes where the user left off.
+    """
+    import os
+    from pathlib import Path
+
+    cfg = get_config()
+    marker = cfg.DATA_DIR / ".active_user"
+    if not marker.exists():
+        return
+    username = marker.read_text(encoding="utf-8").strip()
+    if not username:
+        return
+    user_dir = cfg.DATA_DIR / "users" / username
+    if not user_dir.is_dir():
+        return
+    os.environ["KAISHO_USER"] = username
+    profile = resolve_active_profile(user_dir)
+    os.environ["PROFILE"] = profile
+    reset_config()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import os
-    # Restore persisted profile selection so the server doesn't
-    # default back to "default" after a restart.
-    if not os.environ.get("PROFILE"):
+    # Restore the last logged-in user and profile so the
+    # server doesn't default to "default" after restart.
+    if not os.environ.get("KAISHO_USER"):
+        _restore_active_user()
+    elif not os.environ.get("PROFILE"):
         cfg0 = get_config()
         saved = resolve_active_profile(cfg0.USER_DIR)
         if saved != cfg0.PROFILE:
             os.environ["PROFILE"] = saved
             reset_config()
-    # Only run init_data_dir when the profile dir already exists.
-    # Avoid auto-creating a "default" profile dir as a startup
-    # side-effect — that dir is only created on register/switch.
+    # Only run init_data_dir when the profile dir
+    # already exists.
     cfg = get_config()
     if cfg.PROFILE_DIR.is_dir():
         init_data_dir(cfg)

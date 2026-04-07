@@ -8,6 +8,7 @@ import {
 import { useState } from "react";
 import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
+import { RelDate } from "../common/RelDate";
 import { Markdown } from "../common/Markdown";
 import {
   useDeleteItem,
@@ -45,10 +46,6 @@ const CUSTOMER_STRIP_RE = /^\[[^\]]+\]\s*/;
 
 function cleanTitle(title: string): string {
   return title.replace(TITLE_STRIP_RE, "").replace(CUSTOMER_STRIP_RE, "");
-}
-
-function formatDate(dateStr: string): string {
-  return dateStr.replace(/^\[/, "").replace(/\]$/, "").slice(0, 10);
 }
 
 function slugify(text: string): string {
@@ -238,9 +235,10 @@ export function InboxItemRow({ item }: Props) {
               />
             )}
           </div>
-          <p className="text-[10px] text-stone-500 mt-0.5">
-            {formatDate(item.created)}
-          </p>
+          <RelDate
+            date={item.created}
+            className="text-[10px] text-stone-500 mt-0.5 block"
+          />
         </div>
 
         {/* Actions */}
