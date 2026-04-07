@@ -54,29 +54,40 @@ def convert_backend(
 def _convert_customers(
     source: Backend, target: Backend,
 ) -> int:
-    """Copy customers and their contracts."""
+    """Copy customers and their contracts.
+
+    Skips customers that already exist in target.
+    """
     customers = source.customers.list_customers(
         include_inactive=True,
     )
     count = 0
     for c in customers:
-        target.customers.add_customer(
-            name=c["name"],
-            status=c.get("status", "active"),
-            customer_type=c.get("type", ""),
-            budget=c.get("budget", 0),
-            color=c.get("color", ""),
-            repo=c.get("repo"),
-            tags=c.get("tags"),
-        )
-        for ct in c.get("contracts", []):
-            target.customers.add_contract(
+        try:
+            target.customers.add_customer(
                 name=c["name"],
-                contract_name=ct["name"],
-                budget=ct.get("budget", 0),
-                start_date=ct.get("start_date", ""),
-                notes=ct.get("notes", ""),
+                status=c.get("status", "active"),
+                customer_type=c.get("type", ""),
+                budget=c.get("budget", 0),
+                color=c.get("color", ""),
+                repo=c.get("repo"),
+                tags=c.get("tags"),
             )
+        except ValueError:
+            continue
+        for ct in c.get("contracts", []):
+            try:
+                target.customers.add_contract(
+                    name=c["name"],
+                    contract_name=ct["name"],
+                    budget=ct.get("budget", 0),
+                    start_date=ct.get(
+                        "start_date", "",
+                    ),
+                    notes=ct.get("notes", ""),
+                )
+            except ValueError:
+                continue
             used = ct.get("used_offset", 0)
             if used:
                 target.customers.update_contract(
