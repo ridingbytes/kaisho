@@ -935,18 +935,25 @@ export function CustomerCard({ customer: c }: Props) {
         /* Edit mode */
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-1.5">
-            <input
-              type="color"
-              value={form.color || "#71717a"}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  color: e.target.value,
-                }))
-              }
-              className="w-5 h-5 rounded-full cursor-pointer border-0 p-0 shrink-0"
-              title="Customer color"
-            />
+            <label
+              className="w-3.5 h-3.5 rounded-full shrink-0 cursor-pointer ring-1 ring-border hover:ring-cta transition-shadow"
+              style={{
+                background: form.color || "#71717a",
+              }}
+              title="Pick color"
+            >
+              <input
+                type="color"
+                value={form.color || "#71717a"}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    color: e.target.value,
+                  }))
+                }
+                className="sr-only"
+              />
+            </label>
             <input
               className={fieldClass("font-semibold flex-1")}
               value={form.name}
