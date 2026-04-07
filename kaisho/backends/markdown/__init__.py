@@ -118,6 +118,7 @@ def _parse_md_sections(
             body = after_heading[
                 prop_match.end():
             ].strip("\n")
+        body = _unescape_body(body)
         sections.append({
             "heading": heading,
             "meta": meta,
@@ -140,6 +141,37 @@ def _parse_md_sections(
     return merged
 
 
+def _escape_body(body: str, level: int) -> str:
+    """Escape heading markers in body text.
+
+    Prefixes lines starting with the section heading
+    marker (e.g. ``## ``) with a backslash so they
+    are not mistaken for new sections on re-read.
+    """
+    prefix = "#" * level + " "
+    lines = []
+    for line in body.split("\n"):
+        if line.startswith(prefix):
+            lines.append("\\" + line)
+        else:
+            lines.append(line)
+    return "\n".join(lines)
+
+
+def _unescape_body(body: str) -> str:
+    r"""Remove backslash escapes from heading markers.
+
+    Reverses ``_escape_body``: ``\## `` becomes ``## ``.
+    """
+    lines = []
+    for line in body.split("\n"):
+        if line.startswith("\\#"):
+            lines.append(line[1:])
+        else:
+            lines.append(line)
+    return "\n".join(lines)
+
+
 def _render_md_sections(
     sections: list[dict], level: int = 2
 ) -> str:
@@ -153,7 +185,9 @@ def _render_md_sections(
             lines.append(prop_block)
         if sec.get("body"):
             lines.append("")
-            lines.append(sec["body"])
+            lines.append(
+                _escape_body(sec["body"], level),
+            )
         parts.append("\n".join(lines))
     return "\n\n".join(parts) + "\n" if parts else ""
 
