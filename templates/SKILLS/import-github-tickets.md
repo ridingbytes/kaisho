@@ -9,6 +9,8 @@ Steps:
    - customer: the customer name from the project
    - title: the ticket title
    - tags: ["@github"]
+   - github_url: the ticket URL (REQUIRED -- always
+     link the GitHub issue to the task)
    - status: map the project column to a task state:
      - Prioritized / Backlog -> TODO
      - In Progress -> IN-PROGRESS

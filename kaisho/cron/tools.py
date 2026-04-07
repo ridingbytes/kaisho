@@ -50,12 +50,28 @@ TOOL_DEFS: list[dict] = [
                 "title": {"type": "string"},
                 "status": {
                     "type": "string",
-                    "description": "e.g. TODO, IN-PROGRESS, WAIT (default: TODO)",
+                    "description": (
+                        "e.g. TODO, IN-PROGRESS, WAIT"
+                        " (default: TODO)"
+                    ),
                 },
                 "tags": {
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "Optional tag names",
+                },
+                "body": {
+                    "type": "string",
+                    "description": (
+                        "Task description/body text"
+                    ),
+                },
+                "github_url": {
+                    "type": "string",
+                    "description": (
+                        "GitHub issue or PR URL to "
+                        "link to this task"
+                    ),
                 },
             },
             "required": ["customer", "title"],
@@ -642,6 +658,8 @@ def _dispatch(name: str, args: dict) -> dict:
             title=args["title"],
             status=args.get("status", "TODO"),
             tags=args.get("tags"),
+            body=args.get("body"),
+            github_url=args.get("github_url"),
         )
         return {"task": task}
 
