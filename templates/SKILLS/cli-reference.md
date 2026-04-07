@@ -18,7 +18,11 @@ Common commands:
 - inbox add "Text" [--type EMAIL] [--customer X]
 - notes list [--json]
 - notes add "Title" --body "..." [--customer X]
-- gh issues [--customer X]
+- gh issues CUSTOMER [--all] [--json]
+- gh projects [--customer X] [--status Y] [--json]
+- gh prs CUSTOMER [--all] [--json]
+- gh show CUSTOMER NUMBER [--json]
+- gh all-issues [--json]
 - profiles list
 - convert --from org --to sql --source X --target Y
 

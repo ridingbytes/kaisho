@@ -136,6 +136,68 @@ def gh_open(customer, number):
         sys.exit(1)
 
 
+@gh.command("projects")
+@click.option("--customer", "-c", default=None,
+              help="Filter by customer name")
+@click.option("--status", "-s", default=None,
+              help="Filter by status column")
+@click.option("--json", "as_json", is_flag=True)
+def gh_projects(customer, status, as_json):
+    """List GitHub Projects v2 for customers."""
+    customers = get_backend().customers.list_customers(
+        include_inactive=True,
+    )
+    if customer:
+        customers = [
+            c for c in customers
+            if c["name"].lower() == customer.lower()
+        ]
+        if not customers:
+            click.echo(
+                f"Customer not found: {customer}",
+                err=True,
+            )
+            sys.exit(1)
+    try:
+        results = gh_service.projects_for_customers(
+            customers,
+        )
+    except GhError as e:
+        click.echo(str(e), err=True)
+        sys.exit(1)
+    if as_json:
+        click.echo(json.dumps(results, default=str))
+        return
+    for group in results:
+        click.echo(
+            f"\n{group['customer']}"
+            f"  ({group['repo']})"
+        )
+        for proj in group.get("projects", []):
+            click.echo(
+                f"  Project: {proj.get('title', '?')}"
+            )
+            for col in proj.get("columns", []):
+                col_name = col.get("name", "?")
+                if status and col_name.lower() != (
+                    status.lower()
+                ):
+                    continue
+                items = col.get("items", [])
+                if not items:
+                    continue
+                click.echo(f"    [{col_name}]")
+                for item in items:
+                    title = item.get("title", "?")
+                    num = item.get("number", "")
+                    num_str = (
+                        f"#{num} " if num else ""
+                    )
+                    click.echo(
+                        f"      {num_str}{title}"
+                    )
+
+
 @gh.command("all-issues")
 @click.option("--json", "as_json", is_flag=True)
 def gh_all_issues(as_json):
