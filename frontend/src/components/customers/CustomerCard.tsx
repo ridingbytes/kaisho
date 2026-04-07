@@ -43,18 +43,20 @@ interface EditState {
   name: string;
   status: string;
   type: string;
+  color: string;
   budget: string;
   used_offset: string;
   repo: string;
 }
 
 function toEditState(c: Customer): EditState {
-  const rawProp = c.properties?.VERBRAUCHT ?? "";
+  const rawProp = c.properties?.USED ?? "";
   const m = rawProp.match(/(\d+(?:\.\d+)?)/);
   return {
     name: c.name,
     status: c.status,
     type: c.type ?? "",
+    color: c.color ?? "",
     budget: String(c.budget),
     used_offset: m ? m[1] : "0",
     repo: c.repo ?? "",
@@ -898,6 +900,7 @@ export function CustomerCard({ customer: c }: Props) {
       name: form.name.trim() || c.name,
       status: form.status,
       type: form.type,
+      color: form.color,
       budget: parseFloat(form.budget) || 0,
       repo: form.repo.trim() || null,
     };
@@ -996,6 +999,27 @@ export function CustomerCard({ customer: c }: Props) {
             </div>
           )}
 
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] font-medium text-stone-500 shrink-0">
+              Color
+            </label>
+            <input
+              type="color"
+              value={form.color || "#71717a"}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  color: e.target.value,
+                }))
+              }
+              className="w-6 h-6 rounded cursor-pointer border border-border"
+              style={{ padding: 0 }}
+            />
+            <span className="text-[10px] text-stone-400 font-mono">
+              {form.color || "#71717a"}
+            </span>
+          </div>
+
           <input
             className={fieldClass()}
             value={form.repo}
@@ -1027,7 +1051,13 @@ export function CustomerCard({ customer: c }: Props) {
           {/* Header */}
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 min-h-[36px] flex flex-col justify-start">
-              <h3 className="text-sm font-semibold text-stone-900 truncate">
+              <h3 className="text-sm font-semibold text-stone-900 truncate flex items-center gap-1.5">
+                {c.color && (
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ background: c.color }}
+                  />
+                )}
                 {c.name}
               </h3>
               {c.repo && (

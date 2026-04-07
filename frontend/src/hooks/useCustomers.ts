@@ -47,6 +47,7 @@ export function useUpdateCustomer() {
           | "name"
           | "status"
           | "type"
+          | "color"
           | "budget"
           | "used"
           | "rest"
