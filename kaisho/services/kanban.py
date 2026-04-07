@@ -75,20 +75,38 @@ def _heading_to_task(heading: Heading, task_id: str) -> dict:
     }
 
 
+def _stable_id(heading: Heading) -> str:
+    """Generate a stable ID for a task heading.
+
+    Uses the TASK_ID property if present. Otherwise
+    derives a 12-char hex hash from the title and
+    CREATED timestamp. Falls back to title-only hash.
+    """
+    import hashlib
+    stored = heading.properties.get("TASK_ID")
+    if stored:
+        return stored
+    created = heading.properties.get("CREATED", "")
+    seed = f"{heading.title}|{created}"
+    return hashlib.sha256(
+        seed.encode()
+    ).hexdigest()[:12]
+
+
 def _collect_tasks(
     org_file: OrgFile,
     keywords: set[str],
 ) -> list[tuple[Heading, str]]:
-    """Collect all level-1 headings with keywords as tasks.
+    """Collect all level-1 headings with keywords.
 
-    Returns list of (heading, id) tuples.
+    Returns list of (heading, id) tuples. IDs are
+    stable hashes derived from title + created date,
+    not positional indices.
     """
     tasks = []
-    idx = 1
     for h1 in org_file.headings:
         if h1.keyword in keywords:
-            tasks.append((h1, str(idx)))
-            idx += 1
+            tasks.append((h1, _stable_id(h1)))
     return tasks
 
 
@@ -146,14 +164,18 @@ def _find_task_heading(
     keywords: set[str],
     task_id: str,
 ) -> Heading | None:
-    """Find a heading by task ID (1-based index or text match)."""
+    """Find a heading by stable task ID or text match."""
     task_pairs = _collect_tasks(org_file, keywords)
-    # Try numeric ID first
+    # Match by stable ID
+    for heading, tid in task_pairs:
+        if tid == task_id:
+            return heading
+    # Fallback: legacy numeric index (1-based)
     if task_id.isdigit():
         idx = int(task_id) - 1
         if 0 <= idx < len(task_pairs):
             return task_pairs[idx][0]
-    # Try text match
+    # Last resort: text match
     lower_id = task_id.lower()
     for heading, _ in task_pairs:
         if lower_id in heading.title.lower():

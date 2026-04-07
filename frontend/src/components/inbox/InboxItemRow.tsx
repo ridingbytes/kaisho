@@ -5,7 +5,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { RelDate } from "../common/RelDate";
@@ -88,9 +88,28 @@ export function InboxItemRow({ item }: Props) {
     item.customer ?? ""
   );
   const [targetFilename, setTargetFilename] = useState("");
+  const [confirmDel, setConfirmDel] = useState(false);
+  const delRef = useRef<HTMLDivElement>(null);
   const del = useDeleteItem();
   const move = useMoveItem();
   const update = useUpdateItem();
+
+  useEffect(() => {
+    if (!confirmDel) return;
+    function handleClick(e: MouseEvent) {
+      if (
+        delRef.current &&
+        !delRef.current.contains(e.target as Node)
+      ) {
+        setConfirmDel(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () =>
+      document.removeEventListener(
+        "mousedown", handleClick,
+      );
+  }, [confirmDel]);
 
   const typeStyle =
     TYPE_STYLES[item.type?.toUpperCase()] ?? TYPE_STYLES["NOTIZ"];
@@ -292,21 +311,49 @@ export function InboxItemRow({ item }: Props) {
               </div>
             )}
           </div>
-          <button
-            title="Delete"
-            onClick={(e) => {
-              e.stopPropagation();
-              const title = cleanTitle(item.title);
-              const msg = `Delete "${title}"?`;
-              if (window.confirm(msg)) {
-                del.mutate(item.id);
-              }
-            }}
-            disabled={del.isPending}
-            className="p-1.5 rounded-md text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
-          >
-            <Trash2 size={14} strokeWidth={2} />
-          </button>
+          <div className="relative">
+            {!confirmDel ? (
+              <button
+                title="Delete"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmDel(true);
+                }}
+                disabled={del.isPending}
+                className="p-1.5 rounded-md text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+              >
+                <Trash2 size={14} strokeWidth={2} />
+              </button>
+            ) : (
+              <div
+                ref={delRef}
+                className="absolute right-0 top-full mt-1 z-50 flex items-center gap-1 px-2 py-1 rounded bg-surface-overlay border border-border shadow-lg whitespace-nowrap"
+              >
+                <span className="text-[10px] text-stone-700">
+                  Delete?
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    del.mutate(item.id);
+                    setConfirmDel(false);
+                  }}
+                  className="p-0.5 rounded text-red-400 hover:bg-red-500/10"
+                >
+                  <Check size={10} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmDel(false);
+                  }}
+                  className="p-0.5 rounded text-stone-600 hover:text-stone-900"
+                >
+                  <X size={10} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
