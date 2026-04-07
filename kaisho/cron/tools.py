@@ -553,6 +553,35 @@ TOOL_DEFS: list[dict] = [
             },
         },
     },
+    {
+        "name": "execute_cli",
+        "description": (
+            "Execute a kai CLI command and return "
+            "the output. Use this for any operation "
+            "not covered by a dedicated tool: "
+            "e.g. 'customer summary', 'gh issues "
+            "--customer ISC', 'task list --customer "
+            "Acme --json', 'notes list --json', "
+            "'convert --from org --to markdown "
+            "--source X --target Y'. "
+            "The command string is everything AFTER "
+            "'kai', e.g. 'gh issues --customer ISC'."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "description": (
+                        "CLI command after 'kai', "
+                        "e.g. 'customer summary' or "
+                        "'gh issues --customer ISC'"
+                    ),
+                },
+            },
+            "required": ["command"],
+        },
+    },
 ]
 
 
@@ -791,6 +820,11 @@ def _dispatch(name: str, args: dict) -> dict:
             customer=args.get("customer"),
         )
 
+    if name == "execute_cli":
+        return _execute_cli(
+            args.get("command", ""),
+        )
+
     return {"error": f"unknown tool: {name!r}"}
 
 
@@ -1010,3 +1044,44 @@ def _list_github_issues(
             if g["customer"].lower() == customer.lower()
         ]
     return {"groups": groups}
+
+
+def _execute_cli(command: str) -> dict:
+    """Run a kai CLI command and return the output.
+
+    Splits the command string into args and invokes
+    the kai CLI via subprocess. Returns stdout or
+    error.
+    """
+    import shlex
+    import shutil
+    import subprocess
+
+    if not command.strip():
+        return {"error": "empty command"}
+
+    kai_bin = shutil.which("kai")
+    if not kai_bin:
+        return {
+            "error": "kai CLI not found in PATH",
+        }
+
+    args = [kai_bin] + shlex.split(command)
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except subprocess.TimeoutExpired:
+        return {"error": "command timed out (60s)"}
+
+    output = result.stdout.strip()
+    if result.returncode != 0:
+        err = result.stderr.strip() or output
+        return {
+            "error": f"exit {result.returncode}: "
+            f"{err}",
+        }
+    return {"output": output}
