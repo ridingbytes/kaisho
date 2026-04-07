@@ -1,4 +1,4 @@
-"""SQL backend supporting SQLite (stdlib) and PostgreSQL (psycopg2).
+"""SQL backend using SQLAlchemy ORM.
 
 DSN format:
   sqlite:///path/to/kaisho.db
@@ -13,6 +13,23 @@ from collections import Counter
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    create_engine,
+    func,
+)
+from sqlalchemy.orm import (
+    declarative_base,
+    relationship,
+    sessionmaker,
+)
+
 from ...time_utils import local_now_naive as _local_now
 from ..base import (
     ClockBackend,
@@ -23,7 +40,122 @@ from ..base import (
 )
 
 
-# -- ID generation --------------------------------------------------
+# -- SQLAlchemy models -----------------------------------------------
+
+Base = declarative_base()
+
+
+class TaskRow(Base):
+    __tablename__ = "tasks"
+    id = Column(String, primary_key=True)
+    customer = Column(String, default="")
+    title = Column(String, nullable=False)
+    status = Column(String, default="TODO")
+    tags = Column(String, default="")
+    body = Column(Text, default="")
+    github_url = Column(String, default="")
+    properties = Column(Text, default="{}")
+    created = Column(String, nullable=False)
+    archived_at = Column(String, nullable=True)
+    archive_status = Column(String, nullable=True)
+
+
+class ClockRow(Base):
+    __tablename__ = "clocks"
+    id = Column(
+        Integer, primary_key=True, autoincrement=True
+    )
+    customer = Column(String, nullable=False)
+    description = Column(String, default="")
+    start = Column(String, nullable=False)
+    end = Column(String, nullable=True)
+    task_id = Column(String, nullable=True)
+    contract = Column(String, nullable=True)
+    booked = Column(Boolean, default=False)
+    notes = Column(Text, default="")
+
+
+class InboxRow(Base):
+    __tablename__ = "inbox"
+    id = Column(String, primary_key=True)
+    type = Column(String, default="")
+    customer = Column(String, default="")
+    title = Column(String, nullable=False)
+    body = Column(Text, default="")
+    channel = Column(String, default="")
+    direction = Column(String, default="")
+    created = Column(String, nullable=False)
+    properties = Column(Text, default="{}")
+
+
+class NoteRow(Base):
+    __tablename__ = "notes"
+    id = Column(String, primary_key=True)
+    title = Column(String, nullable=False)
+    body = Column(Text, default="")
+    customer = Column(String, default="")
+    task_id = Column(String, nullable=True)
+    tags = Column(String, default="")
+    created = Column(String, nullable=False)
+
+
+class CustomerRow(Base):
+    __tablename__ = "customers"
+    name = Column(String, primary_key=True)
+    status = Column(String, default="active")
+    type = Column(String, default="")
+    color = Column(String, default="")
+    budget = Column(Float, default=0)
+    repo = Column(String, default="")
+    tags = Column(String, default="")
+    properties = Column(Text, default="{}")
+    contracts = relationship(
+        "ContractRow", back_populates="customer_rel"
+    )
+
+
+class ContractRow(Base):
+    __tablename__ = "contracts"
+    id = Column(
+        Integer, primary_key=True, autoincrement=True
+    )
+    customer = Column(
+        String,
+        ForeignKey("customers.name"),
+        nullable=False,
+    )
+    name = Column(String, nullable=False)
+    budget = Column(Float, default=0)
+    used_offset = Column(Float, default=0)
+    start_date = Column(String, default="")
+    end_date = Column(String, nullable=True)
+    notes = Column(Text, default="")
+    customer_rel = relationship(
+        "CustomerRow", back_populates="contracts"
+    )
+
+
+# -- Engine wrapper --------------------------------------------------
+
+
+class _Engine:
+    """Wraps SQLAlchemy engine and session factory."""
+
+    def __init__(self, dsn: str):
+        if dsn.startswith("sqlite"):
+            path = dsn.replace("sqlite:///", "")
+            Path(path).parent.mkdir(
+                parents=True, exist_ok=True
+            )
+        self.engine = create_engine(dsn)
+        Base.metadata.create_all(self.engine)
+        self._Session = sessionmaker(bind=self.engine)
+
+    def session(self):
+        return self._Session()
+
+
+# -- ID generation ---------------------------------------------------
 
 
 def _generate_id(seed: str) -> str:
@@ -69,7 +201,7 @@ def _period_range(period: str) -> tuple[date, date]:
     return date.min, date.max
 
 
-# -- Auto-categorize for inbox --------------------------------------
+# -- Auto-categorize for inbox ---------------------------------------
 
 
 def _guess_inbox_type(text: str) -> str:
@@ -93,18 +225,7 @@ def _guess_inbox_type(text: str) -> str:
     return "note"
 
 
-# -- Row conversion helpers ------------------------------------------
-
-
-def _row_to_dict_sqlite(row):
-    """Convert a sqlite3.Row to a plain dict."""
-    return dict(row)
-
-
-def _row_to_dict_pg(row, description):
-    """Convert a psycopg2 tuple row to a dict."""
-    cols = [col.name for col in description]
-    return dict(zip(cols, row))
+# -- Serialization helpers -------------------------------------------
 
 
 def _parse_tags(raw: str | None) -> list[str]:
@@ -135,239 +256,139 @@ def _serialize_properties(props: dict | None) -> str:
     return json.dumps(props, ensure_ascii=False)
 
 
-# ====================================================================
-#  Database wrapper
-# ====================================================================
+# -- Row-to-dict converters ------------------------------------------
 
 
-_SQLITE_TABLES = """
-CREATE TABLE IF NOT EXISTS tasks (
-    id TEXT PRIMARY KEY,
-    customer TEXT NOT NULL DEFAULT '',
-    title TEXT NOT NULL DEFAULT '',
-    status TEXT NOT NULL DEFAULT 'TODO',
-    tags TEXT NOT NULL DEFAULT '',
-    body TEXT NOT NULL DEFAULT '',
-    github_url TEXT NOT NULL DEFAULT '',
-    properties TEXT NOT NULL DEFAULT '{}',
-    created TEXT NOT NULL DEFAULT '',
-    archived_at TEXT,
-    archive_status TEXT
-);
-
-CREATE TABLE IF NOT EXISTS clocks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    customer TEXT NOT NULL DEFAULT '',
-    description TEXT NOT NULL DEFAULT '',
-    start TEXT NOT NULL DEFAULT '',
-    end TEXT,
-    task_id TEXT NOT NULL DEFAULT '',
-    contract TEXT NOT NULL DEFAULT '',
-    booked INTEGER NOT NULL DEFAULT 0,
-    notes TEXT NOT NULL DEFAULT ''
-);
-
-CREATE TABLE IF NOT EXISTS inbox (
-    id TEXT PRIMARY KEY,
-    type TEXT NOT NULL DEFAULT 'note',
-    customer TEXT NOT NULL DEFAULT '',
-    title TEXT NOT NULL DEFAULT '',
-    body TEXT NOT NULL DEFAULT '',
-    channel TEXT NOT NULL DEFAULT '',
-    direction TEXT NOT NULL DEFAULT '',
-    created TEXT NOT NULL DEFAULT '',
-    properties TEXT NOT NULL DEFAULT '{}'
-);
-
-CREATE TABLE IF NOT EXISTS notes (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL DEFAULT '',
-    body TEXT NOT NULL DEFAULT '',
-    customer TEXT NOT NULL DEFAULT '',
-    task_id TEXT,
-    tags TEXT NOT NULL DEFAULT '',
-    created TEXT NOT NULL DEFAULT ''
-);
-
-CREATE TABLE IF NOT EXISTS customers (
-    name TEXT PRIMARY KEY,
-    status TEXT NOT NULL DEFAULT 'active',
-    type TEXT NOT NULL DEFAULT '',
-    color TEXT NOT NULL DEFAULT '',
-    budget REAL NOT NULL DEFAULT 0,
-    repo TEXT NOT NULL DEFAULT '',
-    tags TEXT NOT NULL DEFAULT '',
-    properties TEXT NOT NULL DEFAULT '{}'
-);
-
-CREATE TABLE IF NOT EXISTS contracts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    customer TEXT NOT NULL DEFAULT '',
-    name TEXT NOT NULL DEFAULT '',
-    budget REAL NOT NULL DEFAULT 0,
-    used_offset REAL NOT NULL DEFAULT 0,
-    start_date TEXT NOT NULL DEFAULT '',
-    end_date TEXT NOT NULL DEFAULT '',
-    notes TEXT NOT NULL DEFAULT ''
-);
-"""
-
-_PG_TABLES = """
-CREATE TABLE IF NOT EXISTS tasks (
-    id TEXT PRIMARY KEY,
-    customer TEXT NOT NULL DEFAULT '',
-    title TEXT NOT NULL DEFAULT '',
-    status TEXT NOT NULL DEFAULT 'TODO',
-    tags TEXT NOT NULL DEFAULT '',
-    body TEXT NOT NULL DEFAULT '',
-    github_url TEXT NOT NULL DEFAULT '',
-    properties TEXT NOT NULL DEFAULT '{}',
-    created TEXT NOT NULL DEFAULT '',
-    archived_at TEXT,
-    archive_status TEXT
-);
-
-CREATE TABLE IF NOT EXISTS clocks (
-    id SERIAL PRIMARY KEY,
-    customer TEXT NOT NULL DEFAULT '',
-    description TEXT NOT NULL DEFAULT '',
-    start TEXT NOT NULL DEFAULT '',
-    "end" TEXT,
-    task_id TEXT NOT NULL DEFAULT '',
-    contract TEXT NOT NULL DEFAULT '',
-    booked INTEGER NOT NULL DEFAULT 0,
-    notes TEXT NOT NULL DEFAULT ''
-);
-
-CREATE TABLE IF NOT EXISTS inbox (
-    id TEXT PRIMARY KEY,
-    type TEXT NOT NULL DEFAULT 'note',
-    customer TEXT NOT NULL DEFAULT '',
-    title TEXT NOT NULL DEFAULT '',
-    body TEXT NOT NULL DEFAULT '',
-    channel TEXT NOT NULL DEFAULT '',
-    direction TEXT NOT NULL DEFAULT '',
-    created TEXT NOT NULL DEFAULT '',
-    properties TEXT NOT NULL DEFAULT '{}'
-);
-
-CREATE TABLE IF NOT EXISTS notes (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL DEFAULT '',
-    body TEXT NOT NULL DEFAULT '',
-    customer TEXT NOT NULL DEFAULT '',
-    task_id TEXT,
-    tags TEXT NOT NULL DEFAULT '',
-    created TEXT NOT NULL DEFAULT ''
-);
-
-CREATE TABLE IF NOT EXISTS customers (
-    name TEXT PRIMARY KEY,
-    status TEXT NOT NULL DEFAULT 'active',
-    type TEXT NOT NULL DEFAULT '',
-    color TEXT NOT NULL DEFAULT '',
-    budget REAL NOT NULL DEFAULT 0,
-    repo TEXT NOT NULL DEFAULT '',
-    tags TEXT NOT NULL DEFAULT '',
-    properties TEXT NOT NULL DEFAULT '{}'
-);
-
-CREATE TABLE IF NOT EXISTS contracts (
-    id SERIAL PRIMARY KEY,
-    customer TEXT NOT NULL DEFAULT '',
-    name TEXT NOT NULL DEFAULT '',
-    budget REAL NOT NULL DEFAULT 0,
-    used_offset REAL NOT NULL DEFAULT 0,
-    start_date TEXT NOT NULL DEFAULT '',
-    end_date TEXT NOT NULL DEFAULT '',
-    notes TEXT NOT NULL DEFAULT ''
-);
-"""
+def _task_row_to_dict(row: TaskRow) -> dict:
+    """Convert a TaskRow ORM object to a plain dict."""
+    return {
+        "id": row.id,
+        "customer": row.customer or "",
+        "title": row.title,
+        "status": row.status or "TODO",
+        "tags": _parse_tags(row.tags),
+        "body": row.body or "",
+        "github_url": row.github_url or "",
+        "properties": _parse_properties(row.properties),
+        "created": row.created,
+        "archived_at": row.archived_at,
+        "archive_status": row.archive_status,
+    }
 
 
-class _DB:
-    """Thin wrapper around DB-API 2.0 connections."""
+def _clock_row_to_dict(row: ClockRow) -> dict:
+    """Convert a ClockRow ORM object to a plain dict."""
+    return {
+        "id": row.id,
+        "customer": row.customer or "",
+        "description": row.description or "",
+        "start": row.start,
+        "end": row.end,
+        "task_id": row.task_id or "",
+        "contract": row.contract or "",
+        "booked": bool(row.booked),
+        "notes": row.notes or "",
+    }
 
-    def __init__(self, dsn: str):
-        self._dsn = dsn
-        self._conn = None
-        self._is_pg = dsn.startswith("postgresql")
-        self._ph = "%s" if self._is_pg else "?"
 
-    def connect(self):
-        """Lazily connect and create tables."""
-        if self._conn is not None:
-            return self._conn
-        if self._dsn.startswith("sqlite"):
-            import sqlite3
-            path = self._dsn.replace("sqlite:///", "")
-            Path(path).parent.mkdir(
-                parents=True, exist_ok=True
-            )
-            self._conn = sqlite3.connect(
-                path, check_same_thread=False,
-            )
-            self._conn.row_factory = sqlite3.Row
-        elif self._is_pg:
-            import psycopg2
-            self._conn = psycopg2.connect(self._dsn)
-        else:
-            raise ValueError(
-                f"Unsupported DSN: {self._dsn}"
-            )
-        self._create_tables()
-        return self._conn
+def _inbox_row_to_dict(row: InboxRow) -> dict:
+    """Convert an InboxRow ORM object to a plain dict."""
+    return {
+        "id": row.id,
+        "type": row.type or "",
+        "customer": row.customer or "",
+        "title": row.title,
+        "body": row.body or "",
+        "channel": row.channel or "",
+        "direction": row.direction or "",
+        "created": row.created,
+        "properties": _parse_properties(row.properties),
+    }
 
-    def _create_tables(self):
-        """Run CREATE TABLE IF NOT EXISTS for all tables."""
-        conn = self._conn
-        cur = conn.cursor()
-        ddl = _PG_TABLES if self._is_pg else _SQLITE_TABLES
-        for stmt in ddl.strip().split(";"):
-            stmt = stmt.strip()
-            if stmt:
-                cur.execute(stmt)
-        conn.commit()
-        cur.close()
 
-    def ph(self, n=1):
-        """Return n parameter placeholders joined by comma."""
-        return ", ".join([self._ph] * n)
+def _note_row_to_dict(row: NoteRow) -> dict:
+    """Convert a NoteRow ORM object to a plain dict."""
+    return {
+        "id": row.id,
+        "title": row.title,
+        "body": row.body or "",
+        "customer": row.customer or "",
+        "task_id": row.task_id,
+        "tags": _parse_tags(row.tags),
+        "created": row.created,
+    }
 
-    def execute(self, sql, params=()):
-        """Execute a write query with commit."""
-        conn = self.connect()
-        cur = conn.cursor()
-        cur.execute(sql, params)
-        conn.commit()
-        return cur
 
-    def fetchall(self, sql, params=()):
-        """Execute a read query and return all rows as dicts."""
-        conn = self.connect()
-        cur = conn.cursor()
-        cur.execute(sql, params)
-        rows = cur.fetchall()
-        if not rows:
-            return []
-        if self._is_pg:
-            desc = cur.description
-            return [
-                _row_to_dict_pg(r, desc) for r in rows
-            ]
-        return [_row_to_dict_sqlite(r) for r in rows]
+def _customer_row_to_dict(row: CustomerRow) -> dict:
+    """Convert a CustomerRow ORM object to a dict.
 
-    def fetchone(self, sql, params=()):
-        """Execute a read query and return one row as dict."""
-        conn = self.connect()
-        cur = conn.cursor()
-        cur.execute(sql, params)
-        row = cur.fetchone()
-        if row is None:
-            return None
-        if self._is_pg:
-            return _row_to_dict_pg(row, cur.description)
-        return _row_to_dict_sqlite(row)
+    Does NOT include computed budget fields (used/rest).
+    """
+    return {
+        "name": row.name,
+        "status": row.status or "active",
+        "type": row.type or "",
+        "color": row.color or "",
+        "budget": row.budget or 0,
+        "repo": row.repo or "",
+        "tags": _parse_tags(row.tags),
+        "properties": _parse_properties(row.properties),
+    }
+
+
+def _contract_row_to_dict(row: ContractRow) -> dict:
+    """Convert a ContractRow ORM object to a dict.
+
+    Does NOT include computed used/rest fields.
+    """
+    return {
+        "id": row.id,
+        "customer": row.customer,
+        "name": row.name,
+        "budget": row.budget or 0,
+        "used_offset": row.used_offset or 0,
+        "start_date": row.start_date or "",
+        "end_date": row.end_date or "",
+        "notes": row.notes or "",
+    }
+
+
+# -- Clock duration helpers ------------------------------------------
+
+
+def _compute_duration_minutes(
+    start_str: str, end_str: str | None
+) -> int:
+    """Compute duration in minutes between two ISO stamps."""
+    if not start_str:
+        return 0
+    start = datetime.fromisoformat(start_str)
+    if not end_str:
+        end = _local_now()
+    else:
+        end = datetime.fromisoformat(end_str)
+    return max(0, int((end - start).total_seconds() / 60))
+
+
+def _enrich_clock(entry: dict) -> dict:
+    """Add computed duration_minutes field."""
+    entry["duration_minutes"] = _compute_duration_minutes(
+        entry.get("start", ""), entry.get("end")
+    )
+    return entry
+
+
+def _entry_in_range(
+    entry: dict, start: date, end: date
+) -> bool:
+    """Check if a clock entry falls within date range."""
+    entry_start = entry.get("start", "")
+    if not entry_start:
+        return False
+    entry_date = datetime.fromisoformat(
+        entry_start
+    ).date()
+    return start <= entry_date <= end
 
 
 # ====================================================================
@@ -376,18 +397,10 @@ class _DB:
 
 
 class SqlTaskBackend(TaskBackend):
-    """TaskBackend backed by a SQL database."""
+    """TaskBackend backed by SQLAlchemy ORM."""
 
-    def __init__(self, db: _DB):
-        self._db = db
-
-    def _row_to_task(self, row: dict) -> dict:
-        """Convert a DB row to a task dict."""
-        row["tags"] = _parse_tags(row.get("tags"))
-        row["properties"] = _parse_properties(
-            row.get("properties")
-        )
-        return row
+    def __init__(self, eng: _Engine):
+        self._eng = eng
 
     def list_tasks(
         self,
@@ -396,71 +409,66 @@ class SqlTaskBackend(TaskBackend):
         tag=None,
         include_done=False,
     ) -> list[dict]:
-        clauses = []
-        params = []
-        ph = self._db._ph
-
-        if not include_done:
-            clauses.append(
-                "(archived_at IS NULL)"
+        session = self._eng.session()
+        try:
+            q = session.query(TaskRow).filter(
+                TaskRow.archived_at.is_(None)
             )
-            clauses.append(f"status != {ph}")
-            params.append("DONE")
-
-        # Only show non-archived tasks by default
-        clauses.append("archived_at IS NULL")
-
-        if status:
-            allowed = (
-                status if isinstance(status, list)
-                else [status]
-            )
-            placeholders = ", ".join(
-                [ph] * len(allowed)
-            )
-            clauses.append(
-                f"status IN ({placeholders})"
-            )
-            params.extend(allowed)
-
-        if customer:
-            clauses.append(f"LOWER(customer) = {ph}")
-            params.append(customer.lower())
-
-        where = (
-            "WHERE " + " AND ".join(clauses)
-            if clauses
-            else ""
-        )
-        sql = f"SELECT * FROM tasks {where}"
-        rows = self._db.fetchall(sql, tuple(params))
-        tasks = [self._row_to_task(r) for r in rows]
-
-        if tag:
-            tasks = [
-                t for t in tasks if tag in t.get("tags", [])
-            ]
-        return tasks
+            if not include_done:
+                q = q.filter(TaskRow.status != "DONE")
+            if status:
+                allowed = (
+                    status
+                    if isinstance(status, list)
+                    else [status]
+                )
+                q = q.filter(TaskRow.status.in_(allowed))
+            if customer:
+                q = q.filter(
+                    func.lower(TaskRow.customer)
+                    == customer.lower()
+                )
+            tasks = [_task_row_to_dict(r) for r in q.all()]
+            if tag:
+                tasks = [
+                    t
+                    for t in tasks
+                    if tag in t.get("tags", [])
+                ]
+            return tasks
+        finally:
+            session.close()
 
     def list_all_tags(self) -> list[dict]:
-        rows = self._db.fetchall(
-            "SELECT tags FROM tasks WHERE archived_at IS NULL"
-        )
-        counter: Counter = Counter()
-        for row in rows:
-            for tg in _parse_tags(row.get("tags")):
-                counter[tg] += 1
-        return [
-            {"name": name, "count": count}
-            for name, count in counter.most_common()
-        ]
+        session = self._eng.session()
+        try:
+            rows = (
+                session.query(TaskRow.tags)
+                .filter(TaskRow.archived_at.is_(None))
+                .all()
+            )
+            counter: Counter = Counter()
+            for (raw_tags,) in rows:
+                for tg in _parse_tags(raw_tags):
+                    counter[tg] += 1
+            return [
+                {"name": name, "count": count}
+                for name, count in counter.most_common()
+            ]
+        finally:
+            session.close()
 
     def list_archived(self) -> list[dict]:
-        rows = self._db.fetchall(
-            "SELECT * FROM tasks "
-            "WHERE archived_at IS NOT NULL"
-        )
-        return [self._row_to_task(r) for r in rows]
+        session = self._eng.session()
+        try:
+            rows = (
+                session.query(TaskRow)
+                .filter(TaskRow.archived_at.isnot(None))
+                .all()
+            )
+            return [_task_row_to_dict(r) for r in rows]
+        finally:
+            session.close()
 
     def add_task(
         self,
@@ -473,20 +481,23 @@ class SqlTaskBackend(TaskBackend):
     ) -> dict:
         task_id = _generate_id(title)
         now = datetime.now().isoformat()
-        self._db.execute(
-            f"INSERT INTO tasks "
-            f"(id, customer, title, status, tags, body, "
-            f"github_url, properties, created) "
-            f"VALUES ({self._db.ph(9)})",
-            (
-                task_id, customer, title, status,
-                _serialize_tags(tags),
-                body or "",
-                github_url or "",
-                "{}",
-                now,
-            ),
+        row = TaskRow(
+            id=task_id,
+            customer=customer,
+            title=title,
+            status=status,
+            tags=_serialize_tags(tags),
+            body=body or "",
+            github_url=github_url or "",
+            properties="{}",
+            created=now,
         )
+        session = self._eng.session()
+        try:
+            session.add(row)
+            session.commit()
+        finally:
+            session.close()
         return {
             "id": task_id,
             "customer": customer,
@@ -500,34 +511,34 @@ class SqlTaskBackend(TaskBackend):
         }
 
     def move_task(self, task_id, new_status) -> dict:
-        ph = self._db._ph
-        self._db.execute(
-            f"UPDATE tasks SET status = {ph} "
-            f"WHERE id = {ph}",
-            (new_status, task_id),
-        )
-        row = self._db.fetchone(
-            f"SELECT * FROM tasks WHERE id = {ph}",
-            (task_id,),
-        )
-        if row is None:
-            raise ValueError(f"Task not found: {task_id}")
-        return self._row_to_task(row)
+        session = self._eng.session()
+        try:
+            row = session.get(TaskRow, task_id)
+            if row is None:
+                raise ValueError(
+                    f"Task not found: {task_id}"
+                )
+            row.status = new_status
+            session.commit()
+            result = _task_row_to_dict(row)
+        finally:
+            session.close()
+        return result
 
     def set_tags(self, task_id, tags) -> dict:
-        ph = self._db._ph
-        self._db.execute(
-            f"UPDATE tasks SET tags = {ph} "
-            f"WHERE id = {ph}",
-            (_serialize_tags(list(tags)), task_id),
-        )
-        row = self._db.fetchone(
-            f"SELECT * FROM tasks WHERE id = {ph}",
-            (task_id,),
-        )
-        if row is None:
-            raise ValueError(f"Task not found: {task_id}")
-        return self._row_to_task(row)
+        session = self._eng.session()
+        try:
+            row = session.get(TaskRow, task_id)
+            if row is None:
+                raise ValueError(
+                    f"Task not found: {task_id}"
+                )
+            row.tags = _serialize_tags(list(tags))
+            session.commit()
+            result = _task_row_to_dict(row)
+        finally:
+            session.close()
+        return result
 
     def update_task(
         self,
@@ -537,70 +548,67 @@ class SqlTaskBackend(TaskBackend):
         body=None,
         github_url=None,
     ) -> dict:
-        ph = self._db._ph
-        sets = []
-        params = []
-        if title is not None:
-            sets.append(f"title = {ph}")
-            params.append(title)
-        if customer is not None:
-            sets.append(f"customer = {ph}")
-            params.append(customer)
-        if body is not None:
-            sets.append(f"body = {ph}")
-            params.append(body)
-        if github_url is not None:
-            sets.append(f"github_url = {ph}")
-            params.append(github_url)
-        if sets:
-            params.append(task_id)
-            self._db.execute(
-                f"UPDATE tasks SET {', '.join(sets)} "
-                f"WHERE id = {ph}",
-                tuple(params),
-            )
-        row = self._db.fetchone(
-            f"SELECT * FROM tasks WHERE id = {ph}",
-            (task_id,),
-        )
-        if row is None:
-            raise ValueError(f"Task not found: {task_id}")
-        return self._row_to_task(row)
+        session = self._eng.session()
+        try:
+            row = session.get(TaskRow, task_id)
+            if row is None:
+                raise ValueError(
+                    f"Task not found: {task_id}"
+                )
+            if title is not None:
+                row.title = title
+            if customer is not None:
+                row.customer = customer
+            if body is not None:
+                row.body = body
+            if github_url is not None:
+                row.github_url = github_url
+            session.commit()
+            result = _task_row_to_dict(row)
+        finally:
+            session.close()
+        return result
 
     def archive_task(self, task_id) -> bool:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT * FROM tasks WHERE id = {ph} "
-            f"AND archived_at IS NULL",
-            (task_id,),
-        )
-        if row is None:
-            return False
-        now = datetime.now().isoformat()
-        self._db.execute(
-            f"UPDATE tasks SET archived_at = {ph}, "
-            f"archive_status = status "
-            f"WHERE id = {ph}",
-            (now, task_id),
-        )
-        return True
+        session = self._eng.session()
+        try:
+            row = (
+                session.query(TaskRow)
+                .filter(
+                    TaskRow.id == task_id,
+                    TaskRow.archived_at.is_(None),
+                )
+                .first()
+            )
+            if row is None:
+                return False
+            now = datetime.now().isoformat()
+            row.archived_at = now
+            row.archive_status = row.status
+            session.commit()
+            return True
+        finally:
+            session.close()
 
     def unarchive_task(self, task_id) -> bool:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT * FROM tasks WHERE id = {ph} "
-            f"AND archived_at IS NOT NULL",
-            (task_id,),
-        )
-        if row is None:
-            return False
-        self._db.execute(
-            f"UPDATE tasks SET archived_at = NULL, "
-            f"archive_status = NULL "
-            f"WHERE id = {ph}",
-            (task_id,),
-        )
-        return True
+        session = self._eng.session()
+        try:
+            row = (
+                session.query(TaskRow)
+                .filter(
+                    TaskRow.id == task_id,
+                    TaskRow.archived_at.isnot(None),
+                )
+                .first()
+            )
+            if row is None:
+                return False
+            row.archived_at = None
+            row.archive_status = None
+            session.commit()
+            return True
+        finally:
+            session.close()
 
 
 # ====================================================================
@@ -609,45 +617,10 @@ class SqlTaskBackend(TaskBackend):
 
 
 class SqlClockBackend(ClockBackend):
-    """ClockBackend backed by a SQL database."""
+    """ClockBackend backed by SQLAlchemy ORM."""
 
-    def __init__(self, db: _DB):
-        self._db = db
-
-    def _duration_minutes(self, entry: dict) -> int:
-        """Compute duration in minutes for an entry."""
-        start_str = entry.get("start", "")
-        end_str = entry.get("end")
-        if not start_str:
-            return 0
-        start = datetime.fromisoformat(start_str)
-        if not end_str:
-            end = _local_now()
-        else:
-            end = datetime.fromisoformat(end_str)
-        return max(
-            0, int((end - start).total_seconds() / 60)
-        )
-
-    def _enrich(self, entry: dict) -> dict:
-        """Add computed duration_minutes field."""
-        entry["duration_minutes"] = (
-            self._duration_minutes(entry)
-        )
-        entry["booked"] = bool(entry.get("booked", 0))
-        return entry
-
-    def _entry_in_range(
-        self, entry: dict, start: date, end: date
-    ) -> bool:
-        """Check if a clock entry falls within range."""
-        entry_start = entry.get("start", "")
-        if not entry_start:
-            return False
-        entry_date = datetime.fromisoformat(
-            entry_start
-        ).date()
-        return start <= entry_date <= end
+    def __init__(self, eng: _Engine):
+        self._eng = eng
 
     def list_entries(
         self,
@@ -658,49 +631,59 @@ class SqlClockBackend(ClockBackend):
         task_id=None,
         contract=None,
     ) -> list[dict]:
-        ph = self._db._ph
-
-        if task_id:
-            rows = self._db.fetchall(
-                f"SELECT * FROM clocks "
-                f"WHERE task_id = {ph}",
-                (task_id,),
-            )
-        else:
-            rows = self._db.fetchall(
-                "SELECT * FROM clocks"
-            )
-            if from_date or to_date:
-                sd = from_date or date.min
-                ed = to_date or date.max
+        session = self._eng.session()
+        try:
+            q = session.query(ClockRow)
+            if task_id:
+                q = q.filter(ClockRow.task_id == task_id)
+                entries = [
+                    _clock_row_to_dict(r) for r in q.all()
+                ]
             else:
-                sd, ed = _period_range(period)
-            rows = [
-                r for r in rows
-                if self._entry_in_range(r, sd, ed)
-            ]
-
-        if customer:
-            low = customer.lower()
-            rows = [
-                r for r in rows
-                if r.get("customer", "").lower() == low
-            ]
-        if contract:
-            rows = [
-                r for r in rows
-                if r.get("contract") == contract
-            ]
-        return [self._enrich(r) for r in rows]
+                entries = [
+                    _clock_row_to_dict(r) for r in q.all()
+                ]
+                if from_date or to_date:
+                    sd = from_date or date.min
+                    ed = to_date or date.max
+                else:
+                    sd, ed = _period_range(period)
+                entries = [
+                    e
+                    for e in entries
+                    if _entry_in_range(e, sd, ed)
+                ]
+            if customer:
+                low = customer.lower()
+                entries = [
+                    e
+                    for e in entries
+                    if e.get("customer", "").lower()
+                    == low
+                ]
+            if contract:
+                entries = [
+                    e
+                    for e in entries
+                    if e.get("contract") == contract
+                ]
+            return [_enrich_clock(e) for e in entries]
+        finally:
+            session.close()
 
     def get_active(self) -> dict | None:
-        row = self._db.fetchone(
-            "SELECT * FROM clocks "
-            "WHERE \"end\" IS NULL"
-        )
-        if row is None:
-            return None
-        return self._enrich(row)
+        session = self._eng.session()
+        try:
+            row = (
+                session.query(ClockRow)
+                .filter(ClockRow.end.is_(None))
+                .first()
+            )
+            if row is None:
+                return None
+            return _enrich_clock(_clock_row_to_dict(row))
+        finally:
+            session.close()
 
     def get_summary(self, period="month") -> list[dict]:
         entries = self.list_entries(period=period)
@@ -732,17 +715,22 @@ class SqlClockBackend(ClockBackend):
                 "A clock entry is already running"
             )
         now = _local_now().isoformat()
-        self._db.execute(
-            f"INSERT INTO clocks "
-            f"(customer, description, start, task_id, "
-            f"contract, booked, notes) "
-            f"VALUES ({self._db.ph(7)})",
-            (
-                customer, description, now,
-                task_id or "", contract or "",
-                0, "",
-            ),
+        row = ClockRow(
+            customer=customer,
+            description=description,
+            start=now,
+            end=None,
+            task_id=task_id or "",
+            contract=contract or "",
+            booked=False,
+            notes="",
         )
+        session = self._eng.session()
+        try:
+            session.add(row)
+            session.commit()
+        finally:
+            session.close()
         entry = {
             "customer": customer,
             "description": description,
@@ -753,24 +741,25 @@ class SqlClockBackend(ClockBackend):
             "booked": False,
             "notes": "",
         }
-        return self._enrich(entry)
+        return _enrich_clock(entry)
 
     def stop(self) -> dict:
-        row = self._db.fetchone(
-            "SELECT * FROM clocks "
-            "WHERE \"end\" IS NULL"
-        )
-        if row is None:
-            raise ValueError("No running clock entry")
-        now = _local_now().isoformat()
-        ph = self._db._ph
-        self._db.execute(
-            f"UPDATE clocks SET \"end\" = {ph} "
-            f"WHERE id = {ph}",
-            (now, row["id"]),
-        )
-        row["end"] = now
-        return self._enrich(row)
+        session = self._eng.session()
+        try:
+            row = (
+                session.query(ClockRow)
+                .filter(ClockRow.end.is_(None))
+                .first()
+            )
+            if row is None:
+                raise ValueError("No running clock entry")
+            now = _local_now().isoformat()
+            row.end = now
+            session.commit()
+            entry = _clock_row_to_dict(row)
+        finally:
+            session.close()
+        return _enrich_clock(entry)
 
     def quick_book(
         self,
@@ -784,8 +773,10 @@ class SqlClockBackend(ClockBackend):
         minutes = _parse_duration_minutes(duration_str)
         if target_date:
             start = datetime(
-                target_date.year, target_date.month,
-                target_date.day, 12, 0, 0,
+                target_date.year,
+                target_date.month,
+                target_date.day,
+                12, 0, 0,
             )
             end = start + timedelta(minutes=minutes)
         else:
@@ -795,18 +786,22 @@ class SqlClockBackend(ClockBackend):
             start = end - timedelta(minutes=minutes)
             if start.date() < end.date():
                 start = end.replace(hour=0, minute=0)
-        self._db.execute(
-            f"INSERT INTO clocks "
-            f"(customer, description, start, \"end\", "
-            f"task_id, contract, booked, notes) "
-            f"VALUES ({self._db.ph(8)})",
-            (
-                customer, description,
-                start.isoformat(), end.isoformat(),
-                task_id or "", contract or "",
-                0, "",
-            ),
+        row = ClockRow(
+            customer=customer,
+            description=description,
+            start=start.isoformat(),
+            end=end.isoformat(),
+            task_id=task_id or "",
+            contract=contract or "",
+            booked=False,
+            notes="",
         )
+        session = self._eng.session()
+        try:
+            session.add(row)
+            session.commit()
+        finally:
+            session.close()
         entry = {
             "customer": customer,
             "description": description,
@@ -817,7 +812,7 @@ class SqlClockBackend(ClockBackend):
             "booked": False,
             "notes": "",
         }
-        return self._enrich(entry)
+        return _enrich_clock(entry)
 
     def update_entry(
         self,
@@ -832,113 +827,98 @@ class SqlClockBackend(ClockBackend):
         notes=None,
         contract=None,
     ) -> dict | None:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT * FROM clocks WHERE start = {ph}",
-            (start_iso,),
-        )
-        if row is None:
-            return None
+        session = self._eng.session()
+        try:
+            row = (
+                session.query(ClockRow)
+                .filter(ClockRow.start == start_iso)
+                .first()
+            )
+            if row is None:
+                return None
 
-        entry = dict(row)
-        if customer is not None:
-            entry["customer"] = customer
-        if description is not None:
-            entry["description"] = description
-        if task_id is not None:
-            entry["task_id"] = task_id
-        if booked is not None:
-            entry["booked"] = int(booked)
-        if notes is not None:
-            entry["notes"] = notes
-        if contract is not None:
-            entry["contract"] = contract
+            if customer is not None:
+                row.customer = customer
+            if description is not None:
+                row.description = description
+            if task_id is not None:
+                row.task_id = task_id
+            if booked is not None:
+                row.booked = booked
+            if notes is not None:
+                row.notes = notes
+            if contract is not None:
+                row.contract = contract
 
-        if start_time is not None:
-            old_start = datetime.fromisoformat(
-                entry["start"]
-            )
-            h, m = (
-                int(x) for x in start_time.split(":")
-            )
-            new_start = old_start.replace(
-                hour=h, minute=m,
-            )
-            delta = new_start - old_start
-            entry["start"] = new_start.isoformat()
-            if entry.get("end"):
-                old_end = datetime.fromisoformat(
-                    entry["end"]
+            if start_time is not None:
+                old_start = datetime.fromisoformat(
+                    row.start
                 )
-                entry["end"] = (
-                    old_end + delta
+                h, m = (
+                    int(x)
+                    for x in start_time.split(":")
+                )
+                new_start = old_start.replace(
+                    hour=h, minute=m
+                )
+                delta = new_start - old_start
+                row.start = new_start.isoformat()
+                if row.end:
+                    old_end = datetime.fromisoformat(
+                        row.end
+                    )
+                    row.end = (
+                        old_end + delta
+                    ).isoformat()
+
+            if hours is not None:
+                start_dt = datetime.fromisoformat(
+                    row.start
+                )
+                row.end = (
+                    start_dt + timedelta(hours=hours)
                 ).isoformat()
 
-        if hours is not None:
-            start_dt = datetime.fromisoformat(
-                entry["start"]
-            )
-            entry["end"] = (
-                start_dt + timedelta(hours=hours)
-            ).isoformat()
-
-        if new_date is not None:
-            old_start = datetime.fromisoformat(
-                entry["start"]
-            )
-            new_start = old_start.replace(
-                year=new_date.year,
-                month=new_date.month,
-                day=new_date.day,
-            )
-            delta = new_start - old_start
-            entry["start"] = new_start.isoformat()
-            if entry.get("end"):
-                old_end = datetime.fromisoformat(
-                    entry["end"]
+            if new_date is not None:
+                old_start = datetime.fromisoformat(
+                    row.start
                 )
-                entry["end"] = (
-                    old_end + delta
-                ).isoformat()
+                new_start = old_start.replace(
+                    year=new_date.year,
+                    month=new_date.month,
+                    day=new_date.day,
+                )
+                delta = new_start - old_start
+                row.start = new_start.isoformat()
+                if row.end:
+                    old_end = datetime.fromisoformat(
+                        row.end
+                    )
+                    row.end = (
+                        old_end + delta
+                    ).isoformat()
 
-        self._db.execute(
-            f"UPDATE clocks SET "
-            f"customer = {ph}, "
-            f"description = {ph}, "
-            f"start = {ph}, "
-            f"\"end\" = {ph}, "
-            f"task_id = {ph}, "
-            f"contract = {ph}, "
-            f"booked = {ph}, "
-            f"notes = {ph} "
-            f"WHERE id = {ph}",
-            (
-                entry["customer"],
-                entry["description"],
-                entry["start"],
-                entry.get("end"),
-                entry.get("task_id", ""),
-                entry.get("contract", ""),
-                entry.get("booked", 0),
-                entry.get("notes", ""),
-                row["id"],
-            ),
-        )
-        return self._enrich(entry)
+            session.commit()
+            result = _clock_row_to_dict(row)
+        finally:
+            session.close()
+        return _enrich_clock(result)
 
     def delete_entry(self, start_iso) -> bool:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT id FROM clocks WHERE start = {ph}",
-            (start_iso,),
-        )
-        if row is None:
-            return False
-        self._db.execute(
-            f"DELETE FROM clocks WHERE id = {ph}",
-            (row["id"],),
-        )
-        return True
+        session = self._eng.session()
+        try:
+            row = (
+                session.query(ClockRow)
+                .filter(ClockRow.start == start_iso)
+                .first()
+            )
+            if row is None:
+                return False
+            session.delete(row)
+            session.commit()
+            return True
+        finally:
+            session.close()
 
 
 # ====================================================================
@@ -947,21 +927,18 @@ class SqlClockBackend(ClockBackend):
 
 
 class SqlInboxBackend(InboxBackend):
-    """InboxBackend backed by a SQL database."""
+    """InboxBackend backed by SQLAlchemy ORM."""
 
-    def __init__(self, db: _DB):
-        self._db = db
-
-    def _row_to_item(self, row: dict) -> dict:
-        """Convert a DB row to an inbox item dict."""
-        row["properties"] = _parse_properties(
-            row.get("properties")
-        )
-        return row
+    def __init__(self, eng: _Engine):
+        self._eng = eng
 
     def list_items(self) -> list[dict]:
-        rows = self._db.fetchall("SELECT * FROM inbox")
-        return [self._row_to_item(r) for r in rows]
+        session = self._eng.session()
+        try:
+            rows = session.query(InboxRow).all()
+            return [_inbox_row_to_dict(r) for r in rows]
+        finally:
+            session.close()
 
     def add_item(
         self,
@@ -974,21 +951,26 @@ class SqlInboxBackend(InboxBackend):
     ) -> dict:
         item_id = _generate_id(text)
         now = datetime.now().isoformat()
-        resolved_type = item_type or _guess_inbox_type(text)
-        self._db.execute(
-            f"INSERT INTO inbox "
-            f"(id, type, customer, title, body, "
-            f"channel, direction, created, properties) "
-            f"VALUES ({self._db.ph(9)})",
-            (
-                item_id, resolved_type,
-                customer or "", text,
-                body or "",
-                channel or "",
-                direction or "",
-                now, "{}",
-            ),
+        resolved_type = (
+            item_type or _guess_inbox_type(text)
         )
+        row = InboxRow(
+            id=item_id,
+            type=resolved_type,
+            customer=customer or "",
+            title=text,
+            body=body or "",
+            channel=channel or "",
+            direction=direction or "",
+            created=now,
+            properties="{}",
+        )
+        session = self._eng.session()
+        try:
+            session.add(row)
+            session.commit()
+        finally:
+            session.close()
         return {
             "id": item_id,
             "type": resolved_type,
@@ -1002,80 +984,63 @@ class SqlInboxBackend(InboxBackend):
         }
 
     def remove_item(self, item_id) -> bool:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT id FROM inbox WHERE id = {ph}",
-            (item_id,),
-        )
-        if row is None:
-            return False
-        self._db.execute(
-            f"DELETE FROM inbox WHERE id = {ph}",
-            (item_id,),
-        )
-        return True
+        session = self._eng.session()
+        try:
+            row = session.get(InboxRow, item_id)
+            if row is None:
+                return False
+            session.delete(row)
+            session.commit()
+            return True
+        finally:
+            session.close()
 
     def update_item(self, item_id, updates) -> dict:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT * FROM inbox WHERE id = {ph}",
-            (item_id,),
-        )
-        if row is None:
-            raise ValueError(
-                f"Inbox item not found: {item_id}"
+        session = self._eng.session()
+        try:
+            row = session.get(InboxRow, item_id)
+            if row is None:
+                raise ValueError(
+                    f"Inbox item not found: {item_id}"
+                )
+            allowed = (
+                "type", "customer", "title", "body",
+                "channel", "direction",
             )
-        item = self._row_to_item(dict(row))
-        allowed = (
-            "type", "customer", "title", "body",
-            "channel", "direction",
-        )
-        sets = []
-        params = []
-        for key in allowed:
-            if key in updates:
-                sets.append(f"{key} = {ph}")
-                params.append(updates[key])
-                item[key] = updates[key]
-        if "properties" in updates:
-            sets.append(f"properties = {ph}")
-            serialized = _serialize_properties(
-                updates["properties"]
-            )
-            params.append(serialized)
-            item["properties"] = updates["properties"]
-        if sets:
-            params.append(item_id)
-            self._db.execute(
-                f"UPDATE inbox SET {', '.join(sets)} "
-                f"WHERE id = {ph}",
-                tuple(params),
-            )
-        return item
+            for key in allowed:
+                if key in updates:
+                    setattr(row, key, updates[key])
+            if "properties" in updates:
+                row.properties = _serialize_properties(
+                    updates["properties"]
+                )
+            session.commit()
+            result = _inbox_row_to_dict(row)
+        finally:
+            session.close()
+        return result
 
     def promote_to_task(
         self, item_id, tasks, customer
     ) -> dict:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT * FROM inbox WHERE id = {ph}",
-            (item_id,),
-        )
-        if row is None:
-            raise ValueError(
-                f"Inbox item not found: {item_id}"
+        session = self._eng.session()
+        try:
+            row = session.get(InboxRow, item_id)
+            if row is None:
+                raise ValueError(
+                    f"Inbox item not found: {item_id}"
+                )
+            item = _inbox_row_to_dict(row)
+            task = tasks.add_task(
+                customer=customer,
+                title=item.get("title", ""),
+                status="TODO",
+                body=item.get("body") or None,
             )
-        item = self._row_to_item(dict(row))
-        task = tasks.add_task(
-            customer=customer,
-            title=item.get("title", ""),
-            status="TODO",
-            body=item.get("body") or None,
-        )
-        self._db.execute(
-            f"DELETE FROM inbox WHERE id = {ph}",
-            (item_id,),
-        )
+            session.delete(row)
+            session.commit()
+        finally:
+            session.close()
         return task
 
 
@@ -1085,39 +1050,44 @@ class SqlInboxBackend(InboxBackend):
 
 
 class SqlNotesBackend(NotesBackend):
-    """NotesBackend backed by a SQL database."""
+    """NotesBackend backed by SQLAlchemy ORM."""
 
-    def __init__(self, db: _DB):
-        self._db = db
-
-    def _row_to_note(self, row: dict) -> dict:
-        """Convert a DB row to a note dict."""
-        row["tags"] = _parse_tags(row.get("tags"))
-        return row
+    def __init__(self, eng: _Engine):
+        self._eng = eng
 
     def list_notes(self) -> list[dict]:
-        rows = self._db.fetchall("SELECT * FROM notes")
-        return [self._row_to_note(r) for r in rows]
+        session = self._eng.session()
+        try:
+            rows = session.query(NoteRow).all()
+            return [_note_row_to_dict(r) for r in rows]
+        finally:
+            session.close()
 
     def add_note(
-        self, title, body="", customer=None,
-        tags=None, task_id=None,
+        self,
+        title,
+        body="",
+        customer=None,
+        tags=None,
+        task_id=None,
     ) -> dict:
         note_id = _generate_id(title)
         now = datetime.now().isoformat()
-        self._db.execute(
-            f"INSERT INTO notes "
-            f"(id, title, body, customer, task_id, "
-            f"tags, created) "
-            f"VALUES ({self._db.ph(7)})",
-            (
-                note_id, title, body,
-                customer or "",
-                task_id,
-                _serialize_tags(tags),
-                now,
-            ),
+        row = NoteRow(
+            id=note_id,
+            title=title,
+            body=body,
+            customer=customer or "",
+            task_id=task_id,
+            tags=_serialize_tags(tags),
+            created=now,
         )
+        session = self._eng.session()
+        try:
+            session.add(row)
+            session.commit()
+        finally:
+            session.close()
         return {
             "id": note_id,
             "title": title,
@@ -1129,79 +1099,63 @@ class SqlNotesBackend(NotesBackend):
         }
 
     def delete_note(self, note_id) -> bool:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT id FROM notes WHERE id = {ph}",
-            (note_id,),
-        )
-        if row is None:
-            return False
-        self._db.execute(
-            f"DELETE FROM notes WHERE id = {ph}",
-            (note_id,),
-        )
-        return True
+        session = self._eng.session()
+        try:
+            row = session.get(NoteRow, note_id)
+            if row is None:
+                return False
+            session.delete(row)
+            session.commit()
+            return True
+        finally:
+            session.close()
 
     def update_note(self, note_id, updates) -> dict:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT * FROM notes WHERE id = {ph}",
-            (note_id,),
-        )
-        if row is None:
-            raise ValueError(
-                f"Note not found: {note_id}"
+        session = self._eng.session()
+        try:
+            row = session.get(NoteRow, note_id)
+            if row is None:
+                raise ValueError(
+                    f"Note not found: {note_id}"
+                )
+            allowed = (
+                "title", "body", "customer", "task_id",
             )
-        note = self._row_to_note(dict(row))
-        allowed = (
-            "title", "body", "customer", "task_id",
-        )
-        sets = []
-        params = []
-        for key in allowed:
-            if key in updates:
-                sets.append(f"{key} = {ph}")
-                params.append(updates[key])
-                note[key] = updates[key]
-        if "tags" in updates:
-            sets.append(f"tags = {ph}")
-            params.append(
-                _serialize_tags(updates["tags"])
-            )
-            note["tags"] = updates["tags"]
-        if sets:
-            params.append(note_id)
-            self._db.execute(
-                f"UPDATE notes SET {', '.join(sets)} "
-                f"WHERE id = {ph}",
-                tuple(params),
-            )
-        return note
+            for key in allowed:
+                if key in updates:
+                    setattr(row, key, updates[key])
+            if "tags" in updates:
+                row.tags = _serialize_tags(
+                    updates["tags"]
+                )
+            session.commit()
+            result = _note_row_to_dict(row)
+        finally:
+            session.close()
+        return result
 
     def promote_to_task(
         self, note_id, tasks, customer
     ) -> dict:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT * FROM notes WHERE id = {ph}",
-            (note_id,),
-        )
-        if row is None:
-            raise ValueError(
-                f"Note not found: {note_id}"
+        session = self._eng.session()
+        try:
+            row = session.get(NoteRow, note_id)
+            if row is None:
+                raise ValueError(
+                    f"Note not found: {note_id}"
+                )
+            note = _note_row_to_dict(row)
+            task = tasks.add_task(
+                customer=customer,
+                title=note.get("title", ""),
+                status="TODO",
+                tags=note.get("tags") or None,
+                body=note.get("body") or None,
             )
-        note = self._row_to_note(dict(row))
-        task = tasks.add_task(
-            customer=customer,
-            title=note.get("title", ""),
-            status="TODO",
-            tags=note.get("tags") or None,
-            body=note.get("body") or None,
-        )
-        self._db.execute(
-            f"DELETE FROM notes WHERE id = {ph}",
-            (note_id,),
-        )
+            session.delete(row)
+            session.commit()
+        finally:
+            session.close()
         return task
 
 
@@ -1211,70 +1165,70 @@ class SqlNotesBackend(NotesBackend):
 
 
 class SqlCustomerBackend(CustomerBackend):
-    """CustomerBackend backed by a SQL database."""
+    """CustomerBackend backed by SQLAlchemy ORM."""
 
-    def __init__(self, db: _DB):
-        self._db = db
+    def __init__(self, eng: _Engine):
+        self._eng = eng
 
     def _used_hours(self, customer_name: str) -> float:
         """Sum booked hours from clocks for a customer."""
-        total_min = 0
-        low = customer_name.lower()
-        rows = self._db.fetchall(
-            "SELECT customer, start, \"end\" FROM clocks"
-        )
-        for r in rows:
-            if r.get("customer", "").lower() != low:
-                continue
-            start_str = r.get("start")
-            end_str = r.get("end")
-            if not start_str or not end_str:
-                continue
-            start = datetime.fromisoformat(start_str)
-            end = datetime.fromisoformat(end_str)
-            total_min += max(
-                0,
-                int(
-                    (end - start).total_seconds() / 60
-                ),
-            )
-        return round(total_min / 60, 2)
+        session = self._eng.session()
+        try:
+            rows = session.query(
+                ClockRow.start, ClockRow.end
+            ).filter(
+                func.lower(ClockRow.customer)
+                == customer_name.lower()
+            ).all()
+            total_min = 0
+            for start_str, end_str in rows:
+                if not start_str or not end_str:
+                    continue
+                start = datetime.fromisoformat(start_str)
+                end = datetime.fromisoformat(end_str)
+                total_min += max(
+                    0,
+                    int(
+                        (end - start).total_seconds()
+                        / 60
+                    ),
+                )
+            return round(total_min / 60, 2)
+        finally:
+            session.close()
 
     def _contract_used_hours(
         self, customer_name: str, contract_name: str
     ) -> float:
         """Sum hours for a specific contract."""
-        rows = self._db.fetchall(
-            "SELECT customer, contract, start, "
-            "\"end\" FROM clocks"
-        )
-        total_min = 0
-        low = customer_name.lower()
-        for r in rows:
-            if r.get("customer", "").lower() != low:
-                continue
-            if r.get("contract") != contract_name:
-                continue
-            start_str = r.get("start")
-            end_str = r.get("end")
-            if not start_str or not end_str:
-                continue
-            start = datetime.fromisoformat(start_str)
-            end = datetime.fromisoformat(end_str)
-            total_min += max(
-                0,
-                int(
-                    (end - start).total_seconds() / 60
-                ),
-            )
-        return round(total_min / 60, 2)
+        session = self._eng.session()
+        try:
+            rows = session.query(
+                ClockRow.start, ClockRow.end
+            ).filter(
+                func.lower(ClockRow.customer)
+                == customer_name.lower(),
+                ClockRow.contract == contract_name,
+            ).all()
+            total_min = 0
+            for start_str, end_str in rows:
+                if not start_str or not end_str:
+                    continue
+                start = datetime.fromisoformat(start_str)
+                end = datetime.fromisoformat(end_str)
+                total_min += max(
+                    0,
+                    int(
+                        (end - start).total_seconds()
+                        / 60
+                    ),
+                )
+            return round(total_min / 60, 2)
+        finally:
+            session.close()
 
     def _enrich_customer(self, cust: dict) -> dict:
-        """Add computed budget fields."""
-        cust["tags"] = _parse_tags(cust.get("tags"))
-        cust["properties"] = _parse_properties(
-            cust.get("properties")
-        )
+        """Add computed budget fields (used/rest)."""
         hours = self._used_hours(cust["name"])
         budget = cust.get("budget", 0)
         cust["used"] = hours
@@ -1296,29 +1250,40 @@ class SqlCustomerBackend(CustomerBackend):
     def list_customers(
         self, include_inactive=False
     ) -> list[dict]:
-        ph = self._db._ph
-        if include_inactive:
-            rows = self._db.fetchall(
-                "SELECT * FROM customers"
-            )
-        else:
-            rows = self._db.fetchall(
-                f"SELECT * FROM customers "
-                f"WHERE status = {ph}",
-                ("active",),
-            )
-        return [self._enrich_customer(r) for r in rows]
+        session = self._eng.session()
+        try:
+            q = session.query(CustomerRow)
+            if not include_inactive:
+                q = q.filter(
+                    CustomerRow.status == "active"
+                )
+            rows = q.all()
+            customers = [
+                _customer_row_to_dict(r) for r in rows
+            ]
+        finally:
+            session.close()
+        return [
+            self._enrich_customer(c) for c in customers
+        ]
 
     def get_customer(self, name) -> dict | None:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT * FROM customers "
-            f"WHERE LOWER(name) = {ph}",
-            (name.lower(),),
-        )
-        if row is None:
-            return None
-        return self._enrich_customer(dict(row))
+        session = self._eng.session()
+        try:
+            row = (
+                session.query(CustomerRow)
+                .filter(
+                    func.lower(CustomerRow.name)
+                    == name.lower()
+                )
+                .first()
+            )
+            if row is None:
+                return None
+            cust = _customer_row_to_dict(row)
+        finally:
+            session.close()
+        return self._enrich_customer(cust)
 
     def get_budget_summary(self) -> list[dict]:
         custs = self.list_customers(
@@ -1353,92 +1318,88 @@ class SqlCustomerBackend(CustomerBackend):
         repo=None,
         tags=None,
     ) -> dict:
-        ph = self._db._ph
-        existing = self._db.fetchone(
-            f"SELECT name FROM customers "
-            f"WHERE LOWER(name) = {ph}",
-            (name.lower(),),
-        )
-        if existing is not None:
-            raise ValueError(
-                f"Customer already exists: {name}"
+        session = self._eng.session()
+        try:
+            existing = (
+                session.query(CustomerRow)
+                .filter(
+                    func.lower(CustomerRow.name)
+                    == name.lower()
+                )
+                .first()
             )
-        self._db.execute(
-            f"INSERT INTO customers "
-            f"(name, status, type, color, budget, "
-            f"repo, tags, properties) "
-            f"VALUES ({self._db.ph(8)})",
-            (
-                name, status, customer_type,
-                color, budget,
-                repo or "",
-                _serialize_tags(tags),
-                "{}",
-            ),
-        )
-        return self._enrich_customer({
-            "name": name,
-            "status": status,
-            "type": customer_type,
-            "color": color,
-            "budget": budget,
-            "repo": repo or "",
-            "tags": _serialize_tags(tags),
-            "properties": "{}",
-        })
+            if existing is not None:
+                raise ValueError(
+                    f"Customer already exists: {name}"
+                )
+            row = CustomerRow(
+                name=name,
+                status=status,
+                type=customer_type,
+                color=color,
+                budget=budget,
+                repo=repo or "",
+                tags=_serialize_tags(tags),
+                properties="{}",
+            )
+            session.add(row)
+            session.commit()
+            cust = _customer_row_to_dict(row)
+        finally:
+            session.close()
+        return self._enrich_customer(cust)
 
     def update_customer(
         self, name, updates
     ) -> dict | None:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT * FROM customers "
-            f"WHERE LOWER(name) = {ph}",
-            (name.lower(),),
-        )
-        if row is None:
-            return None
-        cust = dict(row)
-
-        sets = []
-        params = []
-        for key in ("name", "status", "budget", "repo"):
-            if key in updates:
-                sets.append(f"{key} = {ph}")
-                params.append(updates[key])
-                cust[key] = updates[key]
-        if "color" in updates:
-            sets.append(f"color = {ph}")
-            params.append(updates["color"])
-            cust["color"] = updates["color"]
-        if "tags" in updates:
-            sets.append(f"tags = {ph}")
-            params.append(
-                _serialize_tags(updates["tags"])
+        session = self._eng.session()
+        try:
+            row = (
+                session.query(CustomerRow)
+                .filter(
+                    func.lower(CustomerRow.name)
+                    == name.lower()
+                )
+                .first()
             )
-            cust["tags"] = _serialize_tags(
-                updates["tags"]
-            )
-        if sets:
-            params.append(name)
-            self._db.execute(
-                f"UPDATE customers "
-                f"SET {', '.join(sets)} "
-                f"WHERE LOWER(name) = LOWER({ph})",
-                tuple(params),
-            )
+            if row is None:
+                return None
+            for key in (
+                "name", "status", "budget", "repo",
+            ):
+                if key in updates:
+                    setattr(row, key, updates[key])
+            if "color" in updates:
+                row.color = updates["color"]
+            if "tags" in updates:
+                row.tags = _serialize_tags(
+                    updates["tags"]
+                )
+            session.commit()
+            cust = _customer_row_to_dict(row)
+        finally:
+            session.close()
         return self._enrich_customer(cust)
 
     def list_contracts(self, name) -> list[dict]:
-        ph = self._db._ph
-        rows = self._db.fetchall(
-            f"SELECT * FROM contracts "
-            f"WHERE LOWER(customer) = {ph}",
-            (name.lower(),),
-        )
+        session = self._eng.session()
+        try:
+            rows = (
+                session.query(ContractRow)
+                .filter(
+                    func.lower(ContractRow.customer)
+                    == name.lower()
+                )
+                .all()
+            )
+            contracts = [
+                _contract_row_to_dict(r) for r in rows
+            ]
+        finally:
+            session.close()
         return [
-            self._enrich_contract(name, dict(r))
-            for r in rows
+            self._enrich_contract(name, c)
+            for c in contracts
         ]
 
     def add_contract(
@@ -1449,105 +1410,105 @@ class SqlCustomerBackend(CustomerBackend):
         start_date,
         notes="",
     ) -> dict:
-        ph = self._db._ph
-        # Verify customer exists
-        cust = self._db.fetchone(
-            f"SELECT name FROM customers "
-            f"WHERE LOWER(name) = {ph}",
-            (name.lower(),),
-        )
-        if cust is None:
-            raise ValueError(
-                f"Customer not found: {name}"
+        session = self._eng.session()
+        try:
+            cust = (
+                session.query(CustomerRow)
+                .filter(
+                    func.lower(CustomerRow.name)
+                    == name.lower()
+                )
+                .first()
             )
-        # Check for duplicate contract name
-        existing = self._db.fetchone(
-            f"SELECT id FROM contracts "
-            f"WHERE LOWER(customer) = {ph} "
-            f"AND name = {ph}",
-            (name.lower(), contract_name),
-        )
-        if existing is not None:
-            raise ValueError(
-                f"Contract already exists: "
-                f"{contract_name}"
+            if cust is None:
+                raise ValueError(
+                    f"Customer not found: {name}"
+                )
+            existing = (
+                session.query(ContractRow)
+                .filter(
+                    func.lower(ContractRow.customer)
+                    == name.lower(),
+                    ContractRow.name == contract_name,
+                )
+                .first()
             )
-        self._db.execute(
-            f"INSERT INTO contracts "
-            f"(customer, name, budget, start_date, "
-            f"notes) "
-            f"VALUES ({self._db.ph(5)})",
-            (
-                name, contract_name, budget,
-                start_date, notes,
-            ),
-        )
-        contract = {
-            "name": contract_name,
-            "budget": budget,
-            "start_date": start_date,
-            "end_date": "",
-            "notes": notes,
-        }
-        return self._enrich_contract(name, contract)
+            if existing is not None:
+                raise ValueError(
+                    f"Contract already exists: "
+                    f"{contract_name}"
+                )
+            row = ContractRow(
+                customer=name,
+                name=contract_name,
+                budget=budget,
+                start_date=start_date,
+                notes=notes,
+            )
+            session.add(row)
+            session.commit()
+            con = _contract_row_to_dict(row)
+        finally:
+            session.close()
+        return self._enrich_contract(name, con)
 
     def update_contract(
         self, name, contract_name, updates
     ) -> dict | None:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT * FROM contracts "
-            f"WHERE LOWER(customer) = {ph} "
-            f"AND name = {ph}",
-            (name.lower(), contract_name),
-        )
-        if row is None:
-            return None
-        con = dict(row)
-        sets = []
-        params = []
-        for key in (
-            "name", "budget", "start_date",
-            "end_date", "notes",
-        ):
-            if key in updates:
-                sets.append(f"{key} = {ph}")
-                params.append(updates[key])
-                con[key] = updates[key]
-        if sets:
-            params.append(con["id"])
-            self._db.execute(
-                f"UPDATE contracts "
-                f"SET {', '.join(sets)} "
-                f"WHERE id = {ph}",
-                tuple(params),
+        session = self._eng.session()
+        try:
+            row = (
+                session.query(ContractRow)
+                .filter(
+                    func.lower(ContractRow.customer)
+                    == name.lower(),
+                    ContractRow.name == contract_name,
+                )
+                .first()
             )
+            if row is None:
+                return None
+            for key in (
+                "name", "budget", "start_date",
+                "end_date", "notes",
+            ):
+                if key in updates:
+                    setattr(row, key, updates[key])
+            session.commit()
+            con = _contract_row_to_dict(row)
+        finally:
+            session.close()
         return self._enrich_contract(name, con)
 
     def close_contract(
         self, name, contract_name, end_date
     ) -> dict | None:
         return self.update_contract(
-            name, contract_name, {"end_date": end_date}
+            name, contract_name,
+            {"end_date": end_date},
         )
 
     def delete_contract(
         self, name, contract_name
     ) -> bool:
-        ph = self._db._ph
-        row = self._db.fetchone(
-            f"SELECT id FROM contracts "
-            f"WHERE LOWER(customer) = {ph} "
-            f"AND name = {ph}",
-            (name.lower(), contract_name),
-        )
-        if row is None:
-            return False
-        self._db.execute(
-            f"DELETE FROM contracts WHERE id = {ph}",
-            (row["id"],),
-        )
-        return True
+        session = self._eng.session()
+        try:
+            row = (
+                session.query(ContractRow)
+                .filter(
+                    func.lower(ContractRow.customer)
+                    == name.lower(),
+                    ContractRow.name == contract_name,
+                )
+                .first()
+            )
+            if row is None:
+                return False
+            session.delete(row)
+            session.commit()
+            return True
+        finally:
+            session.close()
 
 
 # ====================================================================
@@ -1564,12 +1525,12 @@ def make_sql_backend(dsn: str) -> tuple[
     Returns (tasks, clocks, inbox, customers,
              notes, watch_paths).
     """
-    db = _DB(dsn)
-    tasks = SqlTaskBackend(db)
-    clocks = SqlClockBackend(db)
-    inbox = SqlInboxBackend(db)
-    customers = SqlCustomerBackend(db)
-    notes = SqlNotesBackend(db)
+    eng = _Engine(dsn)
+    tasks = SqlTaskBackend(eng)
+    clocks = SqlClockBackend(eng)
+    inbox = SqlInboxBackend(eng)
+    customers = SqlCustomerBackend(eng)
+    notes = SqlNotesBackend(eng)
     watch_paths: list[Path] = []
     return (
         tasks, clocks, inbox, customers,

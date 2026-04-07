@@ -28,7 +28,7 @@ from kaisho.backends.sql import (
     SqlInboxBackend,
     SqlNotesBackend,
     SqlTaskBackend,
-    _DB,
+    _Engine,
 )
 
 
@@ -53,7 +53,7 @@ def tasks_backend(request, tmp_path):
             tmp_path / "tasks.json",
             tmp_path / "archive.json",
         )
-    db = _DB(_sql_dsn(tmp_path))
+    db = _Engine(_sql_dsn(tmp_path))
     return SqlTaskBackend(db)
 
 
@@ -67,7 +67,7 @@ def clocks_backend(request, tmp_path):
         return JsonClockBackend(
             tmp_path / "clocks.json",
         )
-    db = _DB(_sql_dsn(tmp_path))
+    db = _Engine(_sql_dsn(tmp_path))
     return SqlClockBackend(db)
 
 
@@ -81,7 +81,7 @@ def inbox_backend(request, tmp_path):
         return JsonInboxBackend(
             tmp_path / "inbox.json",
         )
-    db = _DB(_sql_dsn(tmp_path))
+    db = _Engine(_sql_dsn(tmp_path))
     return SqlInboxBackend(db)
 
 
@@ -95,7 +95,7 @@ def notes_backend(request, tmp_path):
         return JsonNotesBackend(
             tmp_path / "notes.json",
         )
-    db = _DB(_sql_dsn(tmp_path))
+    db = _Engine(_sql_dsn(tmp_path))
     return SqlNotesBackend(db)
 
 
@@ -111,7 +111,7 @@ def customers_backend(request, tmp_path):
             tmp_path / "customers.json",
             tmp_path / "clocks.json",
         )
-    db = _DB(_sql_dsn(tmp_path))
+    db = _Engine(_sql_dsn(tmp_path))
     return SqlCustomerBackend(db)
 
 

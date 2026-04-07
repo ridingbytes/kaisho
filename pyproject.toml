@@ -20,15 +20,13 @@ dependencies = [
     "watchfiles>=0.21",
     "python-multipart>=0.0.9",
     "youtube-transcript-api>=1.0",
+    "sqlalchemy>=2.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
-]
-postgres = [
-    "psycopg2-binary>=2.9",
 ]
 
 [project.scripts]
