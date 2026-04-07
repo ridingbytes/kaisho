@@ -10,6 +10,7 @@ class CustomerCreate(BaseModel):
     name: str
     status: str = "active"
     type: str = ""
+    color: str = ""
     budget: float = 0
     repo: str | None = None
     tags: list[str] = []
@@ -23,6 +24,7 @@ def create_customer(body: CustomerCreate):
             status=body.status,
             customer_type=body.type,
             budget=body.budget,
+            color=body.color,
             repo=body.repo,
             tags=body.tags,
         )

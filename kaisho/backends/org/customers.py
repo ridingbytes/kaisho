@@ -43,6 +43,7 @@ class OrgCustomerBackend(CustomerBackend):
         status: str = "active",
         customer_type: str = "",
         budget: float = 0,
+        color: str = "",
         repo: str | None = None,
         tags: list[str] | None = None,
     ) -> dict:
@@ -52,6 +53,7 @@ class OrgCustomerBackend(CustomerBackend):
             status=status,
             customer_type=customer_type,
             budget=budget,
+            color=color,
             repo=repo,
             tags=tags,
         )

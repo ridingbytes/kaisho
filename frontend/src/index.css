@@ -3,15 +3,16 @@
 @tailwind utilities;
 
 /* ============================================================
-   DESIGN TOKENS — light (default) and dark
+   DESIGN TOKENS — Zinc palette (true neutral)
+   Light (default) and dark
    ============================================================ */
 
 :root {
-  /* Surfaces — Graphite Lavender light (default) */
-  --surface-base:    #fafafc;
+  /* Surfaces — Zinc light (default) */
+  --surface-base:    #fafafa;
   --surface-card:    #ffffff;
-  --surface-raised:  #f3f3f8;
-  --surface-overlay: #e4e4ec;
+  --surface-raised:  #f4f4f5;
+  --surface-overlay: #e4e4e7;
 
   /* Borders */
   --border-subtle:  rgba(0, 0, 0, 0.05);
@@ -19,16 +20,16 @@
   --border-strong:  rgba(0, 0, 0, 0.18);
 
   /* Text */
-  --text-primary:   #1e1e2e;
-  --text-secondary: #3d3d5c;
-  --text-tertiary:  #5c5c8a;
-  --text-muted:     #8888aa;
-  --text-disabled:  #b4b4cc;
+  --text-primary:   #18181b;
+  --text-secondary: #3f3f46;
+  --text-tertiary:  #52525b;
+  --text-muted:     #a1a1aa;
+  --text-disabled:  #d4d4d8;
 
-  /* CTA — darkest graphite-lavender */
-  --cta:       #1e1e2e;
-  --cta-hover: #33334d;
-  --cta-muted: #f0f0f8;
+  /* CTA — darkest zinc */
+  --cta:       #18181b;
+  --cta-hover: #27272a;
+  --cta-muted: #f4f4f5;
 
   /* Shadows */
   --shadow-card:      0 1px 3px rgba(0,0,0,0.04),
@@ -39,8 +40,8 @@
                       0 8px 16px rgba(0,0,0,0.05);
 
   /* Body */
-  --body-bg:    #fafafc;
-  --body-color: #1e1e2e;
+  --body-bg:    #fafafa;
+  --body-color: #18181b;
 
   /* Scrollbar */
   --scrollbar-thumb:       rgba(0, 0, 0, 0.10);
@@ -48,11 +49,11 @@
 }
 
 [data-theme="dark"] {
-  /* Surfaces — Graphite Lavender dark */
-  --surface-base:    #16161e;
-  --surface-card:    #1e1e2e;
-  --surface-raised:  #2a2a3d;
-  --surface-overlay: #36364d;
+  /* Surfaces — Zinc dark */
+  --surface-base:    #09090b;
+  --surface-card:    #18181b;
+  --surface-raised:  #27272a;
+  --surface-overlay: #3f3f46;
 
   /* Borders */
   --border-subtle:  rgba(255, 255, 255, 0.06);
@@ -60,16 +61,16 @@
   --border-strong:  rgba(255, 255, 255, 0.18);
 
   /* Text */
-  --text-primary:   #e4e4ec;
-  --text-secondary: #c4c4d4;
-  --text-tertiary:  #9898b4;
-  --text-muted:     #6868a0;
-  --text-disabled:  #484878;
+  --text-primary:   #fafafa;
+  --text-secondary: #d4d4d8;
+  --text-tertiary:  #a1a1aa;
+  --text-muted:     #71717a;
+  --text-disabled:  #52525b;
 
   /* CTA — inverted for dark */
-  --cta:       #e4e4ec;
-  --cta-hover: #fafafc;
-  --cta-muted: rgba(228, 228, 236, 0.08);
+  --cta:       #fafafa;
+  --cta-hover: #e4e4e7;
+  --cta-muted: rgba(250, 250, 250, 0.06);
 
   /* Shadows */
   --shadow-card:      0 1px 3px rgba(0,0,0,0.4),
@@ -80,8 +81,8 @@
                       0 8px 16px rgba(0,0,0,0.4);
 
   /* Body */
-  --body-bg:    #16161e;
-  --body-color: #e4e4ec;
+  --body-bg:    #09090b;
+  --body-color: #fafafa;
 
   /* Scrollbar */
   --scrollbar-thumb:       rgba(255, 255, 255, 0.12);
@@ -132,57 +133,72 @@
   }
 }
 
-/* Light theme — remap Tailwind stone-* to Graphite Lavender values.
-   Tailwind stone bakes in warm brown hex values; we override them
-   with cool lavender-gray equivalents that match the palette. */
+/* Light theme — remap Tailwind stone-* to Zinc values.
+   Tailwind stone bakes in warm brown hex values; we
+   override them with true neutral Zinc equivalents. */
 
 .text-stone-900,
-.text-stone-800 { color: #1e1e2e; }
-.text-stone-700  { color: #4a4b65; }
-.text-stone-600  { color: #6e7191; }
-.text-stone-500  { color: #8b8fa3; }
-.text-stone-400  { color: #b4b4cc; }
+.text-stone-800 { color: #18181b; }
+.text-stone-700  { color: #3f3f46; }
+.text-stone-600  { color: #52525b; }
+.text-stone-500  { color: #71717a; }
+.text-stone-400  { color: #a1a1aa; }
 
 .hover\:text-stone-900:hover,
-.hover\:text-stone-800:hover { color: #1e1e2e; }
-.hover\:text-stone-700:hover  { color: #4a4b65; }
+.hover\:text-stone-800:hover { color: #18181b; }
+.hover\:text-stone-700:hover  { color: #3f3f46; }
 
-.placeholder-stone-500::placeholder { color: #8b8fa3; }
+.placeholder-stone-500::placeholder { color: #71717a; }
 
-/* Dark theme — bg-cta is light (#e4e4ec) so text must be dark.
-   Our non-layered rule beats Tailwind's text-white from @layer utilities. */
+/* Dark theme — bg-cta is light (#fafafa) so text on CTA
+   buttons must be dark. Non-layered beats Tailwind's
+   text-white from @layer utilities. */
 
-[data-theme="dark"] .bg-cta { color: #1e1e2e; }
-[data-theme="dark"] .hover\:bg-cta-hover:hover { color: #1e1e2e; }
-
-/* Toggle switch: use a mid-lavender track so the white knob
-   stays visible and the active state reads as "on". */
-[data-theme="dark"] [role="switch"][aria-checked="true"] {
-  background-color: #6868a0;
+[data-theme="dark"] .bg-cta { color: #18181b; }
+[data-theme="dark"] .hover\:bg-cta-hover:hover {
+  color: #18181b;
 }
 
-/* Dark theme — remap stone-* to light lavender-gray equivalents */
+/* Toggle switch: use a mid-zinc track so the white knob
+   stays visible and the active state reads as "on". */
+[data-theme="dark"] [role="switch"][aria-checked="true"] {
+  background-color: #71717a;
+}
+
+/* Dark theme — remap stone-* to light Zinc equivalents */
 
 [data-theme="dark"] .text-stone-900,
-[data-theme="dark"] .text-stone-800 { color: #e4e4ec; }
-[data-theme="dark"] .text-stone-700  { color: #c4c4d0; }
-[data-theme="dark"] .text-stone-600  { color: #8b8fa3; }
-[data-theme="dark"] .text-stone-500  { color: #6e7191; }
-[data-theme="dark"] .text-stone-400  { color: #4a4b65; }
+[data-theme="dark"] .text-stone-800 { color: #fafafa; }
+[data-theme="dark"] .text-stone-700  { color: #d4d4d8; }
+[data-theme="dark"] .text-stone-600  { color: #a1a1aa; }
+[data-theme="dark"] .text-stone-500  { color: #71717a; }
+[data-theme="dark"] .text-stone-400  { color: #52525b; }
 
 [data-theme="dark"] .hover\:text-stone-900:hover,
-[data-theme="dark"] .hover\:text-stone-800:hover { color: #fafafc; }
-[data-theme="dark"] .hover\:text-stone-700:hover  { color: #e4e4ec; }
+[data-theme="dark"] .hover\:text-stone-800:hover {
+  color: #ffffff;
+}
+[data-theme="dark"] .hover\:text-stone-700:hover {
+  color: #fafafa;
+}
 
-[data-theme="dark"] .placeholder-stone-500::placeholder { color: #4a4b65; }
+[data-theme="dark"] .placeholder-stone-500::placeholder {
+  color: #52525b;
+}
 
 /* Status colours — brighter for dark bg */
-[data-theme="dark"] .text-green-400   { color: #4ade80; }
-[data-theme="dark"] .text-yellow-400  { color: #fbbf24; }
-[data-theme="dark"] .text-red-400     { color: #f87171; }
-[data-theme="dark"] .bg-green-900\/40  { background-color: rgba(22, 163, 74, 0.15); }
-[data-theme="dark"] .bg-yellow-900\/40 { background-color: rgba(217, 119, 6, 0.15); }
-[data-theme="dark"] .bg-red-900\/40    { background-color: rgba(220, 38, 38, 0.15); }
+[data-theme="dark"] .text-green-400  { color: #4ade80; }
+[data-theme="dark"] .text-yellow-400 { color: #fbbf24; }
+[data-theme="dark"] .text-red-400    { color: #f87171; }
+[data-theme="dark"] .bg-green-900\/40 {
+  background-color: rgba(22, 163, 74, 0.15);
+}
+[data-theme="dark"] .bg-yellow-900\/40 {
+  background-color: rgba(217, 119, 6, 0.15);
+}
+[data-theme="dark"] .bg-red-900\/40 {
+  background-color: rgba(220, 38, 38, 0.15);
+}
 
 /* ============================================================
    UTILITIES

@@ -63,6 +63,7 @@ def _heading_to_customer(heading: Heading) -> dict:
         "name": name,
         "status": props.get("STATUS", "active"),
         "type": props.get("TYPE", ""),
+        "color": props.get("COLOR", ""),
         "tags": list(heading.tags),
         "budget": budget,
         "used": used,
@@ -149,10 +150,24 @@ def get_customer(
 _PROP_MAP = {
     "status": "STATUS",
     "type": "TYPE",
+    "color": "COLOR",
     "budget": "BUDGET",
     "used_offset": "USED",
     "repo": "REPO",
 }
+
+
+_CUSTOMER_COLORS = [
+    "#2563eb", "#7c3aed", "#0891b2", "#16a34a",
+    "#d97706", "#dc2626", "#4f46e5", "#0d9488",
+    "#9333ea", "#b45309", "#059669", "#6366f1",
+]
+
+
+def _random_color() -> str:
+    """Pick a random customer color."""
+    import random
+    return random.choice(_CUSTOMER_COLORS)
 
 
 def add_customer(
@@ -161,6 +176,7 @@ def add_customer(
     status: str = "active",
     customer_type: str = "",
     budget: float = 0,
+    color: str = "",
     repo: str | None = None,
     tags: list[str] | None = None,
 ) -> dict:
@@ -178,6 +194,7 @@ def add_customer(
         raise ValueError(f"Customer already exists: {name}")
 
     props: dict[str, str] = {"STATUS": status}
+    props["COLOR"] = color or _random_color()
     if customer_type:
         props["TYPE"] = customer_type
     if budget:

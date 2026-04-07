@@ -305,6 +305,7 @@ class CustomerBackend(ABC):
         status: str = "active",
         customer_type: str = "",
         budget: float = 0,
+        color: str = "",
         repo: str | None = None,
         tags: list[str] | None = None,
     ) -> dict:

@@ -621,7 +621,7 @@ export function DashboardView() {
             label="Open tasks"
             value={data.open_task_count}
             icon={CheckSquare}
-            cta="#1e1e2e"
+            cta="#18181b"
             onClick={() => setView("board")}
           />
           <StatCard
