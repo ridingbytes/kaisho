@@ -81,7 +81,7 @@ export function KanbanColumn({
       ref={setNodeRef}
       style={style}
       className={[
-        "flex flex-col w-72 shrink-0",
+        "flex flex-col w-72 shrink-0 h-full min-h-0",
         isDragging ? "opacity-40" : "",
       ]
         .filter(Boolean)
@@ -129,7 +129,7 @@ export function KanbanColumn({
       {/* Drop zone */}
       <div
         className={[
-          "flex flex-col gap-2 min-h-32 p-2 rounded-xl",
+          "flex flex-col gap-2 min-h-32 p-2 rounded-xl flex-1 overflow-y-auto min-h-0",
           "border border-dashed transition-colors duration-150",
           isOver
             ? "border-cta bg-cta-muted"
