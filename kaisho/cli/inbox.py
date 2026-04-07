@@ -40,9 +40,17 @@ def inbox():
 @click.argument("text", nargs=-1, required=True)
 @click.option("--type", "item_type", default=None,
               help="Item type: EMAIL, IDEE, LEAD, NOTIZ")
-@click.option("--customer", default=None, help="Customer name")
+@click.option("--customer", default=None,
+              help="Customer name")
+@click.option("--body", "-b", default=None,
+              help="Body text / details")
+@click.option("--channel", default=None,
+              help="Channel: email, phone, chat, etc.")
+@click.option("--direction", default=None,
+              help="Direction: in or out")
 @click.option("--json", "as_json", is_flag=True)
-def inbox_add(text, item_type, customer, as_json):
+def inbox_add(text, item_type, customer, body,
+              channel, direction, as_json):
     """Add an item to the inbox.
 
     Pass - as TEXT to read from stdin.
@@ -54,6 +62,9 @@ def inbox_add(text, item_type, customer, as_json):
         text=joined,
         item_type=item_type,
         customer=customer,
+        body=body,
+        channel=channel,
+        direction=direction,
     )
     if as_json:
         click.echo(json.dumps(result, default=str))
@@ -78,6 +89,21 @@ def inbox_list(type_filter, as_json):
         return
     for item in items:
         click.echo(_format_item(item))
+
+
+@inbox.command("remove")
+@click.argument("item_id")
+@click.option("--json", "as_json", is_flag=True)
+def inbox_remove(item_id, as_json):
+    """Remove an inbox item by ID."""
+    ok = get_backend().inbox.remove_item(item_id)
+    if as_json:
+        click.echo(json.dumps({"removed": ok}))
+    elif ok:
+        click.echo(f"Removed #{item_id}")
+    else:
+        click.echo(f"Item not found: #{item_id}", err=True)
+        sys.exit(1)
 
 
 @inbox.command("promote")

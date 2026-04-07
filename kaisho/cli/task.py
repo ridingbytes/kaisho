@@ -37,14 +37,22 @@ def task():
 @click.argument("title", nargs=-1, required=True)
 @click.option("--tag", "tags", multiple=True, help="Add tag")
 @click.option("--status", default="TODO", help="Initial status")
-@click.option("--json", "as_json", is_flag=True, help="JSON output")
-def task_add(customer_name, title, tags, status, as_json):
+@click.option("--body", "-b", default=None,
+              help="Task body/description")
+@click.option("--github-url", default=None,
+              help="GitHub issue/PR URL")
+@click.option("--json", "as_json", is_flag=True,
+              help="JSON output")
+def task_add(customer_name, title, tags, status,
+             body, github_url, as_json):
     """Add a new task."""
     result = get_backend().tasks.add_task(
         customer=customer_name,
         title=" ".join(title),
         status=status,
         tags=list(tags),
+        body=body,
+        github_url=github_url,
     )
     if as_json:
         click.echo(json.dumps(result, default=str))
