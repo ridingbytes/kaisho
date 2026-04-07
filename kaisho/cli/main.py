@@ -24,6 +24,7 @@ from ..config import (
     list_profiles,
     rename_profile,
     reset_config,
+    resolve_active_profile,
 )
 
 
@@ -39,6 +40,13 @@ def cli(profile):
     if profile:
         os.environ["PROFILE"] = profile
         reset_config()
+    else:
+        # Restore persisted profile selection
+        cfg = get_config()
+        saved = resolve_active_profile(cfg.DATA_DIR)
+        if saved != cfg.PROFILE:
+            os.environ["PROFILE"] = saved
+            reset_config()
     init_data_dir()
 
 

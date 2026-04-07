@@ -31,14 +31,13 @@ from .watcher.service import watch_files
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import os
-    # Restore the active profile on startup.
-    if not os.environ.get("PROFILE"):
-        cfg = get_config()
-        saved = resolve_active_profile(cfg.DATA_DIR)
-        if saved != cfg.PROFILE:
-            os.environ["PROFILE"] = saved
-            reset_config()
+    # Always restore the persisted profile, even if
+    # PROFILE env var is set to "default" by pydantic.
     cfg = get_config()
+    saved = resolve_active_profile(cfg.DATA_DIR)
+    if saved != cfg.PROFILE:
+        os.environ["PROFILE"] = saved
+        cfg = reset_config()
     if cfg.PROFILE_DIR.is_dir():
         init_data_dir(cfg)
     watch_paths = get_backend().watch_paths
