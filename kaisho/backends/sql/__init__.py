@@ -322,8 +322,13 @@ def _note_row_to_dict(row: NoteRow) -> dict:
 def _customer_row_to_dict(row: CustomerRow) -> dict:
     """Convert a CustomerRow ORM object to a dict.
 
-    Does NOT include computed budget fields (used/rest).
+    Includes contracts from the relationship. Does NOT
+    include computed budget fields (used/rest).
     """
+    contracts = [
+        _contract_row_to_dict(c)
+        for c in (row.contracts or [])
+    ]
     return {
         "name": row.name,
         "status": row.status or "active",
@@ -332,7 +337,10 @@ def _customer_row_to_dict(row: CustomerRow) -> dict:
         "budget": row.budget or 0,
         "repo": row.repo or "",
         "tags": _parse_tags(row.tags),
-        "properties": _parse_properties(row.properties),
+        "properties": _parse_properties(
+            row.properties
+        ),
+        "contracts": contracts,
     }
 
 
@@ -1228,11 +1236,15 @@ class SqlCustomerBackend(CustomerBackend):
             session.close()
 
     def _enrich_customer(self, cust: dict) -> dict:
-        """Add computed budget fields (used/rest)."""
-        hours = self._used_hours(cust["name"])
+        """Add computed budget fields (used/rest)
+        to customer and all its contracts."""
+        name = cust["name"]
+        hours = self._used_hours(name)
         budget = cust.get("budget", 0)
         cust["used"] = hours
         cust["rest"] = round(budget - hours, 2)
+        for con in cust.get("contracts", []):
+            self._enrich_contract(name, con)
         return cust
 
     def _enrich_contract(

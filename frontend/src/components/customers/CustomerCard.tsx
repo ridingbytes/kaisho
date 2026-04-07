@@ -881,10 +881,13 @@ export function CustomerCard({ customer: c }: Props) {
   const { data: settings } = useSettings();
   const customerTypes = settings?.customer_types ?? [];
 
+  const contracts = c.contracts ?? [];
   const activeContract =
-    c.contracts.find((ct) => ct.end_date === null)?.name ?? "";
+    contracts.find(
+      (ct) => !ct.end_date,
+    )?.name ?? "";
 
-  const hasContracts = (c.contracts ?? []).length > 0;
+  const hasContracts = contracts.length > 0;
   const hasContingent = !hasContracts && c.budget > 0;
   const isArchived = ["inactive", "archiv", "archived"].includes(
     c.status.toLowerCase()
