@@ -53,12 +53,24 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Kaisho", lifespan=lifespan)
 
+_DEFAULT_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+
+
+def _cors_origins() -> list[str]:
+    """Read CORS origins from env or fall back to defaults."""
+    import os
+    env = os.environ.get("CORS_ORIGINS", "")
+    if env:
+        return [o.strip() for o in env.split(",") if o.strip()]
+    return _DEFAULT_ORIGINS
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-    ],
+    allow_origins=_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
