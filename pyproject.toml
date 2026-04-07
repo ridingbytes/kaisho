@@ -22,9 +22,18 @@ dependencies = [
     "youtube-transcript-api>=1.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+]
+
 [project.scripts]
 kai = "kaisho.cli.main:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["kaisho*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
