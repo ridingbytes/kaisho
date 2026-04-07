@@ -1,6 +1,10 @@
+import hashlib
+import hmac
 import json
+import secrets
 import urllib.request
 from base64 import b64decode, b64encode
+from pathlib import Path
 from time import time
 
 from fastapi import APIRouter, Body, HTTPException, Request
@@ -12,11 +16,58 @@ from ...services import settings as settings_svc
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
 # ------------------------------------------------------------------
-# In-memory session store (cleared on restart)
+# Persistent session store (survives server restarts)
 # ------------------------------------------------------------------
 
 _SESSION_TTL = 86400  # 24 hours
 _sessions: dict[str, dict] = {}  # token -> {username, created}
+
+
+def _sessions_path() -> Path:
+    """Path to the sessions persistence file."""
+    return get_config().DATA_DIR / ".sessions.json"
+
+
+def _load_sessions() -> None:
+    """Load sessions from disk, pruning expired ones."""
+    global _sessions
+    path = _sessions_path()
+    if not path.exists():
+        return
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return
+    now = time()
+    _sessions = {
+        k: v for k, v in data.items()
+        if now - v.get("created", 0) < _SESSION_TTL
+    }
+
+
+def _save_sessions() -> None:
+    """Persist sessions to disk."""
+    path = _sessions_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(_sessions), encoding="utf-8",
+    )
+
+
+def _server_secret() -> str:
+    """Return the server signing secret, creating if needed."""
+    cfg = get_config()
+    path = cfg.DATA_DIR / ".server_secret"
+    if path.exists():
+        return path.read_text(encoding="utf-8").strip()
+    secret = secrets.token_hex(32)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(secret, encoding="utf-8")
+    return secret
+
+
+# Load persisted sessions on module import
+_load_sessions()
 
 # ------------------------------------------------------------------
 # Rate limiting for auth endpoints
@@ -41,10 +92,21 @@ def _rate_limit_check(key: str) -> None:
     _rate_buckets[key] = bucket
 
 
+def _sign(payload: str) -> str:
+    """Create HMAC-SHA256 signature for a payload."""
+    return hmac.new(
+        _server_secret().encode(),
+        payload.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+
 def _make_token(username: str) -> str:
-    """Create a session token and store it."""
-    raw = f"{username}:{time()}"
-    return b64encode(raw.encode()).decode()
+    """Create a signed session token."""
+    payload = f"{username}:{time()}"
+    encoded = b64encode(payload.encode()).decode()
+    signature = _sign(encoded)
+    return f"{encoded}.{signature}"
 
 
 def _token_username(token: str) -> str | None:
@@ -54,7 +116,13 @@ def _token_username(token: str) -> str | None:
         return None
     if time() - session["created"] > _SESSION_TTL:
         _sessions.pop(token, None)
+        _save_sessions()
         return None
+    # Verify signature
+    if "." in token:
+        encoded, sig = token.rsplit(".", 1)
+        if not hmac.compare_digest(sig, _sign(encoded)):
+            return None
     return session["username"]
 
 
@@ -170,7 +238,10 @@ def auth_login(body: LoginBody, request: Request):
     init_data_dir(cfg)
     reset_backend()
     token = _make_token(body.username)
-    _sessions[token] = {"username": body.username, "created": time()}
+    _sessions[token] = {
+        "username": body.username, "created": time(),
+    }
+    _save_sessions()
     from ...config import load_user_yaml
     meta = load_user_yaml(cfg)
     return {
@@ -228,7 +299,10 @@ def auth_register(body: RegisterBody, request: Request):
             _htpasswd_path(username), body.password,
         )
     token = _make_token(username)
-    _sessions[token] = {"username": username, "created": time()}
+    _sessions[token] = {
+        "username": username, "created": time(),
+    }
+    _save_sessions()
     return {
         "token": token,
         "password_set": bool(body.password),
@@ -271,6 +345,7 @@ def auth_logout(request: Request):
     if auth.startswith("Bearer "):
         token = auth[7:]
         _sessions.pop(token, None)
+        _save_sessions()
     return {"ok": True}
 
 
