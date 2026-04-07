@@ -1,9 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"
      width="32" height="32" fill="none">
-  <!-- Kaisho logo: Chevron Dot — "Execute. Result."
-       Graphite Lavender primary: #1e1e2e -->
-  <path d="M8 8l10 8-10 8"
-        stroke="#1e1e2e" stroke-width="3"
-        stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="25" cy="16" r="2.5" fill="#1e1e2e"/>
+  <!-- Kaisho: Open Bracket Palm (Three Lines)
+       開手 — structure for what you hold -->
+  <path d="M 10 5 L 5 5 L 5 27 L 10 27"
+        stroke="#1e1e2e" stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round" fill="none"/>
+  <line x1="13" y1="10" x2="13" y2="22"
+        stroke="#1e1e2e" stroke-width="2.2"
+        stroke-linecap="round"/>
+  <line x1="19" y1="8" x2="19" y2="24"
+        stroke="#1e1e2e" stroke-width="2.2"
+        stroke-linecap="round"/>
+  <line x1="25" y1="11" x2="25" y2="21"
+        stroke="#1e1e2e" stroke-width="2.2"
+        stroke-linecap="round"/>
 </svg>
