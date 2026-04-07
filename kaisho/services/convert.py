@@ -4,6 +4,7 @@ Reads all entities from a source backend and writes them
 to a target backend. Handles dependency ordering:
 customers first, then tasks, clocks, inbox, notes.
 """
+from datetime import date
 from pathlib import Path
 
 from ..backends import Backend
@@ -122,16 +123,21 @@ def _convert_clocks(
         mins = e.get("duration_minutes") or 0
         if mins <= 0:
             continue
-        h = mins / 60
-        dur_str = f"{h:.2f}h"
+        h = int(mins // 60)
+        m = int(mins % 60)
+        dur_str = f"{h}h{m}m" if m else f"{h}h"
+        tgt_date = None
+        if e.get("start"):
+            tgt_date = date.fromisoformat(
+                e["start"][:10]
+            )
         target.clocks.quick_book(
             duration_str=dur_str,
             customer=e["customer"],
             description=e.get("description", ""),
             task_id=e.get("task_id"),
             contract=e.get("contract"),
-            target_date=e["start"][:10]
-            if e.get("start") else None,
+            target_date=tgt_date,
         )
         count += 1
     return count

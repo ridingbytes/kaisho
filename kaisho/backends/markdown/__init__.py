@@ -1669,6 +1669,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         status="active",
         customer_type="",
         budget=0,
+        color="",
         repo=None,
         tags=None,
     ) -> dict:
@@ -1682,7 +1683,7 @@ class MarkdownCustomerBackend(CustomerBackend):
             "name": name,
             "status": status,
             "type": customer_type,
-            "color": "",
+            "color": color,
             "tags": tags or [],
             "budget": budget,
             "repo": repo or "",

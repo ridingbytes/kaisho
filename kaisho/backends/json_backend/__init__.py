@@ -778,6 +778,7 @@ class JsonCustomerBackend(CustomerBackend):
         status="active",
         customer_type="",
         budget=0,
+        color="",
         repo=None,
         tags=None,
     ) -> dict:
@@ -791,6 +792,7 @@ class JsonCustomerBackend(CustomerBackend):
             "name": name,
             "status": status,
             "type": customer_type,
+            "color": color,
             "tags": tags or [],
             "budget": budget,
             "repo": repo or "",
