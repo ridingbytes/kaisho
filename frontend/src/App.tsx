@@ -226,11 +226,11 @@ function AppShell({
           <img
             src={
               theme === "dark"
-                ? "/kaisho-wordmark-light.svg"
-                : "/kaisho-wordmark.svg"
+                ? "/kaisho-logo-light.svg"
+                : "/kaisho-logo.svg"
             }
             alt="Kaisho"
-            className="h-4"
+            className="h-6"
           />
         </button>
         <span className="text-border mx-0.5">·</span>

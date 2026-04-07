@@ -14,8 +14,8 @@ DEFAULT_AI: dict = {
     "openrouter_api_key": "",
     "openai_url": "https://api.openai.com/v1",
     "openai_api_key": "",
-    "advisor_model": "ollama:qwen3:14b",
-    "cron_model": "ollama:qwen3:14b",
+    "advisor_model": "",
+    "cron_model": "",
 }
 
 
