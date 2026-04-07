@@ -1,7 +1,7 @@
-"""Tests for markdown and JSON backends.
+"""Tests for markdown, JSON, and SQL backends.
 
-Both backends implement the same ABC interface, so we parametrize
-all tests to run against both implementations.
+All backends implement the same ABC interface, so we
+parametrize all tests to run against all implementations.
 """
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -22,6 +22,14 @@ from kaisho.backends.markdown import (
     MarkdownNotesBackend,
     MarkdownTaskBackend,
 )
+from kaisho.backends.sql import (
+    SqlClockBackend,
+    SqlCustomerBackend,
+    SqlInboxBackend,
+    SqlNotesBackend,
+    SqlTaskBackend,
+    _DB,
+)
 
 
 # ---------------------------------------------------------------
@@ -29,49 +37,82 @@ from kaisho.backends.markdown import (
 # ---------------------------------------------------------------
 
 
-@pytest.fixture(params=["markdown", "json"])
+def _sql_dsn(tmp_path: Path) -> str:
+    return f"sqlite:///{tmp_path / 'test.db'}"
+
+
+@pytest.fixture(params=["markdown", "json", "sql"])
 def tasks_backend(request, tmp_path):
-    tasks_f = tmp_path / "tasks.md"
-    archive_f = tmp_path / "archive.md"
     if request.param == "markdown":
-        return MarkdownTaskBackend(tasks_f, archive_f)
-    tasks_f = tmp_path / "tasks.json"
-    archive_f = tmp_path / "archive.json"
-    return JsonTaskBackend(tasks_f, archive_f)
+        return MarkdownTaskBackend(
+            tmp_path / "tasks.md",
+            tmp_path / "archive.md",
+        )
+    if request.param == "json":
+        return JsonTaskBackend(
+            tmp_path / "tasks.json",
+            tmp_path / "archive.json",
+        )
+    db = _DB(_sql_dsn(tmp_path))
+    return SqlTaskBackend(db)
 
 
-@pytest.fixture(params=["markdown", "json"])
+@pytest.fixture(params=["markdown", "json", "sql"])
 def clocks_backend(request, tmp_path):
     if request.param == "markdown":
-        return MarkdownClockBackend(tmp_path / "clocks.md")
-    return JsonClockBackend(tmp_path / "clocks.json")
+        return MarkdownClockBackend(
+            tmp_path / "clocks.md",
+        )
+    if request.param == "json":
+        return JsonClockBackend(
+            tmp_path / "clocks.json",
+        )
+    db = _DB(_sql_dsn(tmp_path))
+    return SqlClockBackend(db)
 
 
-@pytest.fixture(params=["markdown", "json"])
+@pytest.fixture(params=["markdown", "json", "sql"])
 def inbox_backend(request, tmp_path):
     if request.param == "markdown":
-        return MarkdownInboxBackend(tmp_path / "inbox.md")
-    return JsonInboxBackend(tmp_path / "inbox.json")
+        return MarkdownInboxBackend(
+            tmp_path / "inbox.md",
+        )
+    if request.param == "json":
+        return JsonInboxBackend(
+            tmp_path / "inbox.json",
+        )
+    db = _DB(_sql_dsn(tmp_path))
+    return SqlInboxBackend(db)
 
 
-@pytest.fixture(params=["markdown", "json"])
+@pytest.fixture(params=["markdown", "json", "sql"])
 def notes_backend(request, tmp_path):
     if request.param == "markdown":
-        return MarkdownNotesBackend(tmp_path / "notes.md")
-    return JsonNotesBackend(tmp_path / "notes.json")
+        return MarkdownNotesBackend(
+            tmp_path / "notes.md",
+        )
+    if request.param == "json":
+        return JsonNotesBackend(
+            tmp_path / "notes.json",
+        )
+    db = _DB(_sql_dsn(tmp_path))
+    return SqlNotesBackend(db)
 
 
-@pytest.fixture(params=["markdown", "json"])
+@pytest.fixture(params=["markdown", "json", "sql"])
 def customers_backend(request, tmp_path):
     if request.param == "markdown":
         return MarkdownCustomerBackend(
             tmp_path / "customers.md",
             tmp_path / "clocks.md",
         )
-    return JsonCustomerBackend(
-        tmp_path / "customers.json",
-        tmp_path / "clocks.json",
-    )
+    if request.param == "json":
+        return JsonCustomerBackend(
+            tmp_path / "customers.json",
+            tmp_path / "clocks.json",
+        )
+    db = _DB(_sql_dsn(tmp_path))
+    return SqlCustomerBackend(db)
 
 
 # ---------------------------------------------------------------
