@@ -146,6 +146,7 @@ DEFAULT_PATHS: dict = {
     "backend": "org",
     "org_dir": "",
     "markdown_dir": "",
+    "json_dir": "",
 }
 
 
@@ -159,7 +160,7 @@ def _default_org_dir(cfg) -> str:
 
 
 def _default_markdown_dir(cfg) -> str:
-    """Profile-local markdown dir, unless an explicit env override."""
+    """Profile-local markdown dir."""
     from pathlib import Path
     builtin = Path("data/markdown").expanduser()
     if cfg.MARKDOWN_DIR.expanduser() != builtin:
@@ -167,36 +168,55 @@ def _default_markdown_dir(cfg) -> str:
     return str(cfg.PROFILE_DIR / "markdown")
 
 
-def get_path_settings(settings: dict, cfg=None) -> dict:
-    """Return backend/path settings with defaults from config.
+def _default_json_dir(cfg) -> str:
+    """Profile-local JSON dir."""
+    from pathlib import Path
+    builtin = Path("data/json").expanduser()
+    if cfg.JSON_DIR.expanduser() != builtin:
+        return str(cfg.JSON_DIR.expanduser())
+    return str(cfg.PROFILE_DIR / "json")
 
-    Keys: backend, org_dir, markdown_dir.
-    org_dir and markdown_dir default to subdirectories inside
-    PROFILE_DIR so each profile keeps its data isolated.
+
+def get_path_settings(settings: dict, cfg=None) -> dict:
+    """Return backend/path settings with defaults.
+
+    Keys: backend, org_dir, markdown_dir, json_dir.
+    Each defaults to a subdirectory inside PROFILE_DIR
+    so each profile keeps its data isolated.
     """
     if cfg is None:
         from ..config import get_config
         cfg = get_config()
     stored = settings.get("paths", {})
     return {
-        "backend": stored.get("backend") or cfg.BACKEND,
+        "backend": (
+            stored.get("backend") or cfg.BACKEND
+        ),
         "org_dir": (
-            stored.get("org_dir") or _default_org_dir(cfg)
+            stored.get("org_dir")
+            or _default_org_dir(cfg)
         ),
         "markdown_dir": (
             stored.get("markdown_dir")
             or _default_markdown_dir(cfg)
         ),
+        "json_dir": (
+            stored.get("json_dir")
+            or _default_json_dir(cfg)
+        ),
     }
 
 
 def set_path_settings(
-    path: Path, updates: dict
+    path: Path, updates: dict,
 ) -> dict:
-    """Persist path/backend settings into settings.yaml."""
+    """Persist path/backend settings."""
     data = load_settings(path)
     paths = data.get("paths", {})
-    for key in ("backend", "org_dir", "markdown_dir"):
+    for key in (
+        "backend", "org_dir",
+        "markdown_dir", "json_dir",
+    ):
         if key in updates and updates[key] is not None:
             paths[key] = updates[key]
     data["paths"] = paths

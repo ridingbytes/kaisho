@@ -710,11 +710,15 @@ class JsonCustomerBackend(CustomerBackend):
         return round(total_min / 60, 2)
 
     def _enrich_customer(self, cust: dict) -> dict:
-        """Add computed budget fields."""
-        hours = self._used_hours(cust["name"])
+        """Add computed budget fields to customer
+        and all its contracts."""
+        name = cust["name"]
+        hours = self._used_hours(name)
         budget = cust.get("budget", 0)
         cust["used"] = hours
         cust["rest"] = round(budget - hours, 2)
+        for con in cust.get("contracts", []):
+            self._enrich_contract(name, con)
         return cust
 
     def _enrich_contract(
@@ -1016,21 +1020,31 @@ def make_json_backend(cfg) -> tuple[
     CustomerBackend, NotesBackend, list[Path],
 ]:
     """Build JSON backends from config paths."""
-    md_dir = cfg.MARKDOWN_DIR.expanduser()
-    md_dir.mkdir(parents=True, exist_ok=True)
+    json_dir = cfg.JSON_DIR.expanduser()
+    json_dir.mkdir(parents=True, exist_ok=True)
 
     tasks = JsonTaskBackend(
-        md_dir / "tasks.json",
-        md_dir / "archive.json",
+        json_dir / "tasks.json",
+        json_dir / "archive.json",
     )
-    clocks = JsonClockBackend(md_dir / "clocks.json")
-    inbox = JsonInboxBackend(md_dir / "inbox.json")
+    clocks = JsonClockBackend(
+        json_dir / "clocks.json",
+    )
+    inbox = JsonInboxBackend(
+        json_dir / "inbox.json",
+    )
     cust = JsonCustomerBackend(
-        md_dir / "customers.json",
-        md_dir / "clocks.json",
+        json_dir / "customers.json",
+        json_dir / "clocks.json",
     )
-    notes = JsonNotesBackend(md_dir / "notes.json")
+    notes = JsonNotesBackend(
+        json_dir / "notes.json",
+    )
     watch_paths = [
-        md_dir, cfg.SETTINGS_FILE.expanduser()
+        json_dir,
+        cfg.SETTINGS_FILE.expanduser(),
     ]
-    return tasks, clocks, inbox, cust, notes, watch_paths
+    return (
+        tasks, clocks, inbox, cust, notes,
+        watch_paths,
+    )

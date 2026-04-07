@@ -372,8 +372,10 @@ function BudgetRow({
     ? b.contracts.reduce((s, c) => s + c.budget, 0)
     : b.budget;
   const displayUsed = hasContracts
-    ? b.contracts.reduce((s, c) => s + c.used, 0)
-    : b.budget - b.rest;
+    ? b.contracts.reduce(
+        (s, c) => s + (c.used ?? 0), 0,
+      )
+    : (b.budget ?? 0) - (b.rest ?? 0);
   const usedPercent = hasContracts
     ? contractUsedPct(displayBudget, displayUsed)
     : Math.min(100 - b.percent, 100);
@@ -463,7 +465,7 @@ function BudgetRow({
                     className="text-[9px] tabular-nums shrink-0 ml-2"
                     style={{ color: cColor }}
                   >
-                    {c.used.toFixed(1)}h used · {c.rest.toFixed(1)}h left · {pct}%
+                    {(c.used ?? 0).toFixed(1)}h used · {(c.rest ?? 0).toFixed(1)}h left · {pct}%
                   </span>
                 </div>
                 <div className="h-1.5 rounded-full bg-surface-raised overflow-hidden">

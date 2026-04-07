@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8765
     MARKDOWN_DIR: Path = Path("data/markdown")
+    JSON_DIR: Path = Path("data/json")
     BACKEND: str = "org"
     SQL_DSN: str = ""
 

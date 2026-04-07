@@ -116,6 +116,8 @@ class _OverlayCfg:
             return Path(paths["org_dir"])
         if name == "MARKDOWN_DIR" and paths.get("markdown_dir"):
             return Path(paths["markdown_dir"])
+        if name == "JSON_DIR" and paths.get("json_dir"):
+            return Path(paths["json_dir"])
         if name == "BACKEND":
             return paths.get("backend", "org")
         # Re-derive org file paths from overridden ORG_DIR
