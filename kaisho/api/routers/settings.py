@@ -137,7 +137,7 @@ def auth_login(body: LoginBody, request: Request):
     import os
     from ...backends import reset_backend
     from ...config import (
-        init_data_dir, list_users, load_active_profile,
+        init_data_dir, list_users, resolve_active_profile,
         reset_config,
     )
     client = request.client.host if request.client else "unknown"
@@ -164,9 +164,8 @@ def auth_login(body: LoginBody, request: Request):
             )
     base_cfg = get_config()
     user_dir = base_cfg.DATA_DIR / "users" / body.username
-    saved_profile = load_active_profile(user_dir)
     os.environ["KAISHO_USER"] = body.username
-    os.environ["PROFILE"] = saved_profile or "default"
+    os.environ["PROFILE"] = resolve_active_profile(user_dir)
     cfg = reset_config()
     init_data_dir(cfg)
     reset_backend()
@@ -955,8 +954,8 @@ def create_user(body: UserCreate):
         )
     import os
     from datetime import datetime, timezone
-    old_user = os.environ.get("KAISHO_USER", "")
-    old_prof = os.environ.get("PROFILE", "")
+    old_user = os.environ.get("KAISHO_USER")
+    old_prof = os.environ.get("PROFILE")
     os.environ["KAISHO_USER"] = username
     os.environ["PROFILE"] = "default"
     new_cfg = reset_config()
@@ -967,8 +966,14 @@ def create_user(body: UserCreate):
         "created": datetime.now(timezone.utc).isoformat(),
     })
     init_data_dir(new_cfg)
-    os.environ["KAISHO_USER"] = old_user or "default"
-    os.environ["PROFILE"] = old_prof or "default"
+    if old_user is not None:
+        os.environ["KAISHO_USER"] = old_user
+    else:
+        os.environ.pop("KAISHO_USER", None)
+    if old_prof is not None:
+        os.environ["PROFILE"] = old_prof
+    else:
+        os.environ.pop("PROFILE", None)
     reset_config()
     return {"username": username}
 
@@ -1035,11 +1040,14 @@ def create_profile(body: ProfileCreate):
             status_code=409,
             detail=f"Profile '{name}' already exists",
         )
-    old = os.environ.get("PROFILE", "")
+    old = os.environ.get("PROFILE")
     os.environ["PROFILE"] = name
     new_cfg = reset_config()
     init_data_dir(new_cfg)
-    os.environ["PROFILE"] = old or "default"
+    if old is not None:
+        os.environ["PROFILE"] = old
+    else:
+        os.environ.pop("PROFILE", None)
     reset_config()
     return {"name": name}
 
@@ -1060,6 +1068,21 @@ def rename_profile_endpoint(name: str, body: ProfileRename):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return {"name": body.new_name}
+
+
+class ProfileCopy(BaseModel):
+    target: str
+
+
+@router.post("/profiles/{name}/copy", status_code=201)
+def copy_profile_endpoint(name: str, body: ProfileCopy):
+    """Copy a profile to a new name."""
+    from ...config import copy_profile
+    try:
+        copy_profile(name, body.target)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"name": body.target}
 
 
 @router.delete("/profiles/{name}", status_code=204)

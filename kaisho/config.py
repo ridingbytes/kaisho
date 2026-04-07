@@ -184,6 +184,28 @@ def load_active_profile(user_dir: Path) -> str | None:
     return None
 
 
+def resolve_active_profile(user_dir: Path) -> str:
+    """Return a valid profile name for *user_dir*.
+
+    Reads the persisted selection and validates it still exists on
+    disk.  If the saved profile directory is gone, falls back to the
+    first existing profile, or "default" as a last resort.
+    """
+    profiles_dir = user_dir / "profiles"
+    saved = load_active_profile(user_dir)
+    if saved and (profiles_dir / saved).is_dir():
+        return saved
+    # Saved profile is gone or unset — pick the first existing one.
+    if profiles_dir.is_dir():
+        existing = sorted(
+            d.name for d in profiles_dir.iterdir()
+            if d.is_dir()
+        )
+        if existing:
+            return existing[0]
+    return "default"
+
+
 def save_active_profile(user_dir: Path, name: str) -> None:
     """Persist the active profile selection to disk."""
     user_dir.mkdir(parents=True, exist_ok=True)
@@ -223,6 +245,32 @@ def delete_profile(name: str, cfg: Settings | None = None) -> None:
     if not profile_dir.is_dir():
         raise ValueError(f"Profile '{name}' does not exist")
     shutil.rmtree(profile_dir)
+
+
+def copy_profile(
+    source: str,
+    target: str,
+    cfg: Settings | None = None,
+) -> None:
+    """Copy *source* profile directory to *target*.
+
+    Raises ValueError if *source* does not exist or *target* already
+    exists.
+    """
+    import re
+    import shutil
+    if cfg is None:
+        cfg = get_config()
+    target = re.sub(r"[^a-zA-Z0-9_-]", "", target.strip())
+    if not target:
+        raise ValueError("Target profile name is invalid")
+    src = cfg.USER_DIR / "profiles" / source
+    dst = cfg.USER_DIR / "profiles" / target
+    if not src.is_dir():
+        raise ValueError(f"Profile '{source}' does not exist")
+    if dst.exists():
+        raise ValueError(f"Profile '{target}' already exists")
+    shutil.copytree(src, dst)
 
 
 def rename_profile(

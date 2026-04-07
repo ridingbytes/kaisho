@@ -21,7 +21,6 @@ export const DEFAULT_SHORTCUTS: ShortcutsConfig = {
     customers: "c",
     knowledge: "k",
     github: "g",
-    communications: "m",
     clocks: "t",
     cron: "r",
     settings: "s",

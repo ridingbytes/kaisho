@@ -233,49 +233,6 @@ kai note promote 3 --customer ACME
 Notes are stored in \`notes.org\` in \`ORG_DIR\`.
 `,
 
-  communications: `
-# Communications
-
-Log inbound and outbound communication entries (calls, emails, chats)
-linked to customers.
-
-**Storage** — entries are stored in SQLite
-(\`DATA_DIR/omnicontrol.db\`, table \`communications\`). Not in an
-org file.
-
-**Log entry** — "+ New" opens a form. Fields: subject, direction
-(in/out), channel (email/phone/chat/other), customer, contact, type,
-tags, body.
-
-**Type** — free-text field for classifying the entry (e.g. meeting,
-proposal, complaint, support). Shown as a badge on the row.
-
-**Tags** — colored labels from Settings. Toggle them in the add form
-or by clicking the pencil icon on any existing row.
-
-**Filter** — filter by customer, channel, or direction using the
-dropdowns in the toolbar.
-
-**Search** — full-text search across subjects and body text.
-
-**Delete** — × icon on a row removes the entry.
-
-## CLI
-
-\`\`\`bash
-kai comm add "Pricing inquiry" --direction in --customer ACME
-kai comm add "Sent proposal" -d out -c email -k CERMEL
-
-kai comm list
-kai comm list --customer ACME --channel email
-kai comm search "budget"
-kai comm show 12
-kai comm delete 12
-\`\`\`
-
-Data is stored in SQLite (\`DATA_DIR/omnicontrol.db\`).
-`,
-
   cron: `
 # Cron
 

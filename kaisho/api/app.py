@@ -8,7 +8,7 @@ from ..backends import get_backend
 from ..config import (
     get_config,
     init_data_dir,
-    load_active_profile,
+    resolve_active_profile,
     reset_config,
 )
 from .routers import (
@@ -35,11 +35,16 @@ async def lifespan(app: FastAPI):
     # default back to "default" after a restart.
     if not os.environ.get("PROFILE"):
         cfg0 = get_config()
-        saved = load_active_profile(cfg0.USER_DIR)
-        if saved and saved != cfg0.PROFILE:
+        saved = resolve_active_profile(cfg0.USER_DIR)
+        if saved != cfg0.PROFILE:
             os.environ["PROFILE"] = saved
             reset_config()
-    init_data_dir()
+    # Only run init_data_dir when the profile dir already exists.
+    # Avoid auto-creating a "default" profile dir as a startup
+    # side-effect — that dir is only created on register/switch.
+    cfg = get_config()
+    if cfg.PROFILE_DIR.is_dir():
+        init_data_dir(cfg)
     watch_paths = get_backend().watch_paths
     task = asyncio.create_task(watch_files(*watch_paths))
     yield

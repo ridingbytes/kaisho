@@ -6,6 +6,7 @@ import {
 import {
   addCustomerType,
   addTag,
+  copyProfile,
   createProfile,
   createSkill,
   createUser,
@@ -451,6 +452,24 @@ export function useRenameProfile() {
       oldName: string;
       newName: string;
     }) => renameProfile(oldName, newName),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings", "profiles"],
+      });
+    },
+  });
+}
+
+export function useCopyProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      name,
+      target,
+    }: {
+      name: string;
+      target: string;
+    }) => copyProfile(name, target),
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: ["settings", "profiles"],

@@ -149,12 +149,30 @@ DEFAULT_PATHS: dict = {
 }
 
 
+def _default_org_dir(cfg) -> str:
+    """Profile-local org dir, unless an explicit env override exists."""
+    from pathlib import Path
+    builtin = Path("data/org").expanduser()
+    if cfg.ORG_DIR.expanduser() != builtin:
+        return str(cfg.ORG_DIR.expanduser())
+    return str(cfg.PROFILE_DIR / "org")
+
+
+def _default_markdown_dir(cfg) -> str:
+    """Profile-local markdown dir, unless an explicit env override."""
+    from pathlib import Path
+    builtin = Path("data/markdown").expanduser()
+    if cfg.MARKDOWN_DIR.expanduser() != builtin:
+        return str(cfg.MARKDOWN_DIR.expanduser())
+    return str(cfg.PROFILE_DIR / "markdown")
+
+
 def get_path_settings(settings: dict, cfg=None) -> dict:
     """Return backend/path settings with defaults from config.
 
     Keys: backend, org_dir, markdown_dir.
-    Falls back to config (env/.env) values when not set in
-    the profile's settings.yaml.
+    org_dir and markdown_dir default to subdirectories inside
+    PROFILE_DIR so each profile keeps its data isolated.
     """
     if cfg is None:
         from ..config import get_config
@@ -163,12 +181,11 @@ def get_path_settings(settings: dict, cfg=None) -> dict:
     return {
         "backend": stored.get("backend") or cfg.BACKEND,
         "org_dir": (
-            stored.get("org_dir")
-            or str(cfg.ORG_DIR.expanduser())
+            stored.get("org_dir") or _default_org_dir(cfg)
         ),
         "markdown_dir": (
             stored.get("markdown_dir")
-            or str(cfg.MARKDOWN_DIR.expanduser())
+            or _default_markdown_dir(cfg)
         ),
     }
 

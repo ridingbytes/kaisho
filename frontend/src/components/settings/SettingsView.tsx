@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  X, Check, Plus, Pencil, RotateCcw,
+  X, Check, Copy, Plus, Pencil, RotateCcw,
   ChevronDown, ChevronRight, Trash2,
 } from "lucide-react";
 import { HelpButton } from "../common/HelpButton";
@@ -41,6 +41,7 @@ import {
   useDeleteTag,
   useAddCustomerType,
   useDeleteCustomerType,
+  useCopyProfile,
   useCreateProfile,
   useDeleteProfile,
   useProfiles,
@@ -1411,12 +1412,15 @@ function ProfilesTab() {
   const { data: profileData } = useProfiles();
   const switchProfile = useSwitchProfile();
   const createProfile = useCreateProfile();
+  const copyProfile = useCopyProfile();
   const renameProfile = useRenameProfile();
   const deleteProfile = useDeleteProfile();
   const [newProfile, setNewProfile] = useState("");
   const [renamingProfile, setRenamingProfile] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [copyingProfile, setCopyingProfile] = useState<string | null>(null);
+  const [copyValue, setCopyValue] = useState("");
 
   if (!userData || !profileData) return null;
 
@@ -1461,6 +1465,23 @@ function ProfilesTab() {
     });
   }
 
+  function startCopy(p: string) {
+    setCopyingProfile(p);
+    setCopyValue(`${p}-copy`);
+  }
+
+  function commitCopy(p: string) {
+    const target = copyValue.trim();
+    if (!target) {
+      setCopyingProfile(null);
+      return;
+    }
+    copyProfile.mutate(
+      { name: p, target },
+      { onSettled: () => setCopyingProfile(null) },
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <section>
@@ -1475,6 +1496,7 @@ function ProfilesTab() {
           {(profileData.profiles ?? []).map((p, i, arr) => {
             const isActive = p === profileData.active;
             const isRenaming = renamingProfile === p;
+            const isCopying = copyingProfile === p;
             const isConfirmingDelete = confirmDelete === p;
             return (
               <div
@@ -1514,6 +1536,37 @@ function ProfilesTab() {
                       <X size={13} strokeWidth={2} />
                     </button>
                   </>
+                ) : isCopying ? (
+                  <>
+                    <span className="text-xs text-stone-500 shrink-0">
+                      Copy <strong className="text-stone-700">{p}</strong> to:
+                    </span>
+                    <input
+                      autoFocus
+                      className={inputCls + " flex-1 text-sm"}
+                      value={copyValue}
+                      onChange={(e) => setCopyValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitCopy(p);
+                        if (e.key === "Escape") setCopyingProfile(null);
+                      }}
+                    />
+                    <button
+                      onClick={() => commitCopy(p)}
+                      disabled={copyProfile.isPending}
+                      className="p-1 rounded text-green-500 hover:text-green-400 transition-colors"
+                      title="Create copy"
+                    >
+                      <Check size={13} strokeWidth={2} />
+                    </button>
+                    <button
+                      onClick={() => setCopyingProfile(null)}
+                      className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
+                      title="Cancel"
+                    >
+                      <X size={13} strokeWidth={2} />
+                    </button>
+                  </>
                 ) : isConfirmingDelete ? (
                   <>
                     <span className="text-xs text-stone-600 flex-1">
@@ -1545,9 +1598,18 @@ function ProfilesTab() {
                       {p}
                     </span>
                     {isActive ? (
-                      <span className="text-[10px] text-cta uppercase tracking-wider font-semibold">
-                        active
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-cta uppercase tracking-wider font-semibold">
+                          active
+                        </span>
+                        <button
+                          onClick={() => startCopy(p)}
+                          className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
+                          title="Copy profile"
+                        >
+                          <Copy size={12} strokeWidth={2} />
+                        </button>
+                      </div>
                     ) : (
                       <div className="flex items-center gap-1">
                         <button
@@ -1560,6 +1622,13 @@ function ProfilesTab() {
                           className="px-2 py-1 rounded text-xs text-stone-600 hover:text-cta hover:bg-cta-muted transition-colors"
                         >
                           Switch
+                        </button>
+                        <button
+                          onClick={() => startCopy(p)}
+                          className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
+                          title="Copy profile"
+                        >
+                          <Copy size={12} strokeWidth={2} />
                         </button>
                         <button
                           onClick={() => startRename(p)}
@@ -1721,7 +1790,6 @@ const SHORTCUT_ROWS: { key: string; label: string }[] = [
   { key: "customers", label: "Customers" },
   { key: "knowledge", label: "Knowledge" },
   { key: "github", label: "GitHub Issues" },
-  { key: "communications", label: "Communications" },
   { key: "clocks", label: "Clock Entries" },
   { key: "cron", label: "Cron Jobs" },
   { key: "settings", label: "Settings" },

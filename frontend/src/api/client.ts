@@ -293,6 +293,16 @@ export function renameProfile(
   );
 }
 
+export function copyProfile(
+  name: string,
+  target: string,
+): Promise<{ name: string }> {
+  return post(
+    `/settings/profiles/${encodeURIComponent(name)}/copy`,
+    { target },
+  );
+}
+
 export function deleteProfile(name: string): Promise<void> {
   return del(`/settings/profiles/${encodeURIComponent(name)}`);
 }
