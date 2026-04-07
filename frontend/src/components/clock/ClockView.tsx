@@ -689,9 +689,9 @@ export function ClockView() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((entry) => (
+              {sorted.map((entry, idx) => (
                 <EntryRow
-                  key={entry.start}
+                  key={`${entry.start}-${idx}`}
                   entry={entry}
                   tasks={tasks}
                 />
