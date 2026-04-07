@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   X, Check, Copy, Plus, Pencil, RotateCcw,
   ChevronDown, ChevronRight, Trash2,
@@ -1948,6 +1949,105 @@ function ShortcutsSection() {
 // Paths
 // ---------------------------------------------------------------------------
 
+function ImportDataSection() {
+  const [format, setFormat] = useState("org");
+  const [path, setPath] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState<
+    Record<string, number> | null
+  >(null);
+  const [error, setError] = useState("");
+  const qc = useQueryClient();
+
+  async function handleImport() {
+    if (!path.trim()) return;
+    setImporting(true);
+    setError("");
+    setResult(null);
+    try {
+      const { importData } = await import(
+        "../../api/client"
+      );
+      const res = await importData(format, path);
+      setResult(res.summary);
+      void qc.invalidateQueries();
+    } catch (e: unknown) {
+      setError(
+        e instanceof Error ? e.message : String(e),
+      );
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  return (
+    <div className="mb-6">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        Import Data
+      </h2>
+      <p className="text-[11px] text-stone-500 mb-3">
+        Import data from another backend into the
+        current profile.
+      </p>
+      <div className="flex items-end gap-2">
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-medium text-stone-500">
+            Format
+          </label>
+          <select
+            value={format}
+            onChange={(e) => setFormat(e.target.value)}
+            className="px-2 py-1.5 rounded-lg text-xs bg-surface-card border border-border text-stone-800"
+          >
+            <option value="org">Org-mode</option>
+            <option value="markdown">Markdown</option>
+            <option value="json">JSON</option>
+            <option value="sql">SQL (DSN)</option>
+          </select>
+        </div>
+        <div className="flex-1 flex flex-col gap-1">
+          <label className="text-[10px] font-medium text-stone-500">
+            {format === "sql"
+              ? "DSN"
+              : "Source directory"}
+          </label>
+          <input
+            type="text"
+            value={path}
+            onChange={(e) => setPath(e.target.value)}
+            placeholder={
+              format === "sql"
+                ? "sqlite:///path/to/db"
+                : "/path/to/data"
+            }
+            className="px-2 py-1.5 rounded-lg text-xs bg-surface-card border border-border text-stone-800 placeholder-stone-400"
+          />
+        </div>
+        <button
+          onClick={handleImport}
+          disabled={importing || !path.trim()}
+          className={saveBtnCls}
+        >
+          {importing ? "Importing…" : "Import"}
+        </button>
+      </div>
+      {result && (
+        <div className="mt-2 text-[11px] text-green-600">
+          Imported: {Object.entries(result)
+            .map(([k, v]) => `${v} ${k}`)
+            .join(", ")}
+        </div>
+      )}
+      {error && (
+        <div className="mt-2 text-[11px] text-red-500">
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function PathsSection() {
   const { data: paths } = usePaths();
   const update = useUpdatePaths();
@@ -2126,6 +2226,9 @@ function PathsSection() {
           )}
         </div>
       </div>
+
+      {/* Import data */}
+      <ImportDataSection />
 
       {/* KB sources */}
       <div>

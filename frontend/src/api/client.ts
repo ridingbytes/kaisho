@@ -196,6 +196,18 @@ export function switchProfile(
   return put("/settings/profile", { profile });
 }
 
+export function importData(
+  sourceFormat: string,
+  sourcePath: string,
+): Promise<{
+  summary: Record<string, number>;
+}> {
+  return post("/settings/import-data", {
+    source_format: sourceFormat,
+    source_path: sourcePath,
+  });
+}
+
 export function createProfile(
   name: string
 ): Promise<{ name: string }> {
