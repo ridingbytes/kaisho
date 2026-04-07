@@ -831,9 +831,13 @@ export function updateTimezone(
 
 export function askAdvisor(
   question: string,
-  model: string
+  model: string,
+  history: { role: string; text: string }[] = [],
 ): Promise<{ answer: string }> {
-  return post<{ answer: string }>("/advisor/ask", { question, model });
+  return post<{ answer: string }>(
+    "/advisor/ask",
+    { question, model, history },
+  );
 }
 
 export function fetchAdvisorSkills(): Promise<

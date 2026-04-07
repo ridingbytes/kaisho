@@ -10,10 +10,16 @@ from ...services.github import GhError, issues_for_customers
 router = APIRouter(prefix="/api/advisor", tags=["advisor"])
 
 
+class ChatMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    text: str
+
+
 class AskRequest(BaseModel):
     question: str
     model: str = "ollama:qwen3:14b"
     include_github: bool = False
+    history: list[ChatMessage] = []
 
 
 @router.post("/ask")
@@ -43,9 +49,26 @@ def api_ask(body: AskRequest):
     from ...config import load_user_yaml
     user_meta = load_user_yaml(cfg)
 
+    # Build question with conversation history
+    question = body.question
+    if body.history:
+        history_lines = []
+        for msg in body.history:
+            role = "User" if msg.role == "user" else "Assistant"
+            history_lines.append(
+                f"{role}: {msg.text}"
+            )
+        history_text = "\n\n".join(history_lines)
+        question = (
+            f"## Conversation so far\n\n"
+            f"{history_text}\n\n"
+            f"## Current request\n\n"
+            f"{body.question}"
+        )
+
     try:
         answer = ask(
-            question=body.question,
+            question=question,
             model_str=body.model,
             tasks=tasks,
             clock_entries=clocks,

@@ -145,7 +145,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
     onMessagesChange((prev) => [...prev, { role: "user", text: question }]);
     setLoading(true);
 
-    askAdvisor(question, model)
+    askAdvisor(question, model, messages)
       .then((result) => {
         onMessagesChange((prev) => [
           ...prev,
