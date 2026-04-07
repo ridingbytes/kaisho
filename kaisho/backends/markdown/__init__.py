@@ -2,13 +2,11 @@
 
 Each domain gets its own Markdown file inside a configurable
 directory (default: data/markdown/). Data is stored as proper
-markdown with level-2 headings and JSON metadata in fenced
-code blocks.
+markdown with level-2 headings and HTML comment property blocks.
 
 Set BACKEND=markdown in .env to activate.
 """
 import hashlib
-import json
 import re
 import tempfile
 from collections import Counter
@@ -26,11 +24,51 @@ from ..base import (
 )
 
 
-# -- Markdown parsing helpers ----------------------------------------
+# -- HTML comment property helpers ----------------------------------
 
-JSON_BLOCK_RE = re.compile(
-    r"^```json\s*\n(.*?)\n```", re.MULTILINE | re.DOTALL
+PROP_BLOCK_RE = re.compile(
+    r"<!--\s*\n(.*?)\n\s*-->",
+    re.DOTALL,
 )
+
+
+def _parse_props(block: str) -> dict:
+    """Parse key: value lines from HTML comment block.
+
+    >>> _parse_props("id: abc123\\ncreated: 2026-04-07")
+    {'id': 'abc123', 'created': '2026-04-07'}
+    >>> _parse_props("")
+    {}
+    """
+    props = {}
+    for line in block.strip().splitlines():
+        line = line.strip()
+        if not line or ":" not in line:
+            continue
+        k, v = line.split(":", 1)
+        props[k.strip()] = v.strip()
+    return props
+
+
+def _render_props(props: dict) -> str:
+    """Render dict as HTML comment property block.
+
+    >>> _render_props({"id": "abc", "status": "active"})
+    '<!--\\nid: abc\\nstatus: active\\n-->'
+    >>> _render_props({})
+    ''
+    """
+    items = [
+        (k, v) for k, v in props.items()
+        if v not in (None, "", 0, 0.0)
+    ]
+    if not items:
+        return ""
+    lines = [f"{k}: {v}" for k, v in items]
+    return "<!--\n" + "\n".join(lines) + "\n-->"
+
+
+# -- Markdown parsing helpers --------------------------------------
 
 
 def _parse_md_sections(
@@ -40,8 +78,8 @@ def _parse_md_sections(
 
     Returns list of dicts with keys:
       heading  -- text after the ## marker
-      meta     -- parsed dict from first fenced json block
-      body     -- everything after the json block
+      meta     -- parsed dict from HTML comment block
+      body     -- everything after the comment block
       raw      -- original full section text
     """
     prefix = "#" * level + " "
@@ -74,11 +112,11 @@ def _parse_md_sections(
         )
         meta = {}
         body = after_heading
-        json_match = JSON_BLOCK_RE.search(after_heading)
-        if json_match:
-            meta = json.loads(json_match.group(1))
+        prop_match = PROP_BLOCK_RE.search(after_heading)
+        if prop_match:
+            meta = _parse_props(prop_match.group(1))
             body = after_heading[
-                json_match.end():
+                prop_match.end():
             ].strip("\n")
         sections.append({
             "heading": heading,
@@ -97,12 +135,9 @@ def _render_md_sections(
     parts = []
     for sec in sections:
         lines = [f"{prefix} {sec['heading']}"]
-        if sec.get("meta"):
-            lines.append("```json")
-            lines.append(json.dumps(
-                sec["meta"], ensure_ascii=False
-            ))
-            lines.append("```")
+        prop_block = _render_props(sec.get("meta", {}))
+        if prop_block:
+            lines.append(prop_block)
         if sec.get("body"):
             lines.append("")
             lines.append(sec["body"])
@@ -110,7 +145,7 @@ def _render_md_sections(
     return "\n\n".join(parts) + "\n" if parts else ""
 
 
-# -- File I/O helpers ------------------------------------------------
+# -- File I/O helpers -----------------------------------------------
 
 
 def _read_md(path: Path) -> str:
@@ -142,7 +177,7 @@ def _generate_id(seed: str) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()[:12]
 
 
-# -- Duration parsing ------------------------------------------------
+# -- Duration parsing -----------------------------------------------
 
 _DURATION_RE = re.compile(
     r"(?:(\d+)\s*h)?[\s,]*(?:(\d+)\s*m(?:in)?)?",
@@ -162,7 +197,7 @@ def _parse_duration_minutes(duration_str: str) -> int:
     return hours * 60 + mins
 
 
-# -- Period filtering ------------------------------------------------
+# -- Period filtering -----------------------------------------------
 
 
 def _period_range(period: str) -> tuple[date, date]:
@@ -176,7 +211,7 @@ def _period_range(period: str) -> tuple[date, date]:
     if period == "month":
         start = today.replace(day=1)
         return start, today
-    # "all" or any unknown period — return widest range
+    # "all" or any unknown period -- return widest range
     return date.min, date.max
 
 
@@ -191,7 +226,7 @@ def _entry_in_range(
     return start <= entry_date <= end
 
 
-# -- Auto-categorize for inbox ---------------------------------------
+# -- Auto-categorize for inbox --------------------------------------
 
 
 def _guess_inbox_type(text: str) -> str:
@@ -215,7 +250,7 @@ def _guess_inbox_type(text: str) -> str:
     return "note"
 
 
-# -- Tag helpers (org-style :tag1:tag2: suffix) ----------------------
+# -- Tag helpers (org-style :tag1:tag2: suffix) ---------------------
 
 _TAG_SUFFIX_RE = re.compile(
     r"\s+(:[a-zA-Z0-9_@-]+(?::[a-zA-Z0-9_@-]+)*:)\s*$"
@@ -223,7 +258,7 @@ _TAG_SUFFIX_RE = re.compile(
 
 
 def _strip_tags(heading: str) -> tuple[str, list[str]]:
-    """Split heading into (text, tags) removing the tag suffix."""
+    """Split heading into (text, tags) removing tag suffix."""
     m = _TAG_SUFFIX_RE.search(heading)
     if not m:
         return heading.strip(), []
@@ -241,7 +276,7 @@ def _append_tags(heading: str, tags: list[str]) -> str:
     return f"{heading}    {tag_str}"
 
 
-# -- Task heading helpers --------------------------------------------
+# -- Task heading helpers -------------------------------------------
 
 
 def _task_heading(task: dict) -> str:
@@ -272,10 +307,39 @@ def _parse_task_heading(heading: str) -> dict:
     }
 
 
+def _props_to_task_meta(meta: dict) -> dict:
+    """Extract task fields and properties from flat props.
+
+    Lines prefixed with ``prop_`` become entries in the
+    ``properties`` sub-dict.
+    """
+    properties = {}
+    plain = {}
+    for k, v in meta.items():
+        if k.startswith("prop_"):
+            properties[k[5:]] = v
+        else:
+            plain[k] = v
+    plain["properties"] = properties
+    return plain
+
+
+def _task_meta_to_props(meta: dict) -> dict:
+    """Flatten task meta + properties into prop lines."""
+    out = {}
+    for k, v in meta.items():
+        if k == "properties":
+            continue
+        out[k] = v
+    for k, v in meta.get("properties", {}).items():
+        out[f"prop_{k}"] = v
+    return out
+
+
 def _section_to_task(sec: dict) -> dict:
     """Convert a parsed section to a task dict."""
     parsed = _parse_task_heading(sec["heading"])
-    meta = sec.get("meta", {})
+    meta = _props_to_task_meta(sec.get("meta", {}))
     return {
         "id": meta.get("id", ""),
         "customer": parsed["customer"],
@@ -300,15 +364,17 @@ def _task_to_section(task: dict) -> dict:
         "created": task.get("created", ""),
         "github_url": task.get("github_url", ""),
     }
-    if task.get("properties"):
-        meta["properties"] = task["properties"]
     if task.get("archived_at"):
         meta["archived_at"] = task["archived_at"]
     if task.get("archive_status"):
         meta["archive_status"] = task["archive_status"]
+    props = _task_meta_to_props({
+        **meta,
+        "properties": task.get("properties", {}),
+    })
     return {
         "heading": _task_heading(task),
-        "meta": meta,
+        "meta": props,
         "body": task.get("body", ""),
     }
 
@@ -515,7 +581,7 @@ class MarkdownTaskBackend(TaskBackend):
         return True
 
 
-# -- Clock heading helpers -------------------------------------------
+# -- Clock heading helpers ------------------------------------------
 
 _TIME_HEADING_RE = re.compile(
     r"^(\d{4}-\d{2}-\d{2})\s+"
@@ -574,10 +640,9 @@ def _load_clock_entries(text: str) -> list[dict]:
     """Parse grouped clock markdown into flat entry list.
 
     Uses raw splitting by heading level to avoid the generic
-    parser consuming sub-headings as JSON metadata.
+    parser consuming sub-headings as HTML comment metadata.
     """
     entries = []
-    # Split into level-2 groups by "## " prefix
     group_chunks = re.split(r"(?m)^## ", text)
     for chunk in group_chunks:
         chunk = chunk.strip()
@@ -590,8 +655,10 @@ def _load_clock_entries(text: str) -> list[dict]:
             else chunk.strip()
         )
         parsed = _parse_group_heading(heading)
-        rest = chunk[first_nl + 1:] if first_nl != -1 else ""
-        # Split into level-3 sub-entries by "### "
+        rest = (
+            chunk[first_nl + 1:] if first_nl != -1
+            else ""
+        )
         sub_chunks = re.split(r"(?m)^### ", rest)
         for sc in sub_chunks:
             sc = sc.strip()
@@ -601,21 +668,43 @@ def _load_clock_entries(text: str) -> list[dict]:
                 f"### {sc}", level=3
             )
             for sub in sub_secs:
-                times = _parse_time_heading(sub["heading"])
+                times = _parse_time_heading(
+                    sub["heading"]
+                )
                 if not times["start"]:
                     continue
                 meta = sub.get("meta", {})
                 entries.append({
                     "customer": parsed["customer"],
-                    "description": parsed["description"],
+                    "description": (
+                        parsed["description"]
+                    ),
                     "start": times["start"],
                     "end": times["end"],
                     "task_id": meta.get("task_id", ""),
-                    "contract": meta.get("contract", ""),
-                    "booked": False,
-                    "notes": sub.get("body", "").strip(),
+                    "contract": meta.get(
+                        "contract", ""
+                    ),
+                    "booked": meta.get(
+                        "booked", ""
+                    ) == "true",
+                    "notes": sub.get(
+                        "body", ""
+                    ).strip(),
                 })
     return entries
+
+
+def _clock_entry_props(entry: dict) -> dict:
+    """Build props dict for a single clock entry."""
+    props = {}
+    if entry.get("task_id"):
+        props["task_id"] = entry["task_id"]
+    if entry.get("contract"):
+        props["contract"] = entry["contract"]
+    if entry.get("booked"):
+        props["booked"] = "true"
+    return props
 
 
 def _save_clock_entries(
@@ -633,22 +722,19 @@ def _save_clock_entries(
         for e in group_entries:
             lines.append("")
             lines.append(f"### {_time_heading(e)}")
-            meta: dict = {}
-            if e.get("task_id"):
-                meta["task_id"] = e["task_id"]
-            if e.get("contract"):
-                meta["contract"] = e["contract"]
-            if meta:
-                lines.append("```json")
-                lines.append(json.dumps(
-                    meta, ensure_ascii=False
-                ))
-                lines.append("```")
+            prop_block = _render_props(
+                _clock_entry_props(e)
+            )
+            if prop_block:
+                lines.append(prop_block)
             if e.get("notes"):
                 lines.append("")
                 lines.append(e["notes"])
         parts.append("\n".join(lines))
-    _write_md(path, "\n\n".join(parts) + "\n" if parts else "")
+    _write_md(
+        path,
+        "\n\n".join(parts) + "\n" if parts else "",
+    )
 
 
 # ====================================================================
@@ -869,12 +955,17 @@ class MarkdownClockBackend(ClockBackend):
                 old_start = datetime.fromisoformat(
                     entry["start"]
                 )
-                h, m = (int(x) for x in start_time.split(":"))
+                h, m = (
+                    int(x)
+                    for x in start_time.split(":")
+                )
                 new_start = old_start.replace(
                     hour=h, minute=m,
                 )
                 delta = new_start - old_start
-                entry["start"] = new_start.isoformat()
+                entry["start"] = (
+                    new_start.isoformat()
+                )
                 if entry.get("end"):
                     old_end = datetime.fromisoformat(
                         entry["end"]
@@ -925,7 +1016,7 @@ class MarkdownClockBackend(ClockBackend):
         return True
 
 
-# -- Inbox heading helpers -------------------------------------------
+# -- Inbox heading helpers ------------------------------------------
 
 
 def _inbox_heading(item: dict) -> str:
@@ -954,10 +1045,39 @@ def _parse_inbox_heading(heading: str) -> dict:
     }
 
 
+def _props_to_inbox_meta(meta: dict) -> dict:
+    """Extract inbox fields and properties from props.
+
+    Lines prefixed with ``prop_`` become entries in the
+    ``properties`` sub-dict.
+    """
+    properties = {}
+    plain = {}
+    for k, v in meta.items():
+        if k.startswith("prop_"):
+            properties[k[5:]] = v
+        else:
+            plain[k] = v
+    plain["properties"] = properties
+    return plain
+
+
+def _inbox_meta_to_props(meta: dict) -> dict:
+    """Flatten inbox meta + properties into prop lines."""
+    out = {}
+    for k, v in meta.items():
+        if k == "properties":
+            continue
+        out[k] = v
+    for k, v in meta.get("properties", {}).items():
+        out[f"prop_{k}"] = v
+    return out
+
+
 def _section_to_inbox(sec: dict) -> dict:
     """Convert a parsed section to an inbox dict."""
     parsed = _parse_inbox_heading(sec["heading"])
-    meta = sec.get("meta", {})
+    meta = _props_to_inbox_meta(sec.get("meta", {}))
     return {
         "id": meta.get("id", ""),
         "type": parsed["type"],
@@ -981,9 +1101,10 @@ def _inbox_to_section(item: dict) -> dict:
     }
     if item.get("properties"):
         meta["properties"] = item["properties"]
+    props = _inbox_meta_to_props(meta)
     return {
         "heading": _inbox_heading(item),
-        "meta": meta,
+        "meta": props,
         "body": item.get("body", ""),
     }
 
@@ -1004,14 +1125,18 @@ class MarkdownInboxBackend(InboxBackend):
     def _load_items(self) -> list[dict]:
         text = _read_md(self._inbox_file)
         sections = _parse_md_sections(text)
-        items = [_section_to_inbox(s) for s in sections]
+        items = [
+            _section_to_inbox(s) for s in sections
+        ]
         for idx, item in enumerate(items, 1):
             if not item.get("id"):
                 item["id"] = str(idx)
         return items
 
     def _save_items(self, items: list[dict]) -> None:
-        sections = [_inbox_to_section(i) for i in items]
+        sections = [
+            _inbox_to_section(i) for i in items
+        ]
         _write_md(
             self._inbox_file,
             _render_md_sections(sections),
@@ -1050,7 +1175,8 @@ class MarkdownInboxBackend(InboxBackend):
     def remove_item(self, item_id) -> bool:
         items = self._load_items()
         new = [
-            i for i in items if i.get("id") != item_id
+            i for i in items
+            if i.get("id") != item_id
         ]
         if len(new) == len(items):
             return False
@@ -1093,7 +1219,7 @@ class MarkdownInboxBackend(InboxBackend):
         return task
 
 
-# -- Note heading helpers --------------------------------------------
+# -- Note heading helpers -------------------------------------------
 
 
 def _note_heading(note: dict) -> str:
@@ -1152,7 +1278,9 @@ class MarkdownNotesBackend(NotesBackend):
         return [_section_to_note(s) for s in sections]
 
     def _save_notes(self, notes: list[dict]) -> None:
-        sections = [_note_to_section(n) for n in notes]
+        sections = [
+            _note_to_section(n) for n in notes
+        ]
         _write_md(
             self._notes_file,
             _render_md_sections(sections),
@@ -1182,7 +1310,8 @@ class MarkdownNotesBackend(NotesBackend):
     def delete_note(self, note_id) -> bool:
         notes = self._load_notes()
         new = [
-            n for n in notes if n.get("id") != note_id
+            n for n in notes
+            if n.get("id") != note_id
         ]
         if len(new) == len(notes):
             return False
@@ -1196,7 +1325,9 @@ class MarkdownNotesBackend(NotesBackend):
                 note.update(updates)
                 self._save_notes(notes)
                 return note
-        raise ValueError(f"Note not found: {note_id}")
+        raise ValueError(
+            f"Note not found: {note_id}"
+        )
 
     def promote_to_task(
         self, note_id, tasks, customer
@@ -1224,51 +1355,99 @@ class MarkdownNotesBackend(NotesBackend):
         return task
 
 
-# -- Customer heading helpers ----------------------------------------
+# -- Customer heading helpers ---------------------------------------
+
+
+def _parse_customer_tags(raw: str) -> list[str]:
+    """Parse a comma-separated or JSON-like tag string."""
+    raw = raw.strip()
+    if not raw or raw == "[]":
+        return []
+    # Handle JSON-style list: ["a", "b"]
+    if raw.startswith("["):
+        raw = raw.strip("[]")
+    return [
+        t.strip().strip("\"'")
+        for t in raw.split(",")
+        if t.strip().strip("\"'")
+    ]
 
 
 def _section_to_customer(sec: dict) -> dict:
     """Convert a level-2 section to a customer dict."""
     meta = sec.get("meta", {})
-    # Parse level-3 subsections for contracts
     body = sec.get("body", "")
     contracts = []
     if body:
-        contract_secs = _parse_md_sections(body, level=3)
+        contract_secs = _parse_md_sections(
+            body, level=3
+        )
         for csec in contract_secs:
             cmeta = csec.get("meta", {})
             contracts.append({
                 "name": csec["heading"],
-                "budget": cmeta.get(
+                "budget": _num(cmeta.get(
                     "budget",
                     cmeta.get("kontingent", 0),
-                ),
+                )),
                 "start_date": cmeta.get(
                     "start_date", ""
                 ),
-                "end_date": cmeta.get("end_date", ""),
-                "used_offset": cmeta.get(
-                    "used_offset",
-                    cmeta.get("verbraucht_offset", 0),
+                "end_date": cmeta.get(
+                    "end_date", ""
                 ),
+                "used_offset": _num(cmeta.get(
+                    "used_offset",
+                    cmeta.get(
+                        "verbraucht_offset", 0
+                    ),
+                )),
                 "notes": csec.get("body", ""),
             })
+    tags_raw = meta.get("tags", "")
+    if isinstance(tags_raw, str):
+        tags = _parse_customer_tags(tags_raw)
+    else:
+        tags = list(tags_raw)
     return {
         "name": sec["heading"],
         "status": meta.get("status", "active"),
         "type": meta.get("type", ""),
-        "budget": meta.get(
+        "color": meta.get("color", ""),
+        "budget": _num(meta.get(
             "budget", meta.get("kontingent", 0)
-        ),
-        "used_offset": meta.get(
+        )),
+        "used_offset": _num(meta.get(
             "used_offset",
             meta.get("verbraucht_offset", 0),
-        ),
+        )),
         "repo": meta.get("repo", ""),
-        "tags": meta.get("tags", []),
-        "properties": meta.get("properties", {}),
+        "tags": tags,
+        "properties": {},
         "contracts": contracts,
     }
+
+
+def _num(val) -> int | float:
+    """Coerce a string or numeric value to a number."""
+    if isinstance(val, (int, float)):
+        return val
+    if isinstance(val, str):
+        val = val.strip()
+        if not val:
+            return 0
+        try:
+            return int(val)
+        except ValueError:
+            return float(val)
+    return 0
+
+
+def _render_tags_value(tags: list[str]) -> str:
+    """Render tags list as a comma-separated string."""
+    if not tags:
+        return ""
+    return ", ".join(tags)
 
 
 def _customer_to_section(cust: dict) -> dict:
@@ -1276,15 +1455,14 @@ def _customer_to_section(cust: dict) -> dict:
     meta = {
         "status": cust.get("status", "active"),
         "type": cust.get("type", ""),
+        "color": cust.get("color", ""),
         "budget": cust.get("budget", 0),
-        "used_offset": cust.get(
-            "used_offset", 0
-        ),
+        "used_offset": cust.get("used_offset", 0),
         "repo": cust.get("repo", ""),
-        "tags": cust.get("tags", []),
+        "tags": _render_tags_value(
+            cust.get("tags", [])
+        ),
     }
-    if cust.get("properties"):
-        meta["properties"] = cust["properties"]
 
     # Render contracts as level-3 subsections
     contract_parts = []
@@ -1293,16 +1471,12 @@ def _customer_to_section(cust: dict) -> dict:
             "budget": con.get("budget", 0),
             "start_date": con.get("start_date", ""),
             "end_date": con.get("end_date", ""),
-            "used_offset": con.get(
-                "used_offset", 0
-            ),
+            "used_offset": con.get("used_offset", 0),
         }
         lines = [f"### {con['name']}"]
-        lines.append("```json")
-        lines.append(json.dumps(
-            cmeta, ensure_ascii=False
-        ))
-        lines.append("```")
+        prop_block = _render_props(cmeta)
+        if prop_block:
+            lines.append(prop_block)
         if con.get("notes"):
             lines.append("")
             lines.append(con["notes"])
@@ -1336,7 +1510,8 @@ class MarkdownCustomerBackend(CustomerBackend):
         text = _read_md(self._customers_file)
         sections = _parse_md_sections(text)
         return [
-            _section_to_customer(s) for s in sections
+            _section_to_customer(s)
+            for s in sections
         ]
 
     def _save_customers(
@@ -1371,7 +1546,9 @@ class MarkdownCustomerBackend(CustomerBackend):
             end = datetime.fromisoformat(end_str)
             total_min += max(
                 0,
-                int((end - start).total_seconds() / 60),
+                int(
+                    (end - start).total_seconds() / 60
+                ),
             )
         return round(total_min / 60, 2)
 
@@ -1394,7 +1571,9 @@ class MarkdownCustomerBackend(CustomerBackend):
             end = datetime.fromisoformat(end_str)
             total_min += max(
                 0,
-                int((end - start).total_seconds() / 60),
+                int(
+                    (end - start).total_seconds() / 60
+                ),
             )
         return round(total_min / 60, 2)
 
@@ -1503,6 +1682,7 @@ class MarkdownCustomerBackend(CustomerBackend):
             "name": name,
             "status": status,
             "type": customer_type,
+            "color": "",
             "tags": tags or [],
             "budget": budget,
             "repo": repo or "",
@@ -1524,7 +1704,7 @@ class MarkdownCustomerBackend(CustomerBackend):
             if c.get("name", "").lower() == low:
                 for key in (
                     "name", "status",
-                    "budget", "repo",
+                    "budget", "repo", "color",
                 ):
                     if key in updates:
                         c[key] = updates[key]
@@ -1657,12 +1837,16 @@ def make_markdown_backend(cfg) -> tuple[
     clocks = MarkdownClockBackend(
         md_dir / "clocks.md"
     )
-    inbox = MarkdownInboxBackend(md_dir / "inbox.md")
+    inbox = MarkdownInboxBackend(
+        md_dir / "inbox.md"
+    )
     cust = MarkdownCustomerBackend(
         md_dir / "customers.md",
         md_dir / "clocks.md",
     )
-    notes = MarkdownNotesBackend(md_dir / "notes.md")
+    notes = MarkdownNotesBackend(
+        md_dir / "notes.md"
+    )
     watch_paths = [
         md_dir, cfg.SETTINGS_FILE.expanduser()
     ]
