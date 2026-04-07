@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Color Palettes v2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: #f5f5f4; color: #1a1a1a;
+      margin: 0; padding: 48px 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1 { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+    .sub {
+      font-size: 15px; color: #78716c; margin-bottom: 48px;
+      max-width: 600px; line-height: 1.7;
+    }
+    .sub strong { color: #1a1a1a; }
+    .palettes { display: flex; flex-direction: column; gap: 56px; max-width: 1100px; }
+
+    .pal { border-radius: 20px; overflow: hidden; }
+    .pal-header {
+      padding: 32px 36px 20px;
+      display: flex; justify-content: space-between;
+      align-items: flex-start; flex-wrap: wrap; gap: 20px;
+    }
+    .pal-num {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .pal-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .pal-vibe {
+      font-size: 13px; font-style: italic; margin-bottom: 8px;
+    }
+    .pal-desc { font-size: 12px; line-height: 1.6; opacity: .55; max-width: 340px; }
+    .swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+    .sw {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+    }
+    .sw-box {
+      width: 32px; height: 32px; border-radius: 7px;
+      border: 1px solid rgba(0,0,0,.06);
+    }
+    .sw-label { font-size: 8px; font-weight: 600; opacity: .4; font-family: "SF Mono", monospace; }
+
+    /* Mini app preview */
+    .preview { padding: 0 36px 36px; }
+    .app-frame {
+      border-radius: 12px; overflow: hidden;
+      display: grid; grid-template-columns: 180px 1fr;
+      min-height: 340px;
+    }
+
+    /* Sidebar */
+    .app-sidebar { padding: 16px 12px; }
+    .app-logo {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .08em; padding: 4px 8px;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .app-nav { display: flex; flex-direction: column; gap: 2px; }
+    .app-nav-item {
+      font-size: 11px; font-weight: 500;
+      padding: 6px 10px; border-radius: 6px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .app-nav-item.active { font-weight: 600; }
+
+    /* Main area */
+    .app-main { padding: 16px 20px; }
+    .app-header {
+      font-size: 14px; font-weight: 700;
+      margin-bottom: 14px;
+      display: flex; justify-content: space-between;
+      align-items: center;
+    }
+    .app-header-btn {
+      font-size: 10px; font-weight: 600;
+      padding: 4px 10px; border-radius: 5px;
+      border: none; cursor: default;
+    }
+
+    /* Kanban columns */
+    .kanban {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .kanban-col { border-radius: 8px; padding: 8px; }
+    .kanban-col-header {
+      display: flex; align-items: center; gap: 5px;
+      margin-bottom: 8px;
+    }
+    .kanban-col-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+    }
+    .kanban-col-title {
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .kanban-col-count {
+      font-size: 9px; font-weight: 600;
+      opacity: .4; margin-left: auto;
+    }
+
+    /* Task cards */
+    .task {
+      border-radius: 6px; padding: 8px;
+      margin-bottom: 5px; font-size: 10px;
+      font-weight: 500; line-height: 1.4;
+    }
+    .task:last-child { margin-bottom: 0; }
+    .task-meta {
+      display: flex; gap: 4px; margin-top: 4px;
+      flex-wrap: wrap;
+    }
+    .task-tag {
+      font-size: 8px; font-weight: 700;
+      padding: 1px 5px; border-radius: 3px;
+    }
+    .task-time {
+      font-size: 8px; font-weight: 600;
+      font-family: "SF Mono", monospace;
+      opacity: .5;
+    }
+
+    /* Budget bars */
+    .budgets { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .budget-row { display: flex; align-items: center; gap: 8px; }
+    .budget-label { font-size: 9px; font-weight: 600; width: 60px; }
+    .budget-bar {
+      flex: 1; height: 5px; border-radius: 3px;
+      overflow: hidden;
+    }
+    .budget-fill { height: 100%; border-radius: 3px; }
+    .budget-pct { font-size: 8px; font-weight: 600; width: 28px; text-align: right; font-family: "SF Mono", monospace; }
+
+    /* Status colors (FIXED across all palettes) */
+    .status-green  { background: #10b981; }
+    .status-amber  { background: #f59e0b; }
+    .status-red    { background: #ef4444; }
+    .status-blue   { background: #3b82f6; }
+    .status-violet { background: #8b5cf6; }
+    .status-slate  { background: #64748b; }
+
+    @media (max-width: 768px) {
+      .app-frame { grid-template-columns: 1fr; }
+      .app-sidebar { display: none; }
+      .kanban { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ═══════════════════════════════════════════
+       PALETTE A: WARM STONE
+       Nearly achromatic warm grays. The brand is
+       restraint — content provides color.
+       ═══════════════════════════════════════════ */
+    .pA { background: #faf9f7; }
+    .pA .pal-num { color: #a8a29e; }
+    .pA .pal-title { color: #292524; }
+    .pA .pal-vibe { color: #a8a29e; }
+    .pA .app-frame { background: #faf9f7; border: 1px solid #e7e5e4; }
+    .pA .app-sidebar { background: #ffffff; border-right: 1px solid #e7e5e4; }
+    .pA .app-logo { color: #292524; }
+    .pA .app-nav-item { color: #a8a29e; }
+    .pA .app-nav-item.active { color: #292524; background: #f5f5f4; }
+    .pA .app-main { background: #faf9f7; }
+    .pA .app-header { color: #292524; }
+    .pA .app-header-btn { background: #292524; color: white; }
+    .pA .kanban-col { background: #f5f5f4; }
+    .pA .kanban-col-title { color: #78716c; }
+    .pA .task { background: #ffffff; border: 1px solid #e7e5e4; color: #292524; }
+    .pA .task-tag { background: rgba(168,162,158,.12); color: #78716c; }
+    .pA .budget-label { color: #57534e; }
+    .pA .budget-bar { background: #e7e5e4; }
+    .pA .budget-pct { color: #78716c; }
+
+    /* ═══════════════════════════════════════════
+       PALETTE B: COOL SLATE
+       Blue-gray undertone. Notion-adjacent but
+       sharper. Professional, no-nonsense.
+       ═══════════════════════════════════════════ */
+    .pB { background: #f8fafc; }
+    .pB .pal-num { color: #94a3b8; }
+    .pB .pal-title { color: #0f172a; }
+    .pB .pal-vibe { color: #94a3b8; }
+    .pB .app-frame { background: #f8fafc; border: 1px solid #e2e8f0; }
+    .pB .app-sidebar { background: #ffffff; border-right: 1px solid #e2e8f0; }
+    .pB .app-logo { color: #0f172a; }
+    .pB .app-nav-item { color: #94a3b8; }
+    .pB .app-nav-item.active { color: #0f172a; background: #f1f5f9; }
+    .pB .app-main { background: #f8fafc; }
+    .pB .app-header { color: #0f172a; }
+    .pB .app-header-btn { background: #0f172a; color: white; }
+    .pB .kanban-col { background: #f1f5f9; }
+    .pB .kanban-col-title { color: #64748b; }
+    .pB .task { background: #ffffff; border: 1px solid #e2e8f0; color: #0f172a; }
+    .pB .task-tag { background: rgba(148,163,184,.12); color: #64748b; }
+    .pB .budget-label { color: #475569; }
+    .pB .budget-bar { background: #e2e8f0; }
+    .pB .budget-pct { color: #64748b; }
+
+    /* ═══════════════════════════════════════════
+       PALETTE C: GRAPHITE + LAVENDER
+       Warm dark text, subtle lavender whisper as
+       accent. Elegant, understated.
+       ═══════════════════════════════════════════ */
+    .pC { background: #fafafe; }
+    .pC .pal-num { color: #8b8fa3; }
+    .pC .pal-title { color: #1e1e2e; }
+    .pC .pal-vibe { color: #8b8fa3; }
+    .pC .app-frame { background: #fafafc; border: 1px solid #e4e4ec; }
+    .pC .app-sidebar { background: #ffffff; border-right: 1px solid #e4e4ec; }
+    .pC .app-logo { color: #1e1e2e; }
+    .pC .app-nav-item { color: #8b8fa3; }
+    .pC .app-nav-item.active { color: #1e1e2e; background: #f0f0f8; }
+    .pC .app-main { background: #fafafc; }
+    .pC .app-header { color: #1e1e2e; }
+    .pC .app-header-btn { background: #1e1e2e; color: white; }
+    .pC .kanban-col { background: #f3f3f8; }
+    .pC .kanban-col-title { color: #6e7191; }
+    .pC .task { background: #ffffff; border: 1px solid #e4e4ec; color: #1e1e2e; }
+    .pC .task-tag { background: rgba(139,143,163,.10); color: #6e7191; }
+    .pC .budget-label { color: #4a4b65; }
+    .pC .budget-bar { background: #e4e4ec; }
+    .pC .budget-pct { color: #6e7191; }
+
+    /* ═══════════════════════════════════════════
+       PALETTE D: SAND + NAVY
+       Warm paper-like base. Navy for authority.
+       Feels like a high-end notebook.
+       ═══════════════════════════════════════════ */
+    .pD { background: #faf8f5; }
+    .pD .pal-num { color: #1e3a5f; }
+    .pD .pal-title { color: #1a1a1a; }
+    .pD .pal-vibe { color: #a09080; }
+    .pD .app-frame { background: #faf8f5; border: 1px solid #e8e2d9; }
+    .pD .app-sidebar { background: #ffffff; border-right: 1px solid #e8e2d9; }
+    .pD .app-logo { color: #1e3a5f; }
+    .pD .app-nav-item { color: #a09080; }
+    .pD .app-nav-item.active { color: #1e3a5f; background: #f3efe8; }
+    .pD .app-main { background: #faf8f5; }
+    .pD .app-header { color: #1a1a1a; }
+    .pD .app-header-btn { background: #1e3a5f; color: white; }
+    .pD .kanban-col { background: #f5f1eb; }
+    .pD .kanban-col-title { color: #8a7d6e; }
+    .pD .task { background: #ffffff; border: 1px solid #e8e2d9; color: #1a1a1a; }
+    .pD .task-tag { background: rgba(30,58,95,.08); color: #1e3a5f; }
+    .pD .budget-label { color: #5c5040; }
+    .pD .budget-bar { background: #e8e2d9; }
+    .pD .budget-pct { color: #8a7d6e; }
+
+    /* ═══════════════════════════════════════════
+       PALETTE E: ZINC + CHARCOAL
+       Monochrome luxury. Almost no hue. True
+       neutrality — the content is king.
+       ═══════════════════════════════════════════ */
+    .pE { background: #fafafa; }
+    .pE .pal-num { color: #a1a1aa; }
+    .pE .pal-title { color: #18181b; }
+    .pE .pal-vibe { color: #a1a1aa; }
+    .pE .app-frame { background: #fafafa; border: 1px solid #e4e4e7; }
+    .pE .app-sidebar { background: #ffffff; border-right: 1px solid #e4e4e7; }
+    .pE .app-logo { color: #18181b; }
+    .pE .app-nav-item { color: #a1a1aa; }
+    .pE .app-nav-item.active { color: #18181b; background: #f4f4f5; }
+    .pE .app-main { background: #fafafa; }
+    .pE .app-header { color: #18181b; }
+    .pE .app-header-btn { background: #18181b; color: white; }
+    .pE .kanban-col { background: #f4f4f5; }
+    .pE .kanban-col-title { color: #71717a; }
+    .pE .task { background: #ffffff; border: 1px solid #e4e4e7; color: #18181b; }
+    .pE .task-tag { background: rgba(113,113,122,.10); color: #52525b; }
+    .pE .budget-label { color: #3f3f46; }
+    .pE .budget-bar { background: #e4e4e7; }
+    .pE .budget-pct { color: #71717a; }
+
+    /* ═══════════════════════════════════════════
+       PALETTE F: PEARL + DEEP TEAL
+       Cool elegance. The teal is dark, muted —
+       never competes with status greens.
+       ═══════════════════════════════════════════ */
+    .pF { background: #f7fafa; }
+    .pF .pal-num { color: #2c6e6f; }
+    .pF .pal-title { color: #1a2e2e; }
+    .pF .pal-vibe { color: #7fa3a3; }
+    .pF .app-frame { background: #f7fafa; border: 1px solid #dce8e8; }
+    .pF .app-sidebar { background: #ffffff; border-right: 1px solid #dce8e8; }
+    .pF .app-logo { color: #1a2e2e; }
+    .pF .app-nav-item { color: #7fa3a3; }
+    .pF .app-nav-item.active { color: #1a2e2e; background: #ecf4f4; }
+    .pF .app-main { background: #f7fafa; }
+    .pF .app-header { color: #1a2e2e; }
+    .pF .app-header-btn { background: #2c6e6f; color: white; }
+    .pF .kanban-col { background: #eff5f5; }
+    .pF .kanban-col-title { color: #5a8a8a; }
+    .pF .task { background: #ffffff; border: 1px solid #dce8e8; color: #1a2e2e; }
+    .pF .task-tag { background: rgba(44,110,111,.08); color: #2c6e6f; }
+    .pF .budget-label { color: #3a5e5e; }
+    .pF .budget-bar { background: #dce8e8; }
+    .pF .budget-pct { color: #5a8a8a; }
+  </style>
+</head>
+<body>
+
+<h1>Color Palettes v2</h1>
+<p class="sub">
+  Light, muted, no clash with status colors.
+  Each palette shown with <strong>real kanban cards,
+  status dots, tags, and budget bars</strong> using the
+  actual app colors (green/amber/red/blue/violet).
+</p>
+
+<div class="palettes">
+
+<!-- ═══ MACRO: each palette gets this app mock ═══ -->
+
+<!-- PALETTE A: WARM STONE -->
+<div class="pal pA">
+  <div class="pal-header">
+    <div>
+      <div class="pal-num">Palette A</div>
+      <div class="pal-title">Warm Stone</div>
+      <div class="pal-vibe">"The brand is restraint."</div>
+      <p class="pal-desc">
+        Near-achromatic warm grays. Like premium stationery.
+        Zero hue competition — status colors and tags become
+        the only color on screen. Content speaks.
+      </p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><div class="sw-box" style="background:#292524"></div><div class="sw-label">Text</div></div>
+      <div class="sw"><div class="sw-box" style="background:#78716c"></div><div class="sw-label">Muted</div></div>
+      <div class="sw"><div class="sw-box" style="background:#a8a29e"></div><div class="sw-label">Subtle</div></div>
+      <div class="sw"><div class="sw-box" style="background:#e7e5e4"></div><div class="sw-label">Border</div></div>
+      <div class="sw"><div class="sw-box" style="background:#f5f5f4"></div><div class="sw-label">Surface</div></div>
+      <div class="sw"><div class="sw-box" style="background:#faf9f7"></div><div class="sw-label">Base</div></div>
+    </div>
+  </div>
+  <div class="preview">
+    <div class="app-frame">
+      <div class="app-sidebar">
+        <div class="app-logo">KAIHO</div>
+        <div class="app-nav">
+          <div class="app-nav-item">Dashboard</div>
+          <div class="app-nav-item active">Kanban</div>
+          <div class="app-nav-item">Clocks</div>
+          <div class="app-nav-item">Customers</div>
+          <div class="app-nav-item">Inbox</div>
+        </div>
+      </div>
+      <div class="app-main">
+        <div class="app-header">
+          <span>Kanban Board</span>
+          <button class="app-header-btn">+ Task</button>
+        </div>
+        <div class="kanban">
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span class="kanban-col-dot status-slate"></span>
+              <span class="kanban-col-title">Todo</span>
+              <span class="kanban-col-count">3</span>
+            </div>
+            <div class="task">Update API docs<div class="task-meta"><span class="task-tag">Acme</span><span class="task-time">2d</span></div></div>
+            <div class="task">Fix auth flow<div class="task-meta"><span class="task-tag">WidgetCo</span></div></div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span class="kanban-col-dot status-amber"></span>
+              <span class="kanban-col-title">In Progress</span>
+              <span class="kanban-col-count">1</span>
+            </div>
+            <div class="task">Dashboard redesign<div class="task-meta"><span class="task-tag">Acme</span><span class="task-time">4h</span></div></div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span class="kanban-col-dot status-blue"></span>
+              <span class="kanban-col-title">Review</span>
+              <span class="kanban-col-count">2</span>
+            </div>
+            <div class="task">Invoice export<div class="task-meta"><span class="task-tag">Internal</span></div></div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span class="kanban-col-dot status-green"></span>
+              <span class="kanban-col-title">Done</span>
+              <span class="kanban-col-count">5</span>
+            </div>
+            <div class="task">Deploy v2.1<div class="task-meta"><span class="task-tag">WidgetCo</span><span class="task-time">3h</span></div></div>
+          </div>
+        </div>
+        <div class="budgets">
+          <div class="budget-row"><span class="budget-label">Acme</span><div class="budget-bar"><div class="budget-fill status-amber" style="width:78%"></div></div><span class="budget-pct">78%</span></div>
+          <div class="budget-row"><span class="budget-label">WidgetCo</span><div class="budget-bar"><div class="budget-fill status-green" style="width:22%"></div></div><span class="budget-pct">22%</span></div>
+          <div class="budget-row"><span class="budget-label">TechStart</span><div class="budget-bar"><div class="budget-fill status-red" style="width:94%"></div></div><span class="budget-pct">94%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PALETTE B: COOL SLATE -->
+<div class="pal pB">
+  <div class="pal-header">
+    <div>
+      <div class="pal-num">Palette B</div>
+      <div class="pal-title">Cool Slate</div>
+      <div class="pal-vibe">"Quiet confidence."</div>
+      <p class="pal-desc">
+        Blue-gray undertone. Cooler than Stone but still
+        neutral. The slight blue keeps it modern and
+        tech-native without introducing an accent hue.
+      </p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><div class="sw-box" style="background:#0f172a"></div><div class="sw-label">Text</div></div>
+      <div class="sw"><div class="sw-box" style="background:#64748b"></div><div class="sw-label">Muted</div></div>
+      <div class="sw"><div class="sw-box" style="background:#94a3b8"></div><div class="sw-label">Subtle</div></div>
+      <div class="sw"><div class="sw-box" style="background:#e2e8f0"></div><div class="sw-label">Border</div></div>
+      <div class="sw"><div class="sw-box" style="background:#f1f5f9"></div><div class="sw-label">Surface</div></div>
+      <div class="sw"><div class="sw-box" style="background:#f8fafc"></div><div class="sw-label">Base</div></div>
+    </div>
+  </div>
+  <div class="preview">
+    <div class="app-frame">
+      <div class="app-sidebar">
+        <div class="app-logo">KAIHO</div>
+        <div class="app-nav"><div class="app-nav-item">Dashboard</div><div class="app-nav-item active">Kanban</div><div class="app-nav-item">Clocks</div><div class="app-nav-item">Customers</div><div class="app-nav-item">Inbox</div></div>
+      </div>
+      <div class="app-main">
+        <div class="app-header"><span>Kanban Board</span><button class="app-header-btn">+ Task</button></div>
+        <div class="kanban">
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-slate"></span><span class="kanban-col-title">Todo</span><span class="kanban-col-count">3</span></div><div class="task">Update API docs<div class="task-meta"><span class="task-tag">Acme</span><span class="task-time">2d</span></div></div><div class="task">Fix auth flow<div class="task-meta"><span class="task-tag">WidgetCo</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-amber"></span><span class="kanban-col-title">In Progress</span><span class="kanban-col-count">1</span></div><div class="task">Dashboard redesign<div class="task-meta"><span class="task-tag">Acme</span><span class="task-time">4h</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-blue"></span><span class="kanban-col-title">Review</span><span class="kanban-col-count">2</span></div><div class="task">Invoice export<div class="task-meta"><span class="task-tag">Internal</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-green"></span><span class="kanban-col-title">Done</span><span class="kanban-col-count">5</span></div><div class="task">Deploy v2.1<div class="task-meta"><span class="task-tag">WidgetCo</span><span class="task-time">3h</span></div></div></div>
+        </div>
+        <div class="budgets">
+          <div class="budget-row"><span class="budget-label">Acme</span><div class="budget-bar"><div class="budget-fill status-amber" style="width:78%"></div></div><span class="budget-pct">78%</span></div>
+          <div class="budget-row"><span class="budget-label">WidgetCo</span><div class="budget-bar"><div class="budget-fill status-green" style="width:22%"></div></div><span class="budget-pct">22%</span></div>
+          <div class="budget-row"><span class="budget-label">TechStart</span><div class="budget-bar"><div class="budget-fill status-red" style="width:94%"></div></div><span class="budget-pct">94%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PALETTE C: GRAPHITE + LAVENDER -->
+<div class="pal pC">
+  <div class="pal-header">
+    <div>
+      <div class="pal-num">Palette C</div>
+      <div class="pal-title">Graphite Lavender</div>
+      <div class="pal-vibe">"Elegant understatement."</div>
+      <p class="pal-desc">
+        Warm dark text with a violet-gray undertone.
+        Feels creative yet professional. The lavender
+        whisper separates it from generic gray UIs.
+      </p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><div class="sw-box" style="background:#1e1e2e"></div><div class="sw-label">Text</div></div>
+      <div class="sw"><div class="sw-box" style="background:#6e7191"></div><div class="sw-label">Muted</div></div>
+      <div class="sw"><div class="sw-box" style="background:#8b8fa3"></div><div class="sw-label">Subtle</div></div>
+      <div class="sw"><div class="sw-box" style="background:#e4e4ec"></div><div class="sw-label">Border</div></div>
+      <div class="sw"><div class="sw-box" style="background:#f3f3f8"></div><div class="sw-label">Surface</div></div>
+      <div class="sw"><div class="sw-box" style="background:#fafafc"></div><div class="sw-label">Base</div></div>
+    </div>
+  </div>
+  <div class="preview">
+    <div class="app-frame">
+      <div class="app-sidebar">
+        <div class="app-logo">KAIHO</div>
+        <div class="app-nav"><div class="app-nav-item">Dashboard</div><div class="app-nav-item active">Kanban</div><div class="app-nav-item">Clocks</div><div class="app-nav-item">Customers</div><div class="app-nav-item">Inbox</div></div>
+      </div>
+      <div class="app-main">
+        <div class="app-header"><span>Kanban Board</span><button class="app-header-btn">+ Task</button></div>
+        <div class="kanban">
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-slate"></span><span class="kanban-col-title">Todo</span><span class="kanban-col-count">3</span></div><div class="task">Update API docs<div class="task-meta"><span class="task-tag">Acme</span><span class="task-time">2d</span></div></div><div class="task">Fix auth flow<div class="task-meta"><span class="task-tag">WidgetCo</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-amber"></span><span class="kanban-col-title">In Progress</span><span class="kanban-col-count">1</span></div><div class="task">Dashboard redesign<div class="task-meta"><span class="task-tag">Acme</span><span class="task-time">4h</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-blue"></span><span class="kanban-col-title">Review</span><span class="kanban-col-count">2</span></div><div class="task">Invoice export<div class="task-meta"><span class="task-tag">Internal</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-green"></span><span class="kanban-col-title">Done</span><span class="kanban-col-count">5</span></div><div class="task">Deploy v2.1<div class="task-meta"><span class="task-tag">WidgetCo</span><span class="task-time">3h</span></div></div></div>
+        </div>
+        <div class="budgets">
+          <div class="budget-row"><span class="budget-label">Acme</span><div class="budget-bar"><div class="budget-fill status-amber" style="width:78%"></div></div><span class="budget-pct">78%</span></div>
+          <div class="budget-row"><span class="budget-label">WidgetCo</span><div class="budget-bar"><div class="budget-fill status-green" style="width:22%"></div></div><span class="budget-pct">22%</span></div>
+          <div class="budget-row"><span class="budget-label">TechStart</span><div class="budget-bar"><div class="budget-fill status-red" style="width:94%"></div></div><span class="budget-pct">94%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PALETTE D: SAND + NAVY -->
+<div class="pal pD">
+  <div class="pal-header">
+    <div>
+      <div class="pal-num">Palette D</div>
+      <div class="pal-title">Sand + Navy</div>
+      <div class="pal-vibe">"The architect's notebook."</div>
+      <p class="pal-desc">
+        Warm paper-like canvas with deep navy accents.
+        Classic authority. Buttons and active states use
+        navy — never conflicts with status colors.
+      </p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><div class="sw-box" style="background:#1e3a5f"></div><div class="sw-label">Navy</div></div>
+      <div class="sw"><div class="sw-box" style="background:#5c5040"></div><div class="sw-label">Text</div></div>
+      <div class="sw"><div class="sw-box" style="background:#a09080"></div><div class="sw-label">Muted</div></div>
+      <div class="sw"><div class="sw-box" style="background:#e8e2d9"></div><div class="sw-label">Border</div></div>
+      <div class="sw"><div class="sw-box" style="background:#f5f1eb"></div><div class="sw-label">Surface</div></div>
+      <div class="sw"><div class="sw-box" style="background:#faf8f5"></div><div class="sw-label">Base</div></div>
+    </div>
+  </div>
+  <div class="preview">
+    <div class="app-frame">
+      <div class="app-sidebar">
+        <div class="app-logo">KAIHO</div>
+        <div class="app-nav"><div class="app-nav-item">Dashboard</div><div class="app-nav-item active">Kanban</div><div class="app-nav-item">Clocks</div><div class="app-nav-item">Customers</div><div class="app-nav-item">Inbox</div></div>
+      </div>
+      <div class="app-main">
+        <div class="app-header"><span>Kanban Board</span><button class="app-header-btn">+ Task</button></div>
+        <div class="kanban">
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-slate"></span><span class="kanban-col-title">Todo</span><span class="kanban-col-count">3</span></div><div class="task">Update API docs<div class="task-meta"><span class="task-tag">Acme</span><span class="task-time">2d</span></div></div><div class="task">Fix auth flow<div class="task-meta"><span class="task-tag">WidgetCo</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-amber"></span><span class="kanban-col-title">In Progress</span><span class="kanban-col-count">1</span></div><div class="task">Dashboard redesign<div class="task-meta"><span class="task-tag">Acme</span><span class="task-time">4h</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-blue"></span><span class="kanban-col-title">Review</span><span class="kanban-col-count">2</span></div><div class="task">Invoice export<div class="task-meta"><span class="task-tag">Internal</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-green"></span><span class="kanban-col-title">Done</span><span class="kanban-col-count">5</span></div><div class="task">Deploy v2.1<div class="task-meta"><span class="task-tag">WidgetCo</span><span class="task-time">3h</span></div></div></div>
+        </div>
+        <div class="budgets">
+          <div class="budget-row"><span class="budget-label">Acme</span><div class="budget-bar"><div class="budget-fill status-amber" style="width:78%"></div></div><span class="budget-pct">78%</span></div>
+          <div class="budget-row"><span class="budget-label">WidgetCo</span><div class="budget-bar"><div class="budget-fill status-green" style="width:22%"></div></div><span class="budget-pct">22%</span></div>
+          <div class="budget-row"><span class="budget-label">TechStart</span><div class="budget-bar"><div class="budget-fill status-red" style="width:94%"></div></div><span class="budget-pct">94%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PALETTE E: ZINC -->
+<div class="pal pE">
+  <div class="pal-header">
+    <div>
+      <div class="pal-num">Palette E</div>
+      <div class="pal-title">Zinc</div>
+      <div class="pal-vibe">"Pure neutral. Content is king."</div>
+      <p class="pal-desc">
+        True neutral gray. No warm, no cool bias.
+        Maximum clarity for status colors and data.
+        Vercel/Linear energy without their accent colors.
+      </p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><div class="sw-box" style="background:#18181b"></div><div class="sw-label">Text</div></div>
+      <div class="sw"><div class="sw-box" style="background:#52525b"></div><div class="sw-label">Muted</div></div>
+      <div class="sw"><div class="sw-box" style="background:#a1a1aa"></div><div class="sw-label">Subtle</div></div>
+      <div class="sw"><div class="sw-box" style="background:#e4e4e7"></div><div class="sw-label">Border</div></div>
+      <div class="sw"><div class="sw-box" style="background:#f4f4f5"></div><div class="sw-label">Surface</div></div>
+      <div class="sw"><div class="sw-box" style="background:#fafafa"></div><div class="sw-label">Base</div></div>
+    </div>
+  </div>
+  <div class="preview">
+    <div class="app-frame">
+      <div class="app-sidebar">
+        <div class="app-logo">KAIHO</div>
+        <div class="app-nav"><div class="app-nav-item">Dashboard</div><div class="app-nav-item active">Kanban</div><div class="app-nav-item">Clocks</div><div class="app-nav-item">Customers</div><div class="app-nav-item">Inbox</div></div>
+      </div>
+      <div class="app-main">
+        <div class="app-header"><span>Kanban Board</span><button class="app-header-btn">+ Task</button></div>
+        <div class="kanban">
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-slate"></span><span class="kanban-col-title">Todo</span><span class="kanban-col-count">3</span></div><div class="task">Update API docs<div class="task-meta"><span class="task-tag">Acme</span><span class="task-time">2d</span></div></div><div class="task">Fix auth flow<div class="task-meta"><span class="task-tag">WidgetCo</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-amber"></span><span class="kanban-col-title">In Progress</span><span class="kanban-col-count">1</span></div><div class="task">Dashboard redesign<div class="task-meta"><span class="task-tag">Acme</span><span class="task-time">4h</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-blue"></span><span class="kanban-col-title">Review</span><span class="kanban-col-count">2</span></div><div class="task">Invoice export<div class="task-meta"><span class="task-tag">Internal</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-green"></span><span class="kanban-col-title">Done</span><span class="kanban-col-count">5</span></div><div class="task">Deploy v2.1<div class="task-meta"><span class="task-tag">WidgetCo</span><span class="task-time">3h</span></div></div></div>
+        </div>
+        <div class="budgets">
+          <div class="budget-row"><span class="budget-label">Acme</span><div class="budget-bar"><div class="budget-fill status-amber" style="width:78%"></div></div><span class="budget-pct">78%</span></div>
+          <div class="budget-row"><span class="budget-label">WidgetCo</span><div class="budget-bar"><div class="budget-fill status-green" style="width:22%"></div></div><span class="budget-pct">22%</span></div>
+          <div class="budget-row"><span class="budget-label">TechStart</span><div class="budget-bar"><div class="budget-fill status-red" style="width:94%"></div></div><span class="budget-pct">94%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PALETTE F: PEARL + DEEP TEAL -->
+<div class="pal pF">
+  <div class="pal-header">
+    <div>
+      <div class="pal-num">Palette F</div>
+      <div class="pal-title">Pearl + Deep Teal</div>
+      <div class="pal-vibe">"Calm authority."</div>
+      <p class="pal-desc">
+        Cool pearl base with a very dark, muted teal as
+        accent. The teal is too dark to clash with status
+        green. Feels medical-grade precise yet warm.
+      </p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><div class="sw-box" style="background:#1a2e2e"></div><div class="sw-label">Text</div></div>
+      <div class="sw"><div class="sw-box" style="background:#2c6e6f"></div><div class="sw-label">Accent</div></div>
+      <div class="sw"><div class="sw-box" style="background:#7fa3a3"></div><div class="sw-label">Muted</div></div>
+      <div class="sw"><div class="sw-box" style="background:#dce8e8"></div><div class="sw-label">Border</div></div>
+      <div class="sw"><div class="sw-box" style="background:#eff5f5"></div><div class="sw-label">Surface</div></div>
+      <div class="sw"><div class="sw-box" style="background:#f7fafa"></div><div class="sw-label">Base</div></div>
+    </div>
+  </div>
+  <div class="preview">
+    <div class="app-frame">
+      <div class="app-sidebar">
+        <div class="app-logo">KAIHO</div>
+        <div class="app-nav"><div class="app-nav-item">Dashboard</div><div class="app-nav-item active">Kanban</div><div class="app-nav-item">Clocks</div><div class="app-nav-item">Customers</div><div class="app-nav-item">Inbox</div></div>
+      </div>
+      <div class="app-main">
+        <div class="app-header"><span>Kanban Board</span><button class="app-header-btn">+ Task</button></div>
+        <div class="kanban">
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-slate"></span><span class="kanban-col-title">Todo</span><span class="kanban-col-count">3</span></div><div class="task">Update API docs<div class="task-meta"><span class="task-tag">Acme</span><span class="task-time">2d</span></div></div><div class="task">Fix auth flow<div class="task-meta"><span class="task-tag">WidgetCo</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-amber"></span><span class="kanban-col-title">In Progress</span><span class="kanban-col-count">1</span></div><div class="task">Dashboard redesign<div class="task-meta"><span class="task-tag">Acme</span><span class="task-time">4h</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-blue"></span><span class="kanban-col-title">Review</span><span class="kanban-col-count">2</span></div><div class="task">Invoice export<div class="task-meta"><span class="task-tag">Internal</span></div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-dot status-green"></span><span class="kanban-col-title">Done</span><span class="kanban-col-count">5</span></div><div class="task">Deploy v2.1<div class="task-meta"><span class="task-tag">WidgetCo</span><span class="task-time">3h</span></div></div></div>
+        </div>
+        <div class="budgets">
+          <div class="budget-row"><span class="budget-label">Acme</span><div class="budget-bar"><div class="budget-fill status-amber" style="width:78%"></div></div><span class="budget-pct">78%</span></div>
+          <div class="budget-row"><span class="budget-label">WidgetCo</span><div class="budget-bar"><div class="budget-fill status-green" style="width:22%"></div></div><span class="budget-pct">22%</span></div>
+          <div class="budget-row"><span class="budget-label">TechStart</span><div class="budget-bar"><div class="budget-fill status-red" style="width:94%"></div></div><span class="budget-pct">94%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

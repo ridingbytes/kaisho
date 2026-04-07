@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logo Concepts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: #0c0e14;
+      color: #e2e8f0;
+      margin: 0; padding: 48px 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1 {
+      font-size: 28px; font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .sub {
+      font-size: 15px; color: #64748b;
+      margin-bottom: 48px; max-width: 600px;
+      line-height: 1.6;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px; max-width: 1100px;
+    }
+    .card {
+      background: #161b27;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px; padding: 32px;
+    }
+    .card h2 {
+      font-size: 16px; font-weight: 700;
+      margin-bottom: 4px; color: #e2e8f0;
+    }
+    .card .story {
+      font-size: 12px; color: #818cf8;
+      font-weight: 600; letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .card p {
+      font-size: 13px; color: #64748b;
+      line-height: 1.6; margin-bottom: 24px;
+    }
+    .logo-row {
+      display: flex; align-items: center;
+      gap: 24px; margin-bottom: 20px;
+    }
+    .logo-box {
+      width: 64px; height: 64px;
+      display: flex; align-items: center;
+      justify-content: center;
+      background: #1e2535;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+    .logo-box--sm {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+    }
+    .brand-text {
+      font-size: 22px; font-weight: 700;
+      letter-spacing: .06em; color: #e2e8f0;
+    }
+    .variants {
+      display: flex; gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .variants span {
+      font-size: 10px; color: #475569;
+      font-weight: 600; text-transform: uppercase;
+      letter-spacing: .1em;
+    }
+    .on-light {
+      background: #f0f2f7 !important;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Logo Concepts</h1>
+<p class="sub">
+  App-driven, not name-driven. Each concept
+  represents the core identity of the product:
+  CLI-first, all-in-one, freelancer control center.
+</p>
+
+<div class="grid">
+
+  <!-- CONCEPT 1: Terminal Prompt -->
+  <div class="card">
+    <div class="story">Concept 1</div>
+    <h2>The Prompt</h2>
+    <p>
+      A stylized terminal prompt that doubles as a
+      forward arrow. Represents CLI-first identity
+      and forward momentum. The blinking cursor is
+      where work begins.
+    </p>
+    <div class="logo-row">
+      <div class="logo-box">
+        <svg width="32" height="32" viewBox="0 0 32 32"
+             fill="none">
+          <path d="M6 8l10 8-10 8" stroke="#818cf8"
+                stroke-width="3" stroke-linecap="round"
+                stroke-linejoin="round"/>
+          <path d="M20 24h6" stroke="#818cf8"
+                stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="brand-text">KAIHO</span>
+    </div>
+    <div class="variants">
+      <div class="logo-box logo-box--sm">
+        <svg width="18" height="18" viewBox="0 0 32 32"
+             fill="none">
+          <path d="M6 8l10 8-10 8" stroke="#818cf8"
+                stroke-width="3" stroke-linecap="round"
+                stroke-linejoin="round"/>
+          <path d="M20 24h6" stroke="#818cf8"
+                stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="logo-box logo-box--sm on-light">
+        <svg width="18" height="18" viewBox="0 0 32 32"
+             fill="none">
+          <path d="M6 8l10 8-10 8" stroke="#6366f1"
+                stroke-width="3" stroke-linecap="round"
+                stroke-linejoin="round"/>
+          <path d="M20 24h6" stroke="#6366f1"
+                stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span>dark / light</span>
+    </div>
+  </div>
+
+  <!-- CONCEPT 2: Converging Paths -->
+  <div class="card">
+    <div class="story">Concept 2</div>
+    <h2>Convergence</h2>
+    <p>
+      Three lines converging into one point.
+      Tasks, time, customers — all flowing into a
+      single system. "Many tools become one."
+      Works at any size, any name.
+    </p>
+    <div class="logo-row">
+      <div class="logo-box">
+        <svg width="32" height="32" viewBox="0 0 32 32"
+             fill="none">
+          <path d="M4 6 L22 16" stroke="#818cf8"
+                stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M4 16 L22 16" stroke="#a78bfa"
+                stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M4 26 L22 16" stroke="#c4b5fd"
+                stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="25" cy="16" r="3.5"
+                  fill="#818cf8"/>
+        </svg>
+      </div>
+      <span class="brand-text">KAIHO</span>
+    </div>
+    <div class="variants">
+      <div class="logo-box logo-box--sm">
+        <svg width="18" height="18" viewBox="0 0 32 32"
+             fill="none">
+          <path d="M4 6 L22 16" stroke="#818cf8"
+                stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M4 16 L22 16" stroke="#a78bfa"
+                stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M4 26 L22 16" stroke="#c4b5fd"
+                stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="25" cy="16" r="3.5"
+                  fill="#818cf8"/>
+        </svg>
+      </div>
+      <div class="logo-box logo-box--sm on-light">
+        <svg width="18" height="18" viewBox="0 0 32 32"
+             fill="none">
+          <path d="M4 6 L22 16" stroke="#6366f1"
+                stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M4 16 L22 16" stroke="#8b5cf6"
+                stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M4 26 L22 16" stroke="#a78bfa"
+                stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="25" cy="16" r="3.5"
+                  fill="#6366f1"/>
+        </svg>
+      </div>
+      <span>dark / light</span>
+    </div>
+  </div>
+
+  <!-- CONCEPT 3: Dashboard Grid -->
+  <div class="card">
+    <div class="story">Concept 3</div>
+    <h2>The Grid</h2>
+    <p>
+      Four quadrants representing the core modules:
+      tasks, time, customers, intelligence. One corner
+      glows — the active focus. Represents the
+      dashboard-as-cockpit philosophy.
+    </p>
+    <div class="logo-row">
+      <div class="logo-box">
+        <svg width="32" height="32" viewBox="0 0 32 32"
+             fill="none">
+          <rect x="3" y="3" width="12" height="12"
+                rx="3" fill="#818cf8"/>
+          <rect x="17" y="3" width="12" height="12"
+                rx="3" fill="#818cf8" opacity=".3"/>
+          <rect x="3" y="17" width="12" height="12"
+                rx="3" fill="#818cf8" opacity=".3"/>
+          <rect x="17" y="17" width="12" height="12"
+                rx="3" fill="#818cf8" opacity=".15"/>
+        </svg>
+      </div>
+      <span class="brand-text">KAIHO</span>
+    </div>
+    <div class="variants">
+      <div class="logo-box logo-box--sm">
+        <svg width="18" height="18" viewBox="0 0 32 32"
+             fill="none">
+          <rect x="3" y="3" width="12" height="12"
+                rx="3" fill="#818cf8"/>
+          <rect x="17" y="3" width="12" height="12"
+                rx="3" fill="#818cf8" opacity=".3"/>
+          <rect x="3" y="17" width="12" height="12"
+                rx="3" fill="#818cf8" opacity=".3"/>
+          <rect x="17" y="17" width="12" height="12"
+                rx="3" fill="#818cf8" opacity=".15"/>
+        </svg>
+      </div>
+      <div class="logo-box logo-box--sm on-light">
+        <svg width="18" height="18" viewBox="0 0 32 32"
+             fill="none">
+          <rect x="3" y="3" width="12" height="12"
+                rx="3" fill="#6366f1"/>
+          <rect x="17" y="3" width="12" height="12"
+                rx="3" fill="#6366f1" opacity=".35"/>
+          <rect x="3" y="17" width="12" height="12"
+                rx="3" fill="#6366f1" opacity=".35"/>
+          <rect x="17" y="17" width="12" height="12"
+                rx="3" fill="#6366f1" opacity=".18"/>
+        </svg>
+      </div>
+      <span>dark / light</span>
+    </div>
+  </div>
+
+  <!-- CONCEPT 4: Pulse -->
+  <div class="card">
+    <div class="story">Concept 4</div>
+    <h2>The Pulse</h2>
+    <p>
+      A heartbeat line that spikes through a circle.
+      Your business has a pulse — tracked hours,
+      active timers, budget alerts. This system
+      keeps its finger on it.
+    </p>
+    <div class="logo-row">
+      <div class="logo-box">
+        <svg width="32" height="32" viewBox="0 0 32 32"
+             fill="none">
+          <circle cx="16" cy="16" r="13"
+                  stroke="#818cf8" stroke-width="2"
+                  opacity=".25"/>
+          <path d="M3 16 H10 L13 8 L16 24 L19 12
+                   L21 16 H29"
+                stroke="#818cf8" stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="brand-text">KAIHO</span>
+    </div>
+    <div class="variants">
+      <div class="logo-box logo-box--sm">
+        <svg width="18" height="18" viewBox="0 0 32 32"
+             fill="none">
+          <circle cx="16" cy="16" r="13"
+                  stroke="#818cf8" stroke-width="2"
+                  opacity=".25"/>
+          <path d="M3 16 H10 L13 8 L16 24 L19 12
+                   L21 16 H29"
+                stroke="#818cf8" stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="logo-box logo-box--sm on-light">
+        <svg width="18" height="18" viewBox="0 0 32 32"
+             fill="none">
+          <circle cx="16" cy="16" r="13"
+                  stroke="#6366f1" stroke-width="2"
+                  opacity=".25"/>
+          <path d="M3 16 H10 L13 8 L16 24 L19 12
+                   L21 16 H29"
+                stroke="#6366f1" stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span>dark / light</span>
+    </div>
+  </div>
+
+  <!-- CONCEPT 5: Stacked Cards -->
+  <div class="card">
+    <div class="story">Concept 5</div>
+    <h2>The Stack</h2>
+    <p>
+      Three overlapping cards, slightly offset.
+      Represents the layered nature of the app:
+      tasks stacking up, getting organized, moving
+      through your workflow. Kanban DNA.
+    </p>
+    <div class="logo-row">
+      <div class="logo-box">
+        <svg width="32" height="32" viewBox="0 0 32 32"
+             fill="none">
+          <rect x="8" y="4" width="18" height="14"
+                rx="3" stroke="#818cf8" stroke-width="2"
+                opacity=".2"/>
+          <rect x="5" y="8" width="18" height="14"
+                rx="3" stroke="#818cf8" stroke-width="2"
+                opacity=".45"/>
+          <rect x="2" y="12" width="18" height="14"
+                rx="3" stroke="#818cf8" stroke-width="2"
+                fill="#818cf8" fill-opacity=".08"/>
+          <path d="M6 17h10 M6 21h6"
+                stroke="#818cf8" stroke-width="2"
+                stroke-linecap="round" opacity=".6"/>
+        </svg>
+      </div>
+      <span class="brand-text">KAIHO</span>
+    </div>
+    <div class="variants">
+      <div class="logo-box logo-box--sm">
+        <svg width="18" height="18" viewBox="0 0 32 32"
+             fill="none">
+          <rect x="8" y="4" width="18" height="14"
+                rx="3" stroke="#818cf8" stroke-width="2"
+                opacity=".2"/>
+          <rect x="5" y="8" width="18" height="14"
+                rx="3" stroke="#818cf8" stroke-width="2"
+                opacity=".45"/>
+          <rect x="2" y="12" width="18" height="14"
+                rx="3" stroke="#818cf8" stroke-width="2"
+                fill="#818cf8" fill-opacity=".08"/>
+          <path d="M6 17h10 M6 21h6"
+                stroke="#818cf8" stroke-width="2"
+                stroke-linecap="round" opacity=".6"/>
+        </svg>
+      </div>
+      <div class="logo-box logo-box--sm on-light">
+        <svg width="18" height="18" viewBox="0 0 32 32"
+             fill="none">
+          <rect x="8" y="4" width="18" height="14"
+                rx="3" stroke="#6366f1" stroke-width="2"
+                opacity=".2"/>
+          <rect x="5" y="8" width="18" height="14"
+                rx="3" stroke="#6366f1" stroke-width="2"
+                opacity=".45"/>
+          <rect x="2" y="12" width="18" height="14"
+                rx="3" stroke="#6366f1" stroke-width="2"
+                fill="#6366f1" fill-opacity=".08"/>
+          <path d="M6 17h10 M6 21h6"
+                stroke="#6366f1" stroke-width="2"
+                stroke-linecap="round" opacity=".6"/>
+        </svg>
+      </div>
+      <span>dark / light</span>
+    </div>
+  </div>
+
+  <!-- CONCEPT 6: Brackets -->
+  <div class="card">
+    <div class="story">Concept 6</div>
+    <h2>The Brackets</h2>
+    <p>
+      Code brackets framing a dot — your work
+      contained, structured, under control.
+      Developer DNA in a single mark. Reads as
+      "what's inside is what matters."
+    </p>
+    <div class="logo-row">
+      <div class="logo-box">
+        <svg width="32" height="32" viewBox="0 0 32 32"
+             fill="none">
+          <path d="M10 5 L5 16 L10 27"
+                stroke="#818cf8" stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"/>
+          <path d="M22 5 L27 16 L22 27"
+                stroke="#818cf8" stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="3"
+                  fill="#818cf8"/>
+        </svg>
+      </div>
+      <span class="brand-text">KAIHO</span>
+    </div>
+    <div class="variants">
+      <div class="logo-box logo-box--sm">
+        <svg width="18" height="18" viewBox="0 0 32 32"
+             fill="none">
+          <path d="M10 5 L5 16 L10 27"
+                stroke="#818cf8" stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"/>
+          <path d="M22 5 L27 16 L22 27"
+                stroke="#818cf8" stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="3"
+                  fill="#818cf8"/>
+        </svg>
+      </div>
+      <div class="logo-box logo-box--sm on-light">
+        <svg width="18" height="18" viewBox="0 0 32 32"
+             fill="none">
+          <path d="M10 5 L5 16 L10 27"
+                stroke="#6366f1" stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"/>
+          <path d="M22 5 L27 16 L22 27"
+                stroke="#6366f1" stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="3"
+                  fill="#6366f1"/>
+        </svg>
+      </div>
+      <span>dark / light</span>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Color Palettes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: #fafafa; color: #1a1a1a;
+      margin: 0; padding: 48px 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1 { font-size: 32px; font-weight: 800; letter-spacing: -.02em; }
+    .sub {
+      font-size: 16px; color: #888; margin-bottom: 56px;
+      max-width: 560px; line-height: 1.6;
+    }
+    .palettes {
+      display: flex; flex-direction: column; gap: 48px;
+      max-width: 1100px;
+    }
+
+    /* Each palette is a full-width preview */
+    .pal {
+      border-radius: 20px; overflow: hidden;
+      border: 1px solid rgba(0,0,0,.06);
+    }
+    .pal-header {
+      padding: 32px 36px 24px;
+      display: flex; justify-content: space-between;
+      align-items: flex-start; flex-wrap: wrap; gap: 16px;
+    }
+    .pal-name {
+      font-size: 13px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .pal-title { font-size: 22px; font-weight: 700; }
+    .pal-desc {
+      font-size: 13px; line-height: 1.6;
+      max-width: 300px; opacity: .6;
+    }
+    .swatches {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .swatch {
+      width: 36px; height: 36px; border-radius: 8px;
+      position: relative;
+    }
+    .swatch::after {
+      content: attr(data-label);
+      position: absolute; bottom: -18px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px; font-weight: 600;
+      white-space: nowrap; opacity: .4;
+    }
+
+    /* Mini site preview */
+    .preview {
+      padding: 0 36px 36px;
+    }
+    .mini-site {
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 2px 20px rgba(0,0,0,.08);
+    }
+    .mini-nav {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+    }
+    .mini-logo {
+      font-size: 14px; font-weight: 700;
+      letter-spacing: .06em;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .mini-links {
+      display: flex; gap: 16px;
+      font-size: 11px; font-weight: 500;
+    }
+    .mini-btn {
+      padding: 5px 14px; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+      border: none;
+    }
+    .mini-hero {
+      text-align: center;
+      padding: 48px 24px 40px;
+    }
+    .mini-hero h2 {
+      font-size: 32px; font-weight: 800;
+      letter-spacing: -.02em;
+      line-height: 1.1; margin-bottom: 12px;
+    }
+    .mini-hero p {
+      font-size: 13px; line-height: 1.6;
+      max-width: 360px; margin: 0 auto 24px;
+    }
+    .mini-hero .mini-btn {
+      padding: 10px 24px; font-size: 13px;
+    }
+    .mini-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px; padding: 0 24px 32px;
+    }
+    .mini-card {
+      border-radius: 10px; padding: 16px;
+    }
+    .mini-card h3 {
+      font-size: 12px; font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .mini-card p {
+      font-size: 10px; line-height: 1.5; opacity: .6;
+    }
+    .mini-card .dot-accent {
+      width: 8px; height: 8px;
+      border-radius: 50%; margin-bottom: 8px;
+    }
+
+    /* ═══════════════════════════════════════════
+       PALETTE 1: OBSIDIAN + ARCTIC
+       "Apple Keynote" aesthetic
+       ═══════════════════════════════════════════ */
+    .p1 { background: #ffffff; }
+    .p1 .pal-name { color: #0071e3; }
+    .p1 .mini-site { background: #fbfbfd; border: 1px solid #e5e5ea; }
+    .p1 .mini-nav { background: rgba(251,251,253,.9); border-bottom: 1px solid #e5e5ea; color: #1d1d1f; }
+    .p1 .mini-logo { color: #1d1d1f; }
+    .p1 .mini-links { color: #86868b; }
+    .p1 .mini-links .active { color: #1d1d1f; }
+    .p1 .mini-btn { background: #0071e3; color: white; }
+    .p1 .mini-hero h2 { color: #1d1d1f; }
+    .p1 .mini-hero h2 em {
+      font-style: normal;
+      background: linear-gradient(90deg, #0071e3, #2997ff);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .p1 .mini-hero p { color: #86868b; }
+    .p1 .mini-card { background: #f5f5f7; }
+    .p1 .mini-card h3 { color: #1d1d1f; }
+    .p1 .mini-card p { color: #86868b; }
+    .p1 .mini-card .dot-accent { background: #0071e3; }
+
+    /* ═══════════════════════════════════════════
+       PALETTE 2: INK + FLAME
+       Statement contrast. Warm energy.
+       ═══════════════════════════════════════════ */
+    .p2 { background: #fafaf9; }
+    .p2 .pal-name { color: #e11d48; }
+    .p2 .mini-site { background: #ffffff; border: 1px solid #e7e5e4; }
+    .p2 .mini-nav { background: #ffffff; border-bottom: 1px solid #e7e5e4; }
+    .p2 .mini-logo { color: #0c0a09; }
+    .p2 .mini-links { color: #a8a29e; }
+    .p2 .mini-links .active { color: #0c0a09; }
+    .p2 .mini-btn { background: #0c0a09; color: white; }
+    .p2 .mini-hero { background: #0c0a09; }
+    .p2 .mini-hero h2 { color: #fafaf9; }
+    .p2 .mini-hero h2 em {
+      font-style: normal;
+      background: linear-gradient(90deg, #fb7185, #e11d48);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .p2 .mini-hero p { color: #a8a29e; }
+    .p2 .mini-hero .mini-btn { background: #e11d48; }
+    .p2 .mini-card { background: #fafaf9; border: 1px solid #e7e5e4; }
+    .p2 .mini-card h3 { color: #0c0a09; }
+    .p2 .mini-card p { color: #a8a29e; }
+    .p2 .mini-card .dot-accent { background: #e11d48; }
+
+    /* ═══════════════════════════════════════════
+       PALETTE 3: SNOW + DEEP VIOLET
+       Mindful power. Calm intensity.
+       ═══════════════════════════════════════════ */
+    .p3 { background: #faf9fc; }
+    .p3 .pal-name { color: #7c3aed; }
+    .p3 .mini-site { background: #ffffff; border: 1px solid #ede9fe; }
+    .p3 .mini-nav { background: #ffffff; border-bottom: 1px solid #ede9fe; }
+    .p3 .mini-logo { color: #1e1b4b; }
+    .p3 .mini-links { color: #a1a1aa; }
+    .p3 .mini-links .active { color: #1e1b4b; }
+    .p3 .mini-btn { background: #7c3aed; color: white; }
+    .p3 .mini-hero h2 { color: #1e1b4b; }
+    .p3 .mini-hero h2 em {
+      font-style: normal;
+      background: linear-gradient(135deg, #7c3aed, #a78bfa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .p3 .mini-hero p { color: #71717a; }
+    .p3 .mini-card { background: #faf5ff; border: 1px solid #ede9fe; }
+    .p3 .mini-card h3 { color: #1e1b4b; }
+    .p3 .mini-card p { color: #71717a; }
+    .p3 .mini-card .dot-accent { background: #7c3aed; }
+
+    /* ═══════════════════════════════════════════
+       PALETTE 4: PAPER + FOREST
+       Zen. Organic. Grounded.
+       ═══════════════════════════════════════════ */
+    .p4 { background: #f8faf8; }
+    .p4 .pal-name { color: #059669; }
+    .p4 .mini-site { background: #ffffff; border: 1px solid #d1d5db; }
+    .p4 .mini-nav { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
+    .p4 .mini-logo { color: #111827; }
+    .p4 .mini-links { color: #9ca3af; }
+    .p4 .mini-links .active { color: #111827; }
+    .p4 .mini-btn { background: #111827; color: white; }
+    .p4 .mini-hero h2 { color: #111827; }
+    .p4 .mini-hero h2 em {
+      font-style: normal;
+      color: #059669;
+      -webkit-text-fill-color: #059669;
+    }
+    .p4 .mini-hero p { color: #6b7280; }
+    .p4 .mini-hero .mini-btn { background: #059669; }
+    .p4 .mini-card { background: #f0fdf4; border: 1px solid #dcfce7; }
+    .p4 .mini-card h3 { color: #111827; }
+    .p4 .mini-card p { color: #6b7280; }
+    .p4 .mini-card .dot-accent { background: #059669; }
+
+    /* ═══════════════════════════════════════════
+       PALETTE 5: PURE + SIGNAL
+       Stark. Pure white. One color speaks.
+       ═══════════════════════════════════════════ */
+    .p5 { background: #ffffff; }
+    .p5 .pal-name { color: #000000; }
+    .p5 .mini-site { background: #ffffff; border: 1px solid #e5e5e5; }
+    .p5 .mini-nav { background: #ffffff; border-bottom: 1px solid #f0f0f0; }
+    .p5 .mini-logo { color: #000000; font-weight: 800; }
+    .p5 .mini-links { color: #999; }
+    .p5 .mini-links .active { color: #000; }
+    .p5 .mini-btn { background: #000; color: white; }
+    .p5 .mini-hero { background: linear-gradient(180deg, #000 0%, #18181b 100%); border-radius: 0 0 16px 16px; }
+    .p5 .mini-hero h2 { color: #fff; }
+    .p5 .mini-hero h2 em {
+      font-style: normal;
+      background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .p5 .mini-hero p { color: #71717a; }
+    .p5 .mini-hero .mini-btn {
+      background: #fff; color: #000;
+    }
+    .p5 .mini-card { background: #fafafa; border: 1px solid #e5e5e5; }
+    .p5 .mini-card h3 { color: #000; }
+    .p5 .mini-card p { color: #71717a; }
+    .p5 .mini-card .dot-accent { background: linear-gradient(135deg, #818cf8, #c084fc); }
+
+    /* ═══════════════════════════════════════════
+       PALETTE 6: MIST + OCEAN
+       Breathing room. Depth without darkness.
+       ═══════════════════════════════════════════ */
+    .p6 { background: #f7f9fc; }
+    .p6 .pal-name { color: #0ea5e9; }
+    .p6 .mini-site { background: #ffffff; border: 1px solid #e2e8f0; }
+    .p6 .mini-nav { background: rgba(255,255,255,.85); backdrop-filter: blur(12px); border-bottom: 1px solid #e2e8f0; }
+    .p6 .mini-logo { color: #0f172a; }
+    .p6 .mini-links { color: #94a3b8; }
+    .p6 .mini-links .active { color: #0f172a; }
+    .p6 .mini-btn { background: #0ea5e9; color: white; }
+    .p6 .mini-hero h2 { color: #0f172a; }
+    .p6 .mini-hero h2 em {
+      font-style: normal;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .p6 .mini-hero p { color: #64748b; }
+    .p6 .mini-card { background: #f0f9ff; border: 1px solid #e0f2fe; }
+    .p6 .mini-card h3 { color: #0f172a; }
+    .p6 .mini-card p { color: #64748b; }
+    .p6 .mini-card .dot-accent { background: #0ea5e9; }
+  </style>
+</head>
+<body>
+
+<h1>Color Palettes</h1>
+<p class="sub">
+  Apple-inspired: clean, light, breathing room.
+  Each palette tells a different story while
+  keeping the "powerful but mindful" balance.
+</p>
+
+<div class="palettes">
+
+<!-- ═══ PALETTE 1: ARCTIC ═══ -->
+<div class="pal p1">
+  <div class="pal-header">
+    <div>
+      <div class="pal-name">Palette 1</div>
+      <div class="pal-title">Arctic</div>
+      <p class="pal-desc">
+        Apple keynote energy. Pure white canvas,
+        system blue accent. Instantly recognizable
+        as premium, clean, professional.
+      </p>
+    </div>
+    <div class="swatches">
+      <div class="swatch" style="background:#1d1d1f" data-label="#1d1d1f"></div>
+      <div class="swatch" style="background:#86868b" data-label="#86868b"></div>
+      <div class="swatch" style="background:#f5f5f7" data-label="#f5f5f7"></div>
+      <div class="swatch" style="background:#0071e3" data-label="#0071e3"></div>
+      <div class="swatch" style="background:#2997ff" data-label="#2997ff"></div>
+    </div>
+  </div>
+  <div class="preview">
+    <div class="mini-site">
+      <div class="mini-nav">
+        <div class="mini-logo">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none"><path d="M6 8l10 8-10 8" stroke="#0071e3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 24h6" stroke="#0071e3" stroke-width="3" stroke-linecap="round"/></svg>
+          KAIHO
+        </div>
+        <div class="mini-links"><span>Features</span> <span>CLI</span> <span>Pricing</span> <button class="mini-btn">Get Started</button></div>
+      </div>
+      <div class="mini-hero">
+        <h2>Freelance work,<br><em>liberated.</em></h2>
+        <p>Tasks, time tracking, customer budgets, and AI insights in one system.</p>
+        <button class="mini-btn">Start Free</button>
+      </div>
+      <div class="mini-cards">
+        <div class="mini-card"><div class="dot-accent"></div><h3>Kanban Board</h3><p>Drag tasks across custom workflow states.</p></div>
+        <div class="mini-card"><div class="dot-accent"></div><h3>Time Tracking</h3><p>Every entry ties to a customer and contract.</p></div>
+        <div class="mini-card"><div class="dot-accent"></div><h3>AI Advisor</h3><p>Context-aware insights from your data.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PALETTE 2: INK + FLAME ═══ -->
+<div class="pal p2">
+  <div class="pal-header">
+    <div>
+      <div class="pal-name">Palette 2</div>
+      <div class="pal-title">Ink + Flame</div>
+      <p class="pal-desc">
+        High contrast. Black hero, warm accent.
+        Makes a statement. The dark hero says
+        "serious tool", the rose says "human touch".
+      </p>
+    </div>
+    <div class="swatches">
+      <div class="swatch" style="background:#0c0a09" data-label="#0c0a09"></div>
+      <div class="swatch" style="background:#a8a29e" data-label="#a8a29e"></div>
+      <div class="swatch" style="background:#fafaf9" data-label="#fafaf9"></div>
+      <div class="swatch" style="background:#e11d48" data-label="#e11d48"></div>
+      <div class="swatch" style="background:#fb7185" data-label="#fb7185"></div>
+    </div>
+  </div>
+  <div class="preview">
+    <div class="mini-site">
+      <div class="mini-nav">
+        <div class="mini-logo">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none"><path d="M6 8l10 8-10 8" stroke="#e11d48" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 24h6" stroke="#e11d48" stroke-width="3" stroke-linecap="round"/></svg>
+          KAIHO
+        </div>
+        <div class="mini-links"><span>Features</span> <span>CLI</span> <span>Pricing</span> <button class="mini-btn">Get Started</button></div>
+      </div>
+      <div class="mini-hero">
+        <h2>Freelance work,<br><em>liberated.</em></h2>
+        <p>Tasks, time tracking, customer budgets, and AI insights in one system.</p>
+        <button class="mini-btn">Start Free</button>
+      </div>
+      <div class="mini-cards">
+        <div class="mini-card"><div class="dot-accent"></div><h3>Kanban Board</h3><p>Drag tasks across custom workflow states.</p></div>
+        <div class="mini-card"><div class="dot-accent"></div><h3>Time Tracking</h3><p>Every entry ties to a customer and contract.</p></div>
+        <div class="mini-card"><div class="dot-accent"></div><h3>AI Advisor</h3><p>Context-aware insights from your data.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PALETTE 3: DEEP VIOLET ═══ -->
+<div class="pal p3">
+  <div class="pal-header">
+    <div>
+      <div class="pal-name">Palette 3</div>
+      <div class="pal-title">Violet Depth</div>
+      <p class="pal-desc">
+        Mindful power. Violet carries wisdom and
+        creativity. Light surface, deep accents.
+        Feels like a premium tool, not a toy.
+      </p>
+    </div>
+    <div class="swatches">
+      <div class="swatch" style="background:#1e1b4b" data-label="#1e1b4b"></div>
+      <div class="swatch" style="background:#71717a" data-label="#71717a"></div>
+      <div class="swatch" style="background:#faf9fc" data-label="#faf9fc"></div>
+      <div class="swatch" style="background:#7c3aed" data-label="#7c3aed"></div>
+      <div class="swatch" style="background:#a78bfa" data-label="#a78bfa"></div>
+    </div>
+  </div>
+  <div class="preview">
+    <div class="mini-site">
+      <div class="mini-nav">
+        <div class="mini-logo">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none"><path d="M6 8l10 8-10 8" stroke="#7c3aed" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 24h6" stroke="#7c3aed" stroke-width="3" stroke-linecap="round"/></svg>
+          KAIHO
+        </div>
+        <div class="mini-links"><span>Features</span> <span>CLI</span> <span>Pricing</span> <button class="mini-btn">Get Started</button></div>
+      </div>
+      <div class="mini-hero">
+        <h2>Freelance work,<br><em>liberated.</em></h2>
+        <p>Tasks, time tracking, customer budgets, and AI insights in one system.</p>
+        <button class="mini-btn">Start Free</button>
+      </div>
+      <div class="mini-cards">
+        <div class="mini-card"><div class="dot-accent"></div><h3>Kanban Board</h3><p>Drag tasks across custom workflow states.</p></div>
+        <div class="mini-card"><div class="dot-accent"></div><h3>Time Tracking</h3><p>Every entry ties to a customer and contract.</p></div>
+        <div class="mini-card"><div class="dot-accent"></div><h3>AI Advisor</h3><p>Context-aware insights from your data.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PALETTE 4: FOREST ═══ -->
+<div class="pal p4">
+  <div class="pal-header">
+    <div>
+      <div class="pal-name">Palette 4</div>
+      <div class="pal-title">Forest</div>
+      <p class="pal-desc">
+        Zen meets productivity. Emerald grounds
+        the work, black text commands attention.
+        Organic warmth. Calm but authoritative.
+      </p>
+    </div>
+    <div class="swatches">
+      <div class="swatch" style="background:#111827" data-label="#111827"></div>
+      <div class="swatch" style="background:#6b7280" data-label="#6b7280"></div>
+      <div class="swatch" style="background:#f0fdf4" data-label="#f0fdf4"></div>
+      <div class="swatch" style="background:#059669" data-label="#059669"></div>
+      <div class="swatch" style="background:#34d399" data-label="#34d399"></div>
+    </div>
+  </div>
+  <div class="preview">
+    <div class="mini-site">
+      <div class="mini-nav">
+        <div class="mini-logo">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none"><path d="M6 8l10 8-10 8" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 24h6" stroke="#059669" stroke-width="3" stroke-linecap="round"/></svg>
+          KAIHO
+        </div>
+        <div class="mini-links"><span>Features</span> <span>CLI</span> <span>Pricing</span> <button class="mini-btn">Get Started</button></div>
+      </div>
+      <div class="mini-hero">
+        <h2>Freelance work,<br><em>liberated.</em></h2>
+        <p>Tasks, time tracking, customer budgets, and AI insights in one system.</p>
+        <button class="mini-btn">Start Free</button>
+      </div>
+      <div class="mini-cards">
+        <div class="mini-card"><div class="dot-accent"></div><h3>Kanban Board</h3><p>Drag tasks across custom workflow states.</p></div>
+        <div class="mini-card"><div class="dot-accent"></div><h3>Time Tracking</h3><p>Every entry ties to a customer and contract.</p></div>
+        <div class="mini-card"><div class="dot-accent"></div><h3>AI Advisor</h3><p>Context-aware insights from your data.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PALETTE 5: PURE + SIGNAL ═══ -->
+<div class="pal p5">
+  <div class="pal-header">
+    <div>
+      <div class="pal-name">Palette 5</div>
+      <div class="pal-title">Pure + Signal</div>
+      <p class="pal-desc">
+        Vercel/Stripe energy. Pure black-on-white
+        with a gradient accent that shifts spectrum.
+        The gradient IS the brand. Maximum contrast,
+        maximum clarity.
+      </p>
+    </div>
+    <div class="swatches">
+      <div class="swatch" style="background:#000000" data-label="#000"></div>
+      <div class="swatch" style="background:#71717a" data-label="#71717a"></div>
+      <div class="swatch" style="background:#ffffff" data-label="#fff"></div>
+      <div class="swatch" style="background:linear-gradient(135deg,#38bdf8,#818cf8,#c084fc)" data-label="gradient"></div>
+      <div class="swatch" style="background:#18181b" data-label="#18181b"></div>
+    </div>
+  </div>
+  <div class="preview">
+    <div class="mini-site">
+      <div class="mini-nav">
+        <div class="mini-logo">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none"><path d="M6 8l10 8-10 8" stroke="url(#g5)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 24h6" stroke="url(#g5)" stroke-width="3" stroke-linecap="round"/><defs><linearGradient id="g5" x1="0" y1="8" x2="26" y2="24"><stop stop-color="#38bdf8"/><stop offset=".5" stop-color="#818cf8"/><stop offset="1" stop-color="#c084fc"/></linearGradient></defs></svg>
+          KAIHO
+        </div>
+        <div class="mini-links"><span>Features</span> <span>CLI</span> <span>Pricing</span> <button class="mini-btn">Get Started</button></div>
+      </div>
+      <div class="mini-hero">
+        <h2>Freelance work,<br><em>liberated.</em></h2>
+        <p>Tasks, time tracking, customer budgets, and AI insights in one system.</p>
+        <button class="mini-btn">Start Free</button>
+      </div>
+      <div class="mini-cards">
+        <div class="mini-card"><div class="dot-accent"></div><h3>Kanban Board</h3><p>Drag tasks across custom workflow states.</p></div>
+        <div class="mini-card"><div class="dot-accent"></div><h3>Time Tracking</h3><p>Every entry ties to a customer and contract.</p></div>
+        <div class="mini-card"><div class="dot-accent"></div><h3>AI Advisor</h3><p>Context-aware insights from your data.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PALETTE 6: MIST + OCEAN ═══ -->
+<div class="pal p6">
+  <div class="pal-header">
+    <div>
+      <div class="pal-name">Palette 6</div>
+      <div class="pal-title">Mist + Ocean</div>
+      <p class="pal-desc">
+        Breathing room. Sky-blue accent with deep
+        slate text. Feels open and airy but
+        technically competent. The calm before
+        deep work.
+      </p>
+    </div>
+    <div class="swatches">
+      <div class="swatch" style="background:#0f172a" data-label="#0f172a"></div>
+      <div class="swatch" style="background:#64748b" data-label="#64748b"></div>
+      <div class="swatch" style="background:#f0f9ff" data-label="#f0f9ff"></div>
+      <div class="swatch" style="background:#0ea5e9" data-label="#0ea5e9"></div>
+      <div class="swatch" style="background:#38bdf8" data-label="#38bdf8"></div>
+    </div>
+  </div>
+  <div class="preview">
+    <div class="mini-site">
+      <div class="mini-nav">
+        <div class="mini-logo">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none"><path d="M6 8l10 8-10 8" stroke="#0ea5e9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 24h6" stroke="#0ea5e9" stroke-width="3" stroke-linecap="round"/></svg>
+          KAIHO
+        </div>
+        <div class="mini-links"><span>Features</span> <span>CLI</span> <span>Pricing</span> <button class="mini-btn">Get Started</button></div>
+      </div>
+      <div class="mini-hero">
+        <h2>Freelance work,<br><em>liberated.</em></h2>
+        <p>Tasks, time tracking, customer budgets, and AI insights in one system.</p>
+        <button class="mini-btn">Start Free</button>
+      </div>
+      <div class="mini-cards">
+        <div class="mini-card"><div class="dot-accent"></div><h3>Kanban Board</h3><p>Drag tasks across custom workflow states.</p></div>
+        <div class="mini-card"><div class="dot-accent"></div><h3>Time Tracking</h3><p>Every entry ties to a customer and contract.</p></div>
+        <div class="mini-card"><div class="dot-accent"></div><h3>AI Advisor</h3><p>Context-aware insights from your data.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
