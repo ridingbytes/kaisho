@@ -934,13 +934,27 @@ export function CustomerCard({ customer: c }: Props) {
       {editing ? (
         /* Edit mode */
         <div className="flex flex-col gap-2">
-          <input
-            className={fieldClass("font-semibold")}
-            value={form.name}
-            onChange={set("name")}
-            placeholder="Name"
-            autoFocus
-          />
+          <div className="flex items-center gap-1.5">
+            <input
+              type="color"
+              value={form.color || "#71717a"}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  color: e.target.value,
+                }))
+              }
+              className="w-5 h-5 rounded-full cursor-pointer border-0 p-0 shrink-0"
+              title="Customer color"
+            />
+            <input
+              className={fieldClass("font-semibold flex-1")}
+              value={form.name}
+              onChange={set("name")}
+              placeholder="Name"
+              autoFocus
+            />
+          </div>
 
           <div className="flex gap-2">
             <select
@@ -998,27 +1012,6 @@ export function CustomerCard({ customer: c }: Props) {
               </label>
             </div>
           )}
-
-          <div className="flex items-center gap-2">
-            <label className="text-[10px] font-medium text-stone-500 shrink-0">
-              Color
-            </label>
-            <input
-              type="color"
-              value={form.color || "#71717a"}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  color: e.target.value,
-                }))
-              }
-              className="w-6 h-6 rounded cursor-pointer border border-border"
-              style={{ padding: 0 }}
-            />
-            <span className="text-[10px] text-stone-400 font-mono">
-              {form.color || "#71717a"}
-            </span>
-          </div>
 
           <input
             className={fieldClass()}
