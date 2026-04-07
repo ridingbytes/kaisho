@@ -128,7 +128,7 @@ class ContractRow(Base):
     budget = Column(Float, default=0)
     used_offset = Column(Float, default=0)
     start_date = Column(String, default="")
-    end_date = Column(String, nullable=True)
+    end_date = Column(String, default="")
     notes = Column(Text, default="")
     customer_rel = relationship(
         "CustomerRow", back_populates="contracts"
