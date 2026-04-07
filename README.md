@@ -66,8 +66,7 @@ kai serve &              # Backend on :8765
 cd frontend && pnpm dev  # Frontend on :5173
 ```
 
-Open http://localhost:5173 in your browser. Create an
-account on first visit.
+Open http://localhost:5173 in your browser.
 
 
 ## CLI
@@ -134,7 +133,6 @@ bash scripts/serve-website.sh
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `KAISHO_USER` | `default` | Active user name |
 | `PROFILE` | `default` | Active profile name |
 | `KAISHO_HOME` | (auto) | Data directory override |
 | `HOST` | `0.0.0.0` | Server bind address |
@@ -154,13 +152,13 @@ bash scripts/serve-website.sh
 
 ## Configuration
 
-User data lives in `~/.kaisho/` or `./data/` (whichever exists).
-Each user has profiles with their own settings, tasks, and
-customer data.
+Data lives in `~/.kaisho/` or `./data/` (whichever exists).
+Multiple profiles allow different backends and settings.
 
 ```
-data/users/<username>/
+data/
   user.yaml                  # User metadata
+  .active_profile            # Current profile
   profiles/<profile>/
     settings.yaml            # Task states, tags, AI config
     jobs.yaml                # Cron job definitions

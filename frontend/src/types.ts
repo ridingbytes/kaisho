@@ -1,3 +1,9 @@
+export interface StateChange {
+  to: string;
+  from: string;
+  timestamp: string;
+}
+
 export interface Task {
   id: string;
   customer: string | null;
@@ -8,6 +14,7 @@ export interface Task {
   created: string;
   body: string;
   github_url: string;
+  state_history?: StateChange[];
 }
 
 export interface ArchivedTask extends Task {

@@ -630,6 +630,35 @@ export function TaskCard({
                 />
               </div>
               <TaskClockSection task={task} />
+              {task.state_history &&
+                task.state_history.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-border-subtle">
+                  <p className="text-[9px] font-semibold tracking-wider uppercase text-stone-400 mb-1">
+                    History
+                  </p>
+                  {task.state_history.map(
+                    (h, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-1.5 text-[10px] text-stone-500 py-0.5"
+                    >
+                      <span
+                        className="w-1 h-1 rounded-full shrink-0 bg-stone-400"
+                      />
+                      <span className="font-medium text-stone-700">
+                        {h.to}
+                      </span>
+                      <span className="text-stone-400">
+                        from {h.from}
+                      </span>
+                      <RelDate
+                        date={h.timestamp}
+                        className="ml-auto text-stone-400"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>
