@@ -291,21 +291,39 @@ def _task_heading(task: dict) -> str:
     return _append_tags(base, task.get("tags", []))
 
 
+_TASK_STATUSES = {
+    "TODO", "NEXT", "IN-PROGRESS", "WAIT",
+    "DONE", "CANCELLED",
+}
+
+
 def _parse_task_heading(heading: str) -> dict:
     """Extract status, customer, title, tags from heading."""
     text, tags = _strip_tags(heading)
-    m = re.match(r"(\S+)\s+\[([^\]]*)\]\s+(.*)", text)
-    if not m:
+    # With customer: STATUS [CUSTOMER] Title
+    m = re.match(
+        r"(\S+)\s+\[([^\]]*)\]\s+(.*)", text,
+    )
+    if m:
         return {
-            "status": "TODO",
+            "status": m.group(1),
+            "customer": m.group(2),
+            "title": m.group(3),
+            "tags": tags,
+        }
+    # Without customer: STATUS Title
+    parts = text.split(None, 1)
+    if len(parts) == 2 and parts[0] in _TASK_STATUSES:
+        return {
+            "status": parts[0],
             "customer": "",
-            "title": text,
+            "title": parts[1],
             "tags": tags,
         }
     return {
-        "status": m.group(1),
-        "customer": m.group(2),
-        "title": m.group(3),
+        "status": "TODO",
+        "customer": "",
+        "title": text,
         "tags": tags,
     }
 
