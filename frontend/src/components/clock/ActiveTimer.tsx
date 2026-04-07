@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { StickyNote } from "lucide-react";
+import { Square, StickyNote } from "lucide-react";
 import { useStopTimer, useUpdateClockEntry } from "../../hooks/useClocks";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
 import type { ActiveTimer as ActiveTimerType } from "../../types";
@@ -10,10 +10,11 @@ function elapsed(startIso: string): string {
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
-  if (h > 0) {
-    return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  }
-  return `${m}:${String(s).padStart(2, "0")}`;
+  return [
+    String(h).padStart(2, "0"),
+    String(m).padStart(2, "0"),
+    String(s).padStart(2, "0"),
+  ].join(":");
 }
 
 interface Props {
@@ -74,66 +75,75 @@ export function ActiveTimer({ timer }: Props) {
     : undefined;
 
   return (
-    <div className="rounded-xl border border-border bg-surface-card p-4 shadow-card">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10 mb-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] font-semibold tracking-wider uppercase text-green-600">
-              Active
-            </span>
-          </div>
-          <p className="text-sm font-semibold text-stone-900 truncate flex items-center gap-1.5">
-            <span
-              className="w-2 h-2 rounded-full shrink-0"
-              style={{
-                background: custColor || "#a1a1aa",
-              }}
-            />
-            {timer.customer}
-          </p>
-          {timer.description && (
-            <p className="text-xs text-stone-600 truncate mt-0.5">
-              {timer.description}
-            </p>
-          )}
-        </div>
+    <div className="rounded-xl border border-border bg-surface-card p-4 shadow-card text-center">
+      {/* Timer digits */}
+      <div
+        key={tick}
+        className="text-3xl font-light font-mono text-stone-900 tabular-nums tracking-wide"
+      >
+        {elapsed(timer.start)}
+      </div>
 
-        <div className="shrink-0 text-right">
-          <div
-            key={tick}
-            className="text-2xl font-mono font-semibold text-stone-900 tabular-nums"
-          >
-            {elapsed(timer.start)}
-          </div>
-          <div className="flex items-center justify-end gap-1 mt-2">
-            <button
-              onClick={() => setNotesOpen((v) => !v)}
-              title="Add notes"
-              className={[
-                "px-2 py-1 rounded-lg text-xs font-semibold transition-colors",
-                notesOpen || notes
-                  ? "bg-cta/10 text-cta border border-cta/20"
-                  : "bg-surface-raised text-stone-600 border border-border-subtle",
-                "hover:text-cta hover:border-cta/20",
-              ].join(" ")}
-            >
-              <StickyNote size={12} />
-            </button>
-            <button
-              onClick={() => stop.mutate()}
-              disabled={stop.isPending}
-              className={[
-                "px-3 py-1 rounded-lg text-xs font-semibold",
-                "bg-red-500/10 text-red-500 border border-red-500/20",
-                "hover:bg-red-500/20 transition-colors",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-              ].join(" ")}
-            >
-              {stop.isPending ? "Stopping…" : "Stop"}
-            </button>
-          </div>
+      {/* Active badge */}
+      <div className="flex items-center justify-center mt-2">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-500/10">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-[10px] font-semibold tracking-wider uppercase text-green-600">
+            Active
+          </span>
         </div>
+      </div>
+
+      {/* Customer and description */}
+      <p className="text-xs text-stone-500 mt-2 truncate flex items-center justify-center gap-1">
+        <span
+          className="w-1.5 h-1.5 rounded-full shrink-0"
+          style={{
+            background: custColor || "#a1a1aa",
+          }}
+        />
+        <span className="text-stone-700">
+          {timer.customer}
+        </span>
+        {timer.description && (
+          <>
+            <span className="font-bold text-stone-400">
+              &middot;
+            </span>
+            <span className="truncate">
+              {timer.description}
+            </span>
+          </>
+        )}
+      </p>
+
+      {/* Controls — icon-only */}
+      <div className="flex items-center justify-center gap-2 mt-3">
+        <button
+          onClick={() => setNotesOpen((v) => !v)}
+          title="Notes"
+          className={[
+            "p-1.5 rounded-lg transition-colors",
+            notesOpen || notes
+              ? "text-cta bg-cta/10"
+              : "text-stone-400 hover:text-stone-700",
+          ].join(" ")}
+        >
+          <StickyNote size={14} />
+        </button>
+        <button
+          onClick={() => stop.mutate()}
+          disabled={stop.isPending}
+          title="Stop timer"
+          className={[
+            "p-1.5 rounded-lg transition-colors",
+            "text-red-400 hover:text-red-500",
+            "hover:bg-red-500/10",
+            "disabled:opacity-40",
+          ].join(" ")}
+        >
+          <Square size={14} fill="currentColor" />
+        </button>
       </div>
 
       {notesOpen && (
