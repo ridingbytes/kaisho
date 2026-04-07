@@ -3,7 +3,7 @@
 ## Architecture overview
 
 ```
-omnicontrol/
+kaisho/
 ├── backends/          # Pluggable storage drivers
 │   ├── base.py        # Abstract base classes (the interface contract)
 │   ├── org/           # Org-mode implementation (default)
@@ -110,7 +110,7 @@ the heading to `todos.org`, stripping the `ARCHIVE_*` properties.
 
 ## Adding a new backend
 
-1. Create `omnicontrol/backends/myformat/__init__.py`.
+1. Create `kaisho/backends/myformat/__init__.py`.
 2. Implement `MyFormatTaskBackend(TaskBackend)`, etc.
 3. Add a `make_myformat_backend(cfg) -> tuple[...]` factory that
    returns the four backends and a `list[Path]` of paths to watch.

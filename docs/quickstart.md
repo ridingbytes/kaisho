@@ -9,8 +9,8 @@
 ## Backend setup
 
 ```bash
-git clone https://github.com/ridingbytes/omnicontrol
-cd omnicontrol
+git clone https://github.com/ridingbytes/kaisho
+cd kaisho
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .
