@@ -8,7 +8,7 @@ from ..backends import get_backend
 from . import open_in_editor
 
 _TITLE_STRIP_RE = re.compile(
-    r"^(?:EMAIL|LEAD|IDEE|NOTIZ|NOTE|IDEA)\s+", re.IGNORECASE
+    r"^(?:NOTE|EMAIL|LEAD|IDEA|BUG|FEATURE)\s+", re.IGNORECASE
 )
 _CUSTOMER_STRIP_RE = re.compile(r"^\[[^\]]+\]\s*")
 
@@ -23,7 +23,7 @@ def _clean_title(title: str) -> str:
 def _format_item(item: dict) -> str:
     """Format an inbox item for display."""
     idx = item.get("id", "?")
-    item_type = (item.get("type") or "NOTIZ").ljust(6)
+    item_type = (item.get("type") or "NOTE").ljust(6)
     customer = item.get("customer") or "-"
     customer_str = f"[{customer}]"
     title = _clean_title(item.get("title") or "")
@@ -39,7 +39,7 @@ def inbox():
 @inbox.command("add")
 @click.argument("text", nargs=-1, required=True)
 @click.option("--type", "item_type", default=None,
-              help="Item type: EMAIL, IDEE, LEAD, NOTIZ")
+              help="Item type: NOTE, EMAIL, LEAD, IDEA")
 @click.option("--customer", default=None,
               help="Customer name")
 @click.option("--body", "-b", default=None,

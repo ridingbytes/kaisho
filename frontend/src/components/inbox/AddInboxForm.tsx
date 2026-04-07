@@ -1,16 +1,7 @@
 import { useState } from "react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { useCaptureItem } from "../../hooks/useInbox";
-
-const TYPES = ["NOTIZ", "EMAIL", "LEAD", "IDEE"] as const;
-
-const CHANNELS = [
-  { value: "", label: "Any channel" },
-  { value: "email", label: "Email" },
-  { value: "phone", label: "Phone" },
-  { value: "chat", label: "Chat" },
-  { value: "other", label: "Other" },
-] as const;
+import { useSettings } from "../../hooks/useSettings";
 
 const DIRECTIONS = [
   { value: "", label: "Any direction" },
@@ -18,7 +9,17 @@ const DIRECTIONS = [
   { value: "out", label: "Out" },
 ] as const;
 
+
 export function AddInboxForm() {
+  const { data: settings } = useSettings();
+  const types: string[] =
+    settings?.inbox_types ?? [
+      "NOTE", "EMAIL", "LEAD", "IDEA",
+    ];
+  const channels: string[] =
+    settings?.inbox_channels ?? [
+      "email", "phone", "chat",
+    ];
   const [text, setText] = useState("");
   const [type, setType] = useState<string>("");
   const [customer, setCustomer] = useState("");
@@ -86,7 +87,7 @@ export function AddInboxForm() {
           className={[inputCls, "w-32 shrink-0"].join(" ")}
         >
           <option value="">Auto type</option>
-          {TYPES.map((t) => (
+          {types.map((t: string) => (
             <option key={t} value={t}>
               {t}
             </option>
@@ -106,9 +107,10 @@ export function AddInboxForm() {
           onChange={(e) => setChannel(e.target.value)}
           className={[inputCls, "flex-1"].join(" ")}
         >
-          {CHANNELS.map((c) => (
-            <option key={c.value} value={c.value}>
-              {c.label}
+          <option value="">Any channel</option>
+          {channels.map((c: string) => (
+            <option key={c} value={c}>
+              {c}
             </option>
           ))}
         </select>

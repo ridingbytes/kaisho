@@ -6,6 +6,16 @@ DEFAULT_CUSTOMER_TYPES: list[str] = [
     "LEAD", "CLIENT", "PROSPECT", "PARTNER",
 ]
 
+DEFAULT_INBOX_TYPES: list[str] = [
+    "NOTE", "EMAIL", "LEAD", "IDEA",
+    "BUG", "FEATURE",
+]
+
+DEFAULT_INBOX_CHANNELS: list[str] = [
+    "email", "phone", "chat", "meeting",
+    "github", "slack",
+]
+
 DEFAULT_AI: dict = {
     "ollama_url": "http://localhost:11434",
     "lm_studio_url": "http://localhost:1234",
@@ -60,6 +70,21 @@ def get_done_state_names(settings: dict) -> list[str]:
 def get_customer_types(settings: dict) -> list[str]:
     """Return customer_types list with defaults."""
     return settings.get("customer_types", list(DEFAULT_CUSTOMER_TYPES))
+
+
+def get_inbox_types(settings: dict) -> list[str]:
+    """Return inbox_types list with defaults."""
+    return settings.get(
+        "inbox_types", list(DEFAULT_INBOX_TYPES),
+    )
+
+
+def get_inbox_channels(settings: dict) -> list[str]:
+    """Return inbox_channels list with defaults."""
+    return settings.get(
+        "inbox_channels",
+        list(DEFAULT_INBOX_CHANNELS),
+    )
 
 
 def get_ai_settings(settings: dict) -> dict:

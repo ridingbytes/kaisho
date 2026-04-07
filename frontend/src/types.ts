@@ -39,6 +39,8 @@ export interface Settings {
   task_states: TaskState[];
   tags: ConfigTag[];
   customer_types: string[];
+  inbox_types: string[];
+  inbox_channels: string[];
 }
 
 export interface AiSettings {

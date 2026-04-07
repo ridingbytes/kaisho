@@ -40,6 +40,12 @@ def get_settings():
     merged["customer_types"] = (
         settings_svc.get_customer_types(data)
     )
+    merged["inbox_types"] = (
+        settings_svc.get_inbox_types(data)
+    )
+    merged["inbox_channels"] = (
+        settings_svc.get_inbox_channels(data)
+    )
     return merged
 
 
@@ -248,6 +254,95 @@ def remove_customer_type(name: str):
         t for t in types if t != name.upper()
     ]
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+
+
+# ---------------------------------------------------------------
+# Inbox types and channels
+# ---------------------------------------------------------------
+
+
+@router.post("/inbox_types", status_code=201)
+def add_inbox_type(body: dict = Body(...)):
+    name = body.get("name", "").strip()
+    if not name:
+        raise HTTPException(
+            status_code=400, detail="name required",
+        )
+    cfg = get_config()
+    data = settings_svc.load_settings(
+        cfg.SETTINGS_FILE,
+    )
+    types = settings_svc.get_inbox_types(data)
+    if name in types:
+        raise HTTPException(
+            status_code=409,
+            detail="Type already exists",
+        )
+    types.append(name)
+    data["inbox_types"] = types
+    settings_svc.save_settings(
+        cfg.SETTINGS_FILE, data,
+    )
+    return {"inbox_types": types}
+
+
+@router.delete(
+    "/inbox_types/{name}", status_code=204,
+)
+def remove_inbox_type(name: str):
+    cfg = get_config()
+    data = settings_svc.load_settings(
+        cfg.SETTINGS_FILE,
+    )
+    types = settings_svc.get_inbox_types(data)
+    data["inbox_types"] = [
+        t for t in types if t != name
+    ]
+    settings_svc.save_settings(
+        cfg.SETTINGS_FILE, data,
+    )
+
+
+@router.post("/inbox_channels", status_code=201)
+def add_inbox_channel(body: dict = Body(...)):
+    name = body.get("name", "").strip().lower()
+    if not name:
+        raise HTTPException(
+            status_code=400, detail="name required",
+        )
+    cfg = get_config()
+    data = settings_svc.load_settings(
+        cfg.SETTINGS_FILE,
+    )
+    channels = settings_svc.get_inbox_channels(data)
+    if name in channels:
+        raise HTTPException(
+            status_code=409,
+            detail="Channel already exists",
+        )
+    channels.append(name)
+    data["inbox_channels"] = channels
+    settings_svc.save_settings(
+        cfg.SETTINGS_FILE, data,
+    )
+    return {"inbox_channels": channels}
+
+
+@router.delete(
+    "/inbox_channels/{name}", status_code=204,
+)
+def remove_inbox_channel(name: str):
+    cfg = get_config()
+    data = settings_svc.load_settings(
+        cfg.SETTINGS_FILE,
+    )
+    channels = settings_svc.get_inbox_channels(data)
+    data["inbox_channels"] = [
+        c for c in channels if c != name
+    ]
+    settings_svc.save_settings(
+        cfg.SETTINGS_FILE, data,
+    )
 
 
 # ---------------------------------------------------------------

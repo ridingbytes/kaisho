@@ -18,7 +18,7 @@ import {
 import { useSetView } from "../../context/ViewContext";
 import type { InboxItem } from "../../types";
 
-const TYPES = ["NOTIZ", "EMAIL", "LEAD", "IDEE"] as const;
+import { useSettings } from "../../hooks/useSettings";
 
 const CHANNELS = [
   { value: "", label: "Any" },
@@ -35,13 +35,15 @@ const DIRECTIONS = [
 ] as const;
 
 const TYPE_STYLES: Record<string, string> = {
+  NOTE: "bg-stone-500/15 text-stone-700",
   EMAIL: "bg-sky-500/15 text-sky-400",
   LEAD: "bg-emerald-500/15 text-emerald-400",
-  IDEE: "bg-violet-500/15 text-violet-400",
-  NOTIZ: "bg-stone-500/15 text-stone-700",
+  IDEA: "bg-violet-500/15 text-violet-400",
+  BUG: "bg-red-500/15 text-red-400",
+  FEATURE: "bg-blue-500/15 text-blue-400",
 };
 
-const TITLE_STRIP_RE = /^(?:EMAIL|LEAD|IDEE|NOTIZ|NOTE|IDEA)\s+/i;
+const TITLE_STRIP_RE = /^(?:EMAIL|LEAD|IDEA|NOTE|BUG|FEATURE)\s+/i;
 const CUSTOMER_STRIP_RE = /^\[[^\]]+\]\s*/;
 
 function cleanTitle(title: string): string {
@@ -74,6 +76,9 @@ interface Props {
 
 export function InboxItemRow({ item }: Props) {
   const setView = useSetView();
+  const { data: settings } = useSettings();
+  const inboxTypes: string[] =
+    settings?.inbox_types ?? ["NOTE", "EMAIL"];
   const [expanded, setExpanded] = useState(false);
   const [moving, setMoving] = useState(false);
   const [moveDest, setMoveDest] = useState<MoveDestination | null>(null);
@@ -112,12 +117,12 @@ export function InboxItemRow({ item }: Props) {
   }, [confirmDel]);
 
   const typeStyle =
-    TYPE_STYLES[item.type?.toUpperCase()] ?? TYPE_STYLES["NOTIZ"];
+    TYPE_STYLES[item.type?.toUpperCase()] ?? TYPE_STYLES["NOTE"];
 
   function startEdit(e: React.MouseEvent) {
     e.stopPropagation();
     setEditTitle(cleanTitle(item.title));
-    setEditType(item.type ?? "NOTIZ");
+    setEditType(item.type ?? "NOTE");
     setEditCustomer(item.customer ?? "");
     setEditBody(item.body ?? "");
     setEditChannel(item.channel ?? "");
@@ -202,7 +207,7 @@ export function InboxItemRow({ item }: Props) {
       >
         {/* Type badge */}
         <span className={[badgeCls, typeStyle].join(" ")}>
-          {item.type ?? "NOTIZ"}
+          {item.type ?? "NOTE"}
         </span>
 
         {/* Channel badge */}
@@ -371,7 +376,7 @@ export function InboxItemRow({ item }: Props) {
                   onChange={(e) => setEditType(e.target.value)}
                   className={`${fieldCls} w-28 shrink-0`}
                 >
-                  {TYPES.map((t) => (
+                  {inboxTypes.map((t: string) => (
                     <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
