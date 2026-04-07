@@ -414,12 +414,12 @@ function BudgetRow({
               "gap-1.5"
             }
           >
-            {dotColor && (
-              <span
-                className="w-2 h-2 rounded-full shrink-0"
-                style={{ background: dotColor }}
-              />
-            )}
+            <span
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{
+                background: dotColor || "#a1a1aa",
+              }}
+            />
             {b.name}
           </button>
         </div>

@@ -84,12 +84,12 @@ export function ActiveTimer({ timer }: Props) {
             </span>
           </div>
           <p className="text-sm font-semibold text-stone-900 truncate flex items-center gap-1.5">
-            {custColor && (
-              <span
-                className="w-2 h-2 rounded-full shrink-0"
-                style={{ background: custColor }}
-              />
-            )}
+            <span
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{
+                background: custColor || "#a1a1aa",
+              }}
+            />
             {timer.customer}
           </p>
           {timer.description && (

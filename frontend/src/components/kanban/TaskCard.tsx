@@ -547,14 +547,12 @@ export function TaskCard({
                       "bg-cta-muted text-cta-hover",
                     ].join(" ")}
                   >
-                    {customerColors[task.customer] && (
-                      <span
-                        className="w-1.5 h-1.5 rounded-full shrink-0"
-                        style={{
-                          background: customerColors[task.customer],
-                        }}
-                      />
-                    )}
+                    <span
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{
+                        background: customerColors[task.customer] || "#a1a1aa",
+                      }}
+                    />
                     {task.customer}
                   </span>
                 </div>

@@ -1052,12 +1052,12 @@ export function CustomerCard({ customer: c }: Props) {
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 min-h-[36px] flex flex-col justify-start">
               <h3 className="text-sm font-semibold text-stone-900 truncate flex items-center gap-1.5">
-                {c.color && (
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ background: c.color }}
-                  />
-                )}
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{
+                    background: c.color || "#a1a1aa",
+                  }}
+                />
                 {c.name}
               </h3>
               {c.repo && (
