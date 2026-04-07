@@ -304,7 +304,9 @@ class _DB:
             Path(path).parent.mkdir(
                 parents=True, exist_ok=True
             )
-            self._conn = sqlite3.connect(path)
+            self._conn = sqlite3.connect(
+                path, check_same_thread=False,
+            )
             self._conn.row_factory = sqlite3.Row
         elif self._is_pg:
             import psycopg2
