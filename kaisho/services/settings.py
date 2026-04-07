@@ -147,6 +147,7 @@ DEFAULT_PATHS: dict = {
     "org_dir": "",
     "markdown_dir": "",
     "json_dir": "",
+    "sql_dsn": "",
 }
 
 
@@ -204,6 +205,7 @@ def get_path_settings(settings: dict, cfg=None) -> dict:
             stored.get("json_dir")
             or _default_json_dir(cfg)
         ),
+        "sql_dsn": stored.get("sql_dsn", ""),
     }
 
 
@@ -215,7 +217,7 @@ def set_path_settings(
     paths = data.get("paths", {})
     for key in (
         "backend", "org_dir",
-        "markdown_dir", "json_dir",
+        "markdown_dir", "json_dir", "sql_dsn",
     ):
         if key in updates and updates[key] is not None:
             paths[key] = updates[key]

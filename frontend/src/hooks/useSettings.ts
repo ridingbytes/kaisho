@@ -233,6 +233,8 @@ export function useUpdatePaths() {
     mutationFn: (updates: {
       org_dir?: string;
       markdown_dir?: string;
+      json_dir?: string;
+      sql_dsn?: string;
     }) => updatePaths(updates),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["settings", "paths"] });

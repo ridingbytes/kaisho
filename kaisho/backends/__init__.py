@@ -65,10 +65,12 @@ def get_backend() -> Backend:
         result = make_json_backend(cfg_overlay)
     elif backend_type == "sql":
         from .sql import make_sql_backend
-        dsn = getattr(
-            cfg_overlay, "SQL_DSN",
-            f"sqlite:///{cfg.PROFILE_DIR / 'kaisho.db'}",
-        )
+        dsn = getattr(cfg_overlay, "SQL_DSN", "")
+        if not dsn:
+            dsn = (
+                f"sqlite:///"
+                f"{cfg.PROFILE_DIR / 'kaisho.db'}"
+            )
         result = make_sql_backend(dsn)
     else:
         raise ValueError(
@@ -118,6 +120,8 @@ class _OverlayCfg:
             return Path(paths["markdown_dir"])
         if name == "JSON_DIR" and paths.get("json_dir"):
             return Path(paths["json_dir"])
+        if name == "SQL_DSN" and paths.get("sql_dsn"):
+            return paths["sql_dsn"]
         if name == "BACKEND":
             return paths.get("backend", "org")
         # Re-derive org file paths from overridden ORG_DIR

@@ -2057,6 +2057,8 @@ function PathsSection() {
   const updateKb = useUpdateKbSources();
   const [orgDir, setOrgDir] = useState("");
   const [mdDir, setMdDir] = useState("");
+  const [jsonDir, setJsonDir] = useState("");
+  const [sqlDsn, setSqlDsn] = useState("");
   const [backend, setBackend] = useState("org");
   const [sources, setSources] = useState<
     { label: string; path: string }[]
@@ -2067,6 +2069,8 @@ function PathsSection() {
     if (paths) {
       setOrgDir(paths.org_dir ?? "");
       setMdDir(paths.markdown_dir ?? "");
+      setJsonDir(paths.json_dir ?? "");
+      setSqlDsn(paths.sql_dsn ?? "");
       setBackend(paths.backend ?? "org");
     }
   }, [paths]);
@@ -2081,7 +2085,12 @@ function PathsSection() {
 
   function handleSavePaths() {
     update.mutate(
-      { org_dir: orgDir, markdown_dir: mdDir },
+      {
+        org_dir: orgDir,
+        markdown_dir: mdDir,
+        json_dir: jsonDir,
+        sql_dsn: sqlDsn,
+      },
       {
         onSuccess: () => {
           setSaved(true);
@@ -2152,6 +2161,9 @@ function PathsSection() {
               <option value="json">
                 JSON (*.json files)
               </option>
+              <option value="sql">
+                SQL (SQLite / PostgreSQL)
+              </option>
             </select>
             <button
               onClick={handleSwitchBackend}
@@ -2198,6 +2210,30 @@ function PathsSection() {
               onChange={(e) => setMdDir(e.target.value)}
               className={inputCls}
               placeholder="data/markdown"
+            />
+          </label>
+          <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
+            <span className="text-xs text-stone-700 w-32 shrink-0">
+              JSON_DIR
+            </span>
+            <input
+              type="text"
+              value={jsonDir}
+              onChange={(e) => setJsonDir(e.target.value)}
+              className={inputCls}
+              placeholder="data/json"
+            />
+          </label>
+          <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
+            <span className="text-xs text-stone-700 w-32 shrink-0">
+              SQL_DSN
+            </span>
+            <input
+              type="text"
+              value={sqlDsn}
+              onChange={(e) => setSqlDsn(e.target.value)}
+              className={inputCls}
+              placeholder="sqlite:///path/to/kaisho.db"
             />
           </label>
           <div className="flex items-center gap-3 px-4 py-2.5">

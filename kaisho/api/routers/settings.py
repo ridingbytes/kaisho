@@ -433,9 +433,16 @@ def get_paths():
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     paths = settings_svc.get_path_settings(data, cfg)
+    sql_dsn = paths.get("sql_dsn", "")
+    if not sql_dsn:
+        sql_dsn = (
+            f"sqlite:///{cfg.PROFILE_DIR / 'kaisho.db'}"
+        )
     return {
         "org_dir": paths["org_dir"],
         "markdown_dir": paths["markdown_dir"],
+        "json_dir": paths["json_dir"],
+        "sql_dsn": sql_dsn,
         "data_dir": str(cfg.DATA_DIR.expanduser()),
         "profile": cfg.PROFILE,
         "profile_dir": str(cfg.PROFILE_DIR),
@@ -447,6 +454,8 @@ def get_paths():
 class PathsUpdate(BaseModel):
     org_dir: str | None = None
     markdown_dir: str | None = None
+    json_dir: str | None = None
+    sql_dsn: str | None = None
     backend: str | None = None
 
 
@@ -466,19 +475,17 @@ def update_paths(body: PathsUpdate):
 
 
 class BackendSwitch(BaseModel):
-    backend: str   # "org", "markdown", or "json"
+    backend: str
 
 
 @router.put("/backend")
 def switch_backend(body: BackendSwitch):
     """Switch the storage backend for this profile."""
-    if body.backend not in ("org", "markdown", "json"):
+    valid = ("org", "markdown", "json", "sql")
+    if body.backend not in valid:
         raise HTTPException(
             status_code=400,
-            detail=(
-                "backend must be 'org', 'markdown',"
-                " 'json', or 'sql'"
-            ),
+            detail=f"backend must be one of: {valid}",
         )
     cfg = get_config()
     settings_svc.set_path_settings(
