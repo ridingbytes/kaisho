@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronRight,
   GitBranch,
+  ListRestart,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
@@ -357,6 +358,7 @@ export function TaskCard({
   } = useSortable({ id: task.id });
 
   const customerColors = useCustomerColors();
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editCustomer, setEditCustomer] = useState("");
@@ -630,35 +632,6 @@ export function TaskCard({
                 />
               </div>
               <TaskClockSection task={task} />
-              {task.state_history &&
-                task.state_history.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-border-subtle">
-                  <p className="text-[9px] font-semibold tracking-wider uppercase text-stone-400 mb-1">
-                    History
-                  </p>
-                  {task.state_history.map(
-                    (h, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-1.5 text-[10px] text-stone-500 py-0.5"
-                    >
-                      <span
-                        className="w-1 h-1 rounded-full shrink-0 bg-stone-400"
-                      />
-                      <span className="font-medium text-stone-700">
-                        {h.to}
-                      </span>
-                      <span className="text-stone-400">
-                        from {h.from}
-                      </span>
-                      <RelDate
-                        date={h.timestamp}
-                        className="ml-auto text-stone-400"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
             </>
           )}
         </div>
@@ -675,6 +648,17 @@ export function TaskCard({
                   iconSize={11}
                 />
               </span>
+            )}
+            {task.state_history &&
+              task.state_history.length > 0 && (
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => setHistoryOpen(true)}
+                className="p-1 rounded text-stone-400 hover:text-cta hover:bg-cta-muted transition-colors"
+                title="State history"
+              >
+                <ListRestart size={11} />
+              </button>
             )}
             <button
               onPointerDown={(e) => e.stopPropagation()}
@@ -727,6 +711,52 @@ export function TaskCard({
           </div>
         )}
       </div>
+
+      {/* State history popup */}
+      {historyOpen && task.state_history && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          onClick={() => setHistoryOpen(false)}
+        >
+          <div className="absolute inset-0 bg-black/50" />
+          <div
+            className="relative bg-surface-card rounded-xl shadow-lg border border-border p-5 w-80 max-h-[60vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
+                State History
+              </h3>
+              <button
+                onClick={() => setHistoryOpen(false)}
+                className="p-1 rounded text-stone-400 hover:text-stone-900"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <div className="flex flex-col gap-1">
+              {task.state_history.map((h, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 text-[11px] py-1"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-stone-400" />
+                  <span className="font-medium text-stone-800">
+                    {h.to}
+                  </span>
+                  <span className="text-stone-500">
+                    from {h.from}
+                  </span>
+                  <RelDate
+                    date={h.timestamp}
+                    className="ml-auto text-stone-400 text-[10px]"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
