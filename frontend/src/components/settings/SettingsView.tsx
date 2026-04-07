@@ -1773,18 +1773,17 @@ function GeneralTab() {
 
 function TagsAndTypesTab() {
   const { data: settings, isLoading } = useSettings();
-
-  if (isLoading) {
-    return <p className="text-sm text-stone-500">Loading…</p>;
-  }
-  if (!settings) return null;
-
   const addCustType = useAddCustomerType();
   const delCustType = useDeleteCustomerType();
   const addInbType = useAddInboxType();
   const delInbType = useDeleteInboxType();
   const addInbChan = useAddInboxChannel();
   const delInbChan = useDeleteInboxChannel();
+
+  if (isLoading) {
+    return <p className="text-sm text-stone-500">Loading…</p>;
+  }
+  if (!settings) return null;
 
   return (
     <div className="flex flex-col gap-8">
