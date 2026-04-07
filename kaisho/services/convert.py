@@ -11,6 +11,10 @@ from pathlib import Path
 from ..backends import Backend
 
 _CUSTOMER_PREFIX_RE = re.compile(r"^\[[^\]]+\]:\s*")
+_STATUS_KEYWORDS = {
+    "TODO", "NEXT", "IN-PROGRESS", "WAIT",
+    "DONE", "CANCELLED",
+}
 
 
 def convert_backend(
@@ -83,13 +87,23 @@ def _convert_customers(
 
 
 def _clean_title(title: str) -> str:
-    """Strip [CUSTOMER]: prefix from a task title.
+    """Strip [CUSTOMER]: prefix and leading status
+    keywords from a task title.
 
-    Org backend includes the prefix in the title field.
-    Other backends store customer separately, so the
-    prefix must be removed to avoid duplication.
+    Org backend includes the customer prefix in the
+    title field. Re-imports can accumulate status
+    keywords at the start. Both are stripped.
     """
-    return _CUSTOMER_PREFIX_RE.sub("", title).strip()
+    title = _CUSTOMER_PREFIX_RE.sub("", title).strip()
+    # Strip accumulated status keywords from start
+    changed = True
+    while changed:
+        changed = False
+        for kw in _STATUS_KEYWORDS:
+            if title.startswith(kw + " "):
+                title = title[len(kw):].strip()
+                changed = True
+    return title
 
 
 def _convert_tasks(

@@ -1987,7 +1987,8 @@ function ImportDataSection() {
       </h2>
       <p className="text-[11px] text-stone-500 mb-3">
         Import data from another backend into the
-        current profile.
+        current profile. Import is additive -- clear
+        existing data files first to avoid duplicates.
       </p>
       <div className="flex items-end gap-2">
         <div className="flex flex-col gap-1">
