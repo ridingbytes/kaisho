@@ -1063,16 +1063,12 @@ def _inbox_heading(item: dict) -> str:
     return f"{itype} {title}"
 
 
-_INBOX_TYPES = {
-    "NOTIZ", "NOTE", "EMAIL", "IDEE", "IDEA",
-    "LEAD", "BUG", "FEATURE", "COMMUNICATION",
-    "note", "email", "lead", "bug", "feature",
-    "communication",
-}
-
-
 def _parse_inbox_heading(heading: str) -> dict:
-    """Extract type, customer, title from heading."""
+    """Extract type, customer, title from heading.
+
+    Accepts any single uppercase/lowercase word as type.
+    Format: TYPE [CUSTOMER] Title  or  TYPE Title
+    """
     # With customer: TYPE [CUSTOMER] Title
     m = re.match(
         r"(\S+)\s+\[([^\]]*)\]\s+(.*)", heading,
@@ -1083,14 +1079,15 @@ def _parse_inbox_heading(heading: str) -> dict:
             "customer": m.group(2),
             "title": m.group(3),
         }
-    # Without customer: TYPE Title
-    parts = heading.split(None, 1)
-    if (len(parts) == 2
-            and parts[0] in _INBOX_TYPES):
+    # Without customer: WORD Rest...
+    # First word is the type if it's a single token
+    # (no spaces, no special chars except hyphen)
+    m2 = re.match(r"([A-Za-z][\w-]*)\s+(.*)", heading)
+    if m2:
         return {
-            "type": parts[0],
+            "type": m2.group(1),
             "customer": "",
-            "title": parts[1],
+            "title": m2.group(2),
         }
     return {
         "type": "note",
