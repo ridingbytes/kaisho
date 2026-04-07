@@ -1,9 +1,26 @@
 #!/usr/bin/env bash
-# Start Kaisho backend + frontend. Ctrl+C stops both.
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VENV_DIR="$SCRIPT_DIR/.venv"
 
 BACKEND_PID=""
 FRONTEND_PID=""
+
+# Create venv if missing
+if [ ! -d "$VENV_DIR" ]; then
+    echo "Creating virtual environment..."
+    python3 -m venv "$VENV_DIR"
+fi
+
+# Activate — all pip/kai calls now use the venv
+source "$VENV_DIR/bin/activate"
+
+# Install if kai is not available in the venv
+if ! command -v kai &>/dev/null; then
+    echo "Installing kaisho..."
+    pip install -e "."
+fi
 
 cleanup() {
     echo ""
