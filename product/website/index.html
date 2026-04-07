@@ -1,0 +1,2431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0" />
+  <title>Kaisho — Freelance work, liberated.</title>
+  <meta name="description"
+        content="Self-hosted productivity for freelancers.
+        Kanban, time tracking, customer budgets, AI advisor,
+        knowledge base. CLI-first. Open source." />
+  <link rel="icon" type="image/svg+xml"
+        href="kaisho-logo.svg" />
+  <link rel="preconnect"
+        href="https://fonts.googleapis.com" />
+  <link rel="preconnect"
+        href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
+        rel="stylesheet" />
+
+  <style>
+    /* === DESIGN TOKENS === */
+    :root {
+      --base:      #fafafc;
+      --card:      #ffffff;
+      --raised:    #f3f3f8;
+      --overlay:   #e4e4ec;
+
+      --t1: #1e1e2e;
+      --t2: #4a4b65;
+      --t3: #6e7191;
+      --t4: #8b8fa3;
+
+      --cta:   #1e1e2e;
+      --cta-h: #33334d;
+      --cta-m: rgba(30, 30, 46, 0.06);
+
+      --border:   #e4e4ec;
+      --border-s: #f3f3f8;
+
+      --green:  #16a34a;
+      --amber:  #d97706;
+      --red:    #dc2626;
+      --blue:   #2563eb;
+      --violet: #7c3aed;
+      --slate:  #64748b;
+
+      --dark: #1e1e2e;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "Inter", sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--t1);
+      background: var(--base);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* === LAYOUT === */
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .section { padding: 96px 0; }
+
+    .section--dark {
+      background: var(--dark);
+      color: #ffffff;
+    }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--t4);
+      margin-bottom: 12px;
+    }
+
+    .section-heading {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1.15;
+      color: var(--t1);
+      margin-bottom: 16px;
+    }
+
+    .section--dark .section-heading { color: #ffffff; }
+
+    .section-sub {
+      font-size: 17px;
+      color: var(--t2);
+      max-width: 520px;
+      line-height: 1.65;
+    }
+
+    .section--dark .section-sub {
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    /* === NAV === */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(250, 250, 252, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 60px;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .nav-wordmark {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--t1);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      margin-left: auto;
+    }
+
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--t2);
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .nav-links a:hover {
+      color: var(--t1);
+      background: var(--cta-m);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      margin-left: 16px;
+    }
+
+    /* === BUTTONS === */
+    .btn-ghost {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--t2);
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s,
+                  background 0.15s;
+      background: transparent;
+      display: inline-block;
+    }
+
+    .btn-ghost:hover {
+      color: var(--t1);
+      border-color: var(--t3);
+      background: var(--cta-m);
+    }
+
+    .btn-primary {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+      background: var(--cta);
+      padding: 7px 16px;
+      border-radius: 7px;
+      border: 1px solid var(--cta);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      display: inline-block;
+    }
+
+    .btn-primary:hover {
+      background: var(--cta-h);
+      border-color: var(--cta-h);
+    }
+
+    .btn-lg {
+      font-size: 15px;
+      padding: 11px 24px;
+      border-radius: 8px;
+    }
+
+    .btn-outline {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--t1);
+      background: transparent;
+      border: 1.5px solid var(--border);
+      padding: 10px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      display: inline-block;
+    }
+
+    .btn-outline:hover {
+      border-color: var(--t3);
+      background: var(--cta-m);
+    }
+
+    .btn-outline--light {
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-outline--light:hover {
+      border-color: rgba(255, 255, 255, 0.65);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* === HERO === */
+    .hero {
+      padding: 80px 0 56px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--t3);
+      background: var(--raised);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 5px 14px;
+      margin-bottom: 28px;
+    }
+
+    .hero-badge-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+
+    .hero-title {
+      font-size: clamp(40px, 6vw, 64px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: var(--t1);
+      margin-bottom: 20px;
+    }
+
+    .hero-title .accent {
+      background: linear-gradient(
+        135deg,
+        #4a4b65 0%,
+        #7c3aed 50%,
+        #4a4b65 100%
+      );
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 18px;
+      color: var(--t2);
+      max-width: 480px;
+      margin: 0 auto 32px;
+      font-weight: 400;
+      line-height: 1.6;
+    }
+
+    .hero-ctas {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      flex-wrap: wrap;
+      margin-bottom: 56px;
+    }
+
+    .hero-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      color: var(--t3);
+      font-weight: 500;
+    }
+
+    .hero-meta-item::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--overlay);
+      display: block;
+    }
+
+    /* === APP FRAME (hero) === */
+    .app-frame {
+      background: var(--dark);
+      border-radius: 12px;
+      border: 1px solid var(--overlay);
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(30, 30, 46, 0.16),
+                  0 4px 16px rgba(30, 30, 46, 0.08);
+      max-width: 880px;
+      margin: 0 auto;
+    }
+
+    .app-frame-bar {
+      background: #252538;
+      padding: 11px 16px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .frame-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+
+    .frame-dot--red   { background: #ff5f57; }
+    .frame-dot--amber { background: #febc2e; }
+    .frame-dot--green { background: #28c840; }
+
+    .app-frame-url {
+      margin-left: 10px;
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 5px;
+      padding: 3px 10px;
+      font-size: 11.5px;
+      color: rgba(255, 255, 255, 0.35);
+      font-family: "SF Mono", "Monaco", monospace;
+      max-width: 220px;
+    }
+
+    .app-frame-content {
+      display: grid;
+      grid-template-columns: 188px 1fr;
+      height: 340px;
+    }
+
+    .app-sidebar {
+      background: #202033;
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 14px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .sidebar-item {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.45);
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+
+    .sidebar-item--active {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .app-main {
+      padding: 18px 20px;
+      overflow: hidden;
+    }
+
+    .app-main-header {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.85);
+      margin-bottom: 14px;
+    }
+
+    .mini-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .mini-stat {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .mini-stat-val {
+      font-size: 20px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.88);
+      letter-spacing: -0.02em;
+    }
+
+    .mini-stat-label {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.35);
+      margin-top: 2px;
+    }
+
+    .mini-tasks-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .mini-task {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      padding: 7px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mini-task-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .mini-task-text {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.65);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mini-task-tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    /* === FEATURE ROWS === */
+    .features-section { padding: 64px 0 80px; }
+
+    .feature-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+      padding: 72px 0;
+      border-bottom: 1px solid var(--border-s);
+    }
+
+    .feature-row:first-child { padding-top: 0; }
+    .feature-row:last-child { border-bottom: none; }
+
+    .feature-row--rev .feature-text { order: 2; }
+    .feature-row--rev .feature-mock { order: 1; }
+
+    .feature-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--t4);
+      margin-bottom: 10px;
+    }
+
+    .feature-heading {
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      color: var(--t1);
+      margin-bottom: 14px;
+    }
+
+    .feature-desc {
+      font-size: 16px;
+      color: var(--t2);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+
+    .feature-desc code {
+      font-family: "SF Mono", "Monaco", "Consolas",
+                   monospace;
+      font-size: 13px;
+      background: var(--raised);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: var(--t1);
+    }
+
+    .feature-bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .feature-bullets li {
+      font-size: 14px;
+      color: var(--t2);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .feature-bullets li::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--t4);
+      flex-shrink: 0;
+    }
+
+    /* Mock base */
+    .mock {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 24px rgba(30, 30, 46, 0.06);
+    }
+
+    /* Kanban mock */
+    .kanban-mock {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .kanban-col {
+      background: var(--raised);
+      border-radius: 8px;
+      padding: 8px;
+    }
+
+    .kanban-col-hdr {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--t4);
+      padding: 2px 4px 8px;
+    }
+
+    .kanban-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 9px;
+      margin-bottom: 6px;
+    }
+
+    .kanban-card:last-child { margin-bottom: 0; }
+
+    .kcard-text {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--t1);
+      line-height: 1.4;
+      margin-bottom: 7px;
+    }
+
+    .kcard-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tag-pill {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.02em;
+    }
+
+    .pill--blue {
+      background: rgba(37, 99, 235, 0.1);
+      color: var(--blue);
+    }
+
+    .pill--violet {
+      background: rgba(124, 58, 237, 0.1);
+      color: var(--violet);
+    }
+
+    .pill--green {
+      background: rgba(22, 163, 74, 0.1);
+      color: var(--green);
+    }
+
+    .pill--amber {
+      background: rgba(217, 119, 6, 0.1);
+      color: var(--amber);
+    }
+
+    .sdot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .sdot--blue   { background: var(--blue); }
+    .sdot--amber  { background: var(--amber); }
+    .sdot--green  { background: var(--green); }
+    .sdot--slate  { background: var(--slate); }
+
+    /* Timer mock */
+    .timer-display {
+      text-align: center;
+      padding: 20px;
+      background: var(--raised);
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+
+    .timer-digits {
+      font-size: 36px;
+      font-weight: 300;
+      letter-spacing: 0.04em;
+      color: var(--t1);
+      font-variant-numeric: tabular-nums;
+      font-family: "SF Mono", "Monaco", "Cascadia Code",
+                   monospace;
+      line-height: 1;
+    }
+
+    .timer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--green);
+      background: rgba(22, 163, 74, 0.1);
+      border-radius: 100px;
+      padding: 3px 10px;
+      margin-top: 10px;
+    }
+
+    .timer-pulse {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.25; }
+    }
+
+    .timer-desc {
+      font-size: 11.5px;
+      color: var(--t3);
+      margin-top: 5px;
+    }
+
+    .entry-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .entry-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 10px;
+      background: var(--raised);
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .entry-cust {
+      font-weight: 600;
+      color: var(--t1);
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .entry-dur {
+      font-weight: 600;
+      color: var(--t3);
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+
+    /* Budget mock */
+    .budget-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .budget-item {}
+
+    .budget-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+
+    .budget-name {
+      font-weight: 600;
+      color: var(--t1);
+    }
+
+    .budget-pct { font-weight: 600; font-size: 12px; }
+
+    .budget-track {
+      height: 5px;
+      background: var(--raised);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .budget-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    /* Chat mock */
+    .chat-mock {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chat-msg {
+      max-width: 87%;
+      font-size: 13px;
+      line-height: 1.55;
+      border-radius: 12px;
+      padding: 10px 13px;
+    }
+
+    .chat-msg--user {
+      align-self: flex-end;
+      background: var(--t1);
+      color: #ffffff;
+      border-radius: 12px 12px 3px 12px;
+    }
+
+    .chat-msg--ai {
+      align-self: flex-start;
+      background: var(--raised);
+      border: 1px solid var(--border);
+      color: var(--t1);
+      border-radius: 3px 12px 12px 12px;
+    }
+
+    .chat-badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--violet);
+      background: rgba(124, 58, 237, 0.08);
+      border-radius: 4px;
+      padding: 2px 7px;
+      margin-bottom: 6px;
+    }
+
+    /* === MORE FEATURES === */
+    .more-features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 48px;
+    }
+
+    .feat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      transition: box-shadow 0.2s;
+    }
+
+    .feat-card:hover {
+      box-shadow: 0 8px 28px rgba(30, 30, 46, 0.08);
+    }
+
+    .feat-icon {
+      width: 34px;
+      height: 34px;
+      background: var(--raised);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      color: var(--t3);
+    }
+
+    .feat-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--t1);
+      margin-bottom: 7px;
+    }
+
+    .feat-desc {
+      font-size: 13.5px;
+      color: var(--t2);
+      line-height: 1.6;
+    }
+
+    .feat-desc code {
+      font-family: "SF Mono", "Monaco", monospace;
+      font-size: 12px;
+      background: var(--raised);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 1px 5px;
+      color: var(--t1);
+    }
+
+    /* === CLI === */
+    .cli-inner {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 64px;
+      align-items: start;
+    }
+
+    .terminal {
+      background: #0d0d1a;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .terminal-bar {
+      background: #1a1a2e;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .terminal-body {
+      padding: 20px;
+      font-family: "SF Mono", "Cascadia Code", "Monaco",
+                   "Consolas", monospace;
+      font-size: 12.5px;
+      line-height: 1.75;
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    .tc-prompt { color: #6e7191; }
+    .tc-cmd    { color: #4ade80; }
+    .tc-str    { color: #d97706; }
+    .tc-flag   { color: #60a5fa; }
+    .tc-out    { color: rgba(255, 255, 255, 0.4); }
+    .tc-gap    { display: block; height: 8px; }
+
+    /* === HOW IT WORKS === */
+    .hiw-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+      margin-top: 56px;
+      text-align: center;
+    }
+
+    .hiw-num {
+      font-size: 52px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.07);
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 14px;
+    }
+
+    .hiw-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .hiw-desc {
+      font-size: 14.5px;
+      color: rgba(255, 255, 255, 0.5);
+      line-height: 1.65;
+    }
+
+    .hiw-desc code {
+      font-family: "SF Mono", monospace;
+      font-size: 12.5px;
+      background: rgba(255, 255, 255, 0.07);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* === INTEGRATIONS === */
+    .integrations-section {
+      padding: 80px 0;
+      text-align: center;
+    }
+
+    .int-pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 40px;
+    }
+
+    .int-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--t2);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 8px 18px;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .int-pill:hover {
+      border-color: var(--t3);
+      color: var(--t1);
+    }
+
+    /* === PRICING === */
+    .pricing-section {
+      padding: 96px 0;
+      text-align: center;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 56px;
+      align-items: start;
+    }
+
+    .price-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 32px 26px;
+      text-align: left;
+      position: relative;
+    }
+
+    .price-card--featured {
+      border-color: var(--t1);
+      box-shadow: 0 0 0 1px var(--t1),
+                  0 20px 60px rgba(30, 30, 46, 0.1);
+    }
+
+    .price-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--t1);
+      color: #ffffff;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 3px 12px;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+
+    .price-tier {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--t4);
+      margin-bottom: 8px;
+    }
+
+    .price-amount {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--t1);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .price-period {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--t3);
+    }
+
+    .price-alt {
+      font-size: 12.5px;
+      color: var(--t4);
+      margin-bottom: 18px;
+      margin-top: 4px;
+      min-height: 18px;
+    }
+
+    .price-desc {
+      font-size: 14px;
+      color: var(--t2);
+      line-height: 1.6;
+      margin-bottom: 20px;
+      border-top: 1px solid var(--border-s);
+      padding-top: 18px;
+    }
+
+    .price-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 26px;
+    }
+
+    .price-features li {
+      font-size: 13.5px;
+      color: var(--t2);
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+    }
+
+    .price-features li::before {
+      content: "";
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: rgba(22, 163, 74, 0.12);
+      border: 1.5px solid var(--green);
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .price-cta {
+      width: 100%;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      display: block;
+    }
+
+    .price-cta--outline {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--t1);
+    }
+
+    .price-cta--outline:hover {
+      border-color: var(--t3);
+      background: var(--cta-m);
+    }
+
+    .price-cta--solid {
+      background: var(--cta);
+      border: 1.5px solid var(--cta);
+      color: #ffffff;
+    }
+
+    .price-cta--solid:hover {
+      background: var(--cta-h);
+      border-color: var(--cta-h);
+    }
+
+    /* === FAQ === */
+    .faq-section { padding: 80px 0; }
+
+    .faq-inner {
+      max-width: 680px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .faq-inner .section-heading { text-align: center; }
+
+    .faq-list {
+      margin-top: 48px;
+      text-align: left;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .faq-item:first-child {
+      border-top: 1px solid var(--border);
+    }
+
+    .faq-q {
+      width: 100%;
+      background: none;
+      border: none;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--t1);
+      cursor: pointer;
+      font-family: "Inter", sans-serif;
+    }
+
+    .faq-chevron {
+      width: 17px;
+      height: 17px;
+      color: var(--t4);
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+
+    .faq-item.open .faq-chevron {
+      transform: rotate(180deg);
+    }
+
+    .faq-a {
+      display: none;
+      font-size: 14.5px;
+      color: var(--t2);
+      line-height: 1.7;
+      padding-bottom: 20px;
+    }
+
+    .faq-item.open .faq-a { display: block; }
+
+    /* === PHILOSOPHY === */
+    .philosophy-section {
+      padding: 96px 0;
+      text-align: center;
+      background: var(--raised);
+    }
+
+    .philosophy-logo { margin: 0 auto 24px; }
+
+    .philosophy-title {
+      font-size: clamp(26px, 3.5vw, 38px);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--t1);
+      margin-bottom: 18px;
+    }
+
+    .philosophy-text {
+      font-size: 17px;
+      color: var(--t2);
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.75;
+    }
+
+    /* === CTA === */
+    .cta-section {
+      padding: 96px 0;
+      text-align: center;
+    }
+
+    .cta-title {
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: #ffffff;
+      margin-bottom: 10px;
+    }
+
+    .cta-sub {
+      font-size: 17px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 36px;
+    }
+
+    .cta-btns {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    /* === FOOTER === */
+    footer {
+      background: var(--dark);
+      color: rgba(255, 255, 255, 0.55);
+      padding: 64px 0 0;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr 1fr;
+      gap: 48px;
+      padding-bottom: 48px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .footer-brand-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .footer-wordmark {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #ffffff;
+    }
+
+    .footer-tag {
+      font-size: 13.5px;
+      color: rgba(255, 255, 255, 0.45);
+      line-height: 1.6;
+      margin-top: 10px;
+      margin-bottom: 6px;
+    }
+
+    .footer-by {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    .footer-col-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.35);
+      margin-bottom: 16px;
+    }
+
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .footer-links a {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.5);
+      transition: color 0.15s;
+    }
+
+    .footer-links a:hover { color: #ffffff; }
+
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.28);
+    }
+
+    .footer-bottom a {
+      color: rgba(255, 255, 255, 0.45);
+      transition: color 0.15s;
+    }
+
+    .footer-bottom a:hover {
+      color: rgba(255, 255, 255, 0.8);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- === NAV === -->
+  <nav>
+    <div class="container">
+      <div class="nav-inner">
+        <a class="nav-brand" href="#">
+          <svg xmlns="http://www.w3.org/2000/svg"
+               viewBox="0 0 32 32" width="26" height="26"
+               fill="none">
+            <path d="M8 8l10 8-10 8"
+                  stroke="#1e1e2e" stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"/>
+            <circle cx="25" cy="16" r="2.5"
+                    fill="#1e1e2e"/>
+          </svg>
+          <span class="nav-wordmark">KAISHO</span>
+        </a>
+        <div class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#cli">CLI</a>
+          <a href="#integrations">Integrations</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#faq">FAQ</a>
+        </div>
+        <div class="nav-actions">
+          <a href="https://github.com/ridingbytes/kaisho"
+             class="btn-ghost">GitHub</a>
+          <a href="#pricing"
+             class="btn-primary">Get Started</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- === HERO === -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        Open Source &middot; Self-hosted &middot; CLI-first
+      </div>
+      <h1 class="hero-title">
+        Freelance work,
+        <span class="accent">liberated.</span>
+      </h1>
+      <p class="hero-sub">
+        One system for tasks, time, clients, and
+        knowledge &mdash; as a desktop app, in the
+        browser, or from the terminal.
+      </p>
+      <div class="hero-ctas">
+        <a href="#pricing"
+           class="btn-primary btn-lg">Start Free</a>
+        <a href="#features"
+           class="btn-outline btn-lg">Explore Features</a>
+      </div>
+      <div class="hero-meta">
+        <span class="hero-meta-item">
+          Desktop + CLI + Web UI
+        </span>
+        <span class="hero-meta-item">Local-first data</span>
+        <span class="hero-meta-item">AI built in</span>
+        <span class="hero-meta-item">
+          Free &amp; open source
+        </span>
+      </div>
+
+      <!-- App frame -->
+      <div class="app-frame">
+        <div class="app-frame-bar">
+          <span class="frame-dot frame-dot--red"></span>
+          <span class="frame-dot frame-dot--amber"></span>
+          <span class="frame-dot frame-dot--green"></span>
+          <span class="app-frame-url">localhost:8765</span>
+        </div>
+        <div class="app-frame-content">
+          <div class="app-sidebar">
+            <div class="sidebar-item sidebar-item--active">
+              Dashboard
+            </div>
+            <div class="sidebar-item">Kanban</div>
+            <div class="sidebar-item">Clock</div>
+            <div class="sidebar-item">Customers</div>
+            <div class="sidebar-item">Inbox</div>
+            <div class="sidebar-item">Knowledge</div>
+            <div class="sidebar-item">GitHub</div>
+            <div class="sidebar-item">Advisor</div>
+          </div>
+          <div class="app-main">
+            <div class="app-main-header">Dashboard</div>
+            <div class="mini-stats">
+              <div class="mini-stat">
+                <div class="mini-stat-val">12</div>
+                <div class="mini-stat-label">Open tasks</div>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-val">3</div>
+                <div class="mini-stat-label">Clients</div>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-val">47h</div>
+                <div class="mini-stat-label">
+                  This month
+                </div>
+              </div>
+            </div>
+            <div class="mini-tasks-row">
+              <div class="mini-task">
+                <span class="mini-task-dot"
+                      style="background:#2563eb"></span>
+                <span class="mini-task-text">
+                  Review sprint deliverables
+                </span>
+                <span class="mini-task-tag pill--blue">
+                  Acme
+                </span>
+              </div>
+              <div class="mini-task">
+                <span class="mini-task-dot"
+                      style="background:#d97706"></span>
+                <span class="mini-task-text">
+                  Fix API authentication
+                </span>
+                <span class="mini-task-tag pill--amber">
+                  Beta
+                </span>
+              </div>
+              <div class="mini-task">
+                <span class="mini-task-dot"
+                      style="background:#7c3aed"></span>
+                <span class="mini-task-text">
+                  Write onboarding docs
+                </span>
+                <span class="mini-task-tag pill--violet">
+                  Gamma
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- === FEATURE ROWS === -->
+  <section class="features-section" id="features">
+    <div class="container">
+
+      <!-- a: Kanban -->
+      <div class="feature-row">
+        <div class="feature-text">
+          <div class="feature-label">Kanban Board</div>
+          <h2 class="feature-heading">
+            Visual task management
+          </h2>
+          <p class="feature-desc">
+            Organize work in a flexible kanban board.
+            Tag tasks by customer, set priorities, drag
+            between states &mdash; all backed by plain
+            org-mode files.
+          </p>
+          <ul class="feature-bullets">
+            <li>Custom workflow states</li>
+            <li>Customer tagging</li>
+            <li>CLI + web sync</li>
+            <li>Filters by state</li>
+          </ul>
+        </div>
+        <div class="feature-mock mock">
+          <div class="kanban-mock">
+            <div class="kanban-col">
+              <div class="kanban-col-hdr">TODO</div>
+              <div class="kanban-card">
+                <div class="kcard-text">
+                  Draft Q2 proposal
+                </div>
+                <div class="kcard-foot">
+                  <span class="tag-pill pill--blue">
+                    Acme
+                  </span>
+                  <span class="sdot sdot--blue"></span>
+                </div>
+              </div>
+              <div class="kanban-card">
+                <div class="kcard-text">
+                  Review SLA terms
+                </div>
+                <div class="kcard-foot">
+                  <span class="tag-pill pill--violet">
+                    Gamma
+                  </span>
+                  <span class="sdot sdot--blue"></span>
+                </div>
+              </div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-hdr">IN-PROGRESS</div>
+              <div class="kanban-card">
+                <div class="kcard-text">
+                  Fix auth endpoint
+                </div>
+                <div class="kcard-foot">
+                  <span class="tag-pill pill--amber">
+                    Beta
+                  </span>
+                  <span class="sdot sdot--amber"></span>
+                </div>
+              </div>
+              <div class="kanban-card">
+                <div class="kcard-text">
+                  Write API docs
+                </div>
+                <div class="kcard-foot">
+                  <span class="tag-pill pill--blue">
+                    Acme
+                  </span>
+                  <span class="sdot sdot--amber"></span>
+                </div>
+              </div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-hdr">DONE</div>
+              <div class="kanban-card">
+                <div class="kcard-text">
+                  DB migration
+                </div>
+                <div class="kcard-foot">
+                  <span class="tag-pill pill--green">
+                    Delta
+                  </span>
+                  <span class="sdot sdot--green"></span>
+                </div>
+              </div>
+              <div class="kanban-card">
+                <div class="kcard-text">
+                  Deploy staging
+                </div>
+                <div class="kcard-foot">
+                  <span class="tag-pill pill--violet">
+                    Gamma
+                  </span>
+                  <span class="sdot sdot--green"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- b: Time Tracking (reversed) -->
+      <div class="feature-row feature-row--rev">
+        <div class="feature-text">
+          <div class="feature-label">Time Tracking</div>
+          <h2 class="feature-heading">
+            Clock in, clock out
+          </h2>
+          <p class="feature-desc">
+            Start a timer with
+            <code>kai clock start</code>.
+            Stop it, tag it to a customer and contract.
+            Your time entries are org-mode headlines
+            &mdash; version-controllable and portable.
+          </p>
+          <ul class="feature-bullets">
+            <li>One-command timer</li>
+            <li>Contract association</li>
+            <li>Summary reports</li>
+            <li>Sync to budget</li>
+          </ul>
+        </div>
+        <div class="feature-mock mock">
+          <div class="timer-display">
+            <div class="timer-digits">02:47:13</div>
+            <div class="timer-badge">
+              <span class="timer-pulse"></span>
+              Active
+            </div>
+            <div class="timer-desc">
+              Beta GmbH sprint review
+            </div>
+          </div>
+          <div class="entry-list">
+            <div class="entry-row">
+              <span class="sdot sdot--green"></span>
+              <span class="entry-cust">Acme Corp</span>
+              <span class="entry-dur">3h 20m</span>
+            </div>
+            <div class="entry-row">
+              <span class="sdot sdot--blue"></span>
+              <span class="entry-cust">Beta GmbH</span>
+              <span class="entry-dur">1h 45m</span>
+            </div>
+            <div class="entry-row">
+              <span class="sdot sdot--slate"></span>
+              <span class="entry-cust">Gamma AG</span>
+              <span class="entry-dur">0h 55m</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- c: Customer Budgets -->
+      <div class="feature-row">
+        <div class="feature-text">
+          <div class="feature-label">Customer Budgets</div>
+          <h2 class="feature-heading">
+            Budget awareness, always on
+          </h2>
+          <p class="feature-desc">
+            Define contracts with hour contingents.
+            Kaisho tracks consumed hours automatically
+            from your clock entries and shows you
+            per-customer burn rate.
+          </p>
+          <ul class="feature-bullets">
+            <li>Per-contract budgets</li>
+            <li>Burn rate visualization</li>
+            <li>Auto-calculation</li>
+            <li>Amber/red warnings</li>
+          </ul>
+        </div>
+        <div class="feature-mock mock">
+          <div class="budget-list">
+            <div class="budget-item">
+              <div class="budget-hdr">
+                <span class="budget-name">Acme Corp</span>
+                <span class="budget-pct"
+                      style="color:var(--green)">
+                  68%
+                </span>
+              </div>
+              <div class="budget-track">
+                <div class="budget-fill"
+                     style="width:68%;
+                            background:var(--green)">
+                </div>
+              </div>
+            </div>
+            <div class="budget-item">
+              <div class="budget-hdr">
+                <span class="budget-name">Beta GmbH</span>
+                <span class="budget-pct"
+                      style="color:var(--amber)">
+                  89%
+                </span>
+              </div>
+              <div class="budget-track">
+                <div class="budget-fill"
+                     style="width:89%;
+                            background:var(--amber)">
+                </div>
+              </div>
+            </div>
+            <div class="budget-item">
+              <div class="budget-hdr">
+                <span class="budget-name">Gamma AG</span>
+                <span class="budget-pct"
+                      style="color:var(--red)">
+                  102%
+                </span>
+              </div>
+              <div class="budget-track">
+                <div class="budget-fill"
+                     style="width:100%;
+                            background:var(--red)">
+                </div>
+              </div>
+            </div>
+            <div class="budget-item">
+              <div class="budget-hdr">
+                <span class="budget-name">Delta Inc</span>
+                <span class="budget-pct"
+                      style="color:var(--green)">
+                  34%
+                </span>
+              </div>
+              <div class="budget-track">
+                <div class="budget-fill"
+                     style="width:34%;
+                            background:var(--green)">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- d: AI Advisor (reversed) -->
+      <div class="feature-row feature-row--rev">
+        <div class="feature-text">
+          <div class="feature-label">AI Advisor</div>
+          <h2 class="feature-heading">
+            Ask your context-aware assistant
+          </h2>
+          <p class="feature-desc">
+            Run <code>kai ask</code> and get answers
+            grounded in your tasks, time entries, customer
+            data, and knowledge base. Use Ollama locally
+            or Claude API in the cloud.
+          </p>
+          <ul class="feature-bullets">
+            <li>Full context injection</li>
+            <li>Ollama or Claude</li>
+            <li>Runs locally</li>
+            <li>Knowledge base search</li>
+          </ul>
+        </div>
+        <div class="feature-mock mock">
+          <div class="chat-mock">
+            <div class="chat-msg chat-msg--user">
+              What should I focus on today?
+            </div>
+            <div class="chat-msg chat-msg--ai">
+              <div class="chat-badge">
+                claude-sonnet-4-6
+              </div>
+              Based on your open tasks: Beta GmbH has
+              2 overdue tickets and your clock budget is
+              at 89%. I&rsquo;d prioritize that sprint
+              first.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- === MORE FEATURES === -->
+  <section class="section"
+           style="background:var(--raised)">
+    <div class="container">
+      <div class="section-label">More features</div>
+      <h2 class="section-heading">
+        Everything in one place
+      </h2>
+      <p class="section-sub">
+        Kaisho covers the full freelance workflow &mdash;
+        from inbox capture to scheduled AI automation.
+      </p>
+      <div class="more-features-grid">
+
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg width="16" height="16"
+                 viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round"
+                 stroke-linejoin="round">
+              <path d="M20 12V22H4V12"/>
+              <path d="M22 7H2v5h20V7z"/>
+              <path d="M12 22V7"/>
+              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11
+                       2 12 7 12 7z"/>
+              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13
+                       2 12 7 12 7z"/>
+            </svg>
+          </div>
+          <div class="feat-title">Inbox &amp; Capture</div>
+          <p class="feat-desc">
+            Capture anything fast.
+            <code>kai inbox add</code> drops items into
+            your inbox for triage later &mdash;
+            via CLI or web.
+          </p>
+        </div>
+
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg width="16" height="16"
+                 viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round"
+                 stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1
+                       4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+          </div>
+          <div class="feat-title">Knowledge Base</div>
+          <p class="feat-desc">
+            Searchable notes and research files. Browse
+            the tree, preview markdown, or
+            <code>kai kb search</code> from the terminal.
+          </p>
+        </div>
+
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg width="16" height="16"
+                 viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round"
+                 stroke-linejoin="round">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87
+                       a3.37 3.37 0 0 0-.94-2.61c3.14-.35
+                       6.44-1.54 6.44-7A5.44 5.44 0 0 0
+                       20 4.77 5.07 5.07 0 0 0 19.91 1S
+                       18.73.65 16 2.48a13.38 13.38 0 0
+                       0-7 0C6.27.65 5.09 1 5.09 1A5.07
+                       5.07 0 0 0 5 4.77a5.44 5.44 0 0 0
+                       -1.5 3.78c0 5.42 3.3 6.61 6.44 7A
+                       3.37 3.37 0 0 0 9 18.13V22"/>
+            </svg>
+          </div>
+          <div class="feat-title">GitHub Integration</div>
+          <p class="feat-desc">
+            Pull issues and PRs per customer. Grouped by
+            repo, visible in web and CLI without leaving
+            your workflow.
+          </p>
+        </div>
+
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg width="16" height="16"
+                 viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round"
+                 stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div class="feat-title">
+            Scheduled Automation
+          </div>
+          <p class="feat-desc">
+            Define cron jobs backed by prompts. Kaisho
+            runs them on schedule and writes AI-generated
+            output back to your files.
+          </p>
+        </div>
+
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg width="16" height="16"
+                 viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round"
+                 stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4
+                       0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div class="feat-title">Multi-User Profiles</div>
+          <p class="feat-desc">
+            Multiple BACKEND configurations. Switch
+            contexts between clients or projects without
+            friction.
+          </p>
+        </div>
+
+        <div class="feat-card">
+          <div class="feat-icon">
+            <svg width="16" height="16"
+                 viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round"
+                 stroke-linejoin="round">
+              <polyline points="4 17 10 11 4 5"/>
+              <line x1="12" y1="19" x2="20" y2="19"/>
+            </svg>
+          </div>
+          <div class="feat-title">Command Palette</div>
+          <p class="feat-desc">
+            Every feature is a <code>kai</code>
+            subcommand. Tab-complete your way through
+            tasks, clocks, customers, knowledge, and more.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- === CLI SECTION === -->
+  <section class="section section--dark" id="cli">
+    <div class="container">
+      <div class="cli-inner">
+        <div>
+          <div class="section-label"
+               style="color:rgba(255,255,255,0.3)">
+            CLI-first
+          </div>
+          <h2 class="section-heading">
+            Everything reachable
+            from the terminal.
+          </h2>
+          <p class="section-sub" style="margin-top:10px">
+            The web UI is optional. Every feature in
+            Kaisho is a
+            <span style="font-family:monospace;
+                  font-size:13px;
+                  background:rgba(255,255,255,0.08);
+                  padding:2px 6px;
+                  border-radius:4px">kai</span>
+            subcommand. Start timers, query your AI
+            advisor, manage tasks &mdash; all without
+            leaving the shell.
+          </p>
+        </div>
+        <div class="terminal">
+          <div class="terminal-bar">
+            <span class="frame-dot frame-dot--red"></span>
+            <span class="frame-dot frame-dot--amber">
+            </span>
+            <span class="frame-dot frame-dot--green">
+            </span>
+          </div>
+          <div class="terminal-body">
+<span class="tc-prompt">$ </span><span class="tc-cmd">kai</span> briefing<br>
+<span class="tc-out">  Morning briefing &mdash; 4 open tasks, 2 customers active</span>
+<span class="tc-gap"></span>
+<span class="tc-prompt">$ </span><span class="tc-cmd">kai</span> clock start <span class="tc-str">"Beta GmbH sprint review"</span> <span class="tc-flag">--customer</span> beta-gmbh<br>
+<span class="tc-out">  Started: 09:14 &mdash; Beta GmbH sprint review</span>
+<span class="tc-gap"></span>
+<span class="tc-prompt">$ </span><span class="tc-cmd">kai</span> ask <span class="tc-str">"Am I on track with Beta GmbH?"</span><br>
+<span class="tc-out">  You have used 89% of the Beta GmbH budget...</span>
+<span class="tc-gap"></span>
+<span class="tc-prompt">$ </span><span class="tc-cmd">kai</span> clock book <span class="tc-flag">--customer</span> beta-gmbh <span class="tc-flag">--hours</span> 2.5<br>
+<span class="tc-out">  Booked 2.5 h to Beta GmbH / Contract-Q2</span>
+<span class="tc-gap"></span>
+<span class="tc-prompt">$ </span><span class="tc-cmd">kai</span> task add <span class="tc-str">"Review invoice draft"</span> <span class="tc-flag">--customer</span> acme<br>
+<span class="tc-out">  Added task #47 &mdash; Review invoice draft [Acme Corp]</span>
+<span class="tc-gap"></span>
+<span class="tc-prompt">$ </span><span class="tc-cmd">kai</span> kb search <span class="tc-str">"oauth"</span><br>
+<span class="tc-out">  wissen/auth-setup.md &mdash; OAuth2 with GitHub Apps</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- === HOW IT WORKS === -->
+  <section class="section section--dark">
+    <div class="container" style="text-align:center">
+      <div class="section-label"
+           style="color:rgba(255,255,255,0.3)">
+        Getting started
+      </div>
+      <h2 class="section-heading">How it works</h2>
+      <p class="section-sub" style="margin:0 auto">
+        Kaisho is a Python package. Three steps
+        from install to work.
+      </p>
+      <div class="hiw-steps">
+        <div>
+          <div class="hiw-num">01</div>
+          <div class="hiw-title">Install</div>
+          <div class="hiw-desc">
+            <code>pip install kaisho</code>
+            then <code>kai serve</code>
+            to start the local server.
+          </div>
+        </div>
+        <div>
+          <div class="hiw-num">02</div>
+          <div class="hiw-title">Point to your files</div>
+          <div class="hiw-desc">
+            Set your org-mode or markdown directory in
+            config. Kaisho reads and writes your existing
+            plain text files.
+          </div>
+        </div>
+        <div>
+          <div class="hiw-num">03</div>
+          <div class="hiw-title">Work</div>
+          <div class="hiw-desc">
+            Open <code>localhost:8765</code>
+            or use <code>kai</code> in any terminal.
+            Your data stays on your machine.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- === INTEGRATIONS === -->
+  <section class="integrations-section" id="integrations">
+    <div class="container">
+      <div class="section-label">Integrations</div>
+      <h2 class="section-heading">Works with your tools.</h2>
+      <p class="section-sub" style="margin:0 auto">
+        Pluggable AI backends. Plain text formats.
+        No lock-in.
+      </p>
+      <div class="int-pills">
+        <span class="int-pill">
+          <svg width="14" height="14"
+               viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31
+              3.435 9.795 8.205 11.385.6.105.825-.255
+              .825-.57 0-.285-.015-1.23-.015-2.235-3.015
+              .555-3.795-.735-4.035-1.41-.135-.345-.72
+              -1.41-1.23-1.695-.42-.225-1.02-.78-.015
+              -.795.945-.015 1.62.87 1.845 1.23 1.08
+              1.815 2.805 1.305 3.495.99.105-.78.42
+              -1.305.765-1.605-2.67-.3-5.46-1.335-5.46
+              -5.925 0-1.305.465-2.385 1.23-3.225-.12
+              -.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3
+              1.23.96-.27 1.98-.405 3-.405s2.04.135 3
+              .405c2.295-1.56 3.3-1.23 3.3-1.23.66
+              1.65.24 2.88.12 3.18.765.84 1.23 1.905
+              1.23 3.225 0 4.605-2.805 5.625-5.475
+              5.925.435.375.81 1.095.81 2.22 0 1.605
+              -.015 2.895-.015 3.3 0 .315.225.69.825
+              .57A12.02 12.02 0 0 0 24 12c0-6.63-5.37
+              -12-12-12z"/>
+          </svg>
+          GitHub
+        </span>
+        <span class="int-pill">Ollama</span>
+        <span class="int-pill">Claude API</span>
+        <span class="int-pill">OpenRouter</span>
+        <span class="int-pill">Org-mode</span>
+        <span class="int-pill">Markdown</span>
+        <span class="int-pill">LM Studio</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- === PRICING === -->
+  <section class="pricing-section"
+           style="background:var(--raised)"
+           id="pricing">
+    <div class="container">
+      <div class="section-label">Pricing</div>
+      <h2 class="section-heading">
+        Start free, scale when you need to.
+      </h2>
+      <p class="section-sub" style="margin:0 auto">
+        All core features are free and open source.
+        Pay only for premium features you need.
+      </p>
+      <div class="pricing-grid">
+
+        <div class="price-card">
+          <div class="price-tier">Free &amp; Open Source</div>
+          <div class="price-amount">
+            &euro;0
+            <span class="price-period">forever</span>
+          </div>
+          <div class="price-alt">&nbsp;</div>
+          <div class="price-desc">
+            Self-hosted, local-first, your data
+            stays yours. CLI + web dashboard.
+          </div>
+          <ul class="price-features">
+            <li>Kanban board with custom states</li>
+            <li>Time tracking with customer budgets</li>
+            <li>Inbox capture and processing</li>
+            <li>AI advisor (Ollama, bring your own key)</li>
+            <li>CLI + web dashboard</li>
+            <li>Community support</li>
+          </ul>
+          <a href="#" class="price-cta price-cta--outline">
+            Download on GitHub
+          </a>
+        </div>
+
+        <div class="price-card price-card--featured">
+          <div class="price-badge">Recommended</div>
+          <div class="price-tier">Personal</div>
+          <div class="price-amount">
+            &euro;5
+            <span class="price-period">/mo</span>
+          </div>
+          <div class="price-alt">
+            or &euro;49/yr &mdash; save 18%
+          </div>
+          <div class="price-desc">
+            Unlock the full toolkit. Desktop app
+            with auto-updates included.
+          </div>
+          <ul class="price-features">
+            <li>Everything in Free</li>
+            <li>Desktop app (macOS, Windows, Linux)</li>
+            <li>Scheduled automation (cron jobs)</li>
+            <li>Knowledge base viewer &amp; search</li>
+            <li>GitHub integration</li>
+            <li>Multiple profiles</li>
+            <li>Auto-updates</li>
+            <li>Email support</li>
+          </ul>
+          <a href="#" class="price-cta price-cta--solid">
+            Get Personal
+          </a>
+        </div>
+
+        <div class="price-card">
+          <div class="price-tier">Pro</div>
+          <div class="price-amount">
+            &euro;19
+            <span class="price-period">/mo</span>
+          </div>
+          <div class="price-alt">
+            or &euro;149/yr &mdash; save 35%
+          </div>
+          <div class="price-desc">
+            For professionals and commercial use.
+            Claude AI included.
+          </div>
+          <ul class="price-features">
+            <li>Everything in Personal</li>
+            <li>Commercial use license</li>
+            <li>Claude AI included (1M tokens/mo)</li>
+            <li>Priority support</li>
+            <li>Early access to new features</li>
+            <li>Company invoice with VAT</li>
+          </ul>
+          <a href="#" class="price-cta price-cta--outline">
+            Get Pro
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- === FAQ === -->
+  <section class="faq-section" id="faq">
+    <div class="container">
+      <div class="faq-inner">
+        <div class="section-label">FAQ</div>
+        <h2 class="section-heading">Common questions</h2>
+      </div>
+      <div style="max-width:680px;margin:0 auto">
+        <div class="faq-list">
+
+          <div class="faq-item">
+            <button class="faq-q"
+                    onclick="toggleFaq(this)">
+              What file formats does Kaisho use?
+              <svg class="faq-chevron"
+                   viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round"
+                   stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="faq-a">
+              Org-mode (.org) is the default and
+              recommended format. Markdown support is also
+              available. Your data stays in plain text
+              files you own.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q"
+                    onclick="toggleFaq(this)">
+              Can I use my own AI model?
+              <svg class="faq-chevron"
+                   viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round"
+                   stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="faq-a">
+              Yes. Kaisho supports Ollama (local), Claude
+              API, OpenRouter, and LM Studio. Point it at
+              any compatible endpoint in your config.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q"
+                    onclick="toggleFaq(this)">
+              Where is my data stored?
+              <svg class="faq-chevron"
+                   viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round"
+                   stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="faq-a">
+              Self-hosted: entirely on your own machine.
+              Cloud: EU-based servers with end-to-end
+              encryption. Riding Bytes never reads
+              your files.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q"
+                    onclick="toggleFaq(this)">
+              Do I need Emacs?
+              <svg class="faq-chevron"
+                   viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round"
+                   stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="faq-a">
+              No. Kaisho reads and writes org-mode files
+              directly. You can use any editor, or just
+              the web UI.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q"
+                    onclick="toggleFaq(this)">
+              How does budget tracking work?
+              <svg class="faq-chevron"
+                   viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round"
+                   stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="faq-a">
+              Define contracts with hour contingents.
+              Kaisho sums your clock entries per customer
+              and contract, and shows you remaining budget
+              in real time.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q"
+                    onclick="toggleFaq(this)">
+              Can I migrate from Toggl, Clockify,
+              or Harvest?
+              <svg class="faq-chevron"
+                   viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round"
+                   stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="faq-a">
+              Yes. Kaisho supports CSV import for time
+              entries from major time tracking tools.
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- === PHILOSOPHY === -->
+  <section class="philosophy-section">
+    <div class="container">
+      <div class="philosophy-logo">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             viewBox="0 0 32 32" width="52" height="52"
+             fill="none">
+          <path d="M8 8l10 8-10 8"
+                stroke="#1e1e2e" stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"/>
+          <circle cx="25" cy="16" r="2.5"
+                  fill="#1e1e2e"/>
+        </svg>
+      </div>
+      <h2 class="philosophy-title">
+        Built for depth, not breadth.
+      </h2>
+      <p class="philosophy-text">
+        Kaisho stands for Kanban + AI + Shell + Organizer.
+        It is not a feature list &mdash; it is a
+        discipline. One tool, one data format, one
+        workflow. Your files. Your control.
+      </p>
+    </div>
+  </section>
+
+  <!-- === CTA === -->
+  <section class="cta-section section--dark">
+    <div class="container">
+      <h2 class="cta-title">
+        Stop juggling tools. Start shipping.
+      </h2>
+      <p class="cta-sub">
+        Free forever, self-hosted. Cloud when you want it.
+      </p>
+      <div class="cta-btns">
+        <a href="#pricing"
+           class="btn-primary btn-lg">Start Free</a>
+        <a href="https://github.com/ridingbytes/kaisho"
+           class="btn-outline btn-outline--light btn-lg">
+          View on GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- === FOOTER === -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand-row">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 viewBox="0 0 32 32" width="22" height="22"
+                 fill="none">
+              <path d="M8 8l10 8-10 8"
+                    stroke="rgba(255,255,255,0.9)"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"/>
+              <circle cx="25" cy="16" r="2.5"
+                      fill="rgba(255,255,255,0.9)"/>
+            </svg>
+            <span class="footer-wordmark">KAISHO</span>
+          </div>
+          <p class="footer-tag">
+            Freelance work, liberated.
+          </p>
+          <p class="footer-by">A Riding Bytes product</p>
+        </div>
+        <div>
+          <div class="footer-col-title">Product</div>
+          <ul class="footer-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#cli">CLI Reference</a></li>
+            <li>
+              <a href="#integrations">Integrations</a>
+            </li>
+            <li><a href="#">Changelog</a></li>
+            <li><a href="#">Roadmap</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Resources</div>
+          <ul class="footer-links">
+            <li><a href="#">Documentation</a></li>
+            <li>
+              <a href="https://github.com/ridingbytes/kaisho">
+                GitHub
+              </a>
+            </li>
+            <li><a href="#">Community</a></li>
+            <li><a href="#">Status</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Company</div>
+          <ul class="footer-links">
+            <li><a href="#">About Riding Bytes</a></li>
+            <li>
+              <a href="https://senaity.com"
+                 target="_blank">SENAITY</a>
+            </li>
+            <li><a href="#">Contact</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>
+          &copy; 2026 Riding Bytes.
+          Kaisho is open-source.
+        </span>
+        <span>
+          Also by Riding Bytes:
+          <a href="https://senaity.com"
+             target="_blank">senaity.com</a>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleFaq(btn) {
+      btn.parentElement.classList.toggle("open");
+    }
+  </script>
+
+</body>
+</html>
