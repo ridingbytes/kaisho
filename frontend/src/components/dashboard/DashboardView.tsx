@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { useCustomerColors } from "../../hooks/useCustomerColors";
 import {
   useActiveTimer,
   useCustomerClockEntries,
@@ -358,11 +359,13 @@ function BudgetRow({
   onNameClick,
   expanded,
   onToggle,
+  dotColor,
 }: {
   b: BudgetSummary;
   onNameClick: () => void;
   expanded: boolean;
   onToggle: () => void;
+  dotColor?: string;
 }) {
   const hasContracts = b.contracts.length > 0;
   const displayBudget = hasContracts
@@ -407,9 +410,16 @@ function BudgetRow({
             className={
               "text-sm font-medium text-stone-800 " +
               "hover:text-cta transition-colors " +
-              "text-left"
+              "text-left inline-flex items-center " +
+              "gap-1.5"
             }
           >
+            {dotColor && (
+              <span
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ background: dotColor }}
+              />
+            )}
             {b.name}
           </button>
         </div>
@@ -504,6 +514,7 @@ export function DashboardView() {
   const { data: timer } = useActiveTimer();
   const stopTimer = useStopTimer();
   const setView = useSetView();
+  const customerColors = useCustomerColors();
   const [expandedCustomers, setExpandedCustomers] =
     useState<Set<string>>(new Set());
 
@@ -655,6 +666,9 @@ export function DashboardView() {
                 <BudgetRow
                   key={b.name}
                   b={b}
+                  dotColor={
+                    customerColors[b.name]
+                  }
                   onNameClick={() =>
                     setView("customers", b.name)
                   }

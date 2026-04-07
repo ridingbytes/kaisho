@@ -12,6 +12,7 @@ import {
   GitBranch,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useCustomerColors } from "../../hooks/useCustomerColors";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
@@ -359,6 +360,7 @@ export function TaskCard({
     isDragging,
   } = useSortable({ id: task.id });
 
+  const customerColors = useCustomerColors();
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editCustomer, setEditCustomer] = useState("");
@@ -540,11 +542,19 @@ export function TaskCard({
                 <div className="mb-1.5">
                   <span
                     className={[
-                      "inline-flex items-center px-1.5 py-0.5 rounded",
+                      "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded",
                       "text-[10px] font-semibold tracking-wider uppercase",
                       "bg-cta-muted text-cta-hover",
                     ].join(" ")}
                   >
+                    {customerColors[task.customer] && (
+                      <span
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{
+                          background: customerColors[task.customer],
+                        }}
+                      />
+                    )}
                     {task.customer}
                   </span>
                 </div>

@@ -8,6 +8,7 @@ import {
   useStartTimer,
   useUpdateClockEntry,
 } from "../../hooks/useClocks";
+import { useCustomerColors } from "../../hooks/useCustomerColors";
 import { useContracts } from "../../hooks/useContracts";
 import { useTasks } from "../../hooks/useTasks";
 import { useSetView } from "../../context/ViewContext";
@@ -326,6 +327,7 @@ interface TaskGroupRowProps {
   isRunning: boolean;
   showResume: boolean;
   tasks: Task[];
+  customerColors: Record<string, string>;
 }
 
 function TaskGroupRow({
@@ -333,6 +335,7 @@ function TaskGroupRow({
   isRunning,
   tasks,
   showResume,
+  customerColors,
 }: TaskGroupRowProps) {
   const resumeTimer = useStartTimer();
   const setView = useSetView();
@@ -345,8 +348,17 @@ function TaskGroupRow({
         <div className="min-w-0 flex-1">
           <button
             onClick={() => setView("customers", group.customer)}
-            className="text-xs font-medium text-stone-800 truncate max-w-full hover:text-cta transition-colors text-left"
+            className="text-xs font-medium text-stone-800 truncate max-w-full hover:text-cta transition-colors text-left inline-flex items-center gap-1.5"
           >
+            {customerColors[group.customer] && (
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{
+                  background:
+                    customerColors[group.customer],
+                }}
+              />
+            )}
             {group.customer}
           </button>
           <p className="text-[11px] text-stone-500 truncate mt-0.5">
@@ -413,6 +425,7 @@ export function ClockList({
     effectiveDate
   );
   const { data: allTasks = [] } = useTasks();
+  const customerColors = useCustomerColors();
 
   const groups = groupEntries(entries);
   const totalMin = groups.reduce((sum, g) => sum + g.totalMinutes, 0);
@@ -442,6 +455,7 @@ export function ClockList({
           isRunning={isRunning}
           showResume={isToday}
           tasks={allTasks}
+          customerColors={customerColors}
         />
       ))}
       <div className="flex justify-between pt-2 mt-1">

@@ -94,6 +94,7 @@ export interface Customer {
   name: string;
   status: string;
   type: string;
+  color: string;
   tags: string[];
   budget: number;
   used: number;
