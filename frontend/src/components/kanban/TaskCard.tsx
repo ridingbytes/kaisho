@@ -587,7 +587,7 @@ export function TaskCard({
           ) : (
             <>
               {task.customer && (
-                <div className="mb-1.5">
+                <div className="mb-1.5 flex items-center gap-1.5">
                   <span
                     className={[
                       "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded",
@@ -603,6 +603,15 @@ export function TaskCard({
                     />
                     {task.customer}
                   </span>
+                  {isTimerRunning
+                    && activeTimer?.start && (
+                    <TimerBadge
+                      start={activeTimer.start}
+                      onStop={() =>
+                        stopClock.mutate()
+                      }
+                    />
+                  )}
                 </div>
               )}
               <p className="text-sm font-medium text-stone-900 leading-snug mb-1">
@@ -676,40 +685,9 @@ export function TaskCard({
                     #{extractIssueNumber(task.github_url)}
                   </a>
                 )}
-                {isTimerRunning && activeTimer?.start && (
-                  <TimerBadge
-                    start={activeTimer.start}
-                    onStop={() => stopClock.mutate()}
-                  />
-                )}
-                {!isTimerRunning && task.customer && (
-                  <button
-                    onPointerDown={(e) =>
-                      e.stopPropagation()
-                    }
-                    onClick={() =>
-                      startClock.mutate({
-                        customer: task.customer!,
-                        description:
-                          stripCustomerPrefix(
-                            task.title,
-                          ),
-                        taskId: task.id,
-                      })
-                    }
-                    disabled={startClock.isPending}
-                    className="ml-auto p-0.5 rounded text-stone-400 opacity-0 group-hover:opacity-100 hover:text-green-500 transition-all disabled:opacity-40"
-                    title="Start timer"
-                  >
-                    <Clock size={10} />
-                  </button>
-                )}
                 <RelDate
                   date={task.created}
-                  className={[
-                    "text-[10px] text-stone-500 shrink-0",
-                    isTimerRunning ? "" : "ml-auto",
-                  ].join(" ")}
+                  className="ml-auto text-[10px] text-stone-500 shrink-0"
                 />
               </div>
               <TaskClockSection task={task} />
@@ -739,6 +717,28 @@ export function TaskCard({
                 title="State history"
               >
                 <ListRestart size={11} />
+              </button>
+            )}
+            {!isTimerRunning && task.customer && (
+              <button
+                onPointerDown={(e) =>
+                  e.stopPropagation()
+                }
+                onClick={() =>
+                  startClock.mutate({
+                    customer: task.customer!,
+                    description:
+                      stripCustomerPrefix(
+                        task.title,
+                      ),
+                    taskId: task.id,
+                  })
+                }
+                disabled={startClock.isPending}
+                className="p-1 rounded text-stone-400 hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
+                title="Start timer"
+              >
+                <Clock size={11} />
               </button>
             )}
             <button
