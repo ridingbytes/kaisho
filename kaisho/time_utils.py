@@ -1,38 +1,25 @@
-"""Timezone-aware current-time helpers.
+"""Current-time helpers.
 
-Uses the timezone configured in the active profile's settings.yaml.
-Falls back to Europe/Berlin if nothing is configured.
+Uses system local time. No timezone configuration needed
+for a single-user, self-hosted app.
 """
 from datetime import datetime
-from zoneinfo import ZoneInfo
-
-from .services.settings import get_timezone, load_settings
-
-
-def _configured_tz() -> str:
-    from .config import get_config
-    try:
-        cfg = get_config()
-        data = load_settings(cfg.SETTINGS_FILE)
-        return get_timezone(data)
-    except Exception:
-        return "Europe/Berlin"
 
 
 def local_now() -> datetime:
-    """Return current datetime in the user's configured timezone."""
-    return datetime.now(ZoneInfo(_configured_tz()))
+    """Return current local datetime."""
+    return datetime.now()
 
 
 def local_now_naive() -> datetime:
-    """Return current local datetime without timezone info.
+    """Return current local datetime (naive).
 
-    Used for clock storage so it stays compatible with existing
-    naive datetime strings already on disk.
+    Alias for local_now() since we always use naive
+    datetimes for storage compatibility.
     """
-    return local_now().replace(tzinfo=None)
+    return datetime.now()
 
 
 def local_now_iso(timespec: str = "seconds") -> str:
-    """Return current datetime ISO string in the configured timezone."""
-    return local_now().isoformat(timespec=timespec)
+    """Return current datetime as ISO string."""
+    return datetime.now().isoformat(timespec=timespec)

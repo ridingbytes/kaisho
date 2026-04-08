@@ -665,28 +665,6 @@ def update_github(body: GithubSettingsUpdate):
 # ---------------------------------------------------------------
 
 
-@router.get("/timezone")
-def get_timezone_setting():
-    cfg = get_config()
-    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
-    return {
-        "timezone": settings_svc.get_timezone(data),
-    }
-
-
-class TimezoneUpdate(BaseModel):
-    timezone: str
-
-
-@router.patch("/timezone")
-def update_timezone(body: TimezoneUpdate):
-    cfg = get_config()
-    tz = settings_svc.set_timezone(
-        cfg.SETTINGS_FILE, body.timezone,
-    )
-    return {"timezone": tz}
-
-
 # ---------------------------------------------------------------
 # Knowledge base sources
 # ---------------------------------------------------------------

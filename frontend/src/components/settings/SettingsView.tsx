@@ -30,8 +30,6 @@ import {
   useUpdateAdvisorFiles,
   useUpdateAiSettings,
   useUpdateGithubSettings,
-  useTimezone,
-  useUpdateTimezone,
   useUpdatePaths,
   useUpdateSkill,
   useUpdateUserProfile,
@@ -1690,82 +1688,10 @@ function ProfilesTab() {
   );
 }
 
-function TimezoneSection() {
-  const { data } = useTimezone();
-  const update = useUpdateTimezone();
-  const [tz, setTz] = useState("");
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    if (data?.timezone) setTz(data.timezone);
-  }, [data]);
-
-  function handleSave() {
-    update.mutate(tz.trim(), {
-      onSuccess: () => {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
-      },
-    });
-  }
-
-  return (
-    <section>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
-        Timezone
-      </p>
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
-        <div className="px-4 py-3">
-          <label className="flex items-center gap-3">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
-              Timezone
-            </span>
-            <input
-              type="text"
-              list="tz-list"
-              value={tz}
-              onChange={(e) => setTz(e.target.value)}
-              placeholder="Europe/Berlin"
-              className={inputCls}
-            />
-            <datalist id="tz-list">
-              {(Intl as unknown as { supportedValuesOf(k: string): string[] })
-                .supportedValuesOf("timeZone")
-                .map((z) => (
-                  <option key={z} value={z} />
-                ))}
-            </datalist>
-          </label>
-          <p className="text-[11px] text-stone-400 mt-1.5 ml-[140px]">
-            IANA timezone name, e.g. Europe/Berlin, America/New_York,
-            UTC. Used for cron history and clock timestamps.
-          </p>
-        </div>
-      </div>
-      <div className="mt-3 flex items-center gap-3">
-        <button
-          onClick={handleSave}
-          disabled={update.isPending}
-          className={saveBtnCls}
-        >
-          {update.isPending ? "Saving…" : "Save"}
-        </button>
-        {saved && (
-          <span className="text-xs text-green-400">Saved.</span>
-        )}
-        {update.isError && (
-          <span className="text-xs text-red-400">Save failed.</span>
-        )}
-      </div>
-    </section>
-  );
-}
-
 function GeneralTab() {
   return (
     <div className="flex flex-col gap-8">
       <UserProfileSection />
-      <TimezoneSection />
       <ProfilesTab />
     </div>
   );

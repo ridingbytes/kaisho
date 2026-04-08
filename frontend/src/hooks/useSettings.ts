@@ -26,7 +26,6 @@ import {
   fetchClaudeCliStatus,
   fetchCurrentUser,
   fetchGithubSettings,
-  fetchTimezone,
   fetchKbSources,
   fetchPaths,
   fetchProfiles,
@@ -39,7 +38,6 @@ import {
   updateAdvisorFiles,
   updateAiSettings,
   updateGithubSettings,
-  updateTimezone,
   updateKbSources,
   updatePaths,
   updateSkill,
@@ -339,26 +337,6 @@ export function useUpdateGithubSettings() {
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: ["settings", "github"],
-      });
-    },
-  });
-}
-
-export function useTimezone() {
-  return useQuery({
-    queryKey: ["settings", "timezone"],
-    queryFn: fetchTimezone,
-    staleTime: 60_000,
-  });
-}
-
-export function useUpdateTimezone() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (tz: string) => updateTimezone(tz),
-    onSuccess: () => {
-      void qc.invalidateQueries({
-        queryKey: ["settings", "timezone"],
       });
     },
   });

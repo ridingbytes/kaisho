@@ -817,16 +817,6 @@ export function updateGithubSettings(
   return patch<GithubSettings>("/settings/github", updates);
 }
 
-export function fetchTimezone(): Promise<{ timezone: string }> {
-  return get<{ timezone: string }>("/settings/timezone");
-}
-
-export function updateTimezone(
-  timezone: string
-): Promise<{ timezone: string }> {
-  return patch<{ timezone: string }>("/settings/timezone", { timezone });
-}
-
 // Advisor
 
 export function askAdvisor(
