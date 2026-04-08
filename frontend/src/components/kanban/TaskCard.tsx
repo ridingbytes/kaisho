@@ -263,6 +263,7 @@ function GithubIssueInput({
   >([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState("");
 
   async function fetchIssues() {
     if (!customer.trim()) return;
@@ -307,31 +308,61 @@ function GithubIssueInput({
         )}
       </div>
       {open && issues.length > 0 && (
-        <ul className="absolute z-50 left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto rounded-lg bg-surface-overlay border border-border shadow-lg">
-          {issues.map((issue) => (
+        <div className="absolute z-50 left-0 top-full mt-1 w-80 rounded-lg bg-surface-overlay border border-border shadow-lg">
+          <input
+            type="text"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder="Filter issues..."
+            autoFocus
+            className="w-full px-3 py-1.5 text-xs border-b border-border bg-transparent text-stone-800 placeholder-stone-400 outline-none"
+          />
+          <ul className="max-h-48 overflow-y-auto">
+          {issues
+            .filter((i) => {
+              if (!filter.trim()) return true;
+              const q = filter.toLowerCase();
+              return (
+                i.title.toLowerCase().includes(q)
+                || String(i.number).includes(
+                  q.replace("#", ""),
+                )
+              );
+            })
+            .map((issue) => (
             <li key={issue.number}>
               <button
                 type="button"
-                onClick={() => { onChange(issue.url); setOpen(false); }}
-                className="w-full text-left px-3 py-1.5 text-xs text-stone-800 hover:bg-cta-muted transition-colors flex items-center gap-2"
+                onClick={() => {
+                  onChange(issue.url);
+                  setOpen(false);
+                  setFilter("");
+                }}
+                className="w-full text-left px-3 py-1.5 text-xs text-stone-800 hover:bg-cta-muted transition-colors flex items-start gap-2"
               >
-                <span className="text-stone-500 font-mono shrink-0">
+                <span className="text-stone-500 font-mono shrink-0 mt-px">
                   #{issue.number}
                 </span>
-                <span className="truncate">{issue.title}</span>
+                <span className="leading-snug">
+                  {issue.title}
+                </span>
               </button>
             </li>
           ))}
           <li>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                setFilter("");
+              }}
               className="w-full text-left px-3 py-1 text-[10px] text-stone-500 hover:text-stone-700"
             >
               Close
             </button>
           </li>
-        </ul>
+          </ul>
+        </div>
       )}
     </div>
   );

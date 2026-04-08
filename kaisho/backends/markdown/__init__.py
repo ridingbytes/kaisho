@@ -576,7 +576,7 @@ class MarkdownTaskBackend(TaskBackend):
             "properties": {},
             "created": datetime.now().isoformat(),
         }
-        tasks.append(task)
+        tasks.insert(0, task)
         self._save_tasks(tasks)
         return task
 

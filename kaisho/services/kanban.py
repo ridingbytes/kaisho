@@ -266,7 +266,7 @@ def add_task(
     if github_url:
         new_heading.properties["GITHUB_URL"] = github_url
 
-    org_file.headings.append(new_heading)
+    org_file.headings.insert(0, new_heading)
     write_org_file(todos_file, org_file)
 
     idx = len(_collect_tasks(org_file, keywords))

@@ -212,7 +212,7 @@ class JsonTaskBackend(TaskBackend):
             "properties": {},
             "created": datetime.now().isoformat(),
         }
-        tasks.append(task)
+        tasks.insert(0, task)
         _write_json(self._tasks_file, tasks)
         return task
 
