@@ -52,12 +52,23 @@ function taskTitleById(tasks: Task[], id: string | null): string | null {
 }
 
 function formatDate(iso: string): string {
-  return iso.slice(0, 10);
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso.slice(0, 10);
+  return d.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function formatTime(iso: string | null): string {
   if (!iso) return "—";
-  return iso.slice(11, 16);
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso.slice(11, 16);
+  return d.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function formatHours(minutes: number | null): string {
