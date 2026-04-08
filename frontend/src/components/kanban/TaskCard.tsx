@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
+import { useStartTimer } from "../../hooks/useClocks";
 import { RelDate } from "../common/RelDate";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import { ContentPopup } from "../common/ContentPopup";
@@ -358,6 +359,7 @@ export function TaskCard({
   } = useSortable({ id: task.id });
 
   const customerColors = useCustomerColors();
+  const startClock = useStartTimer();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -660,6 +662,24 @@ export function TaskCard({
                 <ListRestart size={11} />
               </button>
             )}
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => {
+                if (!task.customer) return;
+                startClock.mutate({
+                  customer: task.customer,
+                  description: stripCustomerPrefix(
+                    task.title,
+                  ),
+                  taskId: task.id,
+                });
+              }}
+              disabled={startClock.isPending}
+              className="p-1 rounded text-stone-400 hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
+              title="Start timer"
+            >
+              <Clock size={11} />
+            </button>
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={startEdit}
