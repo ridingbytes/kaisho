@@ -673,46 +673,9 @@ export function TaskCard({
                   )}
                 </div>
               )}
-              <div className="flex items-start gap-1 mb-1">
-                <p className="text-sm font-medium text-stone-900 leading-snug flex-1">
-                  {stripCustomerPrefix(task.title)}
-                </p>
-                <button
-                  onPointerDown={(e) =>
-                    e.stopPropagation()
-                  }
-                  onClick={() => setTagging((v) => !v)}
-                  className={[
-                    "p-0.5 rounded shrink-0 mt-0.5 transition-colors",
-                    tagging
-                      ? "text-cta"
-                      : "text-stone-400 hover:text-cta",
-                  ].join(" ")}
-                  title="Edit tags"
-                >
-                  <Tag size={10} />
-                </button>
-              </div>
-              {tagging && (
-                <div
-                  className="mb-1.5"
-                  onPointerDown={(e) =>
-                    e.stopPropagation()
-                  }
-                >
-                  <TagDropdown
-                    selected={task.tags}
-                    allTags={allTags}
-                    autoOpen
-                    onChange={(tags) => {
-                      setTaskTags.mutate({
-                        taskId: task.id,
-                        tags,
-                      });
-                    }}
-                  />
-                </div>
-              )}
+              <p className="text-sm font-medium text-stone-900 leading-snug mb-1">
+                {stripCustomerPrefix(task.title)}
+              </p>
               {task.body && (
                 <div className="mb-1.5">
                   <div className="flex items-center gap-1">
@@ -750,34 +713,69 @@ export function TaskCard({
                 </div>
               )}
               <div className="flex items-center gap-2 flex-wrap">
-                {task.tags.map((tagName) => {
-                  const def = allTags.find((t) => t.name === tagName);
-                  return def ? (
+                {tagging ? (
+                  <div onPointerDown={(e) => e.stopPropagation()}>
+                    <TagDropdown
+                      selected={task.tags}
+                      allTags={allTags}
+                      autoOpen
+                      onChange={(tags) => {
+                        setTaskTags.mutate({
+                          taskId: task.id,
+                          tags,
+                        });
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    {task.tags.map((tagName) => {
+                      const def = allTags.find(
+                        (t) => t.name === tagName,
+                      );
+                      return def ? (
+                        <button
+                          key={tagName}
+                          onPointerDown={(e) =>
+                            e.stopPropagation()
+                          }
+                          onClick={() =>
+                            onTagClick?.(tagName)
+                          }
+                          className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white hover:opacity-80 transition-opacity"
+                          style={{
+                            backgroundColor: def.color,
+                          }}
+                        >
+                          {tagName}
+                        </button>
+                      ) : (
+                        <button
+                          key={tagName}
+                          onPointerDown={(e) =>
+                            e.stopPropagation()
+                          }
+                          onClick={() =>
+                            onTagClick?.(tagName)
+                          }
+                          className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-overlay text-stone-700 border border-border-subtle hover:border-cta hover:text-cta transition-colors"
+                        >
+                          {tagName}
+                        </button>
+                      );
+                    })}
                     <button
-                      key={tagName}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={() => onTagClick?.(tagName)}
-                      className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white hover:opacity-80 transition-opacity"
-                      style={{ backgroundColor: def.color }}
+                      onPointerDown={(e) =>
+                        e.stopPropagation()
+                      }
+                      onClick={() => setTagging(true)}
+                      className="p-0.5 rounded text-stone-400 hover:text-cta transition-colors"
+                      title="Edit tags"
                     >
-                      {tagName}
+                      <Tag size={10} />
                     </button>
-                  ) : (
-                    <button
-                      key={tagName}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={() => onTagClick?.(tagName)}
-                      className={[
-                        "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                        "bg-surface-overlay text-stone-700",
-                        "border border-border-subtle",
-                        "hover:border-cta hover:text-cta transition-colors",
-                      ].join(" ")}
-                    >
-                      {tagName}
-                    </button>
-                  );
-                })}
+                  </>
+                )}
                 {task.github_url && (
                   <a
                     href={task.github_url}
