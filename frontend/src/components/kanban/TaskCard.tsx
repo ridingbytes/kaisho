@@ -12,6 +12,7 @@ import {
   ChevronRight,
   GitBranch,
   ListRestart,
+  Tag,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
@@ -466,6 +467,7 @@ export function TaskCard({
       === stripCustomerPrefix(task.title)
   );
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [tagging, setTagging] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editCustomer, setEditCustomer] = useState("");
@@ -671,9 +673,51 @@ export function TaskCard({
                   )}
                 </div>
               )}
-              <p className="text-sm font-medium text-stone-900 leading-snug mb-1">
-                {stripCustomerPrefix(task.title)}
-              </p>
+              <div className="flex items-start gap-1 mb-1">
+                <p className="text-sm font-medium text-stone-900 leading-snug flex-1">
+                  {stripCustomerPrefix(task.title)}
+                </p>
+                <button
+                  onPointerDown={(e) =>
+                    e.stopPropagation()
+                  }
+                  onClick={() => setTagging((v) => !v)}
+                  className={[
+                    "p-0.5 rounded shrink-0 mt-0.5 transition-colors",
+                    tagging
+                      ? "text-cta"
+                      : "text-stone-400 hover:text-cta",
+                  ].join(" ")}
+                  title="Edit tags"
+                >
+                  <Tag size={10} />
+                </button>
+              </div>
+              {tagging && (
+                <div
+                  className="mb-1.5"
+                  onPointerDown={(e) =>
+                    e.stopPropagation()
+                  }
+                >
+                  <TagDropdown
+                    selected={task.tags}
+                    allTags={allTags}
+                    onChange={(tags) => {
+                      setTaskTags.mutate(
+                        {
+                          taskId: task.id,
+                          tags,
+                        },
+                        {
+                          onSuccess: () =>
+                            setTagging(false),
+                        },
+                      );
+                    }}
+                  />
+                </div>
+              )}
               {task.body && (
                 <div className="mb-1.5">
                   <div className="flex items-center gap-1">
