@@ -530,10 +530,16 @@ export function TaskCard({
           if (tagsChanged) {
             setTaskTags.mutate(
               { taskId: task.id, tags: editTags },
-              { onSuccess: () => setEditing(false) }
+              {
+                onSuccess: () => {
+                  setEditing(false);
+                  setTagging(false);
+                },
+              }
             );
           } else {
             setEditing(false);
+            setTagging(false);
           }
         },
       }
@@ -545,7 +551,10 @@ export function TaskCard({
       e.preventDefault();
       handleSave();
     }
-    if (e.key === "Escape") setEditing(false);
+    if (e.key === "Escape") {
+      setEditing(false);
+      setTagging(false);
+    }
   }
 
   return (
@@ -626,7 +635,10 @@ export function TaskCard({
                 </span>
                 <button
                   onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => setEditing(false)}
+                  onClick={() => {
+                    setEditing(false);
+                    setTagging(false);
+                  }}
                   className="p-1 text-stone-500 hover:text-stone-900 rounded"
                 >
                   <X size={12} />
@@ -713,6 +725,23 @@ export function TaskCard({
                 </div>
               )}
               <div className="flex items-center gap-2 flex-wrap">
+                {task.github_url && (
+                  <a
+                    href={task.github_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onPointerDown={(e) =>
+                      e.stopPropagation()
+                    }
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-overlay border border-border-subtle text-stone-700 hover:text-cta hover:border-cta transition-colors"
+                    title={task.github_url}
+                  >
+                    <GitBranch size={10} />
+                    #{extractIssueNumber(
+                      task.github_url,
+                    )}
+                  </a>
+                )}
                 {tagging ? (
                   <div onPointerDown={(e) => e.stopPropagation()}>
                     <TagDropdown
@@ -775,19 +804,6 @@ export function TaskCard({
                       <Tag size={10} />
                     </button>
                   </>
-                )}
-                {task.github_url && (
-                  <a
-                    href={task.github_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-overlay border border-border-subtle text-stone-700 hover:text-cta hover:border-cta transition-colors"
-                    title={task.github_url}
-                  >
-                    <GitBranch size={10} />
-                    #{extractIssueNumber(task.github_url)}
-                  </a>
                 )}
                 <span className="ml-auto flex items-center gap-1 shrink-0">
                   <RelDate
