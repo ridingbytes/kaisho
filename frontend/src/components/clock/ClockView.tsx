@@ -254,7 +254,7 @@ function EditForm({ entry, onClose }: EditFormProps) {
   const [description, setDescription] = useState(entry.description);
   const [hours, setHours] = useState(minutesToDecimal(entry.duration_minutes));
   const [taskId, setTaskId] = useState<string | null>(entry.task_id);
-  const { data: tasks = [] } = useTasks();
+  const { data: tasks = [] } = useTasks(true);
   const { data: contracts = [] } = useContracts(customer || null);
   const initialTitle = entry.task_id
     ? (taskTitleById(tasks, entry.task_id) ?? "")
@@ -533,7 +533,7 @@ export function ClockView() {
     period,
     specificDate || undefined
   );
-  const { data: tasks = [] } = useTasks();
+  const { data: tasks = [] } = useTasks(true);
   const { pendingSearch, clearPendingSearch } = usePendingSearch();
 
   useEffect(

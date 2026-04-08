@@ -437,7 +437,7 @@ export function ClockList({
     "today",
     effectiveDate
   );
-  const { data: allTasks = [] } = useTasks();
+  const { data: allTasks = [] } = useTasks(true);
   const customerColors = useCustomerColors();
 
   const groups = groupEntries(entries);
