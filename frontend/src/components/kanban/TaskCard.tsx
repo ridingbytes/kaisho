@@ -748,6 +748,7 @@ export function TaskCard({
                       selected={task.tags}
                       allTags={allTags}
                       autoOpen
+                      addOnly
                       onChange={(tags) => {
                         setTaskTags.mutate({
                           taskId: task.id,

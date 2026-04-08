@@ -11,10 +11,12 @@ interface Props {
   allTags: TagDef[];
   onChange: (tags: string[]) => void;
   autoOpen?: boolean;
+  addOnly?: boolean;
 }
 
 export function TagDropdown({
   selected, allTags, onChange, autoOpen,
+  addOnly,
 }: Props) {
   const [open, setOpen] = useState(!!autoOpen);
   const ref = useRef<HTMLDivElement>(null);
@@ -58,13 +60,15 @@ export function TagDropdown({
             style={{ backgroundColor: def?.color ?? "#64748b" }}
           >
             {tagName}
-            <button
-              type="button"
-              onClick={() => toggle(tagName)}
-              className="opacity-70 hover:opacity-100 leading-none"
-            >
-              <X size={9} />
-            </button>
+            {!addOnly && (
+              <button
+                type="button"
+                onClick={() => toggle(tagName)}
+                className="opacity-70 hover:opacity-100 leading-none"
+              >
+                <X size={9} />
+              </button>
+            )}
           </span>
         );
       })}
