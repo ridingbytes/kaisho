@@ -260,7 +260,7 @@ def start_timer(
             f"{active['description']}"
         )
 
-    start = local_now().replace(second=0, microsecond=0)
+    start = local_now().replace(microsecond=0)
     clock = Clock(start=start, end=None)
     _append_clock_entry(
         clocks_file, customer, description, clock, task_id, contract
@@ -291,7 +291,7 @@ def stop_timer(clocks_file: Path) -> dict:
     if found_clock is None or found_heading is None:
         raise ValueError("No active timer found")
 
-    end = datetime.now().replace(second=0, microsecond=0)
+    end = datetime.now().replace(microsecond=0)
     delta = end - found_clock.start
     total_minutes = int(delta.total_seconds() / 60)
     hours = total_minutes // 60

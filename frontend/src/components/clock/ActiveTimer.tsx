@@ -5,8 +5,11 @@ import { useCustomerColors } from "../../hooks/useCustomerColors";
 import type { ActiveTimer as ActiveTimerType } from "../../types";
 
 function elapsed(startIso: string): string {
+  // Server stores naive datetime in the configured
+  // timezone. Append a Z-less parse that JS treats as
+  // local time (matching the server's intent).
   const diffMs = Date.now() - new Date(startIso).getTime();
-  const totalSec = Math.floor(diffMs / 1000);
+  const totalSec = Math.max(0, Math.floor(diffMs / 1000));
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
