@@ -10,10 +10,13 @@ interface Props {
   selected: string[];
   allTags: TagDef[];
   onChange: (tags: string[]) => void;
+  autoOpen?: boolean;
 }
 
-export function TagDropdown({ selected, allTags, onChange }: Props) {
-  const [open, setOpen] = useState(false);
+export function TagDropdown({
+  selected, allTags, onChange, autoOpen,
+}: Props) {
+  const [open, setOpen] = useState(!!autoOpen);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

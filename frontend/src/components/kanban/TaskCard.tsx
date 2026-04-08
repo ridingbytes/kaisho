@@ -703,17 +703,12 @@ export function TaskCard({
                   <TagDropdown
                     selected={task.tags}
                     allTags={allTags}
+                    autoOpen
                     onChange={(tags) => {
-                      setTaskTags.mutate(
-                        {
-                          taskId: task.id,
-                          tags,
-                        },
-                        {
-                          onSuccess: () =>
-                            setTagging(false),
-                        },
-                      );
+                      setTaskTags.mutate({
+                        taskId: task.id,
+                        tags,
+                      });
                     }}
                   />
                 </div>

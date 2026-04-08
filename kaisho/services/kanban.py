@@ -269,8 +269,9 @@ def add_task(
     org_file.headings.insert(0, new_heading)
     write_org_file(todos_file, org_file)
 
-    idx = len(_collect_tasks(org_file, keywords))
-    return _heading_to_task(new_heading, str(idx))
+    return _heading_to_task(
+        new_heading, _stable_id(new_heading),
+    )
 
 
 def move_task(
