@@ -134,6 +134,94 @@ def task_cancel(task_id):
     _move_to(task_id, "CANCELLED")
 
 
+@task.command("show")
+@click.argument("task_id")
+@click.option("--json", "as_json", is_flag=True)
+def task_show(task_id, as_json):
+    """Show details for a task."""
+    tasks = get_backend().tasks.list_tasks(
+        include_done=True,
+    )
+    t = next(
+        (t for t in tasks if t["id"] == task_id),
+        None,
+    )
+    if not t:
+        click.echo(
+            f"Task not found: {task_id}", err=True,
+        )
+        sys.exit(1)
+    if as_json:
+        click.echo(json.dumps(t, default=str))
+        return
+    click.echo(f"ID:       {t['id']}")
+    click.echo(f"Status:   {t['status']}")
+    click.echo(f"Customer: {t.get('customer', '')}")
+    title = CUSTOMER_STRIP_RE.sub(
+        "", t.get("title", ""),
+    )
+    click.echo(f"Title:    {title}")
+    if t.get("tags"):
+        click.echo(
+            f"Tags:     {', '.join(t['tags'])}"
+        )
+    if t.get("github_url"):
+        click.echo(
+            f"GitHub:   {t['github_url']}"
+        )
+    if t.get("created"):
+        click.echo(f"Created:  {t['created']}")
+    if t.get("body"):
+        click.echo(f"\n{t['body']}")
+
+
+@task.command("update")
+@click.argument("task_id")
+@click.option("--title", default=None,
+              help="New title")
+@click.option("--customer", default=None,
+              help="New customer")
+@click.option("--body", "-b", default=None,
+              help="New body text")
+@click.option("--github-url", default=None,
+              help="GitHub issue/PR URL")
+@click.option("--json", "as_json", is_flag=True)
+def task_update(task_id, title, customer, body,
+                github_url, as_json):
+    """Update a task's fields."""
+    result = get_backend().tasks.update_task(
+        task_id=task_id,
+        title=title,
+        customer=customer,
+        body=body,
+        github_url=github_url,
+    )
+    if as_json:
+        click.echo(json.dumps(result, default=str))
+    else:
+        click.echo(f"Updated task {task_id}")
+
+
+@task.command("delete")
+@click.argument("task_id")
+@click.option("--yes", "-y", is_flag=True,
+              help="Skip confirmation")
+def task_delete(task_id, yes):
+    """Delete a task by archiving it."""
+    if not yes:
+        click.confirm(
+            f"Archive task {task_id}?", abort=True,
+        )
+    ok = get_backend().tasks.archive_task(task_id)
+    if ok:
+        click.echo(f"Archived task {task_id}")
+    else:
+        click.echo(
+            f"Task not found: {task_id}", err=True,
+        )
+        sys.exit(1)
+
+
 @task.command("tag")
 @click.argument("task_id")
 @click.argument("tags", nargs=-1, required=True)
