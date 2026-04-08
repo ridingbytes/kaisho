@@ -752,10 +752,27 @@ export function TaskCard({
                     #{extractIssueNumber(task.github_url)}
                   </a>
                 )}
-                <RelDate
-                  date={task.created}
-                  className="ml-auto text-[10px] text-stone-500 shrink-0"
-                />
+                <span className="ml-auto flex items-center gap-1 shrink-0">
+                  <RelDate
+                    date={task.created}
+                    className="text-[10px] text-stone-500"
+                  />
+                  {task.state_history &&
+                    task.state_history.length > 0 && (
+                    <button
+                      onPointerDown={(e) =>
+                        e.stopPropagation()
+                      }
+                      onClick={() =>
+                        setHistoryOpen(true)
+                      }
+                      className="p-0.5 rounded text-stone-400 hover:text-cta transition-colors"
+                      title="State history"
+                    >
+                      <ListRestart size={9} />
+                    </button>
+                  )}
+                </span>
               </div>
               <TaskClockSection task={task} />
             </>
@@ -860,19 +877,6 @@ export function TaskCard({
                 </div>
               )}
             </div>
-            {task.state_history &&
-              task.state_history.length > 0 && (
-              <button
-                onPointerDown={(e) =>
-                  e.stopPropagation()
-                }
-                onClick={() => setHistoryOpen(true)}
-                className="p-1 rounded text-stone-400 hover:text-cta hover:bg-cta-muted transition-colors"
-                title="State history"
-              >
-                <ListRestart size={11} />
-              </button>
-            )}
           </div>
         )}
       </div>
@@ -882,6 +886,13 @@ export function TaskCard({
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
           onClick={() => setHistoryOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setHistoryOpen(false);
+            }
+          }}
+          tabIndex={-1}
+          ref={(el) => el?.focus()}
         >
           <div className="absolute inset-0 bg-black/50" />
           <div
