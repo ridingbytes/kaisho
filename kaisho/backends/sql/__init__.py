@@ -548,6 +548,34 @@ class SqlTaskBackend(TaskBackend):
             session.close()
         return result
 
+    def reorder_tasks(
+        self, task_ids: list[str],
+    ) -> list[dict]:
+        # SQL doesn't guarantee row order, so we
+        # just return tasks in the requested order
+        session = self._eng.session()
+        try:
+            all_tasks = (
+                session.query(TaskRow)
+                .filter(TaskRow.archived_at.is_(None))
+                .all()
+            )
+            tasks = [
+                _task_row_to_dict(r) for r in all_tasks
+            ]
+        finally:
+            session.close()
+        by_id = {t["id"]: t for t in tasks}
+        reordered = [
+            by_id[tid] for tid in task_ids
+            if tid in by_id
+        ]
+        rest = [
+            t for t in tasks
+            if t["id"] not in set(task_ids)
+        ]
+        return reordered + rest
+
     def update_task(
         self,
         task_id,

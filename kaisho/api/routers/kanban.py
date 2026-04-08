@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 
 from ...backends import get_backend
@@ -42,6 +42,12 @@ def list_tasks(
         tag=tag,
         include_done=include_done,
     )
+
+
+@router.put("/tasks/order")
+def reorder_tasks(task_ids: list[str] = Body(...)):
+    """Reorder tasks within a column."""
+    return get_backend().tasks.reorder_tasks(task_ids)
 
 
 @router.post("/tasks", status_code=201)

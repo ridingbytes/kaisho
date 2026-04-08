@@ -73,6 +73,15 @@ class OrgTaskBackend(TaskBackend):
             tags=tags,
         )
 
+    def reorder_tasks(
+        self, task_ids: list[str],
+    ) -> list[dict]:
+        return kanban.reorder_tasks(
+            todos_file=self._todos_file,
+            keywords=self._keywords,
+            task_ids=task_ids,
+        )
+
     def update_task(
         self, task_id: str,
         title: str | None = None,

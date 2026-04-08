@@ -135,6 +135,56 @@ def _get_done_states(keywords: set[str]) -> set[str]:
     return {"DONE", "CANCELLED"} & keywords
 
 
+def reorder_tasks(
+    todos_file: Path,
+    keywords: set[str],
+    task_ids: list[str],
+) -> list[dict]:
+    """Reorder task headings in the org file.
+
+    task_ids specifies the desired order for a subset
+    of tasks. Headings not in task_ids keep their
+    relative position.
+    """
+    org_file = parse_org_file(todos_file, keywords)
+    pairs = _collect_tasks(org_file, keywords)
+    id_to_heading = {tid: h for h, tid in pairs}
+
+    # Separate headings into reordered and others
+    reordered = [
+        id_to_heading[tid]
+        for tid in task_ids
+        if tid in id_to_heading
+    ]
+    reordered_set = set(id(h) for h in reordered)
+    others = [
+        h for h in org_file.headings
+        if id(h) not in reordered_set
+    ]
+
+    # Rebuild: place reordered headings at the
+    # positions where they originally appeared
+    original_positions = [
+        i for i, h in enumerate(org_file.headings)
+        if id(h) in reordered_set
+    ]
+    result = list(org_file.headings)
+    for pos, heading in zip(
+        original_positions, reordered,
+    ):
+        result[pos] = heading
+        heading.dirty = True
+
+    org_file.headings = result
+    write_org_file(todos_file, org_file)
+
+    new_pairs = _collect_tasks(org_file, keywords)
+    return [
+        _heading_to_task(h, tid)
+        for h, tid in new_pairs
+    ]
+
+
 def list_tasks(
     todos_file: Path,
     keywords: set[str],

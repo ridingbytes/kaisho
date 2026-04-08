@@ -28,6 +28,8 @@ import {
   useTasks,
   useUnarchiveTask,
 } from "../../hooks/useTasks";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { reorderTasks as apiReorderTasks } from "../../api/client";
 import { useReorderStates, useSettings } from "../../hooks/useSettings";
 import type { ArchivedTask, Task } from "../../types";
 import { Toggle } from "../common/Toggle";
@@ -198,6 +200,16 @@ export function KanbanBoard() {
   const { data: settings } = useSettings();
   const moveTask = useMoveTask();
   const reorderStates = useReorderStates();
+  const qc = useQueryClient();
+  const reorderTasksMut = useMutation({
+    mutationFn: (ids: string[]) =>
+      apiReorderTasks(ids),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+    },
+  });
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [pendingStatus, setPendingStatus] = useState<
     Record<string, string>
@@ -280,7 +292,29 @@ export function KanbanBoard() {
     const task = tasks.find((t) => t.id === activeId);
 
     if (newStatus && task && newStatus !== task.status) {
-      moveTask.mutate({ taskId: activeId, status: newStatus });
+      moveTask.mutate({
+        taskId: activeId, status: newStatus,
+      });
+    } else if (over && activeId !== String(over.id)) {
+      // Within-column reorder
+      const status = task?.status;
+      if (status) {
+        const column = tasksByStatus(status);
+        const oldIdx = column.findIndex(
+          (t) => t.id === activeId,
+        );
+        const newIdx = column.findIndex(
+          (t) => t.id === String(over.id),
+        );
+        if (oldIdx !== -1 && newIdx !== -1) {
+          const reordered = arrayMove(
+            column, oldIdx, newIdx,
+          );
+          reorderTasksMut.mutate(
+            reordered.map((t) => t.id),
+          );
+        }
+      }
     }
 
     setActiveTask(null);

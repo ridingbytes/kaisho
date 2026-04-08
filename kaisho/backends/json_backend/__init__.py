@@ -234,6 +234,22 @@ class JsonTaskBackend(TaskBackend):
                 return t
         raise ValueError(f"Task not found: {task_id}")
 
+    def reorder_tasks(
+        self, task_ids: list[str],
+    ) -> list[dict]:
+        tasks = _read_json(self._tasks_file)
+        by_id = {t["id"]: t for t in tasks}
+        reordered = [
+            by_id[tid] for tid in task_ids
+            if tid in by_id
+        ]
+        rest = [
+            t for t in tasks
+            if t["id"] not in set(task_ids)
+        ]
+        _write_json(self._tasks_file, reordered + rest)
+        return _read_json(self._tasks_file)
+
     def update_task(
         self,
         task_id,

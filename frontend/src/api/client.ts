@@ -322,6 +322,12 @@ export function updateState(
   return patch(`/settings/states/${encodeURIComponent(name)}`, updates);
 }
 
+export function reorderTasks(
+  taskIds: string[],
+): Promise<unknown> {
+  return put("/kanban/tasks/order", taskIds);
+}
+
 export function reorderStates(names: string[]): Promise<unknown> {
   return fetch(`${BASE}/settings/states/order`, {
     method: "PUT",

@@ -59,6 +59,16 @@ class TaskBackend(ABC):
         """Remove task from active store.  Return False if not found."""
 
     @abstractmethod
+    def reorder_tasks(
+        self, task_ids: list[str],
+    ) -> list[dict]:
+        """Reorder tasks within a status column.
+
+        task_ids is the desired order. Returns the
+        reordered task list.
+        """
+
+    @abstractmethod
     def update_task(
         self, task_id: str,
         title: str | None = None,

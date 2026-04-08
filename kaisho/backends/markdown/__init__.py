@@ -598,6 +598,22 @@ class MarkdownTaskBackend(TaskBackend):
                 return t
         raise ValueError(f"Task not found: {task_id}")
 
+    def reorder_tasks(
+        self, task_ids: list[str],
+    ) -> list[dict]:
+        tasks = self._load_tasks()
+        by_id = {t["id"]: t for t in tasks}
+        reordered = [
+            by_id[tid] for tid in task_ids
+            if tid in by_id
+        ]
+        rest = [
+            t for t in tasks
+            if t["id"] not in set(task_ids)
+        ]
+        self._save_tasks(reordered + rest)
+        return self._load_tasks()
+
     def update_task(
         self,
         task_id,
