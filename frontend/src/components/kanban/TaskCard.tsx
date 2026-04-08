@@ -724,7 +724,10 @@ export function TaskCard({
                 onPointerDown={(e) =>
                   e.stopPropagation()
                 }
-                onClick={() =>
+                onClick={async () => {
+                  if (activeTimer?.active) {
+                    await stopClock.mutateAsync();
+                  }
                   startClock.mutate({
                     customer: task.customer!,
                     description:
@@ -732,9 +735,12 @@ export function TaskCard({
                         task.title,
                       ),
                     taskId: task.id,
-                  })
+                  });
+                }}
+                disabled={
+                  startClock.isPending
+                  || stopClock.isPending
                 }
-                disabled={startClock.isPending}
                 className="p-1 rounded text-stone-400 hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
                 title="Start timer"
               >
