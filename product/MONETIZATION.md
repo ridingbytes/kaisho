@@ -14,29 +14,29 @@ or AI token budgets.
 
 ### Tiers
 
-| Tier | Price | What they get |
-|------|-------|---------------|
-| Open Source | $0 | Everything. CLI + Web UI. All features. Ollama locally. BYOK for Claude/OpenRouter. Self-hosted. |
-| Hosted | $9/mo | We run a Docker instance for the customer. Daily backups. Custom subdomain (name.kaisho.dev). Customer provides own AI API key. |
+| Tier        | Price  | What they get                                                                                                                                                   |
+|-------------|--------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Open Source | $0     | Everything. CLI + Web UI. All features. Ollama locally. BYOK for Claude/OpenRouter. Self-hosted.                                                                |
+| Hosted      | $9/mo  | We run a Docker instance for the customer. Daily backups. Custom subdomain (name.kaisho.dev). Customer provides own AI API key.                                 |
 | Hosted + AI | $19/mo | Hosted instance + Claude Sonnet access. Token budget: 2M input + 200K output tokens/month (~60-80 advisor queries). Overage: $5 per additional 1M input tokens. |
 
 ### Revenue math
 
-| Scenario | Users | MRR | ARR |
-|----------|-------|-----|-----|
-| Early (6 months) | 30 hosted, 10 hosted+AI | $460 | $5.5K |
-| Traction (12 months) | 150 hosted, 50 hosted+AI | $2,300 | $27.6K |
-| Growth (24 months) | 500 hosted, 200 hosted+AI | $8,300 | $99.6K |
+| Scenario             | Users                     | MRR    | ARR    |
+|----------------------|---------------------------|--------|--------|
+| Early (6 months)     | 30 hosted, 10 hosted+AI   | $460   | $5.5K  |
+| Traction (12 months) | 150 hosted, 50 hosted+AI  | $2,300 | $27.6K |
+| Growth (24 months)   | 500 hosted, 200 hosted+AI | $8,300 | $99.6K |
 
 ### Cost structure per customer
 
-| Component | Hosted $9 | Hosted+AI $19 |
-|-----------|-----------|---------------|
-| VPS (shared, ~256MB RAM) | ~$2/mo | ~$2/mo |
-| Backup storage | ~$0.50/mo | ~$0.50/mo |
-| Claude API (2M in + 200K out) | $0 | ~$8/mo |
-| Stripe fees (2.9% + $0.30) | ~$0.56 | ~$0.85 |
-| **Margin** | **$5.94 (66%)** | **$7.65 (40%)** |
+| Component                     | Hosted $9       | Hosted+AI $19   |
+|-------------------------------|-----------------|-----------------|
+| VPS (shared, ~256MB RAM)      | ~$2/mo          | ~$2/mo          |
+| Backup storage                | ~$0.50/mo       | ~$0.50/mo       |
+| Claude API (2M in + 200K out) | $0              | ~$8/mo          |
+| Stripe fees (2.9% + $0.30)    | ~$0.56          | ~$0.85          |
+| **Margin**                    | **$5.94 (66%)** | **$7.65 (40%)** |
 
 ### Pros
 
@@ -80,29 +80,30 @@ versions.
 
 ### Tiers
 
-| Tier | Price | What they get |
-|------|-------|---------------|
-| Free | $0 | CLI only. No web dashboard. Core task/clock/customer features. Ollama AI. 1 profile. |
-| Personal | EUR 5/mo or EUR 49/yr | Full app (CLI + desktop UI). All features. Unlimited profiles. Auto-updates. Personal use only. |
-| Pro | EUR 19/mo or EUR 149/yr | Everything in Personal. Commercial use license. Priority support. Early access. AI token pack (1M tokens/mo). Invoice for tax deduction. |
+| Tier     | Price                   | What they get                                                                                                                            |
+|----------|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| Free     | $0                      | CLI only. No web dashboard. Core task/clock/customer features. Ollama AI. 1 profile.                                                     |
+| Personal | EUR 5/mo or EUR 49/yr   | Full app (CLI + desktop UI). All features. Unlimited profiles. Auto-updates. Personal use only.                                          |
+| Pro      | EUR 19/mo or EUR 149/yr | Everything in Personal. Commercial use license. Priority support. Early access. AI token pack (1M tokens/mo). Invoice for tax deduction. |
 
 ### Revenue math
 
-| Scenario | Personal | Pro | MRR | ARR |
-|----------|----------|-----|-----|-----|
-| Early (6 months) | 80 | 20 | EUR 780 | EUR 9.4K |
-| Traction (12 months) | 300 | 80 | EUR 3,020 | EUR 36.2K |
-| Growth (24 months) | 1000 | 300 | EUR 10,700 | EUR 128.4K |
+| Scenario             | Personal | Pro | MRR        | ARR        |
+|----------------------|----------|-----|------------|------------|
+| Early (6 months)     | 80       | 20  | EUR 780    | EUR 9.4K   |
+| Traction (12 months) | 300      | 80  | EUR 3,020  | EUR 36.2K  |
+| Growth (24 months)   | 1000     | 300 | EUR 10,700 | EUR 128.4K |
+|                      |          |     |            |            |
 
 ### Cost structure per customer
 
-| Component | Personal EUR 5 | Pro EUR 19 |
-|-----------|----------------|------------|
-| Infrastructure | $0 | $0 |
-| Claude API (1M tokens) | $0 | ~$4/mo |
-| Stripe fees | ~EUR 0.45 | ~EUR 0.85 |
-| Auto-update CDN | ~EUR 0.01 | ~EUR 0.01 |
-| **Margin** | **EUR 4.54 (91%)** | **EUR 14.14 (74%)** |
+| Component              | Personal EUR 5     | Pro EUR 19          |
+|------------------------|--------------------|---------------------|
+| Infrastructure         | $0                 | $0                  |
+| Claude API (1M tokens) | $0                 | ~$4/mo              |
+| Stripe fees            | ~EUR 0.45          | ~EUR 0.85           |
+| Auto-update CDN        | ~EUR 0.01          | ~EUR 0.01           |
+| **Margin**             | **EUR 4.54 (91%)** | **EUR 14.14 (74%)** |
 
 ### What the free version includes (CLI only)
 
@@ -158,14 +159,14 @@ paying easy and worthwhile.
 
 ### Electron vs Tauri
 
-| | Electron | Tauri |
-|---|---|---|
-| Bundle size | ~150MB | ~5MB |
-| RAM usage | ~200MB | ~30MB |
-| Dev effort | Low (existing React app) | Medium (Rust bridge) |
-| Auto-update | electron-updater (mature) | tauri-updater (good) |
-| Signing/notarize | Well documented | Well documented |
-| Cross-platform | Win/Mac/Linux | Win/Mac/Linux |
+|                  | Electron                  | Tauri                |
+|------------------|---------------------------|----------------------|
+| Bundle size      | ~150MB                    | ~5MB                 |
+| RAM usage        | ~200MB                    | ~30MB                |
+| Dev effort       | Low (existing React app)  | Medium (Rust bridge) |
+| Auto-update      | electron-updater (mature) | tauri-updater (good) |
+| Signing/notarize | Well documented           | Well documented      |
+| Cross-platform   | Win/Mac/Linux             | Win/Mac/Linux        |
 
 Recommendation: **Tauri**. The frontend is already a
 standalone React app. Tauri wraps it with minimal overhead.
@@ -207,12 +208,12 @@ that serve different user types.
 
 ### Tiers
 
-| Tier | Price | Target | Delivery |
-|------|-------|--------|----------|
-| **Open Source** | $0 | Developers, tinkerers | GitHub, pip install |
-| **Desktop App** | EUR 5/mo or EUR 49/yr | Solo freelancers | Tauri app, auto-update, license key |
-| **Pro** | EUR 19/mo or EUR 149/yr | Consultants, small agencies | Desktop app + AI tokens + commercial license + priority support |
-| **Hosted** | EUR 15/mo | Non-technical freelancers | We host, they use browser |
+| Tier            | Price                   | Target                      | Delivery                                                        |
+|-----------------|-------------------------|-----------------------------|-----------------------------------------------------------------|
+| **Open Source** | $0                      | Developers, tinkerers       | GitHub, pip install                                             |
+| **Desktop App** | EUR 5/mo or EUR 49/yr   | Solo freelancers            | Tauri app, auto-update, license key                             |
+| **Pro**         | EUR 19/mo or EUR 149/yr | Consultants, small agencies | Desktop app + AI tokens + commercial license + priority support |
+| **Hosted**      | EUR 15/mo               | Non-technical freelancers   | We host, they use browser                                       |
 
 ### Why this works
 
@@ -236,11 +237,11 @@ that serve different user types.
 
 ### Revenue projections (Hybrid)
 
-| Phase | OS users | Desktop | Pro | Hosted | MRR |
-|-------|----------|---------|-----|--------|-----|
-| Launch (3 months) | 500 | 40 | 10 | 0 | EUR 390 |
-| Traction (12 months) | 3000 | 200 | 60 | 30 | EUR 2,590 |
-| Growth (24 months) | 8000 | 800 | 250 | 150 | EUR 11,000 |
+| Phase                | OS users | Desktop | Pro | Hosted | MRR        |
+|----------------------|----------|---------|-----|--------|------------|
+| Launch (3 months)    | 500      | 40      | 10  | 0      | EUR 390    |
+| Traction (12 months) | 3000     | 200     | 60  | 30     | EUR 2,590  |
+| Growth (24 months)   | 8000     | 800     | 250 | 150    | EUR 11,000 |
 
 ### Implementation priority
 
@@ -289,19 +290,19 @@ Needed for Pro tier AI features without BYOK.
 
 ## Comparison Matrix
 
-| Criterion | A: Hosted Only | B: Desktop Only | C: Hybrid |
-|-----------|---------------|-----------------|-----------|
-| Time to first EUR | 1-2 weeks | 3-4 weeks | 1-2 weeks |
-| Margin (Personal) | 66% | 91% | 91% |
-| Margin (Pro/AI) | 40% | 74% | 74% |
-| Infra cost at 500 users | ~EUR 1,200/mo | ~EUR 20/mo | ~EUR 200/mo |
-| Scalability | Linear cost | Zero marginal cost | Mostly zero |
-| Matches product philosophy | Partially (cloud) | Yes (local-first) | Yes |
-| User acquisition | GitHub → Hosted | GitHub → App | GitHub → Both |
-| Dev effort (initial) | Low | Medium | Low (Phase 1) |
-| Dev effort (total) | Medium | Medium | High |
-| Revenue ceiling (solo dev) | ~EUR 100K ARR | ~EUR 130K ARR | ~EUR 130K ARR |
-| Risk | Server costs grow | Packaging complexity | Complexity |
+| Criterion                  | A: Hosted Only    | B: Desktop Only      | C: Hybrid     |
+|----------------------------|-------------------|----------------------|---------------|
+| Time to first EUR          | 1-2 weeks         | 3-4 weeks            | 1-2 weeks     |
+| Margin (Personal)          | 66%               | 91%                  | 91%           |
+| Margin (Pro/AI)            | 40%               | 74%                  | 74%           |
+| Infra cost at 500 users    | ~EUR 1,200/mo     | ~EUR 20/mo           | ~EUR 200/mo   |
+| Scalability                | Linear cost       | Zero marginal cost   | Mostly zero   |
+| Matches product philosophy | Partially (cloud) | Yes (local-first)    | Yes           |
+| User acquisition           | GitHub → Hosted   | GitHub → App         | GitHub → Both |
+| Dev effort (initial)       | Low               | Medium               | Low (Phase 1) |
+| Dev effort (total)         | Medium            | Medium               | High          |
+| Revenue ceiling (solo dev) | ~EUR 100K ARR     | ~EUR 130K ARR        | ~EUR 130K ARR |
+| Risk                       | Server costs grow | Packaging complexity | Complexity    |
 
 
 ---

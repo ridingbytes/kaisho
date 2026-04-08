@@ -10,13 +10,13 @@ One Kaisho instance runs:
 
 ### Memory per container
 
-| Component | RAM |
-|-----------|-----|
-| Python 3.12 runtime | ~30 MB |
-| FastAPI/Uvicorn idle | ~20 MB |
-| Libraries (pydantic, click, httpx, apscheduler, watchfiles, yaml) | ~30 MB |
-| Org-parser + user data in memory | ~5-20 MB |
-| **Total per instance** | **~100-150 MB** |
+| Component                                                         | RAM             |
+|-------------------------------------------------------------------|-----------------|
+| Python 3.12 runtime                                               | ~30 MB          |
+| FastAPI/Uvicorn idle                                              | ~20 MB          |
+| Libraries (pydantic, click, httpx, apscheduler, watchfiles, yaml) | ~30 MB          |
+| Org-parser + user data in memory                                  | ~5-20 MB        |
+| **Total per instance**                                            | **~100-150 MB** |
 
 With shared Docker base image (same Python, same libs),
 read-only layers are shared across containers. Only
@@ -38,12 +38,12 @@ API calls to Ollama/Claude). A freelancer generates
 
 ## VPS Capacity (Hetzner)
 
-| VPS | RAM | Price/mo | Instances (conservative) | Instances (tight) |
-|-----|-----|----------|--------------------------|-------------------|
-| CX22 | 4 GB | EUR 4 | ~20 | ~30 |
-| CX32 | 8 GB | EUR 7 | ~45 | ~60 |
-| CX42 | 16 GB | EUR 16 | ~100 | ~130 |
-| CX52 | 32 GB | EUR 30 | ~220 | ~280 |
+| VPS  | RAM   | Price/mo | Instances (conservative) | Instances (tight) |
+|------|-------|----------|--------------------------|-------------------|
+| CX22 | 4 GB  | EUR 4    | ~20                      | ~30               |
+| CX32 | 8 GB  | EUR 7    | ~45                      | ~60               |
+| CX42 | 16 GB | EUR 16   | ~100                     | ~130              |
+| CX52 | 32 GB | EUR 30   | ~220                     | ~280              |
 
 Conservative = 150 MB/instance + 1 GB OS/proxy overhead.
 Tight = 100 MB/instance + shared base image optimization.
@@ -51,13 +51,13 @@ Tight = 100 MB/instance + shared base image optimization.
 
 ## Revenue vs Cost at Scale
 
-| Customers | Server | Cost/mo | Revenue (EUR 9/mo) | Margin |
-|-----------|--------|---------|--------------------|---------|
-| 10 | 1x CX22 | EUR 4 | EUR 90 | 96% |
-| 30 | 1x CX32 | EUR 7 | EUR 270 | 97% |
-| 50 | 1x CX32 | EUR 7 | EUR 450 | 98% |
-| 100 | 1x CX42 | EUR 16 | EUR 900 | 98% |
-| 200 | 1x CX52 | EUR 30 | EUR 1,800 | 98% |
+| Customers | Server  | Cost/mo | Revenue (EUR 9/mo) | Margin |
+|-----------|---------|---------|--------------------|--------|
+| 10        | 1x CX22 | EUR 4   | EUR 90             | 96%    |
+| 30        | 1x CX32 | EUR 7   | EUR 270            | 97%    |
+| 50        | 1x CX32 | EUR 7   | EUR 450            | 98%    |
+| 100       | 1x CX42 | EUR 16  | EUR 900            | 98%    |
+| 200       | 1x CX52 | EUR 30  | EUR 1,800          | 98%    |
 
 
 ## Required Components for Hosted Tier

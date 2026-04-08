@@ -1,90 +1,66 @@
 # Kaisho SaaS Readiness Assessment
 
-Audit date: 2026-04-07. Based on code in ~/develop/kaisho/.
+Updated: 2026-04-08. Based on current single-user
+architecture.
+
+
+## Current Architecture
+
+Kaisho is a single-user, self-hosted application.
+There is no login, no sessions, no multi-user auth.
+The app starts and serves one user's data directly.
+
+Multiple profiles allow different backends and settings
+within the same instance.
 
 
 ## What Already Exists
 
-### Authentication (working)
-- LoginPage.tsx with username/password + registration
-- Token stored in localStorage as `kai_token` (Bearer)
-- Backend: session tokens, .htpasswd files (SHA-256+salt)
-- Rate limiting: 10 attempts per 5 min per IP
-- Token TTL: 24 hours
-
-### Multi-User (working)
-- Users stored in data/users/{username}/
-- Each user has user.yaml + profile directories
-- Login sets os.environ["KAISHO_USER"] + PROFILE,
-  then calls reset_config()
-- Data isolation via profile paths
-
-### Backend Abstraction (clean)
-- Pluggable: org, markdown, json backends
-- Base class in kaisho/backends/base.py
-- Easy to add a database backend
+- Pluggable backends: org-mode, markdown, JSON, SQL
+  (SQLite/PostgreSQL via SQLAlchemy)
+- FastAPI with WebSocket for real-time updates
+- Profile switching and CRUD
+- Configurable CORS origins via environment variable
+- Backend conversion CLI (kai convert)
+- Import/export between all backend formats
 
 
-## Critical Gaps for Cloud SaaS
+## Deployment Path: Docker-per-Customer
 
-### 1. In-Memory Session Storage
-- Sessions dict lost on every server restart
-- Incompatible with multi-instance deployment
-- Fix: Redis or PostgreSQL session store
-- Effort: 2-3 hours
+For a hosted SaaS tier, the recommended approach is
+one Docker container per customer:
 
-### 2. Global os.environ for User Context
-- os.environ["KAISHO_USER"] is process-wide
-- Concurrent API requests overwrite each other
-- Fix: request middleware passes user_id per request
-- Effort: ~1 week (refactor all routers)
-
-### 3. File System as Database
-- All data in local org/markdown/YAML files
-- Works single-machine, breaks distributed
-- Fix: DB-backed backend or S3 with per-user prefix
-- Effort: 1-2 weeks
-
-### 4. No Multi-Instance Support
-- File watcher ties backend to single process
-- Race conditions with multiple servers
-- Fix: Redis Pub/Sub or webhook notifications
-- Effort: ~1 week
-
-### 5. Token Security
-- Tokens are base64-encoded, not signed
-- Fix: JWT with server secret
-- Effort: 4 hours
-
-### 6. CORS Hardcoded
-- Only allows localhost:5173 and localhost:3000
-- Fix: read from environment
-- Effort: 1 hour
-
-
-## Deployment Options
-
-### Option A: Docker-per-Customer (quick, no refactor)
-- Each customer gets own container + volume
-- No multi-tenant needed, no code changes
+- Each customer gets their own isolated instance
+- No multi-tenant code needed
 - Reverse proxy routes subdomains to containers
-- Timeline: 3-4 days
-- Limitation: one user per instance
+- Authentication handled at proxy level (basic auth,
+  OAuth, or API key)
+- No changes to the Kaisho codebase required
 
-### Option B: Multi-Tenant SaaS (proper, needs refactor)
-- Fix gaps 1-5 above
-- Add database backend
-- Timeline: 3-4 weeks
-- Scales to thousands of users
-
-### Recommendation
-Start with Option A. Migrate to B only when demand
-justifies the engineering investment.
+This matches Phase 3 from MONETIZATION.md.
 
 
-## What is Already Good
-- Backend abstraction is clean and extensible
-- FastAPI with proper CORS, WebSocket support
-- Frontend has login, token persistence, Bearer auth
-- CLI services layer is framework-agnostic
-- No dependency on local tools (Emacs, git hooks)
+## What Would Be Needed
+
+| Component | Effort | Notes |
+|-----------|--------|-------|
+| Dockerfile | 4h | Python + Node build |
+| Reverse proxy config | 4h | Caddy/Traefik subdomain routing |
+| Deploy script | 16h | Container + volume + subdomain |
+| Stripe subscription | 16h | Checkout + webhook |
+| Monitoring | 8h | Uptime, disk, memory per container |
+| Backup automation | 4h | Volume snapshots |
+
+Total: ~52h for minimum viable hosted tier.
+
+
+## Not Needed (Removed)
+
+The following were previously listed as gaps but are
+no longer relevant after the single-user refactor:
+
+- Multi-user session storage (removed)
+- JWT token signing (removed)
+- Per-request user context (removed)
+- Multi-instance file locking (not needed for
+  single-user containers)

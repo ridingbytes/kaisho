@@ -4,7 +4,8 @@ Authoritative design system reference. All values reflect the
 actual implementation in `frontend/src/index.css` and
 `frontend/tailwind.config.cjs`.
 
-**Kaisho** = **K**anban + **AI** + **Sh**ell + **O**rganizer
+**Kaisho** (開手, "open hand") -- the position of readiness
+in martial arts. Structure without rigidity.
 Domain: kaisho.dev | CLI: `kai`
 
 

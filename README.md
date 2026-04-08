@@ -1,12 +1,23 @@
 # Kaisho
 
+<p align="center">
+  <img src="logos/kaisho-logo.svg" alt="Kaisho" width="64" height="64" />
+</p>
+
 [![Tests](https://github.com/ridingbytes/kaisho/actions/workflows/test.yml/badge.svg)](https://github.com/ridingbytes/kaisho/actions/workflows/test.yml)
 
-Personal productivity platform for freelancers and consultants.
+Productivity system for people who build things.
 Kanban board, time tracking, customer budgets, AI advisor,
 knowledge base, and more. CLI-first with a web dashboard.
 
-**Kaisho** = **K**anban + **AI** + **Sh**ell + **O**rganizer
+**Kaisho** (開手) means "open hand" in Japanese martial
+arts -- the position of readiness. A closed fist commits
+to one action. The open hand keeps all options available.
+
+The mark is an open bracket with three lines inside.
+The bracket is the palm. The lines are what you hold:
+your tasks, your hours, your ideas. Structure without
+rigidity.
 
 
 ## Features
@@ -26,9 +37,9 @@ knowledge base, and more. CLI-first with a web dashboard.
   reports, and maintenance
 - **Notes** -- org-mode notes viewer
 - **Dashboard** -- stats, budget overview, calendar
-- **Multi-User / Multi-Profile** -- separate data per user
-  and profile
-- **Dark / Light Theme** -- Graphite Lavender palette
+- **Multiple Profiles** -- different backends and settings
+  per profile
+- **Dark / Light Theme** -- Zinc palette (true neutral)
 
 
 ## Quick Start
