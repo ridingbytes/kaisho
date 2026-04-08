@@ -137,6 +137,7 @@ export function TaskAutocomplete({
             <li key={task.id}>
               <button
                 type="button"
+                title={taskLabel(task)}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   selectTask(task);
