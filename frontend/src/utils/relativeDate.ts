@@ -39,15 +39,22 @@ export function relativeDate(
 ): { label: string; full: string } {
   if (!raw) return { label: "", full: "" };
 
-  const clean = raw
-    .replace(/^\[/, "")
-    .replace(/\]$/, "");
-  const full = clean.slice(0, 16);
-
   const date = parseDate(raw);
   if (!date) {
-    return { label: raw.slice(0, 10), full };
+    const fallback = raw
+      .replace(/^\[/, "")
+      .replace(/\]$/, "")
+      .slice(0, 16);
+    return { label: raw.slice(0, 10), full: fallback };
   }
+  const full = date.toLocaleString(undefined, {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
