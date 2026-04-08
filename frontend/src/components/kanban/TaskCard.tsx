@@ -14,7 +14,11 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
-import { useStartTimer } from "../../hooks/useClocks";
+import {
+  useActiveTimer,
+  useStartTimer,
+  useStopTimer,
+} from "../../hooks/useClocks";
 import { RelDate } from "../common/RelDate";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import { ContentPopup } from "../common/ContentPopup";
@@ -360,6 +364,14 @@ export function TaskCard({
 
   const customerColors = useCustomerColors();
   const startClock = useStartTimer();
+  const stopClock = useStopTimer();
+  const { data: activeTimer } = useActiveTimer();
+  const isTimerRunning = !!(
+    activeTimer?.active
+    && activeTimer?.customer === task.customer
+    && activeTimer?.description
+      === stripCustomerPrefix(task.title)
+  );
   const [historyOpen, setHistoryOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -665,6 +677,10 @@ export function TaskCard({
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => {
+                if (isTimerRunning) {
+                  stopClock.mutate();
+                  return;
+                }
                 if (!task.customer) return;
                 startClock.mutate({
                   customer: task.customer,
@@ -674,9 +690,22 @@ export function TaskCard({
                   taskId: task.id,
                 });
               }}
-              disabled={startClock.isPending}
-              className="p-1 rounded text-stone-400 hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
-              title="Start timer"
+              disabled={
+                startClock.isPending
+                || stopClock.isPending
+              }
+              className={[
+                "p-1 rounded transition-colors",
+                "disabled:opacity-40",
+                isTimerRunning
+                  ? "text-green-500 animate-pulse"
+                  : "text-stone-400 hover:text-green-500 hover:bg-green-500/10 opacity-0 group-hover:opacity-100",
+              ].join(" ")}
+              title={
+                isTimerRunning
+                  ? "Stop timer"
+                  : "Start timer"
+              }
             >
               <Clock size={11} />
             </button>
