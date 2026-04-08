@@ -5,9 +5,24 @@ import type { Task } from "../../types";
 
 const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
 
+function issueNumber(url: string): string {
+  const m = url.match(/\/(\d+)\/?$/);
+  return m ? `#${m[1]}` : "";
+}
+
 function taskLabel(task: Task): string {
-  const title = task.title.replace(CUSTOMER_PREFIX_RE, "");
-  return task.customer ? `[${task.customer}] ${title}` : title;
+  const title = task.title.replace(
+    CUSTOMER_PREFIX_RE, "",
+  );
+  const num = task.github_url
+    ? issueNumber(task.github_url)
+    : "";
+  const prefix = task.customer
+    ? `[${task.customer}] `
+    : "";
+  return num
+    ? `${prefix}${num} ${title}`
+    : `${prefix}${title}`;
 }
 
 interface Props {
@@ -47,9 +62,22 @@ export function TaskAutocomplete({
   const [highlightIdx, setHighlightIdx] = useState(-1);
 
   const filtered: Task[] = value.trim()
-    ? tasks.filter((t) =>
-        taskLabel(t).toLowerCase().includes(value.toLowerCase())
-      )
+    ? tasks.filter((t) => {
+        const q = value.toLowerCase();
+        const label = taskLabel(t).toLowerCase();
+        if (label.includes(q)) return true;
+        // Match #number against github_url
+        if (
+          q.startsWith("#")
+          && t.github_url
+          && issueNumber(t.github_url)
+            .toLowerCase()
+            .startsWith(q)
+        ) {
+          return true;
+        }
+        return false;
+      })
     : tasks.slice(0, MAX_UNFILTERED);
 
   const showCreate =
@@ -132,7 +160,7 @@ export function TaskAutocomplete({
         className={`w-full ${inputClassName}`}
       />
       {open && itemCount > 0 && (
-        <ul className="absolute z-50 left-0 right-0 top-full mt-0.5 max-h-48 overflow-y-auto rounded-md border border-border bg-surface-raised shadow-card-hover">
+        <ul className="absolute z-50 left-0 top-full mt-0.5 min-w-full w-max max-w-sm max-h-48 overflow-y-auto rounded-md border border-border bg-surface-raised shadow-card-hover">
           {filtered.map((task, i) => (
             <li key={task.id}>
               <button
@@ -143,7 +171,7 @@ export function TaskAutocomplete({
                   selectTask(task);
                 }}
                 className={[
-                  "w-full text-left px-2 py-1.5 text-xs truncate transition-colors",
+                  "w-full text-left px-2 py-1.5 text-xs transition-colors leading-snug",
                   i === highlightIdx
                     ? "bg-cta-muted text-stone-900"
                     : "text-stone-800 hover:bg-surface-overlay",
