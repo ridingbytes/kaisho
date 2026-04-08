@@ -336,6 +336,42 @@ function GithubIssueInput({
   );
 }
 
+function TimerBadge({
+  start,
+  onStop,
+}: {
+  start: string;
+  onStop: () => void;
+}) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(
+      () => setTick((t) => t + 1), 60_000,
+    );
+    return () => clearInterval(id);
+  }, []);
+  const diffMs =
+    Date.now() - new Date(start).getTime();
+  const totalMin = Math.floor(diffMs / 60_000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  const label =
+    `${String(h).padStart(2, "0")}:`
+    + `${String(m).padStart(2, "0")}`;
+  return (
+    <button
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={onStop}
+      className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-600 text-[10px] font-mono font-semibold hover:bg-red-500/10 hover:text-red-500 transition-colors"
+      title="Stop timer"
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+      {label}
+    </button>
+  );
+}
+
+
 function stripCustomerPrefix(title: string): string {
   return title.replace(CUSTOMER_PREFIX_RE, "");
 }
@@ -640,9 +676,40 @@ export function TaskCard({
                     #{extractIssueNumber(task.github_url)}
                   </a>
                 )}
+                {isTimerRunning && activeTimer?.start && (
+                  <TimerBadge
+                    start={activeTimer.start}
+                    onStop={() => stopClock.mutate()}
+                  />
+                )}
+                {!isTimerRunning && task.customer && (
+                  <button
+                    onPointerDown={(e) =>
+                      e.stopPropagation()
+                    }
+                    onClick={() =>
+                      startClock.mutate({
+                        customer: task.customer!,
+                        description:
+                          stripCustomerPrefix(
+                            task.title,
+                          ),
+                        taskId: task.id,
+                      })
+                    }
+                    disabled={startClock.isPending}
+                    className="ml-auto p-0.5 rounded text-stone-400 opacity-0 group-hover:opacity-100 hover:text-green-500 transition-all disabled:opacity-40"
+                    title="Start timer"
+                  >
+                    <Clock size={10} />
+                  </button>
+                )}
                 <RelDate
                   date={task.created}
-                  className="ml-auto text-[10px] text-stone-500 shrink-0"
+                  className={[
+                    "text-[10px] text-stone-500 shrink-0",
+                    isTimerRunning ? "" : "ml-auto",
+                  ].join(" ")}
                 />
               </div>
               <TaskClockSection task={task} />
@@ -674,41 +741,6 @@ export function TaskCard({
                 <ListRestart size={11} />
               </button>
             )}
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => {
-                if (isTimerRunning) {
-                  stopClock.mutate();
-                  return;
-                }
-                if (!task.customer) return;
-                startClock.mutate({
-                  customer: task.customer,
-                  description: stripCustomerPrefix(
-                    task.title,
-                  ),
-                  taskId: task.id,
-                });
-              }}
-              disabled={
-                startClock.isPending
-                || stopClock.isPending
-              }
-              className={[
-                "p-1 rounded transition-colors",
-                "disabled:opacity-40",
-                isTimerRunning
-                  ? "text-green-500 animate-pulse"
-                  : "text-stone-400 hover:text-green-500 hover:bg-green-500/10 opacity-0 group-hover:opacity-100",
-              ].join(" ")}
-              title={
-                isTimerRunning
-                  ? "Stop timer"
-                  : "Start timer"
-              }
-            >
-              <Clock size={11} />
-            </button>
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={startEdit}
