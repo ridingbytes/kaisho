@@ -48,6 +48,7 @@ export function KanbanColumn({
   }, [openAdd, onAddOpened]);
   const [customer, setCustomer] = useState("");
   const [title, setTitle] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
   const addTask = useAddTask();
 
   function handleAdd() {
@@ -57,11 +58,13 @@ export function KanbanColumn({
         customer: customer.trim(),
         title: title.trim(),
         status: state.name,
+        github_url: githubUrl.trim() || undefined,
       },
       {
         onSuccess: () => {
           setCustomer("");
           setTitle("");
+          setGithubUrl("");
           setAdding(false);
         },
       }
@@ -171,6 +174,14 @@ export function KanbanColumn({
               placeholder="Task title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className={inputCls}
+            />
+            <input
+              type="text"
+              placeholder="GitHub URL (optional)"
+              value={githubUrl}
+              onChange={(e) => setGithubUrl(e.target.value)}
               onKeyDown={handleKeyDown}
               className={inputCls}
             />
