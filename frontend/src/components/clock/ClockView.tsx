@@ -54,11 +54,7 @@ function taskTitleById(tasks: Task[], id: string | null): string | null {
 function formatDate(iso: string): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso.slice(0, 10);
-  return d.toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+  return d.toLocaleDateString();
 }
 
 function formatTime(iso: string | null): string {
