@@ -175,7 +175,9 @@ export function KanbanBoard() {
   const { pendingSearch, clearPendingSearch } = usePendingSearch();
 
   useEffect(
-    () => registerPanelAction("board", () => setOpenAddInFirst(true)),
+    () => registerPanelAction("board", () =>
+      setTimeout(() => setOpenAddInFirst(true), 0),
+    ),
     []
   );
 

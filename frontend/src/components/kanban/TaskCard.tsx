@@ -1,3 +1,4 @@
+import ReactDOM from "react-dom";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -264,6 +265,8 @@ function GithubIssueInput({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("");
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   async function fetchIssues() {
     if (!customer.trim()) return;
@@ -287,7 +290,7 @@ function GithubIssueInput({
   }
 
   return (
-    <div className="relative">
+    <div ref={wrapRef} className="relative">
       <div className="flex gap-1">
         <input
           value={value}
@@ -297,6 +300,7 @@ function GithubIssueInput({
         />
         {customer.trim() && (
           <button
+            ref={btnRef}
             type="button"
             onClick={fetchIssues}
             disabled={loading}
@@ -307,12 +311,31 @@ function GithubIssueInput({
           </button>
         )}
       </div>
-      {open && issues.length > 0 && (
-        <div className="absolute z-50 left-0 top-full mt-1 w-80 rounded-lg bg-surface-overlay border border-border shadow-lg">
+      {open && issues.length > 0 && ReactDOM.createPortal(
+        <div
+          className="fixed z-[9999] w-80 max-h-64 rounded-lg bg-surface-overlay border border-border shadow-lg"
+          style={{
+            top: wrapRef.current
+              ? wrapRef.current.getBoundingClientRect().bottom + 4
+              : 100,
+            left: wrapRef.current
+              ? Math.min(
+                  wrapRef.current.getBoundingClientRect().left,
+                  window.innerWidth - 330,
+                )
+              : 100,
+          }}
+        >
           <input
             type="text"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setOpen(false);
+                setFilter("");
+              }
+            }}
             placeholder="Filter issues..."
             autoFocus
             className="w-full px-3 py-1.5 text-xs border-b border-border bg-transparent text-stone-800 placeholder-stone-400 outline-none"
@@ -362,7 +385,8 @@ function GithubIssueInput({
             </button>
           </li>
           </ul>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
