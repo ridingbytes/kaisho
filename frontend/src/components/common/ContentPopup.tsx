@@ -1,4 +1,4 @@
-import { X, Maximize2 } from "lucide-react";
+import { X, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Markdown } from "./Markdown";
 
@@ -38,7 +38,7 @@ export function ContentPopup({
         ].join(" ")}
         title="View full content"
       >
-        <Maximize2 size={iconSize} />
+        <ExternalLink size={iconSize} />
       </button>
 
       {open && (

@@ -676,18 +676,28 @@ export function TaskCard({
               </p>
               {task.body && (
                 <div className="mb-1.5">
-                  <button
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={() => setBodyExpanded((v) => !v)}
-                    className="flex items-center gap-1 text-[10px] text-stone-500 hover:text-stone-700 transition-colors"
-                  >
-                    {bodyExpanded ? (
-                      <ChevronDown size={10} />
-                    ) : (
-                      <ChevronRight size={10} />
-                    )}
-                    Description
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => setBodyExpanded((v) => !v)}
+                      className="flex items-center gap-1 text-[10px] text-stone-500 hover:text-stone-700 transition-colors"
+                    >
+                      {bodyExpanded ? (
+                        <ChevronDown size={10} />
+                      ) : (
+                        <ChevronRight size={10} />
+                      )}
+                      Description
+                    </button>
+                    <span onPointerDown={(e) => e.stopPropagation()}>
+                      <ContentPopup
+                        content={task.body}
+                        title={stripCustomerPrefix(task.title)}
+                        markdown
+                        iconSize={9}
+                      />
+                    </span>
+                  </div>
                   {bodyExpanded && (
                     <div
                       className="mt-1 pl-1 border-l border-border-subtle"
@@ -755,27 +765,6 @@ export function TaskCard({
         {/* Hover actions */}
         {!editing && !isDragOverlay && (
           <div className="flex flex-col items-center gap-1 px-1 py-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-            {task.body && (
-              <span onPointerDown={(e) => e.stopPropagation()}>
-                <ContentPopup
-                  content={task.body}
-                  title={stripCustomerPrefix(task.title)}
-                  markdown
-                  iconSize={11}
-                />
-              </span>
-            )}
-            {task.state_history &&
-              task.state_history.length > 0 && (
-              <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => setHistoryOpen(true)}
-                className="p-1 rounded text-stone-400 hover:text-cta hover:bg-cta-muted transition-colors"
-                title="State history"
-              >
-                <ListRestart size={11} />
-              </button>
-            )}
             {task.status !== "DONE"
               && task.status !== "CANCELLED" && (
               <button
@@ -871,6 +860,19 @@ export function TaskCard({
                 </div>
               )}
             </div>
+            {task.state_history &&
+              task.state_history.length > 0 && (
+              <button
+                onPointerDown={(e) =>
+                  e.stopPropagation()
+                }
+                onClick={() => setHistoryOpen(true)}
+                className="p-1 rounded text-stone-400 hover:text-cta hover:bg-cta-muted transition-colors"
+                title="State history"
+              >
+                <ListRestart size={11} />
+              </button>
+            )}
           </div>
         )}
       </div>
