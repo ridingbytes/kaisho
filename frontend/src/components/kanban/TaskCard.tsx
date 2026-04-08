@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
+import { useMoveTask } from "../../hooks/useTasks";
 import {
   useActiveTimer,
   useStartTimer,
@@ -400,6 +401,7 @@ export function TaskCard({
 
   const customerColors = useCustomerColors();
   const startClock = useStartTimer();
+  const markDone = useMoveTask();
   const stopClock = useStopTimer();
   const { data: activeTimer } = useActiveTimer();
   const isTimerRunning = !!(
@@ -717,6 +719,25 @@ export function TaskCard({
                 title="State history"
               >
                 <ListRestart size={11} />
+              </button>
+            )}
+            {task.status !== "DONE"
+              && task.status !== "CANCELLED" && (
+              <button
+                onPointerDown={(e) =>
+                  e.stopPropagation()
+                }
+                onClick={() =>
+                  markDone.mutate({
+                    taskId: task.id,
+                    status: "DONE",
+                  })
+                }
+                disabled={markDone.isPending}
+                className="p-1 rounded text-stone-400 hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
+                title="Mark as done"
+              >
+                <Check size={11} />
               </button>
             )}
             {!isTimerRunning && task.customer && (
