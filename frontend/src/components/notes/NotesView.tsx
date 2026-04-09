@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { ConfirmPopover } from "../common/ConfirmPopover";
+import { tagBadgeStyle } from "../../utils/tagColors";
 import { RelDate } from "../common/RelDate";
 import {
   ArrowRightLeft,
@@ -268,10 +270,8 @@ function NoteRow({
                 e.stopPropagation();
                 onTagClick(tagName);
               }}
-              className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white shrink-0 hover:opacity-80 transition-opacity"
-              style={{
-                backgroundColor: def?.color ?? "#64748b",
-              }}
+              className="px-1.5 py-0.5 rounded text-[10px] font-semibold shrink-0 hover:opacity-80 transition-opacity"
+              style={tagBadgeStyle(def?.color)}
               title={`Filter by ${tagName}`}
             >
               {tagName}
@@ -325,16 +325,14 @@ function NoteRow({
             </div>
           )}
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="text-stone-500 hover:text-red-400 transition-colors shrink-0"
-          title="Delete"
-        >
-          <Trash2 size={13} />
-        </button>
+        <ConfirmPopover onConfirm={onDelete}>
+          <button
+            className="text-stone-500 hover:text-red-400 transition-colors shrink-0"
+            title="Delete"
+          >
+            <Trash2 size={13} />
+          </button>
+        </ConfirmPopover>
       </div>
 
       {expanded && (
@@ -580,11 +578,13 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
       e.preventDefault();
       doSubmit();
     }
+    if (e.key === "Escape") onClose();
   }
 
   return (
     <form
       onSubmit={handleSubmit}
+      onKeyDown={handleKeyDown}
       className="border-b border-border-subtle bg-surface-card px-4 py-3 flex flex-col gap-2"
     >
       <div className="flex gap-2">
@@ -720,12 +720,10 @@ export function NotesView() {
         {tagFilter && (
           <button
             onClick={() => setTagFilter("")}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold text-white hover:opacity-80"
-            style={{
-              backgroundColor:
-                allTags.find((t) => t.name === tagFilter)?.color
-                ?? "#64748b",
-            }}
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold hover:opacity-80"
+            style={tagBadgeStyle(
+              allTags.find((t) => t.name === tagFilter)?.color,
+            )}
           >
             {tagFilter}
             <X size={10} />
@@ -762,11 +760,7 @@ export function NotesView() {
             key={note.id}
             note={note}
             allTags={allTags}
-            onDelete={() => {
-              if (window.confirm(`Delete "${note.title}"?`)) {
-                deleteNote.mutate(note.id);
-              }
-            }}
+            onDelete={() => deleteNote.mutate(note.id)}
             onTagClick={setTagFilter}
           />
         ))}

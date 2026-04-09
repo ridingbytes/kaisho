@@ -65,6 +65,7 @@ export interface Contract {
   used_offset: number;
   used: number;
   rest: number;
+  billable: boolean;
 }
 
 export interface ClockEntry {

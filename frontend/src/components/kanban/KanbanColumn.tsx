@@ -14,6 +14,7 @@ interface KanbanColumnProps {
   openAdd?: boolean;
   onAddOpened?: () => void;
   onTagClick?: (tag: string) => void;
+  onCustomerClick?: (customer: string) => void;
 }
 
 export function KanbanColumn({
@@ -22,6 +23,7 @@ export function KanbanColumn({
   openAdd,
   onAddOpened,
   onTagClick,
+  onCustomerClick,
 }: KanbanColumnProps) {
   const {
     setNodeRef,
@@ -149,6 +151,7 @@ export function KanbanColumn({
               task={task}
               statusColor={state.color}
               onTagClick={onTagClick}
+              onCustomerClick={onCustomerClick}
             />
           ))}
         </SortableContext>

@@ -62,11 +62,21 @@ def update_customer(
     return c
 
 
+@router.delete("/{name}", status_code=204)
+def delete_customer(name: str):
+    ok = get_backend().customers.delete_customer(name)
+    if not ok:
+        raise HTTPException(
+            status_code=404, detail="Customer not found"
+        )
+
+
 class ContractCreate(BaseModel):
     name: str
     budget: float
     start_date: str
     notes: str = ""
+    billable: bool = True
 
 
 class ContractUpdate(BaseModel):
@@ -76,6 +86,7 @@ class ContractUpdate(BaseModel):
     end_date: str | None = None
     notes: str | None = None
     used_offset: float | None = None
+    billable: bool | None = None
 
 
 @router.get("/{name}/contracts")
@@ -94,6 +105,7 @@ def add_contract(name: str, body: ContractCreate):
         return get_backend().customers.add_contract(
             name, body.name, body.budget,
             body.start_date, body.notes,
+            body.billable,
         )
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))

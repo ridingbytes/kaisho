@@ -1,14 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useInboxItems } from "../../hooks/useInbox";
 import { AddInboxForm } from "./AddInboxForm";
 import { InboxItemRow } from "./InboxItemRow";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
+import { registerPanelAction } from "../../utils/panelActions";
 
 export function InboxView() {
   const { data: items = [], isLoading } = useInboxItems();
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
+  useEffect(
+    () => registerPanelAction("inbox", () => setShowForm(true)),
+    [],
+  );
 
   const active = items.filter(
     (i) => i.properties?.ARCHIVED !== "true"
@@ -23,9 +30,15 @@ export function InboxView() {
         <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700 flex-1">
           Inbox
         </h1>
+        <button
+          onClick={() => setShowForm((v) => !v)}
+          className="mr-2 px-3 py-1 rounded-lg text-xs bg-cta text-white hover:bg-cta-hover transition-colors"
+        >
+          + Add
+        </button>
         <HelpButton title="Inbox" doc={DOCS.inbox} view="inbox" />
       </div>
-      <AddInboxForm />
+      {showForm && <AddInboxForm onClose={() => setShowForm(false)} />}
 
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
@@ -37,7 +50,7 @@ export function InboxView() {
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <p className="text-stone-500 text-sm">Inbox is empty</p>
             <p className="text-stone-400 text-xs">
-              Add something above to get started
+              Click "+ Add" to capture something
             </p>
           </div>
         )}

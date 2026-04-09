@@ -515,6 +515,14 @@ export function createCustomer(data: {
   return post<Customer>("/customers/", data);
 }
 
+export function deleteCustomer(
+  name: string,
+): Promise<void> {
+  return del(
+    `/customers/${encodeURIComponent(name)}`,
+  );
+}
+
 export function updateCustomer(
   name: string,
   updates: Partial<
@@ -545,6 +553,7 @@ export function addContract(
     budget: number;
     start_date: string;
     notes?: string;
+    billable?: boolean;
   },
 ): Promise<Contract> {
   return post<Contract>(
@@ -563,6 +572,7 @@ export function updateContract(
     start_date?: string;
     end_date?: string | null;
     notes?: string;
+    billable?: boolean;
   },
 ): Promise<Contract> {
   return patch<Contract>(
@@ -586,6 +596,46 @@ export function deleteContract(
 
 export function fetchDashboard(): Promise<Dashboard> {
   return get<Dashboard>("/dashboard/");
+}
+
+export interface TimeInsightsEntry {
+  start: string;
+  customer: string;
+  description: string;
+  contract: string | null;
+  task_id: string | null;
+  duration_minutes: number;
+  billable: boolean;
+}
+
+export interface TimeInsightsCustomer {
+  name: string;
+  total_min: number;
+  billable_min: number;
+  entries: TimeInsightsEntry[];
+}
+
+export interface TimeInsights {
+  period: string;
+  start_date: string;
+  end_date: string;
+  daily: {
+    date: string;
+    total_min: number;
+    billable_min: number;
+  }[];
+  by_customer: TimeInsightsCustomer[];
+  billable_total_min: number;
+  non_billable_total_min: number;
+  total_min: number;
+}
+
+export function fetchTimeInsights(
+  period: string,
+): Promise<TimeInsights> {
+  return get<TimeInsights>(
+    `/dashboard/time-insights?period=${period}`,
+  );
 }
 
 // Knowledge

@@ -4,6 +4,8 @@ import remarkGfm from "remark-gfm";
 interface MarkdownProps {
   children: string;
   className?: string;
+  /** Called on link click. If provided, handles the click. */
+  onLinkClick?: (url: string) => void;
 }
 
 const components = {
@@ -104,12 +106,50 @@ const components = {
   ),
 };
 
-export function Markdown({ children, className }: MarkdownProps) {
+function makeLink(
+  onLinkClick?: (url: string) => void,
+) {
+  return ({
+    href,
+    children,
+  }: {
+    href?: string;
+    children?: React.ReactNode;
+  }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-cta hover:text-cta-hover underline"
+      onClick={
+        onLinkClick
+          ? (e: React.MouseEvent<HTMLAnchorElement>) => {
+              if (!e.shiftKey && href) {
+                e.preventDefault();
+                onLinkClick(href);
+              }
+            }
+          : undefined
+      }
+    >
+      {children}
+    </a>
+  );
+}
+
+export function Markdown({
+  children,
+  className,
+  onLinkClick,
+}: MarkdownProps) {
+  const merged = onLinkClick
+    ? { ...components, a: makeLink(onLinkClick) }
+    : components;
   return (
     <div className={className}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        components={components as never}
+        components={merged as never}
       >
         {children}
       </ReactMarkdown>

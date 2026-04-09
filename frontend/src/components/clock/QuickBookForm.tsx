@@ -50,7 +50,13 @@ export function QuickBookForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+    <form
+      onSubmit={handleSubmit}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onDone?.();
+      }}
+      className="flex flex-col gap-2"
+    >
       <CustomerAutocomplete
         value={customer}
         onChange={(v) => {
@@ -80,31 +86,28 @@ export function QuickBookForm({
         onChange={(e) => setDescription(e.target.value)}
         className={inputCls}
       />
-      <div className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Duration (2h, 30m)"
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-          className={[inputCls, "w-28 shrink-0"].join(" ")}
-        />
-        <TaskAutocomplete
-          taskId={taskId}
-          value={taskTitle}
-          onChange={setTaskTitle}
-          onSelect={(id, label) => {
-            setTaskId(id);
-            setTaskTitle(label);
-          }}
-          onClear={() => {
-            setTaskId(null);
-            setTaskTitle("");
-          }}
-          customer={customer}
-          inputClassName={inputCls}
-          className="flex-1 min-w-0"
-        />
-      </div>
+      <input
+        type="text"
+        placeholder="Duration (2h, 30m)"
+        value={duration}
+        onChange={(e) => setDuration(e.target.value)}
+        className={inputCls}
+      />
+      <TaskAutocomplete
+        taskId={taskId}
+        value={taskTitle}
+        onChange={setTaskTitle}
+        onSelect={(id, label) => {
+          setTaskId(id);
+          setTaskTitle(label);
+        }}
+        onClear={() => {
+          setTaskId(null);
+          setTaskTitle("");
+        }}
+        customer={customer}
+        inputClassName={inputCls}
+      />
       <button
         type="submit"
         disabled={

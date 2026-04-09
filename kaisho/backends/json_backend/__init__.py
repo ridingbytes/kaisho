@@ -93,6 +93,9 @@ def _period_range(period: str) -> tuple[date, date]:
     if period == "month":
         start = today.replace(day=1)
         return start, today
+    if period == "year":
+        start = today.replace(month=1, day=1)
+        return start, today
     return date.min, date.max
 
 
@@ -741,6 +744,7 @@ class JsonCustomerBackend(CustomerBackend):
         budget = con.get("budget", 0)
         con["used"] = hours
         con["rest"] = round(budget - hours, 2)
+        con.setdefault("billable", True)
         return con
 
     # -- queries -------------------------------------------------
@@ -860,6 +864,7 @@ class JsonCustomerBackend(CustomerBackend):
         budget,
         start_date,
         notes="",
+        billable=True,
     ) -> dict:
         custs = _read_json(self._customers_file)
         low = name.lower()
@@ -879,6 +884,7 @@ class JsonCustomerBackend(CustomerBackend):
                 "start_date": start_date,
                 "end_date": "",
                 "notes": notes,
+                "billable": billable,
             }
             contracts.append(contract)
             _write_json(self._customers_file, custs)
@@ -919,6 +925,18 @@ class JsonCustomerBackend(CustomerBackend):
         return self.update_contract(
             name, contract_name, {"end_date": end_date}
         )
+
+    def delete_customer(self, name) -> bool:
+        custs = _read_json(self._customers_file)
+        low = name.lower()
+        new = [
+            c for c in custs
+            if c.get("name", "").lower() != low
+        ]
+        if len(new) == len(custs):
+            return False
+        _write_json(self._customers_file, new)
+        return True
 
     def delete_contract(
         self, name, contract_name

@@ -42,6 +42,76 @@ import { usePendingSearch } from "../../context/ViewContext";
 
 const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
 
+/**
+ * Merge a prefixed filter token into a search string.
+ * For "tags", appends comma-separated values (additive).
+ * For others, replaces an existing token with same prefix.
+ */
+/**
+ * Merge a prefixed filter token into a search string.
+ * For "tags", appends comma-separated values (additive).
+ * For others, replaces an existing token with same prefix.
+ */
+function mergeSearchToken(
+  current: string, prefix: string, value: string,
+): string {
+  const re = new RegExp(`${prefix}:(\\S+)`);
+  const m = current.match(re);
+  if (m) {
+    if (prefix === "tags") {
+      const existing = m[1].split(",");
+      if (existing.includes(value)) return current;
+      const merged = [...existing, value].join(",");
+      return current
+        .replace(re, `${prefix}:${merged}`)
+        .trim();
+    }
+    return current
+      .replace(re, `${prefix}:${value}`)
+      .trim();
+  }
+  return `${current} ${prefix}:${value}`.trim();
+}
+
+/** Remove a prefixed token from the search string. */
+function removeSearchToken(
+  current: string, prefix: string,
+): string {
+  const re = new RegExp(`${prefix}:\\S+`);
+  return current.replace(re, "").replace(/\s+/g, " ").trim();
+}
+
+const FILTER_PREFIXES = ["customer", "tags", "status"];
+
+/** Extract structured filter tokens from search. */
+function parseSearchTokens(
+  search: string,
+): { prefix: string; value: string }[] {
+  const tokens: { prefix: string; value: string }[] = [];
+  for (const part of search.split(/\s+/)) {
+    const idx = part.indexOf(":");
+    if (idx < 1) continue;
+    const prefix = part.slice(0, idx);
+    if (FILTER_PREFIXES.includes(prefix)) {
+      tokens.push({ prefix, value: part.slice(idx + 1) });
+    }
+  }
+  return tokens;
+}
+
+/** Return the free-text portion of the search. */
+function freeText(search: string): string {
+  return search
+    .split(/\s+/)
+    .filter((p) => {
+      const idx = p.indexOf(":");
+      if (idx < 1) return true;
+      return !FILTER_PREFIXES.includes(p.slice(0, idx));
+    })
+    .join(" ")
+    .trim();
+}
+
 function stripCustomerPrefix(title: string): string {
   return title.replace(CUSTOMER_PREFIX_RE, "");
 }
@@ -154,13 +224,51 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
   );
 }
 
-function matchesSearch(task: Task, query: string): boolean {
+function matchesSearch(
+  task: Task, query: string,
+): boolean {
   if (!query) return true;
-  const q = query.toLowerCase();
-  if (task.title.toLowerCase().includes(q)) return true;
-  if (task.customer?.toLowerCase().includes(q)) return true;
-  if (task.tags.some((t) => t.toLowerCase().includes(q))) return true;
-  return false;
+  const parts = query.split(/\s+/);
+  return parts.every((part) => {
+    const p = part.toLowerCase();
+    // customer:NAME filter
+    if (p.startsWith("customer:")) {
+      const val = p.slice(9);
+      return (
+        task.customer?.toLowerCase().includes(val)
+        ?? false
+      );
+    }
+    // tags:tag1,tag2 filter (all must match)
+    if (p.startsWith("tags:")) {
+      const vals = p.slice(5).split(",");
+      return vals.every((v) =>
+        task.tags.some(
+          (t) => t.toLowerCase().includes(v),
+        ),
+      );
+    }
+    // status:X filter
+    if (p.startsWith("status:")) {
+      return task.status.toLowerCase()
+        === p.slice(7);
+    }
+    // plain text: match title, customer, or tags
+    if (task.title.toLowerCase().includes(p)) {
+      return true;
+    }
+    if (task.customer?.toLowerCase().includes(p)) {
+      return true;
+    }
+    if (
+      task.tags.some(
+        (t) => t.toLowerCase().includes(p),
+      )
+    ) {
+      return true;
+    }
+    return false;
+  });
 }
 
 export function KanbanBoard() {
@@ -355,36 +463,107 @@ export function KanbanBoard() {
           <Plus size={12} />
           New
         </button>
-        <div className="relative flex items-center ml-2">
-          <Search
-            size={11}
-            className="absolute left-2 text-stone-500 pointer-events-none"
-          />
-          <input
-            ref={searchRef}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setSearch("");
-                searchRef.current?.blur();
+        <div className="flex items-center gap-1.5 ml-2">
+          <div className="relative flex items-center">
+            <Search
+              size={11}
+              className={[
+                "absolute left-2 pointer-events-none",
+                "text-stone-500",
+              ].join(" ")}
+            />
+            <input
+              ref={searchRef}
+              value={freeText(search)}
+              onChange={(e) => {
+                const text = e.target.value;
+                setSearch((prev) => {
+                  const tokens = parseSearchTokens(prev);
+                  const parts = tokens.map(
+                    (t) => `${t.prefix}:${t.value}`,
+                  );
+                  return [...parts, text]
+                    .filter(Boolean)
+                    .join(" ");
+                });
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setSearch("");
+                  searchRef.current?.blur();
+                }
+              }}
+              placeholder={
+                parseSearchTokens(search).length
+                  ? "Add text…"
+                  : "Search tasks…"
               }
-            }}
-            placeholder="Search tasks…"
-            className={[
-              "pl-6 pr-6 py-1 text-xs rounded",
-              "bg-surface-raised border border-border",
-              "text-stone-800 placeholder-stone-500",
-              "focus:outline-none focus:border-cta",
-              "w-44",
-            ].join(" ")}
-          />
+              className={[
+                "pl-6 pr-6 py-1 text-xs rounded",
+                "bg-surface-raised border border-border",
+                "text-stone-800 placeholder-stone-500",
+                "focus:outline-none focus:border-cta",
+                "w-44",
+              ].join(" ")}
+            />
+            {freeText(search) && (
+              <button
+                onClick={() =>
+                  setSearch((prev) =>
+                    parseSearchTokens(prev)
+                      .map((t) => `${t.prefix}:${t.value}`)
+                      .join(" "),
+                  )
+                }
+                className={[
+                  "absolute right-1.5",
+                  "text-stone-500 hover:text-stone-700",
+                ].join(" ")}
+              >
+                <X size={10} />
+              </button>
+            )}
+          </div>
+          {parseSearchTokens(search).map((t) => (
+            <button
+              key={t.prefix}
+              onClick={() =>
+                setSearch((s) => removeSearchToken(s, t.prefix))
+              }
+              className={[
+                "inline-flex items-center gap-1",
+                "px-1.5 py-0.5 rounded text-[10px]",
+                "font-semibold transition-colors",
+                "bg-cta-muted text-cta-hover",
+                "hover:bg-red-100 hover:text-red-600",
+                "group/badge",
+              ].join(" ")}
+              title={`Remove ${t.prefix} filter`}
+            >
+              <span className="uppercase tracking-wider">
+                {t.prefix}
+              </span>
+              <span className="font-normal">{t.value}</span>
+              <X
+                size={9}
+                className={[
+                  "opacity-0 group-hover/badge:opacity-100",
+                  "transition-opacity",
+                ].join(" ")}
+              />
+            </button>
+          ))}
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="absolute right-1.5 text-stone-500 hover:text-stone-700"
+              className={[
+                "p-1 rounded text-stone-400",
+                "hover:text-stone-700 hover:bg-stone-100",
+                "transition-colors",
+              ].join(" ")}
+              title="Clear all filters"
             >
-              <X size={10} />
+              <X size={11} />
             </button>
           )}
         </div>
@@ -422,7 +601,16 @@ export function KanbanBoard() {
                   tasks={tasksByStatus(state.name)}
                   openAdd={idx === 0 && openAddInFirst}
                   onAddOpened={() => setOpenAddInFirst(false)}
-                  onTagClick={(tag) => setSearch(tag)}
+                  onTagClick={(tag) =>
+                    setSearch((s) =>
+                      mergeSearchToken(s, "tags", tag)
+                    )
+                  }
+                  onCustomerClick={(c) =>
+                    setSearch((s) =>
+                      mergeSearchToken(s, "customer", c)
+                    )
+                  }
                 />
               ))}
             </div>

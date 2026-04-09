@@ -44,19 +44,6 @@ export type View =
   | "settings"
   | "advisor";
 
-const VIEW_TITLES: Record<View, string> = {
-  dashboard: "Dashboard",
-  board: "Board",
-  inbox: "Inbox",
-  notes: "Notes",
-  customers: "Customers",
-  knowledge: "Knowledge",
-  github: "GitHub",
-  clocks: "Clock Entries",
-  cron: "Cron",
-  settings: "Settings",
-  advisor: "Advisor",
-};
 
 const VALID_VIEWS = new Set<View>([
   "dashboard", "board", "inbox", "notes", "customers",
@@ -98,6 +85,31 @@ function AppShell() {
   const [clockOpen, setClockOpen] = useState(
     () => localStorage.getItem("clock_open") !== "false"
   );
+
+  const [appTitle, setAppTitle] = useState(
+    () => localStorage.getItem("kaisho_app_title") || "KAISHO",
+  );
+
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key === "kaisho_app_title") {
+        setAppTitle(e.newValue || "KAISHO");
+      }
+    }
+    function onCustom() {
+      setAppTitle(
+        localStorage.getItem("kaisho_app_title") || "KAISHO",
+      );
+    }
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("app-title-changed", onCustom);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(
+        "app-title-changed", onCustom,
+      );
+    };
+  }, []);
 
   const lastKeyRef = useRef<{ key: string; time: number } | null>(null);
 
@@ -163,6 +175,8 @@ function AppShell() {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      // Skip if another handler already consumed the event
+      if (e.defaultPrevented) return;
       // Command palette shortcut (always active)
       if (matchesShortcut(e, config.commandPalette)) {
         e.preventDefault();
@@ -174,21 +188,46 @@ function AppShell() {
         setPaletteOpen(false);
         return;
       }
-      // View shortcuts — ignore when palette is open or input is focused
+      // Shortcuts — ignore when palette is open or input focused
       if (paletteOpen) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (["INPUT", "TEXTAREA", "SELECT"].includes(tag)) return;
-      for (const [v, shortcut] of Object.entries(config.views)) {
+
+      // Action shortcuts (e.g. Shift+B → new task)
+      for (const [action, shortcut] of Object.entries(
+        config.actions,
+      )) {
         if (matchesShortcut(e, shortcut)) {
-          // Double-tap same shortcut → open "new item" form in that panel
+          e.preventDefault();
+          const panel = action.replace("new:", "");
+          setView(panel as View);
+          setTimeout(() => schedulePanelAction(
+            panel, "open_form",
+          ), 0);
+          return;
+        }
+      }
+
+      // View shortcuts (plain keys, no modifiers)
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      for (const [v, shortcut] of Object.entries(
+        config.views,
+      )) {
+        if (matchesShortcut(e, shortcut)) {
           const now = Date.now();
           const last = lastKeyRef.current;
-          if (last && last.key === e.key && now - last.time < 500) {
+          if (
+            last &&
+            last.key === e.key &&
+            now - last.time < 500
+          ) {
             schedulePanelAction(v, "open_form");
             lastKeyRef.current = null;
           } else {
-            lastKeyRef.current = { key: e.key, time: now };
+            lastKeyRef.current = {
+              key: e.key,
+              time: now,
+            };
           }
           setView(v as View);
           return;
@@ -217,10 +256,12 @@ function AppShell() {
             className="h-6"
           />
         </button>
-        <span className="text-border mx-0.5">·</span>
-        <span className="text-sm font-semibold text-stone-900">
-          {VIEW_TITLES[view]}
-        </span>
+        <button
+          onClick={() => setView("dashboard")}
+          className="text-sm font-bold tracking-[0.06em] uppercase text-stone-700 hover:text-cta transition-colors"
+        >
+          {appTitle}
+        </button>
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}

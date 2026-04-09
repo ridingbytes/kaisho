@@ -25,6 +25,7 @@ from .routers import (
     ws as ws_router,
 )
 from .routers import settings as settings_router
+from ..cron.scheduler import build_scheduler
 from .watcher.service import watch_files
 
 
@@ -40,11 +41,17 @@ async def lifespan(app: FastAPI):
         cfg = reset_config()
     if cfg.PROFILE_DIR.is_dir():
         init_data_dir(cfg)
+
+    # Start cron scheduler
+    scheduler = build_scheduler(cfg.JOBS_FILE)
+    scheduler.start()
+
     watch_paths = get_backend().watch_paths
     task = asyncio.create_task(
         watch_files(*watch_paths)
     )
     yield
+    scheduler.shutdown(wait=False)
     task.cancel()
 
 

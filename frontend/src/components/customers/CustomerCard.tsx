@@ -9,9 +9,13 @@ import {
   X,
   Check,
 } from "lucide-react";
+import { ConfirmPopover } from "../common/ConfirmPopover";
 import { useState } from "react";
 import { navigateToClockDate } from "../../utils/clockNavigation";
-import { useUpdateCustomer } from "../../hooks/useCustomers";
+import {
+  useDeleteCustomer,
+  useUpdateCustomer,
+} from "../../hooks/useCustomers";
 import {
   useContracts,
   useAddContract,
@@ -156,6 +160,9 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
   const [startDate, setStartDate] = useState(contract.start_date);
   const [endDate, setEndDate] = useState(contract.end_date ?? "");
   const [notes, setNotes] = useState(contract.notes);
+  const [billable, setBillable] = useState(
+    contract.billable ?? true,
+  );
   const updateContract = useUpdateContract();
   const deleteContract = useDeleteContract();
 
@@ -176,6 +183,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
     setStartDate(contract.start_date);
     setEndDate(contract.end_date ?? "");
     setNotes(contract.notes);
+    setBillable(contract.billable ?? true);
     setEditing(true);
   }
 
@@ -194,6 +202,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
           start_date: startDate,
           end_date: endDate || null,
           notes,
+          billable,
         },
       },
       { onSuccess: () => setEditing(false) }
@@ -270,6 +279,15 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
           placeholder="Notes"
           className={fieldClass()}
         />
+        <label className="flex items-center gap-1.5 text-xs text-stone-700 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={billable}
+            onChange={(e) => setBillable(e.target.checked)}
+            className="rounded border-border text-cta focus:ring-cta"
+          />
+          Billable
+        </label>
         <div className="flex gap-1 justify-end">
           <button
             onClick={() => setEditing(false)}
@@ -311,6 +329,11 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             closed
           </span>
         )}
+        {contract.billable === false && (
+          <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/10 text-amber-600">
+            non-billable
+          </span>
+        )}
         <div className="hidden group-hover:flex gap-0.5 ml-auto">
           <button
             onClick={startEdit}
@@ -319,21 +342,23 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
           >
             <Pencil size={10} />
           </button>
-          <button
-            onClick={() => {
-              if (window.confirm(`Delete contract "${contract.name}"?`)) {
-                deleteContract.mutate({
-                  customerName,
-                  contractName: contract.name,
-                });
-              }
-            }}
+          <ConfirmPopover
+            onConfirm={() =>
+              deleteContract.mutate({
+                customerName,
+                contractName: contract.name,
+              })
+            }
             disabled={deleteContract.isPending}
-            className="p-0.5 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-            title="Delete"
           >
-            <X size={10} />
-          </button>
+            <button
+              disabled={deleteContract.isPending}
+              className="p-0.5 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              title="Delete"
+            >
+              <X size={10} />
+            </button>
+          </ConfirmPopover>
         </div>
       </div>
       {contract.budget > 0 && (
@@ -364,6 +389,7 @@ function AddContractForm({
   const [name, setName] = useState("");
   const [hours, setHours] = useState("");
   const [startDate, setStartDate] = useState(today);
+  const [billable, setBillable] = useState(true);
   const addContract = useAddContract();
 
   function handleSubmit(e: React.FormEvent) {
@@ -373,7 +399,12 @@ function AddContractForm({
     addContract.mutate(
       {
         customerName,
-        data: { name: name.trim(), budget: h, start_date: startDate },
+        data: {
+          name: name.trim(),
+          budget: h,
+          start_date: startDate,
+          billable,
+        },
       },
       { onSuccess: onDone }
     );
@@ -409,6 +440,15 @@ function AddContractForm({
         onChange={(e) => setStartDate(e.target.value)}
         className={fieldClass()}
       />
+      <label className="flex items-center gap-1.5 text-xs text-stone-700 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={billable}
+          onChange={(e) => setBillable(e.target.checked)}
+          className="rounded border-border text-cta focus:ring-cta"
+        />
+        Billable
+      </label>
       <div className="flex gap-1 justify-end">
         <button
           type="button"
@@ -686,18 +726,18 @@ function TimeEntryRow({
         >
           <Pencil size={10} />
         </button>
-        <button
-          onClick={() => {
-            if (window.confirm("Delete this time entry?")) {
-              deleteEntry.mutate(entry.start);
-            }
-          }}
+        <ConfirmPopover
+          onConfirm={() => deleteEntry.mutate(entry.start)}
           disabled={deleteEntry.isPending}
-          className="p-0.5 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-          title="Delete"
         >
-          <Trash2 size={10} />
-        </button>
+          <button
+            disabled={deleteEntry.isPending}
+            className="p-0.5 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            title="Delete"
+          >
+            <Trash2 size={10} />
+          </button>
+        </ConfirmPopover>
       </div>
     </div>
   );
@@ -878,6 +918,7 @@ export function CustomerCard({ customer: c }: Props) {
   const [booking, setBooking] = useState(false);
   const [form, setForm] = useState<EditState>(toEditState(c));
   const update = useUpdateCustomer();
+  const remove = useDeleteCustomer();
   const { data: settings } = useSettings();
   const customerTypes = settings?.customer_types ?? [];
 
@@ -923,6 +964,13 @@ export function CustomerCard({ customer: c }: Props) {
     ) => setForm((f) => ({ ...f, [key]: e.target.value }));
   }
 
+  function handleEditKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Escape") setEditing(false);
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      handleSave();
+    }
+  }
 
   return (
     <div
@@ -936,7 +984,10 @@ export function CustomerCard({ customer: c }: Props) {
     >
       {editing ? (
         /* Edit mode */
-        <div className="flex flex-col gap-2">
+        <div
+          className="flex flex-col gap-2"
+          onKeyDown={handleEditKeyDown}
+        >
           <div className="flex items-center gap-1.5">
             <label
               className="w-3.5 h-3.5 rounded-full shrink-0 cursor-pointer ring-1 ring-border hover:ring-cta transition-shadow"
@@ -1098,6 +1149,19 @@ export function CustomerCard({ customer: c }: Props) {
               >
                 <Pencil size={11} />
               </button>
+              <ConfirmPopover
+                label={`Delete ${c.name}?`}
+                onConfirm={() => remove.mutate(c.name)}
+                disabled={remove.isPending}
+              >
+                <button
+                  disabled={remove.isPending}
+                  className="p-1 rounded-md text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+                  title="Delete customer"
+                >
+                  <Trash2 size={11} />
+                </button>
+              </ConfirmPopover>
             </div>
           </div>
 

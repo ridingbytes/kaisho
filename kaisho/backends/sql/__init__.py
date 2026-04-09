@@ -130,6 +130,7 @@ class ContractRow(Base):
     start_date = Column(String, default="")
     end_date = Column(String, default="")
     notes = Column(Text, default="")
+    billable = Column(Boolean, default=True)
     customer_rel = relationship(
         "CustomerRow", back_populates="contracts"
     )
@@ -197,6 +198,9 @@ def _period_range(period: str) -> tuple[date, date]:
         return start, today
     if period == "month":
         start = today.replace(day=1)
+        return start, today
+    if period == "year":
+        start = today.replace(month=1, day=1)
         return start, today
     return date.min, date.max
 
@@ -358,6 +362,9 @@ def _contract_row_to_dict(row: ContractRow) -> dict:
         "start_date": row.start_date or "",
         "end_date": row.end_date or "",
         "notes": row.notes or "",
+        "billable": row.billable
+        if row.billable is not None
+        else True,
     }
 
 
@@ -1443,6 +1450,7 @@ class SqlCustomerBackend(CustomerBackend):
         budget,
         start_date,
         notes="",
+        billable=True,
     ) -> dict:
         session = self._eng.session()
         try:
@@ -1478,6 +1486,7 @@ class SqlCustomerBackend(CustomerBackend):
                 budget=budget,
                 start_date=start_date,
                 notes=notes,
+                billable=billable,
             )
             session.add(row)
             session.commit()
@@ -1504,7 +1513,7 @@ class SqlCustomerBackend(CustomerBackend):
                 return None
             for key in (
                 "name", "budget", "start_date",
-                "end_date", "notes",
+                "end_date", "notes", "billable",
             ):
                 if key in updates:
                     setattr(row, key, updates[key])
@@ -1521,6 +1530,25 @@ class SqlCustomerBackend(CustomerBackend):
             name, contract_name,
             {"end_date": end_date},
         )
+
+    def delete_customer(self, name) -> bool:
+        session = self._eng.session()
+        try:
+            row = (
+                session.query(CustomerRow)
+                .filter(
+                    func.lower(CustomerRow.name)
+                    == name.lower(),
+                )
+                .first()
+            )
+            if row is None:
+                return False
+            session.delete(row)
+            session.commit()
+            return True
+        finally:
+            session.close()
 
     def delete_contract(
         self, name, contract_name

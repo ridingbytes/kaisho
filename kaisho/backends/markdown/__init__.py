@@ -258,6 +258,9 @@ def _period_range(period: str) -> tuple[date, date]:
     if period == "month":
         start = today.replace(day=1)
         return start, today
+    if period == "year":
+        start = today.replace(month=1, day=1)
+        return start, today
     # "all" or any unknown period -- return widest range
     return date.min, date.max
 
@@ -1732,6 +1735,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         budget = con.get("budget", 0)
         con["used"] = hours
         con["rest"] = round(budget - hours, 2)
+        con.setdefault("billable", True)
         return con
 
     # -- queries -------------------------------------------------
@@ -1873,6 +1877,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         budget,
         start_date,
         notes="",
+        billable=True,
     ) -> dict:
         custs = self._load_customers()
         low = name.lower()
@@ -1892,6 +1897,7 @@ class MarkdownCustomerBackend(CustomerBackend):
                 "start_date": start_date,
                 "end_date": "",
                 "notes": notes,
+                "billable": billable,
             }
             contracts.append(contract)
             self._save_customers(custs)
@@ -1933,6 +1939,18 @@ class MarkdownCustomerBackend(CustomerBackend):
             name, contract_name,
             {"end_date": end_date},
         )
+
+    def delete_customer(self, name) -> bool:
+        custs = self._load_customers()
+        low = name.lower()
+        new = [
+            c for c in custs
+            if c.get("name", "").lower() != low
+        ]
+        if len(new) == len(custs):
+            return False
+        self._save_customers(new)
+        return True
 
     def delete_contract(
         self, name, contract_name

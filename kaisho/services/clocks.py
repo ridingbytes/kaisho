@@ -156,6 +156,8 @@ def _in_period(
     if period == "month":
         start, end = _month_range(today)
         return start <= entry_date <= end
+    if period == "year":
+        return entry_date.year == today.year
     return True
 
 

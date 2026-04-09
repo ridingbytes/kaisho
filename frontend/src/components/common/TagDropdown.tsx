@@ -1,5 +1,6 @@
 import { Tag, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { tagBadgeStyle } from "../../utils/tagColors";
 
 interface TagDef {
   name: string;
@@ -56,8 +57,8 @@ export function TagDropdown({
         return (
           <span
             key={tagName}
-            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold text-white"
-            style={{ backgroundColor: def?.color ?? "#64748b" }}
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+            style={tagBadgeStyle(def?.color)}
           >
             {tagName}
             {!addOnly && (

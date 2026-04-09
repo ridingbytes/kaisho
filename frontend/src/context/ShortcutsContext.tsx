@@ -9,6 +9,7 @@ import {
 export interface ShortcutsConfig {
   commandPalette: string;
   views: Record<string, string>;
+  actions: Record<string, string>;
 }
 
 export const DEFAULT_SHORTCUTS: ShortcutsConfig = {
@@ -26,6 +27,14 @@ export const DEFAULT_SHORTCUTS: ShortcutsConfig = {
     settings: "s",
     advisor: "a",
   },
+  actions: {
+    "new:board": "shift+b",
+    "new:inbox": "shift+i",
+    "new:notes": "shift+n",
+    "new:clocks": "shift+t",
+    "new:knowledge": "shift+k",
+    "new:customers": "shift+c",
+  },
 };
 
 const STORAGE_KEY = "kaisho_shortcuts";
@@ -39,6 +48,7 @@ function loadConfig(): ShortcutsConfig {
         commandPalette:
           saved.commandPalette ?? DEFAULT_SHORTCUTS.commandPalette,
         views: { ...DEFAULT_SHORTCUTS.views, ...(saved.views ?? {}) },
+        actions: { ...DEFAULT_SHORTCUTS.actions, ...(saved.actions ?? {}) },
       };
     }
   } catch {
@@ -84,6 +94,7 @@ export function displayShortcut(shortcut: string): string {
 interface ShortcutsContextValue {
   config: ShortcutsConfig;
   setViewShortcut: (view: string, key: string) => void;
+  setActionShortcut: (action: string, key: string) => void;
   setCommandPaletteShortcut: (key: string) => void;
   resetToDefaults: () => void;
 }
@@ -106,6 +117,20 @@ export function ShortcutsProvider({
     (view: string, key: string) => {
       setConfig((prev) => {
         const next = { ...prev, views: { ...prev.views, [view]: key } };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        return next;
+      });
+    },
+    []
+  );
+
+  const setActionShortcut = useCallback(
+    (action: string, key: string) => {
+      setConfig((prev) => {
+        const next = {
+          ...prev,
+          actions: { ...prev.actions, [action]: key },
+        };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
         return next;
       });
@@ -136,10 +161,11 @@ export function ShortcutsProvider({
     () => ({
       config,
       setViewShortcut,
+      setActionShortcut,
       setCommandPaletteShortcut,
       resetToDefaults,
     }),
-    [config, setViewShortcut, setCommandPaletteShortcut, resetToDefaults]
+    [config, setViewShortcut, setActionShortcut, setCommandPaletteShortcut, resetToDefaults]
   );
 
   return (

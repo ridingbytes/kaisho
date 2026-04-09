@@ -1,4 +1,5 @@
 import ReactDOM from "react-dom";
+import { ConfirmPopover } from "../common/ConfirmPopover";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -26,6 +27,12 @@ import { RelDate } from "../common/RelDate";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
+import {
+  LinkOverlay,
+  handleLinkClick,
+  useLinkOverlay,
+} from "../common/LinkPopover";
+import { tagBadgeStyle } from "../../utils/tagColors";
 import { Markdown } from "../common/Markdown";
 import { TagDropdown } from "../common/TagDropdown";
 import {
@@ -181,18 +188,18 @@ function ClockEntryRow({
       >
         <X size={9} />
       </button>
-      <button
-        onClick={() => {
-          if (window.confirm("Delete this time entry?")) {
-            deleteEntry.mutate(entry.start);
-          }
-        }}
+      <ConfirmPopover
+        onConfirm={() => deleteEntry.mutate(entry.start)}
         disabled={deleteEntry.isPending}
-        title="Delete entry"
-        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-red-400 disabled:opacity-40"
       >
-        <Trash2 size={9} />
-      </button>
+        <button
+          disabled={deleteEntry.isPending}
+          title="Delete entry"
+          className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-red-400 disabled:opacity-40"
+        >
+          <Trash2 size={9} />
+        </button>
+      </ConfirmPopover>
     </li>
   );
 }
@@ -438,6 +445,7 @@ interface TaskCardProps {
   statusColor: string;
   isDragOverlay?: boolean;
   onTagClick?: (tag: string) => void;
+  onCustomerClick?: (customer: string) => void;
 }
 
 export function TaskCard({
@@ -445,6 +453,7 @@ export function TaskCard({
   statusColor,
   isDragOverlay = false,
   onTagClick,
+  onCustomerClick,
 }: TaskCardProps) {
   const {
     attributes,
@@ -475,25 +484,14 @@ export function TaskCard({
   const [editBody, setEditBody] = useState("");
   const [editGithubUrl, setEditGithubUrl] = useState("");
   const [bodyExpanded, setBodyExpanded] = useState(false);
-  const [confirmArchive, setConfirmArchive] = useState(false);
-  const confirmRef = useRef<HTMLDivElement>(null);
+  const {
+    overlayUrl,
+    openOverlay,
+    closeOverlay,
+  } = useLinkOverlay();
   const updateTask = useUpdateTask();
   const setTaskTags = useSetTaskTags();
   const archiveTask = useArchiveTask();
-
-  useEffect(() => {
-    if (!confirmArchive) return;
-    function handleClick(e: MouseEvent) {
-      if (
-        confirmRef.current &&
-        !confirmRef.current.contains(e.target as Node)
-      ) {
-        setConfirmArchive(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [confirmArchive]);
   const { data: settings } = useSettings();
   const allTags = settings?.tags ?? [];
 
@@ -659,11 +657,18 @@ export function TaskCard({
             <>
               {task.customer && (
                 <div className="mb-1.5 flex items-center gap-1.5">
-                  <span
+                  <button
+                    onPointerDown={(e) =>
+                      e.stopPropagation()
+                    }
+                    onClick={() =>
+                      onCustomerClick?.(task.customer!)
+                    }
                     className={[
                       "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded",
                       "text-[10px] font-semibold tracking-wider uppercase",
                       "bg-cta-muted text-cta-hover",
+                      "hover:bg-cta/10 transition-colors cursor-pointer",
                     ].join(" ")}
                   >
                     <span
@@ -673,7 +678,7 @@ export function TaskCard({
                       }}
                     />
                     {task.customer}
-                  </span>
+                  </button>
                   {isTimerRunning
                     && activeTimer?.start && (
                     <TimerBadge
@@ -717,7 +722,10 @@ export function TaskCard({
                       className="mt-1 pl-1 border-l border-border-subtle"
                       onPointerDown={(e) => e.stopPropagation()}
                     >
-                      <Markdown className="text-xs text-stone-700 [&_p]:mb-1 [&_p]:leading-relaxed">
+                      <Markdown
+                        className="text-xs text-stone-700 [&_p]:mb-1 [&_p]:leading-relaxed break-words [&_a]:break-all"
+                        onLinkClick={openOverlay}
+                      >
                         {task.body}
                       </Markdown>
                     </div>
@@ -732,6 +740,9 @@ export function TaskCard({
                     rel="noopener noreferrer"
                     onPointerDown={(e) =>
                       e.stopPropagation()
+                    }
+                    onClick={(e) =>
+                      handleLinkClick(e, openOverlay)
                     }
                     className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-overlay border border-border-subtle text-stone-700 hover:text-cta hover:border-cta transition-colors"
                     title={task.github_url}
@@ -772,10 +783,8 @@ export function TaskCard({
                           onClick={() =>
                             onTagClick?.(tagName)
                           }
-                          className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white hover:opacity-80 transition-opacity"
-                          style={{
-                            backgroundColor: def.color,
-                          }}
+                          className="px-1.5 py-0.5 rounded text-[10px] font-semibold hover:opacity-80 transition-opacity"
+                          style={tagBadgeStyle(def.color)}
                         >
                           {tagName}
                         </button>
@@ -891,46 +900,19 @@ export function TaskCard({
             >
               <Pencil size={11} />
             </button>
-            <div className="relative" ref={confirmRef}>
+            <ConfirmPopover
+              label="Archive?"
+              onConfirm={() => archiveTask.mutate(task.id)}
+              disabled={archiveTask.isPending}
+            >
               <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setConfirmArchive(true);
-                }}
                 disabled={archiveTask.isPending}
                 className="p-1 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
                 title="Archive"
               >
                 <Trash2 size={11} />
               </button>
-              {confirmArchive && (
-                <div className="absolute right-0 top-full mt-1 z-50 flex items-center gap-1 px-2 py-1 rounded bg-surface-overlay border border-border shadow-lg whitespace-nowrap">
-                  <span className="text-[10px] text-stone-700">
-                    Archive?
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      archiveTask.mutate(task.id);
-                      setConfirmArchive(false);
-                    }}
-                    className="p-0.5 rounded text-red-400 hover:bg-red-500/10"
-                  >
-                    <Check size={10} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setConfirmArchive(false);
-                    }}
-                    className="p-0.5 rounded text-stone-600 hover:text-stone-900"
-                  >
-                    <X size={10} />
-                  </button>
-                </div>
-              )}
-            </div>
+            </ConfirmPopover>
           </div>
         )}
       </div>
@@ -986,6 +968,13 @@ export function TaskCard({
             </div>
           </div>
         </div>
+      )}
+
+      {overlayUrl && (
+        <LinkOverlay
+          url={overlayUrl}
+          onClose={closeOverlay}
+        />
       )}
     </div>
   );

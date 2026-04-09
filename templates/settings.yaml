@@ -41,7 +41,7 @@ tags:
   color: '#ef4444'
   description: Bug or issue
 - name: '@github'
-  color: '#18181b'
+  color: '#6e7781'
   description: GitHub related (PR, review)
 - name: '@prio-high'
   color: '#dc2626'

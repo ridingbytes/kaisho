@@ -1688,9 +1688,55 @@ function ProfilesTab() {
   );
 }
 
+function AppTitleSection() {
+  const [title, setTitle] = useState(
+    () => localStorage.getItem("kaisho_app_title") || "",
+  );
+
+  function commit() {
+    const val = title.trim();
+    if (val) {
+      localStorage.setItem("kaisho_app_title", val);
+    } else {
+      localStorage.removeItem("kaisho_app_title");
+    }
+    window.dispatchEvent(new Event("app-title-changed"));
+  }
+
+  return (
+    <section>
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        App Title
+      </h2>
+      <div className="flex items-center gap-3">
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+          }}
+          placeholder="KAISHO"
+          className={[
+            "px-3 py-1.5 rounded text-sm w-48",
+            "bg-surface-raised border border-border",
+            "text-stone-900 placeholder-stone-400",
+            "focus:outline-none focus:border-cta",
+          ].join(" ")}
+        />
+        <span className="text-[10px] text-stone-400">
+          Shown in the header next to the logo
+        </span>
+      </div>
+    </section>
+  );
+}
+
 function GeneralTab() {
   return (
     <div className="flex flex-col gap-8">
+      <AppTitleSection />
       <UserProfileSection />
       <ProfilesTab />
     </div>
@@ -1763,6 +1809,15 @@ const SHORTCUT_ROWS: { key: string; label: string }[] = [
   { key: "advisor", label: "Advisor" },
 ];
 
+const ACTION_ROWS: { key: string; label: string }[] = [
+  { key: "new:board", label: "New Task" },
+  { key: "new:inbox", label: "New Inbox Item" },
+  { key: "new:notes", label: "New Note" },
+  { key: "new:clocks", label: "New Clock Entry" },
+  { key: "new:knowledge", label: "New KB File" },
+  { key: "new:customers", label: "New Customer" },
+];
+
 function KeyCapture({
   onCapture,
   onCancel,
@@ -1802,24 +1857,163 @@ function ShortcutsSection() {
   const {
     config,
     setViewShortcut,
+    setActionShortcut,
     setCommandPaletteShortcut,
     resetToDefaults,
   } = useShortcutsContext();
-  const [recording, setRecording] = useState<string | null>(null);
+  const [recording, setRecording] = useState<string | null>(
+    null,
+  );
+
+  function findConflict(
+    s: string, excludeKey: string,
+  ): string | null {
+    if (
+      excludeKey !== "_palette" &&
+      config.commandPalette === s
+    ) return "Command palette";
+    for (const r of SHORTCUT_ROWS) {
+      if (r.key !== excludeKey && config.views[r.key] === s)
+        return r.label;
+    }
+    for (const r of ACTION_ROWS) {
+      if (
+        r.key !== excludeKey &&
+        config.actions[r.key] === s
+      ) return r.label;
+    }
+    return null;
+  }
 
   function handleCapture(rowKey: string, s: string) {
+    const conflict = findConflict(s, rowKey);
+    if (conflict) {
+      // Clear the conflicting shortcut
+      const cKey = [
+        ...(config.commandPalette === s
+          ? [{ key: "_palette" }] : []),
+        ...SHORTCUT_ROWS.filter(
+          (r) => config.views[r.key] === s,
+        ),
+        ...ACTION_ROWS.filter(
+          (r) => config.actions[r.key] === s,
+        ),
+      ].find((r) => r.key !== rowKey);
+      if (cKey) {
+        if (cKey.key === "_palette") {
+          setCommandPaletteShortcut("");
+        } else if (cKey.key.startsWith("new:")) {
+          setActionShortcut(cKey.key, "");
+        } else {
+          setViewShortcut(cKey.key, "");
+        }
+      }
+    }
     if (rowKey === "_palette") {
       setCommandPaletteShortcut(s);
+    } else if (rowKey.startsWith("new:")) {
+      setActionShortcut(rowKey, s);
     } else {
       setViewShortcut(rowKey, s);
     }
     setRecording(null);
   }
 
-  const allRows = [
-    { key: "_palette", label: "Command palette" },
-    ...SHORTCUT_ROWS,
-  ];
+  function currentFor(key: string): string {
+    if (key === "_palette") return config.commandPalette;
+    if (key.startsWith("new:"))
+      return config.actions[key] ?? "";
+    return config.views[key] ?? "";
+  }
+
+  function defaultFor(key: string): string {
+    if (key === "_palette")
+      return DEFAULT_SHORTCUTS.commandPalette;
+    if (key.startsWith("new:"))
+      return DEFAULT_SHORTCUTS.actions[key] ?? "";
+    return DEFAULT_SHORTCUTS.views[key] ?? "";
+  }
+
+  function resetOne(key: string) {
+    const def = defaultFor(key);
+    if (key === "_palette") {
+      setCommandPaletteShortcut(def);
+    } else if (key.startsWith("new:")) {
+      setActionShortcut(key, def);
+    } else {
+      setViewShortcut(key, def);
+    }
+  }
+
+  function renderGroup(
+    title: string,
+    rows: { key: string; label: string }[],
+  ) {
+    return (
+      <>
+        <h3 className="text-[10px] font-semibold tracking-wider uppercase text-stone-500 mt-4 mb-1.5">
+          {title}
+        </h3>
+        <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+          {rows.map((row, i) => {
+            const current = currentFor(row.key);
+            const isDefault = current === defaultFor(row.key);
+            const isRecording = recording === row.key;
+
+            return (
+              <div
+                key={row.key}
+                className={[
+                  "group flex items-center gap-3",
+                  "px-4 py-2.5",
+                  i < rows.length - 1
+                    ? "border-b border-border-subtle"
+                    : "",
+                ].join(" ")}
+              >
+                <span className="text-sm text-stone-800 flex-1">
+                  {row.label}
+                </span>
+                {!isDefault && (
+                  <button
+                    onClick={() => resetOne(row.key)}
+                    className="text-[10px] text-stone-400 hover:text-stone-700 transition-colors shrink-0"
+                    title="Reset this shortcut"
+                  >
+                    reset
+                  </button>
+                )}
+                {isRecording ? (
+                  <KeyCapture
+                    onCapture={(s) =>
+                      handleCapture(row.key, s)
+                    }
+                    onCancel={() => setRecording(null)}
+                  />
+                ) : (
+                  <button
+                    onClick={() => setRecording(row.key)}
+                    className="flex items-center gap-2 group/edit"
+                    title="Click to reassign"
+                  >
+                    <kbd className="text-[10px] font-mono text-stone-700 border border-border rounded px-1.5 py-0.5 group-hover/edit:border-cta group-hover/edit:text-cta transition-colors">
+                      {current
+                        ? displayShortcut(current)
+                        : "—"}
+                    </kbd>
+                    <Pencil
+                      size={10}
+                      className="text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                    />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </>
+    );
+  }
 
   return (
     <section>
@@ -1836,76 +2030,14 @@ function ShortcutsSection() {
           Reset
         </button>
       </div>
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
-        {allRows.map((row, i) => {
-          const current =
-            row.key === "_palette"
-              ? config.commandPalette
-              : config.views[row.key] ?? "";
-          const isDefault =
-            row.key === "_palette"
-              ? current === DEFAULT_SHORTCUTS.commandPalette
-              : current === (DEFAULT_SHORTCUTS.views[row.key] ?? "");
-          const isRecording = recording === row.key;
-
-          return (
-            <div
-              key={row.key}
-              className={[
-                "group flex items-center gap-3 px-4 py-2.5",
-                i < allRows.length - 1
-                  ? "border-b border-border-subtle"
-                  : "",
-              ].join(" ")}
-            >
-              <span className="text-sm text-stone-800 flex-1">
-                {row.label}
-              </span>
-              {!isDefault && (
-                <button
-                  onClick={() =>
-                    row.key === "_palette"
-                      ? setCommandPaletteShortcut(
-                          DEFAULT_SHORTCUTS.commandPalette
-                        )
-                      : setViewShortcut(
-                          row.key,
-                          DEFAULT_SHORTCUTS.views[row.key] ?? ""
-                        )
-                  }
-                  className="text-[10px] text-stone-400 hover:text-stone-700 transition-colors shrink-0"
-                  title="Reset this shortcut"
-                >
-                  reset
-                </button>
-              )}
-              {isRecording ? (
-                <KeyCapture
-                  onCapture={(s) => handleCapture(row.key, s)}
-                  onCancel={() => setRecording(null)}
-                />
-              ) : (
-                <button
-                  onClick={() => setRecording(row.key)}
-                  className="flex items-center gap-2 group/edit"
-                  title="Click to reassign"
-                >
-                  <kbd className="text-[10px] font-mono text-stone-700 border border-border rounded px-1.5 py-0.5 group-hover/edit:border-cta group-hover/edit:text-cta transition-colors">
-                    {current ? displayShortcut(current) : "—"}
-                  </kbd>
-                  <Pencil
-                    size={10}
-                    className="text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                  />
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {renderGroup("General", [
+        { key: "_palette", label: "Command palette" },
+      ])}
+      {renderGroup("Navigate", SHORTCUT_ROWS)}
+      {renderGroup("Actions", ACTION_ROWS)}
       <p className="mt-2 text-[10px] text-stone-400">
-        Shortcuts fire when no text field is focused. Click a shortcut
-        to reassign it by pressing any key.
+        Shortcuts fire when no text field is focused. Click a
+        shortcut to reassign it by pressing any key.
       </p>
     </section>
   );

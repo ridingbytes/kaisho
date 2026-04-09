@@ -79,10 +79,11 @@ class OrgCustomerBackend(CustomerBackend):
         budget: float,
         start_date: str,
         notes: str = "",
+        billable: bool = True,
     ) -> dict:
         return customers.add_contract(
             self._kunden_file, name, contract_name,
-            budget, start_date, notes,
+            budget, start_date, notes, billable,
         )
 
     def update_contract(
@@ -97,6 +98,11 @@ class OrgCustomerBackend(CustomerBackend):
     ) -> dict | None:
         return customers.close_contract(
             self._kunden_file, name, contract_name, end_date
+        )
+
+    def delete_customer(self, name: str) -> bool:
+        return customers.delete_customer(
+            self._kunden_file, name
         )
 
     def delete_contract(self, name: str, contract_name: str) -> bool:

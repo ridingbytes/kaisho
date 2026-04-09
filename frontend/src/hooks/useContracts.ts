@@ -29,6 +29,7 @@ export function useAddContract() {
         budget: number;
         start_date: string;
         notes?: string;
+        billable?: boolean;
       };
     }) => addContract(customerName, data),
     onSuccess: (_data, vars) => {
@@ -57,6 +58,7 @@ export function useUpdateContract() {
         start_date?: string;
         end_date?: string | null;
         notes?: string;
+        billable?: boolean;
       };
     }) => updateContract(customerName, contractName, updates),
     onSuccess: (_data, vars) => {

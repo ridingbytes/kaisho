@@ -614,6 +614,32 @@ TOOL_DEFS: list[dict] = [
             "required": ["command"],
         },
     },
+    {
+        "name": "get_time_insights",
+        "description": (
+            "Get time tracking insights: daily activity, "
+            "billable vs non-billable split, and hours "
+            "by customer. Use this to analyze how time "
+            "was spent and give actionable advice on "
+            "time allocation and priorities."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "period": {
+                    "type": "string",
+                    "enum": [
+                        "week", "month",
+                        "quarter", "year",
+                    ],
+                    "description": (
+                        "Time period to analyze"
+                    ),
+                },
+            },
+            "required": ["period"],
+        },
+    },
 ]
 
 
@@ -858,6 +884,11 @@ def _dispatch(name: str, args: dict) -> dict:
     if name == "execute_cli":
         return _execute_cli(
             args.get("command", ""),
+        )
+
+    if name == "get_time_insights":
+        return _get_time_insights(
+            args.get("period", "month"),
         )
 
     return {"error": f"unknown tool: {name!r}"}
@@ -1120,3 +1151,72 @@ def _execute_cli(command: str) -> dict:
             f"{err}",
         }
     return {"output": output}
+
+
+def _get_time_insights(period: str) -> dict:
+    """Return time insights for the advisor."""
+    from ..api.routers.dashboard import (
+        _billable_contracts,
+        _is_billable,
+        _period_range,
+    )
+    from ..backends import get_backend
+
+    backend = get_backend()
+    start, end = _period_range(period)
+    entries = backend.clocks.list_entries(
+        period="all", from_date=start, to_date=end,
+    )
+    billable_set = _billable_contracts(backend)
+
+    billable_min = 0
+    non_billable_min = 0
+    by_cust: dict[str, dict] = {}
+    for e in entries:
+        mins = e.get("duration_minutes") or 0
+        cust = e.get("customer", "Unknown")
+        is_bill = _is_billable(e, billable_set)
+        if is_bill:
+            billable_min += mins
+        else:
+            non_billable_min += mins
+        if cust not in by_cust:
+            by_cust[cust] = {
+                "total_min": 0,
+                "billable_min": 0,
+            }
+        by_cust[cust]["total_min"] += mins
+        if is_bill:
+            by_cust[cust]["billable_min"] += mins
+
+    customers = sorted(
+        [{"name": k, **v} for k, v in by_cust.items()],
+        key=lambda x: x["total_min"],
+        reverse=True,
+    )
+
+    total = billable_min + non_billable_min
+    return {
+        "period": period,
+        "start_date": start.isoformat(),
+        "end_date": end.isoformat(),
+        "total_hours": round(total / 60, 1),
+        "billable_hours": round(billable_min / 60, 1),
+        "non_billable_hours": round(
+            non_billable_min / 60, 1,
+        ),
+        "billable_pct": (
+            round(billable_min / total * 100)
+            if total > 0 else 0
+        ),
+        "by_customer": [
+            {
+                "name": c["name"],
+                "hours": round(c["total_min"] / 60, 1),
+                "billable_hours": round(
+                    c["billable_min"] / 60, 1,
+                ),
+            }
+            for c in customers
+        ],
+    }

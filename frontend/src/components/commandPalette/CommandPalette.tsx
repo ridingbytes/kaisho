@@ -29,6 +29,8 @@ interface Command {
   icon: React.ElementType;
   /** If set, schedules this action in the target panel after navigating. */
   panelAction?: string;
+  /** Key into config.actions for the shortcut display. */
+  actionKey?: string;
 }
 
 const COMMANDS: Command[] = [
@@ -45,11 +47,12 @@ const COMMANDS: Command[] = [
   { id: "goto-settings", label: "Settings", hint: "Go to", view: "settings", icon: Settings },
   { id: "goto-advisor", label: "Advisor", hint: "Go to", view: "advisor", icon: Bot },
   // Create
-  { id: "new-note", label: "New Note", hint: "Create", view: "notes", icon: Plus, panelAction: "open_form" },
-  { id: "new-task", label: "New Task", hint: "Create", view: "board", icon: Plus },
-  { id: "new-inbox", label: "New Inbox Item", hint: "Create", view: "inbox", icon: Plus },
-  { id: "new-customer", label: "New Customer", hint: "Create", view: "customers", icon: Plus, panelAction: "open_form" },
-  { id: "new-clock", label: "New Clock Entry", hint: "Create", view: "clocks", icon: Plus, panelAction: "open_form" },
+  { id: "new-task", label: "New Task", hint: "Create", view: "board", icon: Plus, panelAction: "open_form", actionKey: "new:board" },
+  { id: "new-inbox", label: "New Inbox Item", hint: "Create", view: "inbox", icon: Plus, panelAction: "open_form", actionKey: "new:inbox" },
+  { id: "new-note", label: "New Note", hint: "Create", view: "notes", icon: Plus, panelAction: "open_form", actionKey: "new:notes" },
+  { id: "new-clock", label: "New Clock Entry", hint: "Create", view: "clocks", icon: Plus, panelAction: "open_form", actionKey: "new:clocks" },
+  { id: "new-kb", label: "New KB File", hint: "Create", view: "knowledge", icon: Plus, panelAction: "open_form", actionKey: "new:knowledge" },
+  { id: "new-customer", label: "New Customer", hint: "Create", view: "customers", icon: Plus, panelAction: "open_form", actionKey: "new:customers" },
 ];
 
 interface Props {
@@ -160,9 +163,11 @@ export function CommandPalette({ onNavigate, onClose }: Props) {
             )}
             {filtered.map((cmd, idx) => {
               const Icon = cmd.icon;
-              // Show nav shortcut only for goto commands (no panelAction)
-              const shortcut =
-                !cmd.panelAction ? config.views[cmd.view] : undefined;
+              const shortcut = cmd.actionKey
+                ? config.actions[cmd.actionKey]
+                : !cmd.panelAction
+                  ? config.views[cmd.view]
+                  : undefined;
               const isActive = idx === activeIdx;
               return (
                 <button

@@ -343,6 +343,7 @@ class CustomerBackend(ABC):
         budget: float,
         start_date: str,
         notes: str = "",
+        billable: bool = True,
     ) -> dict:
         """Add a named contract to a customer."""
 
@@ -363,6 +364,10 @@ class CustomerBackend(ABC):
         end_date: str,
     ) -> dict | None:
         """Close a contract by setting its end_date."""
+
+    @abstractmethod
+    def delete_customer(self, name: str) -> bool:
+        """Delete a customer. Returns False if not found."""
 
     @abstractmethod
     def delete_contract(self, name: str, contract_name: str) -> bool:

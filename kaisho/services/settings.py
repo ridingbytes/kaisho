@@ -3,7 +3,7 @@ from pathlib import Path
 import yaml
 
 DEFAULT_CUSTOMER_TYPES: list[str] = [
-    "LEAD", "CLIENT", "PROSPECT", "PARTNER",
+    "LEAD", "CLIENT", "PROSPECT", "PARTNER", "INTERN",
 ]
 
 DEFAULT_INBOX_TYPES: list[str] = [

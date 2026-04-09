@@ -26,6 +26,7 @@ def _heading_to_contract(heading: "Heading", customer_name: str) -> dict:
     props = heading.properties
     budget = _extract_hours(props.get("BUDGET", "0"))
     used_offset = _extract_hours(props.get("USED", "0"))
+    billable_raw = props.get("BILLABLE", "true").lower()
     return {
         "customer": customer_name,
         "name": heading.title.strip(),
@@ -36,6 +37,7 @@ def _heading_to_contract(heading: "Heading", customer_name: str) -> dict:
         "used_offset": used_offset,
         "used": 0.0,
         "rest": budget,
+        "billable": billable_raw != "false",
     }
 
 
@@ -360,6 +362,7 @@ def add_contract(
     budget: float,
     start_date: str,
     notes: str = "",
+    billable: bool = True,
 ) -> dict:
     """Add a named contract to a customer."""
     result = _find_customer_heading(kunden_file, customer_name)
@@ -377,6 +380,8 @@ def add_contract(
         "BUDGET": f"{budget}h",
         "START": start_date,
     }
+    if not billable:
+        props["BILLABLE"] = "false"
     new_contract = Heading(
         level=3,
         keyword="CONTRACT",
@@ -431,6 +436,11 @@ def update_contract(
                 if updates["notes"]
                 else []
             )
+        if "billable" in updates:
+            if updates["billable"]:
+                child.properties.pop("BILLABLE", None)
+            else:
+                child.properties["BILLABLE"] = "false"
         child.dirty = True
         h2.dirty = True
         write_org_file(kunden_file, org_file)
@@ -449,6 +459,23 @@ def close_contract(
         kunden_file, customer_name, contract_name,
         {"end_date": end_date},
     )
+
+
+def delete_customer(
+    kunden_file: Path,
+    customer_name: str,
+) -> bool:
+    """Delete a customer heading from the org file."""
+    org_file = parse_org_file(kunden_file, CUSTOMER_KEYWORDS)
+    name_lower = customer_name.lower()
+    for h1 in org_file.headings:
+        for i, h2 in enumerate(h1.children):
+            if h2.title.strip().lower() == name_lower:
+                h1.children.pop(i)
+                h1.dirty = True
+                write_org_file(kunden_file, org_file)
+                return True
+    return False
 
 
 def delete_contract(

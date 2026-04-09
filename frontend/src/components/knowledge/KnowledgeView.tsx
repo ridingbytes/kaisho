@@ -8,6 +8,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { ConfirmPopover } from "../common/ConfirmPopover";
 import { useEffect, useRef, useState } from "react";
 import {
   useDeleteKnowledgeFile,
@@ -376,7 +377,6 @@ function EditorPanel({
 }: EditorPanelProps) {
   const [content, setContent] = useState(initialContent);
   const [preview, setPreview] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const save = useSaveKnowledgeFile();
   const remove = useDeleteKnowledgeFile();
@@ -433,34 +433,17 @@ function EditorPanel({
           >
             {preview ? "Edit" : "Preview"}
           </button>
-          {!confirmDelete ? (
+          <ConfirmPopover
+            onConfirm={handleDelete}
+            disabled={remove.isPending}
+          >
             <button
-              onClick={() => setConfirmDelete(true)}
               className="p-1 rounded text-stone-500 hover:text-red-400"
               title="Delete file"
             >
               <Trash2 size={13} />
             </button>
-          ) : (
-            <>
-              <span className="text-xs text-red-400">
-                Delete?
-              </span>
-              <button
-                onClick={handleDelete}
-                disabled={remove.isPending}
-                className="p-1 rounded text-red-400 hover:bg-red-500/10 disabled:opacity-40"
-              >
-                <Check size={13} />
-              </button>
-              <button
-                onClick={() => setConfirmDelete(false)}
-                className="p-1 rounded text-stone-600 hover:text-stone-900"
-              >
-                <X size={13} />
-              </button>
-            </>
-          )}
+          </ConfirmPopover>
           <button
             onClick={onClose}
             className="p-1 rounded text-stone-500 hover:text-stone-900"
@@ -570,26 +553,6 @@ function TreeNodeRow({
   const indent = depth * 16;
   const [renaming, setRenaming] = useState(false);
   const [renamePath, setRenamePath] = useState("");
-  const [confirmingDelete, setConfirmingDelete] =
-    useState(false);
-  const deleteRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!confirmingDelete) return;
-    function handleClick(e: MouseEvent) {
-      if (
-        deleteRef.current &&
-        !deleteRef.current.contains(e.target as Node)
-      ) {
-        setConfirmingDelete(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () =>
-      document.removeEventListener(
-        "mousedown", handleClick
-      );
-  }, [confirmingDelete]);
 
   if (node.kind === "leaf") {
     const isSelected = selectedPath === node.path;
@@ -682,12 +645,10 @@ function TreeNodeRow({
                 ))}
             </select>
           )}
-          <div className="relative" ref={deleteRef}>
+          <ConfirmPopover
+            onConfirm={() => onDelete(node.path)}
+          >
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setConfirmingDelete(true);
-              }}
               className={
                 "p-0.5 rounded text-stone-400 " +
                 "hover:text-red-400 transition-colors"
@@ -696,47 +657,7 @@ function TreeNodeRow({
             >
               <Trash2 size={9} />
             </button>
-            {confirmingDelete && (
-              <div
-                className={
-                  "absolute right-0 top-full mt-1 " +
-                  "z-50 flex items-center gap-1 " +
-                  "px-2 py-1 rounded bg-surface-overlay " +
-                  "border border-border shadow-lg " +
-                  "whitespace-nowrap"
-                }
-              >
-                <span className="text-[10px] text-stone-700">
-                  Delete?
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(node.path);
-                    setConfirmingDelete(false);
-                  }}
-                  className={
-                    "p-0.5 rounded text-red-400 " +
-                    "hover:bg-red-500/10"
-                  }
-                >
-                  <Check size={10} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setConfirmingDelete(false);
-                  }}
-                  className={
-                    "p-0.5 rounded text-stone-600 " +
-                    "hover:text-stone-900"
-                  }
-                >
-                  <X size={10} />
-                </button>
-              </div>
-            )}
-          </div>
+          </ConfirmPopover>
         </div>
       </div>
     );

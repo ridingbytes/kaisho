@@ -10,7 +10,11 @@ const DIRECTIONS = [
 ] as const;
 
 
-export function AddInboxForm() {
+export function AddInboxForm({
+  onClose,
+}: {
+  onClose?: () => void;
+}) {
   const { data: settings } = useSettings();
   const types: string[] =
     settings?.inbox_types ?? [
@@ -48,14 +52,20 @@ export function AddInboxForm() {
           setBody("");
           setChannel("");
           setDirection("");
+          onClose?.();
         },
       }
     );
   }
 
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Escape") onClose?.();
+  }
+
   return (
     <form
       onSubmit={handleSubmit}
+      onKeyDown={handleKeyDown}
       className="flex flex-col gap-2 p-4 border-b border-border-subtle bg-surface-card/40"
     >
       <div className="flex gap-2">

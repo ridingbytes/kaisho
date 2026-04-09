@@ -1,5 +1,8 @@
 import {
+  ArrowDown,
+  ArrowUp,
   Check,
+  Copy,
   Download,
   Pencil,
   Plus,
@@ -7,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
@@ -24,12 +28,24 @@ import {
   exportClocksCsv,
   exportClocksExcel,
 } from "../../utils/exportClocks";
+import { navigateToClockDate } from "../../utils/clockNavigation";
 import { registerPanelAction } from "../../utils/panelActions";
 import { usePendingSearch, useSetView } from "../../context/ViewContext";
 import { SearchInput } from "../common/SearchInput";
 import type { ClockEntry, Task } from "../../types";
 
-type Period = "today" | "week" | "month";
+type Period = "today" | "week" | "month" | "year";
+
+type SortCol =
+  | "date"
+  | "time"
+  | "customer"
+  | "contract"
+  | "task"
+  | "description"
+  | "duration";
+type SortDir = "asc" | "desc";
+type SortState = { col: SortCol; dir: SortDir };
 
 const inputCls =
   "bg-surface-raised border border-border rounded px-2 py-1 text-sm " +
@@ -252,7 +268,7 @@ interface EditFormProps {
 }
 
 function EditForm({ entry, onClose }: EditFormProps) {
-  const [entryDate, setEntryDate] = useState(formatDate(entry.start));
+  const [entryDate, setEntryDate] = useState(entry.start.slice(0, 10));
   const [startTime, setStartTime] = useState(
     entry.start ? entry.start.slice(11, 16) : ""
   );
@@ -279,7 +295,7 @@ function EditForm({ entry, onClose }: EditFormProps) {
       task_id?: string;
       contract?: string;
     } = {};
-    const origDate = formatDate(entry.start);
+    const origDate = entry.start.slice(0, 10);
     const origTime = entry.start.slice(11, 16);
     if (entryDate !== origDate || startTime !== origTime) {
       updates.new_date = entryDate;
@@ -428,8 +444,25 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
     "view"
   );
   const remove = useDeleteClockEntry();
+  const duplicate = useQuickBook();
   const setView = useSetView();
   const taskTitle = taskTitleById(tasks, entry.task_id);
+
+  function handleDuplicate() {
+    const mins = entry.duration_minutes ?? 0;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const dur = h > 0 && m > 0
+      ? `${h}h${m}min`
+      : h > 0 ? `${h}h` : `${m}min`;
+    duplicate.mutate({
+      duration: dur,
+      customer: entry.customer,
+      description: entry.description,
+      contract: entry.contract ?? undefined,
+      taskId: entry.task_id ?? undefined,
+    });
+  }
 
   if (mode === "edit") {
     return (
@@ -450,10 +483,17 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
       <td
         className={
           "px-3 py-1.5 text-xs font-mono " +
-          "text-stone-600 whitespace-nowrap"
+          "whitespace-nowrap"
         }
       >
-        {formatDate(entry.start)}
+        <button
+          onClick={() =>
+            navigateToClockDate(entry.start.slice(0, 10))
+          }
+          className="text-stone-600 hover:text-cta transition-colors"
+        >
+          {formatDate(entry.start)}
+        </button>
       </td>
       <td
         className={
@@ -514,17 +554,100 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
             <Pencil size={11} />
           </button>
           <button
-            onClick={() => remove.mutate(entry.start)}
-            disabled={remove.isPending}
-            className="p-0.5 rounded text-stone-600 hover:text-red-400 disabled:opacity-40"
-            title="Delete"
+            onClick={handleDuplicate}
+            disabled={duplicate.isPending}
+            className="p-0.5 rounded text-stone-600 hover:text-cta disabled:opacity-40"
+            title="Duplicate for today"
           >
-            <Trash2 size={11} />
+            <Copy size={11} />
           </button>
+          <ConfirmPopover
+            onConfirm={() => remove.mutate(entry.start)}
+            disabled={remove.isPending}
+          >
+            <button
+              disabled={remove.isPending}
+              className="p-0.5 rounded text-stone-600 hover:text-red-400 disabled:opacity-40"
+              title="Delete"
+            >
+              <Trash2 size={11} />
+            </button>
+          </ConfirmPopover>
         </span>
       </td>
     </tr>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Sortable column header
+// ---------------------------------------------------------------------------
+
+const thCls = [
+  "px-3 py-2 text-[10px] font-semibold uppercase",
+  "tracking-wider text-stone-600 select-none",
+  "cursor-pointer hover:text-stone-900 transition-colors",
+].join(" ");
+
+function SortTh({
+  label,
+  col,
+  sort,
+  onSort,
+  align,
+}: {
+  label: string;
+  col: SortCol;
+  sort: SortState;
+  onSort: (col: SortCol) => void;
+  align?: "right";
+}) {
+  const active = sort.col === col;
+  const Icon = sort.dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <th
+      className={`${thCls}${
+        align === "right" ? " text-right" : ""
+      }`}
+      onClick={() => onSort(col)}
+    >
+      <span className="inline-flex items-center gap-0.5">
+        {label}
+        {active && (
+          <Icon
+            size={10}
+            className="text-cta"
+            strokeWidth={2.5}
+          />
+        )}
+      </span>
+    </th>
+  );
+}
+
+function sortValue(
+  entry: ClockEntry,
+  col: SortCol,
+  tasks: Task[],
+): string | number {
+  switch (col) {
+    case "date":
+      return entry.start;
+    case "time":
+      return entry.start;
+    case "customer":
+      return entry.customer.toLowerCase();
+    case "contract":
+      return (entry.contract ?? "").toLowerCase();
+    case "task":
+      return (
+        taskTitleById(tasks, entry.task_id) ?? ""
+      ).toLowerCase();
+    case "description":
+      return entry.description.toLowerCase();
+    case "duration":
+      return entry.duration_minutes ?? 0;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -536,6 +659,18 @@ export function ClockView() {
   const [specificDate, setSpecificDate] = useState("");
   const [search, setSearch] = useState("");
   const [booking, setBooking] = useState(false);
+  const [sort, setSort] = useState<SortState>({
+    col: "date",
+    dir: "desc",
+  });
+
+  function toggleSort(col: SortCol) {
+    setSort((prev) =>
+      prev.col === col
+        ? { col, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { col, dir: "desc" },
+    );
+  }
   const { data: entries = [], isLoading } = useClockEntries(
     period,
     specificDate || undefined
@@ -563,9 +698,15 @@ export function ClockView() {
       )
     : entries;
 
-  const sorted = [...filtered].sort(
-    (a, b) => b.start.localeCompare(a.start)
-  );
+  const sorted = [...filtered].sort((a, b) => {
+    const av = sortValue(a, sort.col, tasks);
+    const bv = sortValue(b, sort.col, tasks);
+    const cmp =
+      typeof av === "number" && typeof bv === "number"
+        ? av - bv
+        : String(av).localeCompare(String(bv));
+    return sort.dir === "asc" ? cmp : -cmp;
+  });
 
   return (
     <div className="flex flex-col h-full">
@@ -592,6 +733,7 @@ export function ClockView() {
           <option value="today">Today</option>
           <option value="week">This week</option>
           <option value="month">This month</option>
+          <option value="year">This year</option>
         </select>
         <input
           type="date"
@@ -672,27 +814,22 @@ export function ClockView() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border text-left sticky top-0 bg-surface-card z-10">
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600">
-                  Date
-                </th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600">
-                  Time
-                </th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600">
-                  Customer
-                </th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600">
-                  Contract
-                </th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600">
-                  Task
-                </th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600">
-                  Description
-                </th>
-                <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-600 text-right">
-                  Duration
-                </th>
+                <SortTh label="Date" col="date"
+                  sort={sort} onSort={toggleSort} />
+                <SortTh label="Time" col="time"
+                  sort={sort} onSort={toggleSort} />
+                <SortTh label="Customer" col="customer"
+                  sort={sort} onSort={toggleSort} />
+                <SortTh label="Contract" col="contract"
+                  sort={sort} onSort={toggleSort} />
+                <SortTh label="Task" col="task"
+                  sort={sort} onSort={toggleSort} />
+                <SortTh label="Description"
+                  col="description"
+                  sort={sort} onSort={toggleSort} />
+                <SortTh label="Duration" col="duration"
+                  sort={sort} onSort={toggleSort}
+                  align="right" />
               </tr>
             </thead>
             <tbody>

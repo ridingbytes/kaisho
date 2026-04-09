@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { ConfirmPopover } from "../common/ConfirmPopover";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
 import {
   useActiveTimer,
@@ -27,6 +28,7 @@ import { navigateToClockDate } from "../../utils/clockNavigation";
 import type { BudgetSummary, ClockEntry } from "../../types";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
+import { TimeInsights } from "./TimeInsights";
 
 const inputCls =
   "px-2 py-1 rounded text-xs bg-surface-raised border " +
@@ -293,17 +295,21 @@ function ClockEntryRow({
         >
           <Pencil size={12} strokeWidth={2} />
         </button>
-        <button
-          onClick={handleDelete}
+        <ConfirmPopover
+          onConfirm={handleDelete}
           disabled={deleteEntry.isPending}
-          className={
-            "p-0.5 rounded text-stone-500 " +
-            "hover:text-red-400 transition-colors"
-          }
-          title="Delete"
         >
-          <Trash2 size={12} strokeWidth={2} />
-        </button>
+          <button
+            disabled={deleteEntry.isPending}
+            className={
+              "p-0.5 rounded text-stone-500 " +
+              "hover:text-red-400 transition-colors"
+            }
+            title="Delete"
+          >
+            <Trash2 size={12} strokeWidth={2} />
+          </button>
+        </ConfirmPopover>
       </div>
     </div>
   );
@@ -684,6 +690,9 @@ export function DashboardView() {
               ))}
           </div>
         )}
+
+        {/* Time Insights */}
+        <TimeInsights />
       </div>
     </div>
   );
