@@ -207,17 +207,50 @@ def _http_post(url: str, payload: bytes, headers: dict) -> dict:
         return json.loads(resp.read())
 
 
+MAX_TOOL_ITERATIONS = 15
+
+# Tools that modify data — limited to prevent runaway writes
+_WRITE_TOOLS = {
+    "capture_inbox", "add_task", "move_task",
+    "update_task", "set_task_tags",
+    "start_clock", "stop_clock", "quick_book",
+}
+MAX_WRITES_PER_RUN = 3
+
+_write_count = 0
+
+
+def _reset_write_counter():
+    global _write_count
+    _write_count = 0
+
+
 def _execute_tool_calls(
     tool_calls: list[dict], include_id: bool = True,
 ) -> list[dict]:
     """Execute tool calls and return tool-result messages."""
+    global _write_count
     results = []
     for call in tool_calls:
         fn = call.get("function", {})
-        result = execute_tool(
-            fn.get("name", ""),
-            fn.get("arguments", {}),
-        )
+        name = fn.get("name", "")
+        if name in _WRITE_TOOLS:
+            _write_count += 1
+            if _write_count > MAX_WRITES_PER_RUN:
+                result = {
+                    "error": (
+                        f"Write limit reached "
+                        f"({MAX_WRITES_PER_RUN} per run)"
+                    ),
+                }
+            else:
+                result = execute_tool(
+                    name, fn.get("arguments", {}),
+                )
+        else:
+            result = execute_tool(
+                name, fn.get("arguments", {}),
+            )
         msg: dict = {
             "role": "tool",
             "content": json.dumps(result, default=str),
@@ -244,6 +277,7 @@ def run_prompt_claude(
     model: str, prompt: str, api_key: str = ""
 ) -> str:
     """Run an agentic Claude session with tools."""
+    _reset_write_counter()
     try:
         import anthropic
     except ImportError as exc:
@@ -256,7 +290,7 @@ def run_prompt_claude(
         {"role": "user", "content": prompt},
     ]
 
-    while True:
+    for _ in range(MAX_TOOL_ITERATIONS):
         resp = client.messages.create(
             model=model,
             max_tokens=4096,
@@ -275,17 +309,35 @@ def run_prompt_claude(
         for block in resp.content:
             if block.type != "tool_use":
                 continue
-            result = execute_tool(block.name, block.input)
+            name = block.name
+            if name in _WRITE_TOOLS:
+                global _write_count
+                _write_count += 1
+                if _write_count > MAX_WRITES_PER_RUN:
+                    result = {
+                        "error": "Write limit reached",
+                    }
+                else:
+                    result = execute_tool(
+                        name, block.input,
+                    )
+            else:
+                result = execute_tool(
+                    name, block.input,
+                )
             tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": block.id,
-                "content": json.dumps(result, default=str),
+                "content": json.dumps(
+                    result, default=str,
+                ),
             })
         if not tool_results:
             return _extract_claude_text(resp.content)
         messages.append({
             "role": "user", "content": tool_results,
         })
+    return _extract_claude_text(resp.content)
 
 
 # ---------------------------------------------------------------------------
@@ -296,6 +348,7 @@ def run_prompt_ollama(
     model: str, prompt: str, base_url: str,
 ) -> str:
     """Run an agentic Ollama session with tools."""
+    _reset_write_counter()
     tools = openai_tools()
     messages: list[dict] = [
         {"role": "user", "content": prompt},
@@ -303,7 +356,7 @@ def run_prompt_ollama(
     url = base_url.rstrip("/") + "/api/chat"
     headers = {"Content-Type": "application/json"}
 
-    while True:
+    for _ in range(MAX_TOOL_ITERATIONS):
         payload = json.dumps({
             "model": model,
             "messages": messages,
@@ -324,8 +377,11 @@ def run_prompt_ollama(
 
         messages.append(msg)
         messages.extend(
-            _execute_tool_calls(tool_calls, include_id=False)
+            _execute_tool_calls(
+                tool_calls, include_id=False,
+            )
         )
+    return messages[-1].get("content", "")
 
 
 # ---------------------------------------------------------------------------
@@ -339,6 +395,7 @@ def run_prompt_openai_compatible(
     api_key: str = "",
 ) -> str:
     """Run an agentic OpenAI-compatible session with tools."""
+    _reset_write_counter()
     tools = openai_tools()
     messages: list[dict] = [
         {"role": "user", "content": prompt},
@@ -350,7 +407,7 @@ def run_prompt_openai_compatible(
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
 
-    while True:
+    for _ in range(MAX_TOOL_ITERATIONS):
         payload = json.dumps({
             "model": model,
             "messages": messages,
@@ -370,8 +427,11 @@ def run_prompt_openai_compatible(
 
         messages.append(msg)
         messages.extend(
-            _execute_tool_calls(tool_calls, include_id=True)
+            _execute_tool_calls(
+                tool_calls, include_id=True,
+            )
         )
+    return messages[-1].get("content", "")
 
 
 # ---------------------------------------------------------------------------
