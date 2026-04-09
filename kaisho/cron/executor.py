@@ -414,8 +414,15 @@ def _inject_context(prompt: str) -> str:
     return context + prompt
 
 
-def _run_claude_cli(model: str, prompt: str) -> str:
-    """Call Claude CLI using subscription login token."""
+def _run_claude_cli(
+    model: str, prompt: str, timeout: int = 300,
+) -> str:
+    """Call Claude CLI (no tool calling support).
+
+    Since April 2025, Claude CLI subscription does not
+    support tool calls without extra usage. Jobs using
+    claude_cli run as simple prompt-in/text-out.
+    """
     import shutil
     import subprocess
 
@@ -425,7 +432,7 @@ def _run_claude_cli(model: str, prompt: str) -> str:
     result = subprocess.run(
         [claude_bin, "-p", "-", "--model", model],
         input=prompt,
-        capture_output=True, text=True, timeout=300,
+        capture_output=True, text=True, timeout=timeout,
     )
     if result.returncode != 0:
         raise ExecutorError(
@@ -521,9 +528,12 @@ def execute_job(
         raise ExecutorError(f"Model not accessible: {err}")
     prompt = load_prompt(job["prompt_file"], project_root)
     provider, model_name = _parse_model(job.get("model", ""))
+    job_timeout = job.get("timeout", 300)
     if provider == "claude_cli":
         prompt = _inject_context(prompt)
-        output_text = _run_claude_cli(model_name, prompt)
+        output_text = _run_claude_cli(
+            model_name, prompt, timeout=job_timeout,
+        )
     elif provider == "claude":
         output_text = run_prompt_claude(
             model_name, prompt, api_key=claude_api_key,

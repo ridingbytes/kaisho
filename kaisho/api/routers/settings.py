@@ -379,6 +379,11 @@ def _claude_cli_status() -> dict:
         "authenticated": authenticated,
         "version": version,
         "path": path,
+        "note": (
+            "Claude CLI subscription no longer supports "
+            "tool calls (since April 2025). Use Ollama "
+            "or the Claude API with an API key instead."
+        ),
     }
 
 
@@ -388,11 +393,7 @@ _CLAUDE_API_MODELS = [
     "claude:claude-haiku-4-5-20251001",
 ]
 
-_CLAUDE_CLI_MODELS = [
-    "claude_cli:claude-opus-4-6",
-    "claude_cli:claude-sonnet-4-6",
-    "claude_cli:claude-haiku-4-5-20251001",
-]
+_CLAUDE_CLI_MODELS: list[str] = []
 
 
 def _fetch_ollama_models(base_url: str) -> list[str]:

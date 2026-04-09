@@ -98,9 +98,9 @@ function OutputSelect({
 
 function StatusPill({ status }: { status: CronRun["status"] }) {
   const styles: Record<CronRun["status"], string> = {
-    running: "bg-yellow-900/40 text-yellow-400",
-    ok: "bg-green-900/40 text-green-400",
-    error: "bg-red-900/40 text-red-400",
+    running: "bg-amber-500/15 text-amber-600",
+    ok: "bg-emerald-500/15 text-emerald-600",
+    error: "bg-red-500/15 text-red-600",
   };
   return (
     <span
@@ -654,7 +654,7 @@ function HistoryTable({
                   </td>
                   <td className="py-2 pr-4">
                     {model && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-indigo-900/30 text-indigo-400">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-indigo-500/10 text-indigo-600">
                         {model}
                       </span>
                     )}

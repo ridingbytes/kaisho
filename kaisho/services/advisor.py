@@ -539,8 +539,11 @@ def _execute_claude_tools(content) -> list[dict]:
 def ask_claude_cli(model: str, prompt: str) -> str:
     """Call the Claude CLI using the local login token.
 
-    Requires ``claude login`` to have been run. Uses the user's
-    Anthropic subscription, no API key needed.
+    Since April 2025, Claude CLI subscription does not
+    support tool calls without extra usage activated.
+    This runs as simple prompt-in/text-out without
+    agentic tool calling. Use Ollama or the Claude API
+    for full advisor functionality.
     """
     import shutil
     import subprocess

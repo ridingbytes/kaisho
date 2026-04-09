@@ -66,6 +66,7 @@ export interface Contract {
   used: number;
   rest: number;
   billable: boolean;
+  bookable: boolean;
 }
 
 export interface ClockEntry {

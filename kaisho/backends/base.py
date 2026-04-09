@@ -344,6 +344,7 @@ class CustomerBackend(ABC):
         start_date: str,
         notes: str = "",
         billable: bool = True,
+        bookable: bool = True,
     ) -> dict:
         """Add a named contract to a customer."""
 

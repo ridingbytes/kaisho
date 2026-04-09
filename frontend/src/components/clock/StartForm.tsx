@@ -15,8 +15,11 @@ export function StartForm({ onStarted }: Props) {
   const [taskId, setTaskId] = useState<string | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
   const start = useStartTimer();
-  const { data: contracts = [] } = useContracts(
+  const { data: allContracts = [] } = useContracts(
     customer || null
+  );
+  const contracts = allContracts.filter(
+    (c) => c.bookable !== false,
   );
 
   function handleCustomerChange(v: string) {

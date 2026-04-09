@@ -101,3 +101,51 @@ app.include_router(ws_router.router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+# -- Serve frontend static files in production ----------
+def _mount_frontend():
+    """Mount the built frontend if the dist/ directory
+    exists. In development, Vite handles this via proxy.
+    """
+    from pathlib import Path
+
+    from fastapi.staticfiles import StaticFiles
+    from starlette.responses import FileResponse
+
+    dist = Path(__file__).parent.parent.parent / (
+        "frontend" / Path("dist")
+    )
+    if not dist.is_dir():
+        return
+
+    # Serve static assets (JS, CSS, images)
+    app.mount(
+        "/assets",
+        StaticFiles(directory=dist / "assets"),
+        name="static-assets",
+    )
+
+    # Serve logo files from dist root
+    for name in (
+        "kaisho-logo.svg",
+        "kaisho-logo-light.svg",
+        "kaisho-wordmark.svg",
+        "kaisho-wordmark-light.svg",
+    ):
+        logo = dist / name
+        if logo.exists():
+            @app.get(f"/{name}")
+            def _logo(p=logo):
+                return FileResponse(p)
+
+    # SPA fallback: all non-API routes serve index.html
+    @app.get("/{path:path}")
+    async def _spa(path: str):
+        file = dist / path
+        if file.is_file():
+            return FileResponse(file)
+        return FileResponse(dist / "index.html")
+
+
+_mount_frontend()

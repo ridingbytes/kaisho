@@ -131,6 +131,7 @@ class ContractRow(Base):
     end_date = Column(String, default="")
     notes = Column(Text, default="")
     billable = Column(Boolean, default=True)
+    bookable = Column(Boolean, default=True)
     customer_rel = relationship(
         "CustomerRow", back_populates="contracts"
     )
@@ -364,6 +365,9 @@ def _contract_row_to_dict(row: ContractRow) -> dict:
         "notes": row.notes or "",
         "billable": row.billable
         if row.billable is not None
+        else True,
+        "bookable": row.bookable
+        if row.bookable is not None
         else True,
     }
 
@@ -1451,6 +1455,7 @@ class SqlCustomerBackend(CustomerBackend):
         start_date,
         notes="",
         billable=True,
+        bookable=True,
     ) -> dict:
         session = self._eng.session()
         try:
@@ -1487,6 +1492,7 @@ class SqlCustomerBackend(CustomerBackend):
                 start_date=start_date,
                 notes=notes,
                 billable=billable,
+                bookable=bookable,
             )
             session.add(row)
             session.commit()
@@ -1514,6 +1520,7 @@ class SqlCustomerBackend(CustomerBackend):
             for key in (
                 "name", "budget", "start_date",
                 "end_date", "notes", "billable",
+                "bookable",
             ):
                 if key in updates:
                     setattr(row, key, updates[key])

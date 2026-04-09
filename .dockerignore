@@ -1,0 +1,35 @@
+# Data
+data/
+*.db
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Dev/IDE
+.git/
+.env
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docs/product
+product/
+docs/
+*.md
+!templates/**/*.md
+!prompts/**/*.md
+
+# Tests
+tests/
+.pytest_cache/
+.coverage

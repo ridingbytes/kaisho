@@ -163,6 +163,9 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
   const [billable, setBillable] = useState(
     contract.billable ?? true,
   );
+  const [bookable, setBookable] = useState(
+    contract.bookable ?? true,
+  );
   const updateContract = useUpdateContract();
   const deleteContract = useDeleteContract();
 
@@ -184,6 +187,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
     setEndDate(contract.end_date ?? "");
     setNotes(contract.notes);
     setBillable(contract.billable ?? true);
+    setBookable(contract.bookable ?? true);
     setEditing(true);
   }
 
@@ -203,6 +207,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
           end_date: endDate || null,
           notes,
           billable,
+          bookable,
         },
       },
       { onSuccess: () => setEditing(false) }
@@ -279,15 +284,26 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
           placeholder="Notes"
           className={fieldClass()}
         />
-        <label className="flex items-center gap-1.5 text-xs text-stone-700 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={billable}
-            onChange={(e) => setBillable(e.target.checked)}
-            className="rounded border-border text-cta focus:ring-cta"
-          />
-          Billable
-        </label>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-1.5 text-xs text-stone-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={billable}
+              onChange={(e) => setBillable(e.target.checked)}
+              className="rounded border-border text-cta focus:ring-cta"
+            />
+            Billable
+          </label>
+          <label className="flex items-center gap-1.5 text-xs text-stone-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={bookable}
+              onChange={(e) => setBookable(e.target.checked)}
+              className="rounded border-border text-cta focus:ring-cta"
+            />
+            Bookable
+          </label>
+        </div>
         <div className="flex gap-1 justify-end">
           <button
             onClick={() => setEditing(false)}
@@ -332,6 +348,11 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
         {contract.billable === false && (
           <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/10 text-amber-600">
             non-billable
+          </span>
+        )}
+        {contract.bookable === false && (
+          <span className="text-[9px] px-1 py-0.5 rounded bg-stone-500/10 text-stone-500">
+            locked
           </span>
         )}
         <div className="hidden group-hover:flex gap-0.5 ml-auto">
@@ -404,6 +425,7 @@ function AddContractForm({
           budget: h,
           start_date: startDate,
           billable,
+          bookable: true,
         },
       },
       { onSuccess: onDone }

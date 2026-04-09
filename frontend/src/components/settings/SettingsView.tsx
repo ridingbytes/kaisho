@@ -575,8 +575,9 @@ function AiSection() {
           </p>
           <p className="text-[10px] text-stone-400 mb-2">
             No API key needed. Ollama and LM Studio run locally.
-            Claude CLI uses your login token (run
-            &quot;claude login&quot; once).
+            Recommended model: <strong>gemma4</strong> (Google)
+            — use <em>gemma4:e2b</em> for cron jobs
+            and <em>gemma4:latest</em> for the advisor.
           </p>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
@@ -607,39 +608,24 @@ function AiSection() {
         </div>
 
         {/* Claude CLI status */}
-        {cliStatus && (
+        {cliStatus && cliStatus.installed && (
           <div className="px-4 py-3 border-b border-border-subtle">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
               Claude CLI (Subscription)
             </p>
             <div className="flex items-center gap-3 text-xs">
-              <span className={
-                cliStatus.installed
-                  ? "text-emerald-400"
-                  : "text-red-400"
-              }>
-                {cliStatus.installed
-                  ? `Installed (${cliStatus.version})`
-                  : "Not installed"}
+              <span className="text-amber-500">
+                Limited
               </span>
-              {cliStatus.installed && (
-                <span className={
-                  cliStatus.authenticated
-                    ? "text-emerald-400"
-                    : "text-amber-400"
-                }>
-                  {cliStatus.authenticated
-                    ? "Logged in"
-                    : "Not logged in"}
-                </span>
-              )}
+              <span className="text-stone-500">
+                {cliStatus.version}
+              </span>
             </div>
             <p className="text-[10px] text-stone-400 mt-1">
-              {cliStatus.installed
-                ? cliStatus.authenticated
-                  ? "Use prefix claude_cli: for subscription-based models."
-                  : "Run 'claude login' in the terminal to authenticate."
-                : "Install Claude Code CLI and run 'claude login'."}
+              Claude CLI no longer supports tool calls
+              without extra usage (since April 2025).
+              Use Ollama or the Claude API for full
+              functionality.
             </p>
           </div>
         )}

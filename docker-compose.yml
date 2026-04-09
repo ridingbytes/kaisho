@@ -1,0 +1,14 @@
+services:
+  kaisho:
+    build: .
+    ports:
+      - "8765:8765"
+    volumes:
+      - kaisho-data:/app/data
+    environment:
+      - KAISHO_HOME=/app/data
+      - CORS_ORIGINS=http://localhost:8765
+    restart: unless-stopped
+
+volumes:
+  kaisho-data:

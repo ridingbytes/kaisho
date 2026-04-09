@@ -79,7 +79,12 @@ function ContractSelect({
   value: string;
   onChange: (v: string) => void;
 }) {
-  const { data: contracts = [] } = useContracts(customer || null);
+  const { data: allContracts = [] } = useContracts(
+    customer || null,
+  );
+  const contracts = allContracts.filter(
+    (c) => c.bookable !== false,
+  );
   if (!customer || contracts.length === 0) return null;
   return (
     <select

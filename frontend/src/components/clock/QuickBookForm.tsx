@@ -19,7 +19,12 @@ export function QuickBookForm({
   const [description, setDescription] = useState("");
   const [taskId, setTaskId] = useState<string | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
-  const { data: contracts = [] } = useContracts(customer || null);
+  const { data: allContracts = [] } = useContracts(
+    customer || null,
+  );
+  const contracts = allContracts.filter(
+    (c) => c.bookable !== false,
+  );
   const book = useQuickBook();
 
   function handleSubmit(e: React.FormEvent) {
