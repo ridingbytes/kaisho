@@ -1,9 +1,18 @@
 jobs:
 - id: daily-briefing
   name: Daily Briefing
-  schedule: "30 9 * * 1-5"
+  schedule: "30 8 * * 1-5"
   model: ""
   prompt_file: prompts/daily-briefing.md
+  output: inbox
+  timeout: 120
+  enabled: false
+
+- id: weekly-project-update
+  name: Project Status
+  schedule: "0 17 * * 5"
+  model: ""
+  prompt_file: prompts/project-update.md
   output: inbox
   timeout: 120
   enabled: false
@@ -14,14 +23,5 @@ jobs:
   model: ""
   prompt_file: prompts/weekly-scout.md
   output: inbox
-  timeout: 300
-  enabled: false
-
-- id: weekly-project-update
-  name: Project Status
-  schedule: "0 17 * * 5"
-  model: ""
-  prompt_file: prompts/project-update.md
-  output: inbox
-  timeout: 120
+  timeout: 900
   enabled: false

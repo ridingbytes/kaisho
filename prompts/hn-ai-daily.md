@@ -7,48 +7,34 @@ nach KI-relevanten Themen durchsucht und aufbereitet.
 
 ## Daten
 
-Die folgenden Daten wurden automatisch von der Hacker News API abgerufen:
+Die folgenden Daten wurden automatisch von der Hacker News API
+abgerufen:
 
 {fetch_results}
 
 ## Aufgabe
 
-1. Filtere alle Beitraege, deren Titel oder URL einen Bezug zu einem
-   der folgenden Themen haben:
-   - Kuenstliche Intelligenz, AI, Machine Learning, Deep Learning
-   - LLM, Large Language Model, GPT, Claude, Gemini, Llama, Mistral
-   - Transformer, Neural Network, Diffusion Model
-   - Robotik mit KI-Bezug, autonome Systeme
-   - KI-Regulierung, KI-Ethik, KI-Sicherheit
-   - KI-Tools, KI-Startups, KI-Forschung
+Filtere die obigen Stories nach KI-relevanten Themen (AI, ML, LLM,
+GPT, Claude, neural networks, deep learning, AGI, computer vision,
+NLP, robotics, autonomous systems, etc.).
 
-2. Erstelle eine deutschsprachige Zusammenfassung aller gefundenen
-   KI-Beitraege im folgenden Format:
+Erstelle einen kurzen deutschsprachigen Digest mit:
 
-## Hacker News KI-Digest — {date}
+### KI-Highlights
 
-**{Anzahl} KI-relevante Beitraege gefunden**
+Die 5-8 wichtigsten KI-Stories des Tages. Pro Story:
+- **Titel** (mit Link)
+- 1-2 Saetze Zusammenfassung: was ist neu, warum relevant
+- Einordnung: Forschung, Produkt, Open Source, Regulierung, Markt
 
-### Top-Beitraege (nach Score sortiert)
+### Trends
 
-Fuer jeden Beitrag:
-- **Titel** (Score: X Punkte, X Kommentare)
-  URL: {url}
-  HN-Diskussion: https://news.ycombinator.com/item?id={objectID}
-  Kurze Einordnung (1-2 Saetze auf Deutsch)
+1-2 Saetze zu Mustern oder Trends, die sich aus den heutigen
+Stories ergeben.
 
-### Thematische Uebersicht
+### Relevant fuer RIDING BYTES
 
-Gruppiere die Beitraege nach Unterthemen (z.B. Modelle & Releases,
-Tools & Produkte, Forschung, Regulierung & Gesellschaft) und gib
-jeweils eine kurze Zusammenfassung.
+Falls Stories fuer LIMS, Laborautomatisierung, Python-Oekoystem,
+oder Open-Source-Geschaeftsmodelle relevant sind, hier auflisten.
 
-### Bewertung des Tages
-
-Welche 2-3 Entwicklungen sind besonders bemerkenswert und warum?
-
----
-
-Antworte ausschliesslich mit dem fertigen Digest.
-Falls keine KI-relevanten Beitraege gefunden werden, schreibe:
-"Heute keine KI-relevanten Beitraege auf Hacker News."
+Halte den Digest kompakt. Keine Fuellsaetze.
