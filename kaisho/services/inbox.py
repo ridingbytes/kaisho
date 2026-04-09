@@ -10,6 +10,20 @@ from . import notes as notes_service
 
 INBOX_KEYWORDS: set[str] = set()
 CREATED_FMT = "%Y-%m-%d %a %H:%M"
+_ORG_HEADING_RE = re.compile(r"^\*+\s")
+
+
+def _escape_body(text: str) -> list[str]:
+    """Split text into lines, escaping any that look like
+    org headings (* at start of line). Adds a leading
+    space so the org parser treats them as body text."""
+    lines = []
+    for line in text.splitlines():
+        if _ORG_HEADING_RE.match(line):
+            lines.append(" " + line)
+        else:
+            lines.append(line)
+    return lines
 CUSTOMER_RE = re.compile(r"\[([^\]]+)\]")
 TITLE_TYPE_RE = re.compile(
     r"^(EMAIL|LEAD|IDEE|NOTIZ|NOTE|IDEA)\s+", re.IGNORECASE
@@ -118,7 +132,7 @@ def add_item(
     )
 
     if body:
-        new_heading.body = body.splitlines()
+        new_heading.body = _escape_body(body)
 
     if channel:
         new_heading.properties["CHANNEL"] = channel
