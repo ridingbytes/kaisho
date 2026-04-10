@@ -62,22 +62,34 @@ export function Sidebar({
   const inboxCount = inboxItems?.length ?? 0;
   const { config } = useShortcutsContext();
 
+  // On mobile the sidebar is in an overlay, always expanded.
+  // On desktop, the open prop controls collapsed/expanded.
+  const expanded = open;
+
   return (
     <nav
       className={[
-        "flex flex-col shrink-0 border-r border-border-subtle bg-surface-card",
+        "flex flex-col shrink-0 border-r",
+        "border-border-subtle bg-surface-card",
         "transition-[width] duration-200 py-2 gap-0.5",
-        open ? "w-40" : "w-14",
-      ].join(" ")}
+        "h-full w-40",
+        !expanded && "md:w-14",
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
-      {/* Toggle */}
+      {/* Toggle (hidden on mobile -- sidebar is overlay) */}
       <button
         onClick={onToggle}
         title={open ? "Collapse" : "Expand"}
         className={[
-          "flex items-center rounded-lg transition-colors",
-          "text-stone-500 hover:text-stone-900 hover:bg-surface-raised",
-          open ? "px-3 h-7 justify-end" : "mx-2 h-7 justify-center",
+          "hidden md:flex items-center rounded-lg",
+          "transition-colors",
+          "text-stone-500 hover:text-stone-900",
+          "hover:bg-surface-raised",
+          open
+            ? "px-3 h-7 justify-end"
+            : "mx-2 h-7 justify-center",
         ].join(" ")}
       >
         {open
@@ -99,19 +111,22 @@ export function Sidebar({
             onClick={() => onChange(id)}
             className={[
               "relative flex items-center",
-              open
-                ? "px-3 gap-2.5 h-8"
-                : "flex-col justify-center mx-2 h-10 gap-1",
+              // Mobile: always horizontal. Desktop: depends on open
+              "px-3 gap-2.5 h-8",
+              !expanded && "md:flex-col md:justify-center md:mx-2 md:h-10 md:gap-1 md:px-0",
               "rounded-lg transition-colors",
-              "text-[9px] font-semibold tracking-wider uppercase",
+              "text-[9px] font-semibold tracking-wider",
+              "uppercase",
               isActive
                 ? "bg-cta-muted text-cta"
                 : "text-stone-700 hover:text-stone-900 hover:bg-surface-raised",
-            ].join(" ")}
+            ]
+              .filter(Boolean)
+              .join(" ")}
           >
             <span className="relative shrink-0">
               <Icon
-                size={open ? 14 : 16}
+                size={expanded ? 14 : 16}
                 strokeWidth={isActive ? 2 : 1.5}
               />
               {/* Inbox badge */}
@@ -132,7 +147,7 @@ export function Sidebar({
               )}
             </span>
             <span className="leading-none truncate">
-              {open ? label : label.slice(0, 3)}
+              {expanded ? label : label.slice(0, 3)}
             </span>
           </button>
         );
@@ -155,22 +170,24 @@ export function Sidebar({
             onClick={() => onChange(id)}
             className={[
               "relative flex items-center",
-              open
-                ? "px-3 gap-2.5 h-8"
-                : "flex-col justify-center mx-2 h-10 gap-1",
+              "px-3 gap-2.5 h-8",
+              !expanded && "md:flex-col md:justify-center md:mx-2 md:h-10 md:gap-1 md:px-0",
               "rounded-lg transition-colors",
-              "text-[9px] font-semibold tracking-wider uppercase",
+              "text-[9px] font-semibold tracking-wider",
+              "uppercase",
               isActive
                 ? "bg-cta-muted text-cta"
                 : "text-stone-700 hover:text-stone-900 hover:bg-surface-raised",
-            ].join(" ")}
+            ]
+              .filter(Boolean)
+              .join(" ")}
           >
             <Icon
-              size={open ? 14 : 16}
+              size={expanded ? 14 : 16}
               strokeWidth={isActive ? 2 : 1.5}
             />
             <span className="leading-none truncate">
-              {open ? label : label.slice(0, 3)}
+              {expanded ? label : label.slice(0, 3)}
             </span>
           </button>
         );

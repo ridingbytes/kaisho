@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Moon, Settings, Sun } from "lucide-react";
+import { Menu, Moon, Settings, Sun, X } from "lucide-react";
 import {
   useCreateProfile,
   useCurrentUser,
@@ -85,6 +85,7 @@ function AppShell() {
   const [clockOpen, setClockOpen] = useState(
     () => localStorage.getItem("clock_open") !== "false"
   );
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const [appTitle, setAppTitle] = useState(
     () => localStorage.getItem("kaisho_app_title") || "KAISHO",
@@ -242,6 +243,13 @@ function AppShell() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <header className="flex items-center gap-2 px-3 h-11 shrink-0 border-b border-border-subtle">
+        {/* Hamburger (mobile only) */}
+        <button
+          onClick={() => setMobileNavOpen((v) => !v)}
+          className="md:hidden p-1 rounded text-stone-600 hover:text-stone-900"
+        >
+          {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
+        </button>
         <button
           onClick={() => setView("dashboard")}
           className="flex items-center opacity-80 hover:opacity-100 transition-opacity"
@@ -258,7 +266,7 @@ function AppShell() {
         </button>
         <button
           onClick={() => setView("dashboard")}
-          className="text-sm font-bold tracking-[0.06em] uppercase text-stone-700 hover:text-cta transition-colors"
+          className="text-sm font-bold tracking-[0.06em] uppercase text-stone-700 hover:text-cta transition-colors hidden sm:block"
         >
           {appTitle}
         </button>
@@ -278,7 +286,7 @@ function AppShell() {
                 onClick={() => setUserMenuOpen((v) => !v)}
                 className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-surface-raised transition-colors"
               >
-                <span className="text-sm font-semibold text-stone-900">
+                <span className="text-sm font-semibold text-stone-900 hidden sm:inline">
                   {currentUser.name || "User"}
                 </span>
                 <PixelAvatar
@@ -379,13 +387,34 @@ function AppShell() {
         clearPendingSearch: () => setPendingSearch(""),
       }}>
         <div className="flex flex-1 min-h-0">
-          <Sidebar
-            active={view}
-            onChange={setView}
-            open={sidebarOpen}
-            onToggle={() => setSidebarOpen((v) => !v)}
-            advisorUnread={advisorUnread}
-          />
+          {/* Mobile nav overlay */}
+          {mobileNavOpen && (
+            <div
+              className="fixed inset-0 z-40 bg-black/40 md:hidden"
+              onClick={() => setMobileNavOpen(false)}
+            />
+          )}
+          <div
+            className={[
+              "md:relative md:translate-x-0",
+              "fixed inset-y-0 left-0 z-50",
+              "transition-transform duration-200",
+              mobileNavOpen
+                ? "translate-x-0"
+                : "-translate-x-full md:translate-x-0",
+            ].join(" ")}
+          >
+            <Sidebar
+              active={view}
+              onChange={(v) => {
+                setView(v);
+                setMobileNavOpen(false);
+              }}
+              open={sidebarOpen}
+              onToggle={() => setSidebarOpen((v) => !v)}
+              advisorUnread={advisorUnread}
+            />
+          </div>
 
           <main className="flex-1 min-w-0 overflow-hidden relative">
             {view === "dashboard" && <DashboardView />}
@@ -407,10 +436,12 @@ function AppShell() {
             </div>
           </main>
 
-          <ClockWidget
-            open={clockOpen}
-            onToggle={() => setClockOpen((v) => !v)}
-          />
+          <div className="hidden md:flex">
+            <ClockWidget
+              open={clockOpen}
+              onToggle={() => setClockOpen((v) => !v)}
+            />
+          </div>
         </div>
       </ViewContext.Provider>
 
