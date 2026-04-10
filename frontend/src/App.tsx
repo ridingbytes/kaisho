@@ -606,19 +606,19 @@ function AppShell() {
             />
           </div>
         </div>
+
+        {/* Mobile timer full-screen modal */}
+        {mobileTimerOpen && (
+          <MobileTimerModal
+            onClose={() => setMobileTimerOpen(false)}
+          />
+        )}
       </ViewContext.Provider>
 
       {paletteOpen && (
         <CommandPalette
           onNavigate={setView}
           onClose={() => setPaletteOpen(false)}
-        />
-      )}
-
-      {/* Mobile timer full-screen modal */}
-      {mobileTimerOpen && (
-        <MobileTimerModal
-          onClose={() => setMobileTimerOpen(false)}
         />
       )}
     </div>
