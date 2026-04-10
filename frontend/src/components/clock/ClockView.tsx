@@ -339,82 +339,92 @@ function EditForm({ entry, onClose }: EditFormProps) {
   }
 
   return (
-    <tr className="bg-surface-raised/40 border-b border-border-subtle">
-      <td colSpan={7} className="px-3 py-2">
-        <div className="flex flex-wrap gap-2 items-center">
-          <input
-            autoFocus
-            type="date"
-            value={entryDate}
-            onChange={(e) => setEntryDate(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className={`${smallInputCls} w-32`}
-          />
-          <input
-            type="time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className={`${smallInputCls} w-24`}
-            title="Start time"
-          />
-          <CustomerAutocomplete
-            value={customer}
-            onChange={(v) => {
-              setCustomer(v);
-              setContract("");
-            }}
-            onKeyDown={handleKeyDown}
-            inputClassName={smallInputCls}
-            className="w-44"
-          />
-          {contracts.length > 0 && (
-            <select
-              value={contract}
-              onChange={(e) => setContract(e.target.value)}
-              className={`${smallInputCls} w-36`}
-            >
-              <option value="">— no contract —</option>
-              {contracts.map((c) => (
-                <option key={c.name} value={c.name}>
-                  {c.name}{c.end_date ? " (closed)" : ""}
-                </option>
-              ))}
-            </select>
-          )}
-          <input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Description"
-            className={`${smallInputCls} flex-1 min-w-32`}
-          />
+    <>
+    <tr className="bg-surface-raised/40">
+      {/* Date */}
+      <td className="px-3 py-2">
+        <input
+          autoFocus
+          type="date"
+          value={entryDate}
+          onChange={(e) => setEntryDate(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className={smallInputCls}
+        />
+      </td>
+      {/* Time */}
+      <td className="px-3 py-2">
+        <input
+          type="time"
+          value={startTime}
+          onChange={(e) => setStartTime(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className={smallInputCls}
+          title="Start time"
+        />
+      </td>
+      {/* Customer */}
+      <td className="px-3 py-2">
+        <CustomerAutocomplete
+          value={customer}
+          onChange={(v) => {
+            setCustomer(v);
+            setContract("");
+          }}
+          onKeyDown={handleKeyDown}
+          inputClassName={smallInputCls}
+        />
+      </td>
+      {/* Contract */}
+      <td className="px-3 py-2">
+        {contracts.length > 0 && (
+          <select
+            value={contract}
+            onChange={(e) => setContract(e.target.value)}
+            className={smallInputCls}
+          >
+            <option value="">---</option>
+            {contracts.map((c) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </td>
+      {/* Task */}
+      <td className="px-3 py-2">
+        <TaskAutocomplete
+          taskId={taskId}
+          value={taskTitle}
+          onChange={setTaskTitle}
+          onSelect={(id, label) => {
+            setTaskId(id);
+            setTaskTitle(label);
+          }}
+          onClear={() => {
+            setTaskId(null);
+            setTaskTitle("");
+          }}
+          customer={customer}
+          inputClassName={smallInputCls}
+          onKeyDown={handleKeyDown}
+        />
+      </td>
+      {/* Description (placeholder) */}
+      <td></td>
+      {/* Duration + actions */}
+      <td className="px-3 py-2 text-right">
+        <div className="flex items-center gap-1 justify-end">
           <input
             value={hours}
             onChange={(e) => setHours(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Hours"
-            className={`${smallInputCls} w-20`}
+            placeholder="h"
+            className={`${smallInputCls} w-16 tabular-nums`}
             type="number"
             step="0.25"
             min="0"
-          />
-          <TaskAutocomplete
-            taskId={taskId}
-            value={taskTitle}
-            onChange={setTaskTitle}
-            onSelect={(id, label) => {
-              setTaskId(id);
-              setTaskTitle(label);
-            }}
-            onClear={() => {
-              setTaskId(null);
-              setTaskTitle("");
-            }}
-            customer={customer}
-            inputClassName={smallInputCls}
-            className="w-48"
-            onKeyDown={handleKeyDown}
           />
           <button
             onClick={onClose}
@@ -432,6 +442,29 @@ function EditForm({ entry, onClose }: EditFormProps) {
         </div>
       </td>
     </tr>
+    {/* Description row */}
+    <tr className="bg-surface-raised/40 border-b border-border-subtle">
+      <td colSpan={7} className="px-3 pb-2">
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          onKeyDown={(e) => {
+            if (
+              e.key === "Enter" &&
+              (e.metaKey || e.ctrlKey)
+            ) {
+              e.preventDefault();
+              handleSave();
+            }
+            if (e.key === "Escape") onClose();
+          }}
+          placeholder="Description"
+          rows={2}
+          className={`${smallInputCls} w-full resize-y`}
+        />
+      </td>
+    </tr>
+    </>
   );
 }
 
