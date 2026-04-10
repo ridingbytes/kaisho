@@ -11,6 +11,7 @@ import {
   promoteInboxItem,
   updateInboxItem,
 } from "../api/client";
+import { useToast } from "../context/ToastContext";
 
 export function useInboxItems() {
   return useQuery({
@@ -22,7 +23,8 @@ export function useInboxItems() {
 }
 
 export function useCaptureItem() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: ({
       text,
@@ -38,25 +40,36 @@ export function useCaptureItem() {
       body?: string;
       channel?: string;
       direction?: string;
-    }) => captureInboxItem(text, type, customer, body, channel, direction),
+    }) => captureInboxItem(
+      text, type, customer, body, channel, direction,
+    ),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["inbox"] });
+      void qc.invalidateQueries({
+        queryKey: ["inbox"],
+      });
+      toast("Inbox item captured");
     },
   });
 }
 
 export function useDeleteItem() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
-    mutationFn: (itemId: string) => deleteInboxItem(itemId),
+    mutationFn: (itemId: string) =>
+      deleteInboxItem(itemId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["inbox"] });
+      void qc.invalidateQueries({
+        queryKey: ["inbox"],
+      });
+      toast("Inbox item deleted");
     },
   });
 }
 
 export function useUpdateItem() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: ({
       itemId,
@@ -73,13 +86,17 @@ export function useUpdateItem() {
       };
     }) => updateInboxItem(itemId, updates),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["inbox"] });
+      void qc.invalidateQueries({
+        queryKey: ["inbox"],
+      });
+      toast("Inbox item updated");
     },
   });
 }
 
 export function useMoveItem() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: ({
       itemId,
@@ -91,17 +108,27 @@ export function useMoveItem() {
       destination: "todo" | "note" | "kb" | "archive";
       customer?: string;
       filename?: string;
-    }) => moveInboxItem(itemId, destination, { customer, filename }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["inbox"] });
-      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      void queryClient.invalidateQueries({ queryKey: ["notes"] });
+    }) => moveInboxItem(
+      itemId, destination, { customer, filename },
+    ),
+    onSuccess: (_d, vars) => {
+      void qc.invalidateQueries({
+        queryKey: ["inbox"],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["notes"],
+      });
+      toast(`Moved to ${vars.destination}`);
     },
   });
 }
 
 export function usePromoteItem() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: ({
       itemId,
@@ -111,8 +138,13 @@ export function usePromoteItem() {
       customer: string;
     }) => promoteInboxItem(itemId, customer),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["inbox"] });
-      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      void qc.invalidateQueries({
+        queryKey: ["inbox"],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+      toast("Promoted to task");
     },
   });
 }

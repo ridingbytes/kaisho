@@ -12,6 +12,7 @@ import {
   useActiveTimer,
   useStopTimer,
 } from "./hooks/useClocks";
+import { ToastProvider } from "./context/ToastContext";
 import { CalendarWidget } from "./components/clock/CalendarWidget";
 import { ClockList } from "./components/clock/ClockList";
 import { StartForm } from "./components/clock/StartForm";
@@ -629,7 +630,9 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ShortcutsProvider>
-        <AppShell />
+        <ToastProvider>
+          <AppShell />
+        </ToastProvider>
       </ShortcutsProvider>
     </QueryClientProvider>
   );

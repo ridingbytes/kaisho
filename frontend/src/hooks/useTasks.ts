@@ -13,6 +13,7 @@ import {
   unarchiveTask,
   updateTask,
 } from "../api/client";
+import { useToast } from "../context/ToastContext";
 
 export function useTasks(includeDone = false) {
   return useQuery({
@@ -24,7 +25,8 @@ export function useTasks(includeDone = false) {
 }
 
 export function useMoveTask() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: ({
       taskId,
@@ -33,14 +35,18 @@ export function useMoveTask() {
       taskId: string;
       status: string;
     }) => moveTask(taskId, status),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    onSuccess: (_d, vars) => {
+      void qc.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+      toast(`Task moved to ${vars.status}`);
     },
   });
 }
 
 export function useAddTask() {
   const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: ({
       customer,
@@ -53,12 +59,18 @@ export function useAddTask() {
       status: string;
       github_url?: string;
     }) => createTask(customer, title, status, github_url),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onSuccess: (_d, vars) => {
+      void qc.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+      toast(`Task added: ${vars.title}`);
+    },
   });
 }
 
 export function useUpdateTask() {
   const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: ({
       taskId,
@@ -73,7 +85,12 @@ export function useUpdateTask() {
         github_url?: string;
       };
     }) => updateTask(taskId, updates),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+      toast("Task updated");
+    },
   });
 }
 
@@ -87,18 +104,29 @@ export function useSetTaskTags() {
       taskId: string;
       tags: string[];
     }) => setTaskTags(taskId, tags),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onSuccess: () =>
+      void qc.invalidateQueries({
+        queryKey: ["tasks"],
+      }),
   });
 }
 
 export function useArchiveTask() {
   const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: (taskId: string) => archiveTask(taskId),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["tasks"] });
-      void qc.invalidateQueries({ queryKey: ["archive"] });
-      void qc.invalidateQueries({ queryKey: ["dashboard"] });
+      void qc.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["archive"],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["dashboard"],
+      });
+      toast("Task archived");
     },
   });
 }
@@ -114,11 +142,17 @@ export function useArchivedTasks() {
 
 export function useUnarchiveTask() {
   const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: (taskId: string) => unarchiveTask(taskId),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["tasks"] });
-      void qc.invalidateQueries({ queryKey: ["archive"] });
+      void qc.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["archive"],
+      });
+      toast("Task restored");
     },
   });
 }

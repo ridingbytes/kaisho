@@ -1,4 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type { Customer } from "../types";
 import {
   createCustomer,
@@ -6,6 +10,7 @@ import {
   fetchCustomers,
   updateCustomer,
 } from "../api/client";
+import { useToast } from "../context/ToastContext";
 
 export function useCustomers(includeInactive = false) {
   return useQuery({
@@ -18,6 +23,7 @@ export function useCustomers(includeInactive = false) {
 
 export function useCreateCustomer() {
   const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: (data: {
       name: string;
@@ -27,26 +33,38 @@ export function useCreateCustomer() {
       repo?: string | null;
       tags?: string[];
     }) => createCustomer(data),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["customers"] });
-      void qc.invalidateQueries({ queryKey: ["dashboard"] });
+    onSuccess: (_d, vars) => {
+      void qc.invalidateQueries({
+        queryKey: ["customers"],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["dashboard"],
+      });
+      toast(`Customer created: ${vars.name}`);
     },
   });
 }
 
 export function useDeleteCustomer() {
   const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: (name: string) => deleteCustomer(name),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["customers"] });
-      void qc.invalidateQueries({ queryKey: ["dashboard"] });
+    onSuccess: (_d, name) => {
+      void qc.invalidateQueries({
+        queryKey: ["customers"],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["dashboard"],
+      });
+      toast(`Customer deleted: ${name}`);
     },
   });
 }
 
 export function useUpdateCustomer() {
   const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: ({
       name,
@@ -69,8 +87,13 @@ export function useUpdateCustomer() {
       > & { used_offset?: number };
     }) => updateCustomer(name, updates),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["customers"] });
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({
+        queryKey: ["customers"],
+      });
+      qc.invalidateQueries({
+        queryKey: ["dashboard"],
+      });
+      toast("Customer updated");
     },
   });
 }

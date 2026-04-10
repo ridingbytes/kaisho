@@ -3,6 +3,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useToast } from "../context/ToastContext";
 import {
   deleteClockEntry,
   fetchActiveTimer,
@@ -65,7 +66,8 @@ export function useTaskClockEntries(taskId: string) {
 }
 
 export function useStartTimer() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: ({
       customer,
@@ -77,25 +79,35 @@ export function useStartTimer() {
       description: string;
       taskId?: string;
       contract?: string;
-    }) => startTimer(customer, description, taskId, contract),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["clocks"] });
+    }) => startTimer(
+      customer, description, taskId, contract,
+    ),
+    onSuccess: (_d, vars) => {
+      void qc.invalidateQueries({
+        queryKey: ["clocks"],
+      });
+      toast(`Timer started: ${vars.customer}`);
     },
   });
 }
 
 export function useStopTimer() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: stopTimer,
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["clocks"] });
+      void qc.invalidateQueries({
+        queryKey: ["clocks"],
+      });
+      toast("Timer stopped");
     },
   });
 }
 
 export function useQuickBook() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: ({
       duration,
@@ -112,16 +124,21 @@ export function useQuickBook() {
       contract?: string;
       date?: string;
     }) => quickBook(
-      duration, customer, description, taskId, contract, date
+      duration, customer, description,
+      taskId, contract, date,
     ),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["clocks"] });
+    onSuccess: (_d, vars) => {
+      void qc.invalidateQueries({
+        queryKey: ["clocks"],
+      });
+      toast(`Booked ${vars.duration} for ${vars.customer}`);
     },
   });
 }
 
 export function useUpdateClockEntry() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: ({
       startIso,
@@ -141,17 +158,25 @@ export function useUpdateClockEntry() {
       };
     }) => updateClockEntry(startIso, updates),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["clocks"] });
+      void qc.invalidateQueries({
+        queryKey: ["clocks"],
+      });
+      toast("Clock entry updated");
     },
   });
 }
 
 export function useDeleteClockEntry() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
-    mutationFn: (startIso: string) => deleteClockEntry(startIso),
+    mutationFn: (startIso: string) =>
+      deleteClockEntry(startIso),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["clocks"] });
+      void qc.invalidateQueries({
+        queryKey: ["clocks"],
+      });
+      toast("Clock entry deleted");
     },
   });
 }
