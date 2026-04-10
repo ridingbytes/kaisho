@@ -571,6 +571,15 @@ def ask_claude_cli(model: str, prompt: str) -> str:
     return result.stdout.strip()
 
 
+def _strip_model_prefix(text: str, model: str) -> str:
+    """Remove model name prefix that some models prepend
+    to their output (e.g. 'claude-sonnet-4-6\\n...')."""
+    for prefix in (model, model.split(":")[0]):
+        if text.startswith(prefix):
+            text = text[len(prefix):].lstrip(": \n")
+    return text
+
+
 def ask(
     question: str,
     model_str: str,
@@ -625,7 +634,8 @@ def ask(
             api_key=openai_api_key,
             system_prompt=sp,
         )
-    return ask_ollama(
+    answer = ask_ollama(
         model_name, prompt, ollama_base_url,
         system_prompt=sp,
     )
+    return _strip_model_prefix(answer, model_name)
