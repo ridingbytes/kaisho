@@ -6,7 +6,6 @@ import {
   Clock,
   Inbox,
   Pencil,
-  Square,
   Trash2,
   TrendingDown,
   X,
@@ -622,14 +621,13 @@ export function DashboardView() {
               onClick={() => stopTimer.mutate()}
               disabled={stopTimer.isPending}
               className={
-                "p-1.5 rounded-lg text-stone-700 " +
-                "hover:text-red-400 " +
+                "p-1.5 rounded-lg " +
                 "hover:bg-red-500/10 " +
                 "transition-colors disabled:opacity-40"
               }
               title="Stop timer"
             >
-              <Square size={16} strokeWidth={2} />
+              <span className="block w-3.5 h-3.5 rounded-sm bg-red-500" />
             </button>
           </div>
         )}

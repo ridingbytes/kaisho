@@ -12,6 +12,8 @@ import {
   useActiveTimer,
   useStopTimer,
 } from "./hooks/useClocks";
+import { CalendarWidget } from "./components/clock/CalendarWidget";
+import { ClockList } from "./components/clock/ClockList";
 import { StartForm } from "./components/clock/StartForm";
 import {
   useCreateProfile,
@@ -70,6 +72,11 @@ function MobileTimerModal({
   onClose: () => void;
 }) {
   const { data: timer } = useActiveTimer();
+  const [selectedDate, setSelectedDate] = useState<
+    string | null
+  >(null);
+  const isRunning = timer?.active === true;
+
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[60] flex flex-col bg-surface-card">
       <div
@@ -106,7 +113,15 @@ function MobileTimerModal({
             }}
           />
         )}
-        <StartForm onStarted={onClose} />
+        {!isRunning && <StartForm onStarted={() => {}} />}
+        <CalendarWidget
+          selectedDate={selectedDate}
+          onDateChange={setSelectedDate}
+        />
+        <ClockList
+          isRunning={isRunning}
+          selectedDate={selectedDate}
+        />
       </div>
     </div>,
     document.body,
