@@ -1,4 +1,5 @@
 import { Check, Pencil, RotateCw, Trash2, X } from "lucide-react";
+import { ConfirmPopover } from "../common/ConfirmPopover";
 import { useState } from "react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
@@ -313,14 +314,18 @@ function SlotRow({ entry, tasks }: SlotRowProps) {
       >
         <Pencil size={10} />
       </button>
-      <button
-        onClick={() => deleteEntry.mutate(entry.start)}
+      <ConfirmPopover
+        onConfirm={() => deleteEntry.mutate(entry.start)}
         disabled={deleteEntry.isPending}
-        className={[actionBtn, "hover:text-red-400 hover:bg-red-500/10"].join(" ")}
-        title="Delete"
       >
-        <Trash2 size={10} />
-      </button>
+        <button
+          disabled={deleteEntry.isPending}
+          className={[actionBtn, "hover:text-red-400 hover:bg-red-500/10"].join(" ")}
+          title="Delete"
+        >
+          <Trash2 size={10} />
+        </button>
+      </ConfirmPopover>
     </div>
   );
 }
