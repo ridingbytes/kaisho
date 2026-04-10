@@ -30,6 +30,8 @@ import {
 } from "../../hooks/useClocks";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { useSettings } from "../../hooks/useSettings";
+import { useTasks } from "../../hooks/useTasks";
+import { useSetView } from "../../context/ViewContext";
 import type {
   ClockEntry,
   Contract,
@@ -38,6 +40,9 @@ import type {
 
 
 const STATUS_OPTIONS = ["active", "inactive", "archiv"];
+const PAGE_SIZE = 5;
+
+const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
 
 interface Props {
   customer: Customer;
@@ -654,16 +659,25 @@ function TimeEntryRow({
   if (editing) {
     return (
       <div className="flex flex-col gap-1 py-1.5 border-b border-border-subtle last:border-0">
+        <textarea
+          autoFocus
+          value={desc}
+          onChange={(e) => setDesc(e.target.value)}
+          onKeyDown={(e) => {
+            if (
+              e.key === "Enter" &&
+              (e.metaKey || e.ctrlKey)
+            ) {
+              e.preventDefault();
+              handleSave();
+            }
+            if (e.key === "Escape") setEditing(false);
+          }}
+          placeholder="Description"
+          rows={2}
+          className={fieldClass("resize-none")}
+        />
         <div className="flex gap-1">
-          <input
-            autoFocus
-            type="text"
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Description"
-            className={fieldClass("flex-1 min-w-0")}
-          />
           <input
             type="number"
             min="0"
@@ -765,6 +779,123 @@ function TimeEntryRow({
   );
 }
 
+function TasksSection({
+  customerName,
+}: {
+  customerName: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const { data: allTasks = [] } = useTasks(true);
+  const setView = useSetView();
+  const [limit, setLimit] = useState(PAGE_SIZE);
+
+  const tasks = allTasks.filter(
+    (t) =>
+      (t.customer || "").toLowerCase() ===
+      customerName.toLowerCase(),
+  );
+
+  const visible = tasks.slice(0, limit);
+  const hasMore = tasks.length > limit;
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={[
+          "flex items-center gap-1 text-[10px]",
+          "font-semibold uppercase tracking-wider",
+          "text-stone-500 hover:text-stone-700",
+          "transition-colors",
+        ].join(" ")}
+      >
+        {open ? (
+          <ChevronDown size={10} />
+        ) : (
+          <ChevronRight size={10} />
+        )}
+        Tasks ({tasks.length})
+      </button>
+
+      {open && (
+        <div className="mt-1 ml-5">
+          {tasks.length === 0 ? (
+            <p className="text-[10px] text-stone-500 py-1">
+              No tasks
+            </p>
+          ) : (
+            <>
+              {visible.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() =>
+                    setView(
+                      "board",
+                      t.title.replace(
+                        CUSTOMER_PREFIX_RE, "",
+                      ),
+                    )
+                  }
+                  className={[
+                    "w-full text-left flex items-center",
+                    "gap-2 py-1.5 text-xs",
+                    "border-b border-border-subtle",
+                    "last:border-0 hover:bg-surface-raised",
+                    "transition-colors rounded px-1",
+                    t.status === "DONE"
+                      ? "opacity-50" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <span
+                    className={[
+                      "px-1 py-0.5 rounded text-[9px]",
+                      "font-bold uppercase tracking-wider",
+                      "shrink-0",
+                      t.status === "DONE"
+                        ? "bg-emerald-500/10 text-emerald-600"
+                        : t.status === "IN-PROGRESS"
+                          ? "bg-blue-500/10 text-blue-600"
+                          : t.status === "NEXT"
+                            ? "bg-amber-500/10 text-amber-600"
+                            : "bg-surface-overlay text-stone-600",
+                    ].join(" ")}
+                  >
+                    {t.status}
+                  </span>
+                  <span className="truncate text-stone-800">
+                    {t.title.replace(
+                      CUSTOMER_PREFIX_RE, "",
+                    )}
+                  </span>
+                </button>
+              ))}
+              {hasMore && (
+                <button
+                  onClick={() =>
+                    setLimit((l) => l + PAGE_SIZE)
+                  }
+                  className={[
+                    "w-full text-center py-1.5",
+                    "text-[10px] text-stone-500",
+                    "hover:text-cta transition-colors",
+                  ].join(" ")}
+                >
+                  Show {Math.min(
+                    PAGE_SIZE,
+                    tasks.length - limit,
+                  )} more
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TimeEntriesSection({
   customerName,
   contracts,
@@ -776,6 +907,10 @@ function TimeEntriesSection({
   const { data: entries = [] } = useCustomerClockEntries(
     open ? customerName : ""
   );
+  const [limit, setLimit] = useState(PAGE_SIZE);
+
+  const visible = entries.slice(0, limit);
+  const hasMore = entries.length > limit;
 
   return (
     <div>
@@ -788,23 +923,43 @@ function TimeEntriesSection({
         ) : (
           <ChevronRight size={10} />
         )}
-        Time Entries{open ? ` (${entries.length})` : ""}
+        Time Entries
+        {open ? ` (${entries.length})` : ""}
       </button>
 
       {open && (
-        <div className="mt-1 ml-5 max-h-48 overflow-y-auto">
+        <div className="mt-1 ml-5">
           {entries.length === 0 ? (
             <p className="text-[10px] text-stone-500 py-1">
               No entries
             </p>
           ) : (
-            entries.map((e) => (
-              <TimeEntryRow
-                key={e.start}
-                entry={e}
-                contracts={contracts}
-              />
-            ))
+            <>
+              {visible.map((e) => (
+                <TimeEntryRow
+                  key={e.start}
+                  entry={e}
+                  contracts={contracts}
+                />
+              ))}
+              {hasMore && (
+                <button
+                  onClick={() =>
+                    setLimit((l) => l + PAGE_SIZE)
+                  }
+                  className={[
+                    "w-full text-center py-1.5",
+                    "text-[10px] text-stone-500",
+                    "hover:text-cta transition-colors",
+                  ].join(" ")}
+                >
+                  Show {Math.min(
+                    PAGE_SIZE,
+                    entries.length - limit,
+                  )} more
+                </button>
+              )}
+            </>
           )}
         </div>
       )}
@@ -1202,6 +1357,9 @@ export function CustomerCard({ customer: c }: Props) {
           ) : (
             <AddFirstContractInline customerName={c.name} />
           )}
+
+          {/* Tasks */}
+          <TasksSection customerName={c.name} />
 
           {/* Time entries */}
           <TimeEntriesSection
