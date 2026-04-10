@@ -440,6 +440,71 @@ function stripCustomerPrefix(title: string): string {
   return title.replace(CUSTOMER_PREFIX_RE, "");
 }
 
+function StatusPicker({
+  current,
+  states,
+  onSelect,
+  onClose,
+}: {
+  current: string;
+  states: { name: string; label: string; color: string }[];
+  onSelect: (status: string) => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (
+        ref.current &&
+        !ref.current.contains(e.target as Node)
+      ) {
+        onClose();
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () =>
+      document.removeEventListener("mousedown", onClick);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className={[
+        "absolute left-2 bottom-0 translate-y-full",
+        "z-50 py-1 rounded-lg shadow-lg",
+        "bg-surface-card border border-border",
+        "min-w-[120px]",
+      ].join(" ")}
+    >
+      {states.map((s) => (
+        <button
+          key={s.name}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect(s.name);
+          }}
+          disabled={s.name === current}
+          className={[
+            "w-full flex items-center gap-2",
+            "px-3 py-1.5 text-xs text-left",
+            "transition-colors",
+            s.name === current
+              ? "text-stone-400 cursor-default"
+              : "text-stone-800 hover:bg-surface-raised",
+          ].join(" ")}
+        >
+          <span
+            className="w-2 h-2 rounded-full shrink-0"
+            style={{ backgroundColor: s.color }}
+          />
+          {s.label || s.name}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 interface TaskCardProps {
   task: Task;
   statusColor: string;
@@ -476,6 +541,7 @@ export function TaskCard({
       === stripCustomerPrefix(task.title)
   );
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [statePicker, setStatePicker] = useState(false);
   const [tagging, setTagging] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -578,12 +644,43 @@ export function TaskCard({
       />
 
       <div className="flex items-stretch">
-        {/* Drag handle */}
-        <div
-          {...listeners}
-          className="flex items-center pl-3 pr-1 cursor-grab active:cursor-grabbing text-stone-400 hover:text-stone-600 shrink-0"
-        >
-          <GripVertical size={12} strokeWidth={2} />
+        {/* Drag handle + state picker */}
+        <div className="flex flex-col items-center shrink-0 relative">
+          <div
+            {...listeners}
+            className="flex-1 flex items-center pl-3 pr-1 cursor-grab active:cursor-grabbing text-stone-400 hover:text-stone-600"
+          >
+            <GripVertical size={12} strokeWidth={2} />
+          </div>
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setStatePicker((v) => !v);
+            }}
+            className={[
+              "mb-2 ml-2 mr-1 w-4 h-4 rounded-full",
+              "border-2 border-white shadow-sm",
+              "hover:scale-125 transition-transform",
+              "shrink-0",
+            ].join(" ")}
+            style={{ backgroundColor: statusColor }}
+            title="Change status"
+          />
+          {statePicker && (
+            <StatusPicker
+              current={task.status}
+              states={settings?.task_states ?? []}
+              onSelect={(s) => {
+                markDone.mutate({
+                  taskId: task.id,
+                  status: s,
+                });
+                setStatePicker(false);
+              }}
+              onClose={() => setStatePicker(false)}
+            />
+          )}
         </div>
 
         {/* Card content */}
