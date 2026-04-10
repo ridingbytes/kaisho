@@ -281,6 +281,7 @@ function EditForm({ entry, onClose }: EditFormProps) {
   const [contract, setContract] = useState(entry.contract ?? "");
   const [description, setDescription] = useState(entry.description);
   const [hours, setHours] = useState(minutesToDecimal(entry.duration_minutes));
+  const [notes, setNotes] = useState(entry.notes ?? "");
   const [taskId, setTaskId] = useState<string | null>(entry.task_id);
   const { data: tasks = [] } = useTasks(true);
   const { data: contracts = [] } = useContracts(customer || null);
@@ -299,6 +300,7 @@ function EditForm({ entry, onClose }: EditFormProps) {
       start_time?: string;
       task_id?: string;
       contract?: string;
+      notes?: string;
     } = {};
     const origDate = entry.start.slice(0, 10);
     const origTime = entry.start.slice(11, 16);
@@ -323,6 +325,9 @@ function EditForm({ entry, onClose }: EditFormProps) {
     }
     if (contract !== (entry.contract ?? "")) {
       updates.contract = contract;
+    }
+    if (notes !== (entry.notes ?? "")) {
+      updates.notes = notes;
     }
     if (Object.keys(updates).length === 0) {
       onClose();
@@ -411,8 +416,16 @@ function EditForm({ entry, onClose }: EditFormProps) {
           onKeyDown={handleKeyDown}
         />
       </td>
-      {/* Description (placeholder) */}
-      <td></td>
+      {/* Description */}
+      <td className="px-3 py-2">
+        <input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Description"
+          className={smallInputCls}
+        />
+      </td>
       {/* Duration + actions */}
       <td className="px-3 py-2 text-right">
         <div className="flex items-center gap-1 justify-end">
@@ -442,12 +455,12 @@ function EditForm({ entry, onClose }: EditFormProps) {
         </div>
       </td>
     </tr>
-    {/* Description row */}
+    {/* Notes row */}
     <tr className="bg-surface-raised/40 border-b border-border-subtle">
       <td colSpan={7} className="px-3 pb-2">
         <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
           onKeyDown={(e) => {
             if (
               e.key === "Enter" &&
@@ -458,7 +471,7 @@ function EditForm({ entry, onClose }: EditFormProps) {
             }
             if (e.key === "Escape") onClose();
           }}
-          placeholder="Description"
+          placeholder="Notes (optional)"
           rows={2}
           className={`${smallInputCls} w-full resize-y`}
         />

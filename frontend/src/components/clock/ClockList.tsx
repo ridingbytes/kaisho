@@ -256,7 +256,7 @@ function SlotRow({ entry, tasks }: SlotRowProps) {
           onKeyDown={handleTextareaKeyDown}
           placeholder="Notes"
           rows={2}
-          className={[inputCls, "resize-none"].join(" ")}
+          className={[inputCls, "resize-y"].join(" ")}
         />
         <div className="flex gap-1 justify-end items-center">
           <span className="text-[9px] text-stone-400 mr-auto">
