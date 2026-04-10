@@ -10,16 +10,14 @@ from . import notes as notes_service
 
 INBOX_KEYWORDS: set[str] = set()
 CREATED_FMT = "%Y-%m-%d %a %H:%M"
-_ORG_HEADING_RE = re.compile(r"^\*+\s")
-
-
 def _escape_body(text: str) -> list[str]:
-    """Split text into lines, escaping any that look like
-    org headings (* at start of line). Adds a leading
-    space so the org parser treats them as body text."""
+    """Split text into lines, escaping any that start
+    with * (org headings, markdown bold, bullets). Adds
+    a leading space so the org parser treats them as
+    body text rather than new headings."""
     lines = []
     for line in text.splitlines():
-        if _ORG_HEADING_RE.match(line):
+        if line.startswith("*"):
             lines.append(" " + line)
         else:
             lines.append(line)
@@ -180,7 +178,8 @@ def update_item(
             heading.title = bare
     if "body" in updates:
         heading.body = (
-            updates["body"].splitlines() if updates["body"] else []
+            _escape_body(updates["body"])
+            if updates["body"] else []
         )
     if "channel" in updates:
         if updates["channel"]:
