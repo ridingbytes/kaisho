@@ -483,7 +483,7 @@ export function KanbanBoard() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3 border-b border-border-subtle shrink-0">
         <h1 className="text-sm font-semibold text-stone-800 tracking-wide uppercase">
           Board
         </h1>
