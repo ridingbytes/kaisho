@@ -10,6 +10,8 @@ import { TaskCard } from "./TaskCard";
 interface KanbanColumnProps {
   state: TaskState;
   tasks: Task[];
+  /** Column width in pixels. Falls back to 288 (w-72). */
+  columnWidth?: number;
   /** When true, open the add-task form immediately (caller resets to false). */
   openAdd?: boolean;
   onAddOpened?: () => void;
@@ -24,6 +26,7 @@ export function KanbanColumn({
   onAddOpened,
   onTagClick,
   onCustomerClick,
+  columnWidth,
 }: KanbanColumnProps) {
   const {
     setNodeRef,
@@ -84,9 +87,15 @@ export function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{
+        ...style,
+        ...(columnWidth
+          ? { width: columnWidth, minWidth: columnWidth }
+          : {}),
+      }}
       className={[
-        "flex flex-col w-72 shrink-0 h-full min-h-0",
+        "flex flex-col shrink-0 h-full min-h-0",
+        !columnWidth && "w-72",
         isDragging ? "opacity-40" : "",
       ]
         .filter(Boolean)

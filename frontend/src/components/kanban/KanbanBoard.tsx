@@ -333,6 +333,38 @@ export function KanbanBoard() {
 
   const states =
     settings?.task_states.filter((s) => showDone || !s.done) ?? [];
+  const colCount = states.length;
+
+  // Responsive column width: snap to 2, 3, or all columns
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [colWidth, setColWidth] = useState<
+    number | undefined
+  >(undefined);
+
+  useEffect(() => {
+    const el = boardRef.current;
+    if (!el || colCount === 0) return;
+    const GAP = 16; // gap-4
+    const PAD = 48; // p-6 * 2
+    function calc() {
+      if (!el) return;
+      const avail = el.clientWidth - PAD;
+      // How many columns fit at min 220px each?
+      const fit = Math.min(
+        colCount,
+        Math.max(1, Math.floor(
+          (avail + GAP) / (220 + GAP),
+        )),
+      );
+      setColWidth(
+        Math.floor((avail - (fit - 1) * GAP) / fit),
+      );
+    }
+    calc();
+    const ro = new ResizeObserver(calc);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [colCount]);
 
   const stateMap = Object.fromEntries(
     (settings?.task_states ?? []).map((s) => [s.name, s])
@@ -581,7 +613,10 @@ export function KanbanBoard() {
       </div>
 
       {/* Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden min-h-0">
+      <div
+        ref={boardRef}
+        className="flex-1 overflow-x-auto overflow-y-hidden min-h-0"
+      >
         <DndContext
           sensors={sensors}
           onDragStart={onDragStart}
@@ -599,6 +634,7 @@ export function KanbanBoard() {
                   key={state.name}
                   state={state}
                   tasks={tasksByStatus(state.name)}
+                  columnWidth={colWidth}
                   openAdd={idx === 0 && openAddInFirst}
                   onAddOpened={() => setOpenAddInFirst(false)}
                   onTagClick={(tag) =>
