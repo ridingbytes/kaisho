@@ -108,7 +108,7 @@ interface TabBarProps {
 
 function TabBar({ active, onChange }: TabBarProps) {
   return (
-    <div className="flex gap-1 border-b border-border-subtle mb-6">
+    <div className="flex flex-wrap gap-1 border-b border-border-subtle mb-6">
       {TABS.map((tab) => (
         <button
           key={tab.id}

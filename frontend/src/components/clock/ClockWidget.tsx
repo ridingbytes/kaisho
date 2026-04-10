@@ -84,9 +84,9 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
   }
 
   return (
-    <aside className="flex flex-col shrink-0 border-l border-border-subtle bg-surface-card w-80">
-      {/* Header */}
-      <div className="flex items-center px-4 py-3 border-b border-border-subtle shrink-0">
+    <aside className="flex flex-col shrink-0 md:border-l border-border-subtle bg-surface-card w-full md:w-80">
+      {/* Header (hidden on mobile -- modal provides its own) */}
+      <div className="hidden md:flex items-center px-4 py-3 border-b border-border-subtle shrink-0">
         <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-700 flex-1">
           Time Tracking
         </h2>

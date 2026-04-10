@@ -1,5 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Menu, Moon, Settings, Sun, X } from "lucide-react";
+import {
+  Clock,
+  Menu,
+  Moon,
+  Settings,
+  Sun,
+  X,
+} from "lucide-react";
+import { useActiveTimer } from "./hooks/useClocks";
 import {
   useCreateProfile,
   useCurrentUser,
@@ -86,6 +94,11 @@ function AppShell() {
     () => localStorage.getItem("clock_open") !== "false"
   );
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobileTimerOpen, setMobileTimerOpen] = useState(
+    false,
+  );
+  const { data: timerData } = useActiveTimer();
+  const timerActive = timerData?.active === true;
 
   const [appTitle, setAppTitle] = useState(
     () => localStorage.getItem("kaisho_app_title") || "KAISHO",
@@ -271,6 +284,19 @@ function AppShell() {
           {appTitle}
         </button>
         <div className="ml-auto flex items-center gap-2">
+          {/* Mobile timer button */}
+          <button
+            onClick={() => setMobileTimerOpen(true)}
+            className={[
+              "md:hidden p-1 rounded transition-colors",
+              timerActive
+                ? "text-cta animate-pulse"
+                : "text-stone-500 hover:text-stone-900",
+            ].join(" ")}
+            title="Time tracking"
+          >
+            <Clock size={16} />
+          </button>
           <button
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
@@ -450,6 +476,29 @@ function AppShell() {
           onNavigate={setView}
           onClose={() => setPaletteOpen(false)}
         />
+      )}
+
+      {/* Mobile timer full-screen modal */}
+      {mobileTimerOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex flex-col bg-surface-card">
+          <div className="flex items-center px-4 py-3 border-b border-border-subtle shrink-0">
+            <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-700 flex-1">
+              Time Tracking
+            </h2>
+            <button
+              onClick={() => setMobileTimerOpen(false)}
+              className="p-1 rounded text-stone-500 hover:text-stone-900"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <ClockWidget
+              open={true}
+              onToggle={() => setMobileTimerOpen(false)}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
