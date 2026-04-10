@@ -7,7 +7,12 @@ import {
   Sun,
   X,
 } from "lucide-react";
-import { useActiveTimer } from "./hooks/useClocks";
+import ReactDOM from "react-dom";
+import {
+  useActiveTimer,
+  useStopTimer,
+} from "./hooks/useClocks";
+import { StartForm } from "./components/clock/StartForm";
 import {
   useCreateProfile,
   useCurrentUser,
@@ -58,6 +63,123 @@ const VALID_VIEWS = new Set<View>([
   "knowledge", "github",
   "clocks", "cron", "settings", "advisor",
 ]);
+
+function MobileTimerModal({
+  onClose,
+}: {
+  onClose: () => void;
+}) {
+  const { data: timer } = useActiveTimer();
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 z-[60] flex flex-col bg-surface-card">
+      <div
+        className={[
+          "flex items-center px-4 py-3",
+          "border-b border-border-subtle shrink-0",
+        ].join(" ")}
+      >
+        <h2
+          className={[
+            "text-xs font-semibold tracking-wider",
+            "uppercase text-stone-700 flex-1",
+          ].join(" ")}
+        >
+          Time Tracking
+        </h2>
+        <button
+          onClick={onClose}
+          className={[
+            "p-1 rounded text-stone-500",
+            "hover:text-stone-900",
+          ].join(" ")}
+        >
+          <X size={18} />
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+        {timer?.active && timer.start && timer.customer && (
+          <ActiveTimerWidget
+            timer={{
+              customer: timer.customer!,
+              description: timer.description,
+              start: timer.start!,
+            }}
+          />
+        )}
+        <StartForm onStarted={onClose} />
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function ActiveTimerWidget({
+  timer,
+}: {
+  timer: { customer: string; description?: string; start: string };
+}) {
+  const [, setTick] = useState(0);
+  const stop = useStopTimer();
+
+  useEffect(() => {
+    const id = setInterval(
+      () => setTick((n) => n + 1), 1000,
+    );
+    return () => clearInterval(id);
+  }, []);
+
+  const diffMs =
+    Date.now() - new Date(timer.start).getTime();
+  const totalSec = Math.max(
+    0, Math.floor(diffMs / 1000),
+  );
+  const h = String(
+    Math.floor(totalSec / 3600),
+  ).padStart(2, "0");
+  const m = String(
+    Math.floor((totalSec % 3600) / 60),
+  ).padStart(2, "0");
+  const s = String(totalSec % 60).padStart(2, "0");
+
+  return (
+    <div
+      className={[
+        "flex flex-col items-center gap-3 p-6",
+        "rounded-xl bg-surface-raised",
+        "border border-border-subtle",
+      ].join(" ")}
+    >
+      <span className="text-4xl font-mono font-bold tabular-nums text-stone-900">
+        {h}:{m}:{s}
+      </span>
+      <span className="text-xs text-emerald-500 font-semibold uppercase">
+        Active
+      </span>
+      <p className="text-sm text-stone-700 text-center">
+        <span className="font-semibold">
+          {timer.customer}
+        </span>
+        {timer.description && (
+          <span className="text-stone-500">
+            {" "}&middot; {timer.description}
+          </span>
+        )}
+      </p>
+      <button
+        onClick={() => stop.mutate()}
+        disabled={stop.isPending}
+        className={[
+          "px-6 py-2 rounded-lg text-sm",
+          "font-semibold bg-red-500 text-white",
+          "hover:bg-red-600 transition-colors",
+          "disabled:opacity-40",
+        ].join(" ")}
+      >
+        {stop.isPending ? "Stopping..." : "Stop Timer"}
+      </button>
+    </div>
+  );
+}
 
 function viewFromHash(): View {
   const hash = window.location.hash.replace(/^#\/?/, "");
@@ -480,25 +602,9 @@ function AppShell() {
 
       {/* Mobile timer full-screen modal */}
       {mobileTimerOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex flex-col bg-surface-card">
-          <div className="flex items-center px-4 py-3 border-b border-border-subtle shrink-0">
-            <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-700 flex-1">
-              Time Tracking
-            </h2>
-            <button
-              onClick={() => setMobileTimerOpen(false)}
-              className="p-1 rounded text-stone-500 hover:text-stone-900"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            <ClockWidget
-              open={true}
-              onToggle={() => setMobileTimerOpen(false)}
-            />
-          </div>
-        </div>
+        <MobileTimerModal
+          onClose={() => setMobileTimerOpen(false)}
+        />
       )}
     </div>
   );
