@@ -219,7 +219,10 @@ def add_customer(
     if org_file.headings:
         org_file.headings[0].children.append(new_heading)
     else:
-        group = Heading(level=1, title="Kunden", dirty=True)
+        group = Heading(
+            level=1, keyword=None,
+            title="Kunden", dirty=True,
+        )
         group.children.append(new_heading)
         org_file.headings.append(group)
 
