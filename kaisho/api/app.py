@@ -139,9 +139,12 @@ def _mount_frontend():
             def _logo(p=logo):
                 return FileResponse(p)
 
-    # SPA fallback: all non-API routes serve index.html
+    # SPA fallback: non-API, non-WS routes serve index.html
     @app.get("/{path:path}")
     async def _spa(path: str):
+        if path.startswith(("api/", "ws", "health")):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404)
         file = dist / path
         if file.is_file():
             return FileResponse(file)
