@@ -105,10 +105,18 @@ def health():
 
 # -- Serve frontend static files in production ----------
 def _mount_frontend():
-    """Mount the built frontend if the dist/ directory
-    exists. In development, Vite handles this via proxy.
+    """Mount the built frontend when SERVE_FRONTEND=true.
+
+    In development Vite proxies API calls, so the backend
+    should NOT serve static files. In Docker / production,
+    set SERVE_FRONTEND=true to serve the built frontend.
     """
+    import os
     from pathlib import Path
+
+    if os.environ.get("SERVE_FRONTEND", "").lower() \
+            not in ("1", "true", "yes"):
+        return
 
     from fastapi.staticfiles import StaticFiles
     from starlette.responses import FileResponse
@@ -126,7 +134,7 @@ def _mount_frontend():
         name="static-assets",
     )
 
-    # Serve logo files from dist root
+    # Serve logo/wordmark SVGs from dist root
     for name in (
         "kaisho-logo.svg",
         "kaisho-logo-light.svg",
@@ -139,12 +147,9 @@ def _mount_frontend():
             def _logo(p=logo):
                 return FileResponse(p)
 
-    # SPA fallback: non-API, non-WS routes serve index.html
+    # SPA fallback: serve index.html for all non-API paths
     @app.get("/{path:path}")
     async def _spa(path: str):
-        if path.startswith(("api/", "ws", "health")):
-            from fastapi import HTTPException
-            raise HTTPException(status_code=404)
         file = dist / path
         if file.is_file():
             return FileResponse(file)

@@ -38,7 +38,8 @@ COPY --from=frontend /build/dist frontend/dist
 
 # Data volume — customer data persists here
 VOLUME /app/data
-ENV KAISHO_HOME=/app/data
+ENV KAISHO_HOME=/app/data \
+    SERVE_FRONTEND=true
 
 # Default port
 EXPOSE 8765
