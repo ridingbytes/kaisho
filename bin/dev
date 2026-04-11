@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+# ============================================================
+# Kaisho development server
+#
+# Usage:
+#   bin/dev              Start backend + frontend (default)
+#   bin/dev --backend    Backend only (API on :8765)
+#   bin/dev --frontend   Frontend only (Vite on :5173)
+#   bin/dev --prod       Production mode (backend serves
+#                        built frontend on :8765)
+#   bin/dev --docker     Build and run Docker container
+#
+# Options:
+#   --port PORT          Backend port (default: 8765)
+#   --profile NAME       Active profile name
+#   --no-install         Skip dependency checks
+# ============================================================
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+MODE="dev"
+PORT="8765"
+PROFILE=""
+SKIP_INSTALL=false
+
+BACKEND_PID=""
+FRONTEND_PID=""
+
+# -- Parse arguments ----------------------------------------
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --backend)   MODE="backend";  shift ;;
+        --frontend)  MODE="frontend"; shift ;;
+        --prod)      MODE="prod";     shift ;;
+        --docker)    MODE="docker";   shift ;;
+        --port)      PORT="$2";       shift 2 ;;
+        --profile)   PROFILE="$2";    shift 2 ;;
+        --no-install) SKIP_INSTALL=true; shift ;;
+        -h|--help)
+            sed -n '2,/^# =====/p' "$0" | grep '^#' \
+                | sed 's/^# \?//'
+            exit 0
+            ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
+    esac
+done
+
+# -- Helpers ------------------------------------------------
+
+cleanup() {
+    echo ""
+    echo "Shutting down..."
+    [ -n "$FRONTEND_PID" ] && kill "$FRONTEND_PID" 2>/dev/null
+    [ -n "$BACKEND_PID" ]  && kill "$BACKEND_PID"  2>/dev/null
+    wait 2>/dev/null
+    echo "Done."
+}
+
+ensure_venv() {
+    if [ ! -d "$ROOT/.venv" ]; then
+        echo "Creating virtual environment..."
+        python3 -m venv "$ROOT/.venv"
+    fi
+    source "$ROOT/.venv/bin/activate"
+}
+
+ensure_deps() {
+    if $SKIP_INSTALL; then return; fi
+
+    # Python
+    if ! command -v kai &>/dev/null; then
+        echo "Installing kaisho..."
+        pip install -e "$ROOT"
+    fi
+
+    # Node (only if frontend needed)
+    if [[ "$MODE" == "dev" || "$MODE" == "frontend" ]]; then
+        if [ ! -d "$ROOT/frontend/node_modules" ]; then
+            echo "Installing frontend deps..."
+            (cd "$ROOT/frontend" && pnpm install)
+        fi
+    fi
+
+    # Frontend build (only if prod mode)
+    if [[ "$MODE" == "prod" ]]; then
+        if [ ! -f "$ROOT/frontend/dist/index.html" ]; then
+            echo "Building frontend..."
+            (cd "$ROOT/frontend" && pnpm install && pnpm build)
+        fi
+    fi
+}
+
+start_backend() {
+    local extra_env=""
+    [ -n "$PROFILE" ] && extra_env="PROFILE=$PROFILE"
+    if [[ "$MODE" == "prod" ]]; then
+        extra_env="$extra_env SERVE_FRONTEND=true"
+    fi
+
+    echo "Starting backend on http://localhost:$PORT ..."
+    env $extra_env kai serve --port "$PORT" &
+    BACKEND_PID=$!
+}
+
+start_frontend() {
+    echo "Starting frontend on http://localhost:5173 ..."
+    (cd "$ROOT/frontend" && pnpm dev) &
+    FRONTEND_PID=$!
+}
+
+# -- Main ---------------------------------------------------
+
+trap cleanup EXIT INT TERM
+
+case "$MODE" in
+    dev)
+        ensure_venv
+        ensure_deps
+        start_backend
+        start_frontend
+        echo ""
+        echo "Kaisho is running."
+        echo "  App:  http://localhost:5173"
+        echo "  API:  http://localhost:$PORT"
+        echo "  Press Ctrl+C to stop."
+        wait
+        ;;
+
+    backend)
+        ensure_venv
+        ensure_deps
+        start_backend
+        echo ""
+        echo "Backend running on http://localhost:$PORT"
+        echo "  Press Ctrl+C to stop."
+        wait
+        ;;
+
+    frontend)
+        ensure_deps
+        start_frontend
+        echo ""
+        echo "Frontend running on http://localhost:5173"
+        echo "  Press Ctrl+C to stop."
+        wait
+        ;;
+
+    prod)
+        ensure_venv
+        ensure_deps
+        echo "Starting production server..."
+        echo "  App:  http://localhost:$PORT"
+        echo "  Press Ctrl+C to stop."
+        SERVE_FRONTEND=true \
+            ${PROFILE:+PROFILE=$PROFILE} \
+            kai serve --port "$PORT"
+        ;;
+
+    docker)
+        echo "Building and starting Docker container..."
+        docker compose up --build
+        ;;
+esac

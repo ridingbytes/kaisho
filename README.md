@@ -60,19 +60,16 @@ cd frontend && pnpm install && cd ..
 ### Run
 
 ```bash
-# Start backend + frontend dev servers
-kai serve &              # Backend on :8765
-cd frontend && pnpm dev  # Frontend on :5173
+bin/dev                  # Backend + frontend (default)
+bin/dev --backend        # Backend only (:8765)
+bin/dev --frontend       # Frontend only (:5173)
+bin/dev --prod           # Production mode (:8765)
+bin/dev --docker         # Docker container
+bin/dev --profile demo   # Use specific profile
+bin/dev --port 9000      # Custom port
 ```
 
-Open http://localhost:5173 in your browser.
-
-### Docker
-
-```bash
-docker compose up --build
-# Open http://localhost:8765
-```
+Open http://localhost:5173 (dev) or http://localhost:8765 (prod).
 
 
 ## CLI
