@@ -348,7 +348,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
   }
 
   return (
-    <div className="group py-2 border-b border-border-subtle last:border-0">
+    <div className="group py-1">
       {/* Row 1: name */}
       <p
         className={[
