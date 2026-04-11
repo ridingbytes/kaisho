@@ -32,6 +32,10 @@ import { navigateToClockDate } from "../../utils/clockNavigation";
 import { registerPanelAction } from "../../utils/panelActions";
 import { usePendingSearch, useSetView } from "../../context/ViewContext";
 import { SearchInput } from "../common/SearchInput";
+import {
+  useInvoicedContracts,
+  isInvoiced,
+} from "../../hooks/useInvoicedContracts";
 import type { ClockEntry, Task } from "../../types";
 
 type Period = "today" | "week" | "month" | "year";
@@ -488,9 +492,10 @@ function EditForm({ entry, onClose }: EditFormProps) {
 interface EntryRowProps {
   entry: ClockEntry;
   tasks: Task[];
+  invoicedSet: Set<string>;
 }
 
-function EntryRow({ entry, tasks }: EntryRowProps) {
+function EntryRow({ entry, tasks, invoicedSet }: EntryRowProps) {
   const [mode, setMode] = useState<"view" | "edit">(
     "view"
   );
@@ -498,6 +503,9 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
   const duplicate = useQuickBook();
   const setView = useSetView();
   const taskTitle = taskTitleById(tasks, entry.task_id);
+  const isInv = isInvoiced(
+    invoicedSet, entry.customer, entry.contract,
+  );
 
   function handleDuplicate() {
     const mins = entry.duration_minutes ?? 0;
@@ -566,10 +574,16 @@ function EntryRow({ entry, tasks }: EntryRowProps) {
       <td className="px-3 py-1.5 text-xs whitespace-nowrap max-w-28 truncate">
         {entry.contract && (
           <span
-            className="px-1.5 py-0.5 rounded text-[10px] bg-surface-overlay text-stone-700"
+            className={[
+              "px-1.5 py-0.5 rounded text-[10px]",
+              isInv
+                ? "bg-emerald-500/10 text-emerald-600"
+                : "bg-surface-overlay text-stone-700",
+            ].join(" ")}
             title={entry.contract}
           >
             {entry.contract}
+            {isInv && " ✓"}
           </span>
         )}
       </td>
@@ -714,6 +728,7 @@ export function ClockView() {
     col: "date",
     dir: "desc",
   });
+  const invoicedSet = useInvoicedContracts();
 
   function toggleSort(col: SortCol) {
     setSort((prev) =>
@@ -889,6 +904,7 @@ export function ClockView() {
                   key={`${entry.start}-${idx}`}
                   entry={entry}
                   tasks={tasks}
+                  invoicedSet={invoicedSet}
                 />
               ))}
             </tbody>

@@ -1,5 +1,9 @@
 import { Check, Pencil, RotateCw, Trash2, X } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import {
+  useInvoicedContracts,
+  isInvoiced,
+} from "../../hooks/useInvoicedContracts";
 import { useState } from "react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
@@ -107,11 +111,12 @@ function ContractSelect({
 // --- Individual slot row (edit/delete per clock stamp) ---
 
 interface SlotRowProps {
+  invoicedSet: Set<string>;
   entry: ClockEntry;
   tasks: Task[];
 }
 
-function SlotRow({ entry, tasks }: SlotRowProps) {
+function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [editCustomer, setEditCustomer] = useState("");
   const setView = useSetView();
@@ -286,8 +291,16 @@ function SlotRow({ entry, tasks }: SlotRowProps) {
         {timeLabel(entry.start)}–{timeLabel(entry.end)}
       </span>
       {entry.contract && (
-        <span className="text-[9px] px-1 py-0.5 rounded bg-surface-overlay text-stone-500 truncate max-w-[60px]">
+        <span
+          className={[
+            "text-[9px] px-1 py-0.5 rounded truncate max-w-[80px]",
+            isInvoiced(invoicedSet, entry.customer, entry.contract)
+              ? "bg-emerald-500/10 text-emerald-600"
+              : "bg-surface-overlay text-stone-500",
+          ].join(" ")}
+        >
           {entry.contract}
+          {isInvoiced(invoicedSet, entry.customer, entry.contract) && " ✓"}
         </span>
       )}
       {entry.task_id && (
@@ -338,6 +351,7 @@ interface TaskGroupRowProps {
   showResume: boolean;
   tasks: Task[];
   customerColors: Record<string, string>;
+  invoicedSet: Set<string>;
 }
 
 function TaskGroupRow({
@@ -346,6 +360,7 @@ function TaskGroupRow({
   tasks,
   showResume,
   customerColors,
+  invoicedSet,
 }: TaskGroupRowProps) {
   const resumeTimer = useStartTimer();
   const setView = useSetView();
@@ -419,7 +434,7 @@ function TaskGroupRow({
       {/* Slots */}
       <div className="mt-0.5">
         {group.entries.map((entry) => (
-          <SlotRow key={entry.start} entry={entry} tasks={tasks} />
+          <SlotRow key={entry.start} entry={entry} tasks={tasks} invoicedSet={invoicedSet} />
         ))}
       </div>
     </div>
@@ -449,6 +464,7 @@ export function ClockList({
   );
   const { data: allTasks = [] } = useTasks(true);
   const customerColors = useCustomerColors();
+  const invoicedSet = useInvoicedContracts();
 
   const groups = groupEntries(entries);
   const totalMin = groups.reduce((sum, g) => sum + g.totalMinutes, 0);
@@ -479,6 +495,7 @@ export function ClockList({
           showResume={isToday}
           tasks={allTasks}
           customerColors={customerColors}
+          invoicedSet={invoicedSet}
         />
       ))}
       <div className="flex justify-between pt-2 mt-1">

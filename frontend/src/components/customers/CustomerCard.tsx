@@ -30,6 +30,10 @@ import {
 } from "../../hooks/useClocks";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { useSettings } from "../../hooks/useSettings";
+import {
+  useInvoicedContracts,
+  isInvoiced,
+} from "../../hooks/useInvoicedContracts";
 import { useTasks } from "../../hooks/useTasks";
 import { useSetView } from "../../context/ViewContext";
 import type {
@@ -510,6 +514,7 @@ interface ContractsSectionProps {
 
 function ContractsSection({ customer }: ContractsSectionProps) {
   const [adding, setAdding] = useState(false);
+  const [showInvoiced, setShowInvoiced] = useState(false);
   const hasContracts = customer.contracts.length > 0;
   const { data: contracts = [] } = useContracts(
     hasContracts ? customer.name : null
@@ -517,15 +522,45 @@ function ContractsSection({ customer }: ContractsSectionProps) {
 
   if (!hasContracts) return null;
 
+  const active = contracts.filter((c) => !c.invoiced);
+  const invoiced = contracts.filter((c) => c.invoiced);
+
   return (
     <div className="flex flex-col gap-1.5">
-      {contracts.map((c) => (
+      {active.map((c) => (
         <ContractRow
           key={c.name}
           contract={c}
           customerName={customer.name}
         />
       ))}
+      {invoiced.length > 0 && (
+        <>
+          <button
+            onClick={() => setShowInvoiced((v) => !v)}
+            className={[
+              "flex items-center gap-1 text-[10px]",
+              "text-stone-400 hover:text-stone-600",
+              "transition-colors self-start",
+            ].join(" ")}
+          >
+            {showInvoiced ? (
+              <ChevronDown size={10} />
+            ) : (
+              <ChevronRight size={10} />
+            )}
+            Invoiced ({invoiced.length})
+          </button>
+          {showInvoiced &&
+            invoiced.map((c) => (
+              <ContractRow
+                key={c.name}
+                contract={c}
+                customerName={customer.name}
+              />
+            ))}
+        </>
+      )}
       {adding ? (
         <AddContractForm
           customerName={customer.name}
@@ -609,6 +644,10 @@ function TimeEntryRow({
   );
   const [contract, setContract] = useState(
     entry.contract ?? ""
+  );
+  const invoicedSet = useInvoicedContracts();
+  const isInv = isInvoiced(
+    invoicedSet, entry.customer, entry.contract,
   );
   const updateEntry = useUpdateClockEntry();
   const deleteEntry = useDeleteClockEntry();
@@ -716,8 +755,17 @@ function TimeEntryRow({
         {entry.description}
       </span>
       {entry.contract && (
-        <span className="text-[9px] px-1 py-0.5 rounded bg-surface-overlay text-stone-600 shrink-0 max-w-[6rem] truncate">
+        <span
+          className={[
+            "text-[9px] px-1 py-0.5 rounded shrink-0",
+            "max-w-[6rem] truncate",
+            isInv
+              ? "bg-emerald-500/10 text-emerald-600"
+              : "bg-surface-overlay text-stone-600",
+          ].join(" ")}
+        >
           {entry.contract}
+          {isInv && " ✓"}
         </span>
       )}
       <span className="text-[10px] text-stone-600 tabular-nums shrink-0">

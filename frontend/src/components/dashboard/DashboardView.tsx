@@ -14,6 +14,10 @@ import { useState } from "react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
 import {
+  useInvoicedContracts,
+  isInvoiced,
+} from "../../hooks/useInvoicedContracts";
+import {
   useActiveTimer,
   useCustomerClockEntries,
   useDeleteClockEntry,
@@ -144,6 +148,10 @@ function ClockEntryRow({
   const { data: contracts } = useContracts(
     editing ? customerName : null
   );
+  const invoicedSet = useInvoicedContracts();
+  const isInv = isInvoiced(
+    invoicedSet, entry.customer, entry.contract,
+  );
 
   const minutes = entry.duration_minutes ?? 0;
 
@@ -262,12 +270,15 @@ function ClockEntryRow({
       </span>
       {entry.contract && (
         <span
-          className={
-            "text-[10px] px-1.5 py-0.5 rounded " +
-            "bg-cta/10 text-cta shrink-0"
-          }
+          className={[
+            "text-[10px] px-1.5 py-0.5 rounded shrink-0",
+            isInv
+              ? "bg-emerald-500/10 text-emerald-600"
+              : "bg-cta/10 text-cta",
+          ].join(" ")}
         >
           {entry.contract}
+          {isInv && " ✓"}
         </span>
       )}
       <span

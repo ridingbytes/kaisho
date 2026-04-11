@@ -3,6 +3,10 @@ import { useState } from "react";
 import { useTimeInsights } from "../../hooks/useDashboard";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
 import { useSetView } from "../../context/ViewContext";
+import {
+  useInvoicedContracts,
+  isInvoiced,
+} from "../../hooks/useInvoicedContracts";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import type {
   TimeInsightsCustomer,
@@ -143,6 +147,10 @@ function ActivityHeatmap({
 
 function EntryRow({ entry }: { entry: TimeInsightsEntry }) {
   const setView = useSetView();
+  const invoicedSet = useInvoicedContracts();
+  const isInv = isInvoiced(
+    invoicedSet, entry.customer, entry.contract,
+  );
   return (
     <div
       className={[
@@ -180,11 +188,14 @@ function EntryRow({ entry }: { entry: TimeInsightsEntry }) {
       {entry.contract && (
         <span
           className={[
-            "px-1 py-0.5 rounded text-[9px]",
-            "bg-surface-overlay text-stone-600 shrink-0",
+            "px-1 py-0.5 rounded text-[9px] shrink-0",
+            isInv
+              ? "bg-emerald-500/10 text-emerald-600"
+              : "bg-surface-overlay text-stone-600",
           ].join(" ")}
         >
           {entry.contract}
+          {isInv && " ✓"}
         </span>
       )}
       <span
