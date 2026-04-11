@@ -55,11 +55,17 @@ async def lifespan(app: FastAPI):
     task.cancel()
 
 
-app = FastAPI(title="Kaisho", lifespan=lifespan)
+app = FastAPI(
+    title="Kaisho",
+    lifespan=lifespan,
+    redirect_slashes=False,
+)
 
 _DEFAULT_ORIGINS = [
     "http://localhost:5173",
+    "http://localhost:5174",
     "http://localhost:3000",
+    "http://localhost:8765",
 ]
 
 
