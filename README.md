@@ -6,40 +6,39 @@
 
 [![Tests](https://github.com/ridingbytes/kaisho/actions/workflows/test.yml/badge.svg)](https://github.com/ridingbytes/kaisho/actions/workflows/test.yml)
 
-Productivity system for people who build things.
+**Kanban AI SHell Organizer** -- productivity system for
+people who build things. Local-first, open source, free.
+
 Kanban board, time tracking, customer budgets, AI advisor,
-knowledge base, and more. CLI-first with a web dashboard.
+knowledge base, and more. CLI-first with a responsive web
+dashboard.
 
 **Kaisho** (開手) means "open hand" in Japanese martial
-arts -- the position of readiness. A closed fist commits
-to one action. The open hand keeps all options available.
-
-The mark is an open bracket with three lines inside.
-The bracket is the palm. The lines are what you hold:
-your tasks, your hours, your ideas. Structure without
-rigidity.
+arts -- the position of readiness.
 
 
 ## Features
 
-- **Kanban Board** -- tasks with custom states, tags,
-  drag-and-drop, customer assignment
+- **Kanban Board** -- drag-and-drop tasks with custom
+  states, tags, customer assignment, status picker
 - **Time Tracking** -- start/stop timer, manual booking,
-  per-customer clock entries
+  billable/bookable contracts, time insights dashboard
 - **Customer Budgets** -- contracts with hour contingents,
-  budget bars, usage alerts
-- **Inbox** -- quick capture, process later
-- **AI Advisor** -- ask questions about your work
-  (Ollama, Claude, OpenRouter)
-- **Knowledge Base** -- search and browse your documents
+  budget bars, usage alerts, billable tracking
+- **Inbox** -- quick capture, triage, promote to task
+- **AI Advisor** -- context-aware assistant with 32 tools
+  (Ollama, Claude, OpenRouter, Gemini, LM Studio)
+- **Scheduled Automation** -- cron jobs for daily
+  briefings, project reports, business scouting
+- **Knowledge Base** -- search and browse documents
 - **GitHub Integration** -- issues and projects
-- **Scheduled Automation** -- cron jobs for briefings,
-  reports, and maintenance
-- **Notes** -- org-mode notes viewer
-- **Dashboard** -- stats, budget overview, calendar
-- **Multiple Profiles** -- different backends and settings
-  per profile
+- **Notes** -- tagged notes with customer assignment
+- **Dashboard** -- stats, activity heatmap, billable
+  split, budget overview, calendar
+- **Responsive** -- works on desktop, tablet, and phone
 - **Dark / Light Theme** -- Zinc palette (true neutral)
+- **Multiple Profiles** -- different backends per profile
+- **Docker Ready** -- single-container deployment
 
 
 ## Quick Start
@@ -48,96 +47,114 @@ rigidity.
 
 - Python 3.12+
 - Node.js 20+ and pnpm
-- Git
 
 ### Install
 
 ```bash
 git clone https://github.com/ridingbytes/kaisho.git
 cd kaisho
-
-# Backend
 pip install -e .
-
-# Frontend
 cd frontend && pnpm install && cd ..
 ```
 
 ### Run
 
 ```bash
-# Option 1: use the run script
-./run.sh
-
-# Option 2: use make
-make dev
-
-# Option 3: start manually
+# Start backend + frontend dev servers
 kai serve &              # Backend on :8765
 cd frontend && pnpm dev  # Frontend on :5173
 ```
 
 Open http://localhost:5173 in your browser.
 
-
-## CLI
-
-The `kai` command provides full access from the terminal:
+### Docker
 
 ```bash
-kai task list                           # List open tasks
-kai task add "Fix login bug" --customer "Acme" --tag "@code"
-kai clock start --customer "Acme"       # Start timer
-kai clock stop                          # Stop timer
-kai clock book 3h --customer "Acme"     # Book hours
-kai customer list                       # List customers
-kai customer add "NewCo" --type agency --budget 80
-kai contract add "Acme" "Q3 Dev" --hours 60
-kai inbox list                          # Show inbox
-kai briefing                            # Morning overview
-kai ask "Which customer needs attention?"
-kai kb search "kubernetes"              # Knowledge base
-kai cron list                           # Scheduled jobs
-kai gh issues                           # GitHub issues
+docker compose up --build
+# Open http://localhost:8765
 ```
 
 
-## Development
+## CLI
 
-### Project Layout
+```bash
+kai task list                         # List open tasks
+kai task add "Fix bug" --customer Acme --tag @code
+kai clock start --customer Acme       # Start timer
+kai clock stop                        # Stop timer
+kai clock book 3h --customer Acme     # Book hours
+kai customer list                     # List customers
+kai contract add Acme "Q3 Dev" --hours 60
+kai inbox list                        # Show inbox
+kai briefing                          # Morning overview
+kai ask "Which customer needs attention?"
+kai kb search "kubernetes"            # Knowledge base
+kai cron list                         # Scheduled jobs
+kai convert --from org --to markdown  # Backend conversion
+```
+
+
+## Project Layout
 
 ```
 kaisho/              Python package (backend)
   api/               FastAPI app + routers
-  backends/          Storage backends (org, markdown, json)
+    routers/         API endpoints by domain
+  backends/          Storage backends
+    org/             Org-mode backend
+    markdown/        Markdown backend
+    json_backend/    JSON backend
+    sql/             SQLAlchemy backend
   cli/               Click CLI commands
+  cron/              Scheduler, executor, tools
   services/          Business logic
   config.py          Settings (pydantic-settings)
-frontend/            React SPA (TypeScript, Vite, Tailwind)
+frontend/            React SPA
   src/components/    UI components by domain
-  src/hooks/         React hooks
+  src/hooks/         React Query hooks
+  src/context/       React contexts (view, shortcuts,
+                     toast)
   src/api/           API client
-tests/               pytest tests
-desktop/             Tauri desktop app scaffold
-scripts/             Build and automation scripts
-product/             Product strategy and website
+  src/utils/         Utilities
+tests/               pytest tests (183 tests)
 templates/           Default profile templates
+prompts/             AI cron job prompt templates
+scripts/             Screenshots, demo data
 ```
 
-### Dev Commands
 
-```bash
-# Run tests
-pytest
+## Architecture
 
-# Build frontend
-cd frontend && pnpm build
+- **Backend**: Python 3.12, FastAPI, uvicorn,
+  pydantic-settings, APScheduler, SQLAlchemy
+- **Frontend**: React 18, TypeScript, Vite,
+  Tailwind CSS, TanStack React Query, dnd-kit
+- **Data**: pluggable backends (org-mode, Markdown,
+  JSON, SQL via SQLAlchemy)
+- **Real-time**: WebSocket + file watcher for live
+  updates on external file changes
+- **AI**: agentic tool loop with 32 tools, supports
+  Ollama, Claude API, OpenRouter, OpenAI, LM Studio
 
-# Start dev servers
-make dev
 
-# Preview product website
-bash scripts/serve-website.sh
+## Configuration
+
+Data lives in `data/profiles/<name>/` (relative to the
+project) or `$KAISHO_HOME/profiles/<name>/`.
+
+```
+data/
+  user.yaml                  User metadata
+  .active_profile            Current profile name
+  profiles/<name>/
+    settings.yaml            Tags, states, AI config
+    jobs.yaml                Cron job definitions
+    org/                     Org-mode data files
+      todos.org
+      customers.org
+      clocks.org
+      inbox.org
+      notes.org
 ```
 
 ### Environment Variables
@@ -145,39 +162,18 @@ bash scripts/serve-website.sh
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PROFILE` | `default` | Active profile name |
-| `KAISHO_HOME` | (auto) | Data directory override |
+| `KAISHO_HOME` | `./data` | Data directory |
 | `HOST` | `0.0.0.0` | Server bind address |
 | `PORT` | `8765` | Server port |
 | `CORS_ORIGINS` | localhost | Comma-separated origins |
+| `SERVE_FRONTEND` | `false` | Serve built frontend (Docker) |
 
 
-## Architecture
+## Development
 
-- **Backend**: Python 3.12, FastAPI, uvicorn, pydantic-settings,
-  APScheduler, aiosqlite
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS,
-  TanStack React Query, WebSocket
-- **Data**: file-based (org-mode, Markdown, or JSON backends)
-- **Desktop**: Tauri v2 (optional, wraps the web app)
-
-
-## Configuration
-
-Data lives in `~/.kaisho/` or `./data/` (whichever exists).
-Multiple profiles allow different backends and settings.
-
-```
-data/
-  user.yaml                  # User metadata
-  .active_profile            # Current profile
-  profiles/<profile>/
-    settings.yaml            # Task states, tags, AI config
-    jobs.yaml                # Cron job definitions
-    org/                     # Org-mode data files
-      todos.org
-      customers.org
-      clocks.org
-      inbox.org
+```bash
+pytest                     # Run 183 tests
+cd frontend && pnpm build  # Production build
 ```
 
 
