@@ -569,7 +569,14 @@ function ContractsSection({ customer }: ContractsSectionProps) {
       ) : (
         <button
           onClick={() => setAdding(true)}
-          className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors self-start"
+          className={[
+            "flex items-center gap-1",
+            "px-2.5 py-1 rounded-md text-[10px]",
+            "font-medium border border-border",
+            "text-stone-600",
+            "hover:border-cta hover:text-cta",
+            "transition-colors self-start",
+          ].join(" ")}
         >
           <Plus size={10} />
           Add contract
@@ -593,7 +600,7 @@ function AddFirstContractInline({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
+        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium border border-border text-stone-600 hover:border-cta hover:text-cta transition-colors"
       >
         <Plus size={10} />
         Add contract
@@ -1377,39 +1384,48 @@ export function CustomerCard({ customer: c }: Props) {
             />
           )}
 
-          {/* Contracts section */}
+          {/* Contracts */}
           {hasContracts ? (
             <ContractsSection customer={c} />
           ) : (
             <AddFirstContractInline customerName={c.name} />
           )}
 
-          {/* Tasks */}
-          <TasksSection customerName={c.name} />
-
-          {/* Time entries */}
-          <TimeEntriesSection
-            customerName={c.name}
-            contracts={c.contracts}
-          />
-
-          {/* Quick-book */}
-          {booking ? (
-            <QuickBookForm
+          {/* Divider + collapsible sections */}
+          <div className="border-t border-border-subtle pt-2 mt-1 flex flex-col gap-1">
+            <TasksSection customerName={c.name} />
+            <TimeEntriesSection
               customerName={c.name}
               contracts={c.contracts}
-              defaultContract={activeContract}
-              onDone={() => setBooking(false)}
             />
-          ) : (
-            <button
-              onClick={() => setBooking(true)}
-              className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
-            >
-              <Clock size={10} />
-              Book time
-            </button>
-          )}
+          </div>
+
+          {/* Actions */}
+          <div className="border-t border-border-subtle pt-2 mt-1 flex gap-2">
+            {booking ? (
+              <QuickBookForm
+                customerName={c.name}
+                contracts={c.contracts}
+                defaultContract={activeContract}
+                onDone={() => setBooking(false)}
+              />
+            ) : (
+              <button
+                onClick={() => setBooking(true)}
+                className={[
+                  "flex items-center gap-1",
+                  "px-2.5 py-1 rounded-md text-[10px]",
+                  "font-medium border border-border",
+                  "text-stone-600",
+                  "hover:border-cta hover:text-cta",
+                  "transition-colors",
+                ].join(" ")}
+              >
+                <Clock size={10} />
+                Book time
+              </button>
+            )}
+          </div>
         </>
       )}
     </div>
