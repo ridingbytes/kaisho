@@ -534,27 +534,6 @@ function ContractsSection({ customer }: ContractsSectionProps) {
           customerName={customer.name}
         />
       ))}
-      {adding ? (
-        <AddContractForm
-          customerName={customer.name}
-          onDone={() => setAdding(false)}
-        />
-      ) : (
-        <button
-          onClick={() => setAdding(true)}
-          className={[
-            "inline-flex items-center gap-1",
-            "px-2.5 py-1 rounded-md text-[10px]",
-            "font-medium border border-border",
-            "text-stone-600",
-            "hover:border-cta hover:text-cta",
-            "transition-colors self-start",
-          ].join(" ")}
-        >
-          <Plus size={10} />
-          Add contract
-        </button>
-      )}
       {invoiced.length > 0 && (
         <>
           <button
@@ -581,6 +560,27 @@ function ContractsSection({ customer }: ContractsSectionProps) {
               />
             ))}
         </>
+      )}
+      {adding ? (
+        <AddContractForm
+          customerName={customer.name}
+          onDone={() => setAdding(false)}
+        />
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          className={[
+            "inline-flex items-center gap-1",
+            "px-2.5 py-1 rounded-md text-[10px]",
+            "font-medium border border-border",
+            "text-stone-600",
+            "hover:border-cta hover:text-cta",
+            "transition-colors self-start",
+          ].join(" ")}
+        >
+          <Plus size={10} />
+          Add contract
+        </button>
       )}
     </div>
   );
