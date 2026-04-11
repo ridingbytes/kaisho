@@ -1924,16 +1924,36 @@ class MarkdownCustomerBackend(CustomerBackend):
                     for key in (
                         "name", "budget",
                         "start_date", "end_date",
-                        "notes",
+                        "notes", "billable", "invoiced",
                     ):
                         if key in updates:
                             con[key] = updates[key]
                     self._save_customers(custs)
+                    if (
+                        "name" in updates
+                        and updates["name"] != contract_name
+                    ):
+                        self._rename_contract_in_clocks(
+                            contract_name,
+                            updates["name"],
+                        )
                     return self._enrich_contract(
                         c["name"], con
                     )
             return None
         return None
+
+    def _rename_contract_in_clocks(
+        self, old_name: str, new_name: str,
+    ) -> None:
+        entries = self._load_entries()
+        changed = False
+        for e in entries:
+            if e.get("contract") == old_name:
+                e["contract"] = new_name
+                changed = True
+        if changed:
+            self._save_entries(entries)
 
     def close_contract(
         self, name, contract_name, end_date

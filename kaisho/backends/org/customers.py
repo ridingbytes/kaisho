@@ -91,9 +91,42 @@ class OrgCustomerBackend(CustomerBackend):
     def update_contract(
         self, name: str, contract_name: str, updates: dict
     ) -> dict | None:
-        return customers.update_contract(
-            self._kunden_file, name, contract_name, updates
+        result = customers.update_contract(
+            self._kunden_file, name,
+            contract_name, updates,
         )
+        if result and "name" in updates:
+            new_name = updates["name"]
+            if new_name != contract_name:
+                self._rename_contract_in_clocks(
+                    name, contract_name, new_name,
+                )
+        return result
+
+    def _rename_contract_in_clocks(
+        self,
+        customer: str,
+        old_name: str,
+        new_name: str,
+    ) -> None:
+        """Update CONTRACT property in clock entries."""
+        from ...org.parser import parse_org_file
+        from ...org.writer import write_org_file
+
+        if not self._clocks_file.exists():
+            return
+        KEYWORDS: set[str] = set()
+        org_file = parse_org_file(
+            self._clocks_file, KEYWORDS,
+        )
+        changed = False
+        for h in org_file.headings:
+            if h.properties.get("CONTRACT") == old_name:
+                h.properties["CONTRACT"] = new_name
+                h.dirty = True
+                changed = True
+        if changed:
+            write_org_file(self._clocks_file, org_file)
 
     def close_contract(
         self, name: str, contract_name: str, end_date: str

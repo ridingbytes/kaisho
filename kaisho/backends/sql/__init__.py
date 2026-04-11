@@ -1517,6 +1517,7 @@ class SqlCustomerBackend(CustomerBackend):
             )
             if row is None:
                 return None
+            old_name = row.name
             for key in (
                 "name", "budget", "start_date",
                 "end_date", "notes", "billable",
@@ -1524,6 +1525,16 @@ class SqlCustomerBackend(CustomerBackend):
             ):
                 if key in updates:
                     setattr(row, key, updates[key])
+            # Cascade rename to clock entries
+            if (
+                "name" in updates
+                and updates["name"] != old_name
+            ):
+                session.query(ClockRow).filter(
+                    ClockRow.contract == old_name,
+                ).update(
+                    {"contract": updates["name"]},
+                )
             session.commit()
             con = _contract_row_to_dict(row)
         finally:
