@@ -554,7 +554,7 @@ export function addContract(
     start_date: string;
     notes?: string;
     billable?: boolean;
-    bookable?: boolean;
+    invoiced?: boolean;
   },
 ): Promise<Contract> {
   return post<Contract>(
@@ -574,7 +574,7 @@ export function updateContract(
     end_date?: string | null;
     notes?: string;
     billable?: boolean;
-    bookable?: boolean;
+    invoiced?: boolean;
   },
 ): Promise<Contract> {
   return patch<Contract>(

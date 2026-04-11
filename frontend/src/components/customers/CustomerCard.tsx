@@ -168,21 +168,27 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
   const [billable, setBillable] = useState(
     contract.billable ?? true,
   );
-  const [bookable, setBookable] = useState(
-    contract.bookable ?? true,
+  const [invoiced, setInvoiced] = useState(
+    contract.invoiced ?? false,
   );
   const updateContract = useUpdateContract();
   const deleteContract = useDeleteContract();
 
   const isActive = !contract.end_date;
-  const pct =
-    contract.budget > 0
+  const isInvoiced = contract.invoiced ?? false;
+  const pct = isInvoiced
+    ? 100
+    : contract.budget > 0
       ? Math.min(
-          Math.round((contract.used / contract.budget) * 100),
-          100
+          Math.round(
+            (contract.used / contract.budget) * 100,
+          ),
+          100,
         )
       : 0;
-  const barColor = contractBarColor(pct);
+  const barColor = isInvoiced
+    ? "#16a34a"
+    : contractBarColor(pct);
 
   function startEdit() {
     setName(contract.name);
@@ -192,7 +198,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
     setEndDate(contract.end_date ?? "");
     setNotes(contract.notes);
     setBillable(contract.billable ?? true);
-    setBookable(contract.bookable ?? true);
+    setInvoiced(contract.invoiced ?? false);
     setEditing(true);
   }
 
@@ -212,7 +218,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
           end_date: endDate || null,
           notes,
           billable,
-          bookable,
+          invoiced,
         },
       },
       { onSuccess: () => setEditing(false) }
@@ -302,11 +308,11 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
           <label className="flex items-center gap-1.5 text-xs text-stone-700 cursor-pointer">
             <input
               type="checkbox"
-              checked={bookable}
-              onChange={(e) => setBookable(e.target.checked)}
+              checked={invoiced}
+              onChange={(e) => setInvoiced(e.target.checked)}
               className="rounded border-border text-cta focus:ring-cta"
             />
-            Bookable
+            Invoiced
           </label>
         </div>
         <div className="flex gap-1 justify-end">
@@ -355,9 +361,9 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             non-billable
           </span>
         )}
-        {contract.bookable === false && (
-          <span className="text-[9px] px-1 py-0.5 rounded bg-stone-500/10 text-stone-500">
-            locked
+        {contract.invoiced && (
+          <span className="text-[9px] px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-600">
+            invoiced
           </span>
         )}
         <div className="hidden group-hover:flex gap-0.5 ml-auto">
@@ -430,7 +436,7 @@ function AddContractForm({
           budget: h,
           start_date: startDate,
           billable,
-          bookable: true,
+          invoiced: false,
         },
       },
       { onSuccess: onDone }
@@ -503,7 +509,6 @@ interface ContractsSectionProps {
 }
 
 function ContractsSection({ customer }: ContractsSectionProps) {
-  const [editOpen, setEditOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const hasContracts = customer.contracts.length > 0;
   const { data: contracts = [] } = useContracts(
@@ -513,54 +518,27 @@ function ContractsSection({ customer }: ContractsSectionProps) {
   if (!hasContracts) return null;
 
   return (
-    <div className="flex flex-col gap-1">
-      {/* Always-visible usage bars */}
+    <div className="flex flex-col gap-1.5">
       {contracts.map((c) => (
-        <BudgetBar
+        <ContractRow
           key={c.name}
-          label={c.name}
-          used={c.used}
-          budget={c.budget}
-          rest={c.rest}
-          closed={!!c.end_date}
+          contract={c}
+          customerName={customer.name}
         />
       ))}
-
-      {/* Expand for editing */}
-      <button
-        onClick={() => setEditOpen((v) => !v)}
-        className="flex items-center gap-1 mt-1 text-[10px] font-semibold uppercase tracking-wider text-stone-400 hover:text-stone-600 transition-colors self-start"
-      >
-        {editOpen
-          ? <ChevronDown size={10} />
-          : <ChevronRight size={10} />}
-        Edit contracts
-      </button>
-
-      {editOpen && (
-        <div className="ml-3">
-          {contracts.map((c) => (
-            <ContractRow
-              key={c.name}
-              contract={c}
-              customerName={customer.name}
-            />
-          ))}
-          {adding ? (
-            <AddContractForm
-              customerName={customer.name}
-              onDone={() => setAdding(false)}
-            />
-          ) : (
-            <button
-              onClick={() => setAdding(true)}
-              className="flex items-center gap-1 px-2 py-1 mt-1 rounded text-[10px] text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
-            >
-              <Plus size={10} />
-              Add contract
-            </button>
-          )}
-        </div>
+      {adding ? (
+        <AddContractForm
+          customerName={customer.name}
+          onDone={() => setAdding(false)}
+        />
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors self-start"
+        >
+          <Plus size={10} />
+          Add contract
+        </button>
       )}
     </div>
   );

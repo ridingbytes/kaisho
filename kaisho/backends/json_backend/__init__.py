@@ -745,7 +745,7 @@ class JsonCustomerBackend(CustomerBackend):
         con["used"] = hours
         con["rest"] = round(budget - hours, 2)
         con.setdefault("billable", True)
-        con.setdefault("bookable", True)
+        con.setdefault("invoiced", False)
         return con
 
     # -- queries -------------------------------------------------
@@ -866,7 +866,7 @@ class JsonCustomerBackend(CustomerBackend):
         start_date,
         notes="",
         billable=True,
-        bookable=True,
+        invoiced=False,
     ) -> dict:
         custs = _read_json(self._customers_file)
         low = name.lower()
@@ -887,7 +887,7 @@ class JsonCustomerBackend(CustomerBackend):
                 "end_date": "",
                 "notes": notes,
                 "billable": billable,
-                "bookable": bookable,
+                "invoiced": invoiced,
             }
             contracts.append(contract)
             _write_json(self._customers_file, custs)

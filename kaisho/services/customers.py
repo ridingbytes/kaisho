@@ -27,7 +27,7 @@ def _heading_to_contract(heading: "Heading", customer_name: str) -> dict:
     budget = _extract_hours(props.get("BUDGET", "0"))
     used_offset = _extract_hours(props.get("USED", "0"))
     billable_raw = props.get("BILLABLE", "true").lower()
-    bookable_raw = props.get("BOOKABLE", "true").lower()
+    invoiced_raw = props.get("INVOICED", "false").lower()
     return {
         "customer": customer_name,
         "name": heading.title.strip(),
@@ -39,7 +39,7 @@ def _heading_to_contract(heading: "Heading", customer_name: str) -> dict:
         "used": 0.0,
         "rest": budget,
         "billable": billable_raw != "false",
-        "bookable": bookable_raw != "false",
+        "invoiced": invoiced_raw == "true",
     }
 
 
@@ -368,7 +368,7 @@ def add_contract(
     start_date: str,
     notes: str = "",
     billable: bool = True,
-    bookable: bool = True,
+    invoiced: bool = False,
 ) -> dict:
     """Add a named contract to a customer."""
     result = _find_customer_heading(kunden_file, customer_name)
@@ -388,8 +388,8 @@ def add_contract(
     }
     if not billable:
         props["BILLABLE"] = "false"
-    if not bookable:
-        props["BOOKABLE"] = "false"
+    if invoiced:
+        props["INVOICED"] = "true"
     new_contract = Heading(
         level=3,
         keyword="CONTRACT",
@@ -449,11 +449,11 @@ def update_contract(
                 child.properties.pop("BILLABLE", None)
             else:
                 child.properties["BILLABLE"] = "false"
-        if "bookable" in updates:
-            if updates["bookable"]:
-                child.properties.pop("BOOKABLE", None)
+        if "invoiced" in updates:
+            if updates["invoiced"]:
+                child.properties["INVOICED"] = "true"
             else:
-                child.properties["BOOKABLE"] = "false"
+                child.properties.pop("INVOICED", None)
         child.dirty = True
         h2.dirty = True
         write_org_file(kunden_file, org_file)

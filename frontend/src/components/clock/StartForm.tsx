@@ -19,7 +19,7 @@ export function StartForm({ onStarted }: Props) {
     customer || null
   );
   const contracts = allContracts.filter(
-    (c) => c.bookable !== false,
+    (c) => !c.invoiced,
   );
 
   function handleCustomerChange(v: string) {

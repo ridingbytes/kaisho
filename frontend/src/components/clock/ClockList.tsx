@@ -84,7 +84,7 @@ function ContractSelect({
     customer || null,
   );
   const contracts = allContracts.filter(
-    (c) => c.bookable !== false,
+    (c) => !c.invoiced,
   );
   if (!customer || contracts.length === 0) return null;
   return (

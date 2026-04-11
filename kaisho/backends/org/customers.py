@@ -80,12 +80,12 @@ class OrgCustomerBackend(CustomerBackend):
         start_date: str,
         notes: str = "",
         billable: bool = True,
-        bookable: bool = True,
+        invoiced: bool = False,
     ) -> dict:
         return customers.add_contract(
             self._kunden_file, name, contract_name,
             budget, start_date, notes, billable,
-            bookable,
+            invoiced,
         )
 
     def update_contract(

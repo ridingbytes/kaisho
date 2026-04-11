@@ -117,7 +117,7 @@ function BookForm({ onClose }: { onClose: () => void }) {
     customer || null,
   );
   const contracts = allContracts.filter(
-    (c) => c.bookable !== false,
+    (c) => !c.invoiced,
   );
   const book = useQuickBook();
 

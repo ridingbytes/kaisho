@@ -1736,7 +1736,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         con["used"] = hours
         con["rest"] = round(budget - hours, 2)
         con.setdefault("billable", True)
-        con.setdefault("bookable", True)
+        con.setdefault("invoiced", False)
         return con
 
     # -- queries -------------------------------------------------
@@ -1879,7 +1879,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         start_date,
         notes="",
         billable=True,
-        bookable=True,
+        invoiced=False,
     ) -> dict:
         custs = self._load_customers()
         low = name.lower()
@@ -1900,7 +1900,7 @@ class MarkdownCustomerBackend(CustomerBackend):
                 "end_date": "",
                 "notes": notes,
                 "billable": billable,
-                "bookable": bookable,
+                "invoiced": invoiced,
             }
             contracts.append(contract)
             self._save_customers(custs)

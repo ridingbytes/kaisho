@@ -23,7 +23,7 @@ export function QuickBookForm({
     customer || null,
   );
   const contracts = allContracts.filter(
-    (c) => c.bookable !== false,
+    (c) => !c.invoiced,
   );
   const book = useQuickBook();
 

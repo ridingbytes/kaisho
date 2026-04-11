@@ -77,7 +77,7 @@ class ContractCreate(BaseModel):
     start_date: str
     notes: str = ""
     billable: bool = True
-    bookable: bool = True
+    invoiced: bool = False
 
 
 class ContractUpdate(BaseModel):
@@ -88,7 +88,7 @@ class ContractUpdate(BaseModel):
     notes: str | None = None
     used_offset: float | None = None
     billable: bool | None = None
-    bookable: bool | None = None
+    invoiced: bool | None = None
 
 
 @router.get("/{name}/contracts")
@@ -107,7 +107,7 @@ def add_contract(name: str, body: ContractCreate):
         return get_backend().customers.add_contract(
             name, body.name, body.budget,
             body.start_date, body.notes,
-            body.billable, body.bookable,
+            body.billable, body.invoiced,
         )
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
