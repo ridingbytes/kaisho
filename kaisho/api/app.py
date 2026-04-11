@@ -55,11 +55,7 @@ async def lifespan(app: FastAPI):
     task.cancel()
 
 
-app = FastAPI(
-    title="Kaisho",
-    lifespan=lifespan,
-    redirect_slashes=False,
-)
+app = FastAPI(title="Kaisho", lifespan=lifespan)
 
 _DEFAULT_ORIGINS = [
     "http://localhost:5173",
@@ -84,6 +80,7 @@ def _cors_origins() -> list[str]:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
+    allow_origin_regex=r"http://localhost:\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
