@@ -44,6 +44,15 @@ import type {
 
 
 const STATUS_OPTIONS = ["active", "inactive", "archiv"];
+
+const actionBtnCls = [
+  "inline-flex items-center gap-1",
+  "px-2.5 py-1 rounded-md text-[10px]",
+  "font-medium border border-border",
+  "text-stone-600",
+  "hover:border-cta hover:text-cta",
+  "transition-colors",
+].join(" ");
 const PAGE_SIZE = 5;
 
 const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
@@ -513,7 +522,6 @@ interface ContractsSectionProps {
 }
 
 function ContractsSection({ customer }: ContractsSectionProps) {
-  const [adding, setAdding] = useState(false);
   const [showInvoiced, setShowInvoiced] = useState(false);
   const hasContracts = customer.contracts.length > 0;
   const { data: contracts = [] } = useContracts(
@@ -561,57 +569,7 @@ function ContractsSection({ customer }: ContractsSectionProps) {
             ))}
         </>
       )}
-      {adding ? (
-        <AddContractForm
-          customerName={customer.name}
-          onDone={() => setAdding(false)}
-        />
-      ) : (
-        <button
-          onClick={() => setAdding(true)}
-          className={[
-            "inline-flex items-center gap-1",
-            "px-2.5 py-1 rounded-md text-[10px]",
-            "font-medium border border-border",
-            "text-stone-600",
-            "hover:border-cta hover:text-cta",
-            "transition-colors self-start",
-          ].join(" ")}
-        >
-          <Plus size={10} />
-          Add contract
-        </button>
-      )}
     </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Add contract button in CustomerCard header (when no contracts yet)
-// ---------------------------------------------------------------------------
-
-function AddFirstContractInline({
-  customerName,
-}: {
-  customerName: string;
-}) {
-  const [open, setOpen] = useState(false);
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium border border-border text-stone-600 hover:border-cta hover:text-cta transition-colors self-start"
-      >
-        <Plus size={10} />
-        Add contract
-      </button>
-    );
-  }
-  return (
-    <AddContractForm
-      customerName={customerName}
-      onDone={() => setOpen(false)}
-    />
   );
 }
 
@@ -1126,6 +1084,7 @@ function QuickBookForm({
 export function CustomerCard({ customer: c }: Props) {
   const [editing, setEditing] = useState(false);
   const [booking, setBooking] = useState(false);
+  const [addingContract, setAddingContract] = useState(false);
   const [form, setForm] = useState<EditState>(toEditState(c));
   const update = useUpdateCustomer();
   const remove = useDeleteCustomer();
@@ -1385,10 +1344,8 @@ export function CustomerCard({ customer: c }: Props) {
           )}
 
           {/* Contracts */}
-          {hasContracts ? (
+          {hasContracts && (
             <ContractsSection customer={c} />
-          ) : (
-            <AddFirstContractInline customerName={c.name} />
           )}
 
           {/* Divider + collapsible sections */}
@@ -1401,29 +1358,38 @@ export function CustomerCard({ customer: c }: Props) {
           </div>
 
           {/* Actions */}
-          <div className="border-t border-border-subtle pt-2 mt-1 flex gap-2">
-            {booking ? (
+          <div className="border-t border-border-subtle pt-2 mt-1 flex flex-col gap-2">
+            {addingContract && (
+              <AddContractForm
+                customerName={c.name}
+                onDone={() => setAddingContract(false)}
+              />
+            )}
+            {booking && (
               <QuickBookForm
                 customerName={c.name}
                 contracts={c.contracts}
                 defaultContract={activeContract}
                 onDone={() => setBooking(false)}
               />
-            ) : (
-              <button
-                onClick={() => setBooking(true)}
-                className={[
-                  "flex items-center gap-1",
-                  "px-2.5 py-1 rounded-md text-[10px]",
-                  "font-medium border border-border",
-                  "text-stone-600",
-                  "hover:border-cta hover:text-cta",
-                  "transition-colors",
-                ].join(" ")}
-              >
-                <Clock size={10} />
-                Book time
-              </button>
+            )}
+            {!addingContract && !booking && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setAddingContract(true)}
+                  className={actionBtnCls}
+                >
+                  <Plus size={10} />
+                  Add contract
+                </button>
+                <button
+                  onClick={() => setBooking(true)}
+                  className={actionBtnCls}
+                >
+                  <Clock size={10} />
+                  Book time
+                </button>
+              </div>
             )}
           </div>
         </>
