@@ -241,15 +241,18 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
   if (editing) {
     return (
       <div className="flex flex-col gap-1 py-2 border-b border-border-subtle last:border-0">
-        <div className="flex gap-1">
+        <div
+          className="grid gap-1"
+          style={{ gridTemplateColumns: "1fr 1fr 1fr" }}
+        >
           <input
             autoFocus
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Contract name"
-            className={`${smallInputCls} flex-1 min-w-0`}
+            placeholder="Name"
+            className={smallInputCls}
           />
           <input
             type="number"
@@ -258,8 +261,8 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             value={hours}
             onChange={(e) => setHours(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Hours"
-            className={`${smallInputCls} w-20 shrink-0 tabular-nums`}
+            placeholder="Budget h"
+            className={`${smallInputCls} tabular-nums`}
           />
           <input
             type="number"
@@ -270,16 +273,19 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             onKeyDown={handleKeyDown}
             placeholder="Offset h"
             title="Used offset (hours)"
-            className={`${smallInputCls} w-20 shrink-0 tabular-nums`}
+            className={`${smallInputCls} tabular-nums`}
           />
         </div>
-        <div className="flex gap-1">
+        <div
+          className="grid gap-1"
+          style={{ gridTemplateColumns: "1fr 1fr" }}
+        >
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             onKeyDown={handleKeyDown}
-            className={fieldClass("flex-1")}
+            className={smallInputCls}
           />
           <input
             type="date"
@@ -287,7 +293,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             onChange={(e) => setEndDate(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="End date"
-            className={fieldClass("flex-1")}
+            className={smallInputCls}
           />
         </div>
         <input
@@ -296,7 +302,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
           onChange={(e) => setNotes(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Notes"
-          className={fieldClass()}
+          className={smallInputCls}
         />
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-1.5 text-xs text-stone-700 cursor-pointer">
