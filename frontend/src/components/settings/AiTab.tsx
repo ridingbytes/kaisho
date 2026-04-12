@@ -49,7 +49,7 @@ function ModelInput({
         "w-full px-3 py-1.5 rounded-lg text-sm font-mono",
         "bg-surface-raised border border-border",
         "text-stone-900 placeholder-stone-500",
-        "focus:outline-none focus:border-border-strong",
+        "focus:outline-none focus:border-cta",
       ].join(" ")}
     />
   );

@@ -38,7 +38,10 @@ import { useTasks } from "../../hooks/useTasks";
 import { useSetView } from "../../context/ViewContext";
 import { CUSTOMER_PREFIX_RE } from "../../utils/customerPrefix";
 import { formatHours } from "../../utils/formatting";
-import { actionBtnCls } from "../../styles/formStyles";
+import {
+  actionBtnCls,
+  smallInputCls,
+} from "../../styles/formStyles";
 import type {
   ClockEntry,
   Contract,
@@ -79,13 +82,7 @@ function toEditState(c: Customer): EditState {
 }
 
 function fieldClass(base = "") {
-  return [
-    "w-full px-2 py-1 rounded-md text-xs",
-    "bg-surface-overlay border border-border",
-    "text-stone-900 placeholder-stone-500",
-    "focus:outline-none focus:border-cta",
-    base,
-  ].join(" ");
+  return `${smallInputCls} ${base}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -252,7 +249,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             onChange={(e) => setName(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Contract name"
-            className="flex-1 min-w-0 px-2 py-1 rounded-md text-xs bg-surface-overlay border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta"
+            className={`${smallInputCls} flex-1 min-w-0`}
           />
           <input
             type="number"
@@ -262,7 +259,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             onChange={(e) => setHours(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Hours"
-            className="w-20 shrink-0 px-2 py-1 rounded-md text-xs tabular-nums bg-surface-overlay border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta"
+            className={`${smallInputCls} w-20 shrink-0 tabular-nums`}
           />
           <input
             type="number"
@@ -273,7 +270,7 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             onKeyDown={handleKeyDown}
             placeholder="Offset h"
             title="Used offset (hours)"
-            className="w-20 shrink-0 px-2 py-1 rounded-md text-xs tabular-nums bg-surface-overlay border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta"
+            className={`${smallInputCls} w-20 shrink-0 tabular-nums`}
           />
         </div>
         <div className="flex gap-1">
