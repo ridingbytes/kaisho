@@ -17,7 +17,8 @@ import json
 from datetime import date
 from pathlib import Path
 
-from .tools import TOOL_DEFS, execute_tool, openai_tools
+from .tool_defs import TOOL_DEFS
+from .tools import execute_tool, openai_tools
 
 
 class ExecutorError(Exception):
@@ -217,26 +218,24 @@ _WRITE_TOOLS = {
 }
 MAX_WRITES_PER_RUN = 3
 
-_write_count = 0
+_state = {"writes": 0}
 
 
 def _reset_write_counter():
-    global _write_count
-    _write_count = 0
+    _state["writes"] = 0
 
 
 def _execute_tool_calls(
     tool_calls: list[dict], include_id: bool = True,
 ) -> list[dict]:
     """Execute tool calls and return tool-result messages."""
-    global _write_count
     results = []
     for call in tool_calls:
         fn = call.get("function", {})
         name = fn.get("name", "")
         if name in _WRITE_TOOLS:
-            _write_count += 1
-            if _write_count > MAX_WRITES_PER_RUN:
+            _state["writes"] += 1
+            if _state["writes"] > MAX_WRITES_PER_RUN:
                 result = {
                     "error": (
                         f"Write limit reached "
@@ -311,9 +310,8 @@ def run_prompt_claude(
                 continue
             name = block.name
             if name in _WRITE_TOOLS:
-                global _write_count
-                _write_count += 1
-                if _write_count > MAX_WRITES_PER_RUN:
+                _state["writes"] += 1
+                if _state["writes"] > MAX_WRITES_PER_RUN:
                     result = {
                         "error": "Write limit reached",
                     }
