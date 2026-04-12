@@ -619,7 +619,8 @@ function HistoryTable({
           {runs.map((run) => {
             const isOpen = expandedId === run.id;
             const hasOutput = !!run.output;
-            const model = jobMap.get(run.job_id)?.model ?? "";
+            const model =
+              run.model || jobMap.get(run.job_id)?.model || "";
             return (
               <Fragment key={run.id}>
                 <tr

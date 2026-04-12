@@ -209,7 +209,7 @@ def api_trigger_job(job_id: str, background_tasks: BackgroundTasks):
     job = get_job(_jobs_file(), job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
-    run_id = start_run(_profile(), job_id)
+    run_id = start_run(_profile(), job_id, job.get("model", ""))
     background_tasks.add_task(_run_job_bg, job, run_id)
     return {"run_id": run_id, "status": "running"}
 

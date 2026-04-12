@@ -176,13 +176,16 @@ def delete_history_entry(
     return True
 
 
-def start_run(profile_dir: Path, job_id: str) -> int:
+def start_run(
+    profile_dir: Path, job_id: str, model: str = ""
+) -> int:
     """Insert a 'running' history record. Returns its id."""
     records = _load_history(profile_dir)
     rid = _next_id(records)
     records.append({
         "id": rid,
         "job_id": job_id,
+        "model": model,
         "started_at": _now_iso(),
         "finished_at": None,
         "status": "running",

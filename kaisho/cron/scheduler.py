@@ -29,7 +29,7 @@ def _project_root() -> Path:
 def _run_job(job: dict) -> None:
     cfg = get_config()
     profile = cfg.PROFILE_DIR
-    run_id = start_run(profile, job["id"])
+    run_id = start_run(profile, job["id"], job.get("model", ""))
     try:
         from ..services.settings import (
             get_ai_settings, load_settings,

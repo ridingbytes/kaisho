@@ -168,6 +168,7 @@ export interface CronJob {
 export interface CronRun {
   id: number;
   job_id: string;
+  model?: string;
   started_at: string;
   finished_at: string | null;
   status: "running" | "ok" | "error";

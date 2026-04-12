@@ -111,7 +111,7 @@ def cron_trigger(job_id, as_json):
         click.echo(f"Job not found: {job_id}", err=True)
         sys.exit(1)
     cfg = _cfg()
-    run_id = start_run(_profile(), job_id)
+    run_id = start_run(_profile(), job_id, job.get("model", ""))
     click.echo(f"Running {job_id}...", err=True)
     try:
         output = execute_job(
