@@ -127,11 +127,12 @@ def _format_budgets(customers: list[dict]) -> str:
         if not k:
             continue
         r = c.get("rest", 0)
-        v = c.get("used", 0)
-        pct = c.get("percent", 0)
+        v = c.get("used", k - r)
+        pct_remaining = c.get("percent", round((r / k) * 100) if k else 0)
         lines.append(
             f"  {c['name']:<22} {v:.0f}h / {k:.0f}h"
-            f"  ({100 - pct:.0f}% used,  {r:.0f}h left)"
+            f"  ({100 - pct_remaining:.0f}% used,"
+            f"  {r:.0f}h left)"
         )
     return ("\n".join(lines) + "\n") if lines else "  (none)\n"
 

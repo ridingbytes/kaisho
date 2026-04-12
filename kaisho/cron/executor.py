@@ -458,7 +458,7 @@ def _inject_context(prompt: str) -> str:
     )
     tasks = backend.tasks.list_tasks(include_done=True)
     clocks = backend.clocks.list_entries(period="week")
-    customers = backend.customers.list_customers()
+    customers = backend.customers.get_budget_summary()
 
     context = (
         f"# Current Data ({now})\n\n"
