@@ -14,6 +14,7 @@ import {
   updateCronJob,
 } from "../api/client";
 import type { CronJob } from "../types";
+import { useToast } from "../context/ToastContext";
 
 export function useCronJobs() {
   return useQuery({
@@ -63,11 +64,13 @@ export function useDisableCronJob() {
 
 export function useAddCronJob() {
   const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: (data: Parameters<typeof createCronJob>[0]) =>
       createCronJob(data),
-    onSuccess: () => {
+    onSuccess: (_d, vars) => {
       void qc.invalidateQueries({ queryKey: ["cron"] });
+      toast(`Cron job added: ${vars.name}`);
     },
   });
 }

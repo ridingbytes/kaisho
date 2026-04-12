@@ -6,6 +6,7 @@ import {
   updateContract,
 } from "../api/client";
 import type { Contract } from "../types";
+import { useToast } from "../context/ToastContext";
 
 export function useContracts(customerName: string | null) {
   return useQuery({
@@ -18,6 +19,7 @@ export function useContracts(customerName: string | null) {
 
 export function useAddContract() {
   const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: ({
       customerName,
@@ -38,6 +40,7 @@ export function useAddContract() {
         queryKey: ["contracts", vars.customerName],
       });
       void qc.invalidateQueries({ queryKey: ["customers"] });
+      toast(`Contract added: ${vars.data.name}`);
     },
   });
 }

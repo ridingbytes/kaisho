@@ -82,9 +82,10 @@ function ToastContainer({
   return ReactDOM.createPortal(
     <div
       className={[
-        "fixed bottom-4 right-4 left-4",
-        "md:left-auto md:w-80",
-        "z-[70] flex flex-col gap-2",
+        "fixed top-4",
+        "left-1/2 -translate-x-1/2",
+        "w-[calc(100%-2rem)] max-w-sm",
+        "z-[9999] flex flex-col gap-2",
         "pointer-events-none",
       ].join(" ")}
     >

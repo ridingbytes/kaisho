@@ -19,6 +19,7 @@ export function useNotes() {
 
 export function useAddNote() {
   const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: (data: {
       title: string;
@@ -27,8 +28,9 @@ export function useAddNote() {
       task_id?: string | null;
       tags?: string[];
     }) => addNote(data),
-    onSuccess: () => {
+    onSuccess: (_d, vars) => {
       void qc.invalidateQueries({ queryKey: ["notes"] });
+      toast(`Note added: ${vars.title}`);
     },
   });
 }
@@ -63,6 +65,9 @@ export function useDeleteNote() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["notes"] });
       toast("Note deleted");
+    },
+    onError: (err: Error) => {
+      toast(err.message, "error");
     },
   });
 }

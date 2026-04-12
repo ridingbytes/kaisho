@@ -10,6 +10,8 @@ const RESOURCE_TO_QUERY: Record<string, string[]> = {
   settings: ["settings"],
   inbox: ["inbox"],
   customers: ["customers"],
+  notes: ["notes"],
+  knowledge: ["knowledge"],
 };
 
 export function useWebSocket() {
