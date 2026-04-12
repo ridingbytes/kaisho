@@ -115,7 +115,7 @@ export function Sidebar({
               "px-3 gap-2.5 h-8",
               !expanded && "md:flex-col md:justify-center md:mx-2 md:h-10 md:gap-1 md:px-0",
               "rounded-lg transition-colors",
-              "text-[9px] font-semibold tracking-wider",
+              "text-[11px] font-semibold tracking-wider",
               "uppercase",
               isActive
                 ? "bg-cta-muted text-cta"
@@ -173,7 +173,7 @@ export function Sidebar({
               "px-3 gap-2.5 h-8",
               !expanded && "md:flex-col md:justify-center md:mx-2 md:h-10 md:gap-1 md:px-0",
               "rounded-lg transition-colors",
-              "text-[9px] font-semibold tracking-wider",
+              "text-[11px] font-semibold tracking-wider",
               "uppercase",
               isActive
                 ? "bg-cta-muted text-cta"
