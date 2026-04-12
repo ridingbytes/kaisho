@@ -96,18 +96,26 @@ def _stable_id(heading: Heading) -> str:
 def _collect_tasks(
     org_file: OrgFile,
     keywords: set[str],
-) -> list[tuple[Heading, str]]:
+) -> tuple[list[tuple[Heading, str]], bool]:
     """Collect all level-1 headings with keywords.
 
-    Returns list of (heading, id) tuples. IDs are
-    stable hashes derived from title + created date,
-    not positional indices.
+    Returns (list of (heading, id) tuples, migrated).
+    IDs are stable hashes derived from title + created date.
+    When a heading has no TASK_ID property the generated hash is
+    written back so future renames do not change the ID.
+    migrated is True when any heading was updated this way.
     """
     tasks = []
+    migrated = False
     for h1 in org_file.headings:
         if h1.keyword in keywords:
-            tasks.append((h1, _stable_id(h1)))
-    return tasks
+            tid = _stable_id(h1)
+            if "TASK_ID" not in h1.properties:
+                h1.properties["TASK_ID"] = tid
+                h1.dirty = True
+                migrated = True
+            tasks.append((h1, tid))
+    return tasks, migrated
 
 
 def _matches_filter(
@@ -147,7 +155,9 @@ def reorder_tasks(
     relative position.
     """
     org_file = parse_org_file(todos_file, keywords)
-    pairs = _collect_tasks(org_file, keywords)
+    pairs, migrated = _collect_tasks(org_file, keywords)
+    if migrated:
+        write_org_file(todos_file, org_file)
     id_to_heading = {tid: h for h, tid in pairs}
 
     # Separate headings into reordered and others
@@ -178,7 +188,7 @@ def reorder_tasks(
     org_file.headings = result
     write_org_file(todos_file, org_file)
 
-    new_pairs = _collect_tasks(org_file, keywords)
+    new_pairs, _ = _collect_tasks(org_file, keywords)
     return [
         _heading_to_task(h, tid)
         for h, tid in new_pairs
@@ -197,7 +207,9 @@ def list_tasks(
     if not todos_file.exists():
         return []
     org_file = parse_org_file(todos_file, keywords)
-    task_pairs = _collect_tasks(org_file, keywords)
+    task_pairs, migrated = _collect_tasks(org_file, keywords)
+    if migrated:
+        write_org_file(todos_file, org_file)
     done_states = _get_done_states(keywords)
     result = []
     for heading, task_id in task_pairs:
@@ -215,7 +227,7 @@ def _find_task_heading(
     task_id: str,
 ) -> Heading | None:
     """Find a heading by stable task ID or text match."""
-    task_pairs = _collect_tasks(org_file, keywords)
+    task_pairs, _ = _collect_tasks(org_file, keywords)
     # Match by stable ID
     for heading, tid in task_pairs:
         if tid == task_id:
@@ -266,12 +278,14 @@ def add_task(
     if github_url:
         new_heading.properties["GITHUB_URL"] = github_url
 
+    # Persist the stable ID so renames don't change it.
+    task_id = _stable_id(new_heading)
+    new_heading.properties["TASK_ID"] = task_id
+
     org_file.headings.insert(0, new_heading)
     write_org_file(todos_file, org_file)
 
-    return _heading_to_task(
-        new_heading, _stable_id(new_heading),
-    )
+    return _heading_to_task(new_heading, task_id)
 
 
 def move_task(
