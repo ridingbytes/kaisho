@@ -36,9 +36,12 @@ const GAP = 2;
 
 function heatColor(mins: number, maxMins: number): string {
   if (mins === 0) return "var(--surface-raised)";
-  const intensity = Math.min(mins / Math.max(maxMins, 1), 1);
-  const alpha = 0.15 + intensity * 0.7;
-  return `rgba(var(--cta-rgb, 24,24,27), ${alpha})`;
+  const intensity = Math.min(
+    mins / Math.max(maxMins, 1), 1,
+  );
+  const alpha = 0.2 + intensity * 0.8;
+  // Emerald green — visible in both light and dark mode
+  return `rgba(16,185,129,${alpha})`;
 }
 
 function ActivityHeatmap({
@@ -399,6 +402,7 @@ function BillableSplit({
 export function TimeInsights() {
   const [period, setPeriod] = useState<Period>("month");
   const { data, isLoading } = useTimeInsights(period);
+  const { data: yearData } = useTimeInsights("year");
   const [selectedDay, setSelectedDay] = useState<
     string | null
   >(null);
@@ -479,9 +483,13 @@ export function TimeInsights() {
           Activity
         </h3>
         <ActivityHeatmap
-          daily={data.daily}
-          startDate={data.start_date}
-          endDate={data.end_date}
+          daily={yearData?.daily ?? data.daily}
+          startDate={
+            yearData?.start_date ?? data.start_date
+          }
+          endDate={
+            yearData?.end_date ?? data.end_date
+          }
           onDayClick={(d) =>
             setSelectedDay((prev) =>
               prev === d ? null : d,
