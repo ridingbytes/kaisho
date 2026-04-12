@@ -7,6 +7,7 @@ import {
   promoteNote,
   updateNote,
 } from "../api/client";
+import { useToast } from "../context/ToastContext";
 
 export function useNotes() {
   return useQuery({
@@ -56,10 +57,12 @@ export function useUpdateNote() {
 
 export function useDeleteNote() {
   const qc = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: (noteId: string) => deleteNote(noteId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["notes"] });
+      toast("Note deleted");
     },
   });
 }
