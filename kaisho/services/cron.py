@@ -196,6 +196,24 @@ def start_run(
     return rid
 
 
+def mark_stale_runs_crashed(profile_dir: Path) -> None:
+    """Mark any still-running records as crashed.
+
+    Called at scheduler startup to clean up records left behind
+    by a previous server crash or restart.
+    """
+    records = _load_history(profile_dir)
+    changed = False
+    for r in records:
+        if r.get("status") == "running":
+            r["finished_at"] = _now_iso()
+            r["status"] = "error"
+            r["error"] = "Interrupted: server restarted"
+            changed = True
+    if changed:
+        _save_history(profile_dir, records)
+
+
 def finish_run(
     profile_dir: Path,
     run_id: int,

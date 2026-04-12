@@ -13,6 +13,7 @@ from ..config import get_config
 from ..services.cron import (
     finish_run,
     list_jobs,
+    mark_stale_runs_crashed,
     start_run,
 )
 from .executor import ExecutorError, execute_job
@@ -30,6 +31,7 @@ def _run_job(job: dict) -> None:
     cfg = get_config()
     profile = cfg.PROFILE_DIR
     run_id = start_run(profile, job["id"], job.get("model", ""))
+    completed = False
     try:
         from ..services.settings import (
             get_ai_settings, load_settings,
@@ -57,15 +59,24 @@ def _run_job(job: dict) -> None:
         finish_run(
             profile, run_id, "ok", output=output[:4000]
         )
+        completed = True
     except ExecutorError as exc:
         finish_run(
             profile, run_id, "error", error=str(exc)
         )
+        completed = True
     except Exception as exc:
         finish_run(
             profile, run_id, "error", error=str(exc)
         )
+        completed = True
         raise
+    finally:
+        if not completed:
+            finish_run(
+                profile, run_id, "error",
+                error="Interrupted: process terminated unexpectedly",
+            )
 
 
 def _cron_kwargs(schedule: str) -> dict:
@@ -106,6 +117,8 @@ def _add_job_to_scheduler(
 def build_scheduler(jobs_file: Path) -> BackgroundScheduler:
     """Create, configure, and store the global scheduler."""
     global _scheduler
+    cfg = get_config()
+    mark_stale_runs_crashed(cfg.PROFILE_DIR)
     _scheduler = BackgroundScheduler()
     jobs = list_jobs(jobs_file)
     for job in jobs:
