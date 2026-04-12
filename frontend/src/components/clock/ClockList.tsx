@@ -123,6 +123,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
   const [editContract, setEditContract] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editDate, setEditDate] = useState("");
+  const [editStartTime, setEditStartTime] = useState("");
   const [editHours, setEditHours] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [editTaskId, setEditTaskId] = useState<string | null>(
@@ -137,6 +138,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
     setEditContract(entry.contract ?? "");
     setEditDesc(entry.description);
     setEditDate(entry.start.slice(0, 10));
+    setEditStartTime(entry.start.slice(11, 16));
     setEditHours(minutesToHours(entry.duration_minutes));
     setEditNotes(entry.notes ?? "");
     setEditTaskId(entry.task_id ?? null);
@@ -155,8 +157,15 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
       updates.description = editDesc.trim();
     }
     const entryDate = entry.start.slice(0, 10);
+    const entryTime = entry.start.slice(11, 16);
     if (editDate && editDate !== entryDate) {
       updates.new_date = editDate;
+    }
+    if (editStartTime && editStartTime !== entryTime) {
+      updates.start_time = editStartTime;
+      if (!updates.new_date) {
+        updates.new_date = editDate || entryDate;
+      }
     }
     const h = parseFloat(editHours);
     if (!isNaN(h) && h > 0) {
@@ -223,36 +232,49 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
           placeholder="Description"
           className={inputCls}
         />
-        <TaskAutocomplete
-          taskId={editTaskId}
-          value={editTaskTitle}
-          onChange={setEditTaskTitle}
-          onSelect={(id, label) => {
-            setEditTaskId(id);
-            setEditTaskTitle(label);
-          }}
-          onClear={() => {
-            setEditTaskId(null);
-            setEditTaskTitle("");
-          }}
-          customer={editCustomer}
-          inputClassName={inputCls}
-          onKeyDown={handleKeyDown}
-        />
         <div className="flex gap-1">
           <input
             type="date"
             value={editDate}
             onChange={(e) => setEditDate(e.target.value)}
             onKeyDown={handleKeyDown}
-            className={inputCls}
+            className={[inputCls, "flex-1"].join(" ")}
           />
+          <input
+            type="time"
+            value={editStartTime}
+            onChange={(e) =>
+              setEditStartTime(e.target.value)
+            }
+            onKeyDown={handleKeyDown}
+            className={[inputCls, "w-24 shrink-0"].join(" ")}
+            title="Start time"
+          />
+        </div>
+        <div className="flex gap-1">
           <input
             value={editHours}
             onChange={(e) => setEditHours(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Hours (e.g. 1.5)"
-            className={inputCls}
+            className={[inputCls, "w-24 shrink-0"].join(" ")}
+          />
+          <TaskAutocomplete
+            taskId={editTaskId}
+            value={editTaskTitle}
+            onChange={setEditTaskTitle}
+            onSelect={(id, label) => {
+              setEditTaskId(id);
+              setEditTaskTitle(label);
+            }}
+            onClear={() => {
+              setEditTaskId(null);
+              setEditTaskTitle("");
+            }}
+            customer={editCustomer}
+            inputClassName={inputCls}
+            className="flex-1 min-w-0"
+            onKeyDown={handleKeyDown}
           />
         </div>
         <textarea
