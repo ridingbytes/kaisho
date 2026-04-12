@@ -160,7 +160,7 @@ export function TaskAutocomplete({
         className={`w-full ${inputClassName}`}
       />
       {open && itemCount > 0 && (
-        <ul className="absolute z-50 left-0 top-full mt-0.5 min-w-full w-max max-w-sm max-h-48 overflow-y-auto rounded-md border border-border bg-surface-raised shadow-card-hover">
+        <ul className="absolute z-50 left-0 right-0 top-full mt-0.5 max-h-48 overflow-y-auto rounded-md border border-border bg-surface-raised shadow-card-hover">
           {filtered.map((task, i) => (
             <li key={task.id}>
               <button
@@ -171,7 +171,7 @@ export function TaskAutocomplete({
                   selectTask(task);
                 }}
                 className={[
-                  "w-full text-left px-2 py-1.5 text-xs transition-colors leading-snug",
+                  "w-full text-left px-2 py-1.5 text-xs transition-colors leading-snug truncate",
                   i === highlightIdx
                     ? "bg-cta-muted text-stone-900"
                     : "text-stone-800 hover:bg-surface-overlay",
