@@ -1,4 +1,5 @@
-import { Check, Pencil, RotateCw, Trash2, X } from "lucide-react";
+import { Pencil, RotateCw, Trash2 } from "lucide-react";
+import { EditFooter } from "../common/EditFooter";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import {
   useInvoicedContracts,
@@ -286,24 +287,11 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
             )}
           />
         </div>
-        <div className="flex gap-1 justify-end items-center mt-1">
-          <span className="text-[9px] text-stone-400 mr-auto">
-            ⌘↵ save
-          </span>
-          <button
-            onClick={() => setMode("view")}
-            className="p-1 rounded text-stone-500 hover:text-stone-900"
-          >
-            <X size={11} />
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={updateEntry.isPending}
-            className="p-1 rounded text-cta hover:bg-cta-muted disabled:opacity-40"
-          >
-            <Check size={11} />
-          </button>
-        </div>
+        <EditFooter
+          onSave={handleSave}
+          onCancel={() => setMode("view")}
+          isPending={updateEntry.isPending}
+        />
       </div>
     );
   }

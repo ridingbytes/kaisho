@@ -5,12 +5,11 @@ import { RelDate } from "../common/RelDate";
 import {
   ArrowRightLeft,
   Check,
-  ChevronDown,
-  ChevronRight,
   Pencil,
   Trash2,
   X,
 } from "lucide-react";
+import { CollapsibleSection } from "../common/CollapsibleSection";
 import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
@@ -667,7 +666,6 @@ export function NotesView() {
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState("");
-  const [archiveOpen, setArchiveOpen] = useState(false);
   const { pendingSearch, clearPendingSearch } = usePendingSearch();
 
   useEffect(
@@ -768,17 +766,12 @@ export function NotesView() {
         {/* Archive drawer */}
         {archivedNotes.length > 0 && (
           <div className="border-t border-border-subtle mt-2">
-            <button
-              onClick={() => setArchiveOpen((v) => !v)}
-              className="flex items-center gap-1 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-500 hover:text-stone-700 transition-colors w-full"
+            <CollapsibleSection
+              label="Archive"
+              count={archivedNotes.length}
+              className="px-4 py-2"
             >
-              {archiveOpen
-                ? <ChevronDown size={10} />
-                : <ChevronRight size={10} />}
-              Archive ({archivedNotes.length})
-            </button>
-            {archiveOpen &&
-              archivedNotes.map((note) => (
+              {archivedNotes.map((note) => (
                 <div key={note.id} className="opacity-60">
                   <NoteRow
                     note={note}
@@ -792,6 +785,7 @@ export function NotesView() {
                   />
                 </div>
               ))}
+            </CollapsibleSection>
           </div>
         )}
       </div>

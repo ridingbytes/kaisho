@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
 import { useInboxItems } from "../../hooks/useInbox";
 import { AddInboxForm } from "./AddInboxForm";
 import { InboxItemRow } from "./InboxItemRow";
+import { CollapsibleSection } from "../common/CollapsibleSection";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
 import { registerPanelAction } from "../../utils/panelActions";
 
 export function InboxView() {
   const { data: items = [], isLoading } = useInboxItems();
-  const [archiveOpen, setArchiveOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
   useEffect(
@@ -61,21 +60,17 @@ export function InboxView() {
         {/* Archive drawer */}
         {archived.length > 0 && (
           <div className="border-t border-border-subtle mt-2">
-            <button
-              onClick={() => setArchiveOpen((v) => !v)}
-              className="flex items-center gap-1 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-stone-500 hover:text-stone-700 transition-colors w-full"
+            <CollapsibleSection
+              label="Archive"
+              count={archived.length}
+              className="px-4 py-2"
             >
-              {archiveOpen
-                ? <ChevronDown size={10} />
-                : <ChevronRight size={10} />}
-              Archive ({archived.length})
-            </button>
-            {archiveOpen &&
-              archived.map((item) => (
+              {archived.map((item) => (
                 <div key={item.id} className="opacity-60">
                   <InboxItemRow item={item} />
                 </div>
               ))}
+            </CollapsibleSection>
           </div>
         )}
       </div>

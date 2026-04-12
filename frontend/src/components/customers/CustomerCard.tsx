@@ -1,6 +1,4 @@
 import {
-  ChevronDown,
-  ChevronRight,
   Clock,
   ExternalLink,
   Pencil,
@@ -9,7 +7,9 @@ import {
   X,
   Check,
 } from "lucide-react";
+import { CollapsibleSection } from "../common/CollapsibleSection";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { EditFooter } from "../common/EditFooter";
 import { useState } from "react";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import {
@@ -321,21 +321,12 @@ function ContractRow({ contract, customerName }: ContractRowProps) {
             Invoiced
           </label>
         </div>
-        <div className="flex gap-1 justify-end">
-          <button
-            onClick={() => setEditing(false)}
-            className="p-1 text-stone-500 hover:text-stone-900 rounded"
-          >
-            <X size={11} />
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={updateContract.isPending}
-            className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
-          >
-            <Check size={11} />
-          </button>
-        </div>
+        <EditFooter
+          onSave={handleSave}
+          onCancel={() => setEditing(false)}
+          isPending={updateContract.isPending}
+          showHint={false}
+        />
       </div>
     );
   }
@@ -515,7 +506,6 @@ interface ContractsSectionProps {
 }
 
 function ContractsSection({ customer }: ContractsSectionProps) {
-  const [showInvoiced, setShowInvoiced] = useState(false);
   const hasContracts = customer.contracts.length > 0;
   const { data: contracts = [] } = useContracts(
     hasContracts ? customer.name : null
@@ -536,31 +526,18 @@ function ContractsSection({ customer }: ContractsSectionProps) {
         />
       ))}
       {invoiced.length > 0 && (
-        <>
-          <button
-            onClick={() => setShowInvoiced((v) => !v)}
-            className={[
-              "flex items-center gap-1 text-[10px]",
-              "text-stone-400 hover:text-stone-600",
-              "transition-colors self-start",
-            ].join(" ")}
-          >
-            {showInvoiced ? (
-              <ChevronDown size={10} />
-            ) : (
-              <ChevronRight size={10} />
-            )}
-            Invoiced ({invoiced.length})
-          </button>
-          {showInvoiced &&
-            invoiced.map((c) => (
-              <ContractRow
-                key={c.name}
-                contract={c}
-                customerName={customer.name}
-              />
-            ))}
-        </>
+        <CollapsibleSection
+          label="Invoiced"
+          count={invoiced.length}
+        >
+          {invoiced.map((c) => (
+            <ContractRow
+              key={c.name}
+              contract={c}
+              customerName={customer.name}
+            />
+          ))}
+        </CollapsibleSection>
       )}
     </div>
   );
@@ -763,7 +740,6 @@ function TasksSection({
 }: {
   customerName: string;
 }) {
-  const [open, setOpen] = useState(false);
   const { data: allTasks = [] } = useTasks(true);
   const setView = useSetView();
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -778,100 +754,84 @@ function TasksSection({
   const hasMore = tasks.length > limit;
 
   return (
-    <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={[
-          "flex items-center gap-1 text-[10px]",
-          "font-semibold uppercase tracking-wider",
-          "text-stone-500 hover:text-stone-700",
-          "transition-colors",
-        ].join(" ")}
-      >
-        {open ? (
-          <ChevronDown size={10} />
+    <CollapsibleSection
+      label="Tasks"
+      count={tasks.length}
+    >
+      <div className="ml-5">
+        {tasks.length === 0 ? (
+          <p className="text-[10px] text-stone-500 py-1">
+            No tasks
+          </p>
         ) : (
-          <ChevronRight size={10} />
-        )}
-        Tasks ({tasks.length})
-      </button>
-
-      {open && (
-        <div className="mt-1 ml-5">
-          {tasks.length === 0 ? (
-            <p className="text-[10px] text-stone-500 py-1">
-              No tasks
-            </p>
-          ) : (
-            <>
-              {visible.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() =>
-                    setView(
-                      "board",
-                      t.title.replace(
-                        CUSTOMER_PREFIX_RE, "",
-                      ),
-                    )
-                  }
-                  className={[
-                    "w-full text-left flex items-center",
-                    "gap-2 py-1.5 text-xs",
-                    "border-b border-border-subtle",
-                    "last:border-0 hover:bg-surface-raised",
-                    "transition-colors rounded px-1",
-                    t.status === "DONE"
-                      ? "opacity-50" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                >
-                  <span
-                    className={[
-                      "px-1 py-0.5 rounded text-[9px]",
-                      "font-bold uppercase tracking-wider",
-                      "shrink-0",
-                      t.status === "DONE"
-                        ? "bg-emerald-500/10 text-emerald-600"
-                        : t.status === "IN-PROGRESS"
-                          ? "bg-blue-500/10 text-blue-600"
-                          : t.status === "NEXT"
-                            ? "bg-amber-500/10 text-amber-600"
-                            : "bg-surface-overlay text-stone-600",
-                    ].join(" ")}
-                  >
-                    {t.status}
-                  </span>
-                  <span className="truncate text-stone-800">
-                    {t.title.replace(
+          <>
+            {visible.map((t) => (
+              <button
+                key={t.id}
+                onClick={() =>
+                  setView(
+                    "board",
+                    t.title.replace(
                       CUSTOMER_PREFIX_RE, "",
-                    )}
-                  </span>
-                </button>
-              ))}
-              {hasMore && (
-                <button
-                  onClick={() =>
-                    setLimit((l) => l + PAGE_SIZE)
-                  }
+                    ),
+                  )
+                }
+                className={[
+                  "w-full text-left flex items-center",
+                  "gap-2 py-1.5 text-xs",
+                  "border-b border-border-subtle",
+                  "last:border-0 hover:bg-surface-raised",
+                  "transition-colors rounded px-1",
+                  t.status === "DONE"
+                    ? "opacity-50" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                <span
                   className={[
-                    "w-full text-center py-1.5",
-                    "text-[10px] text-stone-500",
-                    "hover:text-cta transition-colors",
+                    "px-1 py-0.5 rounded text-[9px]",
+                    "font-bold uppercase tracking-wider",
+                    "shrink-0",
+                    t.status === "DONE"
+                      ? "bg-emerald-500/10 text-emerald-600"
+                      : t.status === "IN-PROGRESS"
+                        ? "bg-blue-500/10 text-blue-600"
+                        : t.status === "NEXT"
+                          ? "bg-amber-500/10 text-amber-600"
+                          : "bg-surface-overlay text-stone-600",
                   ].join(" ")}
                 >
-                  Show {Math.min(
-                    PAGE_SIZE,
-                    tasks.length - limit,
-                  )} more
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      )}
-    </div>
+                  {t.status}
+                </span>
+                <span className="truncate text-stone-800">
+                  {t.title.replace(
+                    CUSTOMER_PREFIX_RE, "",
+                  )}
+                </span>
+              </button>
+            ))}
+            {hasMore && (
+              <button
+                onClick={() =>
+                  setLimit((l) => l + PAGE_SIZE)
+                }
+                className={[
+                  "w-full text-center py-1.5",
+                  "text-[10px] text-stone-500",
+                  "hover:text-cta transition-colors",
+                ].join(" ")}
+              >
+                Show {Math.min(
+                  PAGE_SIZE,
+                  tasks.length - limit,
+                )} more
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </CollapsibleSection>
   );
 }
 
@@ -882,9 +842,8 @@ function TimeEntriesSection({
   customerName: string;
   contracts: Contract[];
 }) {
-  const [open, setOpen] = useState(false);
   const { data: entries = [] } = useCustomerClockEntries(
-    open ? customerName : ""
+    customerName
   );
   const [limit, setLimit] = useState(PAGE_SIZE);
 
@@ -892,57 +851,45 @@ function TimeEntriesSection({
   const hasMore = entries.length > limit;
 
   return (
-    <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-stone-500 hover:text-stone-700 transition-colors"
-      >
-        {open ? (
-          <ChevronDown size={10} />
+    <CollapsibleSection
+      label="Time Entries"
+      count={entries.length}
+    >
+      <div className="ml-5">
+        {entries.length === 0 ? (
+          <p className="text-[10px] text-stone-500 py-1">
+            No entries
+          </p>
         ) : (
-          <ChevronRight size={10} />
+          <>
+            {visible.map((e) => (
+              <TimeEntryRow
+                key={e.start}
+                entry={e}
+                contracts={contracts}
+              />
+            ))}
+            {hasMore && (
+              <button
+                onClick={() =>
+                  setLimit((l) => l + PAGE_SIZE)
+                }
+                className={[
+                  "w-full text-center py-1.5",
+                  "text-[10px] text-stone-500",
+                  "hover:text-cta transition-colors",
+                ].join(" ")}
+              >
+                Show {Math.min(
+                  PAGE_SIZE,
+                  entries.length - limit,
+                )} more
+              </button>
+            )}
+          </>
         )}
-        Time Entries
-        {open ? ` (${entries.length})` : ""}
-      </button>
-
-      {open && (
-        <div className="mt-1 ml-5">
-          {entries.length === 0 ? (
-            <p className="text-[10px] text-stone-500 py-1">
-              No entries
-            </p>
-          ) : (
-            <>
-              {visible.map((e) => (
-                <TimeEntryRow
-                  key={e.start}
-                  entry={e}
-                  contracts={contracts}
-                />
-              ))}
-              {hasMore && (
-                <button
-                  onClick={() =>
-                    setLimit((l) => l + PAGE_SIZE)
-                  }
-                  className={[
-                    "w-full text-center py-1.5",
-                    "text-[10px] text-stone-500",
-                    "hover:text-cta transition-colors",
-                  ].join(" ")}
-                >
-                  Show {Math.min(
-                    PAGE_SIZE,
-                    entries.length - limit,
-                  )} more
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      )}
-    </div>
+      </div>
+    </CollapsibleSection>
   );
 }
 
