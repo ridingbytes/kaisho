@@ -13,15 +13,12 @@ import {
   Settings,
   Users,
 } from "lucide-react";
-import { useEffect } from "react";
 import type { View } from "../../App";
 import {
   displayShortcut,
   useShortcutsContext,
 } from "../../context/ShortcutsContext";
-import { useInboxItems } from "../../hooks/useInbox";
-import { useNotes } from "../../hooks/useNotes";
-import { useUnreadBadge } from "../../hooks/useUnreadBadge";
+import { useUnreadBadges } from "../../hooks/useUnreadBadges";
 
 interface NavItem {
   id: View;
@@ -61,16 +58,8 @@ export function Sidebar({
   onToggle,
   advisorUnread,
 }: SidebarProps) {
-  const { data: inboxItems } = useInboxItems();
-  const inboxCount = inboxItems?.length ?? 0;
-  const { data: notes } = useNotes();
-  const notesCount = notes?.length ?? 0;
-  const notesBadge = useUnreadBadge("notes", notesCount);
+  const unread = useUnreadBadges(active);
   const { config } = useShortcutsContext();
-
-  useEffect(() => {
-    if (active === "notes") notesBadge.markSeen();
-  }, [active, notesCount, notesBadge.markSeen]);
 
   // On mobile the sidebar is in an overlay, always expanded.
   // On desktop, the open prop controls collapsed/expanded.
@@ -110,6 +99,7 @@ export function Sidebar({
       {/* Nav items */}
       {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
         const isActive = active === id;
+        const badge = unread[id] ?? 0;
         return (
           <button
             key={id}
@@ -139,8 +129,8 @@ export function Sidebar({
                 size={expanded ? 14 : 16}
                 strokeWidth={isActive ? 2 : 1.5}
               />
-              {/* Inbox badge */}
-              {id === "inbox" && inboxCount > 0 && (
+              {/* Unread badge */}
+              {badge > 0 && (
                 <span
                   className={[
                     "absolute -top-1.5 -right-2 min-w-[14px] h-3.5 px-0.5",
@@ -148,19 +138,7 @@ export function Sidebar({
                     "text-[9px] font-bold bg-cta text-white",
                   ].join(" ")}
                 >
-                  {inboxCount > 99 ? "99+" : inboxCount}
-                </span>
-              )}
-              {/* Notes unread badge */}
-              {id === "notes" && notesBadge.unread > 0 && (
-                <span
-                  className={[
-                    "absolute -top-1.5 -right-2 min-w-[14px] h-3.5 px-0.5",
-                    "flex items-center justify-center rounded-full",
-                    "text-[9px] font-bold bg-cta text-white",
-                  ].join(" ")}
-                >
-                  {notesBadge.unread > 99 ? "99+" : notesBadge.unread}
+                  {badge > 99 ? "99+" : badge}
                 </span>
               )}
               {/* Advisor unread dot */}

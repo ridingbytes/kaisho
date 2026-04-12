@@ -1,0 +1,54 @@
+import { useEffect } from "react";
+import { useCustomers } from "./useCustomers";
+import { useInboxItems } from "./useInbox";
+import { useNotes } from "./useNotes";
+import { useTasks } from "./useTasks";
+import { useCronJobs } from "./useCron";
+import { useUnreadBadge } from "./useUnreadBadge";
+
+/**
+ * Aggregates unread counts for all tracked nav panels.
+ * Marks a panel as seen automatically when it becomes active.
+ * Returns a record of panel → unread count.
+ */
+export function useUnreadBadges(active: string): Record<string, number> {
+  const { data: tasks = [] } = useTasks();
+  const { data: inboxItems = [] } = useInboxItems();
+  const { data: notes = [] } = useNotes();
+  const { data: customers = [] } = useCustomers();
+  const { data: cronJobs = [] } = useCronJobs();
+
+  const board = useUnreadBadge("board", tasks.length);
+  const inbox = useUnreadBadge("inbox", inboxItems.length);
+  const notesBadge = useUnreadBadge("notes", notes.length);
+  const customersBadge = useUnreadBadge("customers", customers.length);
+  const cron = useUnreadBadge("cron", cronJobs.length);
+
+  useEffect(() => {
+    if (active === "board") board.markSeen();
+  }, [active, tasks.length, board.markSeen]);
+
+  useEffect(() => {
+    if (active === "inbox") inbox.markSeen();
+  }, [active, inboxItems.length, inbox.markSeen]);
+
+  useEffect(() => {
+    if (active === "notes") notesBadge.markSeen();
+  }, [active, notes.length, notesBadge.markSeen]);
+
+  useEffect(() => {
+    if (active === "customers") customersBadge.markSeen();
+  }, [active, customers.length, customersBadge.markSeen]);
+
+  useEffect(() => {
+    if (active === "cron") cron.markSeen();
+  }, [active, cronJobs.length, cron.markSeen]);
+
+  return {
+    board: board.unread,
+    inbox: inbox.unread,
+    notes: notesBadge.unread,
+    customers: customersBadge.unread,
+    cron: cron.unread,
+  };
+}
