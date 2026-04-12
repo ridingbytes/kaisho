@@ -6,6 +6,7 @@ import {
 import {
   archiveTask,
   createTask,
+  deleteArchivedTask,
   fetchArchivedTasks,
   fetchTasks,
   moveTask,
@@ -153,6 +154,20 @@ export function useUnarchiveTask() {
         queryKey: ["archive"],
       });
       toast("Task restored");
+    },
+  });
+}
+
+export function useDeleteArchivedTask() {
+  const qc = useQueryClient();
+  const toast = useToast();
+  return useMutation({
+    mutationFn: (taskId: string) => deleteArchivedTask(taskId),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["archive"],
+      });
+      toast("Archived task deleted");
     },
   });
 }

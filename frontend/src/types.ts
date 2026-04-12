@@ -20,6 +20,7 @@ export interface Task {
 export interface ArchivedTask extends Task {
   archived_at: string;
   archive_status: string;
+  clock_count: number;
 }
 
 export interface TaskState {

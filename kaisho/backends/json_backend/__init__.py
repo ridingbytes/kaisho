@@ -314,6 +314,14 @@ class JsonTaskBackend(TaskBackend):
         _write_json(self._tasks_file, tasks)
         return True
 
+    def delete_archived_task(self, task_id: str) -> bool:
+        archive = _read_json(self._archive_file)
+        remaining = [t for t in archive if t["id"] != task_id]
+        if len(remaining) == len(archive):
+            return False
+        _write_json(self._archive_file, remaining)
+        return True
+
 
 # ====================================================================
 #  ClockBackend

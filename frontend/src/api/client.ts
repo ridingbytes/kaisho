@@ -139,6 +139,10 @@ export function unarchiveTask(taskId: string): Promise<{ ok: boolean }> {
   );
 }
 
+export function deleteArchivedTask(taskId: string): Promise<void> {
+  return del(`/kanban/archive/${encodeURIComponent(taskId)}`);
+}
+
 // Settings
 
 export function fetchSettings(): Promise<Settings> {

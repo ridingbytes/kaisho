@@ -161,6 +161,20 @@ def _in_period(
     return True
 
 
+def count_task_clock_entries(
+    clocks_file: Path, task_id: str
+) -> int:
+    """Return the number of clock entries referencing task_id."""
+    if not clocks_file.exists() or not task_id:
+        return 0
+    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
+    return sum(
+        len(h.logbook)
+        for h in org_file.headings
+        if h.properties.get("TASK_ID") == task_id
+    )
+
+
 def list_entries(
     clocks_file: Path,
     period: str = "today",

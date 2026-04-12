@@ -657,6 +657,22 @@ class SqlTaskBackend(TaskBackend):
         finally:
             session.close()
 
+    def delete_archived_task(self, task_id: str) -> bool:
+        session = self._eng.session()
+        try:
+            deleted = (
+                session.query(TaskRow)
+                .filter(
+                    TaskRow.id == task_id,
+                    TaskRow.archived_at.isnot(None),
+                )
+                .delete()
+            )
+            session.commit()
+            return deleted > 0
+        finally:
+            session.close()
+
 
 # ====================================================================
 #  ClockBackend

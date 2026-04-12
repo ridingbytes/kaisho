@@ -481,16 +481,55 @@ def _heading_to_archived_task(heading: Heading, task_id: str) -> dict:
 def list_archived_tasks(
     archive_file: Path,
     keywords: set[str],
+    clocks_file: Path | None = None,
 ) -> list[dict]:
-    """List all tasks from the archive file."""
+    """List all tasks from the archive file.
+
+    When clocks_file is provided each task includes a
+    clock_count field with the number of referencing entries.
+    """
     if not archive_file.exists():
         return []
     archive_org = parse_org_file(archive_file, keywords)
     archiv = _find_or_create_archiv_heading(archive_org)
-    return [
-        _heading_to_archived_task(h, _archive_task_id(i + 1))
-        for i, h in enumerate(archiv.children)
-    ]
+    tasks = []
+    for i, h in enumerate(archiv.children):
+        task = _heading_to_archived_task(h, _archive_task_id(i + 1))
+        task_id = h.properties.get("TASK_ID", "")
+        if clocks_file and task_id:
+            from .clocks import count_task_clock_entries
+            task["clock_count"] = count_task_clock_entries(
+                clocks_file, task_id
+            )
+        else:
+            task["clock_count"] = 0
+        tasks.append(task)
+    return tasks
+
+
+def delete_archived_task(
+    archive_file: Path,
+    keywords: set[str],
+    task_id: str,
+) -> bool:
+    """Permanently remove a task from the archive.
+
+    Returns False if the task was not found.
+    task_id must be a positional archive ID (e.g. 'a3').
+    """
+    if not archive_file.exists():
+        return False
+    if not task_id.startswith("a") or not task_id[1:].isdigit():
+        return False
+    archive_org = parse_org_file(archive_file, keywords)
+    archiv = _find_or_create_archiv_heading(archive_org)
+    idx = int(task_id[1:]) - 1
+    if idx < 0 or idx >= len(archiv.children):
+        return False
+    archiv.children.pop(idx)
+    archiv.dirty = True
+    write_org_file(archive_file, archive_org)
+    return True
 
 
 def _strip_archive_properties(heading: Heading) -> None:

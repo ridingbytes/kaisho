@@ -12,10 +12,12 @@ class OrgTaskBackend(TaskBackend):
         todos_file: Path,
         archive_file: Path,
         keywords: set[str],
+        clocks_file: Path | None = None,
     ) -> None:
         self._todos_file = todos_file
         self._archive_file = archive_file
         self._keywords = keywords
+        self._clocks_file = clocks_file
 
     @property
     def data_file(self) -> Path:
@@ -122,12 +124,20 @@ class OrgTaskBackend(TaskBackend):
         return kanban.list_archived_tasks(
             archive_file=self._archive_file,
             keywords=self._keywords,
+            clocks_file=self._clocks_file,
         )
 
     def unarchive_task(self, task_id: str) -> bool:
         return kanban.unarchive_task(
             archive_file=self._archive_file,
             todos_file=self._todos_file,
+            keywords=self._keywords,
+            task_id=task_id,
+        )
+
+    def delete_archived_task(self, task_id: str) -> bool:
+        return kanban.delete_archived_task(
+            archive_file=self._archive_file,
             keywords=self._keywords,
             task_id=task_id,
         )

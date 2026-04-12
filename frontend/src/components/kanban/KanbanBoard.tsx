@@ -19,11 +19,13 @@ import {
   ArchiveRestore,
   Plus,
   Search,
+  Trash2,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   useArchivedTasks,
+  useDeleteArchivedTask,
   useMoveTask,
   useTasks,
   useUnarchiveTask,
@@ -32,6 +34,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { reorderTasks as apiReorderTasks } from "../../api/client";
 import { useReorderStates, useSettings } from "../../hooks/useSettings";
 import type { ArchivedTask, Task } from "../../types";
+import { ConfirmPopover } from "../common/ConfirmPopover";
 import { Toggle } from "../common/Toggle";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
@@ -124,6 +127,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
   const [open, setOpen] = useState(false);
   const { data: archived = [] } = useArchivedTasks();
   const unarchive = useUnarchiveTask();
+  const deleteArchived = useDeleteArchivedTask();
 
   return (
     <div className="border-t border-border-subtle bg-surface shrink-0">
@@ -159,7 +163,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                   <th className="text-left pb-1 pr-3 font-medium w-20">
                     Status
                   </th>
-                  <th className="pb-1 w-8" />
+                  <th className="pb-1 w-16" />
                 </tr>
               </thead>
               <tbody>
@@ -198,14 +202,33 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                         )}
                       </td>
                       <td className="py-1">
-                        <button
-                          onClick={() => unarchive.mutate(task.id)}
-                          disabled={unarchive.isPending}
-                          title="Unarchive"
-                          className="opacity-0 group-hover/row:opacity-100 p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-all disabled:opacity-40"
-                        >
-                          <ArchiveRestore size={11} />
-                        </button>
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover/row:opacity-100">
+                          <button
+                            onClick={() => unarchive.mutate(task.id)}
+                            disabled={unarchive.isPending}
+                            title="Unarchive"
+                            className="p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-all disabled:opacity-40"
+                          >
+                            <ArchiveRestore size={11} />
+                          </button>
+                          <ConfirmPopover
+                            label={
+                              task.clock_count > 0
+                                ? `Delete? (${task.clock_count} clock ${task.clock_count === 1 ? "entry" : "entries"} will lose task link)`
+                                : "Delete?"
+                            }
+                            onConfirm={() =>
+                              deleteArchived.mutate(task.id)
+                            }
+                          >
+                            <button
+                              title="Delete permanently"
+                              className="p-1 rounded text-stone-500 hover:text-red-400 transition-all"
+                            >
+                              <Trash2 size={11} />
+                            </button>
+                          </ConfirmPopover>
+                        </div>
                       </td>
                     </tr>
                   );

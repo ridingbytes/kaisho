@@ -29,7 +29,9 @@ def make_org_backend(cfg: Settings) -> tuple[
 ]:
     """Build the five org backends and the list of paths to watch."""
     kw = _keywords(cfg)
-    tasks = OrgTaskBackend(cfg.TODOS_FILE, cfg.ARCHIVE_FILE, kw)
+    tasks = OrgTaskBackend(
+        cfg.TODOS_FILE, cfg.ARCHIVE_FILE, kw, cfg.CLOCKS_FILE
+    )
     clocks = OrgClockBackend(cfg.CLOCKS_FILE)
     inbox = OrgInboxBackend(cfg.INBOX_FILE)
     cust = OrgCustomerBackend(cfg.CUSTOMERS_FILE, cfg.CLOCKS_FILE)

@@ -111,6 +111,15 @@ def list_archive():
     return get_backend().tasks.list_archived()
 
 
+@router.delete("/archive/{task_id}", status_code=204)
+def delete_archived_task(task_id: str):
+    ok = get_backend().tasks.delete_archived_task(task_id)
+    if not ok:
+        raise HTTPException(
+            status_code=404, detail="Archived task not found"
+        )
+
+
 @router.post("/archive/{task_id}/unarchive", status_code=200)
 def unarchive_task(task_id: str):
     ok = get_backend().tasks.unarchive_task(task_id)

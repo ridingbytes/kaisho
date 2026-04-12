@@ -682,6 +682,14 @@ class MarkdownTaskBackend(TaskBackend):
         self._save_tasks(tasks)
         return True
 
+    def delete_archived_task(self, task_id: str) -> bool:
+        archive = self._load_archive()
+        remaining = [t for t in archive if t["id"] != task_id]
+        if len(remaining) == len(archive):
+            return False
+        self._save_archive(remaining)
+        return True
+
 
 # -- Clock heading helpers ------------------------------------------
 

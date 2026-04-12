@@ -100,6 +100,13 @@ class TaskBackend(ABC):
         Return False if not found.
         """
 
+    @abstractmethod
+    def delete_archived_task(self, task_id: str) -> bool:
+        """Permanently delete an archived task.
+
+        Return False if not found.
+        """
+
 
 class ClockBackend(ABC):
     """Read/write time-tracking clock entries."""
