@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from ...backends import get_backend
 from ...config import get_config
 from ...cron.executor import ExecutorError, execute_job, load_prompt
+from ...cron.scheduler import sync_jobs
 from ...services import settings as settings_svc
 from ...services.cron import (
     add_job,
@@ -98,18 +99,22 @@ def api_add_job(body: JobCreate):
         data["prompt_file"] = _write_prompt_file(body.id, "")
 
     try:
-        return add_job(_jobs_file(), data)
+        job = add_job(_jobs_file(), data)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    sync_jobs(_jobs_file())
+    return job
 
 
 @router.patch("/jobs/{job_id}")
 def api_update_job(job_id: str, body: JobUpdate):
     updates = {k: v for k, v in body.model_dump().items() if v is not None}
     try:
-        return update_job(_jobs_file(), job_id, updates)
+        job = update_job(_jobs_file(), job_id, updates)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    sync_jobs(_jobs_file())
+    return job
 
 
 @router.delete("/jobs/{job_id}", status_code=204)
@@ -117,6 +122,7 @@ def api_delete_job(job_id: str):
     ok = delete_job(_jobs_file(), job_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Job not found")
+    sync_jobs(_jobs_file())
 
 
 @router.get("/jobs/{job_id}/prompt")
@@ -148,17 +154,21 @@ def api_update_prompt(job_id: str, body: PromptUpdate):
 @router.post("/jobs/{job_id}/enable")
 def api_enable_job(job_id: str):
     try:
-        return set_enabled(_jobs_file(), job_id, True)
+        job = set_enabled(_jobs_file(), job_id, True)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    sync_jobs(_jobs_file())
+    return job
 
 
 @router.post("/jobs/{job_id}/disable")
 def api_disable_job(job_id: str):
     try:
-        return set_enabled(_jobs_file(), job_id, False)
+        job = set_enabled(_jobs_file(), job_id, False)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    sync_jobs(_jobs_file())
+    return job
 
 
 # ---------------------------------------------------------------------------

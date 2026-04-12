@@ -86,6 +86,7 @@ function OutputSelect({
       value={value}
       onChange={(e) => onChange(e.target.value)}
     >
+      <option value="none">None (panel only)</option>
       <option value="inbox">Inbox</option>
       {sources.map((s) => (
         <option key={s.label} value={s.label}>

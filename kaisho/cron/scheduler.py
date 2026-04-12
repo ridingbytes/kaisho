@@ -17,6 +17,10 @@ from ..services.cron import (
 )
 from .executor import ExecutorError, execute_job
 
+# Module-level scheduler instance — set by build_scheduler(),
+# used by sync_jobs() so the API can update it without a restart.
+_scheduler: BackgroundScheduler | None = None
+
 
 def _project_root() -> Path:
     return Path(__file__).parent.parent.parent
@@ -81,20 +85,62 @@ def _cron_kwargs(schedule: str) -> dict:
     }
 
 
+def _add_job_to_scheduler(
+    scheduler: BackgroundScheduler, job: dict
+) -> None:
+    """Add a single enabled job to the live scheduler."""
+    try:
+        kwargs = _cron_kwargs(job["schedule"])
+    except ValueError:
+        return
+    scheduler.add_job(
+        _run_job,
+        trigger=CronTrigger(**kwargs),
+        args=[job],
+        id=job["id"],
+        name=job.get("name", job["id"]),
+        replace_existing=True,
+    )
+
+
 def build_scheduler(jobs_file: Path) -> BackgroundScheduler:
-    """Create and return a configured scheduler."""
-    scheduler = BackgroundScheduler()
+    """Create, configure, and store the global scheduler."""
+    global _scheduler
+    _scheduler = BackgroundScheduler()
     jobs = list_jobs(jobs_file)
     for job in jobs:
         if not job.get("enabled", False):
             continue
-        kwargs = _cron_kwargs(job["schedule"])
-        scheduler.add_job(
-            _run_job,
-            trigger=CronTrigger(**kwargs),
-            args=[job],
-            id=job["id"],
-            name=job.get("name", job["id"]),
-            replace_existing=True,
-        )
-    return scheduler
+        _add_job_to_scheduler(_scheduler, job)
+    return _scheduler
+
+
+def sync_jobs(jobs_file: Path) -> None:
+    """Re-sync the live scheduler to match jobs.yaml.
+
+    Call this after any job mutation (add/update/enable/disable/
+    delete) so changes take effect without a server restart.
+    Does nothing if no scheduler has been started yet.
+    """
+    if _scheduler is None:
+        return
+    jobs = list_jobs(jobs_file)
+    enabled_ids = set()
+    for job in jobs:
+        if job.get("enabled", False):
+            _add_job_to_scheduler(_scheduler, job)
+            enabled_ids.add(job["id"])
+        else:
+            # Remove if it was previously scheduled
+            try:
+                _scheduler.remove_job(job["id"])
+            except Exception:
+                pass
+
+    # Remove jobs that no longer exist in YAML
+    scheduled_ids = {j.id for j in _scheduler.get_jobs()}
+    for job_id in scheduled_ids - enabled_ids:
+        try:
+            _scheduler.remove_job(job_id)
+        except Exception:
+            pass

@@ -138,14 +138,18 @@ def write_output(
     content: str,
     job_name: str = "AI Report",
 ) -> None:
-    """Write cron output to the active backend's inbox.
+    """Write cron output to the configured destination.
 
-    output_dest: "inbox" or a KB source label. All outputs go
-    to inbox via the backend (respects org/markdown/json).
+    output_dest:
+      "none"  — keep output in history only, write nowhere
+      "inbox" — create an inbox item
+      <label> — create an inbox item AND append to KB source
     """
+    if output_dest == "none":
+        return
+
     from ..backends import get_backend
 
-    # Always create an inbox item via the active backend
     get_backend().inbox.add_item(
         text=job_name,
         item_type="AI",
