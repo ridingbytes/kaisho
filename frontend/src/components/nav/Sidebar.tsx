@@ -13,12 +13,15 @@ import {
   Settings,
   Users,
 } from "lucide-react";
+import { useEffect } from "react";
 import type { View } from "../../App";
 import {
   displayShortcut,
   useShortcutsContext,
 } from "../../context/ShortcutsContext";
 import { useInboxItems } from "../../hooks/useInbox";
+import { useNotes } from "../../hooks/useNotes";
+import { useUnreadBadge } from "../../hooks/useUnreadBadge";
 
 interface NavItem {
   id: View;
@@ -60,7 +63,14 @@ export function Sidebar({
 }: SidebarProps) {
   const { data: inboxItems } = useInboxItems();
   const inboxCount = inboxItems?.length ?? 0;
+  const { data: notes } = useNotes();
+  const notesCount = notes?.length ?? 0;
+  const notesBadge = useUnreadBadge("notes", notesCount);
   const { config } = useShortcutsContext();
+
+  useEffect(() => {
+    if (active === "notes") notesBadge.markSeen();
+  }, [active, notesCount, notesBadge.markSeen]);
 
   // On mobile the sidebar is in an overlay, always expanded.
   // On desktop, the open prop controls collapsed/expanded.
@@ -139,6 +149,18 @@ export function Sidebar({
                   ].join(" ")}
                 >
                   {inboxCount > 99 ? "99+" : inboxCount}
+                </span>
+              )}
+              {/* Notes unread badge */}
+              {id === "notes" && notesBadge.unread > 0 && (
+                <span
+                  className={[
+                    "absolute -top-1.5 -right-2 min-w-[14px] h-3.5 px-0.5",
+                    "flex items-center justify-center rounded-full",
+                    "text-[9px] font-bold bg-cta text-white",
+                  ].join(" ")}
+                >
+                  {notesBadge.unread > 99 ? "99+" : notesBadge.unread}
                 </span>
               )}
               {/* Advisor unread dot */}
