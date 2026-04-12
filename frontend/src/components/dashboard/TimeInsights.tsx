@@ -8,6 +8,11 @@ import {
   isInvoiced,
 } from "../../hooks/useInvoicedContracts";
 import { navigateToClockDate } from "../../utils/clockNavigation";
+import {
+  formatDate,
+  formatHours,
+  formatTime,
+} from "../../utils/formatting";
 import type {
   TimeInsightsCustomer,
   TimeInsightsEntry,
@@ -21,30 +26,6 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: "quarter", label: "Quarter" },
   { value: "year", label: "Year" },
 ];
-
-function fmtH(mins: number): string {
-  const h = (mins / 60).toFixed(1).replace(/\.0$/, "");
-  return `${h}h`;
-}
-
-function fmtDate(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
-  if (isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(undefined, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
-}
-
-function fmtTime(iso: string): string {
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso.slice(11, 16);
-  return d.toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 // -------------------------------------------------------
 // Activity Heatmap
@@ -131,7 +112,7 @@ function ActivityHeatmap({
               onClick={() => onDayClick(day)}
             >
               <title>
-                {fmtDate(day)}: {fmtH(mins)}
+                {formatDate(day)}: {formatHours(mins)}
               </title>
             </rect>
           );
@@ -164,7 +145,7 @@ function EntryRow({ entry }: { entry: TimeInsightsEntry }) {
         }
         className="text-stone-500 hover:text-cta tabular-nums shrink-0"
       >
-        {fmtTime(entry.start)}
+        {formatTime(entry.start)}
       </button>
       <button
         onClick={() =>
@@ -206,7 +187,7 @@ function EntryRow({ entry }: { entry: TimeInsightsEntry }) {
             : "text-stone-500",
         ].join(" ")}
       >
-        {fmtH(entry.duration_minutes)}
+        {formatHours(entry.duration_minutes)}
       </span>
     </div>
   );
@@ -275,7 +256,7 @@ function CustomerBar({
           />
         </div>
         <span className="tabular-nums text-stone-600 shrink-0 w-12 text-right">
-          {fmtH(cust.total_min)}
+          {formatHours(cust.total_min)}
         </span>
         {billPct > 0 && billPct < 100 && (
           <span className="text-[9px] text-emerald-600 shrink-0">
@@ -355,7 +336,7 @@ function BillableSplit({
                   v === "billable" ? null : "billable",
                 )
               }
-              title={`Billable: ${fmtH(billableMin)} (${billPct}%)`}
+              title={`Billable: ${formatHours(billableMin)} (${billPct}%)`}
             />
           )}
           {nonBillableMin > 0 && (
@@ -374,22 +355,22 @@ function BillableSplit({
                     : "non-billable",
                 )
               }
-              title={`Non-billable: ${fmtH(nonBillableMin)} (${100 - billPct}%)`}
+              title={`Non-billable: ${formatHours(nonBillableMin)} (${100 - billPct}%)`}
             />
           )}
         </div>
         <span className="text-xs tabular-nums text-stone-600 shrink-0">
-          {fmtH(total)}
+          {formatHours(total)}
         </span>
       </div>
       <div className="flex gap-3 text-[10px] text-stone-500 mb-2">
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-sm bg-emerald-500" />
-          Billable {fmtH(billableMin)}
+          Billable {formatHours(billableMin)}
         </span>
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-sm bg-amber-400" />
-          Non-billable {fmtH(nonBillableMin)}
+          Non-billable {formatHours(nonBillableMin)}
         </span>
       </div>
       {expanded && (
@@ -511,8 +492,8 @@ export function TimeInsights() {
         {selectedDay && dayEntries.length > 0 && (
           <div className="mt-2 p-2 rounded-lg bg-surface-overlay border border-border-subtle">
             <p className="text-[10px] text-stone-500 mb-1">
-              {fmtDate(selectedDay)} —{" "}
-              {fmtH(
+              {formatDate(selectedDay)} —{" "}
+              {formatHours(
                 dayEntries.reduce(
                   (s, e) => s + e.duration_minutes,
                   0,

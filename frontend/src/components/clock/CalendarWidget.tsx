@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { formatHours } from "../../utils/formatting";
 import type { ClockEntry } from "../../types";
 
 async function fetchMonthEntries(
@@ -15,13 +16,6 @@ async function fetchMonthEntries(
   );
   if (!res.ok) throw new Error("Failed to fetch entries");
   return res.json();
-}
-
-function formatHours(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
 function buildYearMonth(year: number, month: number): string {

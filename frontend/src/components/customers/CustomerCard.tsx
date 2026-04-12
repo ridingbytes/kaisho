@@ -36,6 +36,9 @@ import {
 } from "../../hooks/useInvoicedContracts";
 import { useTasks } from "../../hooks/useTasks";
 import { useSetView } from "../../context/ViewContext";
+import { CUSTOMER_PREFIX_RE } from "../../utils/customerPrefix";
+import { formatHours } from "../../utils/formatting";
+import { actionBtnCls } from "../../styles/formStyles";
 import type {
   ClockEntry,
   Contract,
@@ -45,17 +48,7 @@ import type {
 
 const STATUS_OPTIONS = ["active", "inactive", "archiv"];
 
-const actionBtnCls = [
-  "inline-flex items-center gap-1",
-  "px-2.5 py-1 rounded-md text-[10px]",
-  "font-medium border border-border",
-  "text-stone-600",
-  "hover:border-cta hover:text-cta",
-  "transition-colors",
-].join(" ");
 const PAGE_SIZE = 5;
-
-const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
 
 interface Props {
   customer: Customer;
@@ -584,11 +577,6 @@ function formatEntryDate(iso: string): string {
     month: "2-digit",
     year: "2-digit",
   });
-}
-
-function formatHours(minutes: number | null): string {
-  if (minutes == null) return "—";
-  return (minutes / 60).toFixed(1) + "h";
 }
 
 interface TimeEntryRowProps {

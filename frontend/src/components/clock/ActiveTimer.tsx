@@ -2,23 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Pencil, Square } from "lucide-react";
 import { useStopTimer, useUpdateClockEntry } from "../../hooks/useClocks";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
+import { elapsed } from "../../utils/formatting";
 import type { ActiveTimer as ActiveTimerType } from "../../types";
-
-function elapsed(startIso: string): string {
-  // Server stores naive datetime in the configured
-  // timezone. Append a Z-less parse that JS treats as
-  // local time (matching the server's intent).
-  const diffMs = Date.now() - new Date(startIso).getTime();
-  const totalSec = Math.max(0, Math.floor(diffMs / 1000));
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  return [
-    String(h).padStart(2, "0"),
-    String(m).padStart(2, "0"),
-    String(s).padStart(2, "0"),
-  ].join(":");
-}
 
 interface Props {
   timer: ActiveTimerType;

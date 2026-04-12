@@ -46,9 +46,9 @@ import {
   useDeleteClockEntry,
 } from "../../hooks/useClocks";
 import { useSettings } from "../../hooks/useSettings";
+import { stripCustomerPrefix } from "../../utils/customerPrefix";
+import { formatHours } from "../../utils/formatting";
 import type { ClockEntry, Task } from "../../types";
-
-const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
 
 function extractIssueNumber(url: string): string {
   const m = url.match(/\/(\d+)$/);
@@ -57,11 +57,6 @@ function extractIssueNumber(url: string): string {
 
 function fmtDate(iso: string): string {
   return iso.slice(0, 10);
-}
-
-function fmtHours(minutes: number | null): string {
-  if (!minutes) return "0h";
-  return `${(minutes / 60).toFixed(1).replace(/\.0$/, "")}h`;
 }
 
 function totalMinutes(entries: ClockEntry[]): number {
@@ -166,7 +161,7 @@ function ClockEntryRow({
         {entry.description}
       </span>
       <span className="tabular-nums text-stone-700">
-        {fmtHours(entry.duration_minutes)}
+        {formatHours(entry.duration_minutes)}
       </span>
       <button
         onClick={startEdit}
@@ -234,7 +229,7 @@ function TaskClockSection({ task }: TaskClockSectionProps) {
             {entries.length}{" "}
             {entries.length === 1 ? "entry" : "entries"}
             {" · "}
-            {fmtHours(totalAll)}
+            {formatHours(totalAll)}
           </span>
         </button>
       </div>
@@ -435,10 +430,6 @@ function TimerBadge({
   );
 }
 
-
-function stripCustomerPrefix(title: string): string {
-  return title.replace(CUSTOMER_PREFIX_RE, "");
-}
 
 function StatusPicker({
   current,

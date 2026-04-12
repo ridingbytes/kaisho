@@ -13,18 +13,10 @@ import { QuickBookForm } from "./QuickBookForm";
 import { StartForm } from "./StartForm";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
+import { formatDateHeading } from "../../utils/formatting";
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
-}
-
-function formatDateHeading(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
 }
 
 interface ClockWidgetProps {

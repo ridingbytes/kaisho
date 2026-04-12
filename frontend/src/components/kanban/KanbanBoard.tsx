@@ -39,8 +39,7 @@ import { TaskCard } from "./TaskCard";
 import { KanbanColumn } from "./KanbanColumn";
 import { registerPanelAction } from "../../utils/panelActions";
 import { usePendingSearch } from "../../context/ViewContext";
-
-const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
+import { stripCustomerPrefix } from "../../utils/customerPrefix";
 
 /**
  * Merge a prefixed filter token into a search string.
@@ -110,10 +109,6 @@ function freeText(search: string): string {
     })
     .join(" ")
     .trim();
-}
-
-function stripCustomerPrefix(title: string): string {
-  return title.replace(CUSTOMER_PREFIX_RE, "");
 }
 
 function fmtArchiveDate(dateStr: string): string {

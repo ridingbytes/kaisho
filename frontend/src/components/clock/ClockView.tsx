@@ -36,6 +36,18 @@ import {
   useInvoicedContracts,
   isInvoiced,
 } from "../../hooks/useInvoicedContracts";
+import {
+  formatDate,
+  formatHours,
+  formatTime,
+  minutesToDecimal,
+  totalHours,
+} from "../../utils/formatting";
+import { taskTitleById } from "../../utils/customerPrefix";
+import {
+  inputCls,
+  smallInputCls,
+} from "../../styles/formStyles";
 import type { ClockEntry, Task } from "../../types";
 
 type Period = "today" | "week" | "month" | "year";
@@ -50,61 +62,6 @@ type SortCol =
   | "duration";
 type SortDir = "asc" | "desc";
 type SortState = { col: SortCol; dir: SortDir };
-
-const inputCls =
-  "bg-surface-raised border border-border rounded px-2 py-1 text-sm " +
-  "text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta";
-
-const smallInputCls =
-  "bg-surface-raised border border-border rounded px-2 py-1 text-xs " +
-  "text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta";
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
-
-function taskTitleById(tasks: Task[], id: string | null): string | null {
-  if (!id) return null;
-  const t = tasks.find((t) => t.id === id);
-  return t ? t.title.replace(CUSTOMER_PREFIX_RE, "") : null;
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso.slice(0, 10);
-  return d.toLocaleDateString();
-}
-
-function formatTime(iso: string | null): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso.slice(11, 16);
-  return d.toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function formatHours(minutes: number | null): string {
-  if (minutes === null) return "—";
-  const h = (minutes / 60).toFixed(2).replace(/\.?0+$/, "");
-  return `${h}h`;
-}
-
-function minutesToDecimal(minutes: number | null): string {
-  if (minutes === null) return "";
-  return (minutes / 60).toFixed(2).replace(/\.?0+$/, "");
-}
-
-function totalHours(entries: ClockEntry[]): string {
-  const mins = entries.reduce(
-    (acc, e) => acc + (e.duration_minutes ?? 0),
-    0
-  );
-  return (mins / 60).toFixed(2).replace(/\.?0+$/, "");
-}
 
 // ---------------------------------------------------------------------------
 // Quick-book form (book a new clock entry without starting a timer)

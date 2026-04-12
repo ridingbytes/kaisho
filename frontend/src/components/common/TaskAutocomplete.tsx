@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useTasks } from "../../hooks/useTasks";
 import { useAddTask } from "../../hooks/useTasks";
+import { CUSTOMER_PREFIX_RE } from "../../utils/customerPrefix";
 import type { Task } from "../../types";
-
-const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
 
 function issueNumber(url: string): string {
   const m = url.match(/\/(\d+)\/?$/);

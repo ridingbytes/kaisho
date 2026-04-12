@@ -32,18 +32,12 @@ import type { BudgetSummary, ClockEntry } from "../../types";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
 import { TimeInsights } from "./TimeInsights";
-
-const inputCls =
-  "px-2 py-1 rounded text-xs bg-surface-raised border " +
-  "border-border text-stone-900 placeholder-stone-500 " +
-  "focus:outline-none focus:border-cta";
-
-function elapsed(startIso: string): string {
-  const diffMs = Date.now() - new Date(startIso).getTime();
-  const h = Math.floor(diffMs / 3_600_000);
-  const m = Math.floor((diffMs % 3_600_000) / 60_000);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-}
+import {
+  elapsed,
+  formatDate,
+  formatHours,
+} from "../../utils/formatting";
+import { smallInputCls } from "../../styles/formStyles";
 
 function budgetBarColor(usedPercent: number): string {
   if (usedPercent >= 100) return "#dc2626";
@@ -54,18 +48,6 @@ function budgetBarColor(usedPercent: number): string {
 function contractUsedPct(budget: number, used: number): number {
   if (budget <= 0) return 0;
   return Math.min(Math.round((used / budget) * 100), 100);
-}
-
-function formatHours(minutes: number): string {
-  return (minutes / 60).toFixed(1) + "h";
-}
-
-function formatDate(isoStart: string): string {
-  const d = new Date(isoStart);
-  return d.toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-  });
 }
 
 function StatCard({
@@ -190,13 +172,13 @@ function ClockEntryRow({
           {formatDate(entry.start)}
         </span>
         <input
-          className={inputCls + " flex-1 min-w-0"}
+          className={smallInputCls + " flex-1 min-w-0"}
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           placeholder="Description"
         />
         <input
-          className={inputCls + " w-14 text-right"}
+          className={smallInputCls + " w-14 text-right"}
           value={hours}
           onChange={(e) => setHours(e.target.value)}
           type="number"
@@ -204,7 +186,7 @@ function ClockEntryRow({
           min="0"
         />
         <select
-          className={inputCls + " w-24"}
+          className={smallInputCls + " w-24"}
           value={contract}
           onChange={(e) => setContract(e.target.value)}
         >

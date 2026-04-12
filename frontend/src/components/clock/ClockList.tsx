@@ -17,29 +17,16 @@ import { useCustomerColors } from "../../hooks/useCustomerColors";
 import { useContracts } from "../../hooks/useContracts";
 import { useTasks } from "../../hooks/useTasks";
 import { useSetView } from "../../context/ViewContext";
+import { taskTitleById } from "../../utils/customerPrefix";
+import { minutesToDecimal } from "../../utils/formatting";
+import { smallInputCls } from "../../styles/formStyles";
 import type { ClockEntry, Task } from "../../types";
-
-const CUSTOMER_PREFIX_RE = /^\[[^\]]+\]:?\s*/;
-
-function taskTitleById(
-  tasks: Task[],
-  id: string | null
-): string {
-  if (!id) return "";
-  const t = tasks.find((t) => t.id === id);
-  return t ? t.title.replace(CUSTOMER_PREFIX_RE, "") : "";
-}
 
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
-}
-
-function minutesToHours(minutes: number | null): string {
-  if (minutes === null) return "";
-  return (minutes / 60).toFixed(2).replace(/\.?0+$/, "");
 }
 
 function timeLabel(iso: string | null): string {
@@ -95,7 +82,7 @@ function ContractSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={inputCls}
+      className={smallInputCls}
     >
       <option value="">— no contract —</option>
       {contracts.map((c) => (
@@ -139,10 +126,10 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
     setEditDesc(entry.description);
     setEditDate(entry.start.slice(0, 10));
     setEditStartTime(entry.start.slice(11, 16));
-    setEditHours(minutesToHours(entry.duration_minutes));
+    setEditHours(minutesToDecimal(entry.duration_minutes));
     setEditNotes(entry.notes ?? "");
     setEditTaskId(entry.task_id ?? null);
-    setEditTaskTitle(taskTitleById(tasks, entry.task_id));
+    setEditTaskTitle(taskTitleById(tasks, entry.task_id) ?? "");
     setMode("edit");
   }
 
@@ -219,7 +206,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
               setEditContract("");
             }}
             onKeyDown={handleKeyDown}
-            inputClassName={inputCls}
+            inputClassName={smallInputCls}
           />
           <ContractSelect
             customer={editCustomer}
@@ -233,7 +220,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
             }
             onKeyDown={handleKeyDown}
             placeholder="Description"
-            className={inputCls}
+            className={smallInputCls}
           />
           <TaskAutocomplete
             taskId={editTaskId}
@@ -248,7 +235,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
               setEditTaskTitle("");
             }}
             customer={editCustomer}
-            inputClassName={inputCls}
+            inputClassName={smallInputCls}
             onKeyDown={handleKeyDown}
           />
           <div
@@ -264,7 +251,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
                 setEditDate(e.target.value)
               }
               onKeyDown={handleKeyDown}
-              className={inputCls}
+              className={smallInputCls}
             />
             <input
               type="time"
@@ -273,7 +260,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
                 setEditStartTime(e.target.value)
               }
               onKeyDown={handleKeyDown}
-              className={inputCls}
+              className={smallInputCls}
               title="Start time"
             />
             <input
@@ -283,7 +270,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
               }
               onKeyDown={handleKeyDown}
               placeholder="Hours"
-              className={inputCls}
+              className={smallInputCls}
             />
           </div>
           <textarea
@@ -294,7 +281,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
             onKeyDown={handleTextareaKeyDown}
             placeholder="Notes"
             rows={2}
-            className={[inputCls, "resize-y"].join(
+            className={[smallInputCls, "resize-y"].join(
               " ",
             )}
           />
@@ -545,13 +532,6 @@ export function ClockList({
     </div>
   );
 }
-
-const inputCls = [
-  "w-full px-2 py-1 rounded text-xs",
-  "bg-surface-raised border border-border",
-  "text-stone-900 placeholder-stone-500",
-  "focus:outline-none focus:border-cta",
-].join(" ");
 
 const actionBtn = [
   "p-0.5 rounded text-stone-400",
