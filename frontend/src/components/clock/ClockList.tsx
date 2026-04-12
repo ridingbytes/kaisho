@@ -210,73 +210,29 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
   if (mode === "edit") {
     return (
       <div className="pl-3 pt-1.5 pb-2">
-        <div
-          className="grid gap-1"
-          style={{
-            gridTemplateColumns: "1fr 1fr",
-          }}
-        >
-          {/* Row 1: Customer (full width) */}
-          <div className="col-span-2">
-            <CustomerAutocomplete
-              autoFocus
-              value={editCustomer}
-              onChange={(v) => {
-                setEditCustomer(v);
-                setEditContract("");
-              }}
-              onKeyDown={handleKeyDown}
-              inputClassName={inputCls}
-            />
-          </div>
-          {/* Row 2: Contract (full width) */}
-          <div className="col-span-2">
-            <ContractSelect
-              customer={editCustomer}
-              value={editContract}
-              onChange={setEditContract}
-            />
-          </div>
-          {/* Row 3: Description (full width) */}
-          <div className="col-span-2">
-            <input
-              value={editDesc}
-              onChange={(e) =>
-                setEditDesc(e.target.value)
-              }
-              onKeyDown={handleKeyDown}
-              placeholder="Description"
-              className={inputCls}
-            />
-          </div>
-          {/* Row 4: Date + Start time */}
-          <input
-            type="date"
-            value={editDate}
-            onChange={(e) =>
-              setEditDate(e.target.value)
-            }
+        <div className="flex flex-col gap-1">
+          <CustomerAutocomplete
+            autoFocus
+            value={editCustomer}
+            onChange={(v) => {
+              setEditCustomer(v);
+              setEditContract("");
+            }}
             onKeyDown={handleKeyDown}
-            className={inputCls}
+            inputClassName={inputCls}
+          />
+          <ContractSelect
+            customer={editCustomer}
+            value={editContract}
+            onChange={setEditContract}
           />
           <input
-            type="time"
-            value={editStartTime}
+            value={editDesc}
             onChange={(e) =>
-              setEditStartTime(e.target.value)
+              setEditDesc(e.target.value)
             }
             onKeyDown={handleKeyDown}
-            className={inputCls}
-            title="Start time"
-          />
-          {/* Row 5: Hours + Task */}
-          <input
-            value={editHours}
-            onChange={(e) =>
-              setEditHours(e.target.value)
-            }
-            onKeyDown={handleKeyDown}
-            placeholder="Hours"
+            placeholder="Description"
             className={inputCls}
           />
           <TaskAutocomplete
@@ -295,21 +251,53 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
             inputClassName={inputCls}
             onKeyDown={handleKeyDown}
           />
-          {/* Row 6: Notes (full width) */}
-          <div className="col-span-2">
-            <textarea
-              value={editNotes}
+          <div
+            className="grid gap-1"
+            style={{
+              gridTemplateColumns: "1fr 1fr 1fr",
+            }}
+          >
+            <input
+              type="date"
+              value={editDate}
               onChange={(e) =>
-                setEditNotes(e.target.value)
+                setEditDate(e.target.value)
               }
-              onKeyDown={handleTextareaKeyDown}
-              placeholder="Notes"
-              rows={2}
-              className={[inputCls, "resize-y"].join(
-                " ",
-              )}
+              onKeyDown={handleKeyDown}
+              className={inputCls}
+            />
+            <input
+              type="time"
+              value={editStartTime}
+              onChange={(e) =>
+                setEditStartTime(e.target.value)
+              }
+              onKeyDown={handleKeyDown}
+              className={inputCls}
+              title="Start time"
+            />
+            <input
+              value={editHours}
+              onChange={(e) =>
+                setEditHours(e.target.value)
+              }
+              onKeyDown={handleKeyDown}
+              placeholder="Hours"
+              className={inputCls}
             />
           </div>
+          <textarea
+            value={editNotes}
+            onChange={(e) =>
+              setEditNotes(e.target.value)
+            }
+            onKeyDown={handleTextareaKeyDown}
+            placeholder="Notes"
+            rows={2}
+            className={[inputCls, "resize-y"].join(
+              " ",
+            )}
+          />
         </div>
         <div className="flex gap-1 justify-end items-center mt-1">
           <span className="text-[9px] text-stone-400 mr-auto">
