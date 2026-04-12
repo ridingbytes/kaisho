@@ -366,11 +366,16 @@ function BudgetRow({
   dotColor?: string;
 }) {
   const hasContracts = b.contracts.length > 0;
+  const activeContracts = b.contracts.filter(
+    (c) => !c.invoiced,
+  );
   const displayBudget = hasContracts
-    ? b.contracts.reduce((s, c) => s + c.budget, 0)
+    ? activeContracts.reduce(
+        (s, c) => s + c.budget, 0,
+      )
     : b.budget;
   const displayUsed = hasContracts
-    ? b.contracts.reduce(
+    ? activeContracts.reduce(
         (s, c) => s + (c.used ?? 0), 0,
       )
     : (b.budget ?? 0) - (b.rest ?? 0);
@@ -451,20 +456,33 @@ function BudgetRow({
       {b.contracts.length > 0 ? (
         <div className="flex flex-col gap-1.5 mt-1">
           {b.contracts.map((c) => {
-            const pct = contractUsedPct(c.budget, c.used);
-            const cColor = budgetBarColor(pct);
+            const inv = c.invoiced ?? false;
+            const pct = inv
+              ? 100
+              : contractUsedPct(c.budget, c.used);
+            const cColor = inv
+              ? "#16a34a"
+              : budgetBarColor(pct);
             return (
               <div key={c.name}>
                 <div className="flex items-baseline justify-between mb-0.5">
-                  <span className="text-[9px] text-stone-500 truncate">
+                  <span className={[
+                    "text-[9px] truncate",
+                    inv
+                      ? "text-emerald-600"
+                      : "text-stone-500",
+                  ].join(" ")}>
                     {c.name}
+                    {inv && " ✓"}
                   </span>
-                  <span
-                    className="text-[9px] tabular-nums shrink-0 ml-2"
-                    style={{ color: cColor }}
-                  >
-                    {(c.used ?? 0).toFixed(1)}h used · {(c.rest ?? 0).toFixed(1)}h left · {pct}%
-                  </span>
+                  {!inv && (
+                    <span
+                      className="text-[9px] tabular-nums shrink-0 ml-2"
+                      style={{ color: cColor }}
+                    >
+                      {(c.used ?? 0).toFixed(1)}h used · {(c.rest ?? 0).toFixed(1)}h left · {pct}%
+                    </span>
+                  )}
                 </div>
                 <div className="h-1.5 rounded-full bg-surface-raised overflow-hidden">
                   <div
