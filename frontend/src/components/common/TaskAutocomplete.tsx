@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTasks } from "../../hooks/useTasks";
 import { useAddTask } from "../../hooks/useTasks";
 import { CUSTOMER_PREFIX_RE } from "../../utils/customerPrefix";
@@ -59,6 +59,15 @@ export function TaskAutocomplete({
   const addTask = useAddTask();
   const [open, setOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(-1);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    if (highlightIdx < 0 || !listRef.current) return;
+    const el = listRef.current.children[highlightIdx];
+    if (el) {
+      (el as HTMLElement).scrollIntoView({ block: "nearest" });
+    }
+  }, [highlightIdx]);
 
   const filtered: Task[] = value.trim()
     ? tasks.filter((t) => {
@@ -112,15 +121,25 @@ export function TaskAutocomplete({
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (itemCount > 0 && e.key === "ArrowDown") {
       e.preventDefault();
-      setHighlightIdx((i) => Math.min(i + 1, itemCount - 1));
+      if (!open) {
+        setOpen(true);
+        setHighlightIdx(0);
+      } else {
+        setHighlightIdx((i) =>
+          Math.min(i + 1, itemCount - 1)
+        );
+      }
       return;
     }
     if (itemCount > 0 && e.key === "ArrowUp") {
       e.preventDefault();
-      setHighlightIdx((i) => Math.max(i - 1, -1));
+      setHighlightIdx((i) => Math.max(i - 1, 0));
       return;
     }
-    if (e.key === "Enter" && highlightIdx >= 0) {
+    if (
+      (e.key === "Enter" || e.key === "Tab") &&
+      highlightIdx >= 0
+    ) {
       e.preventDefault();
       if (highlightIdx < filtered.length) {
         selectTask(filtered[highlightIdx]);
@@ -159,7 +178,7 @@ export function TaskAutocomplete({
         className={`w-full ${inputClassName}`}
       />
       {open && itemCount > 0 && (
-        <ul className="absolute z-50 left-0 right-0 top-full mt-0.5 max-h-48 overflow-y-auto rounded-md border border-border bg-surface-raised shadow-card-hover">
+        <ul ref={listRef} className="absolute z-50 left-0 right-0 top-full mt-0.5 max-h-48 overflow-y-auto rounded-md border border-border bg-surface-raised shadow-card-hover">
           {filtered.map((task, i) => (
             <li key={task.id}>
               <button
@@ -172,8 +191,8 @@ export function TaskAutocomplete({
                 className={[
                   "w-full text-left px-2 py-1.5 text-xs transition-colors leading-snug truncate",
                   i === highlightIdx
-                    ? "bg-cta-muted text-stone-900"
-                    : "text-stone-800 hover:bg-surface-overlay",
+                    ? "bg-surface-overlay text-stone-900 font-medium"
+                    : "text-stone-800 hover:bg-surface-overlay/50",
                 ].join(" ")}
               >
                 {taskLabel(task)}
@@ -192,8 +211,8 @@ export function TaskAutocomplete({
                   "w-full text-left px-2 py-1.5 text-xs truncate",
                   "transition-colors text-cta",
                   highlightIdx === filtered.length
-                    ? "bg-cta-muted"
-                    : "hover:bg-surface-overlay",
+                    ? "bg-surface-overlay font-medium"
+                    : "hover:bg-surface-overlay/50",
                 ].join(" ")}
               >
                 + Create &quot;{value.trim()}&quot;
