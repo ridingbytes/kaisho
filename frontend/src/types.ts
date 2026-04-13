@@ -77,7 +77,7 @@ export interface ClockEntry {
   end: string | null;
   duration_minutes: number | null;
   task_id: string | null;
-  booked: boolean;
+  invoiced: boolean;
   notes: string;
   contract: string | null;
 }
@@ -129,6 +129,10 @@ export interface Dashboard {
   open_task_count: number;
   inbox_count: number;
   budgets: BudgetSummary[];
+  month_hours: number;
+  budgets_warning: number;
+  unassigned_cloud: number;
+  aging_inbox: number;
 }
 
 export interface KnowledgeFile {

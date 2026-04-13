@@ -1,9 +1,11 @@
 import {
+  AlertTriangle,
   Check,
   CheckSquare,
   ChevronDown,
   ChevronRight,
   Clock,
+  CloudOff,
   Inbox,
   Pencil,
   Trash2,
@@ -12,6 +14,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { ContentPopup } from "../common/ContentPopup";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
 import {
   useInvoicedContracts,
@@ -232,7 +235,7 @@ function ClockEntryRow({
       <span
         className={
           "text-xs text-stone-500 tabular-nums shrink-0 " +
-          "w-10 cursor-pointer hover:text-cta"
+          "w-16 cursor-pointer hover:text-cta"
         }
         onClick={() =>
           navigateToClockDate(entry.start.slice(0, 10))
@@ -242,12 +245,19 @@ function ClockEntryRow({
       </span>
       <span
         className={
-          "text-xs text-stone-700 truncate " +
-          "min-w-0 flex-1"
+          "text-xs text-stone-700 truncate overflow-hidden " +
+          "min-w-0 flex-1 inline-flex items-center gap-1"
         }
       >
         {entry.description || (
           <em className="text-stone-500">no description</em>
+        )}
+        {entry.notes && (
+          <ContentPopup
+            content={entry.notes}
+            title="Notes"
+            icon="notes"
+          />
         )}
       </span>
       {entry.contract && (
@@ -646,6 +656,42 @@ export function DashboardView() {
             cta="#d97706"
             onClick={() => setView("inbox")}
           />
+          {data.month_hours > 0 && (
+            <StatCard
+              label="Hours this month"
+              value={data.month_hours}
+              icon={Clock}
+              cta="#16a34a"
+              onClick={() => setView("clocks")}
+            />
+          )}
+          {data.budgets_warning > 0 && (
+            <StatCard
+              label="Budgets at risk"
+              value={data.budgets_warning}
+              icon={AlertTriangle}
+              cta="#dc2626"
+              onClick={() => setView("customers")}
+            />
+          )}
+          {data.unassigned_cloud > 0 && (
+            <StatCard
+              label="Unassigned entries"
+              value={data.unassigned_cloud}
+              icon={CloudOff}
+              cta="#7c3aed"
+              onClick={() => setView("clocks")}
+            />
+          )}
+          {data.aging_inbox > 0 && (
+            <StatCard
+              label="Inbox > 7 days"
+              value={data.aging_inbox}
+              icon={Inbox}
+              cta="#dc2626"
+              onClick={() => setView("inbox")}
+            />
+          )}
         </div>
 
         {/* Budget overview with clock entries */}

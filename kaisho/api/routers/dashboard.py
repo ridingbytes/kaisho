@@ -12,15 +12,64 @@ router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 def get_dashboard():
     backend = get_backend()
     active_timer = backend.clocks.get_active()
-    open_tasks = backend.tasks.list_tasks(include_done=False)
+    open_tasks = backend.tasks.list_tasks(
+        include_done=False,
+    )
     inbox_items = backend.inbox.list_items()
     budgets = backend.customers.get_budget_summary()
+
+    # Hours this month
+    all_entries = backend.clocks.list_entries(
+        period="year",
+    )
+    month_entries = backend.clocks.list_entries(
+        period="month",
+    )
+    month_minutes = sum(
+        e.get("duration_minutes") or 0
+        for e in month_entries
+    )
+
+    # Budgets nearing exhaustion (>= 80%)
+    budgets_warning = [
+        b for b in budgets
+        if b.get("budget", 0) > 0
+        and b.get("used", 0) / b["budget"] >= 0.8
+    ]
+
+    # Unassigned cloud entries
+    unassigned_count = sum(
+        1 for e in all_entries
+        if not e.get("customer")
+    )
+
+    # Aging inbox (> 7 days old)
+    aging_inbox = 0
+    for item in inbox_items:
+        props = item.get("properties", {})
+        created = props.get("CREATED", "")
+        if not created:
+            continue
+        try:
+            created_date = date.fromisoformat(
+                created[:10],
+            )
+            if (date.today() - created_date).days > 7:
+                aging_inbox += 1
+        except ValueError:
+            continue
 
     return {
         "active_timer": active_timer,
         "open_task_count": len(open_tasks),
         "inbox_count": len(inbox_items),
         "budgets": budgets,
+        "month_hours": round(
+            month_minutes / 60, 1,
+        ),
+        "budgets_warning": len(budgets_warning),
+        "unassigned_cloud": unassigned_count,
+        "aging_inbox": aging_inbox,
     }
 
 
