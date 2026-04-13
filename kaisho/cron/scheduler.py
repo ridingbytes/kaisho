@@ -114,6 +114,36 @@ def _add_job_to_scheduler(
     )
 
 
+def _run_cloud_sync() -> None:
+    """Periodic cloud sync job. No-op when disabled."""
+    from ..services import settings as settings_svc
+    from ..services import cloud_sync as sync_svc
+    from ..backends import get_backend
+
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    sync = data.get("cloud_sync", {})
+    if not sync.get("enabled"):
+        return
+
+    url = sync.get("url", "")
+    key = sync.get("api_key", "")
+    if not url or not key:
+        return
+
+    backend = get_backend()
+    sync_svc.run_sync_cycle(
+        cloud_url=url,
+        api_key=key,
+        profile_dir=cfg.PROFILE_DIR,
+        clocks_file=backend.clocks.data_file,
+        customers_fn=backend.customers.list_customers,
+        tasks_fn=lambda: backend.tasks.list_tasks(
+            include_done=False,
+        ),
+    )
+
+
 def build_scheduler(jobs_file: Path) -> BackgroundScheduler:
     """Create, configure, and store the global scheduler."""
     global _scheduler
@@ -125,7 +155,49 @@ def build_scheduler(jobs_file: Path) -> BackgroundScheduler:
         if not job.get("enabled", False):
             continue
         _add_job_to_scheduler(_scheduler, job)
+
+    # Cloud sync job — runs every 5 minutes.
+    _scheduler.add_job(
+        _run_cloud_sync,
+        "interval",
+        minutes=5,
+        id="__cloud_sync__",
+        name="Cloud Sync",
+        replace_existing=True,
+    )
+
+    # Recurring tasks — runs daily at 06:00.
+    _scheduler.add_job(
+        _run_recurring_tasks,
+        trigger=CronTrigger(hour=6, minute=0),
+        id="__recurring_tasks__",
+        name="Recurring Tasks",
+        replace_existing=True,
+    )
+
     return _scheduler
+
+
+def _run_recurring_tasks() -> None:
+    """Create new task instances for due recurring tasks."""
+    from ..services.recurring_tasks import (
+        process_recurring_tasks,
+    )
+    from ..backends import get_backend
+
+    try:
+        backend = get_backend()
+        created = process_recurring_tasks(backend)
+        if created:
+            import logging
+            logging.getLogger(__name__).info(
+                "Recurring tasks: created %d", created,
+            )
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(
+            "Recurring tasks failed: %s", exc,
+        )
 
 
 def sync_jobs(jobs_file: Path) -> None:

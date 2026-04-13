@@ -24,6 +24,8 @@ import {
   fetchAiSettings,
   fetchAvailableModels,
   fetchClaudeCliStatus,
+  fetchCloudSyncStatus,
+  fetchInvoiceExportSettings,
   fetchCurrentUser,
   fetchGithubSettings,
   fetchKbSources,
@@ -317,6 +319,22 @@ export function useUpdateKbSources() {
         queryKey: ["knowledge"],
       });
     },
+  });
+}
+
+export function useInvoiceExportSettings() {
+  return useQuery({
+    queryKey: ["settings", "invoice_export"],
+    queryFn: fetchInvoiceExportSettings,
+    staleTime: 60_000,
+  });
+}
+
+export function useCloudSyncStatus() {
+  return useQuery({
+    queryKey: ["settings", "cloud_sync"],
+    queryFn: fetchCloudSyncStatus,
+    staleTime: 30_000,
   });
 }
 

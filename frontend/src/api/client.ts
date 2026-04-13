@@ -410,6 +410,7 @@ export function quickBook(
   taskId?: string,
   contract?: string,
   date?: string,
+  notes?: string,
 ): Promise<ClockEntry> {
   return post<ClockEntry>("/clocks/quick-book", {
     duration,
@@ -418,6 +419,7 @@ export function quickBook(
     task_id: taskId ?? null,
     contract: contract ?? null,
     date: date ?? null,
+    notes: notes ?? null,
   });
 }
 
@@ -430,7 +432,7 @@ export function updateClockEntry(
     new_date?: string;
     start_time?: string;
     task_id?: string;
-    booked?: boolean;
+    invoiced?: boolean;
     notes?: string;
     contract?: string;
   }
@@ -442,6 +444,40 @@ export function updateClockEntry(
 export function deleteClockEntry(startIso: string): Promise<void> {
   const qs = encodeURIComponent(startIso);
   return del(`/clocks/entries?start=${qs}`);
+}
+
+// Invoice preview
+
+export interface InvoicePreview {
+  customer: string;
+  contract: string | null;
+  from_date: string | null;
+  to_date: string | null;
+  entries: ClockEntry[];
+  total_minutes: number;
+  total_hours: number;
+  entry_count: number;
+}
+
+export function fetchInvoicePreview(
+  customer: string,
+  contract?: string | null,
+  fromDate?: string | null,
+  toDate?: string | null,
+): Promise<InvoicePreview> {
+  const params = new URLSearchParams({ customer });
+  if (contract) params.set("contract", contract);
+  if (fromDate) params.set("from_date", fromDate);
+  if (toDate) params.set("to_date", toDate);
+  return get<InvoicePreview>(
+    `/clocks/invoice-preview?${params}`,
+  );
+}
+
+export function batchInvoiceEntries(
+  starts: string[],
+): Promise<{ invoiced: number }> {
+  return post("/clocks/batch-invoice", { starts });
 }
 
 // Inbox
@@ -859,6 +895,31 @@ export function moveCronOutput(
   });
 }
 
+// Invoice Export
+
+export interface ExportColumnConfig {
+  field: string;
+  format?: string;
+}
+
+export interface InvoiceExportSettings {
+  columns: ExportColumnConfig[];
+}
+
+export function fetchInvoiceExportSettings(): Promise<InvoiceExportSettings> {
+  return get<InvoiceExportSettings>(
+    "/settings/invoice_export",
+  );
+}
+
+export function updateInvoiceExportSettings(
+  columns: ExportColumnConfig[],
+): Promise<InvoiceExportSettings> {
+  return patch<InvoiceExportSettings>(
+    "/settings/invoice_export", { columns },
+  );
+}
+
 // GitHub
 
 export function fetchGithubIssues(): Promise<GithubIssueGroup[]> {
@@ -877,6 +938,61 @@ export function updateGithubSettings(
   updates: { token?: string; base_url?: string }
 ): Promise<GithubSettings> {
   return patch<GithubSettings>("/settings/github", updates);
+}
+
+// Cloud Sync
+
+export interface CloudSyncStatus {
+  enabled: boolean;
+  api_key_set: boolean;
+  url: string;
+  interval: number;
+  connected: boolean;
+  plan: string | null;
+  pending: number;
+}
+
+export interface CloudSyncResult {
+  pulled: number;
+  pushed: boolean;
+  error?: string;
+}
+
+export function fetchCloudSyncStatus(): Promise<CloudSyncStatus> {
+  return get<CloudSyncStatus>("/cloud-sync/status");
+}
+
+export function connectCloudSync(
+  url: string, apiKey: string,
+): Promise<{ ok: boolean; plan: string }> {
+  return post("/cloud-sync/connect", {
+    url, api_key: apiKey,
+  });
+}
+
+export function disconnectCloudSync(): Promise<{ ok: boolean }> {
+  return post("/cloud-sync/disconnect", {});
+}
+
+export function syncNow(): Promise<CloudSyncResult> {
+  return post<CloudSyncResult>("/cloud-sync/sync-now", {});
+}
+
+export function fetchPendingCloudEntries(): Promise<
+  ClockEntry[]
+> {
+  return get<ClockEntry[]>("/cloud-sync/pending");
+}
+
+export function triageCloudEntries(
+  entries: {
+    start: string;
+    customer?: string;
+    task_id?: string | null;
+    contract?: string | null;
+  }[],
+): Promise<{ updated: number }> {
+  return post("/cloud-sync/triage", { entries });
 }
 
 // Advisor

@@ -102,6 +102,81 @@ def set_ai_settings(path: Path, updates: dict) -> dict:
     return get_ai_settings(data)
 
 
+DEFAULT_CLOUD_SYNC: dict = {
+    "enabled": False,
+    "url": "",
+    "api_key": "",
+    "interval": 300,
+}
+
+
+def get_cloud_sync_settings(settings: dict) -> dict:
+    """Return cloud sync settings with defaults."""
+    raw = {
+        **DEFAULT_CLOUD_SYNC,
+        **settings.get("cloud_sync", {}),
+    }
+    return {
+        "enabled": raw["enabled"],
+        "url": raw["url"],
+        "api_key_set": bool(raw.get("api_key")),
+        "interval": raw["interval"],
+    }
+
+
+def get_cloud_sync_key(settings: dict) -> str:
+    """Return the raw cloud sync API key."""
+    return settings.get("cloud_sync", {}).get(
+        "api_key", "",
+    )
+
+
+def set_cloud_sync_settings(
+    path: Path, updates: dict,
+) -> dict:
+    """Persist cloud sync settings; return new block."""
+    data = load_settings(path)
+    sync = data.get("cloud_sync", {})
+    sync.update(updates)
+    data["cloud_sync"] = sync
+    save_settings(path, data)
+    return get_cloud_sync_settings(data)
+
+
+DEFAULT_INVOICE_EXPORT: dict = {
+    "columns": [
+        {"field": "date"},
+        {"field": "start_time"},
+        {"field": "end_time"},
+        {"field": "customer"},
+        {"field": "description"},
+        {"field": "contract"},
+        {"field": "task"},
+        {"field": "hours"},
+    ],
+}
+
+
+def get_invoice_export_settings(settings: dict) -> dict:
+    """Return invoice export column config."""
+    return {
+        **DEFAULT_INVOICE_EXPORT,
+        **settings.get("invoice_export", {}),
+    }
+
+
+def set_invoice_export_settings(
+    path: Path, updates: dict,
+) -> dict:
+    """Persist invoice export settings."""
+    data = load_settings(path)
+    exp = data.get("invoice_export", {})
+    exp.update(updates)
+    data["invoice_export"] = exp
+    save_settings(path, data)
+    return get_invoice_export_settings(data)
+
+
 DEFAULT_GITHUB: dict = {
     "token": "",
     "base_url": "https://api.github.com",

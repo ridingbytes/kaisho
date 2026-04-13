@@ -24,6 +24,7 @@ from .routers import (
     notes,
     ws as ws_router,
 )
+from .routers import cloud_sync
 from .routers import settings as settings_router
 from ..cron.scheduler import build_scheduler
 from .watcher.service import watch_files
@@ -94,6 +95,7 @@ app.include_router(notes.router)
 app.include_router(knowledge.router)
 
 app.include_router(cron.router)
+app.include_router(cloud_sync.router)
 app.include_router(settings_router.router)
 app.include_router(github.router)
 app.include_router(advisor.router)
