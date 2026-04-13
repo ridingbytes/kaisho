@@ -1,5 +1,6 @@
 import {
   Clock,
+  Download,
   ExternalLink,
   Pencil,
   Plus,
@@ -8,7 +9,9 @@ import {
   Check,
 } from "lucide-react";
 import { CollapsibleSection } from "../common/CollapsibleSection";
+import { InvoicePanel } from "./InvoicePanel";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { ContentPopup } from "../common/ContentPopup";
 import { EditFooter } from "../common/EditFooter";
 import { useState } from "react";
 import { navigateToClockDate } from "../../utils/clockNavigation";
@@ -684,8 +687,15 @@ function TimeEntryRow({
       >
         {formatEntryDate(entry.start)}
       </span>
-      <span className="text-xs text-stone-800 truncate min-w-0 flex-1">
+      <span className="text-xs text-stone-800 truncate min-w-0 flex-1 inline-flex items-center gap-1">
         {entry.description}
+        {entry.notes && (
+          <ContentPopup
+            content={entry.notes}
+            title="Notes"
+            icon="notes"
+          />
+        )}
       </span>
       {entry.contract && (
         <span
@@ -1022,6 +1032,7 @@ function QuickBookForm({
 export function CustomerCard({ customer: c }: Props) {
   const [editing, setEditing] = useState(false);
   const [booking, setBooking] = useState(false);
+  const [invoicing, setInvoicing] = useState(false);
   const [addingContract, setAddingContract] = useState(false);
   const [form, setForm] = useState<EditState>(toEditState(c));
   const update = useUpdateCustomer();
@@ -1311,8 +1322,14 @@ export function CustomerCard({ customer: c }: Props) {
                 onDone={() => setBooking(false)}
               />
             )}
-            {!addingContract && !booking && (
-              <div className="flex gap-2">
+            {invoicing && (
+              <InvoicePanel
+                customer={c.name}
+                onClose={() => setInvoicing(false)}
+              />
+            )}
+            {!addingContract && !booking && !invoicing && (
+              <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => setAddingContract(true)}
                   className={actionBtnCls}
@@ -1326,6 +1343,13 @@ export function CustomerCard({ customer: c }: Props) {
                 >
                   <Clock size={10} />
                   Book time
+                </button>
+                <button
+                  onClick={() => setInvoicing(true)}
+                  className={actionBtnCls}
+                >
+                  <Download size={10} />
+                  Invoice
                 </button>
               </div>
             )}

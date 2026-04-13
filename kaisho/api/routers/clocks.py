@@ -15,6 +15,7 @@ class QuickBookRequest(BaseModel):
     task_id: str | None = None
     contract: str | None = None
     date: str | None = None  # YYYY-MM-DD, defaults to today
+    notes: str | None = None
 
 
 class TimerStart(BaseModel):
@@ -31,7 +32,7 @@ class EntryUpdate(BaseModel):
     new_date: date | None = None
     start_time: str | None = None
     task_id: str | None = None
-    booked: bool | None = None
+    invoiced: bool | None = None
     notes: str | None = None
     contract: str | None = None
 
@@ -77,6 +78,7 @@ def quick_book(body: QuickBookRequest):
             task_id=body.task_id,
             contract=body.contract,
             target_date=target_date,
+            notes=body.notes,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -118,7 +120,7 @@ def update_entry(start: str, body: EntryUpdate):
         new_date=body.new_date,
         start_time=body.start_time,
         task_id=body.task_id,
-        booked=body.booked,
+        invoiced=body.invoiced,
         notes=body.notes,
         contract=body.contract,
     )
@@ -131,4 +133,64 @@ def update_entry(start: str, body: EntryUpdate):
 def delete_entry(start: str):
     found = get_backend().clocks.delete_entry(start_iso=start)
     if not found:
-        raise HTTPException(status_code=404, detail="Entry not found")
+        raise HTTPException(
+            status_code=404, detail="Entry not found",
+        )
+
+
+# ── Invoice preparation ──────────────────────────────
+
+@router.get("/invoice-preview")
+def invoice_preview(
+    customer: str,
+    contract: str | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+):
+    """Return unbilled entries for a customer/contract."""
+    backend = get_backend()
+    entries = backend.clocks.list_entries(
+        period="all",
+        customer=customer,
+        from_date=from_date,
+        to_date=to_date,
+        contract=contract,
+    )
+    unbilled = [
+        e for e in entries if not e.get("invoiced")
+    ]
+    total_minutes = sum(
+        e.get("duration_minutes") or 0 for e in unbilled
+    )
+    return {
+        "customer": customer,
+        "contract": contract,
+        "from_date": (
+            from_date.isoformat() if from_date else None
+        ),
+        "to_date": (
+            to_date.isoformat() if to_date else None
+        ),
+        "entries": unbilled,
+        "total_minutes": total_minutes,
+        "total_hours": round(total_minutes / 60, 2),
+        "entry_count": len(unbilled),
+    }
+
+
+class BatchBookRequest(BaseModel):
+    starts: list[str]
+
+
+@router.post("/batch-invoice")
+def batch_invoice(body: BatchBookRequest):
+    """Mark multiple entries as invoiced."""
+    backend = get_backend()
+    count = 0
+    for start_iso in body.starts:
+        result = backend.clocks.update_entry(
+            start_iso=start_iso, invoiced=True,
+        )
+        if result is not None:
+            count += 1
+    return {"invoiced": count}
