@@ -5,14 +5,23 @@ import {
   fetchContracts,
   updateContract,
 } from "../api/client";
-import type { Contract } from "../types";
+import type { Contract, Customer } from "../types";
 import { useToast } from "../context/ToastContext";
+import { useCustomers } from "./useCustomers";
 
 export function useContracts(customerName: string | null) {
+  const { data: customers = [] } = useCustomers(true);
+  const isKnown = !!(
+    customerName &&
+    customers.some(
+      (c: Customer) => c.name === customerName,
+    )
+  );
+
   return useQuery({
     queryKey: ["contracts", customerName],
     queryFn: () => fetchContracts(customerName!),
-    enabled: !!customerName,
+    enabled: isKnown,
     staleTime: 15_000,
   });
 }
