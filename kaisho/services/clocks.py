@@ -8,8 +8,11 @@ from ..org.models import Clock, Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 
-# Heading title format: [CUSTOMER]: description
-ENTRY_RE = re.compile(r"^\[([^\]]+)\]:\s*(.*)")
+# Heading title format: [DATE] [CUSTOMER]: description
+# Also supports legacy format: [CUSTOMER]: description
+ENTRY_RE = re.compile(
+    r"^(?:\[\d{4}-\d{2}-\d{2}\s+\w+\]\s+)?\[([^\]]+)\]:\s*(.*)"
+)
 DURATION_SIMPLE_RE = re.compile(
     r"^(\d+(?:\.\d+)?)\s*(h|hours?|m|min|mins|minutes?)$"
 )
@@ -27,9 +30,14 @@ def _parse_entry_title(title: str) -> tuple[str, str]:
     return "", title.strip()
 
 
-def _entry_title(customer: str, description: str) -> str:
-    """Format a heading title as '[customer]: description'."""
-    return f"[{customer}]: {description}"
+def _entry_title(
+    customer: str, description: str, dt: datetime | None = None
+) -> str:
+    """Format a heading title as '[DATE] [customer]: description'."""
+    if dt is None:
+        dt = local_now()
+    date_str = dt.strftime("%Y-%m-%d %a")
+    return f"[{date_str}] [{customer}]: {description}"
 
 
 def _parse_duration(duration_str: str) -> int | None:
@@ -56,7 +64,7 @@ def _clock_to_entry(
     customer: str,
     description: str,
     task_id: str | None = None,
-    booked: bool = False,
+    invoiced: bool = False,
     notes: str | None = None,
     contract: str | None = None,
 ) -> dict:
@@ -72,7 +80,7 @@ def _clock_to_entry(
         "end": clock.end.isoformat() if clock.end else None,
         "duration_minutes": duration_minutes,
         "task_id": task_id,
-        "booked": booked,
+        "invoiced": invoiced,
         "notes": notes or "",
         "contract": contract or None,
     }
@@ -85,19 +93,26 @@ def _heading_notes(heading: Heading) -> str | None:
 
 
 def _collect_clock_entries(org_file: OrgFile) -> list[dict]:
-    """Collect all clock entries from the flat org file."""
+    """Collect all clock entries from the org file.
+
+    Each heading should contain exactly one CLOCK line
+    (new format). Legacy multi-clock headings are still
+    supported for backwards compatibility.
+    """
     entries = []
     for h1 in org_file.headings:
         customer, desc = _parse_entry_title(h1.title)
         task_id = h1.properties.get("TASK_ID") or None
-        booked = h1.properties.get("BOOKED", "").lower() == "true"
+        invoiced = (
+            h1.properties.get("INVOICED", "").lower() == "true"
+        )
         notes = _heading_notes(h1)
         contract = h1.properties.get("CONTRACT") or None
         for clock in h1.logbook:
             entries.append(
                 _clock_to_entry(
                     clock, customer, desc,
-                    task_id, booked, notes, contract,
+                    task_id, invoiced, notes, contract,
                 )
             )
     return entries
@@ -213,14 +228,14 @@ def get_active_timer(clocks_file: Path) -> dict | None:
     for h1 in org_file.headings:
         customer, desc = _parse_entry_title(h1.title)
         task_id = h1.properties.get("TASK_ID") or None
-        booked = h1.properties.get("BOOKED", "").lower() == "true"
+        invoiced = h1.properties.get("INVOICED", "").lower() == "true"
         notes = _heading_notes(h1)
         contract = h1.properties.get("CONTRACT") or None
         for clock in h1.logbook:
             if clock.end is None:
                 return _clock_to_entry(
                     clock, customer, desc,
-                    task_id, booked, notes, contract,
+                    task_id, invoiced, notes, contract,
                 )
     return None
 
@@ -233,6 +248,7 @@ def quick_book(
     task_id: str | None = None,
     contract: str | None = None,
     target_date: date | None = None,
+    notes: str | None = None,
 ) -> dict:
     """Book time on a specific date (or today)."""
     minutes = _parse_duration(duration_str)
@@ -254,10 +270,12 @@ def quick_book(
     clock = Clock(start=start, end=end)
 
     _append_clock_entry(
-        clocks_file, customer, description, clock, task_id, contract
+        clocks_file, customer, description,
+        clock, task_id, contract, notes,
     )
     return _clock_to_entry(
-        clock, customer, description, task_id, contract=contract
+        clock, customer, description,
+        task_id, notes=notes, contract=contract,
     )
 
 
@@ -368,11 +386,11 @@ def update_clock_entry(
     new_date: date | None = None,
     start_time: str | None = None,
     task_id: str | None = None,
-    booked: bool | None = None,
+    invoiced: bool | None = None,
     notes: str | None = None,
     contract: str | None = None,
 ) -> dict | None:
-    """Update customer, description, hours, date, task, booked, or notes."""
+    """Update customer, description, hours, date, task, invoiced, or notes."""
     if not clocks_file.exists():
         return None
     org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
@@ -386,7 +404,9 @@ def update_clock_entry(
     if description is not None:
         current_desc = description
     if customer is not None or description is not None:
-        heading.title = _entry_title(current_customer, current_desc)
+        heading.title = _entry_title(
+            current_customer, current_desc, clock.start
+        )
         heading.dirty = True
     if new_date is not None:
         delta = timedelta(
@@ -395,6 +415,9 @@ def update_clock_entry(
         clock.start = clock.start + delta
         if clock.end is not None:
             clock.end = clock.end + delta
+        heading.title = _entry_title(
+            current_customer, current_desc, clock.start
+        )
         heading.dirty = True
     if start_time is not None:
         h, m = (int(x) for x in start_time.split(":"))
@@ -423,11 +446,11 @@ def update_clock_entry(
         else:
             heading.properties["TASK_ID"] = task_id
         heading.dirty = True
-    if booked is not None:
-        if booked:
-            heading.properties["BOOKED"] = "true"
+    if invoiced is not None:
+        if invoiced:
+            heading.properties["INVOICED"] = "true"
         else:
-            heading.properties.pop("BOOKED", None)
+            heading.properties.pop("INVOICED", None)
         heading.dirty = True
     if notes is not None:
         heading.body = notes.splitlines() if notes.strip() else []
@@ -439,15 +462,15 @@ def update_clock_entry(
             heading.properties.pop("CONTRACT", None)
         heading.dirty = True
     current_task_id = heading.properties.get("TASK_ID") or None
-    current_booked = (
-        heading.properties.get("BOOKED", "").lower() == "true"
+    current_invoiced = (
+        heading.properties.get("INVOICED", "").lower() == "true"
     )
     current_notes = _heading_notes(heading)
     current_contract = heading.properties.get("CONTRACT") or None
     write_org_file(clocks_file, org_file)
     return _clock_to_entry(
         clock, current_customer, current_desc,
-        current_task_id, current_booked, current_notes,
+        current_task_id, current_invoiced, current_notes,
         current_contract,
     )
 
@@ -456,7 +479,7 @@ def delete_clock_entry(
     clocks_file: Path,
     start_iso: str,
 ) -> bool:
-    """Delete a clock entry by its start timestamp."""
+    """Delete a clock entry by removing its heading."""
     if not clocks_file.exists():
         return False
     org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
@@ -465,10 +488,9 @@ def delete_clock_entry(
     except ValueError:
         return False
     for h1 in org_file.headings:
-        for clock in list(h1.logbook):
+        for clock in h1.logbook:
             if clock.start == target:
-                h1.logbook.remove(clock)
-                h1.dirty = True
+                org_file.headings.remove(h1)
                 write_org_file(clocks_file, org_file)
                 return True
     return False
@@ -481,42 +503,30 @@ def _append_clock_entry(
     clock: Clock,
     task_id: str | None = None,
     contract: str | None = None,
+    notes: str | None = None,
 ) -> None:
-    """Append a clock entry to clocks.org as a flat heading."""
+    """Append a clock entry to clocks.org.
+
+    Each clock gets its own heading with the format:
+    * [DATE] [Customer]: Description
+    """
     if not clocks_file.exists():
         clocks_file.parent.mkdir(parents=True, exist_ok=True)
         org_file = OrgFile()
     else:
         org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
 
-    title = _entry_title(customer, description)
-    entry_heading = _find_or_create_heading(
-        org_file.headings, title, level=1, task_id=task_id
+    title = _entry_title(customer, description, clock.start)
+    heading = Heading(
+        level=1, keyword=None, title=title, dirty=True
     )
     if task_id:
-        entry_heading.properties["TASK_ID"] = task_id
+        heading.properties["TASK_ID"] = task_id
     if contract:
-        entry_heading.properties["CONTRACT"] = contract
-    entry_heading.logbook.append(clock)
-    entry_heading.dirty = True
+        heading.properties["CONTRACT"] = contract
+    if notes:
+        heading.body = notes.splitlines()
+    heading.logbook.append(clock)
+    org_file.headings.append(heading)
 
     write_org_file(clocks_file, org_file)
-
-
-def _find_or_create_heading(
-    headings: list[Heading],
-    title: str,
-    level: int,
-    task_id: str | None = None,
-) -> Heading:
-    """Find heading by title and task_id, or create a new one."""
-    for h in headings:
-        title_match = h.title.strip().lower() == title.strip().lower()
-        heading_task = h.properties.get("TASK_ID") or None
-        if title_match and heading_task == task_id:
-            return h
-    new_h = Heading(
-        level=level, keyword=None, title=title, dirty=True
-    )
-    headings.append(new_h)
-    return new_h

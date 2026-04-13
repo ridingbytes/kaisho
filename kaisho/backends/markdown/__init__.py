@@ -693,68 +693,70 @@ class MarkdownTaskBackend(TaskBackend):
 
 # -- Clock heading helpers ------------------------------------------
 
-_TIME_HEADING_RE = re.compile(
+_CLOCK_HEADING_RE = re.compile(
+    r"^\[(\d{4}-\d{2}-\d{2})\]\s+"
+    r"(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2}|running)\s+"
+    r"\[([^\]]*)\]\s*-\s*(.*)"
+)
+
+# Legacy grouped format for backwards compatibility
+_LEGACY_GROUP_RE = re.compile(
+    r"^\[([^\]]*)\]\s*-\s*(.*)"
+)
+_LEGACY_TIME_RE = re.compile(
     r"^(\d{4}-\d{2}-\d{2})\s+"
     r"(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2}|running)$"
 )
 
 
-def _group_key(entry: dict) -> str:
-    """Key for grouping entries: [customer] - description."""
-    return (
-        f"[{entry.get('customer', '')}] - "
-        f"{entry.get('description', '')}"
-    )
-
-
-def _parse_group_heading(heading: str) -> dict:
-    """Parse '[CUSTOMER] - Description' heading."""
-    m = re.match(r"^\[([^\]]*)\]\s*-\s*(.*)", heading)
-    if m:
-        return {
-            "customer": m.group(1).strip(),
-            "description": m.group(2).strip(),
-        }
-    return {"customer": heading.strip(), "description": ""}
-
-
-def _time_heading(entry: dict) -> str:
-    """Build level-3 heading: 2026-04-06 10:00 - 11:00."""
+def _clock_heading(entry: dict) -> str:
+    """Build heading: [2026-04-06] 10:00 - 11:00 [Customer] - Desc."""
     start = entry.get("start", "")
     end = entry.get("end")
-    s_dt = datetime.fromisoformat(start) if start else None
+    s_dt = (
+        datetime.fromisoformat(start) if start else None
+    )
     if s_dt is None:
         return "unknown"
     date_str = s_dt.strftime("%Y-%m-%d")
     start_time = s_dt.strftime("%H:%M")
-    if end:
-        e_dt = datetime.fromisoformat(end)
-        end_time = e_dt.strftime("%H:%M")
-    else:
-        end_time = "running"
-    return f"{date_str} {start_time} - {end_time}"
+    end_time = (
+        datetime.fromisoformat(end).strftime("%H:%M")
+        if end else "running"
+    )
+    customer = entry.get("customer", "")
+    desc = entry.get("description", "")
+    return (
+        f"[{date_str}] {start_time} - {end_time}"
+        f" [{customer}] - {desc}"
+    )
 
 
-def _parse_time_heading(heading: str) -> dict:
-    """Parse '2026-04-06 10:00 - 11:00' heading."""
-    m = _TIME_HEADING_RE.match(heading.strip())
+def _parse_clock_heading(heading: str) -> dict | None:
+    """Parse new format heading."""
+    m = _CLOCK_HEADING_RE.match(heading.strip())
     if not m:
-        return {"start": "", "end": None}
+        return None
     d, st, et = m.group(1), m.group(2), m.group(3)
     start = f"{d}T{st}:00"
     end = f"{d}T{et}:00" if et != "running" else None
-    return {"start": start, "end": end}
+    return {
+        "customer": m.group(4).strip(),
+        "description": m.group(5).strip(),
+        "start": start,
+        "end": end,
+    }
 
 
 def _load_clock_entries(text: str) -> list[dict]:
-    """Parse grouped clock markdown into flat entry list.
+    """Parse clock markdown into flat entry list.
 
-    Uses raw splitting by heading level to avoid the generic
-    parser consuming sub-headings as HTML comment metadata.
+    Supports both new (one-entry-per-heading) and legacy
+    (grouped by customer) formats.
     """
     entries = []
-    group_chunks = re.split(r"(?m)^## ", text)
-    for chunk in group_chunks:
+    chunks = re.split(r"(?m)^## ", text)
+    for chunk in chunks:
         chunk = chunk.strip()
         if not chunk:
             continue
@@ -764,42 +766,77 @@ def _load_clock_entries(text: str) -> list[dict]:
             if first_nl != -1
             else chunk.strip()
         )
-        parsed = _parse_group_heading(heading)
         rest = (
             chunk[first_nl + 1:] if first_nl != -1
             else ""
         )
+
+        # Try new format first
+        parsed = _parse_clock_heading(heading)
+        if parsed:
+            secs = _parse_md_sections(
+                f"## {chunk}", level=2,
+            )
+            meta = (
+                secs[0].get("meta", {}) if secs else {}
+            )
+            body = (
+                secs[0].get("body", "").strip()
+                if secs else ""
+            )
+            entries.append({
+                **parsed,
+                "task_id": meta.get("task_id", ""),
+                "contract": meta.get("contract", ""),
+                "invoiced": meta.get(
+                    "invoiced", "",
+                ) == "true",
+                "notes": body,
+            })
+            continue
+
+        # Legacy grouped format
+        gm = _LEGACY_GROUP_RE.match(heading)
+        if not gm:
+            continue
+        customer = gm.group(1).strip()
+        description = gm.group(2).strip()
         sub_chunks = re.split(r"(?m)^### ", rest)
         for sc in sub_chunks:
             sc = sc.strip()
             if not sc:
                 continue
             sub_secs = _parse_md_sections(
-                f"### {sc}", level=3
+                f"### {sc}", level=3,
             )
             for sub in sub_secs:
-                times = _parse_time_heading(
-                    sub["heading"]
+                tm = _LEGACY_TIME_RE.match(
+                    sub["heading"].strip(),
                 )
-                if not times["start"]:
+                if not tm:
                     continue
+                d = tm.group(1)
+                st, et = tm.group(2), tm.group(3)
+                start = f"{d}T{st}:00"
+                end = (
+                    f"{d}T{et}:00"
+                    if et != "running" else None
+                )
                 meta = sub.get("meta", {})
                 entries.append({
-                    "customer": parsed["customer"],
-                    "description": (
-                        parsed["description"]
-                    ),
-                    "start": times["start"],
-                    "end": times["end"],
+                    "customer": customer,
+                    "description": description,
+                    "start": start,
+                    "end": end,
                     "task_id": meta.get("task_id", ""),
                     "contract": meta.get(
-                        "contract", ""
+                        "contract", "",
                     ),
-                    "booked": meta.get(
-                        "booked", ""
+                    "invoiced": meta.get(
+                        "booked", "",
                     ) == "true",
                     "notes": sub.get(
-                        "body", ""
+                        "body", "",
                     ).strip(),
                 })
     return entries
@@ -812,34 +849,26 @@ def _clock_entry_props(entry: dict) -> dict:
         props["task_id"] = entry["task_id"]
     if entry.get("contract"):
         props["contract"] = entry["contract"]
-    if entry.get("booked"):
-        props["booked"] = "true"
+    if entry.get("invoiced"):
+        props["invoiced"] = "true"
     return props
 
 
 def _save_clock_entries(
-    path: Path, entries: list[dict]
+    path: Path, entries: list[dict],
 ) -> None:
-    """Write entries grouped by customer/description."""
-    groups: dict[str, list[dict]] = {}
-    for e in entries:
-        key = _group_key(e)
-        groups.setdefault(key, []).append(e)
-
+    """Write each entry as its own level-2 heading."""
     parts = []
-    for key, group_entries in groups.items():
-        lines = [f"## {key}"]
-        for e in group_entries:
+    for e in entries:
+        lines = [f"## {_clock_heading(e)}"]
+        prop_block = _render_props(
+            _clock_entry_props(e),
+        )
+        if prop_block:
+            lines.append(prop_block)
+        if e.get("notes"):
             lines.append("")
-            lines.append(f"### {_time_heading(e)}")
-            prop_block = _render_props(
-                _clock_entry_props(e)
-            )
-            if prop_block:
-                lines.append(prop_block)
-            if e.get("notes"):
-                lines.append("")
-                lines.append(e["notes"])
+            lines.append(e["notes"])
         parts.append("\n".join(lines))
     _write_md(
         path,
@@ -976,7 +1005,7 @@ class MarkdownClockBackend(ClockBackend):
             "end": None,
             "task_id": task_id or "",
             "contract": contract or "",
-            "booked": False,
+            "invoiced": False,
             "notes": "",
         }
         entries.append(entry)
@@ -1019,7 +1048,7 @@ class MarkdownClockBackend(ClockBackend):
             "end": end.isoformat(),
             "task_id": task_id or "",
             "contract": contract or "",
-            "booked": False,
+            "invoiced": False,
             "notes": "",
         }
         entries.append(entry)
@@ -1035,7 +1064,7 @@ class MarkdownClockBackend(ClockBackend):
         new_date=None,
         start_time: str | None = None,
         task_id: str | None = None,
-        booked: bool | None = None,
+        invoiced: bool | None = None,
         notes: str | None = None,
         contract: str | None = None,
     ) -> dict | None:
@@ -1049,8 +1078,8 @@ class MarkdownClockBackend(ClockBackend):
                 entry["description"] = description
             if task_id is not None:
                 entry["task_id"] = task_id
-            if booked is not None:
-                entry["booked"] = booked
+            if invoiced is not None:
+                entry["invoiced"] = invoiced
             if notes is not None:
                 entry["notes"] = notes
             if contract is not None:
