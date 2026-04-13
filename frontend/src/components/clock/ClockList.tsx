@@ -1,6 +1,7 @@
 import { Pencil, RotateCw, Trash2 } from "lucide-react";
 import { EditFooter } from "../common/EditFooter";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { ContentPopup } from "../common/ContentPopup";
 import {
   useInvoicedContracts,
   isInvoiced,
@@ -326,11 +327,25 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
           {taskTitleById(tasks, entry.task_id) || entry.task_id}
         </button>
       )}
-      <span className="text-[10px] text-stone-500 tabular-nums ml-auto">
+      {entry.invoiced && (
+        <span
+          className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"
+          title="Invoiced"
+        />
+      )}
+      <span className={`text-[10px] text-stone-500 tabular-nums ${entry.invoiced ? "" : "ml-auto"}`}>
         {entry.duration_minutes !== null
           ? formatDuration(entry.duration_minutes)
           : "…"}
       </span>
+      {entry.notes && (
+        <ContentPopup
+          content={entry.notes}
+          title="Notes"
+          icon="notes"
+          iconSize={10}
+        />
+      )}
       <button
         onClick={startEdit}
         className={actionBtn}

@@ -116,6 +116,7 @@ export function useQuickBook() {
       taskId,
       contract,
       date,
+      notes,
     }: {
       duration: string;
       customer: string;
@@ -123,9 +124,10 @@ export function useQuickBook() {
       taskId?: string;
       contract?: string;
       date?: string;
+      notes?: string;
     }) => quickBook(
       duration, customer, description,
-      taskId, contract, date,
+      taskId, contract, date, notes,
     ),
     onSuccess: (_d, vars) => {
       void qc.invalidateQueries({
@@ -152,7 +154,7 @@ export function useUpdateClockEntry() {
         new_date?: string;
         start_time?: string;
         task_id?: string;
-        booked?: boolean;
+        invoiced?: boolean;
         notes?: string;
         contract?: string;
       };

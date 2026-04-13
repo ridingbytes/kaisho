@@ -151,15 +151,15 @@ def clock_summary(period, as_json):
               help="New date (YYYY-MM-DD)")
 @click.option("--task-id", default=None,
               help="New task ID (empty to remove)")
-@click.option("--booked/--no-booked", default=None,
-              help="Mark as booked or not")
+@click.option("--invoiced/--no-invoiced", default=None,
+              help="Mark as invoiced or not")
 @click.option("--notes", default=None, help="New notes")
 @click.option("--contract", default=None,
               help="Assign to a contract (empty string to remove)")
 @click.option("--json", "as_json", is_flag=True)
 def clock_update(
     start_iso, customer, description, hours, new_date,
-    task_id, booked, notes, contract, as_json,
+    task_id, invoiced, notes, contract, as_json,
 ):
     """Update a clock entry by its start timestamp."""
     from_date = date.fromisoformat(new_date) if new_date else None
@@ -170,7 +170,7 @@ def clock_update(
         hours=hours,
         new_date=from_date,
         task_id=task_id,
-        booked=booked,
+        invoiced=invoiced,
         notes=notes,
         contract=contract,
     )
@@ -181,6 +181,32 @@ def clock_update(
         click.echo(json.dumps(entry, default=str))
     else:
         click.echo(f"Updated: {_format_entry(entry)}")
+
+
+@clock.command("batch-invoice")
+@click.argument("customer")
+@click.option("--contract", default=None,
+              help="Filter by contract name")
+@click.option("--json", "as_json", is_flag=True)
+def clock_batch_invoice(customer, contract, as_json):
+    """Mark all uninvoiced entries for a customer."""
+    entries = get_backend().clocks.list_entries(
+        period="year",
+        customer=customer,
+        contract=contract,
+    )
+    count = 0
+    for e in entries:
+        if e.get("invoiced"):
+            continue
+        get_backend().clocks.update_entry(
+            start_iso=e["start"], invoiced=True,
+        )
+        count += 1
+    if as_json:
+        click.echo(json.dumps({"invoiced": count}))
+    else:
+        click.echo(f"Marked {count} entries as invoiced.")
 
 
 @clock.command("edit")

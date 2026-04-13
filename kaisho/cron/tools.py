@@ -206,6 +206,40 @@ def _stop_clock(args: dict) -> dict:
     return {"entry": _backend().clocks.stop()}
 
 
+def _update_clock_entry(args: dict) -> dict:
+    result = _backend().clocks.update_entry(
+        start_iso=args["start"],
+        customer=args.get("customer"),
+        description=args.get("description"),
+        invoiced=args.get("invoiced"),
+        contract=args.get("contract"),
+        notes=args.get("notes"),
+    )
+    if result is None:
+        return {"error": "Entry not found"}
+    return {"entry": result}
+
+
+def _batch_invoice(args: dict) -> dict:
+    """Mark all uninvoiced entries for a contract."""
+    customer = args.get("customer")
+    contract = args.get("contract")
+    entries = _backend().clocks.list_entries(
+        period="year",
+        customer=customer,
+        contract=contract,
+    )
+    count = 0
+    for e in entries:
+        if e.get("invoiced"):
+            continue
+        _backend().clocks.update_entry(
+            start_iso=e["start"], invoiced=True,
+        )
+        count += 1
+    return {"invoiced": count}
+
+
 def _list_profiles(args: dict) -> dict:
     from ..config import get_config, list_profiles
     cfg = get_config()
@@ -269,6 +303,8 @@ _HANDLERS: dict[str, Any] = {
     "update_note": _update_note,
     "start_clock": _start_clock,
     "stop_clock": _stop_clock,
+    "update_clock_entry": _update_clock_entry,
+    "batch_invoice": _batch_invoice,
     "list_kb_files": lambda a: _list_kb_files(),
     "list_profiles": _list_profiles,
     "rename_profile": _rename_profile,

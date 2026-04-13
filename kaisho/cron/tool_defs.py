@@ -371,7 +371,86 @@ TOOL_DEFS: list[dict] = [
         "description": (
             "Stop the currently running clock timer."
         ),
-        "input_schema": {"type": "object", "properties": {}},
+        "input_schema": {
+            "type": "object", "properties": {},
+        },
+    },
+    {
+        "name": "update_clock_entry",
+        "description": (
+            "Update a clock entry. Can change customer, "
+            "description, contract, notes, or invoiced "
+            "status. Identify the entry by its start "
+            "ISO timestamp."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "start": {
+                    "type": "string",
+                    "description": (
+                        "ISO start timestamp of the "
+                        "entry to update"
+                    ),
+                },
+                "customer": {
+                    "type": "string",
+                    "description": (
+                        "New customer name (optional)"
+                    ),
+                },
+                "description": {
+                    "type": "string",
+                    "description": (
+                        "New description (optional)"
+                    ),
+                },
+                "invoiced": {
+                    "type": "boolean",
+                    "description": (
+                        "Mark as invoiced or not"
+                    ),
+                },
+                "contract": {
+                    "type": "string",
+                    "description": (
+                        "Contract name (optional)"
+                    ),
+                },
+                "notes": {
+                    "type": "string",
+                    "description": (
+                        "New notes (optional)"
+                    ),
+                },
+            },
+            "required": ["start"],
+        },
+    },
+    {
+        "name": "batch_invoice",
+        "description": (
+            "Mark all uninvoiced clock entries for a "
+            "customer or contract as invoiced. Returns "
+            "the number of entries marked."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "customer": {
+                    "type": "string",
+                    "description": "Customer name",
+                },
+                "contract": {
+                    "type": "string",
+                    "description": (
+                        "Contract name (optional, "
+                        "filters entries)"
+                    ),
+                },
+            },
+            "required": ["customer"],
+        },
     },
     {
         "name": "list_kb_files",

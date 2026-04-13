@@ -466,6 +466,31 @@ class AiSettingsUpdate(BaseModel):
     cron_model: str | None = None
 
 
+class ExportColumn(BaseModel):
+    field: str
+    format: str | None = None
+
+
+class InvoiceExportUpdate(BaseModel):
+    columns: list[ExportColumn]
+
+
+@router.get("/invoice_export")
+def get_invoice_export():
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    return settings_svc.get_invoice_export_settings(data)
+
+
+@router.patch("/invoice_export")
+def update_invoice_export(body: InvoiceExportUpdate):
+    cfg = get_config()
+    columns = [c.model_dump(exclude_none=True) for c in body.columns]
+    return settings_svc.set_invoice_export_settings(
+        cfg.SETTINGS_FILE, {"columns": columns},
+    )
+
+
 @router.get("/ai")
 def get_ai():
     cfg = get_config()

@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { CloudTriagePanel } from "./CloudTriagePanel";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
@@ -36,6 +37,7 @@ import {
   useInvoicedContracts,
   isInvoiced,
 } from "../../hooks/useInvoicedContracts";
+import { useInvoiceExportSettings } from "../../hooks/useSettings";
 import {
   formatDate,
   formatHours,
@@ -243,6 +245,7 @@ function EditForm({ entry, onClose }: EditFormProps) {
   const [description, setDescription] = useState(entry.description);
   const [hours, setHours] = useState(minutesToDecimal(entry.duration_minutes));
   const [notes, setNotes] = useState(entry.notes ?? "");
+  const [invoiced, setInvoiced] = useState(entry.invoiced ?? false);
   const [taskId, setTaskId] = useState<string | null>(entry.task_id);
   const { data: tasks = [] } = useTasks(true);
   const { data: contracts = [] } = useContracts(customer || null);
@@ -262,6 +265,7 @@ function EditForm({ entry, onClose }: EditFormProps) {
       task_id?: string;
       contract?: string;
       notes?: string;
+      invoiced?: boolean;
     } = {};
     const origDate = entry.start.slice(0, 10);
     const origTime = entry.start.slice(11, 16);
@@ -289,6 +293,9 @@ function EditForm({ entry, onClose }: EditFormProps) {
     }
     if (notes !== (entry.notes ?? "")) {
       updates.notes = notes;
+    }
+    if (invoiced !== (entry.invoiced ?? false)) {
+      updates.invoiced = invoiced;
     }
     if (Object.keys(updates).length === 0) {
       onClose();
@@ -359,7 +366,7 @@ function EditForm({ entry, onClose }: EditFormProps) {
         )}
       </td>
       {/* Task */}
-      <td className="px-3 py-2">
+      <td className="px-3 py-2 min-w-[160px]">
         <TaskAutocomplete
           taskId={taskId}
           value={taskTitle}
@@ -388,7 +395,7 @@ function EditForm({ entry, onClose }: EditFormProps) {
         />
       </td>
       {/* Duration + actions */}
-      <td className="px-3 py-2 text-right">
+      <td className="px-3 py-2 text-right min-w-[120px]">
         <div className="flex items-center gap-1 justify-end">
           <input
             value={hours}
@@ -416,7 +423,7 @@ function EditForm({ entry, onClose }: EditFormProps) {
         </div>
       </td>
     </tr>
-    {/* Notes row */}
+    {/* Notes + invoiced row */}
     <tr className="bg-surface-raised/40 border-b border-border-subtle">
       <td colSpan={7} className="px-3 pb-2">
         <textarea
@@ -436,6 +443,17 @@ function EditForm({ entry, onClose }: EditFormProps) {
           rows={2}
           className={`${smallInputCls} w-full resize-y`}
         />
+        <label className="flex items-center gap-1.5 mt-1.5 text-xs text-stone-600 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={invoiced}
+            onChange={(e) =>
+              setInvoiced(e.target.checked)
+            }
+            className="rounded border-border text-cta focus:ring-cta"
+          />
+          Invoiced
+        </label>
       </td>
     </tr>
     </>
@@ -458,6 +476,7 @@ function EntryRow({ entry, tasks, invoicedSet }: EntryRowProps) {
   );
   const remove = useDeleteClockEntry();
   const duplicate = useQuickBook();
+  const updateEntry = useUpdateClockEntry();
   const setView = useSetView();
   const taskTitle = taskTitleById(tasks, entry.task_id);
   const isInv = isInvoiced(
@@ -563,11 +582,50 @@ function EntryRow({ entry, tasks, invoicedSet }: EntryRowProps) {
               content={entry.description}
             />
           )}
+          {entry.notes && (
+            <ContentPopup
+              content={entry.notes}
+              title="Notes"
+              icon="notes"
+            />
+          )}
         </span>
       </td>
       <td className="px-3 py-1.5 text-xs text-stone-700 tabular-nums whitespace-nowrap text-right">
+        {entry.invoiced && (
+          <span
+            className="inline-flex items-center gap-0.5 mr-1.5 px-1 py-0.5 rounded text-[9px] font-semibold bg-emerald-500/10 text-emerald-600"
+            title="Invoiced"
+          >
+            <Check size={9} /> inv
+          </span>
+        )}
         <span className="mr-2">{formatHours(entry.duration_minutes)}</span>
         <span className="inline-flex gap-0.5 opacity-0 group-hover:opacity-100">
+          <button
+            onClick={() =>
+              updateEntry.mutate({
+                startIso: entry.start,
+                updates: {
+                  invoiced: !entry.invoiced,
+                },
+              })
+            }
+            disabled={updateEntry.isPending}
+            className={[
+              "p-0.5 rounded transition-colors",
+              entry.invoiced
+                ? "text-emerald-500 hover:text-stone-600"
+                : "text-stone-400 hover:text-emerald-500",
+            ].join(" ")}
+            title={
+              entry.invoiced
+                ? "Unmark invoiced"
+                : "Mark as invoiced"
+            }
+          >
+            <Check size={11} />
+          </button>
           <button
             onClick={() => setMode("edit")}
             className="p-0.5 rounded text-stone-600 hover:text-stone-900"
@@ -686,6 +744,9 @@ export function ClockView() {
     dir: "desc",
   });
   const invoicedSet = useInvoicedContracts();
+  const { data: exportSettings } =
+    useInvoiceExportSettings();
+  const exportColumns = exportSettings?.columns;
 
   function toggleSort(col: SortCol) {
     setSort((prev) =>
@@ -742,11 +803,11 @@ export function ClockView() {
           value={search}
           onChange={setSearch}
           placeholder="Search customer / description…"
-          inputClassName={`${inputCls} w-52 pr-6`}
+          inputClassName="px-2 py-1 rounded-lg text-xs bg-surface-raised border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta w-52 pr-6"
           className="w-52"
         />
         <select
-          className={`${inputCls} w-28`}
+          className={`${smallInputCls} !w-28`}
           value={period}
           onChange={(e) => {
             setPeriod(e.target.value as Period);
@@ -760,7 +821,7 @@ export function ClockView() {
         </select>
         <input
           type="date"
-          className={`${inputCls} w-36`}
+          className={`${smallInputCls} !w-36`}
           value={specificDate}
           title="Filter by specific date"
           onChange={(e) => setSpecificDate(e.target.value)}
@@ -776,7 +837,8 @@ export function ClockView() {
               onClick={() =>
                 exportClocksCsv(
                   sorted,
-                  `clock-entries-${period}.csv`
+                  `clock-entries-${period}.csv`,
+                  exportColumns,
                 )
               }
               className={
@@ -794,7 +856,8 @@ export function ClockView() {
               onClick={() =>
                 exportClocksExcel(
                   sorted,
-                  `clock-entries-${period}.xls`
+                  `clock-entries-${period}.xlsx`,
+                  exportColumns,
                 )
               }
               className={
@@ -822,6 +885,11 @@ export function ClockView() {
 
       {/* Quick-book form */}
       {booking && <BookForm onClose={() => setBooking(false)} />}
+
+      {/* Cloud triage (unassigned entries) */}
+      <div className="px-4 py-2">
+        <CloudTriagePanel />
+      </div>
 
       {/* Table */}
       <div className="flex-1 overflow-y-auto">

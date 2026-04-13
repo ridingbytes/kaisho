@@ -394,8 +394,8 @@ day, regardless of the period selection.
 **Task** — each entry can be linked to a task. The task name appears
 in its own column. Use the edit form to assign or change the task.
 
-**Booked** — a green check icon marks entries already transferred to
-a customer's budget. The book button is hidden for booked entries.
+**Invoiced** — a green check icon marks entries that have been
+invoiced. The invoice button is hidden for invoiced entries.
 
 **Book** — "+ Book" in the toolbar opens a quick-book form to log a
 new entry with a duration string (e.g. \`2h\`, \`90min\`, \`1.5h\`).
@@ -407,7 +407,7 @@ entry to the new day while keeping the original time-of-day.
 
 **Book to project** (arrow icon on hover) — copy the entry's hours
 to a customer's budget as a time entry. Customer, description, and
-hours are pre-filled and editable. Marks the clock entry as booked.
+hours are pre-filled and editable. Marks the clock entry as invoiced.
 
 **Delete** (trash icon on hover) — removes the clock entry
 permanently.
@@ -415,8 +415,8 @@ permanently.
 ## Task card clock section
 
 On the Kanban board, each task card shows a collapsible clock section
-listing all entries linked to that task. A "book all unbooked" button
-lets you transfer unbooked hours to the customer's budget in one
+listing all entries linked to that task. A "mark all invoiced" button
+lets you flag entries as invoiced in one
 click.
 
 ## CLI

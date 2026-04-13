@@ -69,6 +69,7 @@ class OrgClockBackend(ClockBackend):
         task_id: str | None = None,
         contract: str | None = None,
         target_date=None,
+        notes: str | None = None,
     ) -> dict:
         return clocks.quick_book(
             clocks_file=self._clocks_file,
@@ -78,6 +79,7 @@ class OrgClockBackend(ClockBackend):
             task_id=task_id,
             contract=contract,
             target_date=target_date,
+            notes=notes,
         )
 
     def update_entry(
@@ -89,7 +91,7 @@ class OrgClockBackend(ClockBackend):
         new_date=None,
         start_time: str | None = None,
         task_id: str | None = None,
-        booked: bool | None = None,
+        invoiced: bool | None = None,
         notes: str | None = None,
         contract: str | None = None,
     ) -> dict | None:
@@ -102,7 +104,7 @@ class OrgClockBackend(ClockBackend):
             new_date=new_date,
             start_time=start_time,
             task_id=task_id,
-            booked=booked,
+            invoiced=invoiced,
             notes=notes,
             contract=contract,
         )

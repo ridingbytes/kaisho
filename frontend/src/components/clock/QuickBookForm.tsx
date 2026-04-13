@@ -19,6 +19,7 @@ export function QuickBookForm({
   const [description, setDescription] = useState("");
   const [taskId, setTaskId] = useState<string | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
+  const [notes, setNotes] = useState("");
   const { data: allContracts = [] } = useContracts(
     customer || null,
   );
@@ -39,6 +40,7 @@ export function QuickBookForm({
         contract: contract || undefined,
         taskId: taskId ?? undefined,
         date: defaultDate || undefined,
+        notes: notes.trim() || undefined,
       },
       {
         onSuccess: () => {
@@ -48,6 +50,7 @@ export function QuickBookForm({
           setDescription("");
           setTaskId(null);
           setTaskTitle("");
+          setNotes("");
           onDone?.();
         },
       }
@@ -112,6 +115,13 @@ export function QuickBookForm({
         }}
         customer={customer}
         inputClassName={inputCls}
+      />
+      <textarea
+        placeholder="Notes (optional)"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        rows={2}
+        className={inputCls + " resize-y"}
       />
       <button
         type="submit"

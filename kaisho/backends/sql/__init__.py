@@ -71,7 +71,7 @@ class ClockRow(Base):
     end = Column(String, nullable=True)
     task_id = Column(String, nullable=True)
     contract = Column(String, nullable=True)
-    booked = Column(Boolean, default=False)
+    invoiced = Column(Boolean, default=False)
     notes = Column(Text, default="")
 
 
@@ -291,7 +291,7 @@ def _clock_row_to_dict(row: ClockRow) -> dict:
         "end": row.end,
         "task_id": row.task_id or "",
         "contract": row.contract or "",
-        "booked": bool(row.booked),
+        "invoiced": bool(row.invoiced),
         "notes": row.notes or "",
     }
 
@@ -785,7 +785,7 @@ class SqlClockBackend(ClockBackend):
             end=None,
             task_id=task_id or "",
             contract=contract or "",
-            booked=False,
+            invoiced=False,
             notes="",
         )
         session = self._eng.session()
@@ -801,7 +801,7 @@ class SqlClockBackend(ClockBackend):
             "end": None,
             "task_id": task_id or "",
             "contract": contract or "",
-            "booked": False,
+            "invoiced": False,
             "notes": "",
         }
         return _enrich_clock(entry)
@@ -850,7 +850,7 @@ class SqlClockBackend(ClockBackend):
             end=end.isoformat(),
             task_id=task_id or "",
             contract=contract or "",
-            booked=False,
+            invoiced=False,
             notes="",
         )
         session = self._eng.session()
@@ -866,7 +866,7 @@ class SqlClockBackend(ClockBackend):
             "end": end.isoformat(),
             "task_id": task_id or "",
             "contract": contract or "",
-            "booked": False,
+            "invoiced": False,
             "notes": "",
         }
         return _enrich_clock(entry)
@@ -880,7 +880,7 @@ class SqlClockBackend(ClockBackend):
         new_date=None,
         start_time=None,
         task_id=None,
-        booked=None,
+        invoiced=None,
         notes=None,
         contract=None,
     ) -> dict | None:
@@ -900,8 +900,8 @@ class SqlClockBackend(ClockBackend):
                 row.description = description
             if task_id is not None:
                 row.task_id = task_id
-            if booked is not None:
-                row.booked = booked
+            if invoiced is not None:
+                row.invoiced = invoiced
             if notes is not None:
                 row.notes = notes
             if contract is not None:
@@ -1228,7 +1228,7 @@ class SqlCustomerBackend(CustomerBackend):
         self._eng = eng
 
     def _used_hours(self, customer_name: str) -> float:
-        """Sum booked hours from clocks for a customer."""
+        """Sum hours from clocks for a customer."""
         session = self._eng.session()
         try:
             rows = session.query(

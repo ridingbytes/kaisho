@@ -445,7 +445,7 @@ class JsonClockBackend(ClockBackend):
             "end": None,
             "task_id": task_id or "",
             "contract": contract or "",
-            "booked": False,
+            "invoiced": False,
             "notes": "",
         }
         entries.append(entry)
@@ -486,7 +486,7 @@ class JsonClockBackend(ClockBackend):
             "end": end.isoformat(),
             "task_id": task_id or "",
             "contract": contract or "",
-            "booked": False,
+            "invoiced": False,
             "notes": "",
         }
         entries.append(entry)
@@ -502,7 +502,7 @@ class JsonClockBackend(ClockBackend):
         new_date=None,
         start_time: str | None = None,
         task_id: str | None = None,
-        booked: bool | None = None,
+        invoiced: bool | None = None,
         notes: str | None = None,
         contract: str | None = None,
     ) -> dict | None:
@@ -516,8 +516,8 @@ class JsonClockBackend(ClockBackend):
                 entry["description"] = description
             if task_id is not None:
                 entry["task_id"] = task_id
-            if booked is not None:
-                entry["booked"] = booked
+            if invoiced is not None:
+                entry["invoiced"] = invoiced
             if notes is not None:
                 entry["notes"] = notes
             if contract is not None:
@@ -687,7 +687,7 @@ class JsonCustomerBackend(CustomerBackend):
     # -- helpers -------------------------------------------------
 
     def _used_hours(self, customer_name: str) -> float:
-        """Sum booked hours from clocks."""
+        """Sum hours from clocks."""
         entries = _read_json(self._clocks_file)
         total_min = 0
         low = customer_name.lower()
