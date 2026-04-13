@@ -1,44 +1,154 @@
+import * as XLSX from "xlsx";
 import type { ClockEntry } from "../types";
 
-const HEADERS = [
-  "Date",
-  "Start",
-  "End",
-  "Customer",
-  "Description",
-  "Contract",
-  "Task",
-  "Hours",
+// ── Column definitions ───────────────────────────────
+
+export interface ExportColumn {
+  field: string;
+  format?: string;
+}
+
+export const AVAILABLE_FIELDS: {
+  field: string;
+  label: string;
+  formats?: { value: string; label: string }[];
+}[] = [
+  { field: "#", label: "Row number" },
+  {
+    field: "date",
+    label: "Date",
+    formats: [
+      { value: "YYYY-MM-DD", label: "2026-04-10" },
+      { value: "DD.MM.YYYY", label: "10.04.2026" },
+      { value: "MM/DD/YYYY", label: "04/10/2026" },
+    ],
+  },
+  { field: "start_time", label: "Start time" },
+  { field: "end_time", label: "End time" },
+  { field: "customer", label: "Customer" },
+  { field: "contract", label: "Contract" },
+  { field: "description", label: "Description" },
+  {
+    field: "hours",
+    label: "Hours",
+    formats: [
+      { value: "decimal", label: "3.50" },
+      { value: "hm", label: "3:30" },
+    ],
+  },
+  { field: "duration", label: "Duration (h:mm)" },
+  { field: "task", label: "Task" },
+  { field: "notes", label: "Notes" },
+  { field: "invoiced", label: "Invoiced" },
 ];
 
-function formatEntryDate(iso: string): string {
-  return iso.slice(0, 10);
+const DEFAULT_COLUMNS: ExportColumn[] = [
+  { field: "date" },
+  { field: "start_time" },
+  { field: "end_time" },
+  { field: "customer" },
+  { field: "description" },
+  { field: "contract" },
+  { field: "task" },
+  { field: "hours" },
+];
+
+// ── Formatters ───────────────────────────────────────
+
+function formatDate(
+  iso: string, fmt?: string,
+): string {
+  const d = iso.slice(0, 10);
+  if (!fmt || fmt === "YYYY-MM-DD") return d;
+  const [y, m, day] = d.split("-");
+  if (fmt === "DD.MM.YYYY") return `${day}.${m}.${y}`;
+  if (fmt === "MM/DD/YYYY") return `${m}/${day}/${y}`;
+  return d;
 }
 
-function formatEntryTime(iso: string | null): string {
-  if (!iso) return "";
-  return iso.slice(11, 16);
-}
-
-function formatEntryHours(minutes: number | null): string {
+function formatHours(
+  minutes: number | null, fmt?: string,
+): string {
   if (minutes === null) return "";
+  if (fmt === "hm") {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${h}:${String(m).padStart(2, "0")}`;
+  }
   return (minutes / 60).toFixed(2);
 }
 
-function entryToRow(entry: ClockEntry): string[] {
-  return [
-    formatEntryDate(entry.start),
-    formatEntryTime(entry.start),
-    formatEntryTime(entry.end),
-    entry.customer,
-    entry.description,
-    entry.contract ?? "",
-    entry.task_id ?? "",
-    formatEntryHours(entry.duration_minutes),
-  ];
+function formatDuration(
+  minutes: number | null,
+): string {
+  if (minutes === null) return "";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${h}:${String(m).padStart(2, "0")}`;
 }
 
-function triggerDownload(blob: Blob, filename: string): void {
+// ── Row builder ──────────────────────────────────────
+
+function cellValue(
+  entry: ClockEntry,
+  col: ExportColumn,
+  rowNum: number,
+): string | number {
+  switch (col.field) {
+    case "#":
+      return rowNum;
+    case "date":
+      return formatDate(entry.start, col.format);
+    case "start_time":
+      return entry.start.slice(11, 16);
+    case "end_time":
+      return entry.end?.slice(11, 16) ?? "";
+    case "customer":
+      return entry.customer;
+    case "contract":
+      return entry.contract ?? "";
+    case "description":
+      return entry.description;
+    case "hours": {
+      if (entry.duration_minutes === null) return "";
+      if (col.format === "hm") {
+        return formatHours(
+          entry.duration_minutes, "hm",
+        );
+      }
+      return Math.round(
+        (entry.duration_minutes / 60) * 100,
+      ) / 100;
+    }
+    case "duration":
+      return formatDuration(entry.duration_minutes);
+    case "task":
+      return entry.task_id ?? "";
+    case "notes":
+      return entry.notes;
+    case "invoiced":
+      return entry.invoiced ? "yes" : "no";
+    default:
+      return "";
+  }
+}
+
+function columnHeaders(
+  columns: ExportColumn[],
+): string[] {
+  return columns.map((col) => {
+    const def = AVAILABLE_FIELDS.find(
+      (f) => f.field === col.field,
+    );
+    return def?.label ?? col.field;
+  });
+}
+
+// ── Download helper ──────────────────────────────────
+
+function triggerDownload(
+  blob: Blob, filename: string,
+): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -48,6 +158,8 @@ function triggerDownload(blob: Blob, filename: string): void {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+// ── CSV export ───────────────────────────────────────
 
 function escapeCsvField(value: string): string {
   if (
@@ -62,74 +174,56 @@ function escapeCsvField(value: string): string {
 
 export function exportClocksCsv(
   entries: ClockEntry[],
-  filename: string
+  filename: string,
+  columns?: ExportColumn[],
 ): void {
-  const header = HEADERS.map(escapeCsvField).join(",");
-  const rows = entries.map(
-    (e) => entryToRow(e).map(escapeCsvField).join(",")
+  const cols = columns ?? DEFAULT_COLUMNS;
+  const header = columnHeaders(cols)
+    .map(escapeCsvField)
+    .join(",");
+  const rows = entries.map((e, i) =>
+    cols
+      .map((col) => {
+        const v = cellValue(e, col, i + 1);
+        return escapeCsvField(String(v));
+      })
+      .join(","),
   );
   const csv = [header, ...rows].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const blob = new Blob(
+    [csv], { type: "text/csv;charset=utf-8" },
+  );
   triggerDownload(blob, filename);
 }
 
-function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function xmlCell(value: string, type: string): string {
-  return (
-    "<Cell><Data ss:Type=\"" +
-    type +
-    "\">" +
-    escapeXml(value) +
-    "</Data></Cell>"
-  );
-}
-
-function xmlRow(cells: string[]): string {
-  return "<Row>" + cells.join("") + "</Row>";
-}
+// ── Excel export (XLSX) ──────────────────────────────
 
 export function exportClocksExcel(
   entries: ClockEntry[],
-  filename: string
+  filename: string,
+  columns?: ExportColumn[],
 ): void {
-  const headerCells = HEADERS.map(
-    (h) => xmlCell(h, "String")
+  const cols = columns ?? DEFAULT_COLUMNS;
+  const headers = columnHeaders(cols);
+
+  const rows = entries.map((entry, i) =>
+    cols.map((col) => cellValue(entry, col, i + 1)),
   );
-  const headerRow = xmlRow(headerCells);
 
-  const dataRows = entries.map((entry) => {
-    const row = entryToRow(entry);
-    const cells = row.map((val, i) => {
-      const isNumber = i === 7 && val !== "";
-      return xmlCell(val, isNumber ? "Number" : "String");
-    });
-    return xmlRow(cells);
+  const ws = XLSX.utils.aoa_to_sheet(
+    [headers, ...rows],
+  );
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(
+    wb, ws, "Clock Entries",
+  );
+
+  const buf = XLSX.write(wb, {
+    bookType: "xlsx",
+    type: "array",
   });
-
-  const xml = [
-    '<?xml version="1.0"?>',
-    '<?mso-application progid="Excel.Sheet"?>',
-    "<Workbook",
-    '  xmlns="urn:schemas-microsoft-com:office:spreadsheet"',
-    '  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">',
-    '<Worksheet ss:Name="Clock Entries">',
-    "<Table>",
-    headerRow,
-    ...dataRows,
-    "</Table>",
-    "</Worksheet>",
-    "</Workbook>",
-  ].join("\n");
-
-  const blob = new Blob([xml], {
-    type: "application/vnd.ms-excel",
+  const blob = new Blob([buf], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   triggerDownload(blob, filename);
 }
