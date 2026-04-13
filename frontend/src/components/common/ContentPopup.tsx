@@ -1,4 +1,6 @@
-import { X, ExternalLink } from "lucide-react";
+import {
+  X, ExternalLink, MessageSquare,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Markdown } from "./Markdown";
 
@@ -7,6 +9,7 @@ interface ContentPopupProps {
   title?: string;
   markdown?: boolean;
   iconSize?: number;
+  icon?: "expand" | "notes";
 }
 
 export function ContentPopup({
@@ -14,7 +17,10 @@ export function ContentPopup({
   title,
   markdown = false,
   iconSize = 11,
+  icon = "expand",
 }: ContentPopupProps) {
+  const IconComponent =
+    icon === "notes" ? MessageSquare : ExternalLink;
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -38,7 +44,7 @@ export function ContentPopup({
         ].join(" ")}
         title="View full content"
       >
-        <ExternalLink size={iconSize} />
+        <IconComponent size={iconSize} />
       </button>
 
       {open && (

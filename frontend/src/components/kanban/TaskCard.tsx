@@ -157,8 +157,15 @@ function ClockEntryRow({
       >
         {fmtDate(entry.start)}
       </span>
-      <span className="flex-1 truncate text-stone-600">
+      <span className="flex-1 truncate text-stone-600 inline-flex items-center gap-1">
         {entry.description}
+        {entry.notes && (
+          <ContentPopup
+            content={entry.notes}
+            title="Notes"
+            icon="notes"
+          />
+        )}
       </span>
       <span className="tabular-nums text-stone-700">
         {formatHours(entry.duration_minutes)}
