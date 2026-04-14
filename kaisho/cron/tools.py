@@ -897,6 +897,7 @@ def _trigger_cron_job(job_id: str) -> dict:
     )
 
     def run_bg() -> None:
+        from pathlib import Path
         from .executor import execute_job, write_output
         from ..services.settings import (
             get_ai_settings, load_settings,
@@ -907,7 +908,7 @@ def _trigger_cron_job(job_id: str) -> dict:
         try:
             output = execute_job(
                 job,
-                project_root=cfg.PROFILE_DIR,
+                project_root=Path(__file__).parent.parent.parent,
                 ollama_base_url=ai["ollama_url"],
                 lm_studio_base_url=ai.get(
                     "lm_studio_url", "",
