@@ -134,7 +134,7 @@ export function useAddTag() {
       name: string;
       color: string;
       description?: string;
-    }) => addTag(name, color, description),
+    }) => addTag({ name, color, description }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["settings"] });
     },

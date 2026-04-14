@@ -1,10 +1,28 @@
-import { useEffect, useRef, useState } from "react";
-import { useCustomers, useCreateCustomer } from "../../hooks/useCustomers";
+import {
+  useCustomers,
+  useCreateCustomer,
+} from "../../hooks/useCustomers";
+import {
+  Autocomplete,
+  type AutocompleteItem,
+} from "./Autocomplete";
+
+/**
+ * Autocomplete input for selecting or creating
+ * a customer. Wraps the generic Autocomplete
+ * component with customer-specific data fetching
+ * and creation logic.
+ */
 
 interface Props {
+  /** Current customer name text. */
   value: string;
+  /** Called when the text or selection changes. */
   onChange: (value: string) => void;
-  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  /** Forwarded to the underlying input. */
+  onKeyDown?: (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => void;
   className?: string;
   inputClassName?: string;
   placeholder?: string;
@@ -24,152 +42,57 @@ export function CustomerAutocomplete({
 }: Props) {
   const { data: customers = [] } = useCustomers(true);
   const createCustomer = useCreateCustomer();
-  const [open, setOpen] = useState(false);
-  const [highlightIdx, setHighlightIdx] = useState(-1);
-  const listRef = useRef<HTMLUListElement>(null);
-
-  useEffect(() => {
-    if (highlightIdx < 0 || !listRef.current) return;
-    const el = listRef.current.children[highlightIdx];
-    if (el) {
-      (el as HTMLElement).scrollIntoView({ block: "nearest" });
-    }
-  }, [highlightIdx]);
 
   const allNames = customers.map((c) => c.name);
   const trimmed = value.trim();
+
   const filtered = trimmed
     ? allNames.filter((n) =>
-        n.toLowerCase().includes(trimmed.toLowerCase())
+        n.toLowerCase().includes(
+          trimmed.toLowerCase(),
+        ),
       )
     : allNames.slice(0, MAX_UNFILTERED);
 
+  const items: AutocompleteItem<string>[] =
+    filtered.map((name) => ({
+      key: name,
+      label: name,
+      data: name,
+    }));
+
   const exactMatch = allNames.some(
-    (n) => n.toLowerCase() === trimmed.toLowerCase()
+    (n) =>
+      n.toLowerCase() === trimmed.toLowerCase(),
   );
   const showCreate = trimmed.length > 0 && !exactMatch;
 
-  function select(name: string) {
-    onChange(name);
-    setOpen(false);
-    setHighlightIdx(-1);
+  function handleSelect(
+    item: AutocompleteItem<string>,
+  ) {
+    onChange(item.data);
   }
 
   function handleCreate() {
     createCustomer.mutate(
       { name: trimmed },
-      {
-        onSuccess: () => {
-          onChange(trimmed);
-          setOpen(false);
-        },
-      }
+      { onSuccess: () => onChange(trimmed) },
     );
   }
 
-  function handleKeyDown(
-    e: React.KeyboardEvent<HTMLInputElement>
-  ) {
-    const total = filtered.length + (showCreate ? 1 : 0);
-    if (total > 0 && e.key === "ArrowDown") {
-      e.preventDefault();
-      if (!open) {
-        setOpen(true);
-        setHighlightIdx(0);
-      } else {
-        setHighlightIdx((i) =>
-          Math.min(i + 1, total - 1)
-        );
-      }
-      return;
-    }
-    if (total > 0 && e.key === "ArrowUp") {
-      e.preventDefault();
-      setHighlightIdx((i) => Math.max(i - 1, 0));
-      return;
-    }
-    if (
-      (e.key === "Enter" || e.key === "Tab") &&
-      highlightIdx >= 0
-    ) {
-      e.preventDefault();
-      if (highlightIdx < filtered.length) {
-        select(filtered[highlightIdx]);
-      } else if (showCreate) {
-        handleCreate();
-      }
-      return;
-    }
-    if (e.key === "Escape" && open) {
-      setOpen(false);
-      setHighlightIdx(-1);
-      return;
-    }
-    onKeyDown?.(e);
-  }
-
   return (
-    <div className={`relative${className ? ` ${className}` : ""}`}>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-          setOpen(true);
-          setHighlightIdx(-1);
-        }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        autoFocus={autoFocus}
-        autoComplete="off"
-        className={`w-full ${inputClassName}`}
-      />
-      {open && (filtered.length > 0 || showCreate) && (
-        <ul ref={listRef} className="absolute z-50 left-0 right-0 top-full mt-0.5 max-h-48 overflow-y-auto rounded-md border border-border bg-surface-raised shadow-card-hover">
-          {filtered.map((name, i) => (
-            <li key={name}>
-              <button
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  select(name);
-                }}
-                className={[
-                  "w-full text-left px-2 py-1.5 text-xs truncate",
-                  "transition-colors",
-                  i === highlightIdx
-                    ? "bg-surface-overlay text-stone-900 font-medium"
-                    : "text-stone-800 hover:bg-surface-overlay/50",
-                ].join(" ")}
-              >
-                {name}
-              </button>
-            </li>
-          ))}
-          {showCreate && (
-            <li>
-              <button
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleCreate();
-                }}
-                className={[
-                  "w-full text-left px-2 py-1.5 text-xs",
-                  "transition-colors border-t border-border-subtle",
-                  highlightIdx === filtered.length
-                    ? "bg-surface-overlay text-cta font-medium"
-                    : "text-cta hover:bg-surface-overlay/50",
-                ].join(" ")}
-              >
-                + Create &quot;{trimmed}&quot;
-              </button>
-            </li>
-          )}
-        </ul>
-      )}
-    </div>
+    <Autocomplete
+      value={value}
+      onChange={onChange}
+      items={items}
+      onSelect={handleSelect}
+      onCreate={handleCreate}
+      showCreate={showCreate}
+      onKeyDown={onKeyDown}
+      className={className}
+      inputClassName={inputClassName}
+      placeholder={placeholder}
+      autoFocus={autoFocus}
+    />
   );
 }

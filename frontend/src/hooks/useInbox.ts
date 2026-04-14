@@ -40,9 +40,10 @@ export function useCaptureItem() {
       body?: string;
       channel?: string;
       direction?: string;
-    }) => captureInboxItem(
-      text, type, customer, body, channel, direction,
-    ),
+    }) => captureInboxItem({
+      text, type, customer, body,
+      channel, direction,
+    }),
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: ["inbox"],

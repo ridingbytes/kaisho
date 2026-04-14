@@ -464,6 +464,8 @@ def _task_to_section(task: dict) -> dict:
 
 
 class MarkdownTaskBackend(TaskBackend):
+    """TaskBackend backed by Markdown files."""
+
     def __init__(
         self, tasks_file: Path, archive_file: Path
     ):
@@ -472,6 +474,7 @@ class MarkdownTaskBackend(TaskBackend):
 
     @property
     def data_file(self) -> Path:
+        """Return the tasks Markdown file path."""
         return self._tasks_file
 
     def _load_tasks(self) -> list[dict]:
@@ -514,6 +517,7 @@ class MarkdownTaskBackend(TaskBackend):
         tag=None,
         include_done=False,
     ) -> list[dict]:
+        """Return tasks matching the given filters."""
         tasks = self._load_tasks()
         if not include_done:
             tasks = [
@@ -543,6 +547,7 @@ class MarkdownTaskBackend(TaskBackend):
         return tasks
 
     def list_all_tags(self) -> list[dict]:
+        """Return all tags with usage counts."""
         tasks = self._load_tasks()
         counter: Counter = Counter()
         for t in tasks:
@@ -554,6 +559,7 @@ class MarkdownTaskBackend(TaskBackend):
         ]
 
     def list_archived(self) -> list[dict]:
+        """Return all archived tasks."""
         return self._load_archive()
 
     # -- mutations -----------------------------------------------
@@ -567,6 +573,7 @@ class MarkdownTaskBackend(TaskBackend):
         body=None,
         github_url=None,
     ) -> dict:
+        """Create a new task and return its dict."""
         tasks = self._load_tasks()
         task = {
             "id": _generate_id(title),
@@ -584,6 +591,7 @@ class MarkdownTaskBackend(TaskBackend):
         return task
 
     def move_task(self, task_id, new_status) -> dict:
+        """Change a task's status and return updated dict."""
         tasks = self._load_tasks()
         for t in tasks:
             if t["id"] == task_id:
@@ -593,6 +601,7 @@ class MarkdownTaskBackend(TaskBackend):
         raise ValueError(f"Task not found: {task_id}")
 
     def set_tags(self, task_id, tags) -> dict:
+        """Replace all tags on a task and return updated dict."""
         tasks = self._load_tasks()
         for t in tasks:
             if t["id"] == task_id:
@@ -604,6 +613,7 @@ class MarkdownTaskBackend(TaskBackend):
     def reorder_tasks(
         self, task_ids: list[str],
     ) -> list[dict]:
+        """Reorder tasks by the given ID sequence."""
         tasks = self._load_tasks()
         by_id = {t["id"]: t for t in tasks}
         reordered = [
@@ -625,6 +635,7 @@ class MarkdownTaskBackend(TaskBackend):
         body=None,
         github_url=None,
     ) -> dict:
+        """Update a task's fields and return updated dict."""
         tasks = self._load_tasks()
         for t in tasks:
             if t["id"] == task_id:
@@ -641,6 +652,7 @@ class MarkdownTaskBackend(TaskBackend):
         raise ValueError(f"Task not found: {task_id}")
 
     def archive_task(self, task_id) -> bool:
+        """Move task to archive. Return False if not found."""
         tasks = self._load_tasks()
         target = None
         remaining = []
@@ -664,6 +676,7 @@ class MarkdownTaskBackend(TaskBackend):
         return True
 
     def unarchive_task(self, task_id: str) -> bool:
+        """Restore an archived task. Return False if not found."""
         archive = self._load_archive()
         target = None
         remaining = []
@@ -683,6 +696,7 @@ class MarkdownTaskBackend(TaskBackend):
         return True
 
     def delete_archived_task(self, task_id: str) -> bool:
+        """Permanently delete an archived task."""
         archive = self._load_archive()
         remaining = [t for t in archive if t["id"] != task_id]
         if len(remaining) == len(archive):
@@ -882,11 +896,14 @@ def _save_clock_entries(
 
 
 class MarkdownClockBackend(ClockBackend):
+    """ClockBackend backed by a Markdown file."""
+
     def __init__(self, clocks_file: Path) -> None:
         self._clocks_file = clocks_file
 
     @property
     def data_file(self) -> Path:
+        """Return the clocks Markdown file path."""
         return self._clocks_file
 
     def _load_entries(self) -> list[dict]:
@@ -928,6 +945,7 @@ class MarkdownClockBackend(ClockBackend):
         task_id=None,
         contract=None,
     ) -> list[dict]:
+        """Return clock entries matching period and filters."""
         entries = self._load_entries()
         if task_id:
             entries = [
@@ -961,12 +979,14 @@ class MarkdownClockBackend(ClockBackend):
         return [self._enrich(e) for e in entries]
 
     def get_active(self) -> dict | None:
+        """Return the running clock entry, or None."""
         for entry in self._load_entries():
             if entry.get("end") is None:
                 return self._enrich(entry)
         return None
 
     def get_summary(self, period="month") -> list[dict]:
+        """Return hours per customer for the period."""
         entries = self.list_entries(period=period)
         totals: dict[str, int] = {}
         for e in entries:
@@ -993,6 +1013,7 @@ class MarkdownClockBackend(ClockBackend):
         task_id=None,
         contract=None,
     ) -> dict:
+        """Open a new clock entry. Raises if one is running."""
         if self.get_active() is not None:
             raise ValueError(
                 "A clock entry is already running"
@@ -1013,6 +1034,7 @@ class MarkdownClockBackend(ClockBackend):
         return self._enrich(entry)
 
     def stop(self) -> dict:
+        """Close the running clock entry. Raises if none."""
         entries = self._load_entries()
         for entry in entries:
             if entry.get("end") is None:
@@ -1032,6 +1054,7 @@ class MarkdownClockBackend(ClockBackend):
         contract=None,
         target_date=None,
     ) -> dict:
+        """Book time retroactively from a duration string."""
         minutes = _parse_duration_minutes(duration_str)
         if not target_date:
             target_date = date.today()
@@ -1068,6 +1091,7 @@ class MarkdownClockBackend(ClockBackend):
         notes: str | None = None,
         contract: str | None = None,
     ) -> dict | None:
+        """Update fields of a clock entry by start time."""
         entries = self._load_entries()
         for entry in entries:
             if entry.get("start") != start_iso:
@@ -1138,6 +1162,7 @@ class MarkdownClockBackend(ClockBackend):
         return None
 
     def delete_entry(self, start_iso) -> bool:
+        """Delete a clock entry. Return False if not found."""
         entries = self._load_entries()
         new = [
             e for e in entries
@@ -1273,11 +1298,14 @@ def _inbox_to_section(item: dict) -> dict:
 
 
 class MarkdownInboxBackend(InboxBackend):
+    """InboxBackend backed by a Markdown file."""
+
     def __init__(self, inbox_file: Path) -> None:
         self._inbox_file = inbox_file
 
     @property
     def data_file(self) -> Path:
+        """Return the inbox Markdown file path."""
         return self._inbox_file
 
     def _load_items(self) -> list[dict]:
@@ -1304,6 +1332,7 @@ class MarkdownInboxBackend(InboxBackend):
         )
 
     def list_items(self) -> list[dict]:
+        """Return all inbox items."""
         return self._load_items()
 
     def add_item(
@@ -1315,6 +1344,7 @@ class MarkdownInboxBackend(InboxBackend):
         channel=None,
         direction=None,
     ) -> dict:
+        """Capture a new inbox item and return its dict."""
         items = self._load_items()
         item = {
             "id": _generate_id(text),
@@ -1334,6 +1364,7 @@ class MarkdownInboxBackend(InboxBackend):
         return item
 
     def remove_item(self, item_id) -> bool:
+        """Delete an inbox item. Return False if not found."""
         items = self._load_items()
         new = [
             i for i in items
@@ -1345,6 +1376,7 @@ class MarkdownInboxBackend(InboxBackend):
         return True
 
     def update_item(self, item_id, updates) -> dict:
+        """Update fields of an inbox item."""
         items = self._load_items()
         for item in items:
             if item.get("id") == item_id:
@@ -1358,6 +1390,7 @@ class MarkdownInboxBackend(InboxBackend):
     def promote_to_task(
         self, item_id, tasks, customer
     ) -> dict:
+        """Convert inbox item to a task and remove from inbox."""
         items = self._load_items()
         target = None
         remaining = []
@@ -1435,11 +1468,14 @@ def _note_to_section(note: dict) -> dict:
 
 
 class MarkdownNotesBackend(NotesBackend):
+    """NotesBackend backed by a Markdown file."""
+
     def __init__(self, notes_file: Path) -> None:
         self._notes_file = notes_file
 
     @property
     def data_file(self) -> Path:
+        """Return the notes Markdown file path."""
         return self._notes_file
 
     def _load_notes(self) -> list[dict]:
@@ -1464,12 +1500,14 @@ class MarkdownNotesBackend(NotesBackend):
         )
 
     def list_notes(self) -> list[dict]:
+        """Return all notes."""
         return self._load_notes()
 
     def add_note(
         self, title, body="", customer=None,
         tags=None, task_id=None,
     ) -> dict:
+        """Create a new note and return its dict."""
         notes = self._load_notes()
         note = {
             "id": _generate_id(title),
@@ -1485,6 +1523,7 @@ class MarkdownNotesBackend(NotesBackend):
         return note
 
     def delete_note(self, note_id) -> bool:
+        """Delete a note. Return False if not found."""
         notes = self._load_notes()
         new = [
             n for n in notes
@@ -1496,6 +1535,7 @@ class MarkdownNotesBackend(NotesBackend):
         return True
 
     def update_note(self, note_id, updates) -> dict:
+        """Update fields of a note. Return updated dict."""
         notes = self._load_notes()
         for note in notes:
             if note.get("id") == note_id:
@@ -1509,6 +1549,7 @@ class MarkdownNotesBackend(NotesBackend):
     def promote_to_task(
         self, note_id, tasks, customer
     ) -> dict:
+        """Convert note to a task and remove from notes."""
         notes = self._load_notes()
         target = None
         remaining = []
@@ -1673,6 +1714,8 @@ def _customer_to_section(cust: dict) -> dict:
 
 
 class MarkdownCustomerBackend(CustomerBackend):
+    """CustomerBackend backed by Markdown files."""
+
     def __init__(
         self, customers_file: Path, clocks_file: Path
     ) -> None:
@@ -1681,6 +1724,7 @@ class MarkdownCustomerBackend(CustomerBackend):
 
     @property
     def data_file(self) -> Path:
+        """Return the customers Markdown file path."""
         return self._customers_file
 
     def _load_customers(self) -> list[dict]:
@@ -1781,6 +1825,7 @@ class MarkdownCustomerBackend(CustomerBackend):
     def list_customers(
         self, include_inactive=False
     ) -> list[dict]:
+        """Return customers, optionally including inactive."""
         custs = self._load_customers()
         if not include_inactive:
             custs = [
@@ -1792,6 +1837,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         ]
 
     def get_customer(self, name) -> dict | None:
+        """Return a single customer by name, or None."""
         custs = self._load_customers()
         low = name.lower()
         for c in custs:
@@ -1800,6 +1846,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         return None
 
     def get_budget_summary(self) -> list[dict]:
+        """Return budget summary for active customers."""
         custs = self.list_customers(
             include_inactive=False
         )
@@ -1852,6 +1899,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         repo=None,
         tags=None,
     ) -> dict:
+        """Create a new customer. Raises ValueError if exists."""
         custs = self._load_customers()
         for c in custs:
             if c.get("name", "").lower() == name.lower():
@@ -1878,6 +1926,7 @@ class MarkdownCustomerBackend(CustomerBackend):
     def update_customer(
         self, name, updates
     ) -> dict | None:
+        """Update customer fields. Return None if not found."""
         custs = self._load_customers()
         low = name.lower()
         for c in custs:
@@ -1895,6 +1944,7 @@ class MarkdownCustomerBackend(CustomerBackend):
     # -- contracts -----------------------------------------------
 
     def list_contracts(self, name) -> list[dict]:
+        """Return all contracts for a customer."""
         custs = self._load_customers()
         low = name.lower()
         for c in custs:
@@ -1918,6 +1968,7 @@ class MarkdownCustomerBackend(CustomerBackend):
         billable=True,
         invoiced=False,
     ) -> dict:
+        """Add a named contract to a customer."""
         custs = self._load_customers()
         low = name.lower()
         for c in custs:
@@ -1951,6 +2002,7 @@ class MarkdownCustomerBackend(CustomerBackend):
     def update_contract(
         self, name, contract_name, updates
     ) -> dict | None:
+        """Update contract fields, cascading name renames."""
         custs = self._load_customers()
         low = name.lower()
         for c in custs:
@@ -1995,12 +2047,14 @@ class MarkdownCustomerBackend(CustomerBackend):
     def close_contract(
         self, name, contract_name, end_date
     ) -> dict | None:
+        """Close a contract by setting its end date."""
         return self.update_contract(
             name, contract_name,
             {"end_date": end_date},
         )
 
     def delete_customer(self, name) -> bool:
+        """Delete a customer. Return False if not found."""
         custs = self._load_customers()
         low = name.lower()
         new = [
@@ -2015,6 +2069,7 @@ class MarkdownCustomerBackend(CustomerBackend):
     def delete_contract(
         self, name, contract_name
     ) -> bool:
+        """Delete a contract. Return False if not found."""
         custs = self._load_customers()
         low = name.lower()
         for c in custs:

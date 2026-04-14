@@ -154,6 +154,7 @@ class _Engine:
         self._Session = sessionmaker(bind=self.engine)
 
     def session(self):
+        """Create and return a new database session."""
         return self._Session()
 
 
@@ -428,6 +429,7 @@ class SqlTaskBackend(TaskBackend):
         tag=None,
         include_done=False,
     ) -> list[dict]:
+        """Return tasks matching the given filters."""
         session = self._eng.session()
         try:
             q = session.query(TaskRow).filter(
@@ -459,6 +461,7 @@ class SqlTaskBackend(TaskBackend):
             session.close()
 
     def list_all_tags(self) -> list[dict]:
+        """Return all tags with usage counts."""
         session = self._eng.session()
         try:
             rows = (
@@ -478,6 +481,7 @@ class SqlTaskBackend(TaskBackend):
             session.close()
 
     def list_archived(self) -> list[dict]:
+        """Return all archived tasks."""
         session = self._eng.session()
         try:
             rows = (
@@ -498,6 +502,7 @@ class SqlTaskBackend(TaskBackend):
         body=None,
         github_url=None,
     ) -> dict:
+        """Create a new task and return its dict."""
         task_id = _generate_id(title)
         now = datetime.now().isoformat()
         row = TaskRow(
@@ -530,6 +535,7 @@ class SqlTaskBackend(TaskBackend):
         }
 
     def move_task(self, task_id, new_status) -> dict:
+        """Change a task's status and return updated dict."""
         session = self._eng.session()
         try:
             row = session.get(TaskRow, task_id)
@@ -545,6 +551,7 @@ class SqlTaskBackend(TaskBackend):
         return result
 
     def set_tags(self, task_id, tags) -> dict:
+        """Replace all tags on a task and return updated dict."""
         session = self._eng.session()
         try:
             row = session.get(TaskRow, task_id)
@@ -562,6 +569,7 @@ class SqlTaskBackend(TaskBackend):
     def reorder_tasks(
         self, task_ids: list[str],
     ) -> list[dict]:
+        """Return tasks ordered by the given ID sequence."""
         # SQL doesn't guarantee row order, so we
         # just return tasks in the requested order
         session = self._eng.session()
@@ -595,6 +603,7 @@ class SqlTaskBackend(TaskBackend):
         body=None,
         github_url=None,
     ) -> dict:
+        """Update a task's fields and return updated dict."""
         session = self._eng.session()
         try:
             row = session.get(TaskRow, task_id)
@@ -617,6 +626,7 @@ class SqlTaskBackend(TaskBackend):
         return result
 
     def archive_task(self, task_id) -> bool:
+        """Move task to archive. Return False if not found."""
         session = self._eng.session()
         try:
             row = (
@@ -638,6 +648,7 @@ class SqlTaskBackend(TaskBackend):
             session.close()
 
     def unarchive_task(self, task_id) -> bool:
+        """Restore an archived task. Return False if not found."""
         session = self._eng.session()
         try:
             row = (
@@ -658,6 +669,7 @@ class SqlTaskBackend(TaskBackend):
             session.close()
 
     def delete_archived_task(self, task_id: str) -> bool:
+        """Permanently delete an archived task."""
         session = self._eng.session()
         try:
             deleted = (
@@ -694,6 +706,7 @@ class SqlClockBackend(ClockBackend):
         task_id=None,
         contract=None,
     ) -> list[dict]:
+        """Return clock entries matching period and filters."""
         session = self._eng.session()
         try:
             q = session.query(ClockRow)
@@ -735,6 +748,7 @@ class SqlClockBackend(ClockBackend):
             session.close()
 
     def get_active(self) -> dict | None:
+        """Return the running clock entry, or None."""
         session = self._eng.session()
         try:
             row = (
@@ -749,6 +763,7 @@ class SqlClockBackend(ClockBackend):
             session.close()
 
     def get_summary(self, period="month") -> list[dict]:
+        """Return hours per customer for the period."""
         entries = self.list_entries(period=period)
         totals: dict[str, int] = {}
         for e in entries:
@@ -773,6 +788,7 @@ class SqlClockBackend(ClockBackend):
         task_id=None,
         contract=None,
     ) -> dict:
+        """Open a new clock entry. Raises if one is running."""
         if self.get_active() is not None:
             raise ValueError(
                 "A clock entry is already running"
@@ -807,6 +823,7 @@ class SqlClockBackend(ClockBackend):
         return _enrich_clock(entry)
 
     def stop(self) -> dict:
+        """Close the running clock entry. Raises if none."""
         session = self._eng.session()
         try:
             row = (
@@ -833,6 +850,7 @@ class SqlClockBackend(ClockBackend):
         contract=None,
         target_date=None,
     ) -> dict:
+        """Book time retroactively from a duration string."""
         minutes = _parse_duration_minutes(duration_str)
         if not target_date:
             target_date = date.today()
@@ -884,6 +902,7 @@ class SqlClockBackend(ClockBackend):
         notes=None,
         contract=None,
     ) -> dict | None:
+        """Update fields of a clock entry by start time."""
         session = self._eng.session()
         try:
             row = (
@@ -962,6 +981,7 @@ class SqlClockBackend(ClockBackend):
         return _enrich_clock(result)
 
     def delete_entry(self, start_iso) -> bool:
+        """Delete a clock entry. Return False if not found."""
         session = self._eng.session()
         try:
             row = (
@@ -990,6 +1010,7 @@ class SqlInboxBackend(InboxBackend):
         self._eng = eng
 
     def list_items(self) -> list[dict]:
+        """Return all inbox items."""
         session = self._eng.session()
         try:
             rows = session.query(InboxRow).all()
@@ -1006,6 +1027,7 @@ class SqlInboxBackend(InboxBackend):
         channel=None,
         direction=None,
     ) -> dict:
+        """Capture a new inbox item and return its dict."""
         item_id = _generate_id(text)
         now = datetime.now().isoformat()
         resolved_type = (
@@ -1041,6 +1063,7 @@ class SqlInboxBackend(InboxBackend):
         }
 
     def remove_item(self, item_id) -> bool:
+        """Delete an inbox item. Return False if not found."""
         session = self._eng.session()
         try:
             row = session.get(InboxRow, item_id)
@@ -1053,6 +1076,7 @@ class SqlInboxBackend(InboxBackend):
             session.close()
 
     def update_item(self, item_id, updates) -> dict:
+        """Update fields of an inbox item."""
         session = self._eng.session()
         try:
             row = session.get(InboxRow, item_id)
@@ -1080,6 +1104,7 @@ class SqlInboxBackend(InboxBackend):
     def promote_to_task(
         self, item_id, tasks, customer
     ) -> dict:
+        """Convert inbox item to a task and remove from inbox."""
         session = self._eng.session()
         try:
             row = session.get(InboxRow, item_id)
@@ -1113,6 +1138,7 @@ class SqlNotesBackend(NotesBackend):
         self._eng = eng
 
     def list_notes(self) -> list[dict]:
+        """Return all notes."""
         session = self._eng.session()
         try:
             rows = session.query(NoteRow).all()
@@ -1128,6 +1154,7 @@ class SqlNotesBackend(NotesBackend):
         tags=None,
         task_id=None,
     ) -> dict:
+        """Create a new note and return its dict."""
         note_id = _generate_id(title)
         now = datetime.now().isoformat()
         row = NoteRow(
@@ -1156,6 +1183,7 @@ class SqlNotesBackend(NotesBackend):
         }
 
     def delete_note(self, note_id) -> bool:
+        """Delete a note. Return False if not found."""
         session = self._eng.session()
         try:
             row = session.get(NoteRow, note_id)
@@ -1168,6 +1196,7 @@ class SqlNotesBackend(NotesBackend):
             session.close()
 
     def update_note(self, note_id, updates) -> dict:
+        """Update fields of a note. Return updated dict."""
         session = self._eng.session()
         try:
             row = session.get(NoteRow, note_id)
@@ -1194,6 +1223,7 @@ class SqlNotesBackend(NotesBackend):
     def promote_to_task(
         self, note_id, tasks, customer
     ) -> dict:
+        """Convert note to a task and remove from notes."""
         session = self._eng.session()
         try:
             row = session.get(NoteRow, note_id)
@@ -1311,6 +1341,7 @@ class SqlCustomerBackend(CustomerBackend):
     def list_customers(
         self, include_inactive=False
     ) -> list[dict]:
+        """Return customers, optionally including inactive."""
         session = self._eng.session()
         try:
             q = session.query(CustomerRow)
@@ -1329,6 +1360,7 @@ class SqlCustomerBackend(CustomerBackend):
         ]
 
     def get_customer(self, name) -> dict | None:
+        """Return a single customer by name, or None."""
         session = self._eng.session()
         try:
             row = (
@@ -1347,6 +1379,7 @@ class SqlCustomerBackend(CustomerBackend):
         return self._enrich_customer(cust)
 
     def get_budget_summary(self) -> list[dict]:
+        """Return budget summary for active customers."""
         custs = self.list_customers(
             include_inactive=False
         )
@@ -1379,6 +1412,7 @@ class SqlCustomerBackend(CustomerBackend):
         repo=None,
         tags=None,
     ) -> dict:
+        """Create a new customer. Raises ValueError if exists."""
         session = self._eng.session()
         try:
             existing = (
@@ -1413,6 +1447,7 @@ class SqlCustomerBackend(CustomerBackend):
     def update_customer(
         self, name, updates
     ) -> dict | None:
+        """Update customer fields. Return None if not found."""
         session = self._eng.session()
         try:
             row = (
@@ -1443,6 +1478,7 @@ class SqlCustomerBackend(CustomerBackend):
         return self._enrich_customer(cust)
 
     def list_contracts(self, name) -> list[dict]:
+        """Return all contracts for a customer."""
         session = self._eng.session()
         try:
             rows = (
@@ -1473,6 +1509,7 @@ class SqlCustomerBackend(CustomerBackend):
         billable=True,
         invoiced=False,
     ) -> dict:
+        """Add a named contract to a customer."""
         session = self._eng.session()
         try:
             cust = (
@@ -1520,6 +1557,7 @@ class SqlCustomerBackend(CustomerBackend):
     def update_contract(
         self, name, contract_name, updates
     ) -> dict | None:
+        """Update contract fields, cascading name renames."""
         session = self._eng.session()
         try:
             row = (
@@ -1560,12 +1598,14 @@ class SqlCustomerBackend(CustomerBackend):
     def close_contract(
         self, name, contract_name, end_date
     ) -> dict | None:
+        """Close a contract by setting its end date."""
         return self.update_contract(
             name, contract_name,
             {"end_date": end_date},
         )
 
     def delete_customer(self, name) -> bool:
+        """Delete a customer. Return False if not found."""
         session = self._eng.session()
         try:
             row = (
@@ -1587,6 +1627,7 @@ class SqlCustomerBackend(CustomerBackend):
     def delete_contract(
         self, name, contract_name
     ) -> bool:
+        """Delete a contract. Return False if not found."""
         session = self._eng.session()
         try:
             row = (

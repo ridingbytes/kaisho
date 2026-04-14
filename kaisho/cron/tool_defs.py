@@ -563,6 +563,71 @@ TOOL_DEFS: list[dict] = [
         },
     },
     {
+        "name": "write_kb_file",
+        "description": (
+            "Create or overwrite a file in the knowledge base. "
+            "Use this when the user asks to create a knowledge "
+            "base entry, KB article, or documentation page. "
+            "Do NOT use add_note for knowledge base entries — "
+            "use this tool instead. "
+            "Requires a label (KB source name) and a filename."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string",
+                    "description": (
+                        "Knowledge base source label, e.g. "
+                        "'docs' or 'research'. Use "
+                        "list_kb_files to discover labels."
+                    ),
+                },
+                "filename": {
+                    "type": "string",
+                    "description": (
+                        "File name including extension, "
+                        "e.g. 'plone-zeoserver-settings.md'"
+                    ),
+                },
+                "content": {
+                    "type": "string",
+                    "description": (
+                        "File content (Markdown recommended)"
+                    ),
+                },
+            },
+            "required": ["label", "filename", "content"],
+        },
+    },
+    {
+        "name": "web_search",
+        "description": (
+            "Search the web using DuckDuckGo and return the "
+            "top results with titles, URLs, and snippets. "
+            "Use this when the user asks about external "
+            "topics, URLs, packages, or anything that "
+            "requires up-to-date web information. "
+            "Follow up with fetch_url to read specific pages."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Search query",
+                },
+                "max_results": {
+                    "type": "integer",
+                    "description": (
+                        "Max results to return (default 5)"
+                    ),
+                },
+            },
+            "required": ["query"],
+        },
+    },
+    {
         "name": "fetch_url",
         "description": (
             "Fetch the content of an HTTP/HTTPS URL and return it as text. "

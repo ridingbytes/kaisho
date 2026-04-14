@@ -5,6 +5,8 @@ service, triggering sync, and triaging unassigned
 clock entries. All endpoints are no-ops when cloud
 sync is disabled.
 """
+import urllib.error
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -43,6 +45,7 @@ def _sync_settings():
 
 @router.get("/status")
 def status():
+    """Return cloud sync connection status."""
     data, cfg = _sync_settings()
     sync = settings_svc.get_cloud_sync_settings(data)
     result = {
@@ -65,7 +68,8 @@ def status():
             result["connected"] = True
             result["plan"] = cloud.get("plan")
             result["pending"] = cloud.get("pending", 0)
-    except Exception:
+    except (urllib.error.URLError, OSError):
+        # Cloud unreachable; return defaults
         pass
     return result
 
@@ -74,10 +78,11 @@ def status():
 
 @router.post("/connect")
 def connect(body: ConnectBody):
+    """Connect to the Kaisho Cloud service."""
     url = body.url.rstrip("/")
     try:
         cloud = sync_svc.cloud_status(url, body.api_key)
-    except Exception as exc:
+    except (urllib.error.URLError, OSError) as exc:
         raise HTTPException(
             status_code=502,
             detail=f"Cannot reach cloud: {exc}",
@@ -107,6 +112,7 @@ def connect(body: ConnectBody):
 
 @router.post("/disconnect")
 def disconnect():
+    """Disconnect from the Kaisho Cloud service."""
     cfg = get_config()
     settings_svc.set_cloud_sync_settings(
         cfg.SETTINGS_FILE,
@@ -119,6 +125,7 @@ def disconnect():
 
 @router.post("/sync-now")
 def sync_now():
+    """Trigger an immediate cloud sync cycle."""
     data, cfg = _sync_settings()
     sync = data.get("cloud_sync", {})
     if not sync.get("enabled"):
@@ -165,6 +172,7 @@ def pending():
 
 @router.post("/triage")
 def triage(body: TriageBody):
+    """Assign customers and tasks to unassigned entries."""
     from ...backends import get_backend
     backend = get_backend()
     updated = 0

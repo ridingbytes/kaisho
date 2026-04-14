@@ -45,6 +45,7 @@ def list_entries(
     to_date: date | None = None,
     task_id: str | None = None,
 ):
+    """List clock entries filtered by period and customer."""
     return get_backend().clocks.list_entries(
         period=period,
         customer=customer,
@@ -56,6 +57,7 @@ def list_entries(
 
 @router.get("/active")
 def get_active():
+    """Return the currently running timer, if any."""
     timer = get_backend().clocks.get_active()
     if timer is None:
         return {"active": False}
@@ -64,6 +66,7 @@ def get_active():
 
 @router.post("/quick-book", status_code=201)
 def quick_book(body: QuickBookRequest):
+    """Book a clock entry with a fixed duration."""
     try:
         from datetime import date as date_cls
         target_date = (
@@ -86,6 +89,7 @@ def quick_book(body: QuickBookRequest):
 
 @router.post("/start", status_code=201)
 def start_timer(body: TimerStart):
+    """Start a new running timer."""
     try:
         return get_backend().clocks.start(
             customer=body.customer,
@@ -99,6 +103,7 @@ def start_timer(body: TimerStart):
 
 @router.post("/stop")
 def stop_timer():
+    """Stop the active timer and save the entry."""
     try:
         return get_backend().clocks.stop()
     except ValueError as e:
@@ -107,11 +112,13 @@ def stop_timer():
 
 @router.get("/summary")
 def get_summary(period: str = "month"):
+    """Return aggregated hours per customer for a period."""
     return get_backend().clocks.get_summary(period=period)
 
 
 @router.patch("/entries")
 def update_entry(start: str, body: EntryUpdate):
+    """Update fields of an existing clock entry."""
     result = get_backend().clocks.update_entry(
         start_iso=start,
         customer=body.customer,
@@ -131,6 +138,7 @@ def update_entry(start: str, body: EntryUpdate):
 
 @router.delete("/entries", status_code=204)
 def delete_entry(start: str):
+    """Delete a clock entry by its start timestamp."""
     found = get_backend().clocks.delete_entry(start_iso=start)
     if not found:
         raise HTTPException(

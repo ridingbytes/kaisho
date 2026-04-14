@@ -219,6 +219,7 @@ _WRITE_TOOLS = {
     "capture_inbox", "add_task", "move_task",
     "update_task", "set_task_tags",
     "start_clock", "stop_clock", "quick_book",
+    "write_kb_file",
 }
 MAX_WRITES_PER_RUN = 3
 
@@ -276,8 +277,40 @@ def _extract_claude_text(content) -> str:
 # Claude agentic loop
 # ---------------------------------------------------------------------------
 
+def _execute_tool_block(name: str, input_data: dict) -> dict:
+    """Execute a single tool call, enforcing write limits."""
+    if name in _WRITE_TOOLS:
+        _state["writes"] += 1
+        if _state["writes"] > MAX_WRITES_PER_RUN:
+            return {"error": "Write limit reached"}
+    return execute_tool(name, input_data)
+
+
+def _collect_tool_results(content) -> list[dict]:
+    """Process tool_use blocks from a Claude response.
+
+    Returns a list of tool_result dicts to send back,
+    or an empty list if no tool calls were found.
+    """
+    results = []
+    for block in content:
+        if block.type != "tool_use":
+            continue
+        result = _execute_tool_block(
+            block.name, block.input,
+        )
+        results.append({
+            "type": "tool_result",
+            "tool_use_id": block.id,
+            "content": json.dumps(
+                result, default=str,
+            ),
+        })
+    return results
+
+
 def run_prompt_claude(
-    model: str, prompt: str, api_key: str = ""
+    model: str, prompt: str, api_key: str = "",
 ) -> str:
     """Run an agentic Claude session with tools."""
     _reset_write_counter()
@@ -285,7 +318,7 @@ def run_prompt_claude(
         import anthropic
     except ImportError as exc:
         raise ExecutorError(
-            "anthropic package not installed"
+            "anthropic package not installed",
         ) from exc
 
     client = anthropic.Anthropic(api_key=api_key or None)
@@ -308,32 +341,9 @@ def run_prompt_claude(
             "role": "assistant",
             "content": resp.content,
         })
-        tool_results = []
-        for block in resp.content:
-            if block.type != "tool_use":
-                continue
-            name = block.name
-            if name in _WRITE_TOOLS:
-                _state["writes"] += 1
-                if _state["writes"] > MAX_WRITES_PER_RUN:
-                    result = {
-                        "error": "Write limit reached",
-                    }
-                else:
-                    result = execute_tool(
-                        name, block.input,
-                    )
-            else:
-                result = execute_tool(
-                    name, block.input,
-                )
-            tool_results.append({
-                "type": "tool_result",
-                "tool_use_id": block.id,
-                "content": json.dumps(
-                    result, default=str,
-                ),
-            })
+        tool_results = _collect_tool_results(
+            resp.content,
+        )
         if not tool_results:
             return _extract_claude_text(resp.content)
         messages.append({
@@ -526,7 +536,7 @@ def verify_model(
         try:
             with urllib.request.urlopen(url, timeout=3):
                 return None
-        except Exception:
+        except (urllib.error.URLError, OSError):
             return f"Ollama not reachable at {ollama_base_url}"
 
     if provider == "lm_studio":
@@ -536,7 +546,7 @@ def verify_model(
         try:
             with urllib.request.urlopen(url, timeout=3):
                 return None
-        except Exception:
+        except (urllib.error.URLError, OSError):
             return (
                 f"LM Studio not reachable at "
                 f"{lm_studio_base_url}"
@@ -565,6 +575,55 @@ def verify_model(
     return f"Unknown provider: {provider}"
 
 
+def _dispatch_prompt(
+    provider: str,
+    model_name: str,
+    prompt: str,
+    timeout: int = 300,
+    claude_api_key: str = "",
+    ollama_base_url: str = "",
+    lm_studio_base_url: str = "",
+    openrouter_base_url: str = "",
+    openrouter_api_key: str = "",
+    openai_base_url: str = "",
+    openai_api_key: str = "",
+) -> str:
+    """Route a prompt to the correct AI provider."""
+    if provider == "claude_cli":
+        return _run_claude_cli(
+            model_name,
+            _inject_context(prompt),
+            timeout=timeout,
+        )
+    if provider == "claude":
+        return run_prompt_claude(
+            model_name, prompt, api_key=claude_api_key,
+        )
+    if provider == "lm_studio":
+        url = lm_studio_base_url.rstrip("/") + "/v1"
+        return run_prompt_openai_compatible(
+            model_name, prompt, url,
+        )
+    if provider in ("openrouter", "openai"):
+        base = (
+            openrouter_base_url
+            if provider == "openrouter"
+            else openai_base_url
+        )
+        key = (
+            openrouter_api_key
+            if provider == "openrouter"
+            else openai_api_key
+        )
+        return run_prompt_openai_compatible(
+            model_name, prompt, base, key,
+        )
+    # Default: Ollama
+    return run_prompt_ollama(
+        model_name, prompt, ollama_base_url,
+    )
+
+
 def execute_job(
     job: dict,
     project_root: Path,
@@ -576,8 +635,7 @@ def execute_job(
     openai_base_url: str = "",
     openai_api_key: str = "",
 ) -> str:
-    """Run a job definition end-to-end. Returns the output text."""
-    # Verify model is accessible
+    """Run a cron job end-to-end and return the output."""
     err = verify_model(
         job.get("model", ""),
         ollama_base_url=ollama_base_url,
@@ -587,40 +645,29 @@ def execute_job(
         openai_api_key=openai_api_key,
     )
     if err:
-        raise ExecutorError(f"Model not accessible: {err}")
-    prompt = load_prompt(job["prompt_file"], project_root)
-    provider, model_name = _parse_model(job.get("model", ""))
-    job_timeout = job.get("timeout", 300)
-    if provider == "claude_cli":
-        prompt = _inject_context(prompt)
-        output_text = _run_claude_cli(
-            model_name, prompt, timeout=job_timeout,
+        raise ExecutorError(
+            f"Model not accessible: {err}",
         )
-    elif provider == "claude":
-        output_text = run_prompt_claude(
-            model_name, prompt, api_key=claude_api_key,
-        )
-    elif provider == "lm_studio":
-        url = lm_studio_base_url.rstrip("/") + "/v1"
-        output_text = run_prompt_openai_compatible(
-            model_name, prompt, url,
-        )
-    elif provider in ("openrouter", "openai"):
-        base = (
-            openrouter_base_url if provider == "openrouter"
-            else openai_base_url
-        )
-        key = (
-            openrouter_api_key if provider == "openrouter"
-            else openai_api_key
-        )
-        output_text = run_prompt_openai_compatible(
-            model_name, prompt, base, key,
-        )
-    else:
-        output_text = run_prompt_ollama(
-            model_name, prompt, ollama_base_url,
-        )
+
+    prompt = load_prompt(
+        job["prompt_file"], project_root,
+    )
+    provider, model_name = _parse_model(
+        job.get("model", ""),
+    )
+
+    output_text = _dispatch_prompt(
+        provider, model_name, prompt,
+        timeout=job.get("timeout", 300),
+        claude_api_key=claude_api_key,
+        ollama_base_url=ollama_base_url,
+        lm_studio_base_url=lm_studio_base_url,
+        openrouter_base_url=openrouter_base_url,
+        openrouter_api_key=openrouter_api_key,
+        openai_base_url=openai_base_url,
+        openai_api_key=openai_api_key,
+    )
+
     write_output(
         job.get("output", "inbox"),
         output_text,

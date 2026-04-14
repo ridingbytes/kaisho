@@ -14,10 +14,15 @@ Personality and user context are loaded from optional markdown files:
   data/skills/  -- reusable prompt templates (*.md)
 """
 import json
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from ..cron.tools import TOOL_DEFS, execute_tool, openai_tools
+
+# Optional callback: (event_type, data_dict) -> None
+EventCallback = Callable[[str, dict[str, Any]], None] | None
 
 
 # ---------------------------------------------------------------------------
@@ -300,16 +305,25 @@ def _parse_model(model_str: str) -> tuple[str, str]:
 
 
 def _execute_tool_calls(
-    tool_calls: list[dict], include_id: bool = True,
+    tool_calls: list[dict],
+    include_id: bool = True,
+    on_event: EventCallback = None,
 ) -> list[dict]:
     """Execute tool calls and return tool-result messages."""
     results = []
     for call in tool_calls:
         fn = call.get("function", {})
-        result = execute_tool(
-            fn.get("name", ""),
-            fn.get("arguments", {}),
-        )
+        name = fn.get("name", "")
+        args = fn.get("arguments", {})
+        if on_event:
+            on_event("tool_call", {
+                "name": name, "args": args,
+            })
+        result = execute_tool(name, args)
+        if on_event:
+            on_event("tool_result", {
+                "name": name, "result": result,
+            })
         msg: dict = {
             "role": "tool",
             "content": json.dumps(result, default=str),
@@ -353,6 +367,7 @@ def _http_post(url: str, payload: bytes, headers: dict) -> dict:
 def ask_ollama(
     model: str, prompt: str, base_url: str,
     system_prompt: str = "",
+    on_event: EventCallback = None,
 ) -> str:
     """Run an agentic Ollama session with tools."""
     tools = openai_tools()
@@ -365,6 +380,8 @@ def ask_ollama(
 
     tools_called = False
     for _ in range(_MAX_TURNS):
+        if on_event:
+            on_event("thinking", {})
         payload = json.dumps({
             "model": model,
             "messages": messages,
@@ -393,7 +410,10 @@ def ask_ollama(
         tools_called = True
         messages.append(msg)
         messages.extend(
-            _execute_tool_calls(tool_calls, include_id=False)
+            _execute_tool_calls(
+                tool_calls, include_id=False,
+                on_event=on_event,
+            )
         )
 
     return messages[-1].get("content", "")
@@ -405,6 +425,7 @@ def ask_openai_compatible(
     base_url: str,
     api_key: str = "",
     system_prompt: str = "",
+    on_event: EventCallback = None,
 ) -> str:
     """Run an agentic OpenAI-compatible session with tools.
 
@@ -425,6 +446,8 @@ def ask_openai_compatible(
 
     tools_called = False
     for _ in range(_MAX_TURNS):
+        if on_event:
+            on_event("thinking", {})
         payload = json.dumps({
             "model": model,
             "messages": messages,
@@ -451,7 +474,10 @@ def ask_openai_compatible(
         tools_called = True
         messages.append(msg)
         messages.extend(
-            _execute_tool_calls(tool_calls, include_id=True)
+            _execute_tool_calls(
+                tool_calls, include_id=True,
+                on_event=on_event,
+            )
         )
 
     return messages[-1].get("content", "")
@@ -460,6 +486,7 @@ def ask_openai_compatible(
 def ask_claude(
     model: str, prompt: str, api_key: str = "",
     system_prompt: str = "",
+    on_event: EventCallback = None,
 ) -> str:
     """Run an agentic Claude session with tools."""
     try:
@@ -476,6 +503,8 @@ def ask_claude(
     tools_called = False
 
     for _ in range(_MAX_TURNS):
+        if on_event:
+            on_event("thinking", {})
         resp = client.messages.create(
             model=model,
             max_tokens=4096,
@@ -489,8 +518,6 @@ def ask_claude(
             if _check_hallucination(
                 text, tools_called, messages
             ):
-                # Fix up: replace last assistant msg with
-                # actual response content
                 messages[-2] = {
                     "role": "assistant",
                     "content": resp.content,
@@ -503,7 +530,9 @@ def ask_claude(
             "content": resp.content,
         })
         tools_called = True
-        tool_results = _execute_claude_tools(resp.content)
+        tool_results = _execute_claude_tools(
+            resp.content, on_event=on_event,
+        )
         if not tool_results:
             return _extract_claude_text(resp.content)
         messages.append({
@@ -522,13 +551,24 @@ def _extract_claude_text(content) -> str:
     return ""
 
 
-def _execute_claude_tools(content) -> list[dict]:
+def _execute_claude_tools(
+    content, on_event: EventCallback = None,
+) -> list[dict]:
     """Execute tool_use blocks and return tool_result dicts."""
     results = []
     for block in content:
         if block.type != "tool_use":
             continue
+        if on_event:
+            on_event("tool_call", {
+                "name": block.name,
+                "args": block.input,
+            })
         result = execute_tool(block.name, block.input)
+        if on_event:
+            on_event("tool_result", {
+                "name": block.name, "result": result,
+            })
         results.append({
             "type": "tool_result",
             "tool_use_id": block.id,
@@ -598,6 +638,7 @@ def ask(
     openai_api_key: str = "",
     data_dir: str = "data",
     user_meta: dict | None = None,
+    on_event: EventCallback = None,
 ) -> str:
     """Assemble context, call model in agentic loop, return answer."""
     prompt = build_context_prompt(
@@ -607,36 +648,37 @@ def ask(
     sp = build_system_prompt(Path(data_dir), user_meta)
     provider, model_name = _parse_model(model_str)
     if provider == "claude_cli":
-        # CLI gets prompt + system prompt concatenated
         full = f"{sp}\n\n---\n\n{prompt}"
         return ask_claude_cli(model_name, full)
     if provider == "claude":
         return ask_claude(
             model_name, prompt,
             api_key=claude_api_key, system_prompt=sp,
+            on_event=on_event,
         )
     if provider == "lm_studio":
         url = lm_studio_base_url.rstrip("/") + "/v1"
         return ask_openai_compatible(
             model_name, prompt,
             base_url=url, system_prompt=sp,
+            on_event=on_event,
         )
     if provider == "openrouter":
         return ask_openai_compatible(
             model_name, prompt,
             base_url=openrouter_base_url,
             api_key=openrouter_api_key,
-            system_prompt=sp,
+            system_prompt=sp, on_event=on_event,
         )
     if provider == "openai":
         return ask_openai_compatible(
             model_name, prompt,
             base_url=openai_base_url,
             api_key=openai_api_key,
-            system_prompt=sp,
+            system_prompt=sp, on_event=on_event,
         )
     answer = ask_ollama(
         model_name, prompt, ollama_base_url,
-        system_prompt=sp,
+        system_prompt=sp, on_event=on_event,
     )
     return _strip_model_prefix(answer, model_name)

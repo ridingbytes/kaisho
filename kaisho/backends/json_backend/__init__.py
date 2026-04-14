@@ -133,12 +133,15 @@ def _guess_inbox_type(text: str) -> str:
 
 
 class JsonTaskBackend(TaskBackend):
+    """TaskBackend backed by JSON files."""
+
     def __init__(self, tasks_file: Path, archive_file: Path):
         self._tasks_file = tasks_file
         self._archive_file = archive_file
 
     @property
     def data_file(self) -> Path:
+        """Return the tasks JSON file path."""
         return self._tasks_file
 
     # -- queries -------------------------------------------------
@@ -150,6 +153,7 @@ class JsonTaskBackend(TaskBackend):
         tag=None,
         include_done=False,
     ) -> list[dict]:
+        """Return tasks matching the given filters."""
         tasks = _read_json(self._tasks_file)
         if not include_done:
             tasks = [
@@ -179,6 +183,7 @@ class JsonTaskBackend(TaskBackend):
         return tasks
 
     def list_all_tags(self) -> list[dict]:
+        """Return all tags with usage counts."""
         tasks = _read_json(self._tasks_file)
         counter: Counter = Counter()
         for t in tasks:
@@ -190,6 +195,7 @@ class JsonTaskBackend(TaskBackend):
         ]
 
     def list_archived(self) -> list[dict]:
+        """Return all archived tasks."""
         return _read_json(self._archive_file)
 
     # -- mutations -----------------------------------------------
@@ -203,6 +209,7 @@ class JsonTaskBackend(TaskBackend):
         body=None,
         github_url=None,
     ) -> dict:
+        """Create a new task and return its dict."""
         tasks = _read_json(self._tasks_file)
         task = {
             "id": _generate_id(title),
@@ -220,6 +227,7 @@ class JsonTaskBackend(TaskBackend):
         return task
 
     def move_task(self, task_id, new_status) -> dict:
+        """Change a task's status and return updated dict."""
         tasks = _read_json(self._tasks_file)
         for t in tasks:
             if t["id"] == task_id:
@@ -229,6 +237,7 @@ class JsonTaskBackend(TaskBackend):
         raise ValueError(f"Task not found: {task_id}")
 
     def set_tags(self, task_id, tags) -> dict:
+        """Replace all tags on a task and return updated dict."""
         tasks = _read_json(self._tasks_file)
         for t in tasks:
             if t["id"] == task_id:
@@ -240,6 +249,7 @@ class JsonTaskBackend(TaskBackend):
     def reorder_tasks(
         self, task_ids: list[str],
     ) -> list[dict]:
+        """Reorder tasks by the given ID sequence."""
         tasks = _read_json(self._tasks_file)
         by_id = {t["id"]: t for t in tasks}
         reordered = [
@@ -261,6 +271,7 @@ class JsonTaskBackend(TaskBackend):
         body=None,
         github_url=None,
     ) -> dict:
+        """Update a task's fields and return updated dict."""
         tasks = _read_json(self._tasks_file)
         for t in tasks:
             if t["id"] == task_id:
@@ -277,6 +288,7 @@ class JsonTaskBackend(TaskBackend):
         raise ValueError(f"Task not found: {task_id}")
 
     def archive_task(self, task_id) -> bool:
+        """Move task to archive. Return False if not found."""
         tasks = _read_json(self._tasks_file)
         target = None
         remaining = []
@@ -296,6 +308,7 @@ class JsonTaskBackend(TaskBackend):
         return True
 
     def unarchive_task(self, task_id: str) -> bool:
+        """Restore an archived task. Return False if not found."""
         archive = _read_json(self._archive_file)
         target = None
         remaining = []
@@ -315,6 +328,7 @@ class JsonTaskBackend(TaskBackend):
         return True
 
     def delete_archived_task(self, task_id: str) -> bool:
+        """Permanently delete an archived task."""
         archive = _read_json(self._archive_file)
         remaining = [t for t in archive if t["id"] != task_id]
         if len(remaining) == len(archive):
@@ -329,11 +343,14 @@ class JsonTaskBackend(TaskBackend):
 
 
 class JsonClockBackend(ClockBackend):
+    """ClockBackend backed by a JSON file."""
+
     def __init__(self, clocks_file: Path) -> None:
         self._clocks_file = clocks_file
 
     @property
     def data_file(self) -> Path:
+        """Return the clocks JSON file path."""
         return self._clocks_file
 
     # -- helpers -------------------------------------------------
@@ -368,6 +385,7 @@ class JsonClockBackend(ClockBackend):
         task_id=None,
         contract=None,
     ) -> list[dict]:
+        """Return clock entries matching period and filters."""
         entries = _read_json(self._clocks_file)
         if task_id:
             entries = [
@@ -401,12 +419,14 @@ class JsonClockBackend(ClockBackend):
         return [self._enrich(e) for e in entries]
 
     def get_active(self) -> dict | None:
+        """Return the running clock entry, or None."""
         for entry in _read_json(self._clocks_file):
             if entry.get("end") is None:
                 return self._enrich(entry)
         return None
 
     def get_summary(self, period="month") -> list[dict]:
+        """Return hours per customer for the period."""
         entries = self.list_entries(period=period)
         totals: dict[str, int] = {}
         for e in entries:
@@ -433,6 +453,7 @@ class JsonClockBackend(ClockBackend):
         task_id=None,
         contract=None,
     ) -> dict:
+        """Open a new clock entry. Raises if one is running."""
         if self.get_active() is not None:
             raise ValueError(
                 "A clock entry is already running"
@@ -453,6 +474,7 @@ class JsonClockBackend(ClockBackend):
         return self._enrich(entry)
 
     def stop(self) -> dict:
+        """Close the running clock entry. Raises if none."""
         entries = _read_json(self._clocks_file)
         for entry in entries:
             if entry.get("end") is None:
@@ -470,6 +492,7 @@ class JsonClockBackend(ClockBackend):
         contract=None,
         target_date=None,
     ) -> dict:
+        """Book time retroactively from a duration string."""
         minutes = _parse_duration_minutes(duration_str)
         if not target_date:
             target_date = date.today()
@@ -506,6 +529,7 @@ class JsonClockBackend(ClockBackend):
         notes: str | None = None,
         contract: str | None = None,
     ) -> dict | None:
+        """Update fields of a clock entry by start time."""
         entries = _read_json(self._clocks_file)
         for entry in entries:
             if entry.get("start") != start_iso:
@@ -569,6 +593,7 @@ class JsonClockBackend(ClockBackend):
         return None
 
     def delete_entry(self, start_iso) -> bool:
+        """Delete a clock entry. Return False if not found."""
         entries = _read_json(self._clocks_file)
         new = [
             e for e in entries
@@ -586,14 +611,18 @@ class JsonClockBackend(ClockBackend):
 
 
 class JsonInboxBackend(InboxBackend):
+    """InboxBackend backed by a JSON file."""
+
     def __init__(self, inbox_file: Path) -> None:
         self._inbox_file = inbox_file
 
     @property
     def data_file(self) -> Path:
+        """Return the inbox JSON file path."""
         return self._inbox_file
 
     def list_items(self) -> list[dict]:
+        """Return all inbox items."""
         items = _read_json(self._inbox_file)
         for idx, item in enumerate(items, 1):
             item.setdefault("id", str(idx))
@@ -608,6 +637,7 @@ class JsonInboxBackend(InboxBackend):
         channel=None,
         direction=None,
     ) -> dict:
+        """Capture a new inbox item and return its dict."""
         items = _read_json(self._inbox_file)
         item = {
             "id": _generate_id(text),
@@ -625,6 +655,7 @@ class JsonInboxBackend(InboxBackend):
         return item
 
     def remove_item(self, item_id) -> bool:
+        """Delete an inbox item. Return False if not found."""
         items = _read_json(self._inbox_file)
         new = [i for i in items if i.get("id") != item_id]
         if len(new) == len(items):
@@ -633,6 +664,7 @@ class JsonInboxBackend(InboxBackend):
         return True
 
     def update_item(self, item_id, updates) -> dict:
+        """Update fields of an inbox item."""
         items = _read_json(self._inbox_file)
         for item in items:
             if item.get("id") == item_id:
@@ -646,6 +678,7 @@ class JsonInboxBackend(InboxBackend):
     def promote_to_task(
         self, item_id, tasks, customer
     ) -> dict:
+        """Convert inbox item to a task and remove from inbox."""
         items = _read_json(self._inbox_file)
         target = None
         remaining = []
@@ -674,6 +707,8 @@ class JsonInboxBackend(InboxBackend):
 
 
 class JsonCustomerBackend(CustomerBackend):
+    """CustomerBackend backed by JSON files."""
+
     def __init__(
         self, customers_file: Path, clocks_file: Path
     ) -> None:
@@ -682,6 +717,7 @@ class JsonCustomerBackend(CustomerBackend):
 
     @property
     def data_file(self) -> Path:
+        """Return the customers JSON file path."""
         return self._customers_file
 
     # -- helpers -------------------------------------------------
@@ -761,6 +797,7 @@ class JsonCustomerBackend(CustomerBackend):
     def list_customers(
         self, include_inactive=False
     ) -> list[dict]:
+        """Return customers, optionally including inactive."""
         custs = _read_json(self._customers_file)
         if not include_inactive:
             custs = [
@@ -770,6 +807,7 @@ class JsonCustomerBackend(CustomerBackend):
         return [self._enrich_customer(c) for c in custs]
 
     def get_customer(self, name) -> dict | None:
+        """Return a single customer by name, or None."""
         custs = _read_json(self._customers_file)
         low = name.lower()
         for c in custs:
@@ -778,6 +816,7 @@ class JsonCustomerBackend(CustomerBackend):
         return None
 
     def get_budget_summary(self) -> list[dict]:
+        """Return budget summary for active customers."""
         custs = self.list_customers(include_inactive=False)
         result = []
         for c in custs:
@@ -809,6 +848,7 @@ class JsonCustomerBackend(CustomerBackend):
         repo=None,
         tags=None,
     ) -> dict:
+        """Create a new customer. Raises ValueError if exists."""
         custs = _read_json(self._customers_file)
         for c in custs:
             if c.get("name", "").lower() == name.lower():
@@ -835,6 +875,7 @@ class JsonCustomerBackend(CustomerBackend):
     def update_customer(
         self, name, updates
     ) -> dict | None:
+        """Update customer fields. Return None if not found."""
         custs = _read_json(self._customers_file)
         low = name.lower()
         for c in custs:
@@ -853,6 +894,7 @@ class JsonCustomerBackend(CustomerBackend):
     # -- contracts -----------------------------------------------
 
     def list_contracts(self, name) -> list[dict]:
+        """Return all contracts for a customer."""
         custs = _read_json(self._customers_file)
         low = name.lower()
         for c in custs:
@@ -876,6 +918,7 @@ class JsonCustomerBackend(CustomerBackend):
         billable=True,
         invoiced=False,
     ) -> dict:
+        """Add a named contract to a customer."""
         custs = _read_json(self._customers_file)
         low = name.lower()
         for c in custs:
@@ -907,6 +950,7 @@ class JsonCustomerBackend(CustomerBackend):
     def update_contract(
         self, name, contract_name, updates
     ) -> dict | None:
+        """Update contract fields, cascading name renames."""
         custs = _read_json(self._customers_file)
         low = name.lower()
         for c in custs:
@@ -954,11 +998,13 @@ class JsonCustomerBackend(CustomerBackend):
     def close_contract(
         self, name, contract_name, end_date
     ) -> dict | None:
+        """Close a contract by setting its end date."""
         return self.update_contract(
             name, contract_name, {"end_date": end_date}
         )
 
     def delete_customer(self, name) -> bool:
+        """Delete a customer. Return False if not found."""
         custs = _read_json(self._customers_file)
         low = name.lower()
         new = [
@@ -973,6 +1019,7 @@ class JsonCustomerBackend(CustomerBackend):
     def delete_contract(
         self, name, contract_name
     ) -> bool:
+        """Delete a contract. Return False if not found."""
         custs = _read_json(self._customers_file)
         low = name.lower()
         for c in custs:
@@ -997,20 +1044,25 @@ class JsonCustomerBackend(CustomerBackend):
 
 
 class JsonNotesBackend(NotesBackend):
+    """NotesBackend backed by a JSON file."""
+
     def __init__(self, notes_file: Path) -> None:
         self._notes_file = notes_file
 
     @property
     def data_file(self) -> Path:
+        """Return the notes JSON file path."""
         return self._notes_file
 
     def list_notes(self) -> list[dict]:
+        """Return all notes."""
         return _read_json(self._notes_file)
 
     def add_note(
         self, title, body="", customer=None,
         tags=None, task_id=None,
     ) -> dict:
+        """Create a new note and return its dict."""
         notes = _read_json(self._notes_file)
         note = {
             "id": _generate_id(title),
@@ -1026,6 +1078,7 @@ class JsonNotesBackend(NotesBackend):
         return note
 
     def delete_note(self, note_id) -> bool:
+        """Delete a note. Return False if not found."""
         notes = _read_json(self._notes_file)
         new = [
             n for n in notes if n.get("id") != note_id
@@ -1036,6 +1089,7 @@ class JsonNotesBackend(NotesBackend):
         return True
 
     def update_note(self, note_id, updates) -> dict:
+        """Update fields of a note. Return updated dict."""
         notes = _read_json(self._notes_file)
         for note in notes:
             if note.get("id") == note_id:
@@ -1047,6 +1101,7 @@ class JsonNotesBackend(NotesBackend):
     def promote_to_task(
         self, note_id, tasks, customer
     ) -> dict:
+        """Convert note to a task and remove from notes."""
         notes = _read_json(self._notes_file)
         target = None
         remaining = []

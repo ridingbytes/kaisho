@@ -22,11 +22,13 @@ class PromoteRequest(BaseModel):
 
 @router.get("/")
 def list_notes():
+    """List all notes."""
     return get_backend().notes.list_notes()
 
 
 @router.post("/", status_code=201)
 def add_note(body: NoteCreate):
+    """Create a new note."""
     return get_backend().notes.add_note(
         title=body.title,
         body=body.body,
@@ -38,6 +40,7 @@ def add_note(body: NoteCreate):
 
 @router.delete("/{note_id}", status_code=204)
 def delete_note(note_id: str):
+    """Delete a note."""
     ok = get_backend().notes.delete_note(note_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Note not found")
@@ -53,6 +56,7 @@ class NoteUpdate(BaseModel):
 
 @router.patch("/{note_id}")
 def update_note(note_id: str, body: NoteUpdate):
+    """Update note title, body, customer, or tags."""
     updates = {
         k: v
         for k, v in body.model_dump(exclude_unset=True).items()
@@ -65,6 +69,7 @@ def update_note(note_id: str, body: NoteUpdate):
 
 @router.post("/{note_id}/promote", status_code=201)
 def promote_note(note_id: str, body: PromoteRequest):
+    """Promote a note to a kanban task."""
     backend = get_backend()
     try:
         return backend.notes.promote_to_task(
@@ -84,6 +89,7 @@ class MoveRequest(BaseModel):
 
 @router.post("/{note_id}/move", status_code=201)
 def move_note(note_id: str, body: MoveRequest):
+    """Move a note to task, KB, or archive."""
     backend = get_backend()
     cfg = get_config()
 

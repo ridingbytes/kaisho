@@ -22,11 +22,13 @@ def _sources() -> list[dict]:
 
 @router.get("/tree")
 def get_tree():
+    """Return the knowledge base file tree."""
     return kb_service.file_tree(_sources())
 
 
 @router.get("/file")
 def get_file(path: str):
+    """Read a single knowledge base file."""
     content = kb_service.read_file(_sources(), path)
     if content is None:
         raise HTTPException(
@@ -37,6 +39,7 @@ def get_file(path: str):
 
 @router.get("/search")
 def search_kb(q: str, max_results: int = 20):
+    """Search knowledge base files by query string."""
     return kb_service.search(
         _sources(), q, max_results=max_results,
     )
@@ -44,6 +47,7 @@ def search_kb(q: str, max_results: int = 20):
 
 @router.put("/file", status_code=200)
 def write_file(body: FileWrite):
+    """Create or overwrite a knowledge base file."""
     sources = _sources()
     labels = {s["label"] for s in sources}
     if body.label not in labels:
@@ -93,6 +97,7 @@ def move_file(body: FileMove):
 
 @router.delete("/file", status_code=204)
 def delete_file(path: str):
+    """Delete a knowledge base file."""
     found = kb_service.delete_file(_sources(), path)
     if not found:
         raise HTTPException(

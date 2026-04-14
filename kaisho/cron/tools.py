@@ -312,6 +312,12 @@ _HANDLERS: dict[str, Any] = {
     "create_skill": lambda a: _create_skill(
         a["name"], a["content"],
     ),
+    "write_kb_file": lambda a: _write_kb_file(
+        a["label"], a["filename"], a["content"],
+    ),
+    "web_search": lambda a: _web_search(
+        a["query"], a.get("max_results", 5),
+    ),
     "fetch_url": lambda a: _fetch_url(
         a["url"], a.get("accept", ""),
     ),
@@ -430,6 +436,70 @@ def _kb_sources() -> list[dict]:
 def _list_kb_files() -> dict:
     from ..services import knowledge as kb_svc
     return {"files": kb_svc.file_tree(_kb_sources())}
+
+
+def _write_kb_file(
+    label: str, filename: str, content: str,
+) -> dict:
+    """Write a file to the knowledge base."""
+    from ..services import knowledge as kb_svc
+    return {
+        "file": kb_svc.write_file(
+            _kb_sources(), label, filename, content,
+        ),
+    }
+
+
+def _web_search(query: str, max_results: int = 5) -> dict:
+    """Search the web via DuckDuckGo HTML results."""
+    import re
+    import urllib.request
+    import urllib.parse
+    url = (
+        "https://html.duckduckgo.com/html/?q="
+        + urllib.parse.quote_plus(query)
+    )
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (compatible; kaisho/1.0)"
+        ),
+    }
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(
+            req, timeout=15,
+        ) as resp:
+            html = resp.read(200_000).decode(
+                "utf-8", errors="replace",
+            )
+    except Exception as exc:
+        return {"error": f"Search failed: {exc}"}
+
+    results = []
+    for m in re.finditer(
+        r'<a rel="nofollow" class="result__a"'
+        r' href="([^"]+)"[^>]*>(.*?)</a>',
+        html,
+    ):
+        href = m.group(1)
+        title = re.sub(r"<[^>]+>", "", m.group(2)).strip()
+        if not title or "duckduckgo" in href.lower():
+            continue
+        results.append({"title": title, "url": href})
+        if len(results) >= max_results:
+            break
+
+    snippet_blocks = re.findall(
+        r'<a class="result__snippet"[^>]*>(.*?)</a>',
+        html,
+    )
+    for i, snip in enumerate(snippet_blocks):
+        if i < len(results):
+            results[i]["snippet"] = re.sub(
+                r"<[^>]+>", "", snip,
+            ).strip()
+
+    return {"results": results}
 
 
 def _search_knowledge(query: str, max_results: int = 10) -> dict:

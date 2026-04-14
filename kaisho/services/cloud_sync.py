@@ -138,6 +138,94 @@ def cloud_status(
 
 # ── Sync cycle ────────────────────────────────────────
 
+def _import_cloud_entry(
+    entry: dict, clocks_file: Path,
+) -> bool:
+    """Write a single cloud clock entry to the local file.
+
+    Returns True if the entry was imported, False if
+    skipped (e.g. no end time).
+    """
+    from .clocks import _append_clock_entry
+
+    start = datetime.fromisoformat(entry["start"])
+    end_str = entry.get("end")
+    if not end_str:
+        return False
+    end = datetime.fromisoformat(end_str)
+
+    clock = Clock(start=start, end=end)
+    _append_clock_entry(
+        clocks_file,
+        customer=entry.get("customer") or "",
+        description=entry.get("description") or "",
+        clock=clock,
+        task_id=entry.get("task_id"),
+        contract=entry.get("contract"),
+    )
+    return True
+
+
+def _build_snapshot_customer(customer: dict) -> dict:
+    """Prepare a customer dict for the cloud snapshot."""
+    return {
+        "name": customer.get("name", ""),
+        "contracts": [
+            {
+                "name": ct.get("name", ""),
+                "budget": ct.get("budget", 0),
+                "start_date": ct.get("start_date", ""),
+            }
+            for ct in customer.get("contracts", [])
+        ],
+    }
+
+
+def _build_snapshot_task(task: dict) -> dict:
+    """Prepare a task dict for the cloud snapshot."""
+    return {
+        "id": task.get("id", ""),
+        "customer": task.get("customer") or "",
+        "title": task.get("title", ""),
+        "status": task.get("status", ""),
+    }
+
+
+def _push_reference_snapshot(
+    cloud_url: str,
+    api_key: str,
+    state: dict,
+    customers_fn,
+    tasks_fn,
+) -> bool:
+    """Push customer/task snapshot to the cloud.
+
+    Returns True on success, False on failure.
+    """
+    try:
+        customers_data = [
+            _build_snapshot_customer(c)
+            for c in customers_fn()
+        ]
+        tasks_data = [
+            _build_snapshot_task(t)
+            for t in tasks_fn()
+        ]
+        push_snapshot(
+            cloud_url, api_key,
+            customers_data, tasks_data,
+        )
+        state["last_snapshot_push"] = (
+            datetime.now().isoformat()
+        )
+        return True
+    except (urllib.error.URLError, OSError) as exc:
+        log.warning(
+            "Cloud snapshot push failed: %s", exc,
+        )
+        return False
+
+
 def run_sync_cycle(
     cloud_url: str,
     api_key: str,
@@ -150,14 +238,11 @@ def run_sync_cycle(
 
     Returns {"pulled": int, "pushed": bool, "error": str}.
     """
-    from .clocks import _append_clock_entry
-
     result = {"pulled": 0, "pushed": False, "error": ""}
-
     state = load_state(profile_dir)
     acked_set = set(state.get("acked_ids", []))
 
-    # Pull completed entries
+    # Pull completed entries from the cloud
     try:
         resp = pull_clocks(
             cloud_url, api_key, state["last_pull"],
@@ -167,41 +252,21 @@ def run_sync_cycle(
         log.warning("Cloud sync pull failed: %s", exc)
         return result
 
-    entries = resp.get("entries", [])
+    # Import new entries
     new_ids = []
-
-    for entry in entries:
+    for entry in resp.get("entries", []):
         eid = entry.get("id")
         if eid in acked_set:
             continue
+        if _import_cloud_entry(entry, clocks_file):
+            new_ids.append(eid)
 
-        start = datetime.fromisoformat(entry["start"])
-        end_str = entry.get("end")
-        end = (
-            datetime.fromisoformat(end_str)
-            if end_str else None
-        )
-        if end is None:
-            continue
-
-        clock = Clock(start=start, end=end)
-        _append_clock_entry(
-            clocks_file,
-            customer=entry.get("customer") or "",
-            description=entry.get("description") or "",
-            clock=clock,
-            task_id=entry.get("task_id"),
-            contract=entry.get("contract"),
-        )
-        new_ids.append(eid)
-
-    # Acknowledge
+    # Acknowledge imported entries
     if new_ids:
         try:
             ack_clocks(cloud_url, api_key, new_ids)
         except (urllib.error.URLError, OSError) as exc:
             log.warning("Cloud ack failed: %s", exc)
-
         acked_set.update(new_ids)
         state["last_pull"] = resp.get(
             "cursor", state["last_pull"],
@@ -214,48 +279,12 @@ def run_sync_cycle(
         acked_list = acked_list[-500:]
     state["acked_ids"] = acked_list
 
-    # Push snapshot if functions are provided
+    # Push reference snapshot
     if customers_fn and tasks_fn:
-        try:
-            customers_raw = customers_fn()
-            tasks_raw = tasks_fn()
-            customers_data = [
-                {
-                    "name": c.get("name", ""),
-                    "contracts": [
-                        {
-                            "name": ct.get("name", ""),
-                            "budget": ct.get("budget", 0),
-                            "start_date": ct.get(
-                                "start_date", "",
-                            ),
-                        }
-                        for ct in c.get("contracts", [])
-                    ],
-                }
-                for c in customers_raw
-            ]
-            tasks_data = [
-                {
-                    "id": t.get("id", ""),
-                    "customer": t.get("customer") or "",
-                    "title": t.get("title", ""),
-                    "status": t.get("status", ""),
-                }
-                for t in tasks_raw
-            ]
-            push_snapshot(
-                cloud_url, api_key,
-                customers_data, tasks_data,
-            )
-            state["last_snapshot_push"] = (
-                datetime.now().isoformat()
-            )
-            result["pushed"] = True
-        except (urllib.error.URLError, OSError) as exc:
-            log.warning(
-                "Cloud snapshot push failed: %s", exc,
-            )
+        result["pushed"] = _push_reference_snapshot(
+            cloud_url, api_key, state,
+            customers_fn, tasks_fn,
+        )
 
     save_state(profile_dir, state)
     return result

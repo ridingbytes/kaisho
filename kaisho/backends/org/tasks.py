@@ -21,6 +21,7 @@ class OrgTaskBackend(TaskBackend):
 
     @property
     def data_file(self) -> Path:
+        """Return the todos org-mode file path."""
         return self._todos_file
 
     def list_tasks(
@@ -30,6 +31,7 @@ class OrgTaskBackend(TaskBackend):
         tag=None,
         include_done=False,
     ) -> list[dict]:
+        """Return tasks matching the given filters."""
         return kanban.list_tasks(
             todos_file=self._todos_file,
             keywords=self._keywords,
@@ -48,6 +50,7 @@ class OrgTaskBackend(TaskBackend):
         body: str | None = None,
         github_url: str | None = None,
     ) -> dict:
+        """Create a new task and return its dict."""
         return kanban.add_task(
             todos_file=self._todos_file,
             keywords=self._keywords,
@@ -60,6 +63,7 @@ class OrgTaskBackend(TaskBackend):
         )
 
     def move_task(self, task_id: str, new_status: str) -> dict:
+        """Change a task's status and return updated dict."""
         return kanban.move_task(
             todos_file=self._todos_file,
             keywords=self._keywords,
@@ -68,6 +72,7 @@ class OrgTaskBackend(TaskBackend):
         )
 
     def set_tags(self, task_id: str, tags: list[str]) -> dict:
+        """Replace all tags on a task and return updated dict."""
         return kanban.set_task_tags(
             todos_file=self._todos_file,
             keywords=self._keywords,
@@ -78,6 +83,7 @@ class OrgTaskBackend(TaskBackend):
     def reorder_tasks(
         self, task_ids: list[str],
     ) -> list[dict]:
+        """Reorder tasks by the given ID sequence."""
         return kanban.reorder_tasks(
             todos_file=self._todos_file,
             keywords=self._keywords,
@@ -91,6 +97,7 @@ class OrgTaskBackend(TaskBackend):
         body: str | None = None,
         github_url: str | None = None,
     ) -> dict:
+        """Update a task's fields and return updated dict."""
         return kanban.update_task(
             todos_file=self._todos_file,
             keywords=self._keywords,
@@ -102,6 +109,7 @@ class OrgTaskBackend(TaskBackend):
         )
 
     def archive_task(self, task_id: str) -> bool:
+        """Move task to the archive file. Return False if not found."""
         return kanban.archive_task(
             todos_file=self._todos_file,
             archive_file=self._archive_file,
@@ -110,6 +118,7 @@ class OrgTaskBackend(TaskBackend):
         )
 
     def list_all_tags(self) -> list[dict]:
+        """Return all tags with usage counts."""
         tasks = self.list_tasks(include_done=True)
         counts: dict[str, int] = {}
         for task in tasks:
@@ -121,6 +130,7 @@ class OrgTaskBackend(TaskBackend):
         ]
 
     def list_archived(self) -> list[dict]:
+        """Return all archived tasks."""
         return kanban.list_archived_tasks(
             archive_file=self._archive_file,
             keywords=self._keywords,
@@ -128,6 +138,7 @@ class OrgTaskBackend(TaskBackend):
         )
 
     def unarchive_task(self, task_id: str) -> bool:
+        """Restore an archived task. Return False if not found."""
         return kanban.unarchive_task(
             archive_file=self._archive_file,
             todos_file=self._todos_file,
@@ -136,6 +147,7 @@ class OrgTaskBackend(TaskBackend):
         )
 
     def delete_archived_task(self, task_id: str) -> bool:
+        """Permanently delete an archived task."""
         return kanban.delete_archived_task(
             archive_file=self._archive_file,
             keywords=self._keywords,

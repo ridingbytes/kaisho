@@ -13,11 +13,13 @@ class OrgCustomerBackend(CustomerBackend):
 
     @property
     def data_file(self) -> Path:
+        """Return the kunden org-mode file path."""
         return self._kunden_file
 
     def list_customers(
         self, include_inactive: bool = False
     ) -> list[dict]:
+        """Return customers, optionally including inactive."""
         return customers.list_customers(
             kunden_file=self._kunden_file,
             clocks_file=self._clocks_file,
@@ -25,6 +27,7 @@ class OrgCustomerBackend(CustomerBackend):
         )
 
     def get_customer(self, name: str) -> dict | None:
+        """Return a single customer by name, or None."""
         return customers.get_customer(
             kunden_file=self._kunden_file,
             clocks_file=self._clocks_file,
@@ -32,6 +35,7 @@ class OrgCustomerBackend(CustomerBackend):
         )
 
     def get_budget_summary(self) -> list[dict]:
+        """Return budget summary for active customers."""
         return customers.get_budget_summary(
             kunden_file=self._kunden_file,
             clocks_file=self._clocks_file,
@@ -47,6 +51,7 @@ class OrgCustomerBackend(CustomerBackend):
         repo: str | None = None,
         tags: list[str] | None = None,
     ) -> dict:
+        """Create a new customer. Raises ValueError if exists."""
         return customers.add_customer(
             kunden_file=self._kunden_file,
             name=name,
@@ -61,6 +66,7 @@ class OrgCustomerBackend(CustomerBackend):
     def update_customer(
         self, name: str, updates: dict
     ) -> dict | None:
+        """Update customer fields. Return None if not found."""
         return customers.update_customer(
             kunden_file=self._kunden_file,
             name=name,
@@ -68,6 +74,7 @@ class OrgCustomerBackend(CustomerBackend):
         )
 
     def list_contracts(self, name: str) -> list[dict]:
+        """Return all contracts for a customer."""
         return customers.list_contracts(
             self._kunden_file, self._clocks_file, name
         )
@@ -82,6 +89,7 @@ class OrgCustomerBackend(CustomerBackend):
         billable: bool = True,
         invoiced: bool = False,
     ) -> dict:
+        """Add a named contract to a customer."""
         return customers.add_contract(
             self._kunden_file, name, contract_name,
             budget, start_date, notes, billable,
@@ -91,6 +99,7 @@ class OrgCustomerBackend(CustomerBackend):
     def update_contract(
         self, name: str, contract_name: str, updates: dict
     ) -> dict | None:
+        """Update contract fields, cascading name renames to clocks."""
         result = customers.update_contract(
             self._kunden_file, name,
             contract_name, updates,
@@ -131,16 +140,19 @@ class OrgCustomerBackend(CustomerBackend):
     def close_contract(
         self, name: str, contract_name: str, end_date: str
     ) -> dict | None:
+        """Close a contract by setting its end date."""
         return customers.close_contract(
             self._kunden_file, name, contract_name, end_date
         )
 
     def delete_customer(self, name: str) -> bool:
+        """Delete a customer. Return False if not found."""
         return customers.delete_customer(
             self._kunden_file, name
         )
 
     def delete_contract(self, name: str, contract_name: str) -> bool:
+        """Delete a contract. Return False if not found."""
         return customers.delete_contract(
             self._kunden_file, name, contract_name
         )

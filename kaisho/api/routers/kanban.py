@@ -35,6 +35,7 @@ def list_tasks(
     tag: str | None = None,
     include_done: bool = False,
 ):
+    """List tasks with optional status and customer filters."""
     status_list = [status] if status else None
     return get_backend().tasks.list_tasks(
         status=status_list,
@@ -52,6 +53,7 @@ def reorder_tasks(task_ids: list[str] = Body(...)):
 
 @router.post("/tasks", status_code=201)
 def create_task(body: TaskCreate):
+    """Create a new kanban task."""
     return get_backend().tasks.add_task(
         customer=body.customer,
         title=body.title,
@@ -64,6 +66,7 @@ def create_task(body: TaskCreate):
 
 @router.patch("/tasks/{task_id}")
 def update_task(task_id: str, body: TaskUpdate):
+    """Update task status, title, customer, or body."""
     try:
         backend = get_backend().tasks
         result = None
@@ -93,6 +96,7 @@ def update_task(task_id: str, body: TaskUpdate):
 
 @router.patch("/tasks/{task_id}/tags")
 def update_tags(task_id: str, body: TagsUpdate):
+    """Replace the tags on a task."""
     try:
         return get_backend().tasks.set_tags(task_id, body.tags)
     except ValueError as e:
@@ -101,6 +105,7 @@ def update_tags(task_id: str, body: TagsUpdate):
 
 @router.delete("/tasks/{task_id}", status_code=204)
 def archive_task(task_id: str):
+    """Archive a task."""
     ok = get_backend().tasks.archive_task(task_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -108,11 +113,13 @@ def archive_task(task_id: str):
 
 @router.get("/archive")
 def list_archive():
+    """List all archived tasks."""
     return get_backend().tasks.list_archived()
 
 
 @router.delete("/archive/{task_id}", status_code=204)
 def delete_archived_task(task_id: str):
+    """Permanently delete an archived task."""
     ok = get_backend().tasks.delete_archived_task(task_id)
     if not ok:
         raise HTTPException(
@@ -122,6 +129,7 @@ def delete_archived_task(task_id: str):
 
 @router.post("/archive/{task_id}/unarchive", status_code=200)
 def unarchive_task(task_id: str):
+    """Restore an archived task back to the board."""
     ok = get_backend().tasks.unarchive_task(task_id)
     if not ok:
         raise HTTPException(

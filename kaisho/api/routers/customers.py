@@ -18,6 +18,7 @@ class CustomerCreate(BaseModel):
 
 @router.post("/", status_code=201)
 def create_customer(body: CustomerCreate):
+    """Create a new customer."""
     try:
         return get_backend().customers.add_customer(
             name=body.name,
@@ -34,6 +35,7 @@ def create_customer(body: CustomerCreate):
 
 @router.get("/")
 def list_customers(include_inactive: bool = False):
+    """List all customers."""
     return get_backend().customers.list_customers(
         include_inactive=include_inactive,
     )
@@ -41,6 +43,7 @@ def list_customers(include_inactive: bool = False):
 
 @router.get("/{name}")
 def get_customer(name: str):
+    """Return a single customer by name."""
     c = get_backend().customers.get_customer(name)
     if c is None:
         raise HTTPException(
@@ -54,6 +57,7 @@ def update_customer(
     name: str,
     updates: dict = Body(...),
 ):
+    """Update customer properties."""
     c = get_backend().customers.update_customer(name, updates)
     if c is None:
         raise HTTPException(
@@ -64,6 +68,7 @@ def update_customer(
 
 @router.delete("/{name}", status_code=204)
 def delete_customer(name: str):
+    """Delete a customer."""
     ok = get_backend().customers.delete_customer(name)
     if not ok:
         raise HTTPException(
@@ -93,6 +98,7 @@ class ContractUpdate(BaseModel):
 
 @router.get("/{name}/contracts")
 def list_contracts(name: str):
+    """List all contracts for a customer."""
     try:
         return get_backend().customers.list_contracts(name)
     except ValueError:
@@ -103,6 +109,7 @@ def list_contracts(name: str):
 
 @router.post("/{name}/contracts", status_code=201)
 def add_contract(name: str, body: ContractCreate):
+    """Add a contract to a customer."""
     try:
         return get_backend().customers.add_contract(
             name, body.name, body.budget,
@@ -117,6 +124,7 @@ def add_contract(name: str, body: ContractCreate):
 def update_contract(
     name: str, contract_name: str, body: ContractUpdate
 ):
+    """Update contract properties."""
     updates = body.model_dump(exclude_none=True)
     contract = get_backend().customers.update_contract(
         name, contract_name, updates
@@ -130,6 +138,7 @@ def update_contract(
 
 @router.delete("/{name}/contracts/{contract_name:path}", status_code=204)
 def delete_contract(name: str, contract_name: str):
+    """Delete a contract from a customer."""
     ok = get_backend().customers.delete_contract(name, contract_name)
     if not ok:
         raise HTTPException(

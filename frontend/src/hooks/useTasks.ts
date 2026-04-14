@@ -59,7 +59,10 @@ export function useAddTask() {
       title: string;
       status: string;
       github_url?: string;
-    }) => createTask(customer, title, status, github_url),
+    }) => createTask({
+      customer, title, status,
+      githubUrl: github_url,
+    }),
     onSuccess: (_d, vars) => {
       void qc.invalidateQueries({
         queryKey: ["tasks"],

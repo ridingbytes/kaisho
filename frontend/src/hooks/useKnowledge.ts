@@ -46,7 +46,7 @@ export function useSaveKnowledgeFile() {
       label: string;
       path: string;
       content: string;
-    }) => saveKnowledgeFile(label, path, content),
+    }) => saveKnowledgeFile({ label, path, content }),
     onSuccess: (_data, vars) => {
       void qc.invalidateQueries({ queryKey: ["knowledge", "tree"] });
       void qc.invalidateQueries({
@@ -95,7 +95,9 @@ export function useMoveKnowledgeFile() {
       oldLabel: string;
       newLabel: string;
       newPath?: string;
-    }) => moveKnowledgeFile(oldPath, oldLabel, newLabel, newPath),
+    }) => moveKnowledgeFile({
+      oldPath, oldLabel, newLabel, newPath,
+    }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["knowledge"] });
     },

@@ -12,6 +12,8 @@ import {
 } from "../api/client";
 import { useToast } from "../context/ToastContext";
 
+/** Provides the list of customers. Set includeInactive
+ *  to also load archived/inactive customers. */
 export function useCustomers(includeInactive = false) {
   return useQuery({
     queryKey: ["customers", includeInactive],
@@ -21,6 +23,8 @@ export function useCustomers(includeInactive = false) {
   });
 }
 
+/** Returns a mutation to create a new customer.
+ *  Invalidates customer and dashboard caches. */
 export function useCreateCustomer() {
   const qc = useQueryClient();
   const toast = useToast();
@@ -45,6 +49,7 @@ export function useCreateCustomer() {
   });
 }
 
+/** Returns a mutation to delete a customer by name. */
 export function useDeleteCustomer() {
   const qc = useQueryClient();
   const toast = useToast();

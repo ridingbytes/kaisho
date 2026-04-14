@@ -377,69 +377,96 @@ def _find_clock_by_start(
     return None
 
 
-def update_clock_entry(
-    clocks_file: Path,
-    start_iso: str,
-    customer: str | None = None,
-    description: str | None = None,
-    hours: float | None = None,
-    new_date: date | None = None,
-    start_time: str | None = None,
-    task_id: str | None = None,
-    invoiced: bool | None = None,
-    notes: str | None = None,
-    contract: str | None = None,
-) -> dict | None:
-    """Update customer, description, hours, date, task, invoiced, or notes."""
-    if not clocks_file.exists():
-        return None
-    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
-    result = _find_clock_by_start(org_file, start_iso)
-    if result is None:
-        return None
-    clock, heading = result
-    current_customer, current_desc = _parse_entry_title(heading.title)
+def _apply_title_update(
+    heading: Heading,
+    clock: Clock,
+    customer: str | None,
+    description: str | None,
+    current_customer: str,
+    current_desc: str,
+) -> tuple[str, str]:
+    """Apply customer/description changes to heading title.
+
+    Returns the (possibly updated) customer and description.
+    """
     if customer is not None:
         current_customer = customer
     if description is not None:
         current_desc = description
     if customer is not None or description is not None:
         heading.title = _entry_title(
-            current_customer, current_desc, clock.start
+            current_customer, current_desc, clock.start,
         )
         heading.dirty = True
-    if new_date is not None:
-        delta = timedelta(
-            days=(new_date - clock.start.date()).days
-        )
-        clock.start = clock.start + delta
-        if clock.end is not None:
-            clock.end = clock.end + delta
-        heading.title = _entry_title(
-            current_customer, current_desc, clock.start
-        )
-        heading.dirty = True
-    if start_time is not None:
-        h, m = (int(x) for x in start_time.split(":"))
-        duration = (
-            (clock.end - clock.start)
-            if clock.end
-            else timedelta()
-        )
-        clock.start = clock.start.replace(
-            hour=h, minute=m, second=0
-        )
-        if clock.end is not None:
-            clock.end = clock.start + duration
-        heading.dirty = True
-    if hours is not None:
-        minutes = int(hours * 60)
-        new_end = clock.start + timedelta(minutes=minutes)
-        h = minutes // 60
-        m = minutes % 60
-        clock.end = new_end
-        clock.duration = f"{h}:{m:02d}"
-        heading.dirty = True
+    return current_customer, current_desc
+
+
+def _apply_date_update(
+    heading: Heading,
+    clock: Clock,
+    new_date: date | None,
+    customer: str,
+    desc: str,
+) -> None:
+    """Shift clock start/end to a new date."""
+    if new_date is None:
+        return
+    delta = timedelta(
+        days=(new_date - clock.start.date()).days,
+    )
+    clock.start = clock.start + delta
+    if clock.end is not None:
+        clock.end = clock.end + delta
+    heading.title = _entry_title(customer, desc, clock.start)
+    heading.dirty = True
+
+
+def _apply_start_time_update(
+    heading: Heading,
+    clock: Clock,
+    start_time: str | None,
+) -> None:
+    """Change the start time while preserving duration."""
+    if start_time is None:
+        return
+    h, m = (int(x) for x in start_time.split(":"))
+    duration = (
+        (clock.end - clock.start)
+        if clock.end
+        else timedelta()
+    )
+    clock.start = clock.start.replace(
+        hour=h, minute=m, second=0,
+    )
+    if clock.end is not None:
+        clock.end = clock.start + duration
+    heading.dirty = True
+
+
+def _apply_hours_update(
+    heading: Heading,
+    clock: Clock,
+    hours: float | None,
+) -> None:
+    """Set the clock duration in hours."""
+    if hours is None:
+        return
+    minutes = int(hours * 60)
+    clock.end = clock.start + timedelta(minutes=minutes)
+    h = minutes // 60
+    m = minutes % 60
+    clock.duration = f"{h}:{m:02d}"
+    heading.dirty = True
+
+
+def _apply_property_updates(
+    heading: Heading,
+    task_id: str | None,
+    invoiced: bool | None,
+    notes: str | None,
+    contract: str | None,
+) -> None:
+    """Apply task_id, invoiced, notes, contract changes."""
     if task_id is not None:
         if task_id == "":
             heading.properties.pop("TASK_ID", None)
@@ -453,7 +480,9 @@ def update_clock_entry(
             heading.properties.pop("INVOICED", None)
         heading.dirty = True
     if notes is not None:
-        heading.body = notes.splitlines() if notes.strip() else []
+        heading.body = (
+            notes.splitlines() if notes.strip() else []
+        )
         heading.dirty = True
     if contract is not None:
         if contract:
@@ -461,17 +490,56 @@ def update_clock_entry(
         else:
             heading.properties.pop("CONTRACT", None)
         heading.dirty = True
-    current_task_id = heading.properties.get("TASK_ID") or None
-    current_invoiced = (
-        heading.properties.get("INVOICED", "").lower() == "true"
+
+
+def update_clock_entry(
+    clocks_file: Path,
+    start_iso: str,
+    customer: str | None = None,
+    description: str | None = None,
+    hours: float | None = None,
+    new_date: date | None = None,
+    start_time: str | None = None,
+    task_id: str | None = None,
+    invoiced: bool | None = None,
+    notes: str | None = None,
+    contract: str | None = None,
+) -> dict | None:
+    """Update fields of a clock entry identified by start
+    timestamp."""
+    if not clocks_file.exists():
+        return None
+    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
+    result = _find_clock_by_start(org_file, start_iso)
+    if result is None:
+        return None
+    clock, heading = result
+
+    cur_cust, cur_desc = _parse_entry_title(
+        heading.title,
     )
-    current_notes = _heading_notes(heading)
-    current_contract = heading.properties.get("CONTRACT") or None
+    cur_cust, cur_desc = _apply_title_update(
+        heading, clock, customer, description,
+        cur_cust, cur_desc,
+    )
+    _apply_date_update(
+        heading, clock, new_date, cur_cust, cur_desc,
+    )
+    _apply_start_time_update(heading, clock, start_time)
+    _apply_hours_update(heading, clock, hours)
+    _apply_property_updates(
+        heading, task_id, invoiced, notes, contract,
+    )
+
     write_org_file(clocks_file, org_file)
     return _clock_to_entry(
-        clock, current_customer, current_desc,
-        current_task_id, current_invoiced, current_notes,
-        current_contract,
+        clock, cur_cust, cur_desc,
+        heading.properties.get("TASK_ID") or None,
+        heading.properties.get(
+            "INVOICED", "",
+        ).lower() == "true",
+        _heading_notes(heading),
+        heading.properties.get("CONTRACT") or None,
     )
 
 

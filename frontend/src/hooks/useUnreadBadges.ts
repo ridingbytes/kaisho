@@ -1,9 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useCustomers } from "./useCustomers";
 import { useInboxItems } from "./useInbox";
 import { useNotes } from "./useNotes";
 import { useTasks } from "./useTasks";
-import { useCronJobs } from "./useCron";
+import { useCronHistory } from "./useCron";
 import { useUnreadBadge } from "./useUnreadBadge";
 
 /**
@@ -16,13 +16,20 @@ export function useUnreadBadges(active: string): Record<string, number> {
   const { data: inboxItems = [] } = useInboxItems();
   const { data: notes = [] } = useNotes();
   const { data: customers = [] } = useCustomers();
-  const { data: cronJobs = [] } = useCronJobs();
+  const { data: history = [] } = useCronHistory();
+
+  const cronDone = useMemo(
+    () => history.filter(
+      (r) => r.status === "ok" || r.status === "error",
+    ).length,
+    [history],
+  );
 
   const board = useUnreadBadge("board", tasks.length);
   const inbox = useUnreadBadge("inbox", inboxItems.length);
   const notesBadge = useUnreadBadge("notes", notes.length);
   const customersBadge = useUnreadBadge("customers", customers.length);
-  const cron = useUnreadBadge("cron", cronJobs.length);
+  const cron = useUnreadBadge("cron", cronDone);
 
   useEffect(() => {
     if (active === "board") board.markSeen();
@@ -42,7 +49,7 @@ export function useUnreadBadges(active: string): Record<string, number> {
 
   useEffect(() => {
     if (active === "cron") cron.markSeen();
-  }, [active, cronJobs.length, cron.markSeen]);
+  }, [active, cronDone, cron.markSeen]);
 
   return {
     board: board.unread,

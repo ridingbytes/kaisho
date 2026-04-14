@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { Send, Trash2 } from "lucide-react";
+import {
+  useCallback, useEffect, useRef, useState,
+} from "react";
+import { Send, Square, Trash2 } from "lucide-react";
 import { askAdvisor } from "../../api/client";
 import {
   useAiSettings,
@@ -76,7 +78,15 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [steps, setSteps] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const stopRequest = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setLoading(false);
+  }, []);
 
   // Set model default once AI settings load
   useEffect(() => {
@@ -142,10 +152,39 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
 
     setInput("");
     setError(null);
-    onMessagesChange((prev) => [...prev, { role: "user", text: question }]);
+    setSteps([]);
+    onMessagesChange((prev) => [
+      ...prev, { role: "user", text: question },
+    ]);
     setLoading(true);
 
-    askAdvisor(question, model, messages)
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
+    askAdvisor({
+      question, model, history: messages,
+      signal: ctrl.signal,
+      onEvent: (type, data) => {
+        if (type === "tool_call") {
+          const name = data.name as string;
+          setSteps((p) => [...p, `Calling ${name}...`]);
+        } else if (type === "tool_result") {
+          const name = data.name as string;
+          const result = data.result as Record<
+            string, unknown
+          >;
+          const hasError = "error" in result;
+          setSteps((p) => [
+            ...p,
+            hasError
+              ? `${name} failed`
+              : `${name} done`,
+          ]);
+        } else if (type === "thinking") {
+          setSteps((p) => [...p, "Thinking..."]);
+        }
+      },
+    })
       .then((result) => {
         onMessagesChange((prev) => [
           ...prev,
@@ -153,11 +192,23 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
         ]);
       })
       .catch((err: unknown) => {
-        const msg =
-          err instanceof Error ? err.message : "Request failed.";
+        if (err instanceof DOMException
+          && err.name === "AbortError") {
+          onMessagesChange((prev) => [
+            ...prev,
+            { role: "assistant", text: "*Stopped.*" },
+          ]);
+          return;
+        }
+        const msg = err instanceof Error
+          ? err.message : "Request failed.";
         setError(msg);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        abortRef.current = null;
+        setSteps([]);
+        setLoading(false);
+      });
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -251,7 +302,43 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             <AssistantBubble key={i} text={msg.text} />
           )
         )}
-        {loading && <AssistantBubble text="Thinking…" thinking />}
+        {loading && (
+          <div className="flex justify-start mb-3">
+            <div
+              className={[
+                "max-w-[80%] px-4 py-2.5",
+                "rounded-2xl rounded-tl-sm",
+                "bg-surface-card border border-border",
+              ].join(" ")}
+            >
+              {steps.length > 0 ? (
+                <div className="space-y-1">
+                  {steps.map((s, i) => (
+                    <div
+                      key={i}
+                      className={[
+                        "text-xs font-mono",
+                        i === steps.length - 1
+                          ? "text-cta"
+                          : "text-stone-400",
+                      ].join(" ")}
+                    >
+                      {s}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span
+                  className={
+                    "text-sm text-stone-500 italic"
+                  }
+                >
+                  Thinking...
+                </span>
+              )}
+            </div>
+          </div>
+        )}
         {error && (
           <p className="text-xs text-red-400 text-center py-2">
             {error}
@@ -304,18 +391,35 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             "placeholder-stone-500 focus:outline-none focus:border-border-strong",
           ].join(" ")}
         />
-        <button
-          type="submit"
-          disabled={loading || !input.trim()}
-          className={[
-            "flex items-center gap-1.5 px-4 py-2 rounded-xl",
-            "bg-cta text-white text-sm hover:bg-cta-hover",
-            "transition-colors disabled:opacity-50 shrink-0",
-          ].join(" ")}
-        >
-          <Send size={14} />
-          Send
-        </button>
+        {loading ? (
+          <button
+            type="button"
+            onClick={stopRequest}
+            className={[
+              "flex items-center gap-1.5 px-4 py-2",
+              "rounded-xl bg-red-500 text-white",
+              "text-sm hover:bg-red-600",
+              "transition-colors shrink-0",
+            ].join(" ")}
+          >
+            <Square size={12} />
+            Stop
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={!input.trim()}
+            className={[
+              "flex items-center gap-1.5 px-4 py-2",
+              "rounded-xl bg-cta text-white text-sm",
+              "hover:bg-cta-hover transition-colors",
+              "disabled:opacity-50 shrink-0",
+            ].join(" ")}
+          >
+            <Send size={14} />
+            Send
+          </button>
+        )}
         </div>
       </form>
     </div>

@@ -1,4 +1,11 @@
+import json
+import queue
+import threading
+from collections.abc import Generator
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from ...backends import get_backend
@@ -22,77 +29,152 @@ class AskRequest(BaseModel):
     history: list[ChatMessage] = []
 
 
-@router.post("/ask")
-def api_ask(body: AskRequest):
-    if not body.question.strip():
-        raise HTTPException(status_code=400, detail="question is required")
+def _format_question_with_history(
+    question: str, history: list[ChatMessage],
+) -> str:
+    """Prepend conversation history to the question."""
+    if not history:
+        return question
+    lines = []
+    for msg in history:
+        role = (
+            "User" if msg.role == "user"
+            else "Assistant"
+        )
+        lines.append(f"{role}: {msg.text}")
+    history_text = "\n\n".join(lines)
+    return (
+        f"## Conversation so far\n\n"
+        f"{history_text}\n\n"
+        f"## Current request\n\n"
+        f"{question}"
+    )
 
+
+def _collect_advisor_context(backend) -> dict:
+    """Gather tasks, clocks, inbox, customers for the
+    advisor prompt."""
+    return {
+        "tasks": backend.tasks.list_tasks(
+            include_done=False,
+        ),
+        "clock_entries": backend.clocks.list_entries(
+            period="month",
+        ),
+        "inbox_items": backend.inbox.list_items(),
+        "customers": (
+            backend.customers.list_customers()
+        ),
+    }
+
+
+def _ai_provider_kwargs(ai: dict) -> dict:
+    """Extract AI provider connection settings."""
+    return {
+        "ollama_base_url": ai["ollama_url"],
+        "lm_studio_base_url": ai.get(
+            "lm_studio_url", "",
+        ),
+        "claude_api_key": ai.get("claude_api_key", ""),
+        "openrouter_base_url": ai.get(
+            "openrouter_url", "",
+        ),
+        "openrouter_api_key": ai.get(
+            "openrouter_api_key", "",
+        ),
+        "openai_base_url": ai.get("openai_url", ""),
+        "openai_api_key": ai.get("openai_api_key", ""),
+    }
+
+
+def _sse_line(event: str, data: dict[str, Any]) -> str:
+    """Format a single SSE event line."""
+    payload = json.dumps(data, default=str)
+    return f"event: {event}\ndata: {payload}\n\n"
+
+
+_SENTINEL = object()
+
+
+def _stream_ask(body: AskRequest) -> Generator[
+    str, None, None,
+]:
+    """Run the advisor in a thread, yield SSE events."""
     cfg = get_config()
     backend = get_backend()
 
-    tasks = backend.tasks.list_tasks(include_done=False)
-    clocks = backend.clocks.list_entries(period="month")
-    inbox = backend.inbox.list_items()
-    customers = backend.customers.list_customers()
-
-    github_issues = []
+    ctx = _collect_advisor_context(backend)
+    github_issues: list[dict] = []
     if body.include_github:
         try:
-            github_issues = issues_for_customers(customers)
+            github_issues = issues_for_customers(
+                ctx["customers"],
+            )
         except (GhError, FileNotFoundError):
             pass
 
     ai = settings_svc.get_ai_settings(
-        settings_svc.load_settings(cfg.SETTINGS_FILE)
+        settings_svc.load_settings(cfg.SETTINGS_FILE),
     )
-
     from ...config import load_user_yaml
     user_meta = load_user_yaml(cfg)
 
-    # Build question with conversation history
-    question = body.question
-    if body.history:
-        history_lines = []
-        for msg in body.history:
-            role = "User" if msg.role == "user" else "Assistant"
-            history_lines.append(
-                f"{role}: {msg.text}"
+    question = _format_question_with_history(
+        body.question, body.history,
+    )
+
+    q: queue.Queue = queue.Queue()
+
+    def on_event(
+        event_type: str, data: dict[str, Any],
+    ) -> None:
+        q.put((event_type, data))
+
+    def run() -> None:
+        try:
+            answer = ask(
+                question=question,
+                model_str=body.model,
+                **ctx,
+                github_issues=github_issues,
+                **_ai_provider_kwargs(ai),
+                data_dir=str(cfg.PROFILE_DIR),
+                user_meta=user_meta,
+                on_event=on_event,
             )
-        history_text = "\n\n".join(history_lines)
-        question = (
-            f"## Conversation so far\n\n"
-            f"{history_text}\n\n"
-            f"## Current request\n\n"
-            f"{body.question}"
-        )
+            q.put(("answer", {"answer": answer}))
+        except RuntimeError as exc:
+            q.put(("error", {"detail": str(exc)}))
+        finally:
+            q.put(_SENTINEL)
 
-    try:
-        answer = ask(
-            question=question,
-            model_str=body.model,
-            tasks=tasks,
-            clock_entries=clocks,
-            inbox_items=inbox,
-            customers=customers,
-            github_issues=github_issues,
-            ollama_base_url=ai["ollama_url"],
-            lm_studio_base_url=ai.get("lm_studio_url", ""),
-            claude_api_key=ai.get("claude_api_key", ""),
-            openrouter_base_url=ai.get(
-                "openrouter_url", ""
-            ),
-            openrouter_api_key=ai.get(
-                "openrouter_api_key", ""
-            ),
-            openai_base_url=ai.get("openai_url", ""),
-            openai_api_key=ai.get("openai_api_key", ""),
-            data_dir=str(cfg.PROFILE_DIR),
-            user_meta=user_meta,
-        )
-    except RuntimeError as exc:
-        raise HTTPException(status_code=502, detail=str(exc))
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
 
-    return {"answer": answer}
+    while True:
+        item = q.get()
+        if item is _SENTINEL:
+            break
+        evt_type, evt_data = item
+        yield _sse_line(evt_type, evt_data)
+
+
+@router.post("/ask")
+def api_ask(body: AskRequest):
+    """Ask the AI advisor a question (SSE stream)."""
+    if not body.question.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="question is required",
+        )
+    return StreamingResponse(
+        _stream_ask(body),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/skills")

@@ -65,11 +65,13 @@ class PromptUpdate(BaseModel):
 
 @router.get("/jobs")
 def api_list_jobs():
+    """List all configured cron jobs."""
     return list_jobs(_jobs_file())
 
 
 @router.get("/jobs/{job_id}")
 def api_get_job(job_id: str):
+    """Return a single cron job by ID."""
     job = get_job(_jobs_file(), job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -89,6 +91,7 @@ def _write_prompt_file(job_id: str, content: str) -> str:
 
 @router.post("/jobs", status_code=201)
 def api_add_job(body: JobCreate):
+    """Create a new cron job."""
     data = body.model_dump()
     prompt_content = data.pop("prompt_content", "")
 
@@ -108,6 +111,7 @@ def api_add_job(body: JobCreate):
 
 @router.patch("/jobs/{job_id}")
 def api_update_job(job_id: str, body: JobUpdate):
+    """Update properties of an existing cron job."""
     updates = {k: v for k, v in body.model_dump().items() if v is not None}
     try:
         job = update_job(_jobs_file(), job_id, updates)
@@ -119,6 +123,7 @@ def api_update_job(job_id: str, body: JobUpdate):
 
 @router.delete("/jobs/{job_id}", status_code=204)
 def api_delete_job(job_id: str):
+    """Delete a cron job."""
     ok = delete_job(_jobs_file(), job_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -127,6 +132,7 @@ def api_delete_job(job_id: str):
 
 @router.get("/jobs/{job_id}/prompt")
 def api_get_prompt(job_id: str):
+    """Return the prompt template for a cron job."""
     job = get_job(_jobs_file(), job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -139,6 +145,7 @@ def api_get_prompt(job_id: str):
 
 @router.put("/jobs/{job_id}/prompt")
 def api_update_prompt(job_id: str, body: PromptUpdate):
+    """Save updated prompt content for a cron job."""
     job = get_job(_jobs_file(), job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -153,6 +160,7 @@ def api_update_prompt(job_id: str, body: PromptUpdate):
 
 @router.post("/jobs/{job_id}/enable")
 def api_enable_job(job_id: str):
+    """Enable a cron job."""
     try:
         job = set_enabled(_jobs_file(), job_id, True)
     except ValueError as e:
@@ -163,6 +171,7 @@ def api_enable_job(job_id: str):
 
 @router.post("/jobs/{job_id}/disable")
 def api_disable_job(job_id: str):
+    """Disable a cron job."""
     try:
         job = set_enabled(_jobs_file(), job_id, False)
     except ValueError as e:
@@ -206,6 +215,7 @@ def _run_job_bg(job: dict, run_id: int) -> None:
 
 @router.post("/jobs/{job_id}/trigger", status_code=202)
 def api_trigger_job(job_id: str, background_tasks: BackgroundTasks):
+    """Manually trigger a cron job execution."""
     job = get_job(_jobs_file(), job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -220,11 +230,13 @@ def api_trigger_job(job_id: str, background_tasks: BackgroundTasks):
 
 @router.get("/history")
 def api_list_history(job_id: str | None = None, limit: int = 50):
+    """List cron job execution history."""
     return list_history(_profile(), job_id=job_id, limit=limit)
 
 
 @router.get("/history/{entry_id}")
 def api_get_history(entry_id: int):
+    """Return a single cron history entry."""
     record = get_history_entry(_profile(), entry_id)
     if record is None:
         raise HTTPException(
@@ -235,6 +247,7 @@ def api_get_history(entry_id: int):
 
 @router.delete("/history/{entry_id}", status_code=204)
 def api_delete_history(entry_id: int):
+    """Delete a cron history entry."""
     ok = delete_history_entry(_profile(), entry_id)
     if not ok:
         raise HTTPException(
@@ -261,6 +274,7 @@ def _build_title(run: dict) -> str:
 
 @router.post("/history/{entry_id}/move", status_code=201)
 def api_move_run_output(entry_id: int, body: MoveRunRequest):
+    """Move cron run output to inbox, task, note, or KB."""
     run = get_history_entry(_profile(), entry_id)
     if run is None:
         raise HTTPException(

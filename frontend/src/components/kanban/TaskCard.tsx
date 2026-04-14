@@ -1,21 +1,12 @@
-import ReactDOM from "react-dom";
-import { ConfirmPopover } from "../common/ConfirmPopover";
+/**
+ * TaskCard -- Main draggable kanban card that composes
+ * sub-components for display, editing, status picking,
+ * hover actions, and state history.
+ */
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  GripVertical,
-  Pencil,
-  Trash2,
-  Check,
-  X,
-  Clock,
-  ChevronDown,
-  ChevronRight,
-  GitBranch,
-  ListRestart,
-  Tag,
-} from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { GripVertical } from "lucide-react";
+import { useState } from "react";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
 import { useMoveTask } from "../../hooks/useTasks";
 import {
@@ -23,485 +14,24 @@ import {
   useStartTimer,
   useStopTimer,
 } from "../../hooks/useClocks";
-import { RelDate } from "../common/RelDate";
-import { navigateToClockDate } from "../../utils/clockNavigation";
-import { ContentPopup } from "../common/ContentPopup";
-import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import {
   LinkOverlay,
-  handleLinkClick,
   useLinkOverlay,
 } from "../common/LinkPopover";
-import { tagBadgeStyle } from "../../utils/tagColors";
-import { Markdown } from "../common/Markdown";
-import { TagDropdown } from "../common/TagDropdown";
 import {
   useUpdateTask,
   useArchiveTask,
   useSetTaskTags,
 } from "../../hooks/useTasks";
-import {
-  useTaskClockEntries,
-  useUpdateClockEntry,
-  useDeleteClockEntry,
-} from "../../hooks/useClocks";
 import { useSettings } from "../../hooks/useSettings";
 import { stripCustomerPrefix } from "../../utils/customerPrefix";
-import { formatHours } from "../../utils/formatting";
-import type { ClockEntry, Task } from "../../types";
+import type { Task } from "../../types";
 
-function extractIssueNumber(url: string): string {
-  const m = url.match(/\/(\d+)$/);
-  return m ? m[1] : "issue";
-}
-
-function fmtDate(iso: string): string {
-  return iso.slice(0, 10);
-}
-
-function totalMinutes(entries: ClockEntry[]): number {
-  return entries.reduce((s, e) => s + (e.duration_minutes ?? 0), 0);
-}
-
-// ---------------------------------------------------------------------------
-// Clock entries section inside a task card
-// ---------------------------------------------------------------------------
-
-interface TaskClockSectionProps {
-  task: Task;
-}
-
-function ClockEntryRow({
-  entry,
-  updateEntry,
-  deleteEntry,
-}: {
-  entry: ClockEntry;
-  updateEntry: ReturnType<typeof useUpdateClockEntry>;
-  deleteEntry: ReturnType<typeof useDeleteClockEntry>;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [desc, setDesc] = useState(entry.description);
-  const [hours, setHours] = useState(
-    String((entry.duration_minutes ?? 0) / 60)
-  );
-
-  function startEdit() {
-    setDesc(entry.description);
-    setHours(
-      String((entry.duration_minutes ?? 0) / 60)
-    );
-    setEditing(true);
-  }
-
-  function handleSave() {
-    const h = parseFloat(hours);
-    if (isNaN(h)) return;
-    updateEntry.mutate(
-      {
-        startIso: entry.start,
-        updates: { description: desc, hours: h },
-      },
-      { onSuccess: () => setEditing(false) }
-    );
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") handleSave();
-    if (e.key === "Escape") setEditing(false);
-  }
-
-  if (editing) {
-    return (
-      <li className="flex items-center gap-1 text-[10px]">
-        <input
-          autoFocus
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="flex-1 min-w-0 px-1 py-0.5 rounded text-[10px] bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
-        />
-        <input
-          type="number"
-          step="0.25"
-          min="0"
-          value={hours}
-          onChange={(e) => setHours(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="w-14 px-1 py-0.5 rounded text-[10px] tabular-nums bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
-        />
-        <button
-          onClick={() => setEditing(false)}
-          className="p-0.5 rounded text-stone-500 hover:text-stone-900"
-        >
-          <X size={9} />
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={updateEntry.isPending}
-          className="p-0.5 rounded text-cta hover:bg-cta-muted disabled:opacity-40"
-        >
-          <Check size={9} />
-        </button>
-      </li>
-    );
-  }
-
-  return (
-    <li className="flex items-center gap-1.5 text-[10px] group/entry">
-      <span
-        className="font-mono text-stone-500 cursor-pointer hover:text-cta"
-        onClick={() =>
-          navigateToClockDate(entry.start.slice(0, 10))
-        }
-      >
-        {fmtDate(entry.start)}
-      </span>
-      <span className="flex-1 truncate text-stone-600 inline-flex items-center gap-1">
-        {entry.description}
-        {entry.notes && (
-          <ContentPopup
-            content={entry.notes}
-            title="Notes"
-            icon="notes"
-          />
-        )}
-      </span>
-      <span className="tabular-nums text-stone-700">
-        {formatHours(entry.duration_minutes)}
-      </span>
-      <button
-        onClick={startEdit}
-        title="Edit entry"
-        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-stone-900"
-      >
-        <Pencil size={9} />
-      </button>
-      <button
-        onClick={() =>
-          updateEntry.mutate({
-            startIso: entry.start,
-            updates: { task_id: "" },
-          })
-        }
-        disabled={updateEntry.isPending}
-        title="Detach from task"
-        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-stone-900 disabled:opacity-40"
-      >
-        <X size={9} />
-      </button>
-      <ConfirmPopover
-        onConfirm={() => deleteEntry.mutate(entry.start)}
-        disabled={deleteEntry.isPending}
-      >
-        <button
-          disabled={deleteEntry.isPending}
-          title="Delete entry"
-          className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-red-400 disabled:opacity-40"
-        >
-          <Trash2 size={9} />
-        </button>
-      </ConfirmPopover>
-    </li>
-  );
-}
-
-function TaskClockSection({ task }: TaskClockSectionProps) {
-  const { data: entries = [] } = useTaskClockEntries(task.id);
-  const updateEntry = useUpdateClockEntry();
-  const deleteEntry = useDeleteClockEntry();
-  const [open, setOpen] = useState(false);
-
-  if (entries.length === 0) return null;
-
-  const totalAll = totalMinutes(entries);
-
-  return (
-    <div
-      className="mt-2 border-t border-border-subtle pt-1.5"
-      onPointerDown={(e) => e.stopPropagation()}
-    >
-      <div className="flex items-center gap-1 text-[10px] text-stone-600 w-full">
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1 hover:text-stone-900 flex-1 min-w-0"
-        >
-          {open ? (
-            <ChevronDown size={10} />
-          ) : (
-            <ChevronRight size={10} />
-          )}
-          <Clock size={10} />
-          <span className="truncate">
-            {entries.length}{" "}
-            {entries.length === 1 ? "entry" : "entries"}
-            {" · "}
-            {formatHours(totalAll)}
-          </span>
-        </button>
-      </div>
-      {open && (
-        <ul className="mt-1 ml-5 space-y-0.5">
-          {entries.map((e) => (
-            <ClockEntryRow
-              key={e.start}
-              entry={e}
-              updateEntry={updateEntry}
-              deleteEntry={deleteEntry}
-            />
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-interface GithubIssueInputProps {
-  customer: string;
-  value: string;
-  onChange: (v: string) => void;
-  inputClassName: string;
-}
-
-function GithubIssueInput({
-  customer,
-  value,
-  onChange,
-  inputClassName,
-}: GithubIssueInputProps) {
-  const [issues, setIssues] = useState<
-    Array<{ number: number; title: string; url: string }>
-  >([]);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState("");
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
-
-  async function fetchIssues() {
-    if (!customer.trim()) return;
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/github/issues/${encodeURIComponent(customer.trim())}?limit=50`
-      );
-      if (res.ok) {
-        const data = await res.json() as {
-          issues?: Array<{ number: number; title: string; url: string }>;
-        };
-        setIssues(data.issues ?? []);
-        setOpen(true);
-      }
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div ref={wrapRef} className="relative">
-      <div className="flex gap-1">
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="GitHub issue URL"
-          className={[inputClassName, "flex-1"].join(" ")}
-        />
-        {customer.trim() && (
-          <button
-            ref={btnRef}
-            type="button"
-            onClick={fetchIssues}
-            disabled={loading}
-            title="Pick GitHub issue"
-            className="px-2 rounded bg-surface-raised border border-border text-stone-600 hover:text-cta hover:border-cta transition-colors disabled:opacity-40"
-          >
-            <GitBranch size={11} />
-          </button>
-        )}
-      </div>
-      {open && issues.length > 0 && ReactDOM.createPortal(
-        <div
-          className="fixed z-[9999] w-80 max-h-64 rounded-lg bg-surface-overlay border border-border shadow-lg"
-          style={{
-            top: wrapRef.current
-              ? wrapRef.current.getBoundingClientRect().bottom + 4
-              : 100,
-            left: wrapRef.current
-              ? Math.min(
-                  wrapRef.current.getBoundingClientRect().left,
-                  window.innerWidth - 330,
-                )
-              : 100,
-          }}
-        >
-          <input
-            type="text"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setOpen(false);
-                setFilter("");
-              }
-            }}
-            placeholder="Filter issues..."
-            autoFocus
-            className="w-full px-3 py-1.5 text-xs border-b border-border bg-transparent text-stone-800 placeholder-stone-400 outline-none"
-          />
-          <ul className="max-h-48 overflow-y-auto">
-          {issues
-            .filter((i) => {
-              if (!filter.trim()) return true;
-              const q = filter.toLowerCase();
-              return (
-                i.title.toLowerCase().includes(q)
-                || String(i.number).includes(
-                  q.replace("#", ""),
-                )
-              );
-            })
-            .map((issue) => (
-            <li key={issue.number}>
-              <button
-                type="button"
-                onClick={() => {
-                  onChange(issue.url);
-                  setOpen(false);
-                  setFilter("");
-                }}
-                className="w-full text-left px-3 py-1.5 text-xs text-stone-800 hover:bg-cta-muted transition-colors flex items-start gap-2"
-              >
-                <span className="text-stone-500 font-mono shrink-0 mt-px">
-                  #{issue.number}
-                </span>
-                <span className="leading-snug">
-                  {issue.title}
-                </span>
-              </button>
-            </li>
-          ))}
-          <li>
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                setFilter("");
-              }}
-              className="w-full text-left px-3 py-1 text-[10px] text-stone-500 hover:text-stone-700"
-            >
-              Close
-            </button>
-          </li>
-          </ul>
-        </div>,
-        document.body,
-      )}
-    </div>
-  );
-}
-
-function TimerBadge({
-  start,
-  onStop,
-}: {
-  start: string;
-  onStop: () => void;
-}) {
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(
-      () => setTick((t) => t + 1), 60_000,
-    );
-    return () => clearInterval(id);
-  }, []);
-  const diffMs =
-    Date.now() - new Date(start).getTime();
-  const totalMin = Math.floor(diffMs / 60_000);
-  const h = Math.floor(totalMin / 60);
-  const m = totalMin % 60;
-  const label =
-    `${String(h).padStart(2, "0")}:`
-    + `${String(m).padStart(2, "0")}`;
-  return (
-    <button
-      onPointerDown={(e) => e.stopPropagation()}
-      onClick={onStop}
-      className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-600 text-[10px] font-mono font-semibold hover:bg-red-500/10 hover:text-red-500 transition-colors"
-      title="Stop timer"
-    >
-      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-      {label}
-    </button>
-  );
-}
-
-
-function StatusPicker({
-  current,
-  states,
-  onSelect,
-  onClose,
-}: {
-  current: string;
-  states: { name: string; label: string; color: string }[];
-  onSelect: (status: string) => void;
-  onClose: () => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function onClick(e: MouseEvent) {
-      if (
-        ref.current &&
-        !ref.current.contains(e.target as Node)
-      ) {
-        onClose();
-      }
-    }
-    document.addEventListener("mousedown", onClick);
-    return () =>
-      document.removeEventListener("mousedown", onClick);
-  }, [onClose]);
-
-  return (
-    <div
-      ref={ref}
-      className={[
-        "absolute left-2 bottom-0 translate-y-full",
-        "z-50 py-1 rounded-lg shadow-lg",
-        "bg-surface-card border border-border",
-        "min-w-[120px]",
-      ].join(" ")}
-    >
-      {states.map((s) => (
-        <button
-          key={s.name}
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelect(s.name);
-          }}
-          disabled={s.name === current}
-          className={[
-            "w-full flex items-center gap-2",
-            "px-3 py-1.5 text-xs text-left",
-            "transition-colors",
-            s.name === current
-              ? "text-stone-400 cursor-default"
-              : "text-stone-800 hover:bg-surface-raised",
-          ].join(" ")}
-        >
-          <span
-            className="w-2 h-2 rounded-full shrink-0"
-            style={{ backgroundColor: s.color }}
-          />
-          {s.label || s.name}
-        </button>
-      ))}
-    </div>
-  );
-}
+import { StatusPicker } from "./StatusPicker";
+import { TaskEditForm } from "./TaskEditForm";
+import { TaskCardActions } from "./TaskCardActions";
+import { TaskCardContent } from "./TaskCardContent";
+import { StateHistoryPopup } from "./StateHistoryPopup";
 
 interface TaskCardProps {
   task: Task;
@@ -511,6 +41,11 @@ interface TaskCardProps {
   onCustomerClick?: (customer: string) => void;
 }
 
+/**
+ * Draggable kanban card. Serves as the composition root
+ * for all task card sub-components: content display,
+ * inline edit form, clock entries, and hover actions.
+ */
 export function TaskCard({
   task,
   statusColor,
@@ -533,26 +68,25 @@ export function TaskCard({
   const stopClock = useStopTimer();
   const { data: activeTimer } = useActiveTimer();
   const isTimerRunning = !!(
-    activeTimer?.active
-    && activeTimer?.customer === task.customer
-    && activeTimer?.description
-      === stripCustomerPrefix(task.title)
+    activeTimer?.active &&
+    activeTimer?.customer === task.customer &&
+    activeTimer?.description ===
+      stripCustomerPrefix(task.title)
   );
   const [historyOpen, setHistoryOpen] = useState(false);
   const [statePicker, setStatePicker] = useState(false);
-  const [tagging, setTagging] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editCustomer, setEditCustomer] = useState("");
-  const [editTags, setEditTags] = useState<string[]>([]);
+  const [editTags, setEditTags] = useState<string[]>(
+    [],
+  );
   const [editBody, setEditBody] = useState("");
-  const [editGithubUrl, setEditGithubUrl] = useState("");
-  const [bodyExpanded, setBodyExpanded] = useState(false);
-  const {
-    overlayUrl,
-    openOverlay,
-    closeOverlay,
-  } = useLinkOverlay();
+  const [editGithubUrl, setEditGithubUrl] = useState(
+    "",
+  );
+  const { overlayUrl, openOverlay, closeOverlay } =
+    useLinkOverlay();
   const updateTask = useUpdateTask();
   const setTaskTags = useSetTaskTags();
   const archiveTask = useArchiveTask();
@@ -591,32 +125,22 @@ export function TaskCard({
         onSuccess: () => {
           if (tagsChanged) {
             setTaskTags.mutate(
-              { taskId: task.id, tags: editTags },
+              {
+                taskId: task.id,
+                tags: editTags,
+              },
               {
                 onSuccess: () => {
                   setEditing(false);
-                  setTagging(false);
                 },
-              }
+              },
             );
           } else {
             setEditing(false);
-            setTagging(false);
           }
         },
-      }
+      },
     );
-  }
-
-  function handleEditKeyDown(e: React.KeyboardEvent) {
-    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-      e.preventDefault();
-      handleSave();
-    }
-    if (e.key === "Escape") {
-      setEditing(false);
-      setTagging(false);
-    }
   }
 
   return (
@@ -630,7 +154,9 @@ export function TaskCard({
         "shadow-card hover:shadow-card-hover",
         "transition-all duration-150",
         isDragging ? "opacity-40" : "opacity-100",
-        isDragOverlay ? "shadow-card-drag rotate-1 scale-105" : "",
+        isDragOverlay
+          ? "shadow-card-drag rotate-1 scale-105"
+          : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -648,10 +174,15 @@ export function TaskCard({
             {...listeners}
             className="flex-1 flex items-center pl-3 pr-1 cursor-grab active:cursor-grabbing text-stone-400 hover:text-stone-600"
           >
-            <GripVertical size={12} strokeWidth={2} />
+            <GripVertical
+              size={12}
+              strokeWidth={2}
+            />
           </div>
           <button
-            onPointerDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) =>
+              e.stopPropagation()
+            }
             onClick={(e) => {
               e.stopPropagation();
               setStatePicker((v) => !v);
@@ -684,385 +215,91 @@ export function TaskCard({
         {/* Card content */}
         <div className="flex-1 min-w-0 py-3 pr-3">
           {editing ? (
-            <div className="flex flex-col gap-1.5">
-              <CustomerAutocomplete
-                autoFocus
-                value={editCustomer}
-                onChange={setEditCustomer}
-                onKeyDown={handleEditKeyDown}
-                inputClassName={editInputCls}
-              />
-              <input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                onKeyDown={handleEditKeyDown}
-                placeholder="Title"
-                className={editInputCls}
-              />
-              <textarea
-                value={editBody}
-                onChange={(e) => setEditBody(e.target.value)}
-                onKeyDown={handleEditKeyDown}
-                placeholder="Description (optional)"
-                rows={3}
-                className={[editInputCls, "resize-none"].join(" ")}
-              />
-              <div onPointerDown={(e) => e.stopPropagation()}>
-                <GithubIssueInput
-                  customer={editCustomer}
-                  value={editGithubUrl}
-                  onChange={setEditGithubUrl}
-                  inputClassName={editInputCls}
-                />
-              </div>
-              <div onPointerDown={(e) => e.stopPropagation()}>
-                <TagDropdown
-                  selected={editTags}
-                  allTags={allTags}
-                  onChange={setEditTags}
-                />
-              </div>
-              <div className="flex gap-1 justify-end items-center">
-                <span className="text-[10px] text-stone-400 mr-auto">
-                  ⌘↵ to save
-                </span>
-                <button
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => {
-                    setEditing(false);
-                    setTagging(false);
-                  }}
-                  className="p-1 text-stone-500 hover:text-stone-900 rounded"
-                >
-                  <X size={12} />
-                </button>
-                <button
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={handleSave}
-                  disabled={
-                    updateTask.isPending || setTaskTags.isPending
-                  }
-                  className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
-                >
-                  <Check size={12} />
-                </button>
-              </div>
-            </div>
+            <TaskEditForm
+              editCustomer={editCustomer}
+              editTitle={editTitle}
+              editBody={editBody}
+              editGithubUrl={editGithubUrl}
+              editTags={editTags}
+              allTags={allTags}
+              isSaving={
+                updateTask.isPending ||
+                setTaskTags.isPending
+              }
+              onCustomerChange={setEditCustomer}
+              onTitleChange={setEditTitle}
+              onBodyChange={setEditBody}
+              onGithubUrlChange={setEditGithubUrl}
+              onTagsChange={setEditTags}
+              onSave={handleSave}
+              onCancel={() => setEditing(false)}
+            />
           ) : (
-            <>
-              {task.customer && (
-                <div className="mb-1.5 flex items-center gap-1.5">
-                  <button
-                    onPointerDown={(e) =>
-                      e.stopPropagation()
-                    }
-                    onClick={() =>
-                      onCustomerClick?.(task.customer!)
-                    }
-                    className={[
-                      "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded",
-                      "text-[10px] font-semibold tracking-wider uppercase",
-                      "bg-cta-muted text-cta-hover",
-                      "hover:bg-cta/10 transition-colors cursor-pointer",
-                    ].join(" ")}
-                  >
-                    <span
-                      className="w-1.5 h-1.5 rounded-full shrink-0"
-                      style={{
-                        background: customerColors[task.customer] || "#a1a1aa",
-                      }}
-                    />
-                    {task.customer}
-                  </button>
-                  {isTimerRunning
-                    && activeTimer?.start && (
-                    <TimerBadge
-                      start={activeTimer.start}
-                      onStop={() =>
-                        stopClock.mutate()
-                      }
-                    />
-                  )}
-                </div>
-              )}
-              <p className="text-sm font-medium text-stone-900 leading-snug mb-1">
-                {stripCustomerPrefix(task.title)}
-              </p>
-              {task.body && (
-                <div className="mb-1.5">
-                  <div className="flex items-center gap-1">
-                    <button
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={() => setBodyExpanded((v) => !v)}
-                      className="flex items-center gap-1 text-[10px] text-stone-500 hover:text-stone-700 transition-colors"
-                    >
-                      {bodyExpanded ? (
-                        <ChevronDown size={10} />
-                      ) : (
-                        <ChevronRight size={10} />
-                      )}
-                      Description
-                    </button>
-                    <span onPointerDown={(e) => e.stopPropagation()}>
-                      <ContentPopup
-                        content={task.body}
-                        title={stripCustomerPrefix(task.title)}
-                        markdown
-                        iconSize={9}
-                      />
-                    </span>
-                  </div>
-                  {bodyExpanded && (
-                    <div
-                      className="mt-1 pl-1 border-l border-border-subtle"
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      <Markdown
-                        className="text-xs text-stone-700 [&_p]:mb-1 [&_p]:leading-relaxed break-words [&_a]:break-all"
-                        onLinkClick={openOverlay}
-                      >
-                        {task.body}
-                      </Markdown>
-                    </div>
-                  )}
-                </div>
-              )}
-              <div className="flex items-center gap-2 flex-wrap">
-                {task.github_url && (
-                  <a
-                    href={task.github_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onPointerDown={(e) =>
-                      e.stopPropagation()
-                    }
-                    onClick={(e) =>
-                      handleLinkClick(e, openOverlay)
-                    }
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-overlay border border-border-subtle text-stone-700 hover:text-cta hover:border-cta transition-colors"
-                    title={task.github_url}
-                  >
-                    <GitBranch size={10} />
-                    #{extractIssueNumber(
-                      task.github_url,
-                    )}
-                  </a>
-                )}
-                {tagging ? (
-                  <div onPointerDown={(e) => e.stopPropagation()}>
-                    <TagDropdown
-                      selected={task.tags}
-                      allTags={allTags}
-                      autoOpen
-                      addOnly
-                      onChange={(tags) => {
-                        setTaskTags.mutate({
-                          taskId: task.id,
-                          tags,
-                        });
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <>
-                    {task.tags.map((tagName) => {
-                      const def = allTags.find(
-                        (t) => t.name === tagName,
-                      );
-                      return def ? (
-                        <button
-                          key={tagName}
-                          onPointerDown={(e) =>
-                            e.stopPropagation()
-                          }
-                          onClick={() =>
-                            onTagClick?.(tagName)
-                          }
-                          className="px-1.5 py-0.5 rounded text-[10px] font-semibold hover:opacity-80 transition-opacity"
-                          style={tagBadgeStyle(def.color)}
-                        >
-                          {tagName}
-                        </button>
-                      ) : (
-                        <button
-                          key={tagName}
-                          onPointerDown={(e) =>
-                            e.stopPropagation()
-                          }
-                          onClick={() =>
-                            onTagClick?.(tagName)
-                          }
-                          className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-overlay text-stone-700 border border-border-subtle hover:border-cta hover:text-cta transition-colors"
-                        >
-                          {tagName}
-                        </button>
-                      );
-                    })}
-                    <button
-                      onPointerDown={(e) =>
-                        e.stopPropagation()
-                      }
-                      onClick={() => setTagging(true)}
-                      className="p-0.5 rounded text-stone-400 hover:text-cta transition-colors"
-                      title="Edit tags"
-                    >
-                      <Tag size={10} />
-                    </button>
-                  </>
-                )}
-                <span className="ml-auto flex items-center gap-1 shrink-0">
-                  <RelDate
-                    date={task.created}
-                    className="text-[10px] text-stone-500"
-                  />
-                  {task.state_history &&
-                    task.state_history.length > 0 && (
-                    <button
-                      onPointerDown={(e) =>
-                        e.stopPropagation()
-                      }
-                      onClick={() =>
-                        setHistoryOpen(true)
-                      }
-                      className="p-0.5 rounded text-stone-400 hover:text-cta transition-colors"
-                      title="State history"
-                    >
-                      <ListRestart size={9} />
-                    </button>
-                  )}
-                </span>
-              </div>
-              <TaskClockSection task={task} />
-            </>
+            <TaskCardContent
+              task={task}
+              customerColors={customerColors}
+              allTags={allTags}
+              isTimerRunning={isTimerRunning}
+              activeTimerStart={
+                activeTimer?.start
+              }
+              onStopTimer={() =>
+                stopClock.mutate()
+              }
+              onCustomerClick={onCustomerClick}
+              onTagClick={onTagClick}
+              onHistoryOpen={() =>
+                setHistoryOpen(true)
+              }
+              openOverlay={openOverlay}
+            />
           )}
         </div>
 
         {/* Hover actions */}
         {!editing && !isDragOverlay && (
-          <div className="flex flex-col items-center gap-1 px-1 py-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-            {task.status !== "DONE"
-              && task.status !== "CANCELLED" && (
-              <button
-                onPointerDown={(e) =>
-                  e.stopPropagation()
-                }
-                onClick={() =>
-                  markDone.mutate({
-                    taskId: task.id,
-                    status: "DONE",
-                  })
-                }
-                disabled={markDone.isPending}
-                className="p-1 rounded text-stone-400 hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
-                title="Mark as done"
-              >
-                <Check size={11} />
-              </button>
-            )}
-            {!isTimerRunning && task.customer && (
-              <button
-                onPointerDown={(e) =>
-                  e.stopPropagation()
-                }
-                onClick={async () => {
-                  if (activeTimer?.active) {
-                    await stopClock.mutateAsync();
-                  }
-                  startClock.mutate({
-                    customer: task.customer!,
-                    description:
-                      stripCustomerPrefix(
-                        task.title,
-                      ),
-                    taskId: task.id,
-                  });
-                }}
-                disabled={
-                  startClock.isPending
-                  || stopClock.isPending
-                }
-                className="p-1 rounded text-stone-400 hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
-                title="Start timer"
-              >
-                <Clock size={11} />
-              </button>
-            )}
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={startEdit}
-              className="p-1 rounded text-stone-400 hover:text-cta hover:bg-cta-muted transition-colors"
-              title="Edit"
-            >
-              <Pencil size={11} />
-            </button>
-            <ConfirmPopover
-              label="Archive?"
-              onConfirm={() => archiveTask.mutate(task.id)}
-              disabled={archiveTask.isPending}
-            >
-              <button
-                disabled={archiveTask.isPending}
-                className="p-1 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
-                title="Archive"
-              >
-                <Trash2 size={11} />
-              </button>
-            </ConfirmPopover>
-          </div>
+          <TaskCardActions
+            status={task.status}
+            isTimerRunning={isTimerRunning}
+            hasCustomer={!!task.customer}
+            isMarkDonePending={markDone.isPending}
+            isStartClockPending={
+              startClock.isPending
+            }
+            isStopClockPending={stopClock.isPending}
+            isArchivePending={archiveTask.isPending}
+            onMarkDone={() =>
+              markDone.mutate({
+                taskId: task.id,
+                status: "DONE",
+              })
+            }
+            onStartTimer={async () => {
+              if (activeTimer?.active) {
+                await stopClock.mutateAsync();
+              }
+              startClock.mutate({
+                customer: task.customer!,
+                description: stripCustomerPrefix(
+                  task.title,
+                ),
+                taskId: task.id,
+              });
+            }}
+            onEdit={startEdit}
+            onArchive={() =>
+              archiveTask.mutate(task.id)
+            }
+          />
         )}
       </div>
 
       {/* State history popup */}
       {historyOpen && task.state_history && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          onClick={() => setHistoryOpen(false)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              setHistoryOpen(false);
-            }
-          }}
-          tabIndex={-1}
-          ref={(el) => el?.focus()}
-        >
-          <div className="absolute inset-0 bg-black/50" />
-          <div
-            className="relative bg-surface-card rounded-xl shadow-lg border border-border p-5 w-80 max-h-[60vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
-                State History
-              </h3>
-              <button
-                onClick={() => setHistoryOpen(false)}
-                className="p-1 rounded text-stone-400 hover:text-stone-900"
-              >
-                <X size={14} />
-              </button>
-            </div>
-            <div className="flex flex-col gap-1">
-              {task.state_history.map((h, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 text-[11px] py-1"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-stone-400" />
-                  <span className="font-medium text-stone-800">
-                    {h.to}
-                  </span>
-                  <span className="text-stone-500">
-                    from {h.from}
-                  </span>
-                  <RelDate
-                    date={h.timestamp}
-                    className="ml-auto text-stone-400 text-[10px]"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <StateHistoryPopup
+          history={task.state_history}
+          onClose={() => setHistoryOpen(false)}
+        />
       )}
 
       {overlayUrl && (
@@ -1074,10 +311,3 @@ export function TaskCard({
     </div>
   );
 }
-
-const editInputCls = [
-  "w-full px-2 py-1 rounded text-xs",
-  "bg-surface-raised border border-border",
-  "text-stone-900 placeholder-stone-500",
-  "focus:outline-none focus:border-cta",
-].join(" ");
