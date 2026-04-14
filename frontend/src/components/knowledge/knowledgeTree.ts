@@ -136,6 +136,24 @@ export function buildTree(
 }
 
 // -----------------------------------------------------------------
+// Collect all folder paths from a tree
+// -----------------------------------------------------------------
+
+/** Return all folder paths in the tree (for move-to picker). */
+export function collectFolderPaths(
+  nodes: TreeNode[],
+): string[] {
+  const paths: string[] = [];
+  for (const node of nodes) {
+    if (node.kind === "folder") {
+      paths.push(node.path);
+      paths.push(...collectFolderPaths(node.children));
+    }
+  }
+  return paths;
+}
+
+// -----------------------------------------------------------------
 // Expand folders that contain matching paths
 // -----------------------------------------------------------------
 

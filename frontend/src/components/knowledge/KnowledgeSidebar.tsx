@@ -18,7 +18,10 @@ import {
 import React, { useRef, useState } from "react";
 import { TreeNodeRow } from "./TreeNodeRow";
 import { MAX_WIDTH, MIN_WIDTH } from "./knowledgeEditorUtils";
-import type { TreeNode } from "./knowledgeTree";
+import {
+  collectFolderPaths,
+  type TreeNode,
+} from "./knowledgeTree";
 
 /** A single search hit returned by the knowledge API. */
 interface SearchResult {
@@ -291,6 +294,7 @@ function LabelSection({
 }: LabelSectionProps) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
+  const folderPaths = collectFolderPaths(nodes);
 
   function handleAdd() {
     const n = name.trim();
@@ -418,6 +422,7 @@ function LabelSection({
             onMove={onMove}
             onDelete={onDelete}
             onCreateFolder={onCreateFolder}
+            folders={folderPaths}
           />
         ))}
     </div>

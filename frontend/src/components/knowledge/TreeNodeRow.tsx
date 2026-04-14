@@ -20,6 +20,70 @@ import { useState } from "react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import type { TreeNode } from "./knowledgeTree";
 
+/** Dropdown to move a file into a subfolder. */
+function MoveToFolderPicker({
+  filePath,
+  folders,
+  onRename,
+}: {
+  filePath: string;
+  folders: string[];
+  onRename: (old: string, next: string) => void;
+}) {
+  const fileName = filePath.split("/").pop() ?? "";
+  const currentDir = filePath.includes("/")
+    ? filePath.slice(0, filePath.lastIndexOf("/"))
+    : "";
+
+  function handleChange(targetDir: string) {
+    if (targetDir === currentDir) return;
+    const newPath = targetDir
+      ? `${targetDir}/${fileName}` : fileName;
+    onRename(filePath, newPath);
+  }
+
+  return (
+    <span
+      className="relative inline-flex"
+      title="Move to folder"
+    >
+      <FolderPlus
+        size={9}
+        className={
+          "absolute left-0 top-0.5 "
+          + "pointer-events-none text-stone-400"
+        }
+      />
+      <select
+        value=""
+        onChange={(e) => {
+          if (e.target.value !== "") {
+            handleChange(
+              e.target.value === "/"
+                ? "" : e.target.value,
+            );
+          }
+        }}
+        className={
+          "w-4 opacity-0 cursor-pointer"
+        }
+      >
+        <option value="" disabled />
+        {currentDir !== "" && (
+          <option value="/">(root)</option>
+        )}
+        {folders
+          .filter((f) => f !== currentDir)
+          .map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
+      </select>
+    </span>
+  );
+}
+
 /** Props for {@link TreeNodeRow}. */
 export interface TreeNodeRowProps {
   /** The tree node to render. */
@@ -30,6 +94,8 @@ export interface TreeNodeRowProps {
   selectedPath: string | null;
   /** All available library labels (for move menu). */
   labels: string[];
+  /** Folder paths within the same label (for move-to). */
+  folders: string[];
   /** Called when a leaf is clicked. */
   onSelect: (path: string, label: string) => void;
   /** Called when a folder chevron is toggled. */
@@ -60,6 +126,7 @@ export function TreeNodeRow({
   depth,
   selectedPath,
   labels,
+  folders,
   onSelect,
   onToggle,
   onRename,
@@ -178,10 +245,17 @@ export function TreeNodeRow({
               "p-0.5 rounded text-stone-400 " +
               "hover:text-cta transition-colors"
             }
-            title="Rename / move"
+            title="Rename"
           >
             <Pencil size={9} />
           </button>
+          {folders.length > 0 && (
+            <MoveToFolderPicker
+              filePath={node.path}
+              folders={folders}
+              onRename={onRename}
+            />
+          )}
           {labels.length > 1 && (
             <select
               value=""
@@ -358,6 +432,7 @@ export function TreeNodeRow({
             onMove={onMove}
             onDelete={onDelete}
             onCreateFolder={onCreateFolder}
+            folders={folders}
           />
         ))}
     </>
