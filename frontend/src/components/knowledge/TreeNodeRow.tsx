@@ -43,44 +43,37 @@ function MoveToFolderPicker({
   }
 
   return (
-    <span
-      className="relative inline-flex"
+    <select
+      value=""
+      onChange={(e) => {
+        if (e.target.value !== "") {
+          handleChange(
+            e.target.value === "/"
+              ? "" : e.target.value,
+          );
+        }
+      }}
+      className={
+        "w-12 text-[9px] bg-transparent "
+        + "text-stone-400 hover:text-stone-700 "
+        + "cursor-pointer"
+      }
       title="Move to folder"
     >
-      <FolderPlus
-        size={9}
-        className={
-          "absolute left-0 top-0.5 "
-          + "pointer-events-none text-stone-400"
-        }
-      />
-      <select
-        value=""
-        onChange={(e) => {
-          if (e.target.value !== "") {
-            handleChange(
-              e.target.value === "/"
-                ? "" : e.target.value,
-            );
-          }
-        }}
-        className={
-          "w-4 opacity-0 cursor-pointer"
-        }
-      >
-        <option value="" disabled />
-        {currentDir !== "" && (
-          <option value="/">(root)</option>
-        )}
-        {folders
-          .filter((f) => f !== currentDir)
-          .map((f) => (
-            <option key={f} value={f}>
-              {f}
-            </option>
-          ))}
-      </select>
-    </span>
+      <option value="">
+        Move...
+      </option>
+      {currentDir !== "" && (
+        <option value="/">(root)</option>
+      )}
+      {folders
+        .filter((f) => f !== currentDir)
+        .map((f) => (
+          <option key={f} value={f}>
+            {f}
+          </option>
+        ))}
+    </select>
   );
 }
 

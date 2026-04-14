@@ -36,7 +36,8 @@ export type TreeNode = TreeFolder | TreeLeaf;
 function insertIntoFolder(
   nodes: TreeNode[],
   segments: string[],
-  file: KnowledgeFile
+  file: KnowledgeFile,
+  parentPath: string = "",
 ): void {
   if (segments.length === 1) {
     nodes.push({
@@ -49,6 +50,8 @@ function insertIntoFolder(
   }
 
   const folderName = segments[0];
+  const folderPath = parentPath
+    ? `${parentPath}/${folderName}` : folderName;
   const existing = nodes.find(
     (n): n is TreeFolder =>
       n.kind === "folder" && n.name === folderName
@@ -56,7 +59,8 @@ function insertIntoFolder(
 
   if (existing) {
     insertIntoFolder(
-      existing.children, segments.slice(1), file
+      existing.children, segments.slice(1),
+      file, folderPath,
     );
     return;
   }
@@ -65,11 +69,14 @@ function insertIntoFolder(
     kind: "folder",
     name: folderName,
     label: file.label,
-    path: segments[0],
+    path: folderPath,
     children: [],
     expanded: false,
   };
-  insertIntoFolder(folder.children, segments.slice(1), file);
+  insertIntoFolder(
+    folder.children, segments.slice(1),
+    file, folderPath,
+  );
   nodes.push(folder);
 }
 
@@ -77,9 +84,12 @@ function ensureFolder(
   nodes: TreeNode[],
   segments: string[],
   label: string,
+  parentPath: string = "",
 ): void {
   if (segments.length === 0) return;
   const name = segments[0];
+  const folderPath = parentPath
+    ? `${parentPath}/${name}` : name;
   let folder = nodes.find(
     (n): n is TreeFolder =>
       n.kind === "folder" && n.name === name,
@@ -89,7 +99,7 @@ function ensureFolder(
       kind: "folder",
       name,
       label,
-      path: segments[0],
+      path: folderPath,
       children: [],
       expanded: false,
     };
@@ -97,7 +107,8 @@ function ensureFolder(
   }
   if (segments.length > 1) {
     ensureFolder(
-      folder.children, segments.slice(1), label,
+      folder.children, segments.slice(1),
+      label, folderPath,
     );
   }
 }
