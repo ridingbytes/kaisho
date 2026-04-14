@@ -11,6 +11,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  FolderPlus,
   Pencil,
   Trash2,
   X,
@@ -43,6 +44,10 @@ export interface TreeNodeRowProps {
   ) => void;
   /** Called to delete a file. */
   onDelete: (path: string) => void;
+  /** Called to create a subfolder inside a folder. */
+  onCreateFolder: (
+    label: string, parentPath: string, name: string,
+  ) => void;
 }
 
 /**
@@ -60,10 +65,13 @@ export function TreeNodeRow({
   onRename,
   onMove,
   onDelete,
+  onCreateFolder,
 }: TreeNodeRowProps) {
   const indent = depth * 16;
   const [renaming, setRenaming] = useState(false);
   const [renamePath, setRenamePath] = useState("");
+  const [addingFolder, setAddingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
 
   if (node.kind === "leaf") {
     const isSelected = selectedPath === node.path;
@@ -221,30 +229,117 @@ export function TreeNodeRow({
     );
   }
 
+  function handleAddFolder() {
+    const name = newFolderName.trim();
+    if (!name) return;
+    const parentPath = node.kind === "folder"
+      ? node.path : "";
+    const fullPath = parentPath
+      ? `${parentPath}/${name}` : name;
+    onCreateFolder(node.label, fullPath, name);
+    setNewFolderName("");
+    setAddingFolder(false);
+  }
+
   return (
     <>
-      <button
-        onClick={() => onToggle(node.path)}
+      <div
         className={
-          "w-full text-left py-1 pr-2 text-xs " +
-          "text-stone-700 flex items-center gap-1 " +
-          "hover:bg-surface-raised transition-colors"
+          "group/folder flex items-center "
+          + "hover:bg-surface-raised "
+          + "transition-colors"
         }
-        style={{ paddingLeft: indent }}
       >
-        {node.expanded ? (
-          <ChevronDown
-            size={10}
-            className="shrink-0"
+        <button
+          onClick={() => onToggle(node.path)}
+          className={
+            "flex-1 text-left py-1 pr-2 text-xs "
+            + "text-stone-700 flex items-center "
+            + "gap-1"
+          }
+          style={{ paddingLeft: indent }}
+        >
+          {node.expanded ? (
+            <ChevronDown
+              size={10}
+              className="shrink-0"
+            />
+          ) : (
+            <ChevronRight
+              size={10}
+              className="shrink-0"
+            />
+          )}
+          <span className="truncate">
+            {node.name}
+          </span>
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setAddingFolder(true);
+            setNewFolderName("");
+            if (!node.expanded) onToggle(node.path);
+          }}
+          className={
+            "hidden group-hover/folder:block "
+            + "p-0.5 mr-1 rounded text-stone-400 "
+            + "hover:text-cta hover:bg-cta-muted "
+            + "transition-colors shrink-0"
+          }
+          title="Add subfolder"
+        >
+          <FolderPlus size={11} />
+        </button>
+      </div>
+      {addingFolder && (
+        <div
+          className="flex items-center gap-1 py-0.5 pr-2"
+          style={{ paddingLeft: (depth + 1) * 16 + 6 }}
+        >
+          <input
+            autoFocus
+            type="text"
+            value={newFolderName}
+            onChange={(e) =>
+              setNewFolderName(e.target.value)
+            }
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleAddFolder();
+              if (e.key === "Escape") {
+                setAddingFolder(false);
+              }
+            }}
+            placeholder="folder name"
+            className={
+              "flex-1 min-w-0 px-1 py-0.5 text-xs "
+              + "rounded bg-surface-raised border "
+              + "border-border text-stone-900 "
+              + "focus:outline-none focus:border-cta"
+            }
           />
-        ) : (
-          <ChevronRight
-            size={10}
-            className="shrink-0"
-          />
-        )}
-        <span className="truncate">{node.name}</span>
-      </button>
+          <button
+            onClick={handleAddFolder}
+            disabled={!newFolderName.trim()}
+            className={
+              "p-0.5 text-cta "
+              + "hover:bg-cta-muted rounded "
+              + "disabled:opacity-40"
+            }
+          >
+            <Check size={10} />
+          </button>
+          <button
+            onClick={() => setAddingFolder(false)}
+            className={
+              "p-0.5 text-stone-500 "
+              + "hover:text-stone-900 rounded"
+            }
+          >
+            <X size={10} />
+          </button>
+        </div>
+      )}
       {node.expanded &&
         node.children.map((child) => (
           <TreeNodeRow
@@ -262,6 +357,7 @@ export function TreeNodeRow({
             onRename={onRename}
             onMove={onMove}
             onDelete={onDelete}
+            onCreateFolder={onCreateFolder}
           />
         ))}
     </>

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  createKnowledgeFolder,
   deleteKnowledgeFile,
   fetchKnowledgeFile,
   fetchKnowledgeTree,
@@ -51,6 +52,23 @@ export function useSaveKnowledgeFile() {
       void qc.invalidateQueries({ queryKey: ["knowledge", "tree"] });
       void qc.invalidateQueries({
         queryKey: ["knowledge", "file", vars.path],
+      });
+    },
+  });
+}
+
+export function useCreateKnowledgeFolder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      label, path,
+    }: {
+      label: string;
+      path: string;
+    }) => createKnowledgeFolder(label, path),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["knowledge", "tree"],
       });
     },
   });

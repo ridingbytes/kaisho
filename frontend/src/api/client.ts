@@ -864,6 +864,13 @@ export function saveKnowledgeFile(
   );
 }
 
+/** Create a folder in the knowledge base. */
+export function createKnowledgeFolder(
+  label: string, path: string,
+): Promise<{ path: string; label: string; name: string }> {
+  return post("/knowledge/folder", { label, path });
+}
+
 /** Delete a knowledge base file by its path. */
 export function deleteKnowledgeFile(path: string): Promise<void> {
   return del(`/knowledge/file?path=${encodeURIComponent(path)}`);

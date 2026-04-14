@@ -7,8 +7,15 @@
  * collapsed-state toggle.
  */
 
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import React, { useRef } from "react";
+import {
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  FolderPlus,
+  X,
+} from "lucide-react";
+import React, { useRef, useState } from "react";
 import { TreeNodeRow } from "./TreeNodeRow";
 import { MAX_WIDTH, MIN_WIDTH } from "./knowledgeEditorUtils";
 import type { TreeNode } from "./knowledgeTree";
@@ -65,6 +72,10 @@ export interface KnowledgeSidebarProps {
   ) => void;
   /** Delete a file. */
   onDelete: (path: string) => void;
+  /** Create a subfolder. */
+  onCreateFolder: (
+    label: string, path: string, name: string,
+  ) => void;
 }
 
 /**
@@ -92,6 +103,7 @@ export function KnowledgeSidebar({
   onRename,
   onMove,
   onDelete,
+  onCreateFolder,
 }: KnowledgeSidebarProps) {
   const isDragging = useRef(false);
   const dragStartX = useRef(0);
@@ -191,65 +203,21 @@ export function KnowledgeSidebar({
             </p>
           ) : (
             labels.map((label) => (
-              <div key={label}>
-                <button
-                  onClick={() =>
-                    onToggleLabel(label)
-                  }
-                  className={
-                    "w-full text-left flex " +
-                    "items-center gap-1 px-3 " +
-                    "pt-2 pb-1 select-none " +
-                    "hover:bg-surface-raised " +
-                    "transition-colors"
-                  }
-                >
-                  {collapsedLabels.has(label) ? (
-                    <ChevronRight
-                      size={10}
-                      className={
-                        "shrink-0 text-stone-600"
-                      }
-                    />
-                  ) : (
-                    <ChevronDown
-                      size={10}
-                      className={
-                        "shrink-0 text-stone-600"
-                      }
-                    />
-                  )}
-                  <span
-                    className={
-                      "text-[10px] text-stone-600 " +
-                      "uppercase tracking-wider"
-                    }
-                  >
-                    {label}
-                  </span>
-                </button>
-                {!collapsedLabels.has(label) &&
-                  (treeNodes[label] ?? []).map(
-                    (node) => (
-                      <TreeNodeRow
-                        key={
-                          node.kind === "leaf"
-                            ? node.path
-                            : node.path + "/"
-                        }
-                        node={node}
-                        depth={1}
-                        selectedPath={selectedPath}
-                        labels={labels}
-                        onSelect={onSelectFile}
-                        onToggle={onToggleFolder}
-                        onRename={onRename}
-                        onMove={onMove}
-                        onDelete={onDelete}
-                      />
-                    )
-                  )}
-              </div>
+              <LabelSection
+                key={label}
+                label={label}
+                collapsed={collapsedLabels.has(label)}
+                nodes={treeNodes[label] ?? []}
+                selectedPath={selectedPath}
+                labels={labels}
+                onToggleLabel={onToggleLabel}
+                onSelectFile={onSelectFile}
+                onToggleFolder={onToggleFolder}
+                onRename={onRename}
+                onMove={onMove}
+                onDelete={onDelete}
+                onCreateFolder={onCreateFolder}
+              />
             ))
           )}
         </div>
@@ -283,6 +251,176 @@ export function KnowledgeSidebar({
         )}
       </div>
     </>
+  );
+}
+
+// -----------------------------------------------------------------
+// Label section with root-level "add folder" support
+// -----------------------------------------------------------------
+
+interface LabelSectionProps {
+  label: string;
+  collapsed: boolean;
+  nodes: TreeNode[];
+  selectedPath: string | null;
+  labels: string[];
+  onToggleLabel: (label: string) => void;
+  onSelectFile: (path: string, label: string) => void;
+  onToggleFolder: (path: string) => void;
+  onRename: (old: string, next: string) => void;
+  onMove: (old: string, oldL: string, newL: string) => void;
+  onDelete: (path: string) => void;
+  onCreateFolder: (
+    label: string, path: string, name: string,
+  ) => void;
+}
+
+function LabelSection({
+  label,
+  collapsed,
+  nodes,
+  selectedPath,
+  labels,
+  onToggleLabel,
+  onSelectFile,
+  onToggleFolder,
+  onRename,
+  onMove,
+  onDelete,
+  onCreateFolder,
+}: LabelSectionProps) {
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+
+  function handleAdd() {
+    const n = name.trim();
+    if (!n) return;
+    onCreateFolder(label, n, n);
+    setName("");
+    setAdding(false);
+  }
+
+  return (
+    <div>
+      <div
+        className={
+          "group/label flex items-center "
+          + "hover:bg-surface-raised "
+          + "transition-colors"
+        }
+      >
+        <button
+          onClick={() => onToggleLabel(label)}
+          className={
+            "flex-1 text-left flex "
+            + "items-center gap-1 px-3 "
+            + "pt-2 pb-1 select-none"
+          }
+        >
+          {collapsed ? (
+            <ChevronRight
+              size={10}
+              className="shrink-0 text-stone-600"
+            />
+          ) : (
+            <ChevronDown
+              size={10}
+              className="shrink-0 text-stone-600"
+            />
+          )}
+          <span
+            className={
+              "text-[10px] text-stone-600 "
+              + "uppercase tracking-wider"
+            }
+          >
+            {label}
+          </span>
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setAdding(true);
+            setName("");
+          }}
+          className={
+            "hidden group-hover/label:block "
+            + "p-0.5 mr-2 rounded text-stone-400 "
+            + "hover:text-cta hover:bg-cta-muted "
+            + "transition-colors shrink-0"
+          }
+          title="Add folder"
+        >
+          <FolderPlus size={11} />
+        </button>
+      </div>
+      {adding && (
+        <div
+          className={
+            "flex items-center gap-1 py-0.5 "
+            + "px-3 ml-3"
+          }
+        >
+          <input
+            autoFocus
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleAdd();
+              if (e.key === "Escape") setAdding(false);
+            }}
+            placeholder="folder name"
+            className={
+              "flex-1 min-w-0 px-1 py-0.5 text-xs "
+              + "rounded bg-surface-raised border "
+              + "border-border text-stone-900 "
+              + "focus:outline-none focus:border-cta"
+            }
+          />
+          <button
+            onClick={handleAdd}
+            disabled={!name.trim()}
+            className={
+              "p-0.5 text-cta "
+              + "hover:bg-cta-muted rounded "
+              + "disabled:opacity-40"
+            }
+          >
+            <Check size={10} />
+          </button>
+          <button
+            onClick={() => setAdding(false)}
+            className={
+              "p-0.5 text-stone-500 "
+              + "hover:text-stone-900 rounded"
+            }
+          >
+            <X size={10} />
+          </button>
+        </div>
+      )}
+      {!collapsed &&
+        nodes.map((node) => (
+          <TreeNodeRow
+            key={
+              node.kind === "leaf"
+                ? node.path
+                : node.path + "/"
+            }
+            node={node}
+            depth={1}
+            selectedPath={selectedPath}
+            labels={labels}
+            onSelect={onSelectFile}
+            onToggle={onToggleFolder}
+            onRename={onRename}
+            onMove={onMove}
+            onDelete={onDelete}
+            onCreateFolder={onCreateFolder}
+          />
+        ))}
+    </div>
   );
 }
 

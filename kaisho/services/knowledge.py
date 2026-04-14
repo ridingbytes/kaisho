@@ -43,10 +43,26 @@ def _iter_files(base: Path):
         yield from sorted(base.rglob(ext))
 
 
-def file_tree(sources: list[dict]) -> list[dict]:
-    """Return list of all KB files across source dirs.
+def _iter_empty_dirs(base: Path) -> list[Path]:
+    """Yield directories that contain no KB files."""
+    result = []
+    for d in sorted(base.rglob("*")):
+        if not d.is_dir():
+            continue
+        has_files = any(
+            f for ext in KB_EXTENSIONS
+            for f in d.glob(ext)
+        )
+        if not has_files:
+            result.append(d)
+    return result
 
-    Each dict: {path, label, name, size}
+
+def file_tree(sources: list[dict]) -> list[dict]:
+    """Return list of all KB files and empty folders.
+
+    Files: {path, label, name, size, kind: "file"}
+    Folders: {path, label, name, size: 0, kind: "folder"}
     """
     entries = []
     for label, base in _expand_sources(sources):
@@ -57,8 +73,34 @@ def file_tree(sources: list[dict]) -> list[dict]:
                 "label": label,
                 "name": f.stem,
                 "size": f.stat().st_size,
+                "kind": "file",
+            })
+        for d in _iter_empty_dirs(base):
+            rel = d.relative_to(base)
+            entries.append({
+                "path": str(rel),
+                "label": label,
+                "name": d.name,
+                "size": 0,
+                "kind": "folder",
             })
     return entries
+
+
+def create_folder(
+    sources: list[dict], label: str, rel_path: str,
+) -> dict:
+    """Create a folder in a KB source directory."""
+    for src_label, base in _expand_sources(sources):
+        if src_label == label:
+            path = _safe_path(base, rel_path)
+            path.mkdir(parents=True, exist_ok=True)
+            return {
+                "path": str(path.relative_to(base)),
+                "label": label,
+                "name": path.name,
+            }
+    raise ValueError(f"Unknown KB source: {label!r}")
 
 
 def read_file(

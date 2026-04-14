@@ -11,6 +11,7 @@
 import { FilePlus, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
+  useCreateKnowledgeFolder,
   useDeleteKnowledgeFile,
   useKnowledgeFile,
   useKnowledgeSearch,
@@ -217,6 +218,7 @@ export function KnowledgeView() {
   }
 
   const deleteFile = useDeleteKnowledgeFile();
+  const createFolder = useCreateKnowledgeFolder();
 
   function handleDeleteFile(path: string) {
     deleteFile.mutate(path, {
@@ -227,6 +229,12 @@ export function KnowledgeView() {
         }
       },
     });
+  }
+
+  function handleCreateFolder(
+    label: string, path: string,
+  ) {
+    createFolder.mutate({ label, path });
   }
 
   const showEditor =
@@ -375,6 +383,7 @@ export function KnowledgeView() {
             onRename={handleRename}
             onMove={handleMove}
             onDelete={handleDeleteFile}
+            onCreateFolder={handleCreateFolder}
           />
 
           {/* Right panel: file content */}

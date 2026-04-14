@@ -141,6 +141,7 @@ export interface KnowledgeFile {
   path: string;
   label: string;
   name: string;
+  kind?: "file" | "folder";
   size: number;
 }
 

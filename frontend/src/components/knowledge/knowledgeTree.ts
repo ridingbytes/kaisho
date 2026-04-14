@@ -73,13 +73,48 @@ function insertIntoFolder(
   nodes.push(folder);
 }
 
+function ensureFolder(
+  nodes: TreeNode[],
+  segments: string[],
+  label: string,
+): void {
+  if (segments.length === 0) return;
+  const name = segments[0];
+  let folder = nodes.find(
+    (n): n is TreeFolder =>
+      n.kind === "folder" && n.name === name,
+  );
+  if (!folder) {
+    folder = {
+      kind: "folder",
+      name,
+      label,
+      path: segments[0],
+      children: [],
+      expanded: false,
+    };
+    nodes.push(folder);
+  }
+  if (segments.length > 1) {
+    ensureFolder(
+      folder.children, segments.slice(1), label,
+    );
+  }
+}
+
 function buildLabelNodes(
   files: KnowledgeFile[],
-  label: string
+  label: string,
 ): TreeNode[] {
   const nodes: TreeNode[] = [];
   for (const file of files) {
     if (file.label !== label) continue;
+    if (file.kind === "folder") {
+      const segments = file.path
+        .split("/").filter(Boolean);
+      ensureFolder(nodes, segments, label);
+      continue;
+    }
     const segments = file.path.split("/").filter(Boolean);
     insertIntoFolder(nodes, segments, file);
   }

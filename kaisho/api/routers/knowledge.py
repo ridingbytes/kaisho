@@ -60,6 +60,26 @@ def write_file(body: FileWrite):
     )
 
 
+class FolderCreate(BaseModel):
+    label: str
+    path: str
+
+
+@router.post("/folder", status_code=201)
+def create_folder(body: FolderCreate):
+    """Create a folder in the knowledge base."""
+    sources = _sources()
+    labels = {s["label"] for s in sources}
+    if body.label not in labels:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown KB source: {body.label!r}",
+        )
+    return kb_service.create_folder(
+        sources, body.label, body.path,
+    )
+
+
 class FileRename(BaseModel):
     old_path: str
     new_path: str
