@@ -907,7 +907,7 @@ def _trigger_cron_job(job_id: str) -> dict:
         try:
             output = execute_job(
                 job,
-                profile_dir=str(cfg.PROFILE_DIR),
+                project_root=cfg.PROFILE_DIR,
                 ollama_base_url=ai["ollama_url"],
                 lm_studio_base_url=ai.get(
                     "lm_studio_url", "",
