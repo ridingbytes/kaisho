@@ -20,59 +20,86 @@ import { useState } from "react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import type { TreeNode } from "./knowledgeTree";
 
-/** Dropdown to move a file into a subfolder. */
-function MoveToFolderPicker({
+/** Combined dropdown: move to folder or another label. */
+function MovePicker({
   filePath,
+  fileLabel,
   folders,
+  labels,
   onRename,
+  onMove,
 }: {
   filePath: string;
+  fileLabel: string;
   folders: string[];
+  labels: string[];
   onRename: (old: string, next: string) => void;
+  onMove: (
+    old: string, oldLabel: string, newLabel: string,
+  ) => void;
 }) {
   const fileName = filePath.split("/").pop() ?? "";
   const currentDir = filePath.includes("/")
     ? filePath.slice(0, filePath.lastIndexOf("/"))
     : "";
+  const otherLabels = labels.filter(
+    (l) => l !== fileLabel,
+  );
+  const availableFolders = folders.filter(
+    (f) => f !== currentDir,
+  );
+  const showRoot = currentDir !== "";
+  const hasFolders = showRoot
+    || availableFolders.length > 0;
 
-  function handleChange(targetDir: string) {
-    if (targetDir === currentDir) return;
-    const newPath = targetDir
-      ? `${targetDir}/${fileName}` : fileName;
-    onRename(filePath, newPath);
+  if (!hasFolders && otherLabels.length === 0) {
+    return null;
+  }
+
+  function handleChange(val: string) {
+    if (val.startsWith("label:")) {
+      onMove(filePath, fileLabel, val.slice(6));
+    } else {
+      const dir = val === "/" ? "" : val;
+      const newPath = dir
+        ? `${dir}/${fileName}` : fileName;
+      onRename(filePath, newPath);
+    }
   }
 
   return (
     <select
       value=""
       onChange={(e) => {
-        if (e.target.value !== "") {
-          handleChange(
-            e.target.value === "/"
-              ? "" : e.target.value,
-          );
-        }
+        if (e.target.value) handleChange(e.target.value);
       }}
       className={
         "w-12 text-[9px] bg-transparent "
         + "text-stone-400 hover:text-stone-700 "
         + "cursor-pointer"
       }
-      title="Move to folder"
+      title="Move to..."
     >
-      <option value="">
-        Move...
-      </option>
-      {currentDir !== "" && (
-        <option value="/">(root)</option>
+      <option value="">Move...</option>
+      {hasFolders && (
+        <optgroup label="Folders">
+          {showRoot && (
+            <option value="/">(root)</option>
+          )}
+          {availableFolders.map((f) => (
+            <option key={f} value={f}>{f}</option>
+          ))}
+        </optgroup>
       )}
-      {folders
-        .filter((f) => f !== currentDir)
-        .map((f) => (
-          <option key={f} value={f}>
-            {f}
-          </option>
-        ))}
+      {otherLabels.length > 0 && (
+        <optgroup label="Sources">
+          {otherLabels.map((l) => (
+            <option key={l} value={`label:${l}`}>
+              {l}
+            </option>
+          ))}
+        </optgroup>
+      )}
     </select>
   );
 }
@@ -242,42 +269,14 @@ export function TreeNodeRow({
           >
             <Pencil size={9} />
           </button>
-          {folders.length > 0 && (
-            <MoveToFolderPicker
-              filePath={node.path}
-              folders={folders}
-              onRename={onRename}
-            />
-          )}
-          {labels.length > 1 && (
-            <select
-              value=""
-              onChange={(e) => {
-                if (e.target.value) {
-                  onMove(
-                    node.path,
-                    node.label,
-                    e.target.value
-                  );
-                }
-              }}
-              className={
-                "w-12 text-[9px] bg-transparent " +
-                "text-stone-400 hover:text-stone-700 " +
-                "cursor-pointer"
-              }
-              title="Move to source"
-            >
-              <option value="">To...</option>
-              {labels
-                .filter((l) => l !== node.label)
-                .map((l) => (
-                  <option key={l} value={l}>
-                    {l}
-                  </option>
-                ))}
-            </select>
-          )}
+          <MovePicker
+            filePath={node.path}
+            fileLabel={node.label}
+            folders={folders}
+            labels={labels}
+            onRename={onRename}
+            onMove={onMove}
+          />
           <ConfirmPopover
             onConfirm={() => onDelete(node.path)}
           >
