@@ -338,6 +338,10 @@ _HANDLERS: dict[str, Any] = {
     "get_time_insights": lambda a: _get_time_insights(
         a.get("period", "month"),
     ),
+    "list_cron_jobs": lambda a: _list_cron_jobs(),
+    "trigger_cron_job": lambda a: _trigger_cron_job(
+        a["job_id"],
+    ),
 }
 
 
@@ -864,4 +868,88 @@ def _get_time_insights(period: str) -> dict:
             }
             for c in customers
         ],
+    }
+
+
+def _list_cron_jobs() -> dict:
+    """List all cron job definitions."""
+    from ..config import get_config
+    from ..services.cron import list_jobs
+    cfg = get_config()
+    return {"jobs": list_jobs(cfg.JOBS_FILE)}
+
+
+def _trigger_cron_job(job_id: str) -> dict:
+    """Trigger a cron job to run immediately."""
+    import threading
+    from ..config import get_config
+    from ..services.cron import (
+        get_job, start_run, finish_run,
+    )
+    cfg = get_config()
+    job = get_job(cfg.JOBS_FILE, job_id)
+    if job is None:
+        return {"error": f"Job not found: {job_id}"}
+
+    run_id = start_run(
+        cfg.PROFILE_DIR, job_id,
+        job.get("model", ""),
+    )
+
+    def run_bg() -> None:
+        from .executor import execute_job, write_output
+        from ..services.settings import (
+            get_ai_settings, load_settings,
+        )
+        ai = get_ai_settings(
+            load_settings(cfg.SETTINGS_FILE),
+        )
+        try:
+            output = execute_job(
+                job,
+                profile_dir=str(cfg.PROFILE_DIR),
+                ollama_base_url=ai["ollama_url"],
+                lm_studio_base_url=ai.get(
+                    "lm_studio_url", "",
+                ),
+                claude_api_key=ai.get(
+                    "claude_api_key", "",
+                ),
+                openrouter_base_url=ai.get(
+                    "openrouter_url", "",
+                ),
+                openrouter_api_key=ai.get(
+                    "openrouter_api_key", "",
+                ),
+                openai_base_url=ai.get(
+                    "openai_url", "",
+                ),
+                openai_api_key=ai.get(
+                    "openai_api_key", "",
+                ),
+            )
+            write_output(
+                job.get("output", "none"),
+                output,
+                job.get("name", job_id),
+            )
+            finish_run(
+                cfg.PROFILE_DIR, run_id,
+                "ok", output=output[:4000],
+            )
+        except Exception as exc:
+            finish_run(
+                cfg.PROFILE_DIR, run_id,
+                "error", error=str(exc),
+            )
+
+    threading.Thread(
+        target=run_bg, daemon=True,
+    ).start()
+
+    return {
+        "triggered": True,
+        "job_id": job_id,
+        "run_id": run_id,
+        "status": "running",
     }

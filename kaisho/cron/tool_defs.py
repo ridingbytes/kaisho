@@ -777,4 +777,32 @@ TOOL_DEFS: list[dict] = [
             "required": ["period"],
         },
     },
+    {
+        "name": "list_cron_jobs",
+        "description": (
+            "List all defined cron jobs with their id, "
+            "name, schedule, model, and enabled status. "
+            "Use this to discover job IDs before "
+            "triggering a job."
+        ),
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "trigger_cron_job",
+        "description": (
+            "Trigger a cron job to run immediately, "
+            "regardless of its schedule or enabled state. "
+            "Use list_cron_jobs first to find the job ID."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "job_id": {
+                    "type": "string",
+                    "description": "The cron job ID",
+                },
+            },
+            "required": ["job_id"],
+        },
+    },
 ]
