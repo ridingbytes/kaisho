@@ -790,8 +790,11 @@ TOOL_DEFS: list[dict] = [
     {
         "name": "trigger_cron_job",
         "description": (
-            "Trigger a cron job to run immediately, "
-            "regardless of its schedule or enabled state. "
+            "Trigger a cron job to run immediately in the "
+            "background. The job runs asynchronously — you "
+            "cannot wait for or monitor the result. Simply "
+            "confirm to the user that it was triggered and "
+            "they can check results in the Cron view. "
             "Use list_cron_jobs first to find the job ID."
         ),
         "input_schema": {

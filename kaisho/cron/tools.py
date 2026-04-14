@@ -952,4 +952,10 @@ def _trigger_cron_job(job_id: str) -> dict:
         "job_id": job_id,
         "run_id": run_id,
         "status": "running",
+        "note": (
+            "The job is running in the background. "
+            "You cannot wait for it or monitor it. "
+            "Tell the user it was triggered and they "
+            "can check results in the Cron view."
+        ),
     }
