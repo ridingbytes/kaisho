@@ -385,18 +385,67 @@ def _is_domain_allowed(domain: str) -> bool:
     return domain in get_url_allowlist(data)
 
 
+def _rewrite_pypi_url(url: str) -> str | None:
+    """Rewrite PyPI project URLs to use the JSON API.
+
+    PyPI serves a JS-rendered page that returns no content
+    for simple HTTP clients. The JSON API returns the full
+    package description as plain text.
+    """
+    import re
+    m = re.match(
+        r"https?://pypi\.org/project/([^/]+)/?",
+        url,
+    )
+    if m:
+        return (
+            f"https://pypi.org/pypi/{m.group(1)}/json"
+        )
+    return None
+
+
+def _fetch_pypi(url: str) -> dict:
+    """Fetch package info via the PyPI JSON API."""
+    import urllib.request
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "kaisho/1.0",
+        "Accept": "application/json",
+    })
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        import json as _json
+        data = _json.loads(resp.read())
+    info = data.get("info", {})
+    body = info.get("description", "")
+    summary = info.get("summary", "")
+    name = info.get("name", "")
+    header = f"# {name}\n\n{summary}\n\n" if name else ""
+    return {
+        "body": header + body,
+        "truncated": len(body) > 50_000,
+    }
+
+
 def _fetch_url(url: str, accept: str = "") -> dict:
     """Fetch a URL (must be in allowlist, truncated to 50k)."""
     import urllib.request
     if not url.startswith(("http://", "https://")):
         return {"error": "only http/https URLs are supported"}
+
+    # PyPI project pages are JS-rendered; use JSON API
+    pypi_url = _rewrite_pypi_url(url)
+    if pypi_url:
+        try:
+            return _fetch_pypi(pypi_url)
+        except Exception as exc:
+            return {"error": str(exc)}
+
     domain = _extract_domain(url)
     if not _is_domain_allowed(domain):
         return {
             "pending_approval": True,
             "domain": domain, "url": url,
         }
-    headers = {"User-Agent": "occontrol-cron/1.0"}
+    headers = {"User-Agent": "kaisho/1.0"}
     if accept:
         headers["Accept"] = accept
     req = urllib.request.Request(url, headers=headers)
