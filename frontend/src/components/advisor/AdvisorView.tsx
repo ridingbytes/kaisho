@@ -1,6 +1,7 @@
 import {
   useCallback, useEffect, useRef, useState,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Send, Square, Trash2 } from "lucide-react";
 import { askAdvisor } from "../../api/client";
 import {
@@ -69,7 +70,14 @@ interface AdvisorViewProps {
   onMessagesChange: React.Dispatch<React.SetStateAction<AdvisorMessage[]>>;
 }
 
+/** Query keys the advisor's tools may have modified. */
+const ADVISOR_INVALIDATIONS = [
+  "knowledge", "tasks", "inbox", "notes",
+  "clocks", "customers",
+];
+
 export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
+  const qc = useQueryClient();
   const { data: aiSettings } = useAiSettings();
   const { data: models = [] } = useAvailableModels();
   const updateAi = useUpdateAiSettings();
@@ -190,6 +198,11 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
           ...prev,
           { role: "assistant", text: result.answer },
         ]);
+        for (const key of ADVISOR_INVALIDATIONS) {
+          void qc.invalidateQueries({
+            queryKey: [key],
+          });
+        }
       })
       .catch((err: unknown) => {
         if (err instanceof DOMException
