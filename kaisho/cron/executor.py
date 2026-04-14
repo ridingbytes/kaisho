@@ -212,7 +212,7 @@ def _http_post(url: str, payload: bytes, headers: dict) -> dict:
         return json.loads(resp.read())
 
 
-MAX_TOOL_ITERATIONS = 15
+MAX_TOOL_ITERATIONS = 30
 
 # Tools that modify data — limited to prevent runaway writes
 _WRITE_TOOLS = {
