@@ -52,6 +52,8 @@ export interface AiSettings {
   openrouter_api_key: string;
   openai_url: string;
   openai_api_key: string;
+  brave_api_key: string;
+  tavily_api_key: string;
   advisor_model: string;
   cron_model: string;
 }

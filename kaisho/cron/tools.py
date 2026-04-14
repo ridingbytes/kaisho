@@ -499,30 +499,109 @@ def _write_kb_file(
     }
 
 
-def _web_search(query: str, max_results: int = 5) -> dict:
-    """Search the web via DuckDuckGo HTML results."""
-    import re
-    import urllib.request
+def _get_search_keys() -> dict[str, str]:
+    """Load search API keys from AI settings."""
+    from ..config import get_config
+    from ..services.settings import (
+        get_ai_settings, load_settings,
+    )
+    cfg = get_config()
+    ai = get_ai_settings(load_settings(cfg.SETTINGS_FILE))
+    return {
+        "brave": ai.get("brave_api_key", ""),
+        "tavily": ai.get("tavily_api_key", ""),
+    }
+
+
+def _search_brave(
+    query: str, api_key: str, max_results: int,
+) -> dict:
+    """Search via Brave Search API."""
     import urllib.parse
+    import urllib.request
+    url = (
+        "https://api.search.brave.com/res/v1/web/search?"
+        + urllib.parse.urlencode({
+            "q": query, "count": max_results,
+        })
+    )
+    req = urllib.request.Request(url, headers={
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip",
+        "X-Subscription-Token": api_key,
+    })
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        import gzip
+        raw = resp.read()
+        if resp.headers.get("Content-Encoding") == "gzip":
+            raw = gzip.decompress(raw)
+        data = json.loads(raw)
+    results = []
+    for item in (data.get("web", {}).get("results") or []):
+        results.append({
+            "title": item.get("title", ""),
+            "url": item.get("url", ""),
+            "snippet": item.get("description", ""),
+        })
+        if len(results) >= max_results:
+            break
+    return {"results": results, "provider": "brave"}
+
+
+def _search_tavily(
+    query: str, api_key: str, max_results: int,
+) -> dict:
+    """Search via Tavily Search API."""
+    import urllib.request
+    payload = json.dumps({
+        "query": query,
+        "max_results": max_results,
+        "include_answer": False,
+    }).encode()
+    req = urllib.request.Request(
+        "https://api.tavily.com/search",
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        data = json.loads(resp.read())
+    results = []
+    for item in (data.get("results") or []):
+        results.append({
+            "title": item.get("title", ""),
+            "url": item.get("url", ""),
+            "snippet": item.get("content", ""),
+        })
+        if len(results) >= max_results:
+            break
+    return {"results": results, "provider": "tavily"}
+
+
+def _search_duckduckgo(
+    query: str, max_results: int,
+) -> dict:
+    """Fallback: scrape DuckDuckGo HTML results."""
+    import re
+    import urllib.parse
+    import urllib.request
     url = (
         "https://html.duckduckgo.com/html/?q="
         + urllib.parse.quote_plus(query)
     )
-    headers = {
+    req = urllib.request.Request(url, headers={
         "User-Agent": (
             "Mozilla/5.0 (compatible; kaisho/1.0)"
         ),
-    }
-    req = urllib.request.Request(url, headers=headers)
-    try:
-        with urllib.request.urlopen(
-            req, timeout=15,
-        ) as resp:
-            html = resp.read(200_000).decode(
-                "utf-8", errors="replace",
-            )
-    except Exception as exc:
-        return {"error": f"Search failed: {exc}"}
+    })
+    with urllib.request.urlopen(
+        req, timeout=15,
+    ) as resp:
+        html = resp.read(200_000).decode(
+            "utf-8", errors="replace",
+        )
 
     results = []
     for m in re.finditer(
@@ -531,7 +610,9 @@ def _web_search(query: str, max_results: int = 5) -> dict:
         html,
     ):
         href = m.group(1)
-        title = re.sub(r"<[^>]+>", "", m.group(2)).strip()
+        title = re.sub(
+            r"<[^>]+>", "", m.group(2),
+        ).strip()
         if not title or "duckduckgo" in href.lower():
             continue
         results.append({"title": title, "url": href})
@@ -548,7 +629,40 @@ def _web_search(query: str, max_results: int = 5) -> dict:
                 r"<[^>]+>", "", snip,
             ).strip()
 
-    return {"results": results}
+    return {"results": results, "provider": "duckduckgo"}
+
+
+def _web_search(query: str, max_results: int = 5) -> dict:
+    """Search the web using the best available provider.
+
+    Priority: Brave > Tavily > DuckDuckGo (fallback).
+    """
+    keys = _get_search_keys()
+
+    providers = []
+    if keys["brave"]:
+        providers.append(
+            lambda: _search_brave(
+                query, keys["brave"], max_results,
+            )
+        )
+    if keys["tavily"]:
+        providers.append(
+            lambda: _search_tavily(
+                query, keys["tavily"], max_results,
+            )
+        )
+    providers.append(
+        lambda: _search_duckduckgo(query, max_results)
+    )
+
+    last_error = ""
+    for search_fn in providers:
+        try:
+            return search_fn()
+        except Exception as exc:
+            last_error = str(exc)
+    return {"error": f"All search providers failed: {last_error}"}
 
 
 def _search_knowledge(query: str, max_results: int = 10) -> dict:

@@ -24,6 +24,8 @@ DEFAULT_AI: dict = {
     "openrouter_api_key": "",
     "openai_url": "https://api.openai.com/v1",
     "openai_api_key": "",
+    "brave_api_key": "",
+    "tavily_api_key": "",
     "advisor_model": "",
     "cron_model": "",
 }

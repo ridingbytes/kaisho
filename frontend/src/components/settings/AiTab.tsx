@@ -478,6 +478,8 @@ export function AiSection(): JSX.Element {
     openrouter_api_key: "",
     openai_url: "",
     openai_api_key: "",
+    brave_api_key: "",
+    tavily_api_key: "",
     advisor_model: "",
     cron_model: "",
   });
@@ -679,6 +681,54 @@ export function AiSection(): JSX.Element {
                   )
                 }
                 placeholder="sk-..."
+                className={inputCls}
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Web search API keys */}
+        <div className="px-4 py-3 border-b border-border-subtle">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
+            Web Search
+          </p>
+          <p className="text-[10px] text-stone-400 mb-2">
+            Used by the advisor&apos;s web_search tool.
+            Priority: Brave &gt; Tavily &gt; DuckDuckGo
+            (free fallback).
+          </p>
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-3">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
+                Brave API Key
+              </span>
+              <input
+                type="password"
+                value={form.brave_api_key}
+                onChange={(e) =>
+                  set(
+                    "brave_api_key",
+                    e.target.value,
+                  )
+                }
+                placeholder="BSA..."
+                className={inputCls}
+              />
+            </label>
+            <label className="flex items-center gap-3">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
+                Tavily API Key
+              </span>
+              <input
+                type="password"
+                value={form.tavily_api_key}
+                onChange={(e) =>
+                  set(
+                    "tavily_api_key",
+                    e.target.value,
+                  )
+                }
+                placeholder="tvly-..."
                 className={inputCls}
               />
             </label>

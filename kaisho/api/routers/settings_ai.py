@@ -127,6 +127,8 @@ class AiSettingsUpdate(BaseModel):
     openrouter_api_key: str | None = None
     openai_url: str | None = None
     openai_api_key: str | None = None
+    brave_api_key: str | None = None
+    tavily_api_key: str | None = None
     advisor_model: str | None = None
     cron_model: str | None = None
 
