@@ -1,11 +1,117 @@
 from datetime import date
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
 from ...backends import get_backend
 
 router = APIRouter(prefix="/api/clocks", tags=["clocks"])
+
+
+# ── iCalendar feed ──────────────────────────────────
+
+def _ical_escape(text: str) -> str:
+    """Escape special characters for iCalendar text."""
+    return (
+        text.replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\n", "\\n")
+    )
+
+
+def _entry_to_vevent(entry: dict) -> str:
+    """Convert a clock entry to an iCalendar VEVENT."""
+    start = entry.get("start", "")
+    end = entry.get("end", "")
+    customer = entry.get("customer", "")
+    desc = entry.get("description", "")
+    contract = entry.get("contract") or ""
+    notes = entry.get("notes") or ""
+    minutes = entry.get("duration_minutes") or 0
+
+    # UID: stable identifier per entry
+    import hashlib
+    raw = f"{start}-{customer}-{desc}"
+    uid = hashlib.sha1(
+        raw.encode(), usedforsecurity=False,
+    ).hexdigest()[:16]
+    uid = f"{uid}@kaisho"
+
+    def fmt(iso: str) -> str:
+        """Convert ISO timestamp to iCal format.
+
+        2026-04-14T09:00:00+02:00 -> 20260414T090000
+        """
+        return iso[:19].replace("-", "").replace(
+            ":", "",
+        )
+
+    summary = f"[{customer}] {desc}"
+    if contract:
+        summary += f" ({contract})"
+
+    lines = [
+        "BEGIN:VEVENT",
+        f"UID:{uid}",
+        f"DTSTART:{fmt(start)}",
+    ]
+    if end:
+        lines.append(f"DTEND:{fmt(end)}")
+    elif minutes > 0:
+        hours = int(minutes // 60)
+        mins = int(minutes % 60)
+        lines.append(f"DURATION:PT{hours}H{mins}M")
+
+    lines.append(
+        f"SUMMARY:{_ical_escape(summary)}"
+    )
+    if notes:
+        lines.append(
+            f"DESCRIPTION:{_ical_escape(notes)}"
+        )
+    lines.append("END:VEVENT")
+    return "\r\n".join(lines)
+
+
+@router.get(
+    "/calendar.ics",
+    response_class=PlainTextResponse,
+)
+def calendar_feed(
+    period: str = "month",
+    customer: str | None = None,
+):
+    """iCalendar feed of clock entries.
+
+    Subscribe to this URL in any calendar app
+    (iCloud, Google, Outlook, Thunderbird).
+    """
+    entries = get_backend().clocks.list_entries(
+        period=period, customer=customer,
+    )
+    # Only include entries with a start time
+    entries = [
+        e for e in entries if e.get("start")
+    ]
+
+    parts = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Kaisho//Clock Entries//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-WR-CALNAME:Kaisho Time Tracking",
+    ]
+    for e in entries:
+        parts.append(_entry_to_vevent(e))
+    parts.append("END:VCALENDAR")
+    ical = "\r\n".join(parts) + "\r\n"
+    return PlainTextResponse(
+        content=ical,
+        media_type="text/calendar; charset=utf-8",
+    )
 
 
 class QuickBookRequest(BaseModel):
