@@ -1156,6 +1156,25 @@ export function fetchCloudSyncStatus(): Promise<CloudSyncStatus> {
   return get<CloudSyncStatus>("/cloud-sync/status");
 }
 
+/** Information about a timer running on another device. */
+export interface CloudActiveTimer {
+  active: boolean;
+  id?: string;
+  customer?: string | null;
+  description?: string;
+  start?: string;
+  task_id?: string | null;
+  contract?: string | null;
+}
+
+/** Fetch the cloud-side running timer (e.g. from the
+ *  mobile app). Returns {active: false} if none or
+ *  cloud sync disabled. */
+export function fetchCloudActiveTimer():
+  Promise<CloudActiveTimer> {
+  return get<CloudActiveTimer>("/cloud-sync/active");
+}
+
 /** Connect to a cloud sync server with URL and
  *  API key. Returns the subscription plan. */
 export function connectCloudSync(

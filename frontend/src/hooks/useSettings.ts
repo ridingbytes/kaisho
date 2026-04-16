@@ -24,6 +24,7 @@ import {
   fetchAiSettings,
   fetchAvailableModels,
   fetchClaudeCliStatus,
+  fetchCloudActiveTimer,
   fetchCloudSyncStatus,
   fetchInvoiceExportSettings,
   fetchCurrentUser,
@@ -335,6 +336,18 @@ export function useCloudSyncStatus() {
     queryKey: ["settings", "cloud_sync"],
     queryFn: fetchCloudSyncStatus,
     staleTime: 30_000,
+  });
+}
+
+/** Poll the cloud-side running timer (e.g. mobile app).
+ *  Returns {active: false} when cloud sync is disabled
+ *  or no remote timer is running. */
+export function useCloudActiveTimer() {
+  return useQuery({
+    queryKey: ["clocks", "cloud_active"],
+    queryFn: fetchCloudActiveTimer,
+    refetchInterval: 10_000,
+    staleTime: 5_000,
   });
 }
 

@@ -121,6 +121,25 @@ def disconnect():
     return {"ok": True}
 
 
+# ── GET /api/cloud-sync/active ────────────────────────
+
+@router.get("/active")
+def active():
+    """Return the cloud-side running timer, if any."""
+    data, _ = _sync_settings()
+    sync = data.get("cloud_sync", {})
+    if not sync.get("enabled"):
+        return {"active": False}
+
+    url = sync.get("url", "")
+    key = sync.get("api_key", "")
+    if not url or not key:
+        return {"active": False}
+
+    result = sync_svc.cloud_active(url, key)
+    return result or {"active": False}
+
+
 # ── POST /api/cloud-sync/sync-now ────────────────────
 
 @router.post("/sync-now")

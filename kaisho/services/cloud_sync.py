@@ -137,6 +137,23 @@ def cloud_status(
     return _request(url, api_key)
 
 
+# ── Cloud active timer ────────────────────────────────
+
+def cloud_active(
+    cloud_url: str, api_key: str,
+) -> dict | None:
+    """Return the active cloud timer, if any.
+
+    Response: {active: bool, start?, customer?, ...}.
+    Returns None on network/auth failure.
+    """
+    url = f"{cloud_url}/sync/active"
+    try:
+        return _request(url, api_key)
+    except (urllib.error.URLError, urllib.error.HTTPError):
+        return None
+
+
 # ── Sync cycle ────────────────────────────────────────
 
 def _import_cloud_entry(

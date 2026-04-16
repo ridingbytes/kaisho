@@ -6,7 +6,9 @@ import {
   Plus,
 } from "lucide-react";
 import { useActiveTimer } from "../../hooks/useClocks";
+import { useCloudActiveTimer } from "../../hooks/useSettings";
 import { ActiveTimer } from "./ActiveTimer";
+import { CloudTimer } from "./CloudTimer";
 import { CalendarWidget } from "./CalendarWidget";
 import { ClockList } from "./ClockList";
 import { QuickBookForm } from "./QuickBookForm";
@@ -26,6 +28,7 @@ interface ClockWidgetProps {
 
 export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
   const { data: timer } = useActiveTimer();
+  const { data: cloudTimer } = useCloudActiveTimer();
   const [booking, setBooking] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(
     () => localStorage.getItem("clock_calendar_open") !== "false"
@@ -93,11 +96,17 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
       </div>
 
       <div className="flex flex-col gap-4 p-4 overflow-y-auto flex-1">
-        {/* Active timer */}
+        {/* Active timer (local) */}
         {timer && <ActiveTimer timer={timer} />}
 
+        {/* Cloud timer (running on mobile). Hidden when
+            a local timer is running to avoid clutter. */}
+        {!isRunning && cloudTimer?.active && (
+          <CloudTimer timer={cloudTimer} />
+        )}
+
         {/* Start timer form */}
-        {!isRunning && <StartForm />}
+        {!isRunning && !cloudTimer?.active && <StartForm />}
 
         <div className="border-t border-border-subtle" />
 
