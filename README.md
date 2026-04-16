@@ -39,6 +39,15 @@ arts -- the position of readiness.
 - **Dark / Light Theme** -- Zinc palette (true neutral)
 - **Multiple Profiles** -- different backends per profile
 - **Docker Ready** -- single-container deployment
+- **Desktop App** -- native macOS window via Tauri
+  (see [`desktop/`](desktop/))
+- **Cloud Sync** (optional) -- mobile clock tracking that
+  syncs back to the local app, via
+  [kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud)
+- **Calendar Feed** -- subscribe any CalDAV/iCal client
+  (iCloud, Google, Outlook) to
+  `GET /api/clocks/calendar.ics` to see time entries as
+  calendar events
 
 
 ## Quick Start
@@ -113,6 +122,9 @@ frontend/            React SPA
                      toast)
   src/api/           API client
   src/utils/         Utilities
+desktop/             Tauri v2 wrapper (native macOS app)
+  src-tauri/         Rust shell (spawns kai serve)
+  src/               Splash screen
 tests/               pytest tests (183 tests)
 templates/           Default profile templates
 prompts/             AI cron job prompt templates
@@ -172,6 +184,18 @@ data/
 pytest                     # Run 183 tests
 cd frontend && pnpm build  # Production build
 ```
+
+
+## Companion projects
+
+- **[desktop/](desktop/)** — Tauri v2 wrapper that opens
+  Kaisho in a native macOS window and auto-starts the
+  backend. No terminal needed.
+- **[kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud)** —
+  optional cloud sync service. Provides a mobile PWA for
+  time tracking on the go; entries sync back to your local
+  kaisho when it connects. Configure via
+  Settings → Cloud Sync.
 
 
 ## License

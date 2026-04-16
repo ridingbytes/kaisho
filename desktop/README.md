@@ -1,82 +1,84 @@
 # Kaisho Desktop App
 
-Tauri v2 wrapper that bundles the Kaisho backend as a
-sidecar process and displays the web dashboard in a native
-window.
+Tauri v2 wrapper that opens Kaisho in a native macOS window
+without a terminal. Auto-starts `kai serve` on launch and
+stops it when you close the window.
 
 ## Architecture
 
 ```
-Tauri App
+Tauri App (native window)
   |
-  +-- Webview (loads http://localhost:8765)
+  +-- Splash screen (polls http://localhost:8765/health)
   |
-  +-- Sidecar: kai-server (PyInstaller binary)
+  +-- Webview -> http://localhost:8765 once ready
+  |
+  +-- Child process: `kai serve`
         |
-        +-- FastAPI/Uvicorn (port 8765)
-        +-- Frontend (static files from frontend/dist)
+        +-- FastAPI on :8765 (API + built frontend)
 ```
 
-On startup, Tauri spawns the `kai-server` sidecar binary,
-waits for port 8765 to become available, then loads the URL
-in the webview. On app close, the sidecar is terminated.
+The window shows the Kaisho splash screen until the backend
+responds on `/health`, then redirects to the served frontend.
+Closing the window kills the child process.
 
-## Auto-Update
-
-The app checks for updates on startup via the Tauri updater
-plugin. The update endpoint points to GitHub Releases:
-
-```
-https://github.com/ridingbytes/kaisho/releases/latest/download/update.json
-```
-
-When a new release is published, the CI workflow builds
-Tauri bundles for all platforms and attaches them to the
-GitHub Release along with an `update.json` manifest.
+No sidecar binary, no auto-updater — the app relies on a
+working `kai` CLI being installed and on your PATH.
 
 ## Prerequisites
 
-- Rust (install via rustup.rs)
+- Rust toolchain (via [rustup.rs](https://rustup.rs))
 - Node.js 20+ and pnpm
-- Python 3.12+ and pip
-- PyInstaller (`pip install pyinstaller`)
+- `kai` CLI installed (`pip install -e ..` from the kaisho
+  repo root)
 
 ## Development
 
 ```bash
-# 1. Build the sidecar (one-time or after backend changes)
-bash scripts/build-sidecar.sh
-
-# 2. Run Tauri in dev mode
 cd desktop
-npx tauri dev
+pnpm install
+pnpm dev
 ```
 
-In dev mode, Tauri connects to the Vite dev server at
-localhost:5173. You still need to start the backend
-separately with `kai serve`.
+First launch takes a minute while Rust compiles Tauri. After
+that, `pnpm dev` opens the native window in a few seconds.
 
 ## Production Build
 
 ```bash
-# Build everything (sidecar + frontend + Tauri bundle)
-bash scripts/build-sidecar.sh
 cd desktop
-npx tauri build
+pnpm build
 ```
 
-The output bundle is in `desktop/src-tauri/target/release/bundle/`.
+Produces `src-tauri/target/release/bundle/macos/Kaisho.app`
+which you can drag into /Applications.
 
-## CI/CD
+### Caveat: pyenv + Finder launch
 
-The GitHub Actions workflow at `.github/workflows/build-desktop.yml`
-builds the desktop app for all platforms on each GitHub Release.
+Apps launched from Finder don't inherit your shell PATH, so
+pyenv shims may not resolve. If `kai` is only available
+through pyenv, the bundled app will fail to spawn the backend.
 
-Required secrets:
-- `TAURI_SIGNING_PRIVATE_KEY` -- for update signature
-- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+Workarounds:
+- Launch from terminal: `open src-tauri/target/release/bundle/macos/Kaisho.app`
+- Hardcode the full path to `kai` in `src-tauri/src/lib.rs`
+- Install `kai` to a system-wide location like `/usr/local/bin`
 
-Generate a signing key pair:
-```bash
-npx tauri signer generate -w ~/.tauri/kaisho.key
+## Files
+
+```
+desktop/
+  package.json               Tauri CLI script wrapper
+  src/
+    index.html               Splash screen
+    splash.css
+    splash.js                Polls /health, redirects on ready
+  src-tauri/
+    Cargo.toml
+    tauri.conf.json          Window size, identifier, icons
+    src/
+      main.rs                Entry point
+      lib.rs                 App setup, kai process lifecycle
+    capabilities/default.json
+    icons/                   Generated from logos/kaisho-logo.svg
 ```
