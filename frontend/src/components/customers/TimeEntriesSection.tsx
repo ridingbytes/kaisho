@@ -26,8 +26,11 @@ export function TimeEntriesSection({
     useCustomerClockEntries(customerName);
   const [limit, setLimit] = useState(PAGE_SIZE);
 
-  const visible = entries.slice(0, limit);
-  const hasMore = entries.length > limit;
+  const sorted = [...entries].sort((a, b) =>
+    (b.start ?? "").localeCompare(a.start ?? ""),
+  );
+  const visible = sorted.slice(0, limit);
+  const hasMore = sorted.length > limit;
 
   return (
     <CollapsibleSection
