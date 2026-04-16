@@ -1354,6 +1354,67 @@ export function updateAdvisorFiles(
   return put("/settings/advisor_files", { soul, user });
 }
 
+// ─── Backup ─────────────────────────────────────────
+
+export interface BackupSettings {
+  directory: string;
+  keep: number;
+  interval_hours: number;
+  resolved_directory: string;
+}
+
+export interface BackupInfo {
+  path: string;
+  filename: string;
+  size_bytes: number;
+  created_at: string;
+  profile: string;
+}
+
+export interface BackupRunResult {
+  backup: BackupInfo;
+  removed: BackupInfo[];
+}
+
+/** Fetch the backup schedule + storage settings. */
+export function fetchBackupSettings(): Promise<BackupSettings> {
+  return get<BackupSettings>("/settings/backup");
+}
+
+/** Update backup schedule / retention / directory. */
+export function updateBackupSettings(
+  updates: Partial<Omit<BackupSettings, "resolved_directory">>,
+): Promise<BackupSettings> {
+  return patch<BackupSettings>("/settings/backup", updates);
+}
+
+/** List existing backup archives, newest first. */
+export function fetchBackups(): Promise<BackupInfo[]> {
+  return get<BackupInfo[]>("/backup/list");
+}
+
+/** Create a new backup now. */
+export function runBackup(
+  prune = true,
+): Promise<BackupRunResult> {
+  return post<BackupRunResult>("/backup/run", { prune });
+}
+
+/** Prune existing backups to the configured keep count. */
+export function pruneBackupsRemote(
+  keep?: number,
+): Promise<{ removed: BackupInfo[] }> {
+  return post<{ removed: BackupInfo[] }>(
+    "/backup/prune",
+    keep !== undefined ? { keep } : {},
+  );
+}
+
+/** URL that streams a backup archive for download. */
+export function backupDownloadUrl(filename: string): string {
+  return `${BASE}/backup/download/${encodeURIComponent(filename)}`;
+}
+
 // ─── URL Allowlist ──────────────────────────────────
 
 /** Fetch the list of allowed domains for the

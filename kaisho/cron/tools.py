@@ -342,6 +342,10 @@ _HANDLERS: dict[str, Any] = {
     "trigger_cron_job": lambda a: _trigger_cron_job(
         a["job_id"],
     ),
+    "create_backup": lambda a: _create_backup(
+        prune=a.get("prune", True),
+    ),
+    "list_backups": lambda a: _list_backups(),
 }
 
 
@@ -959,4 +963,52 @@ def _trigger_cron_job(job_id: str) -> dict:
             "Tell the user it was triggered and they "
             "can check results in the Cron view."
         ),
+    }
+
+
+def _create_backup(prune: bool = True) -> dict:
+    """Create a backup archive and optionally prune."""
+    from ..config import get_config
+    from ..services import backup as backup_svc
+    from ..services import settings as settings_svc
+
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    backup_cfg = settings_svc.get_backup_settings(data)
+    target = settings_svc.resolve_backup_dir(data, cfg)
+
+    info = backup_svc.create_backup(
+        source_dir=cfg.DATA_DIR,
+        backup_dir=target,
+        profile=cfg.PROFILE,
+    )
+    removed: list[dict] = []
+    keep = backup_cfg.get("keep", 0)
+    if prune and keep > 0:
+        removed = [
+            b.to_dict()
+            for b in backup_svc.prune_backups(
+                target, keep,
+            )
+        ]
+    return {
+        "backup": info.to_dict(),
+        "removed": removed,
+    }
+
+
+def _list_backups() -> dict:
+    """Return existing backups newest first."""
+    from ..config import get_config
+    from ..services import backup as backup_svc
+    from ..services import settings as settings_svc
+
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    target = settings_svc.resolve_backup_dir(data, cfg)
+    return {
+        "backups": [
+            b.to_dict()
+            for b in backup_svc.list_backups(target)
+        ],
     }

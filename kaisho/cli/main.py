@@ -3,6 +3,7 @@ import os
 import click
 
 from .advisor import ask_cmd
+from .backup import backup_cmd
 from .convert import convert_cmd
 from .notes import notes
 from .youtube import youtube_cmd
@@ -140,3 +141,4 @@ cli.add_command(ask_cmd)
 cli.add_command(youtube_cmd, name="youtube")
 cli.add_command(convert_cmd, name="convert")
 cli.add_command(notes, name="notes")
+cli.add_command(backup_cmd, name="backup")

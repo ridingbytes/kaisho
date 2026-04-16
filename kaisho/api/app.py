@@ -13,6 +13,7 @@ from ..config import (
 )
 from .routers import (
     advisor,
+    backup as backup_router,
     clocks,
     cron,
     customers,
@@ -99,6 +100,7 @@ app.include_router(knowledge.router)
 
 app.include_router(cron.router)
 app.include_router(cloud_sync.router)
+app.include_router(backup_router.router)
 app.include_router(settings_router.router)
 app.include_router(settings_states.router)
 app.include_router(settings_ai.router)

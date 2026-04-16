@@ -114,6 +114,73 @@ def _add_job_to_scheduler(
     )
 
 
+def _run_backup() -> None:
+    """Periodic backup job. No-op when disabled."""
+    from ..services import backup as backup_svc
+    from ..services import settings as settings_svc
+
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    backup_cfg = settings_svc.get_backup_settings(data)
+    if backup_cfg.get("interval_hours", 0) <= 0:
+        return
+    target = settings_svc.resolve_backup_dir(data, cfg)
+    try:
+        backup_svc.create_backup(
+            source_dir=cfg.DATA_DIR,
+            backup_dir=target,
+            profile=cfg.PROFILE,
+        )
+    except Exception as exc:  # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).warning(
+            "Scheduled backup failed: %s", exc,
+        )
+        return
+    keep = backup_cfg.get("keep", 0)
+    if keep > 0:
+        backup_svc.prune_backups(target, keep)
+
+
+_BACKUP_JOB_ID = "__backup__"
+
+
+def _backup_trigger():
+    """Return an APScheduler trigger for the backup job
+    based on the configured interval, or None if disabled."""
+    from apscheduler.triggers.interval import IntervalTrigger
+    from ..services import settings as settings_svc
+
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    hours = settings_svc.get_backup_settings(data).get(
+        "interval_hours", 0,
+    )
+    if hours <= 0:
+        return None
+    return IntervalTrigger(hours=hours)
+
+
+def sync_backup_job() -> None:
+    """Refresh the backup schedule after settings change."""
+    if _scheduler is None:
+        return
+    trigger = _backup_trigger()
+    if trigger is None:
+        try:
+            _scheduler.remove_job(_BACKUP_JOB_ID)
+        except Exception:
+            pass
+        return
+    _scheduler.add_job(
+        _run_backup,
+        trigger=trigger,
+        id=_BACKUP_JOB_ID,
+        name="Backup",
+        replace_existing=True,
+    )
+
+
 def _run_cloud_sync() -> None:
     """Periodic cloud sync job. No-op when disabled."""
     from ..services import settings as settings_svc
@@ -174,6 +241,17 @@ def build_scheduler(jobs_file: Path) -> BackgroundScheduler:
         name="Recurring Tasks",
         replace_existing=True,
     )
+
+    # Periodic backup job (gated on interval_hours > 0).
+    trigger = _backup_trigger()
+    if trigger is not None:
+        _scheduler.add_job(
+            _run_backup,
+            trigger=trigger,
+            id=_BACKUP_JOB_ID,
+            name="Backup",
+            replace_existing=True,
+        )
 
     return _scheduler
 

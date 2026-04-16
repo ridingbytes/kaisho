@@ -164,7 +164,7 @@ export function CloudSyncSection(): JSX.Element {
                   onChange={(e) =>
                     setUrl(e.target.value)
                   }
-                  placeholder="https://cloud.kaisho.app"
+                  placeholder="https://cloud.kaisho.dev"
                   className={inputCls}
                 />
               </label>

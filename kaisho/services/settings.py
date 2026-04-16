@@ -106,7 +106,7 @@ def set_ai_settings(path: Path, updates: dict) -> dict:
 
 DEFAULT_CLOUD_SYNC: dict = {
     "enabled": False,
-    "url": "",
+    "url": "https://cloud.kaisho.dev",
     "api_key": "",
     "interval": 300,
 }
@@ -143,6 +143,52 @@ def set_cloud_sync_settings(
     data["cloud_sync"] = sync
     save_settings(path, data)
     return get_cloud_sync_settings(data)
+
+
+DEFAULT_BACKUP: dict = {
+    # Empty string -> resolve to DATA_DIR / "backups" at
+    # runtime via resolve_backup_dir().
+    "directory": "",
+    "keep": 10,
+    # 0 disables the scheduled backup job.
+    "interval_hours": 24,
+}
+
+
+def get_backup_settings(settings: dict) -> dict:
+    """Return backup settings with defaults filled in."""
+    return {
+        **DEFAULT_BACKUP, **settings.get("backup", {}),
+    }
+
+
+def set_backup_settings(
+    path: Path, updates: dict,
+) -> dict:
+    """Persist backup settings updates; return the new block."""
+    data = load_settings(path)
+    block = data.get("backup", {})
+    block.update(updates)
+    data["backup"] = block
+    save_settings(path, data)
+    return get_backup_settings(data)
+
+
+def resolve_backup_dir(settings: dict, cfg=None) -> Path:
+    """Return the absolute backup directory path.
+
+    Uses ``backup.directory`` from settings when set,
+    otherwise ``DATA_DIR / "backups"``.
+    """
+    if cfg is None:
+        from ..config import get_config
+        cfg = get_config()
+    raw = get_backup_settings(settings).get(
+        "directory", "",
+    )
+    if raw:
+        return Path(raw).expanduser()
+    return cfg.DATA_DIR / "backups"
 
 
 DEFAULT_INVOICE_EXPORT: dict = {

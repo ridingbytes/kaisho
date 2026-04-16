@@ -808,4 +808,38 @@ TOOL_DEFS: list[dict] = [
             "required": ["job_id"],
         },
     },
+    {
+        "name": "create_backup",
+        "description": (
+            "Create a ZIP backup of the Kaisho data "
+            "directory and (by default) prune old backups "
+            "so only the configured number of recent "
+            "backups are kept. Returns the new backup's "
+            "filename, size, and how many old backups "
+            "were pruned."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "prune": {
+                    "type": "boolean",
+                    "description": (
+                        "Prune old backups after creating "
+                        "the new one (default: true)."
+                    ),
+                },
+            },
+        },
+    },
+    {
+        "name": "list_backups",
+        "description": (
+            "List existing backup archives, newest first. "
+            "Returns each backup's filename, size in bytes "
+            "and creation timestamp."
+        ),
+        "input_schema": {
+            "type": "object", "properties": {},
+        },
+    },
 ]

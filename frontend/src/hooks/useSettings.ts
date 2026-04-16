@@ -23,11 +23,16 @@ import {
   fetchAdvisorSkills,
   fetchAiSettings,
   fetchAvailableModels,
+  fetchBackups,
+  fetchBackupSettings,
   fetchClaudeCliStatus,
   fetchCloudActiveTimer,
   fetchCloudSyncStatus,
   fetchInvoiceExportSettings,
   fetchCurrentUser,
+  pruneBackupsRemote,
+  runBackup,
+  updateBackupSettings,
   fetchGithubSettings,
   fetchKbSources,
   fetchPaths,
@@ -591,3 +596,55 @@ export function useUpdateUserProfile() {
   });
 }
 
+
+
+// ─── Backup ─────────────────────────────────────────
+
+export function useBackupSettings() {
+  return useQuery({
+    queryKey: ["settings", "backup"],
+    queryFn: fetchBackupSettings,
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateBackupSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: updateBackupSettings,
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings", "backup"],
+      });
+    },
+  });
+}
+
+export function useBackups() {
+  return useQuery({
+    queryKey: ["backups"],
+    queryFn: fetchBackups,
+    staleTime: 30_000,
+  });
+}
+
+export function useRunBackup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (prune: boolean = true) =>
+      runBackup(prune),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["backups"] });
+    },
+  });
+}
+
+export function usePruneBackups() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (keep?: number) => pruneBackupsRemote(keep),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["backups"] });
+    },
+  });
+}

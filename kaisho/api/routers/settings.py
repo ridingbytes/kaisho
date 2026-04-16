@@ -287,6 +287,61 @@ def put_advisor_files(body: AdvisorFilesUpdate):
     }
 
 
+# ── Backup ───────────────────────────────────────────
+
+
+class BackupSettingsUpdate(BaseModel):
+    directory: str | None = None
+    keep: int | None = None
+    interval_hours: int | None = None
+
+
+@router.get("/backup")
+def get_backup_settings():
+    """Return backup schedule settings."""
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    result = settings_svc.get_backup_settings(data)
+    resolved = settings_svc.resolve_backup_dir(data, cfg)
+    result["resolved_directory"] = str(resolved)
+    return result
+
+
+@router.patch("/backup")
+def update_backup_settings(body: BackupSettingsUpdate):
+    """Update backup schedule settings."""
+    cfg = get_config()
+    updates = body.model_dump(exclude_none=True)
+    if "keep" in updates and updates["keep"] < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="keep must be >= 0",
+        )
+    if (
+        "interval_hours" in updates
+        and updates["interval_hours"] < 0
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="interval_hours must be >= 0",
+        )
+    updated = settings_svc.set_backup_settings(
+        cfg.SETTINGS_FILE, updates,
+    )
+    # Reschedule periodic backup if it changed.
+    try:
+        from ...cron.scheduler import sync_backup_job
+        sync_backup_job()
+    except Exception as exc:  # noqa: BLE001
+        # Scheduler may not be running (tests, CLI) —
+        # settings are still persisted in that case.
+        import logging
+        logging.getLogger(__name__).debug(
+            "sync_backup_job skipped: %s", exc,
+        )
+    return updated
+
+
 # ── URL allowlist ────────────────────────────────────
 
 
