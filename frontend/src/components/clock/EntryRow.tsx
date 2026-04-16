@@ -99,7 +99,7 @@ export function EntryRow({
       <td
         className={
           "px-3 py-1.5 text-xs font-mono " +
-          "whitespace-nowrap"
+          "whitespace-nowrap overflow-hidden"
         }
       >
         <button
@@ -119,13 +119,16 @@ export function EntryRow({
       <td
         className={
           "px-3 py-1.5 text-xs text-stone-600 " +
-          "whitespace-nowrap"
+          "whitespace-nowrap overflow-hidden"
         }
       >
         {formatTime(entry.start)}–
         {formatTime(entry.end)}
       </td>
-      <td className="px-3 py-1.5 text-xs whitespace-nowrap">
+      <td className={
+        "px-3 py-1.5 text-xs whitespace-nowrap " +
+        "overflow-hidden"
+      }>
         <button
           onClick={() =>
             setView("customers", entry.customer)
@@ -134,20 +137,24 @@ export function EntryRow({
             "px-1.5 py-0.5 rounded text-[10px] " +
             "font-semibold tracking-wider uppercase " +
             "bg-cta-muted text-cta-hover " +
-            "hover:bg-cta/20 transition-colors"
+            "hover:bg-cta/20 transition-colors " +
+            "max-w-full truncate inline-block align-middle"
           }
+          title={entry.customer}
         >
           {entry.customer}
         </button>
       </td>
       <td className={
         "px-3 py-1.5 text-xs whitespace-nowrap " +
-        "max-w-28 truncate"
+        "overflow-hidden"
       }>
         {entry.contract && (
           <span
             className={[
               "px-1.5 py-0.5 rounded text-[10px]",
+              "max-w-full truncate inline-block",
+              "align-middle",
               isInv
                 ? "bg-emerald-500/10 text-emerald-600"
                 : "bg-surface-overlay text-stone-700",
@@ -161,7 +168,7 @@ export function EntryRow({
       </td>
       <td className={
         "px-3 py-1.5 text-xs whitespace-nowrap " +
-        "max-w-32 truncate"
+        "overflow-hidden"
       }>
         {taskTitle && (
           <button
@@ -171,7 +178,9 @@ export function EntryRow({
             className={
               "px-1.5 py-0.5 rounded text-[10px] " +
               "font-medium bg-cta-muted text-cta " +
-              "hover:bg-cta/20 transition-colors"
+              "hover:bg-cta/20 transition-colors " +
+              "max-w-full truncate inline-block " +
+              "align-middle"
             }
             title={taskTitle}
           >
@@ -179,8 +188,14 @@ export function EntryRow({
           </button>
         )}
       </td>
-      <td className="px-3 py-1.5 text-xs text-stone-700 w-full">
-        <span className="inline-flex items-center gap-1">
+      <td className={
+        "px-3 py-1.5 text-xs text-stone-700 " +
+        "overflow-hidden"
+      }>
+        <span className={
+          "inline-flex items-center gap-1 " +
+          "max-w-full truncate align-middle"
+        }>
           {entry.description}
           {entry.description.length > 40 && (
             <ContentPopup
@@ -198,7 +213,8 @@ export function EntryRow({
       </td>
       <td className={
         "px-3 py-1.5 text-xs text-stone-700 " +
-        "tabular-nums whitespace-nowrap text-right"
+        "tabular-nums whitespace-nowrap text-right " +
+        "overflow-hidden"
       }>
         {entry.invoiced && (
           <span

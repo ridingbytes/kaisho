@@ -37,6 +37,8 @@ import type { ArchivedTask, Task } from "../../types";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { Toggle } from "../common/Toggle";
 import { HelpButton } from "../common/HelpButton";
+import { ResizeHandle } from "../common/ResizeHandle";
+import { useResizableColumns } from "../../hooks/useResizableColumns";
 import { DOCS } from "../../docs/panelDocs";
 import { TaskCard } from "./TaskCard";
 import { KanbanColumn } from "./KanbanColumn";
@@ -119,6 +121,14 @@ function fmtArchiveDate(dateStr: string): string {
   return dateStr.slice(0, 10);
 }
 
+const ARCHIVE_COLUMNS = [
+  { key: "archived", defaultPct: 14 },
+  { key: "customer", defaultPct: 16 },
+  { key: "title", defaultPct: 48 },
+  { key: "status", defaultPct: 14 },
+  { key: "actions", defaultPct: 8 },
+];
+
 interface ArchiveDrawerProps {
   stateMap: Record<string, { color: string }>;
 }
@@ -128,6 +138,8 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
   const { data: archived = [] } = useArchivedTasks();
   const unarchive = useUnarchiveTask();
   const deleteArchived = useDeleteArchivedTask();
+  const { widths, tableRef, startResize } =
+    useResizableColumns("archive", ARCHIVE_COLUMNS);
 
   return (
     <div className="border-t border-border-subtle bg-surface shrink-0">
@@ -150,20 +162,45 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
           {archived.length === 0 ? (
             <p className="text-xs text-stone-500 py-2">No archived tasks.</p>
           ) : (
-            <table className="w-full text-xs text-stone-700 border-separate border-spacing-y-0.5">
-              <thead>
+            <table
+              ref={tableRef}
+              className="w-full text-xs text-stone-700 table-fixed border-separate border-spacing-y-0.5"
+            >
+              <colgroup>
+                {widths.map((w, i) => (
+                  <col
+                    key={ARCHIVE_COLUMNS[i].key}
+                    style={{ width: `${w}%` }}
+                  />
+                ))}
+              </colgroup>
+              <thead className="group/thead">
                 <tr className="text-[10px] uppercase tracking-wider text-stone-500">
-                  <th className="text-left pb-1 pr-3 font-medium w-20">
+                  <th className="relative text-left pb-1 pr-3 font-medium">
                     Archived
+                    <ResizeHandle
+                      onMouseDown={(e) => startResize(0, e)}
+                    />
                   </th>
-                  <th className="text-left pb-1 pr-3 font-medium w-24">
+                  <th className="relative text-left pb-1 pr-3 font-medium">
                     Customer
+                    <ResizeHandle
+                      onMouseDown={(e) => startResize(1, e)}
+                    />
                   </th>
-                  <th className="text-left pb-1 pr-3 font-medium">Title</th>
-                  <th className="text-left pb-1 pr-3 font-medium w-20">
+                  <th className="relative text-left pb-1 pr-3 font-medium">
+                    Title
+                    <ResizeHandle
+                      onMouseDown={(e) => startResize(2, e)}
+                    />
+                  </th>
+                  <th className="relative text-left pb-1 pr-3 font-medium">
                     Status
+                    <ResizeHandle
+                      onMouseDown={(e) => startResize(3, e)}
+                    />
                   </th>
-                  <th className="pb-1 w-16" />
+                  <th className="pb-1" />
                 </tr>
               </thead>
               <tbody>
@@ -174,29 +211,33 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                       key={task.id}
                       className="group/row hover:bg-surface-overlay rounded"
                     >
-                      <td className="pr-3 py-1 font-mono text-stone-500 whitespace-nowrap">
+                      <td className="pr-3 py-1 font-mono text-stone-500 whitespace-nowrap overflow-hidden">
                         {fmtArchiveDate(task.archived_at)}
                       </td>
-                      <td className="pr-3 py-1 whitespace-nowrap">
+                      <td className="pr-3 py-1 whitespace-nowrap overflow-hidden">
                         {task.customer && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-cta-muted text-cta-hover">
+                          <span
+                            className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-cta-muted text-cta-hover max-w-full truncate inline-block align-middle"
+                            title={task.customer}
+                          >
                             {task.customer}
                           </span>
                         )}
                       </td>
-                      <td className="pr-3 py-1 text-stone-800 truncate max-w-xs">
+                      <td className="pr-3 py-1 text-stone-800 truncate">
                         {stripCustomerPrefix(task.title)}
                       </td>
-                      <td className="pr-3 py-1 whitespace-nowrap">
+                      <td className="pr-3 py-1 whitespace-nowrap overflow-hidden">
                         {state ? (
                           <span
-                            className="px-1.5 py-0.5 rounded text-[10px] font-medium text-white"
+                            className="px-1.5 py-0.5 rounded text-[10px] font-medium text-white max-w-full truncate inline-block align-middle"
                             style={{ backgroundColor: state.color }}
+                            title={task.archive_status}
                           >
                             {task.archive_status}
                           </span>
                         ) : (
-                          <span className="text-stone-500">
+                          <span className="text-stone-500 truncate inline-block max-w-full align-middle">
                             {task.archive_status}
                           </span>
                         )}

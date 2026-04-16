@@ -3,6 +3,7 @@
  * the clock entries table.
  */
 import { ArrowDown, ArrowUp } from "lucide-react";
+import { ResizeHandle } from "../common/ResizeHandle";
 import { taskTitleById } from "../../utils/customerPrefix";
 import type { ClockEntry, Task } from "../../types";
 
@@ -23,7 +24,7 @@ export type SortState = { col: SortCol; dir: SortDir };
 // -----------------------------------------------------------------
 
 const thCls = [
-  "px-3 py-2 text-[10px] font-semibold uppercase",
+  "relative px-3 py-2 text-[10px] font-semibold uppercase",
   "tracking-wider text-stone-600 select-none",
   "cursor-pointer hover:text-stone-900 transition-colors",
 ].join(" ");
@@ -35,11 +36,15 @@ interface SortThProps {
   sort: SortState;
   onSort: (col: SortCol) => void;
   align?: "right";
+  /** When set, renders a drag handle on the right edge
+   *  that calls this handler on mouse-down. */
+  onResizeStart?: (e: React.MouseEvent) => void;
 }
 
 /**
  * A clickable table header cell that toggles sort
- * direction and highlights the active column.
+ * direction and highlights the active column. Optionally
+ * renders a resize handle on the right edge.
  */
 export function SortTh({
   label,
@@ -47,6 +52,7 @@ export function SortTh({
   sort,
   onSort,
   align,
+  onResizeStart,
 }: SortThProps) {
   const active = sort.col === col;
   const Icon = sort.dir === "asc" ? ArrowUp : ArrowDown;
@@ -57,7 +63,10 @@ export function SortTh({
       }`}
       onClick={() => onSort(col)}
     >
-      <span className="inline-flex items-center gap-0.5">
+      <span className={[
+        "inline-flex items-center gap-0.5",
+        "truncate align-middle",
+      ].join(" ")}>
         {label}
         {active && (
           <Icon
@@ -67,6 +76,9 @@ export function SortTh({
           />
         )}
       </span>
+      {onResizeStart && (
+        <ResizeHandle onMouseDown={onResizeStart} />
+      )}
     </th>
   );
 }

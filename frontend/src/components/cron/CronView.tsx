@@ -13,6 +13,8 @@ import { Fragment, useRef, useState } from "react";
 import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
+import { ResizeHandle } from "../common/ResizeHandle";
+import { useResizableColumns } from "../../hooks/useResizableColumns";
 import { DOCS } from "../../docs/panelDocs";
 import { useKbSources } from "../../hooks/useSettings";
 import {
@@ -34,6 +36,18 @@ import { Toggle } from "../common/Toggle";
 import type { CronJob, CronRun } from "../../types";
 
 const MODEL_DATALIST = "cron-model-list";
+
+const CRON_HISTORY_COLUMNS = [
+  { key: "toggle", defaultPct: 3 },
+  { key: "id", defaultPct: 6 },
+  { key: "job", defaultPct: 18 },
+  { key: "model", defaultPct: 14 },
+  { key: "started", defaultPct: 15 },
+  { key: "finished", defaultPct: 15 },
+  { key: "status", defaultPct: 10 },
+  { key: "error", defaultPct: 15 },
+  { key: "actions", defaultPct: 4 },
+];
 
 const fieldCls =
   "px-2 py-1 rounded text-xs bg-surface-raised border border-border " +
@@ -576,6 +590,8 @@ function HistoryTable({
     null
   );
   const jobMap = new Map(jobs.map((j) => [j.id, j]));
+  const { widths, tableRef, startResize } =
+    useResizableColumns("cron-history", CRON_HISTORY_COLUMNS);
 
   if (runs.length === 0) {
     return (
@@ -585,34 +601,72 @@ function HistoryTable({
     );
   }
 
+  const resizable = "relative py-2 pr-4 font-medium text-left";
+
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-xs">
-        <thead>
+      <table
+        ref={tableRef}
+        className="w-full text-xs table-fixed"
+      >
+        <colgroup>
+          {widths.map((w, i) => (
+            <col
+              key={CRON_HISTORY_COLUMNS[i].key}
+              style={{ width: `${w}%` }}
+            />
+          ))}
+        </colgroup>
+        <thead className="group/thead">
           <tr className="text-stone-500 border-b border-border-subtle">
-            <th className="text-left py-2 pr-4 font-medium w-4" />
-            <th className="text-left py-2 pr-4 font-medium">
+            <th className={resizable}>
+              <ResizeHandle
+                onMouseDown={(e) => startResize(0, e)}
+              />
+            </th>
+            <th className={resizable}>
               #
+              <ResizeHandle
+                onMouseDown={(e) => startResize(1, e)}
+              />
             </th>
-            <th className="text-left py-2 pr-4 font-medium">
+            <th className={resizable}>
               Job
+              <ResizeHandle
+                onMouseDown={(e) => startResize(2, e)}
+              />
             </th>
-            <th className="text-left py-2 pr-4 font-medium">
+            <th className={resizable}>
               Model
+              <ResizeHandle
+                onMouseDown={(e) => startResize(3, e)}
+              />
             </th>
-            <th className="text-left py-2 pr-4 font-medium">
+            <th className={resizable}>
               Started
+              <ResizeHandle
+                onMouseDown={(e) => startResize(4, e)}
+              />
             </th>
-            <th className="text-left py-2 pr-4 font-medium">
+            <th className={resizable}>
               Finished
+              <ResizeHandle
+                onMouseDown={(e) => startResize(5, e)}
+              />
             </th>
-            <th className="text-left py-2 pr-4 font-medium">
+            <th className={resizable}>
               Status
+              <ResizeHandle
+                onMouseDown={(e) => startResize(6, e)}
+              />
             </th>
-            <th className="text-left py-2 pr-4 font-medium">
+            <th className={resizable}>
               Error
+              <ResizeHandle
+                onMouseDown={(e) => startResize(7, e)}
+              />
             </th>
-            <th className="py-2 w-6" />
+            <th className="py-2" />
           </tr>
         </thead>
         <tbody>
@@ -639,7 +693,7 @@ function HistoryTable({
                     isOpen ? "bg-surface-raised" : "",
                   ].join(" ")}
                 >
-                  <td className="py-2 pr-2 text-stone-500 w-4">
+                  <td className="py-2 pr-2 text-stone-500 overflow-hidden">
                     {hasOutput ? (
                       isOpen ? (
                         <ChevronDown size={10} />
@@ -648,35 +702,35 @@ function HistoryTable({
                       )
                     ) : null}
                   </td>
-                  <td className="py-2 pr-4 text-stone-500">
+                  <td className="py-2 pr-4 text-stone-500 overflow-hidden">
                     {run.id}
                   </td>
-                  <td className="py-2 pr-4 font-mono text-stone-700">
+                  <td className="py-2 pr-4 font-mono text-stone-700 truncate">
                     {run.job_id}
                   </td>
-                  <td className="py-2 pr-4">
+                  <td className="py-2 pr-4 overflow-hidden">
                     {model && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-indigo-500/10 text-indigo-600">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-indigo-500/10 text-indigo-600 truncate inline-block max-w-full align-middle">
                         {model}
                       </span>
                     )}
                   </td>
-                  <td className="py-2 pr-4 text-stone-700">
+                  <td className="py-2 pr-4 text-stone-700 truncate">
                     {run.started_at
                       .slice(0, 19)
                       .replace("T", " ")}
                   </td>
-                  <td className="py-2 pr-4 text-stone-700">
+                  <td className="py-2 pr-4 text-stone-700 truncate">
                     {run.finished_at
                       ? run.finished_at
                           .slice(0, 19)
                           .replace("T", " ")
                       : "\u2014"}
                   </td>
-                  <td className="py-2 pr-4">
+                  <td className="py-2 pr-4 overflow-hidden">
                     <StatusPill status={run.status} />
                   </td>
-                  <td className="py-2 pr-4 text-red-400 max-w-xs truncate">
+                  <td className="py-2 pr-4 text-red-400 truncate">
                     {run.status === "error"
                       ? run.error
                       : ""}
