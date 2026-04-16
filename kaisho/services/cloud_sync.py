@@ -10,6 +10,7 @@ app works fully standalone with no cloud dependency.
 import json
 import logging
 import tempfile
+import urllib.parse
 import urllib.request
 import urllib.error
 from datetime import datetime
@@ -90,10 +91,10 @@ def pull_clocks(
     since: str = "1970-01-01T00:00:00Z",
 ) -> dict:
     """Fetch unsynced completed clock entries."""
-    url = (
-        f"{cloud_url}/sync/pull-clocks"
-        f"?since={since}&limit=100"
-    )
+    qs = urllib.parse.urlencode({
+        "since": since, "limit": 100,
+    })
+    url = f"{cloud_url}/sync/pull-clocks?{qs}"
     return _request(url, api_key)
 
 
