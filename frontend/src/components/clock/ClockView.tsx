@@ -17,12 +17,18 @@ import { SearchInput } from "../common/SearchInput";
 import { DOCS } from "../../docs/panelDocs";
 import { useClockEntries } from "../../hooks/useClocks";
 import { useInvoicedContracts } from "../../hooks/useInvoicedContracts";
+import { useResizableColumns } from "../../hooks/useResizableColumns";
 import { useInvoiceExportSettings } from "../../hooks/useSettings";
 import { useTasks } from "../../hooks/useTasks";
 import {
   exportClocksCsv,
   exportClocksExcel,
 } from "../../utils/exportClocks";
+import { taskTitleById } from "../../utils/customerPrefix";
+import {
+  isValidQuery,
+  matchesFilter,
+} from "../../utils/filterMatch";
 import { registerPanelAction } from "../../utils/panelActions";
 import {
   usePendingSearch,
@@ -33,15 +39,129 @@ import type { SortCol, SortState } from "./ClockTableHeader";
 
 type Period = "today" | "week" | "month" | "year";
 
+const PERIOD_STORAGE_KEY = "clocks_period";
+const PERIOD_VALUES: Period[] = [
+  "today",
+  "week",
+  "month",
+  "year",
+];
+
+function loadPeriod(): Period {
+  const raw = localStorage.getItem(PERIOD_STORAGE_KEY);
+  return PERIOD_VALUES.includes(raw as Period)
+    ? (raw as Period)
+    : "week";
+}
+
+/** Column-filter keys (text columns only). */
+const FILTER_KEYS = [
+  "customer",
+  "contract",
+  "task",
+  "description",
+] as const;
+type FilterKey = (typeof FILTER_KEYS)[number];
+type ColFilters = Record<FilterKey, string>;
+
+const FILTERS_STORAGE_KEY = "clocks_col_filters";
+
+const EMPTY_FILTERS: ColFilters = {
+  customer: "",
+  contract: "",
+  task: "",
+  description: "",
+};
+
+function loadFilters(): ColFilters {
+  const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
+  if (!raw) return EMPTY_FILTERS;
+  try {
+    const parsed = JSON.parse(raw);
+    return { ...EMPTY_FILTERS, ...parsed };
+  } catch {
+    return EMPTY_FILTERS;
+  }
+}
+
+
+interface FilterInputProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+/** Compact regex-aware filter input for a column header.
+ *  Shows a small X to clear when non-empty and turns red
+ *  on invalid regex. */
+function FilterInput({
+  value,
+  onChange,
+}: FilterInputProps) {
+  const valid = isValidQuery(value);
+  return (
+    <div className="relative">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Filter…"
+        title={
+          valid
+            ? "Filter (case-insensitive regex; " +
+              "comma separates OR terms)"
+            : "Invalid regex \u2014 filter is ignored " +
+              "until you fix it"
+        }
+        className={[
+          "w-full px-2 py-0.5 rounded text-[11px]",
+          "bg-surface-raised border",
+          valid
+            ? "border-border focus:border-cta"
+            : "border-red-400 focus:border-red-500",
+          "text-stone-900 placeholder-stone-400",
+          "focus:outline-none",
+          value ? "pr-5" : "",
+        ].join(" ")}
+      />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          className={[
+            "absolute right-1 top-1/2 -translate-y-1/2",
+            "text-stone-400 hover:text-stone-700",
+            "text-xs leading-none",
+          ].join(" ")}
+          title="Clear filter"
+        >
+          ×
+        </button>
+      )}
+    </div>
+  );
+}
+
+const CLOCK_COLUMNS = [
+  { key: "date", defaultPct: 8 },
+  { key: "time", defaultPct: 10 },
+  { key: "customer", defaultPct: 10 },
+  { key: "contract", defaultPct: 10 },
+  { key: "task", defaultPct: 14 },
+  { key: "description", defaultPct: 36 },
+  { key: "duration", defaultPct: 12 },
+];
+
 /**
  * Top-level clock entries panel with period filtering,
  * search, CSV/XLS export, quick-book, and a sortable
  * entries table.
  */
 export function ClockView() {
-  const [period, setPeriod] = useState<Period>("week");
+  const [period, setPeriod] = useState<Period>(loadPeriod);
   const [specificDate, setSpecificDate] = useState("");
   const [search, setSearch] = useState("");
+  const [colFilters, setColFilters] =
+    useState<ColFilters>(loadFilters);
   const [booking, setBooking] = useState(false);
   const [sort, setSort] = useState<SortState>({
     col: "date",
@@ -51,6 +171,8 @@ export function ClockView() {
   const { data: exportSettings } =
     useInvoiceExportSettings();
   const exportColumns = exportSettings?.columns;
+  const { widths, tableRef, startResize } =
+    useResizableColumns("clocks", CLOCK_COLUMNS);
 
   function toggleSort(col: SortCol) {
     setSort((prev) =>
@@ -87,7 +209,18 @@ export function ClockView() {
     }
   }, [pendingSearch, clearPendingSearch]);
 
-  const filtered = search
+  useEffect(() => {
+    localStorage.setItem(
+      FILTERS_STORAGE_KEY,
+      JSON.stringify(colFilters),
+    );
+  }, [colFilters]);
+
+  function setFilter(key: FilterKey, value: string) {
+    setColFilters((prev) => ({ ...prev, [key]: value }));
+  }
+
+  const searchFiltered = search
     ? entries.filter(
         (e) =>
           e.customer
@@ -98,6 +231,17 @@ export function ClockView() {
             .includes(search.toLowerCase()),
       )
     : entries;
+
+  const filtered = searchFiltered.filter((e) => {
+    const taskTitle =
+      taskTitleById(tasks, e.task_id) ?? "";
+    return (
+      matchesFilter(e.customer, colFilters.customer) &&
+      matchesFilter(e.contract ?? "", colFilters.contract) &&
+      matchesFilter(taskTitle, colFilters.task) &&
+      matchesFilter(e.description, colFilters.description)
+    );
+  });
 
   const sorted = [...filtered].sort((a, b) => {
     const av = sortValue(a, sort.col, tasks);
@@ -142,8 +286,13 @@ export function ClockView() {
           className={`${smallInputCls} !w-28`}
           value={period}
           onChange={(e) => {
-            setPeriod(e.target.value as Period);
+            const next = e.target.value as Period;
+            setPeriod(next);
             setSpecificDate("");
+            localStorage.setItem(
+              PERIOD_STORAGE_KEY,
+              next,
+            );
           }}
         >
           <option value="today">Today</option>
@@ -257,8 +406,19 @@ export function ClockView() {
           </p>
         )}
         {sorted.length > 0 && (
-          <table className="w-full">
-            <thead>
+          <table
+            ref={tableRef}
+            className="w-full table-fixed"
+          >
+            <colgroup>
+              {widths.map((w, i) => (
+                <col
+                  key={CLOCK_COLUMNS[i].key}
+                  style={{ width: `${w}%` }}
+                />
+              ))}
+            </colgroup>
+            <thead className="group/thead">
               <tr className={
                 "border-b border-border text-left " +
                 "sticky top-0 bg-surface-card z-10"
@@ -268,36 +428,42 @@ export function ClockView() {
                   col="date"
                   sort={sort}
                   onSort={toggleSort}
+                  onResizeStart={(e) => startResize(0, e)}
                 />
                 <SortTh
                   label="Time"
                   col="time"
                   sort={sort}
                   onSort={toggleSort}
+                  onResizeStart={(e) => startResize(1, e)}
                 />
                 <SortTh
                   label="Customer"
                   col="customer"
                   sort={sort}
                   onSort={toggleSort}
+                  onResizeStart={(e) => startResize(2, e)}
                 />
                 <SortTh
                   label="Contract"
                   col="contract"
                   sort={sort}
                   onSort={toggleSort}
+                  onResizeStart={(e) => startResize(3, e)}
                 />
                 <SortTh
                   label="Task"
                   col="task"
                   sort={sort}
                   onSort={toggleSort}
+                  onResizeStart={(e) => startResize(4, e)}
                 />
                 <SortTh
                   label="Description"
                   col="description"
                   sort={sort}
                   onSort={toggleSort}
+                  onResizeStart={(e) => startResize(5, e)}
                 />
                 <SortTh
                   label="Duration"
@@ -306,6 +472,46 @@ export function ClockView() {
                   onSort={toggleSort}
                   align="right"
                 />
+              </tr>
+              <tr className={
+                "border-b border-border-subtle " +
+                "bg-surface-card"
+              }>
+                <th />
+                <th />
+                <th className="px-2 py-1">
+                  <FilterInput
+                    value={colFilters.customer}
+                    onChange={(v) =>
+                      setFilter("customer", v)
+                    }
+                  />
+                </th>
+                <th className="px-2 py-1">
+                  <FilterInput
+                    value={colFilters.contract}
+                    onChange={(v) =>
+                      setFilter("contract", v)
+                    }
+                  />
+                </th>
+                <th className="px-2 py-1">
+                  <FilterInput
+                    value={colFilters.task}
+                    onChange={(v) =>
+                      setFilter("task", v)
+                    }
+                  />
+                </th>
+                <th className="px-2 py-1">
+                  <FilterInput
+                    value={colFilters.description}
+                    onChange={(v) =>
+                      setFilter("description", v)
+                    }
+                  />
+                </th>
+                <th />
               </tr>
             </thead>
             <tbody>

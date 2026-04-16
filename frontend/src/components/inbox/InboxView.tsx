@@ -6,6 +6,7 @@ import { CollapsibleSection } from "../common/CollapsibleSection";
 import { HelpButton } from "../common/HelpButton";
 import { SearchInput } from "../common/SearchInput";
 import { DOCS } from "../../docs/panelDocs";
+import { matchesAny } from "../../utils/filterMatch";
 import { registerPanelAction } from "../../utils/panelActions";
 
 export function InboxView() {
@@ -19,7 +20,7 @@ export function InboxView() {
   );
 
   const matchesSearch = (title: string) =>
-    !search || title.toLowerCase().includes(search.toLowerCase());
+    matchesAny([title], search);
 
   const active = items.filter(
     (i) =>
@@ -39,6 +40,7 @@ export function InboxView() {
         <SearchInput
           value={search}
           onChange={setSearch}
+          validate
           inputClassName="px-2 py-1 rounded-lg text-xs bg-surface-raised border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta w-40 pr-6"
           className="w-40"
         />

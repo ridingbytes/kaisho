@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useCreateCustomer, useCustomers } from "../../hooks/useCustomers";
 import { useSettings } from "../../hooks/useSettings";
+import { matchesAny } from "../../utils/filterMatch";
 import { registerPanelAction } from "../../utils/panelActions";
 import { Toggle } from "../common/Toggle";
 import { HelpButton } from "../common/HelpButton";
@@ -130,9 +131,8 @@ function sortAndFilter(
   search: string,
   sortBy: SortKey
 ) {
-  const q = search.toLowerCase();
-  const filtered = q
-    ? customers.filter((c) => c.name.toLowerCase().includes(q))
+  const filtered = search
+    ? customers.filter((c) => matchesAny([c.name], search))
     : customers;
   return [...filtered].sort((a, b) => {
     if (sortBy === "name") return a.name.localeCompare(b.name);
@@ -172,6 +172,7 @@ export function CustomersView() {
         <SearchInput
           value={search}
           onChange={setSearch}
+          validate
           inputClassName={`${inputCls} w-44 pr-6`}
           className="w-44"
         />

@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useRef } from "react";
+import { isValidQuery } from "../../utils/filterMatch";
 
 interface SearchInputProps {
   value: string;
@@ -8,6 +9,10 @@ interface SearchInputProps {
   className?: string;
   inputClassName?: string;
   autoFocus?: boolean;
+  /** When true, validate `value` as a filterMatch query
+   *  and apply a red outline + tooltip on invalid regex.
+   *  Callers that use the shared matcher should set this. */
+  validate?: boolean;
 }
 
 export function SearchInput({
@@ -17,8 +22,10 @@ export function SearchInput({
   className,
   inputClassName,
   autoFocus,
+  validate,
 }: SearchInputProps) {
   const ref = useRef<HTMLInputElement>(null);
+  const invalid = validate && !isValidQuery(value);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Escape") {
@@ -37,7 +44,19 @@ export function SearchInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        className={inputClassName}
+        title={
+          validate
+            ? invalid
+              ? "Invalid regex \u2014 filter is ignored " +
+                "until you fix it"
+              : "Filter (case-insensitive regex; " +
+                "comma separates OR terms)"
+            : undefined
+        }
+        className={[
+          inputClassName ?? "",
+          invalid ? "!border-red-400" : "",
+        ].join(" ")}
       />
       {value && (
         <button

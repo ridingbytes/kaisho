@@ -28,6 +28,7 @@ import { useSettings } from "../../hooks/useSettings";
 import { useTasks } from "../../hooks/useTasks";
 import { usePendingSearch, useSetView } from "../../context/ViewContext";
 import { SearchInput } from "../common/SearchInput";
+import { matchesAny } from "../../utils/filterMatch";
 import { registerPanelAction } from "../../utils/panelActions";
 import type { NoteItem } from "../../types";
 
@@ -691,15 +692,10 @@ export function NotesView() {
     if (tagFilter && !(n.tags ?? []).includes(tagFilter)) {
       return false;
     }
-    if (search) {
-      const q = search.toLowerCase();
-      return (
-        n.title.toLowerCase().includes(q) ||
-        (n.customer ?? "").toLowerCase().includes(q) ||
-        (n.body ?? "").toLowerCase().includes(q)
-      );
-    }
-    return true;
+    return matchesAny(
+      [n.title, n.customer, n.body],
+      search,
+    );
   });
 
   return (
@@ -712,6 +708,7 @@ export function NotesView() {
         <SearchInput
           value={search}
           onChange={setSearch}
+          validate
           inputClassName="px-2 py-1 rounded-lg text-xs bg-surface-raised border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta w-40 pr-6"
           className="w-40"
         />
