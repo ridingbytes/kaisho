@@ -478,7 +478,7 @@ export function fetchTaskClockEntries(
 /** Params for starting a new timer. */
 export interface StartTimerParams {
   customer: string;
-  description: string;
+  description?: string;
   taskId?: string;
   contract?: string;
 }
@@ -490,7 +490,7 @@ export function startTimer(
 ): Promise<ClockEntry> {
   return post<ClockEntry>("/clocks/start", {
     customer: params.customer,
-    description: params.description,
+    description: params.description ?? "",
     task_id: params.taskId ?? null,
     contract: params.contract ?? null,
   });
@@ -506,7 +506,7 @@ export function stopTimer(): Promise<ClockEntry> {
 export interface QuickBookParams {
   duration: string;
   customer: string;
-  description: string;
+  description?: string;
   taskId?: string;
   contract?: string;
   date?: string;
@@ -521,7 +521,7 @@ export function quickBook(
   return post<ClockEntry>("/clocks/quick-book", {
     duration: params.duration,
     customer: params.customer,
-    description: params.description,
+    description: params.description ?? "",
     task_id: params.taskId ?? null,
     contract: params.contract ?? null,
     date: params.date ?? null,

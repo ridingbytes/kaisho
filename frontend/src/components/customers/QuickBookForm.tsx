@@ -47,7 +47,7 @@ export function QuickBookForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!duration.trim() || !description.trim()) return;
+    if (!duration.trim()) return;
     book.mutate(
       {
         duration: duration.trim(),
@@ -91,7 +91,7 @@ export function QuickBookForm({
         />
         <input
           type="text"
-          placeholder="Description"
+          placeholder="Description (optional)"
           value={description}
           onChange={(e) =>
             setDescription(e.target.value)
@@ -148,7 +148,6 @@ export function QuickBookForm({
           disabled={
             book.isPending
             || !duration.trim()
-            || !description.trim()
           }
           className={
             "p-1 text-cta hover:bg-cta-muted "

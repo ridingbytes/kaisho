@@ -38,12 +38,7 @@ export function BookForm({ onClose }: BookFormProps) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (
-      !duration.trim() ||
-      !customer.trim() ||
-      !description.trim()
-    )
-      return;
+    if (!duration.trim() || !customer.trim()) return;
     book.mutate(
       {
         duration: duration.trim(),
@@ -130,7 +125,7 @@ export function BookForm({ onClose }: BookFormProps) {
       )}
       <div className="flex flex-col gap-1 flex-1 min-w-40">
         <label className="text-[10px] text-stone-600 uppercase tracking-wider">
-          Description *
+          Description
         </label>
         <input
           className={inputCls}
@@ -168,8 +163,7 @@ export function BookForm({ onClose }: BookFormProps) {
           disabled={
             book.isPending ||
             !duration.trim() ||
-            !customer.trim() ||
-            !description.trim()
+            !customer.trim()
           }
           className={
             "px-3 py-1.5 rounded bg-cta text-white " +

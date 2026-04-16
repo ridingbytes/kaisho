@@ -88,7 +88,7 @@ export function useStartTimer() {
       contract,
     }: {
       customer: string;
-      description: string;
+      description?: string;
       taskId?: string;
       contract?: string;
     }) => startTimer({
@@ -148,7 +148,7 @@ export function useQuickBook() {
     }: {
       duration: string;
       customer: string;
-      description: string;
+      description?: string;
       taskId?: string;
       contract?: string;
       date?: string;

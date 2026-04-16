@@ -30,8 +30,7 @@ export function QuickBookForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!duration.trim() || !customer.trim() || !description.trim())
-      return;
+    if (!duration.trim() || !customer.trim()) return;
     book.mutate(
       {
         duration: duration.trim(),
@@ -89,7 +88,7 @@ export function QuickBookForm({
       )}
       <input
         type="text"
-        placeholder="Description"
+        placeholder="Description (optional)"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         className={inputCls}
@@ -128,8 +127,7 @@ export function QuickBookForm({
         disabled={
           book.isPending ||
           !duration.trim() ||
-          !customer.trim() ||
-          !description.trim()
+          !customer.trim()
         }
         className={[
           "w-full py-2 rounded-lg text-xs font-semibold",

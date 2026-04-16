@@ -29,7 +29,7 @@ export function StartForm({ onStarted }: Props) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!customer.trim() || !description.trim()) return;
+    if (!customer.trim()) return;
     start.mutate(
       {
         customer: customer.trim(),
@@ -74,7 +74,7 @@ export function StartForm({ onStarted }: Props) {
       )}
       <input
         type="text"
-        placeholder="Description"
+        placeholder="Description (optional)"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         className={inputCls}
@@ -98,8 +98,7 @@ export function StartForm({ onStarted }: Props) {
         type="submit"
         disabled={
           start.isPending ||
-          !customer.trim() ||
-          !description.trim()
+          !customer.trim()
         }
         className={[
           "w-full py-2 rounded-lg text-xs font-semibold",
