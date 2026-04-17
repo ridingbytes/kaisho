@@ -40,7 +40,7 @@ from . import sync_state
 
 log = logging.getLogger(__name__)
 
-HTTP_TIMEOUT = 30
+HTTP_TIMEOUT = 60
 
 
 # -- Timezone helpers ------------------------------------------
