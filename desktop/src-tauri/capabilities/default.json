@@ -8,6 +8,12 @@
     "shell:allow-spawn",
     "shell:allow-kill",
     "shell:allow-stdin-write",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        { "name": "binaries/kai-server", "sidecar": true }
+      ]
+    },
     "updater:default",
     "dialog:default",
     "process:default"
