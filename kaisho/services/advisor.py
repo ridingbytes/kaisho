@@ -299,7 +299,7 @@ def _parse_model(model_str: str) -> tuple[str, str]:
         if provider in (
             "ollama", "claude", "claude_cli",
             "lm_studio", "openrouter", "openai",
-            "cloud",
+            "kaisho",
         ):
             return provider, name
     return "ollama", model_str
@@ -680,7 +680,7 @@ def ask(
             api_key=openai_api_key,
             system_prompt=sp, on_event=on_event,
         )
-    if provider == "cloud":
+    if provider == "kaisho":
         from .cloud_sync import cloud_ai_complete
         return cloud_ai_complete(
             cloud_url=cloud_url,

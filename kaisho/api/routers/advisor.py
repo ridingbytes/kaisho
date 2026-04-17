@@ -125,7 +125,7 @@ def _stream_ask(body: AskRequest) -> Generator[
 
     # When Cloud AI is enabled, override the model
     model_str = (
-        "cloud:default"
+        "kaisho:default"
         if use_cloud and cloud_url and cloud_key
         else body.model
     )

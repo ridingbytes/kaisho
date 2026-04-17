@@ -597,7 +597,7 @@ def _dispatch_prompt(
     which proxies to Claude and meters usage against
     the user's sync_ai quota.
     """
-    if provider == "cloud":
+    if provider == "kaisho":
         from ..services.cloud_sync import (
             cloud_ai_complete,
         )
@@ -669,7 +669,7 @@ def execute_job(
     # Cloud AI override: route everything through the
     # cloud gateway when the user has opted in.
     if use_cloud_ai and cloud_url and cloud_api_key:
-        provider = "cloud"
+        provider = "kaisho"
         model_name = ""
     else:
         err = verify_model(
