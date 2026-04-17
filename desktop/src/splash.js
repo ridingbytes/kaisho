@@ -1,11 +1,9 @@
 "use strict";
 
-const BACKEND_URL = "http://localhost:8765";
-const HEALTH_URL = BACKEND_URL + "/health";
-const POLL_INTERVAL_MS = 500;
-const MAX_WAIT_MS = 60000;
+var POLL_INTERVAL_MS = 500;
+var MAX_WAIT_MS = 60000;
 
-const statusEl = document.getElementById("status");
+var statusEl = document.getElementById("status");
 
 function setStatus(text) {
   if (statusEl) {
@@ -13,12 +11,17 @@ function setStatus(text) {
   }
 }
 
+function getBackendUrl() {
+  var port = window.__KAISHO_PORT__ || 8765;
+  return "http://127.0.0.1:" + port;
+}
+
 async function isBackendReady() {
   try {
-    const res = await fetch(HEALTH_URL, {
-      method: "GET",
-      cache: "no-store",
-    });
+    var res = await fetch(
+      getBackendUrl() + "/health",
+      { method: "GET", cache: "no-store" },
+    );
     return res.ok;
   } catch (_err) {
     return false;
@@ -26,24 +29,27 @@ async function isBackendReady() {
 }
 
 function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(
+    function (resolve) { setTimeout(resolve, ms); },
+  );
 }
 
 async function waitAndRedirect() {
-  const started = Date.now();
+  var started = Date.now();
   setStatus("Starting\u2026");
 
   while (Date.now() - started < MAX_WAIT_MS) {
     if (await isBackendReady()) {
       setStatus("Ready");
-      window.location.replace(BACKEND_URL);
+      window.location.replace(getBackendUrl());
       return;
     }
     await sleep(POLL_INTERVAL_MS);
   }
 
   setStatus(
-    "Backend did not start in time. Check that `kai` is in PATH.",
+    "Backend did not start in time. "
+    + "Check the application logs.",
   );
 }
 

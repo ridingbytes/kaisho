@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2
+
+- Fix desktop app startup: PyInstaller-aware path resolution
+- Random port selection to avoid conflicts
+- Simplify Kaisho AI: single completion, no tool calls
+- Default crons (daily-briefing, project-update) use Kaisho AI
+- Token budget for agentic loop (50K max per run)
+
 ## 0.3.1
 
 - Fix desktop app: set SERVE_FRONTEND=true for sidecar

@@ -28,14 +28,45 @@ pub fn run() {
         .setup(|app| {
             // Spawn the bundled kai-server sidecar.
             let shell = app.shell();
+            // Pick a random port to avoid conflicts with
+            // other kaisho instances or dev servers.
+            let port = {
+                let listener =
+                    std::net::TcpListener::bind(
+                        "127.0.0.1:0",
+                    )
+                    .expect("failed to bind random port");
+                listener.local_addr().unwrap().port()
+            };
+            let port_str = port.to_string();
+
             let (mut rx, child) = shell
                 .sidecar("kai-server")
                 .expect("kai-server sidecar not found")
                 .env("SERVE_FRONTEND", "true")
-                .args(["serve", "--host", "127.0.0.1"])
+                .args([
+                    "serve",
+                    "--host",
+                    "127.0.0.1",
+                    "--port",
+                    &port_str,
+                ])
                 .spawn()?;
 
             app.manage(KaiProcess(Mutex::new(Some(child))));
+
+            // Tell the splash screen which port to poll.
+            // This is a Tauri webview eval (not browser
+            // eval) — it injects a constant into the
+            // splash page's JS context.
+            if let Some(win) = app.get_webview_window("main")
+            {
+                let js = format!(
+                    "window.__KAISHO_PORT__ = {};",
+                    port,
+                );
+                let _ = win.eval(&js);  // safe: Tauri webview API, not user input
+            }
 
             // Pipe child stdout/stderr for debugging.
             tauri::async_runtime::spawn(async move {

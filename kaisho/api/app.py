@@ -141,9 +141,12 @@ def _mount_frontend():
     from fastapi.staticfiles import StaticFiles
     from starlette.responses import FileResponse
 
-    dist = Path(__file__).parent.parent.parent / (
-        "frontend" / Path("dist")
-    )
+    import sys
+    if getattr(sys, "frozen", False):
+        base = Path(sys._MEIPASS)
+    else:
+        base = Path(__file__).parent.parent.parent
+    dist = base / "frontend" / "dist"
     if not dist.is_dir():
         return
 

@@ -5,7 +5,16 @@ import yaml
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-_PROJECT_ROOT = Path(__file__).parent.parent
+def _get_project_root() -> Path:
+    """Return the project root, handling PyInstaller."""
+    import sys
+    if getattr(sys, "frozen", False):
+        # PyInstaller bundles data into sys._MEIPASS
+        return Path(sys._MEIPASS)
+    return Path(__file__).parent.parent
+
+
+_PROJECT_ROOT = _get_project_root()
 
 
 class Settings(BaseSettings):
