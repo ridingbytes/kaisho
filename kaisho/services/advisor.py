@@ -681,22 +681,16 @@ def ask(
             system_prompt=sp, on_event=on_event,
         )
     if provider == "kaisho":
-        from .cloud_sync import cloud_ai_complete
-        no_tools = (
-            "\n\nIMPORTANT: Answer directly using "
-            "only the context provided. Do not "
-            "attempt to call tools, functions, or "
-            "fetch external URLs. Do not use XML "
-            "tags or function_calls markup."
-        )
-        return cloud_ai_complete(
+        from .cloud_sync import cloud_ai_agentic
+        return cloud_ai_agentic(
             cloud_url=cloud_url,
             api_key=cloud_api_key,
-            system=sp + no_tools,
-            messages=[{
-                "role": "user",
-                "content": prompt,
-            }],
+            system=sp,
+            prompt=prompt,
+            tools=openai_tools(),
+            tool_executor=execute_tool,
+            max_tokens=4096,
+            on_event=on_event,
         )
     answer = ask_ollama(
         model_name, prompt, ollama_base_url,

@@ -366,31 +366,145 @@ def cloud_ai_complete(
     api_key: str,
     system: str,
     messages: list[dict],
-    max_tokens: int = 1024,
-) -> str:
-    """Send a prompt to the cloud AI gateway and return
-    the assistant's text response.
+    max_tokens: int = 4096,
+    tools: list[dict] | None = None,
+) -> dict:
+    """Send a chat completion request to the cloud AI
+    gateway and return the full response.
 
-    Used by the advisor executor when ``use_cloud_ai``
-    is enabled in settings. Routes through
-    ``POST /ai/complete`` which proxies to Claude and
-    meters usage.
+    Routes through ``POST /ai/complete`` which proxies
+    to OpenRouter and meters usage.
 
     :param cloud_url: Base URL.
     :param api_key: API key.
     :param system: System prompt.
     :param messages: List of ``{role, content}`` dicts.
     :param max_tokens: Max response tokens.
-    :returns: The assistant's text response.
+    :param tools: Optional OpenAI-format tool defs.
+    :returns: Response dict with ``text``, ``tool_calls``,
+        ``finish_reason``.
     :raises CloudUnavailable: On network failure.
     """
     url = f"{cloud_url}/ai/complete"
-    resp = safe_request(url, api_key, "POST", {
+    payload: dict[str, Any] = {
         "system": system,
         "messages": messages,
         "max_tokens": max_tokens,
-    })
-    return resp.get("text", "")
+    }
+    if tools:
+        payload["tools"] = tools
+    return safe_request(url, api_key, "POST", payload)
+
+
+# Max turns for the cloud agentic loop. Each turn is
+# one LLM call + tool execution. Prevents runaway loops
+# and limits cost exposure.
+_MAX_CLOUD_TURNS = 15
+
+
+def cloud_ai_agentic(
+    cloud_url: str,
+    api_key: str,
+    system: str,
+    prompt: str,
+    tools: list[dict] | None = None,
+    tool_executor: Any = None,
+    max_tokens: int = 4096,
+    on_event: Any = None,
+) -> str:
+    """Run a multi-turn agentic loop through the cloud
+    AI gateway.
+
+    Each turn: send messages + tools to the cloud →
+    receive response → if tool_calls, execute locally →
+    append results → next turn.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param system: System prompt.
+    :param prompt: User prompt.
+    :param tools: OpenAI-format tool definitions.
+    :param tool_executor: Callable(name, args) → dict.
+    :param max_tokens: Max response tokens per turn.
+    :param on_event: Optional callback for UI streaming.
+    :returns: Final assistant text response.
+    :raises CloudUnavailable: On network failure.
+    """
+    messages: list[dict] = [
+        {"role": "user", "content": prompt},
+    ]
+    last_text = ""
+
+    for turn in range(_MAX_CLOUD_TURNS):
+        resp = cloud_ai_complete(
+            cloud_url, api_key, system,
+            messages, max_tokens, tools,
+        )
+        text = resp.get("text", "")
+        tool_calls = resp.get("tool_calls")
+        finish = resp.get("finish_reason", "stop")
+
+        if text:
+            last_text = text
+
+        # No tool calls → done
+        if not tool_calls or finish == "stop":
+            break
+
+        # Append assistant message with tool_calls
+        assistant_msg: dict[str, Any] = {
+            "role": "assistant",
+        }
+        if text:
+            assistant_msg["content"] = text
+        assistant_msg["tool_calls"] = tool_calls
+        messages.append(assistant_msg)
+
+        # Execute each tool locally
+        for call in tool_calls:
+            fn = call.get("function", {})
+            name = fn.get("name", "")
+            args_raw = fn.get("arguments", "{}")
+            call_id = call.get("id", "")
+
+            if on_event:
+                on_event("tool_call", {
+                    "name": name,
+                    "args": args_raw,
+                })
+
+            # Parse arguments
+            if isinstance(args_raw, str):
+                try:
+                    args = json.loads(args_raw)
+                except (json.JSONDecodeError, ValueError):
+                    args = {}
+            else:
+                args = args_raw or {}
+
+            # Execute tool
+            if tool_executor:
+                result = tool_executor(name, args)
+            else:
+                result = {
+                    "error": "tool execution disabled",
+                }
+
+            if on_event:
+                on_event("tool_result", {
+                    "name": name,
+                    "result": result,
+                })
+
+            messages.append({
+                "role": "tool",
+                "content": json.dumps(
+                    result, default=str,
+                ),
+                "tool_call_id": call_id,
+            })
+
+    return last_text
 
 
 def wipe_cloud_entries(

@@ -224,7 +224,59 @@ _WRITE_TOOLS = {
 }
 MAX_WRITES_PER_RUN = 3
 
+# Tools blocked in Kaisho AI (cloud) mode. These are
+# either dangerous (profile deletion, recursive cron)
+# or don't make sense remotely.
+_CLOUD_BLOCKED_TOOLS = {
+    "delete_profile",
+    "rename_profile",
+    "trigger_cron_job",
+    "create_backup",
+    "approve_url_domain",
+}
+
+# Allowed kai CLI subcommands for execute_cli. Only
+# read-only and safe commands are permitted.
+_ALLOWED_CLI_SUBCOMMANDS = {
+    "ask", "briefing", "customer", "clock",
+    "task", "note", "kb", "cron", "tag",
+    "config", "version",
+}
+
 _state = {"writes": 0}
+
+
+def _safe_tool_executor(name: str, args: dict) -> dict:
+    """Execute a tool with cloud-mode safety guards.
+
+    Blocks dangerous tools and enforces write limits.
+    """
+    if name in _CLOUD_BLOCKED_TOOLS:
+        return {
+            "error": f"Tool '{name}' is not available "
+            "in Kaisho AI mode",
+        }
+    # Restrict execute_cli to safe subcommands
+    if name == "execute_cli":
+        cmd = (args.get("command") or "").strip()
+        parts = cmd.split()
+        if parts and parts[0] not in _ALLOWED_CLI_SUBCOMMANDS:
+            return {
+                "error": f"CLI subcommand '{parts[0]}'"
+                " is not allowed. Permitted: "
+                + ", ".join(
+                    sorted(_ALLOWED_CLI_SUBCOMMANDS)
+                ),
+            }
+    # Enforce write limits
+    if name in _WRITE_TOOLS:
+        _state["writes"] += 1
+        if _state["writes"] > MAX_WRITES_PER_RUN:
+            return {
+                "error": "Write limit reached "
+                f"({MAX_WRITES_PER_RUN} per run)",
+            }
+    return execute_tool(name, args)
 
 
 def _reset_write_counter():
@@ -600,22 +652,21 @@ def _dispatch_prompt(
     """
     if provider == "kaisho":
         from ..services.cloud_sync import (
-            cloud_ai_complete,
+            cloud_ai_agentic,
         )
-        return cloud_ai_complete(
+        _reset_write_counter()
+        return cloud_ai_agentic(
             cloud_url, cloud_api_key,
             system=(
                 "You are the Kaisho AI advisor. "
-                "Answer the prompt directly using "
-                "only the context provided. Do not "
-                "attempt to call tools, functions, "
-                "or fetch external URLs. Do not use "
-                "XML tags or function_calls markup."
+                "Use the provided tools to gather "
+                "data and perform actions. Never "
+                "fabricate tool results."
             ),
-            messages=[{
-                "role": "user",
-                "content": prompt,
-            }],
+            prompt=prompt,
+            tools=openai_tools(),
+            tool_executor=_safe_tool_executor,
+            max_tokens=4096,
         )
     if provider == "claude_cli":
         return _run_claude_cli(

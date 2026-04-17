@@ -19,6 +19,11 @@ import {
   useShortcutsContext,
 } from "../../context/ShortcutsContext";
 import { useUnreadBadges } from "../../hooks/useUnreadBadges";
+import {
+  useAiSettings,
+  useCloudSyncStatus,
+  useGithubSettings,
+} from "../../hooks/useSettings";
 
 interface NavItem {
   id: View;
@@ -60,6 +65,32 @@ export function Sidebar({
 }: SidebarProps) {
   const unread = useUnreadBadges(active);
   const { config } = useShortcutsContext();
+  const { data: aiSettings } = useAiSettings();
+  const { data: cloudStatus } = useCloudSyncStatus();
+  const { data: ghSettings } = useGithubSettings();
+
+  // Hide panels when the feature isn't configured
+  const hasAi = !!(
+    aiSettings?.ollama_url
+    || aiSettings?.claude_api_key
+    || aiSettings?.openrouter_api_key
+    || aiSettings?.openai_api_key
+    || cloudStatus?.use_cloud_ai
+  );
+  const hasGithub = !!(
+    ghSettings && ghSettings.token_set
+  );
+
+  const hiddenViews = new Set<View>();
+  if (!hasAi) {
+    hiddenViews.add("advisor");
+    hiddenViews.add("cron");
+  }
+  if (!hasGithub) hiddenViews.add("github");
+
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => !hiddenViews.has(item.id),
+  );
 
   // On mobile the sidebar is in an overlay, always expanded.
   // On desktop, the open prop controls collapsed/expanded.
@@ -97,7 +128,7 @@ export function Sidebar({
       </button>
 
       {/* Nav items */}
-      {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+      {visibleItems.map(({ id, label, icon: Icon }) => {
         const isActive = active === id;
         const badge = unread[id] ?? 0;
         return (
