@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { Fragment, useRef, useState } from "react";
+import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
@@ -220,7 +221,6 @@ function JobCard({ job }: { job: CronJob }) {
   }
 
   function handleDelete() {
-    if (!confirm(`Delete job "${job.name}"?`)) return;
     deleteJob.mutate(job.id);
   }
 
@@ -265,16 +265,18 @@ function JobCard({ job }: { job: CronJob }) {
             <Play size={10} />
             {trigger.isPending ? "…" : "Run"}
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete();
-            }}
-            className="text-stone-500 hover:text-red-400 transition-colors"
-            title="Delete job"
+          <ConfirmPopover
+            label={`Delete "${job.name}"?`}
+            onConfirm={handleDelete}
           >
-            <Trash2 size={12} />
-          </button>
+            <button
+              onClick={(e) => e.stopPropagation()}
+              className="text-stone-500 hover:text-red-400 transition-colors"
+              title="Delete job"
+            >
+              <Trash2 size={12} />
+            </button>
+          </ConfirmPopover>
         </div>
       </div>
 

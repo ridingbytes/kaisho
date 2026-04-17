@@ -773,11 +773,9 @@ export function NotesView() {
                   <NoteRow
                     note={note}
                     allTags={allTags}
-                    onDelete={() => {
-                      if (window.confirm(`Delete "${note.title}"?`)) {
-                        deleteNote.mutate(note.id);
-                      }
-                    }}
+                    onDelete={() =>
+                      deleteNote.mutate(note.id)
+                    }
                     onTagClick={setTagFilter}
                   />
                 </div>
