@@ -189,6 +189,57 @@ def sync_backup_job() -> None:
     )
 
 
+def _on_cloud_ws_event(
+    event: str, data: dict,
+) -> None:
+    """Handle real-time events from the cloud WebSocket.
+
+    Triggers an immediate sync cycle for data changes
+    and broadcasts timer events to the local WebSocket
+    so the frontend updates instantly.
+    """
+    import logging
+    log = logging.getLogger(__name__)
+    log.info("Cloud WS event: %s", event)
+
+    if event in ("entries:changed", "entries:deleted"):
+        # Trigger immediate sync instead of waiting
+        # for the 15-minute fallback
+        _run_cloud_sync()
+
+    if event in ("timer:started", "timer:stopped"):
+        # Broadcast to local WebSocket so the desktop
+        # UI updates the cloud timer widget instantly
+        try:
+            from ..api.ws.manager import broadcast
+            broadcast({
+                "resource": "clocks",
+                "type": event,
+                "data": data,
+            })
+        except Exception:
+            pass
+
+
+def _start_cloud_ws_if_enabled() -> None:
+    """Start the cloud WS client if sync is configured."""
+    from ..services import settings as settings_svc
+
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    sync = data.get("cloud_sync", {})
+    if not sync.get("enabled"):
+        return
+
+    url = sync.get("url", "")
+    key = sync.get("api_key", "")
+    if not url or not key:
+        return
+
+    from ..services.cloud_ws import start_cloud_ws
+    start_cloud_ws(url, key, _on_cloud_ws_event)
+
+
 def _run_cloud_sync() -> None:
     """Periodic cloud sync job. No-op when disabled."""
     from ..services import settings as settings_svc
@@ -231,15 +282,19 @@ def build_scheduler(jobs_file: Path) -> BackgroundScheduler:
             continue
         _add_job_to_scheduler(_scheduler, job)
 
-    # Cloud sync job — runs every 5 minutes.
+    # Cloud sync — runs every 15 minutes as fallback.
+    # Real-time sync is handled by the cloud WebSocket.
     _scheduler.add_job(
         _run_cloud_sync,
         "interval",
-        minutes=5,
+        minutes=15,
         id="__cloud_sync__",
         name="Cloud Sync",
         replace_existing=True,
     )
+
+    # Start cloud WebSocket for real-time sync events
+    _start_cloud_ws_if_enabled()
 
     # Recurring tasks — runs daily at 06:00.
     _scheduler.add_job(

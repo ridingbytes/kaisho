@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0
+
+- Kaisho AI with full agentic tool calling through OpenRouter
+- Real-time WebSocket sync replaces polling (mobile + desktop)
+- Per-job Kaisho AI toggle for cron jobs
+- AI token usage meter in Cloud Sync settings
+- Security guardrails for cloud tool execution
+- Hide advisor/cron/GitHub panels when not configured
+- Timezone fix for cloud sync (UTC conversion)
+- System scheduler jobs preserved during job sync
+- German identifiers renamed to English throughout
+
 ## 0.2.0
 
 - Bidirectional cloud sync with last-writer-wins conflict resolution
