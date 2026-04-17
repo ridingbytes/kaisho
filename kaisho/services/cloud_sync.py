@@ -32,7 +32,7 @@ import threading
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -41,6 +41,51 @@ from . import sync_state
 log = logging.getLogger(__name__)
 
 HTTP_TIMEOUT = 30
+
+
+# -- Timezone helpers ------------------------------------------
+
+def _local_to_utc(iso: str) -> str:
+    """Convert a naive local ISO timestamp to UTC ISO.
+
+    The local app stores naive datetimes in the system
+    timezone.  The cloud stores TIMESTAMPTZ (UTC).  This
+    bridge converts local → UTC before pushing.
+    """
+    if not iso:
+        return iso
+    try:
+        naive = datetime.fromisoformat(iso)
+        if naive.tzinfo is not None:
+            # Already timezone-aware — convert to UTC
+            utc = naive.astimezone(timezone.utc)
+            return utc.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        # Naive → assume local timezone
+        local = naive.astimezone()  # attach system tz
+        utc = local.astimezone(timezone.utc)
+        return utc.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    except (ValueError, TypeError):
+        return iso
+
+
+def _utc_to_local(iso: str) -> str:
+    """Convert a UTC ISO timestamp to naive local ISO.
+
+    The cloud returns UTC timestamps. The local app
+    stores naive datetimes in the system timezone.
+    """
+    if not iso:
+        return iso
+    try:
+        # Parse — handle both "Z" suffix and "+00:00"
+        ts = iso.replace("Z", "+00:00")
+        aware = datetime.fromisoformat(ts)
+        local = aware.astimezone()  # system timezone
+        # Return naive local (strip tzinfo for storage)
+        naive = local.replace(tzinfo=None)
+        return naive.isoformat()
+    except (ValueError, TypeError):
+        return iso
 
 # Serialize background pushes so rapid-fire local
 # mutations don't stack up parallel sync cycles.
@@ -397,8 +442,8 @@ def entry_to_wire(entry: dict) -> dict:
     """Convert a local entry dict to the wire format used
     by ``POST /sync/apply``.
 
-    Maps ``sync_id`` → ``id`` and normalises optional
-    fields.
+    Maps ``sync_id`` → ``id``, normalises optional fields,
+    and converts local timestamps to UTC for the cloud.
 
     :param entry: Local clock entry dict.
     :returns: Wire-format dict for the cloud API.
@@ -407,13 +452,14 @@ def entry_to_wire(entry: dict) -> dict:
         "id": entry["sync_id"],
         "customer": entry.get("customer") or None,
         "description": entry.get("description") or "",
-        "start": entry["start"],
-        "end": entry.get("end"),
+        "start": _local_to_utc(entry["start"]),
+        "end": _local_to_utc(entry.get("end") or "")
+            or None,
         "task_id": entry.get("task_id") or None,
         "contract": entry.get("contract") or None,
         "notes": entry.get("notes") or "",
         "invoiced": bool(entry.get("invoiced")),
-        "updated_at": (
+        "updated_at": _local_to_utc(
             entry.get("updated_at")
             or datetime.now().isoformat()
         ),
@@ -424,7 +470,9 @@ def wire_to_local(entry: dict) -> dict:
     """Convert a wire-format entry from ``/sync/changes``
     into the local dict shape.
 
-    Maps ``id`` → ``sync_id`` and normalises fields.
+    Maps ``id`` → ``sync_id``, normalises fields, and
+    converts UTC timestamps from the cloud to naive local
+    timestamps for storage.
 
     :param entry: Wire-format entry from the cloud.
     :returns: Local entry dict for the clocks service.
@@ -433,13 +481,16 @@ def wire_to_local(entry: dict) -> dict:
         "sync_id": entry["id"],
         "customer": entry.get("customer") or "",
         "description": entry.get("description") or "",
-        "start": entry["start"],
-        "end": entry.get("end"),
+        "start": _utc_to_local(entry["start"]),
+        "end": _utc_to_local(entry.get("end") or "")
+            or None,
         "task_id": entry.get("task_id") or None,
         "contract": entry.get("contract") or None,
         "notes": entry.get("notes") or "",
         "invoiced": bool(entry.get("invoiced")),
-        "updated_at": entry["updated_at"],
+        "updated_at": _utc_to_local(
+            entry["updated_at"],
+        ),
         "deleted_at": entry.get("deleted_at"),
     }
 
