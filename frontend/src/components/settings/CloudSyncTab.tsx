@@ -43,14 +43,35 @@ export function CloudSyncSection(): JSX.Element {
       .finally(() => setConnecting(false));
   }
 
+  const [disconnecting, setDisconnecting] = useState(false);
+
   function handleDisconnect() {
-    disconnectCloudSync().then(() => {
-      setMsg("Disconnected");
-      void qc.invalidateQueries({
-        queryKey: ["settings", "cloud_sync"],
-      });
-      setTimeout(() => setMsg(""), 3000);
-    });
+    if (!confirm(
+      "Disconnect and wipe all synced entries from " +
+      "the cloud? Your local data is kept.",
+    )) return;
+    setDisconnecting(true);
+    setErr("");
+    disconnectCloudSync()
+      .then((res: Record<string, unknown>) => {
+        const wiped = res?.wiped || 0;
+        const wipeErr = res?.wipe_error;
+        if (wipeErr) {
+          setMsg(`Disconnected (wipe failed: ${wipeErr})`);
+        } else {
+          setMsg(
+            `Disconnected — ${wiped} cloud entries removed`,
+          );
+        }
+        void qc.invalidateQueries({
+          queryKey: ["settings", "cloud_sync"],
+        });
+        setTimeout(() => setMsg(""), 5000);
+      })
+      .catch((e: { message?: string }) => {
+        setErr(e?.message || "Disconnect failed");
+      })
+      .finally(() => setDisconnecting(false));
   }
 
   function handleSyncNow() {
@@ -182,9 +203,12 @@ export function CloudSyncSection(): JSX.Element {
             </button>
             <button
               onClick={handleDisconnect}
-              className="px-4 py-1.5 rounded text-sm text-stone-600 hover:text-red-600 border border-border hover:border-red-300 transition-colors"
+              disabled={disconnecting}
+              className="px-4 py-1.5 rounded text-sm text-stone-600 hover:text-red-600 border border-border hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-wait"
             >
-              Disconnect
+              {disconnecting
+                ? "Flushing cloud data..."
+                : "Disconnect"}
             </button>
           </div>
         </div>

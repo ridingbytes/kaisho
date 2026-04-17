@@ -1206,8 +1206,15 @@ export function connectCloudSync(
   });
 }
 
-/** Disconnect from the cloud sync server. */
-export function disconnectCloudSync(): Promise<{ ok: boolean }> {
+/** Disconnect from the cloud sync server.
+ *  Runs a final pull, wipes all cloud entries, and
+ *  clears local sync state. */
+export function disconnectCloudSync(): Promise<{
+  ok: boolean;
+  wiped: number;
+  pull_error: string | null;
+  wipe_error: string | null;
+}> {
   return post("/cloud-sync/disconnect", {});
 }
 
