@@ -17,7 +17,10 @@ import { HelpButton } from "../common/HelpButton";
 import { ResizeHandle } from "../common/ResizeHandle";
 import { useResizableColumns } from "../../hooks/useResizableColumns";
 import { DOCS } from "../../docs/panelDocs";
-import { useKbSources } from "../../hooks/useSettings";
+import {
+  useCloudSyncStatus,
+  useKbSources,
+} from "../../hooks/useSettings";
 import {
   useAddCronJob,
   useCronHistory,
@@ -144,7 +147,13 @@ function EnableToggle({ job }: { job: CronJob }) {
   );
 }
 
-function JobCard({ job }: { job: CronJob }) {
+function JobCard({
+  job,
+  cloudAi,
+}: {
+  job: CronJob;
+  cloudAi: boolean;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editSchedule, setEditSchedule] = useState(job.schedule);
@@ -287,7 +296,13 @@ function JobCard({ job }: { job: CronJob }) {
       >
         <span title="Schedule">{job.schedule}</span>
         <span className="text-stone-400">|</span>
-        <span title="Model">{job.model}</span>
+        <span title="Model">
+          {cloudAi ? (
+            <span className="text-cta">Cloud AI</span>
+          ) : (
+            job.model
+          )}
+        </span>
         <span className="text-stone-400">|</span>
         <span title="Output">{job.output}</span>
       </div>
@@ -317,13 +332,21 @@ function JobCard({ job }: { job: CronJob }) {
                   <span className="text-[10px] text-stone-500 uppercase tracking-wide">
                     Model
                   </span>
-                  <input
-                    className={fieldCls}
-                    value={editModel}
-                    onChange={(e) => setEditModel(e.target.value)}
-                    placeholder="ollama:qwen3:14b"
-                    list={MODEL_DATALIST}
-                  />
+                  {cloudAi ? (
+                    <span className="px-2 py-1 rounded text-xs font-medium bg-cta/10 text-cta border border-cta/30">
+                      Cloud AI
+                    </span>
+                  ) : (
+                    <input
+                      className={fieldCls}
+                      value={editModel}
+                      onChange={(e) =>
+                        setEditModel(e.target.value)
+                      }
+                      placeholder="ollama:qwen3:14b"
+                      list={MODEL_DATALIST}
+                    />
+                  )}
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="text-[10px] text-stone-500 uppercase tracking-wide">
@@ -422,7 +445,13 @@ function JobCard({ job }: { job: CronJob }) {
   );
 }
 
-function AddJobForm({ onClose }: { onClose: () => void }) {
+function AddJobForm({
+  onClose,
+  cloudAi,
+}: {
+  onClose: () => void;
+  cloudAi: boolean;
+}) {
   const addJob = useAddCronJob();
   const [id, setId] = useState("");
   const [name, setName] = useState("");
@@ -508,14 +537,20 @@ function AddJobForm({ onClose }: { onClose: () => void }) {
           <span className="text-[10px] text-stone-500 uppercase tracking-wide">
             Model
           </span>
-          <input
-            className={fieldCls}
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            placeholder="ollama:qwen3:14b"
-            list={MODEL_DATALIST}
-            required
-          />
+          {cloudAi ? (
+            <span className="px-2 py-1 rounded text-xs font-medium bg-cta/10 text-cta border border-cta/30">
+              Cloud AI
+            </span>
+          ) : (
+            <input
+              className={fieldCls}
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              placeholder="ollama:qwen3:14b"
+              list={MODEL_DATALIST}
+              required
+            />
+          )}
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-[10px] text-stone-500 uppercase tracking-wide">
@@ -783,6 +818,8 @@ export function CronView() {
   const { data: history = [], isLoading: historyLoading } =
     useCronHistory();
   const { data: models = [] } = useAvailableModels();
+  const { data: cloudStatus } = useCloudSyncStatus();
+  const cloudAi = !!cloudStatus?.use_cloud_ai;
   const deleteRun = useDeleteCronRun();
 
   return (
@@ -812,7 +849,10 @@ export function CronView() {
       </div>
 
       {showForm && (
-        <AddJobForm onClose={() => setShowForm(false)} />
+        <AddJobForm
+          onClose={() => setShowForm(false)}
+          cloudAi={cloudAi}
+        />
       )}
 
       <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
@@ -829,7 +869,11 @@ export function CronView() {
           )}
           <div className="flex flex-col gap-3">
             {jobs.map((job) => (
-              <JobCard key={job.id} job={job} />
+              <JobCard
+                key={job.id}
+                job={job}
+                cloudAi={cloudAi}
+              />
             ))}
           </div>
         </section>
