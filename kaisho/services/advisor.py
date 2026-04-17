@@ -681,20 +681,48 @@ def ask(
             system_prompt=sp, on_event=on_event,
         )
     if provider == "kaisho":
-        from .cloud_sync import cloud_ai_complete
-        if on_event:
-            on_event("thinking", {})
-        resp = cloud_ai_complete(
+        from .cloud_sync import cloud_ai_agentic
+        # Only expose the kai CLI tool — the advisor
+        # can create tasks, book time, etc. via CLI
+        # commands but cannot fetch URLs or access
+        # the filesystem directly.
+        cli_tool = [{
+            "type": "function",
+            "function": {
+                "name": "execute_cli",
+                "description": (
+                    "Run a kai CLI command. Examples: "
+                    "task add CUSTOMER \"Title\", "
+                    "clock start CUSTOMER, "
+                    "clock stop, "
+                    "clock book 2h CUSTOMER \"desc\", "
+                    "note add \"Title\""
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "command": {
+                            "type": "string",
+                            "description": (
+                                "The kai subcommand "
+                                "and arguments"
+                            ),
+                        },
+                    },
+                    "required": ["command"],
+                },
+            },
+        }]
+        return cloud_ai_agentic(
             cloud_url=cloud_url,
             api_key=cloud_api_key,
             system=sp,
-            messages=[{
-                "role": "user",
-                "content": prompt,
-            }],
+            prompt=prompt,
+            tools=cli_tool,
+            tool_executor=execute_tool,
             max_tokens=4096,
+            on_event=on_event,
         )
-        return resp.get("text", "")
     answer = ask_ollama(
         model_name, prompt, ollama_base_url,
         system_prompt=sp, on_event=on_event,
