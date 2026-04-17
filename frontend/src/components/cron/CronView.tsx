@@ -158,6 +158,9 @@ function JobCard({
   const [editing, setEditing] = useState(false);
   const [editSchedule, setEditSchedule] = useState(job.schedule);
   const [editModel, setEditModel] = useState(job.model);
+  const [editKaishoAi, setEditKaishoAi] = useState(
+    !!job.use_kaisho_ai,
+  );
   const [editOutput, setEditOutput] = useState(job.output);
   const [editTimeout, setEditTimeout] = useState(String(job.timeout));
   // undefined = not yet edited; string = user has typed something
@@ -192,6 +195,7 @@ function JobCard({
     e.stopPropagation();
     setEditSchedule(job.schedule);
     setEditModel(job.model);
+    setEditKaishoAi(!!job.use_kaisho_ai);
     setEditOutput(job.output);
     setEditTimeout(String(job.timeout));
     setEditing(true);
@@ -207,6 +211,7 @@ function JobCard({
           model: editModel,
           output: editOutput,
           timeout: Number(editTimeout),
+          use_kaisho_ai: editKaishoAi,
         },
       },
       { onSuccess: () => setEditing(false) }
@@ -306,7 +311,7 @@ function JobCard({
         <span title="Schedule">{job.schedule}</span>
         <span className="text-stone-400">|</span>
         <span title="Model">
-          {cloudAi ? (
+          {job.use_kaisho_ai && cloudAi ? (
             <span className="text-cta">Kaisho AI</span>
           ) : (
             job.model
@@ -341,7 +346,39 @@ function JobCard({
                   <span className="text-[10px] text-stone-500 uppercase tracking-wide">
                     Model
                   </span>
-                  {cloudAi ? (
+                  {cloudAi && (
+                    <label className="flex items-center gap-2 mb-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditKaishoAi((v) => !v)
+                        }
+                        className={[
+                          "relative w-7 h-4 rounded-full",
+                          "transition-colors shrink-0",
+                          editKaishoAi
+                            ? "bg-cta"
+                            : "bg-stone-300",
+                        ].join(" ")}
+                      >
+                        <span
+                          className={[
+                            "absolute top-0.5 left-0.5",
+                            "w-3 h-3 rounded-full",
+                            "bg-white shadow",
+                            "transition-transform",
+                            editKaishoAi
+                              ? "translate-x-3"
+                              : "",
+                          ].join(" ")}
+                        />
+                      </button>
+                      <span className="text-[10px] text-stone-600">
+                        Kaisho AI
+                      </span>
+                    </label>
+                  )}
+                  {editKaishoAi && cloudAi ? (
                     <span className="px-2 py-1 rounded text-xs font-medium bg-cta/10 text-cta border border-cta/30">
                       Kaisho AI
                     </span>
@@ -466,6 +503,7 @@ function AddJobForm({
   const [name, setName] = useState("");
   const [schedule, setSchedule] = useState("0 9 * * 1-5");
   const [model, setModel] = useState("ollama:qwen3:14b");
+  const [useKaishoAi, setUseKaishoAi] = useState(cloudAi);
   const [output, setOutput] = useState("inbox");
   const [jobTimeout, setJobTimeout] = useState("120");
   const [promptContent, setPromptContent] = useState("");
@@ -482,6 +520,7 @@ function AddJobForm({
         output,
         timeout: Number(jobTimeout),
         enabled: true,
+        use_kaisho_ai: useKaishoAi,
       },
       { onSuccess: onClose }
     );
@@ -546,7 +585,39 @@ function AddJobForm({
           <span className="text-[10px] text-stone-500 uppercase tracking-wide">
             Model
           </span>
-          {cloudAi ? (
+          {cloudAi && (
+            <label className="flex items-center gap-2 mb-1">
+              <button
+                type="button"
+                onClick={() =>
+                  setUseKaishoAi((v) => !v)
+                }
+                className={[
+                  "relative w-7 h-4 rounded-full",
+                  "transition-colors shrink-0",
+                  useKaishoAi
+                    ? "bg-cta"
+                    : "bg-stone-300",
+                ].join(" ")}
+              >
+                <span
+                  className={[
+                    "absolute top-0.5 left-0.5",
+                    "w-3 h-3 rounded-full",
+                    "bg-white shadow",
+                    "transition-transform",
+                    useKaishoAi
+                      ? "translate-x-3"
+                      : "",
+                  ].join(" ")}
+                />
+              </button>
+              <span className="text-[10px] text-stone-600">
+                Kaisho AI
+              </span>
+            </label>
+          )}
+          {useKaishoAi && cloudAi ? (
             <span className="px-2 py-1 rounded text-xs font-medium bg-cta/10 text-cta border border-cta/30">
               Kaisho AI
             </span>

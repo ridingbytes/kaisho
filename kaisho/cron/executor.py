@@ -668,18 +668,24 @@ def execute_job(
 ) -> str:
     """Run a cron job end-to-end and return the output.
 
-    When ``use_cloud_ai`` is True, all AI requests are
-    routed through the kaisho-cloud gateway regardless
-    of the job's configured model. This uses the user's
-    sync_ai token quota instead of local resources.
+    When ``use_cloud_ai`` is True globally *and* the job
+    has ``use_kaisho_ai`` enabled, AI requests route
+    through the kaisho-cloud gateway. Jobs without this
+    flag always use their configured local model.
     """
     prompt = load_prompt(
         job["prompt_file"], project_root,
     )
 
-    # Kaisho AI override: route everything through the
-    # cloud gateway when the user has opted in.
-    if use_cloud_ai and cloud_url and cloud_api_key:
+    # Per-job Kaisho AI: only route through the cloud
+    # when both the global toggle and the job flag are on.
+    job_wants_kaisho = job.get("use_kaisho_ai", False)
+    if (
+        job_wants_kaisho
+        and use_cloud_ai
+        and cloud_url
+        and cloud_api_key
+    ):
         provider = "kaisho"
         model_name = ""
     else:

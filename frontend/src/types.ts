@@ -171,6 +171,7 @@ export interface CronJob {
   output: string;
   timeout: number;
   enabled: boolean;
+  use_kaisho_ai?: boolean;
 }
 
 export interface CronRun {

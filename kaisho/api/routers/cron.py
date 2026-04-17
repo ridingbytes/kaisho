@@ -47,6 +47,7 @@ class JobCreate(BaseModel):
     output: str = "inbox"
     timeout: int = 120
     enabled: bool = True
+    use_kaisho_ai: bool = False
 
 
 class JobUpdate(BaseModel):
@@ -57,6 +58,7 @@ class JobUpdate(BaseModel):
     output: str | None = None
     timeout: int | None = None
     enabled: bool | None = None
+    use_kaisho_ai: bool | None = None
 
 
 class PromptUpdate(BaseModel):

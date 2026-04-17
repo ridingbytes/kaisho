@@ -988,6 +988,7 @@ export function createCronJob(data: {
   output: string;
   timeout: number;
   enabled: boolean;
+  use_kaisho_ai?: boolean;
 }): Promise<CronJob> {
   return post<CronJob>("/cron/jobs", data);
 }
@@ -995,7 +996,7 @@ export function createCronJob(data: {
 /** Update fields on an existing cron job. */
 export function updateCronJob(
   jobId: string,
-  updates: Partial<Pick<CronJob, "name" | "schedule" | "model" | "output" | "timeout">>
+  updates: Partial<Pick<CronJob, "name" | "schedule" | "model" | "output" | "timeout" | "use_kaisho_ai">>
 ): Promise<CronJob> {
   return patch<CronJob>(`/cron/jobs/${encodeURIComponent(jobId)}`, updates);
 }

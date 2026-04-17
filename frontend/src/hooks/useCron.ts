@@ -84,7 +84,7 @@ export function useUpdateCronJob() {
     }: {
       jobId: string;
       updates: Partial<
-        Pick<CronJob, "name" | "schedule" | "model" | "output" | "timeout">
+        Pick<CronJob, "name" | "schedule" | "model" | "output" | "timeout" | "use_kaisho_ai">
       >;
     }) => updateCronJob(jobId, updates),
     onSuccess: () => {
