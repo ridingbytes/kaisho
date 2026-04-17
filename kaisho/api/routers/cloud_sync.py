@@ -36,6 +36,28 @@ def _cloud_creds(data: dict) -> tuple[str, str]:
 
 # ── GET /api/cloud-sync/status ────────────────────────
 
+# Cache cloud stats to avoid an HTTP round-trip on
+# every status request. Refreshed during sync cycles.
+import time as _time
+
+_cloud_stats_cache: dict = {}
+_cloud_stats_ts: float = 0
+_CLOUD_STATS_TTL = 120  # 2 minutes
+
+
+def _get_cached_cloud_stats(url: str, key: str) -> dict:
+    """Return cloud stats, cached for 2 minutes."""
+    global _cloud_stats_cache, _cloud_stats_ts
+    now = _time.time()
+    if now - _cloud_stats_ts < _CLOUD_STATS_TTL:
+        return _cloud_stats_cache
+    stats = sync_svc.cloud_stats(url, key)
+    if stats:
+        _cloud_stats_cache = stats
+        _cloud_stats_ts = now
+    return _cloud_stats_cache
+
+
 @router.get("/status")
 def status():
     """Return connection + local sync state."""
@@ -64,7 +86,7 @@ def status():
         return result
 
     url, key = _cloud_creds(data)
-    stats = sync_svc.cloud_stats(url, key)
+    stats = _get_cached_cloud_stats(url, key)
     if stats:
         result["connected"] = True
         result["plan"] = stats.get("plan")
@@ -260,9 +282,15 @@ def disconnect():
 
 # ── GET /api/cloud-sync/active ────────────────────────
 
+_cloud_active_cache: dict = {"active": False}
+_cloud_active_ts: float = 0
+_CLOUD_ACTIVE_TTL = 10  # 10 seconds (timer state changes fast)
+
+
 @router.get("/active")
 def active():
     """Return the cloud-side running timer, if any."""
+    global _cloud_active_cache, _cloud_active_ts
     data, _ = _sync_settings()
     sync = data.get("cloud_sync", {})
     if not sync.get("enabled"):
@@ -272,8 +300,18 @@ def active():
     if not url or not key:
         return {"active": False}
 
+    now = _time.time()
+    if now - _cloud_active_ts < _CLOUD_ACTIVE_TTL:
+        return _cloud_active_cache
+
     result = sync_svc.cloud_active(url, key)
-    return result or {"active": False}
+    if result:
+        _cloud_active_cache = result
+        _cloud_active_ts = now
+        return result
+    _cloud_active_cache = {"active": False}
+    _cloud_active_ts = now
+    return _cloud_active_cache
 
 
 # ── POST /api/cloud-sync/stop-cloud-timer ─────────────

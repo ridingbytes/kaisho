@@ -237,9 +237,15 @@ def _on_cloud_ws_event(
     log = logging.getLogger(__name__)
     log.info("Cloud WS event: %s", event)
 
-    # Timer events: broadcast immediately so the
-    # desktop UI shows the cloud timer widget
+    # Timer events: invalidate cache + broadcast so the
+    # desktop UI picks up the cloud timer instantly.
     if event in ("timer:started", "timer:stopped"):
+        try:
+            from ..api.routers import cloud_sync as cs_router
+            cs_router._cloud_active_ts = 0
+            cs_router._cloud_stats_ts = 0
+        except Exception:
+            pass
         try:
             from ..api.ws.manager import broadcast_sync
             broadcast_sync({
