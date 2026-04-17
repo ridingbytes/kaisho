@@ -126,7 +126,15 @@ class OrgClockBackend(ClockBackend):
     def apply_sync_payload(
         self, fields: dict,
     ) -> dict:
-        """Upsert a cloud-origin payload by sync_id."""
+        """Upsert a cloud-origin payload by sync_id.
+
+        If no local heading carries this sync_id, tries
+        to match by content (start + customer + desc)
+        before inserting. This prevents duplicates when
+        a user accidentally removes the :SYNC_ID:
+        property in Emacs — the entry re-adopts the
+        cloud's UUID instead of creating a second copy.
+        """
         existing = clocks.update_clock_entry_by_sync_id(
             clocks_file=self._clocks_file,
             sync_id=fields["sync_id"],
@@ -134,6 +142,19 @@ class OrgClockBackend(ClockBackend):
         )
         if existing is not None:
             return existing
+
+        # Content-match: re-adopt UUID if the entry
+        # exists locally but lost its SYNC_ID.
+        adopted = clocks.adopt_sync_id(
+            clocks_file=self._clocks_file,
+            sync_id=fields["sync_id"],
+            start_iso=fields["start"],
+            customer=fields.get("customer") or "",
+            description=fields.get("description") or "",
+        )
+        if adopted is not None:
+            return adopted
+
         return clocks.insert_clock_entry_from_sync(
             clocks_file=self._clocks_file,
             fields=fields,

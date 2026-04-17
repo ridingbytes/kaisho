@@ -384,6 +384,85 @@ class TestActiveTimerRouting:
         assert len(running) == 0
 
 
+class TestSyncIdAdoption:
+    """When a user removes :SYNC_ID: in Emacs, the entry
+    should re-adopt the cloud's UUID on the next pull
+    instead of creating a duplicate."""
+
+    def test_adopt_uuid_on_content_match(
+        self, backend, fake_cloud,
+        profile_dir, patched_backend,
+    ):
+        # Create a local entry that gets synced.
+        entry = backend.quick_book(
+            duration_str="1h",
+            customer="Acme", description="work",
+        )
+        sync_svc.run_sync_cycle(
+            cloud_url="http://fake", api_key="key",
+            profile_dir=profile_dir,
+            clocks_file=backend.data_file,
+        )
+        original_sid = entry["sync_id"]
+        assert original_sid in fake_cloud.entries
+
+        # Simulate user removing SYNC_ID in Emacs:
+        # re-read the file, strip the property, write.
+        from kaisho.org.parser import parse_org_file
+        from kaisho.org.writer import write_org_file
+        org = parse_org_file(
+            backend.data_file, set(),
+        )
+        for h in org.headings:
+            h.properties.pop("SYNC_ID", None)
+            h.dirty = True
+        write_org_file(backend.data_file, org)
+
+        # Next read backfills a NEW SYNC_ID.
+        entries = backend.list_entries(period="all")
+        assert entries[0]["sync_id"] != original_sid
+
+        # Sync again — cloud still has original_sid.
+        sync_svc.run_sync_cycle(
+            cloud_url="http://fake", api_key="key",
+            profile_dir=profile_dir,
+            clocks_file=backend.data_file,
+        )
+
+        # The entry should have re-adopted the cloud's
+        # UUID, NOT created a duplicate.
+        final = backend.list_entries(period="all")
+        assert len(final) == 1
+        assert final[0]["sync_id"] == original_sid
+
+    def test_skip_adoption_if_uuid_taken(
+        self, backend,
+    ):
+        # Create two entries: e1 keeps its SYNC_ID,
+        # e2 loses it. Then try to adopt e1's UUID
+        # for e2 — should be rejected because e1
+        # already owns that UUID.
+        e1 = backend.quick_book(
+            duration_str="1h",
+            customer="Acme", description="first",
+        )
+        e2 = backend.quick_book(
+            duration_str="1h",
+            customer="Beta", description="second",
+        )
+
+        # Try to adopt e1's UUID for e2's content.
+        # This must fail — e1 already has that UUID.
+        result = clocks_svc.adopt_sync_id(
+            backend.data_file,
+            sync_id=e1["sync_id"],
+            start_iso=e2["start"],
+            customer="Beta",
+            description="second",
+        )
+        assert result is None
+
+
 class TestLastWriterWins:
     def test_newer_local_overwrites_cloud(
         self, backend, fake_cloud,

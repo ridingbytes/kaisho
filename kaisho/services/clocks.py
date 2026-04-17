@@ -494,6 +494,15 @@ def append_entry(
             parents=True, exist_ok=True,
         )
         org_file = OrgFile()
+        # Header comment so Emacs users know not to
+        # remove the sync properties.
+        org_file.preamble = [
+            "# Kaisho clock entries.",
+            "# Do not remove :SYNC_ID: or :UPDATED_AT:"
+            " properties —",
+            "# they link entries to the cloud. Removing"
+            " one causes a duplicate.",
+        ]
     else:
         org_file = parse_org_file(
             clocks_file, CLOCK_KEYWORDS,
@@ -765,6 +774,90 @@ def apply_sync_payload(
         notes.splitlines() if notes.strip() else []
     )
     heading.dirty = True
+
+
+def find_by_content(
+    org_file: OrgFile,
+    start_iso: str,
+    customer: str,
+    description: str,
+) -> tuple[Clock, Heading] | None:
+    """Find a heading whose clock matches by start time,
+    customer, and description — ignoring ``SYNC_ID``.
+
+    Used to re-adopt a cloud UUID when a user accidentally
+    removes the ``:SYNC_ID:`` property in Emacs. Without
+    this, the entry would be duplicated on the next sync.
+
+    The match is intentionally strict (all three fields
+    must match) to avoid false positives.
+
+    :param org_file: Parsed org file.
+    :param start_iso: ISO start timestamp to match.
+    :param customer: Customer name to match.
+    :param description: Description to match.
+    :returns: ``(clock, heading)`` or ``None``.
+    """
+    try:
+        target = datetime.fromisoformat(start_iso)
+    except ValueError:
+        return None
+    for h in org_file.headings:
+        cust, desc = parse_entry_title(h.title)
+        if cust != customer or desc != description:
+            continue
+        for clock in h.logbook:
+            if clock.start == target:
+                return clock, h
+    return None
+
+
+def adopt_sync_id(
+    clocks_file: Path,
+    sync_id: str,
+    start_iso: str,
+    customer: str,
+    description: str,
+) -> dict | None:
+    """Try to re-adopt a cloud UUID for a local entry
+    that lost its ``SYNC_ID`` (e.g. manual edit in Emacs).
+
+    Finds a local entry matching by content (start +
+    customer + description). If found, checks that no
+    other heading already uses the given ``sync_id``
+    (to prevent UUID collisions). If safe, stamps the
+    UUID and returns the entry. Otherwise returns
+    ``None``.
+
+    :param clocks_file: Path to clocks.org.
+    :param sync_id: The cloud UUID to adopt.
+    :param start_iso: Start timestamp to match.
+    :param customer: Customer name to match.
+    :param description: Description to match.
+    :returns: Entry dict if adopted, ``None`` otherwise.
+    """
+    if not clocks_file.exists():
+        return None
+    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
+
+    # Safety: another heading already has this UUID.
+    # Don't touch it — let the duplicate happen instead
+    # of corrupting two entries.
+    if find_by_sync_id(org_file, sync_id) is not None:
+        return None
+
+    found = find_by_content(
+        org_file, start_iso, customer, description,
+    )
+    if found is None:
+        return None
+    clock, heading = found
+
+    heading.properties["SYNC_ID"] = sync_id
+    heading.properties["UPDATED_AT"] = current_timestamp()
+    heading.dirty = True
+    write_org_file(clocks_file, org_file)
+    return heading_to_entry(heading, clock)
 
 
 # -- Public API ------------------------------------------------
