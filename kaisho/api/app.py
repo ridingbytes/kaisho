@@ -48,11 +48,6 @@ async def lifespan(app: FastAPI):
     if cfg.PROFILE_DIR.is_dir():
         init_data_dir(cfg)
 
-    # Capture the event loop so background threads
-    # (scheduler, cloud WS) can schedule async broadcasts.
-    from .ws.manager import set_event_loop
-    set_event_loop(asyncio.get_event_loop())
-
     # Start cron scheduler
     scheduler = build_scheduler(cfg.JOBS_FILE)
     scheduler.start()

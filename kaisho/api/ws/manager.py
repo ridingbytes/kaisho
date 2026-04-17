@@ -40,26 +40,3 @@ class ConnectionManager:
 
 
 manager = ConnectionManager()
-
-# The uvicorn event loop, captured at startup so
-# background threads can schedule async broadcasts.
-_loop: asyncio.AbstractEventLoop | None = None
-
-
-def set_event_loop(loop: asyncio.AbstractEventLoop) -> None:
-    """Capture the running event loop (called once from
-    the FastAPI lifespan)."""
-    global _loop
-    _loop = loop
-
-
-def broadcast_sync(message: dict) -> None:
-    """Broadcast from a non-async context (e.g. scheduler
-    thread). Schedules the async broadcast on uvicorn's
-    event loop.
-    """
-    if _loop is None or _loop.is_closed():
-        return
-    asyncio.run_coroutine_threadsafe(
-        manager.broadcast(message), _loop,
-    )

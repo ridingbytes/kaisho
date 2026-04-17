@@ -189,101 +189,6 @@ def sync_backup_job() -> None:
     )
 
 
-_ws_sync_pending = False
-_ws_sync_lock = __import__("threading").Lock()
-
-
-def _debounced_sync() -> None:
-    """Run a sync if one is pending, with dedup."""
-    global _ws_sync_pending
-    import time
-    # Short delay to coalesce rapid events
-    time.sleep(2)
-    with _ws_sync_lock:
-        if not _ws_sync_pending:
-            return
-        _ws_sync_pending = False
-    try:
-        _run_cloud_sync()
-    except Exception:
-        pass
-
-
-def _schedule_ws_sync() -> None:
-    """Schedule a debounced sync from a WS event."""
-    global _ws_sync_pending
-    import threading
-    with _ws_sync_lock:
-        if _ws_sync_pending:
-            return  # Already scheduled
-        _ws_sync_pending = True
-    threading.Thread(
-        target=_debounced_sync,
-        daemon=True,
-        name="cloud-ws-sync",
-    ).start()
-
-
-def _on_cloud_ws_event(
-    event: str, data: dict,
-) -> None:
-    """Handle real-time events from the cloud WebSocket.
-
-    Timer events are broadcast immediately to the local
-    WebSocket. Data changes schedule a debounced sync
-    (coalesces rapid events into one sync cycle).
-    """
-    import logging
-    log = logging.getLogger(__name__)
-    log.info("Cloud WS event: %s", event)
-
-    # Timer events: invalidate cache + broadcast so the
-    # desktop UI picks up the cloud timer instantly.
-    if event in ("timer:started", "timer:stopped"):
-        try:
-            from ..api.routers import cloud_sync as cs_router
-            cs_router._cloud_active_ts = 0
-            cs_router._cloud_stats_ts = 0
-        except Exception:
-            pass
-        try:
-            from ..api.ws.manager import broadcast_sync
-            broadcast_sync({
-                "resource": "clocks",
-                "type": event,
-                "data": data,
-            })
-        except Exception:
-            pass
-
-    # Data changes: schedule debounced background sync
-    if event in (
-        "entries:changed",
-        "entries:deleted",
-        "timer:stopped",
-    ):
-        _schedule_ws_sync()
-
-
-def _start_cloud_ws_if_enabled() -> None:
-    """Start the cloud WS client if sync is configured."""
-    from ..services import settings as settings_svc
-
-    cfg = get_config()
-    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
-    sync = data.get("cloud_sync", {})
-    if not sync.get("enabled"):
-        return
-
-    url = sync.get("url", "")
-    key = sync.get("api_key", "")
-    if not url or not key:
-        return
-
-    from ..services.cloud_ws import start_cloud_ws
-    start_cloud_ws(url, key, _on_cloud_ws_event)
-
-
 def _run_cloud_sync() -> None:
     """Periodic cloud sync job. No-op when disabled."""
     from ..services import settings as settings_svc
@@ -326,19 +231,15 @@ def build_scheduler(jobs_file: Path) -> BackgroundScheduler:
             continue
         _add_job_to_scheduler(_scheduler, job)
 
-    # Cloud sync — runs every 15 minutes as fallback.
-    # Real-time sync is handled by the cloud WebSocket.
+    # Cloud sync job — runs every 5 minutes.
     _scheduler.add_job(
         _run_cloud_sync,
         "interval",
-        minutes=15,
+        minutes=5,
         id="__cloud_sync__",
         name="Cloud Sync",
         replace_existing=True,
     )
-
-    # Start cloud WebSocket for real-time sync events
-    _start_cloud_ws_if_enabled()
 
     # Recurring tasks — runs daily at 06:00.
     _scheduler.add_job(
