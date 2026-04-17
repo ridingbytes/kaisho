@@ -6,6 +6,7 @@ import {
   syncNow,
 } from "../../api/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { ConfirmPopover } from "../common/ConfirmPopover";
 import { inputCls, saveBtnCls } from "./styles";
 
 export function CloudSyncSection(): JSX.Element {
@@ -46,14 +47,10 @@ export function CloudSyncSection(): JSX.Element {
   const [disconnecting, setDisconnecting] = useState(false);
 
   function handleDisconnect() {
-    if (!confirm(
-      "Disconnect and wipe all synced entries from " +
-      "the cloud? Your local data is kept.",
-    )) return;
     setDisconnecting(true);
     setErr("");
     disconnectCloudSync()
-      .then((res: Record<string, unknown>) => {
+      .then((res) => {
         const wiped = res?.wiped || 0;
         const wipeErr = res?.wipe_error;
         if (wipeErr) {
@@ -201,15 +198,20 @@ export function CloudSyncSection(): JSX.Element {
             >
               {syncing ? "Syncing..." : "Sync Now"}
             </button>
-            <button
-              onClick={handleDisconnect}
+            <ConfirmPopover
+              label="Wipe cloud data and disconnect?"
+              onConfirm={handleDisconnect}
               disabled={disconnecting}
-              className="px-4 py-1.5 rounded text-sm text-stone-600 hover:text-red-600 border border-border hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-wait"
             >
-              {disconnecting
-                ? "Flushing cloud data..."
-                : "Disconnect"}
-            </button>
+              <button
+                disabled={disconnecting}
+                className="px-4 py-1.5 rounded text-sm text-stone-600 hover:text-red-600 border border-border hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-wait"
+              >
+                {disconnecting
+                  ? "Flushing cloud data..."
+                  : "Disconnect"}
+              </button>
+            </ConfirmPopover>
           </div>
         </div>
       ) : (
