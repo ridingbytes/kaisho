@@ -40,7 +40,7 @@ def make_org_backend(cfg: Settings) -> tuple[
         cfg.ORG_DIR.expanduser(),
         cfg.SETTINGS_FILE.expanduser(),
     ]
-    for kb_dir in (cfg.WISSEN_DIR, cfg.RESEARCH_DIR):
+    for kb_dir in (cfg.KNOWLEDGE_DIR, cfg.RESEARCH_DIR):
         expanded = kb_dir.expanduser()
         if expanded.is_dir():
             watch_paths.append(expanded)

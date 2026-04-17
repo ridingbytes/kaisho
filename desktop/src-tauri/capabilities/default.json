@@ -4,6 +4,12 @@
   "description": "Default capabilities for the Kaisho desktop app.",
   "windows": ["main"],
   "permissions": [
-    "core:default"
+    "core:default",
+    "shell:allow-spawn",
+    "shell:allow-kill",
+    "shell:allow-stdin-write",
+    "updater:default",
+    "dialog:default",
+    "process:default"
   ]
 }

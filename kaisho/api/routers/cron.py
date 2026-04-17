@@ -327,7 +327,7 @@ def api_move_run_output(entry_id: int, body: MoveRunRequest):
                 status_code=400,
                 detail="filename must end with .md",
             )
-        kb_dir = cfg.WISSEN_DIR.expanduser()
+        kb_dir = cfg.KNOWLEDGE_DIR.expanduser()
         kb_dir.mkdir(parents=True, exist_ok=True)
         dest = kb_dir / body.filename
         content = f"# {title}\n\n{output}\n"

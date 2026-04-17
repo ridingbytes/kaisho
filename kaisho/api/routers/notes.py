@@ -117,7 +117,7 @@ def move_note(note_id: str, body: MoveRequest):
         try:
             return notes_service.move_to_kb(
                 notes_file=backend.notes.data_file,
-                kb_dir=cfg.WISSEN_DIR.expanduser(),
+                kb_dir=cfg.KNOWLEDGE_DIR.expanduser(),
                 note_id=note_id,
                 filename=body.filename,
             )

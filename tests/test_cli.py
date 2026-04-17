@@ -34,12 +34,12 @@ def mock_config(tmp_path):
         CUSTOMERS_FILE = org / "customers.org"
         INBOX_FILE = org / "inbox.org"
         ARCHIVE_FILE = org / "archive.org"
-        WISSEN_DIR = tmp_path / "wissen"
+        KNOWLEDGE_DIR = tmp_path / "wissen"
         RESEARCH_DIR = tmp_path / "research"
         OLLAMA_BASE_URL = "http://localhost:11434"
         SETTINGS_FILE = tmp_path / "settings.yaml"
 
-    FakeCfg.WISSEN_DIR.mkdir()
+    FakeCfg.KNOWLEDGE_DIR.mkdir()
     FakeCfg.RESEARCH_DIR.mkdir()
     return FakeCfg()
 

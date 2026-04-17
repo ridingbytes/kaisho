@@ -10,6 +10,7 @@ import { PathsSection } from "./PathsTab";
 import { CloudSyncSection } from "./CloudSyncTab";
 import { BackupSection } from "./BackupTab";
 import { InvoiceExportSection } from "./InvoiceExportTab";
+import { UpdateSection } from "./UpdateTab";
 
 type TabId =
   | "general"
@@ -20,7 +21,8 @@ type TabId =
   | "backup"
   | "export"
   | "shortcuts"
-  | "paths";
+  | "paths"
+  | "updates";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "general", label: "General" },
@@ -32,6 +34,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "export", label: "Export" },
   { id: "shortcuts", label: "Shortcuts" },
   { id: "paths", label: "Paths" },
+  { id: "updates", label: "Updates" },
 ];
 
 interface TabBarProps {
@@ -105,6 +108,9 @@ export function SettingsView(): JSX.Element {
             <ShortcutsSection />
           )}
           {activeTab === "paths" && <PathsSection />}
+          {activeTab === "updates" && (
+            <UpdateSection />
+          )}
         </div>
       </div>
     </div>

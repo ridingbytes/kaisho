@@ -30,6 +30,7 @@ import {
   fetchCloudSyncStatus,
   fetchInvoiceExportSettings,
   fetchCurrentUser,
+  fetchVersionInfo,
   pruneBackupsRemote,
   runBackup,
   updateBackupSettings,
@@ -646,5 +647,16 @@ export function usePruneBackups() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["backups"] });
     },
+  });
+}
+
+
+// ─── Version ───────────────────────────────────────
+
+export function useVersionInfo() {
+  return useQuery({
+    queryKey: ["version"],
+    queryFn: fetchVersionInfo,
+    staleTime: 300_000,
   });
 }

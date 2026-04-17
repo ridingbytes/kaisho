@@ -28,8 +28,8 @@ export function NewFileForm({
   onClose,
 }: NewFileFormProps) {
   const [label, setLabel] = useState<
-    "wissen" | "research"
-  >("wissen");
+    "knowledge" | "research"
+  >("knowledge");
   const [path, setPath] = useState("");
   const save = useSaveKnowledgeFile();
 
@@ -77,11 +77,11 @@ export function NewFileForm({
           value={label}
           onChange={(e) =>
             setLabel(
-              e.target.value as "wissen" | "research"
+              e.target.value as "knowledge" | "research"
             )
           }
         >
-          <option value="wissen">wissen</option>
+          <option value="knowledge">wissen</option>
           <option value="research">research</option>
         </select>
       </div>

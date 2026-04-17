@@ -9,8 +9,13 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 TAURI_DIR="$PROJECT_ROOT/desktop/src-tauri"
 BIN_DIR="$TAURI_DIR/binaries"
 
-# Detect target triple for Tauri sidecar naming
+# Detect target triple for Tauri sidecar naming.
+# Accepts an optional $1 override (CI passes the matrix target).
 detect_target() {
+    if [ -n "${1:-}" ]; then
+        echo "$1"
+        return
+    fi
     local arch os
     arch="$(uname -m)"
     case "$arch" in
@@ -29,8 +34,14 @@ detect_target() {
     echo "${arch}-${os}"
 }
 
-TARGET="$(detect_target)"
+TARGET="$(detect_target "${1:-}")"
 echo "Building sidecar for target: $TARGET"
+
+# On Windows the binary needs a .exe suffix
+EXE_SUFFIX=""
+if [[ "$TARGET" == *"windows"* ]]; then
+    EXE_SUFFIX=".exe"
+fi
 
 # Ensure PyInstaller is available
 if ! command -v pyinstaller &>/dev/null; then
@@ -41,6 +52,7 @@ fi
 # Build the frontend (production)
 echo "Building frontend..."
 cd "$PROJECT_ROOT/frontend"
+pnpm install --frozen-lockfile
 pnpm build
 
 # Build the Python binary
@@ -52,6 +64,7 @@ pyinstaller \
     --add-data "frontend/dist:frontend/dist" \
     --add-data "templates:templates" \
     --add-data "prompts:prompts" \
+    --add-data "CHANGELOG.md:." \
     --hidden-import "kaisho" \
     --hidden-import "uvicorn" \
     --hidden-import "uvicorn.logging" \
@@ -69,7 +82,9 @@ pyinstaller \
 
 # Move binary to Tauri binaries dir
 mkdir -p "$BIN_DIR"
-cp "dist/kai-server-${TARGET}" "$BIN_DIR/"
+SRC="dist/kai-server-${TARGET}${EXE_SUFFIX}"
+DST="$BIN_DIR/kai-server-${TARGET}${EXE_SUFFIX}"
+cp "$SRC" "$DST"
 
-echo "Sidecar built: $BIN_DIR/kai-server-${TARGET}"
-echo "Size: $(du -h "$BIN_DIR/kai-server-${TARGET}" | cut -f1)"
+echo "Sidecar built: $DST"
+echo "Size: $(du -h "$DST" | cut -f1)"

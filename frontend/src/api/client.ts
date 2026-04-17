@@ -1443,6 +1443,19 @@ export function backupDownloadUrl(filename: string): string {
   return `${BASE}/backup/download/${encodeURIComponent(filename)}`;
 }
 
+// ─── Version ───────────────────────────────────────
+
+/** App version and changelog info. */
+export interface VersionInfo {
+  version: string;
+  changelog: string;
+}
+
+/** Fetch current app version and changelog. */
+export function fetchVersionInfo(): Promise<VersionInfo> {
+  return get<VersionInfo>("/version");
+}
+
 // ─── URL Allowlist ──────────────────────────────────
 
 /** Fetch the list of allowed domains for the

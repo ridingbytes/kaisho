@@ -116,7 +116,7 @@ def _format_inbox(items: list[dict]) -> str:
         return "  (none)\n"
     lines = []
     for item in items[:10]:
-        item_type = (item.get("type") or "NOTIZ").ljust(6)
+        item_type = (item.get("type") or "NOTE").ljust(6)
         customer = item.get("customer") or "-"
         title = item.get("title") or ""
         lines.append(f"  [{item_type}] [{customer}] {title}")

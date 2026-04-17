@@ -67,10 +67,10 @@ def get_backend() -> Backend:
         from .sql import make_sql_backend
         dsn = getattr(cfg_overlay, "SQL_DSN", "")
         if not dsn:
-            dsn = (
-                f"sqlite:///"
-                f"{cfg.PROFILE_DIR / 'kaisho.db'}"
+            db_path = (
+                cfg.PROFILE_DIR / "kaisho.db"
             )
+            dsn = f"sqlite:///{db_path.as_posix()}"
         result = make_sql_backend(dsn)
     else:
         raise ValueError(

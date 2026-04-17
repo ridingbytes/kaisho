@@ -378,7 +378,7 @@ retain their `CONTRACT` property but the contract definition is gone.
 
 ## kai kb
 
-Search and read the knowledge base (WISSEN_DIR and RESEARCH_DIR).
+Search and read the knowledge base (KNOWLEDGE_DIR and RESEARCH_DIR).
 
 ### kb list
 
@@ -398,7 +398,7 @@ Print the contents of a knowledge base file. PATH is relative to the
 knowledge base root (as shown by `kb list`).
 
 ```bash
-kai kb show wissen/project-notes.md
+kai kb show knowledge/project-notes.md
 ```
 
 ### kb search
@@ -419,7 +419,7 @@ kai kb search API authentication --limit 10
 ## kai gh
 
 Query GitHub issues and pull requests. Repos are resolved from the
-`REPO` property on each customer in `kunden.org`. Only customers with
+`REPO` property on each customer in `customers.org`. Only customers with
 a configured `REPO` appear in the GitHub view.
 
 ### gh issues
@@ -702,9 +702,9 @@ development. Interactive API docs available at `/docs`.
 | Variable           | Default                      | Description                                        |
 |--------------------|------------------------------|----------------------------------------------------|
 | `ORG_DIR`          | `~/ownCloud/cowork/org`      | Directory containing org data files                |
-| `WISSEN_DIR`       | `~/ownCloud/cowork/wissen`   | Knowledge base directory                           |
+| `KNOWLEDGE_DIR`       | `~/ownCloud/cowork/knowledge`   | Knowledge base directory                           |
 | `RESEARCH_DIR`     | `~/ownCloud/cowork/research` | Research / AI output directory                     |
-| `KUNDEN_DIR`       | `~/ownCloud/cowork/kunden`   | Customer markdown files (markdown backend)         |
+| `CUSTOMERS_DIR`       | `~/ownCloud/cowork/customers`   | Customer markdown files (markdown backend)         |
 | `BACKEND`          | `org`                        | Storage driver: `org`, `markdown`, `json`, or `sql`|
 | `SQL_DSN`          |                              | SQL DSN (sqlite:/// or postgresql://)              |
 | `JOBS_FILE`        | `./jobs.yaml`                | Cron job definitions                               |

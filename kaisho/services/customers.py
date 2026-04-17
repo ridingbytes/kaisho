@@ -85,13 +85,13 @@ def _is_active(customer: dict) -> bool:
 
 
 def _find_customer_heading(
-    kunden_file: Path, name: str
+    customers_file: Path, name: str
 ) -> tuple | None:
     """Find the level-2 heading for a customer by name.
 
     Returns (org_file, h2) or None if not found.
     """
-    org_file = parse_org_file(kunden_file, CUSTOMER_KEYWORDS)
+    org_file = parse_org_file(customers_file, CUSTOMER_KEYWORDS)
     name_lower = name.lower()
     for h1 in org_file.headings:
         for h2 in h1.children:
@@ -120,14 +120,14 @@ def _enrich_customer(customer: dict, clocks_file: Path) -> dict:
 
 
 def list_customers(
-    kunden_file: Path,
+    customers_file: Path,
     clocks_file: Path,
     include_inactive: bool = False,
 ) -> list[dict]:
     """List customers from customers file, enriched with clock hours."""
-    if not kunden_file.exists():
+    if not customers_file.exists():
         return []
-    org_file = parse_org_file(kunden_file, CUSTOMER_KEYWORDS)
+    org_file = parse_org_file(customers_file, CUSTOMER_KEYWORDS)
     customers = []
     for h1 in org_file.headings:
         for h2 in h1.children:
@@ -138,11 +138,11 @@ def list_customers(
 
 
 def get_customer(
-    kunden_file: Path, clocks_file: Path, name: str
+    customers_file: Path, clocks_file: Path, name: str
 ) -> dict | None:
     """Get a customer by name."""
     all_customers = list_customers(
-        kunden_file, clocks_file, include_inactive=True
+        customers_file, clocks_file, include_inactive=True
     )
     name_lower = name.lower()
     for customer in all_customers:
@@ -175,7 +175,7 @@ def _random_color() -> str:
 
 
 def add_customer(
-    kunden_file: Path,
+    customers_file: Path,
     name: str,
     status: str = "active",
     customer_type: str = "",
@@ -190,11 +190,11 @@ def add_customer(
     called 'Kunden' if the file is empty.
     Raises ValueError if a customer with that name already exists.
     """
-    kunden_file.parent.mkdir(parents=True, exist_ok=True)
-    if not kunden_file.exists():
-        kunden_file.write_text("", encoding="utf-8")
+    customers_file.parent.mkdir(parents=True, exist_ok=True)
+    if not customers_file.exists():
+        customers_file.write_text("", encoding="utf-8")
 
-    if _find_customer_heading(kunden_file, name) is not None:
+    if _find_customer_heading(customers_file, name) is not None:
         raise ValueError(f"Customer already exists: {name}")
 
     props: dict[str, str] = {"STATUS": status}
@@ -215,7 +215,7 @@ def add_customer(
         dirty=True,
     )
 
-    org_file = parse_org_file(kunden_file, CUSTOMER_KEYWORDS)
+    org_file = parse_org_file(customers_file, CUSTOMER_KEYWORDS)
     if org_file.headings:
         org_file.headings[0].children.append(new_heading)
     else:
@@ -226,12 +226,12 @@ def add_customer(
         group.children.append(new_heading)
         org_file.headings.append(group)
 
-    write_org_file(kunden_file, org_file)
+    write_org_file(customers_file, org_file)
     return _heading_to_customer(new_heading)
 
 
 def update_customer(
-    kunden_file: Path,
+    customers_file: Path,
     name: str,
     updates: dict,
 ) -> dict | None:
@@ -240,7 +240,7 @@ def update_customer(
     Supported keys in *updates*: name, status, budget, repo.
     Returns the updated customer dict, or None if not found.
     """
-    org_file = parse_org_file(kunden_file, CUSTOMER_KEYWORDS)
+    org_file = parse_org_file(customers_file, CUSTOMER_KEYWORDS)
     name_lower = name.lower()
     for h1 in org_file.headings:
         for h2 in h1.children:
@@ -261,7 +261,7 @@ def update_customer(
                 else:
                     h2.properties.pop(prop, None)
             h2.dirty = True
-            write_org_file(kunden_file, org_file)
+            write_org_file(customers_file, org_file)
             return _heading_to_customer(h2)
     return None
 
@@ -285,11 +285,11 @@ def _enrich_contracts(
 
 
 def get_budget_summary(
-    kunden_file: Path, clocks_file: Path
+    customers_file: Path, clocks_file: Path
 ) -> list[dict]:
     """Return budget summary for all active customers."""
     customers = list_customers(
-        kunden_file, clocks_file, include_inactive=False
+        customers_file, clocks_file, include_inactive=False
     )
     summaries = []
     for customer in customers:
@@ -333,10 +333,10 @@ def _clock_hours_by_contract(
 
 
 def list_contracts(
-    kunden_file: Path, clocks_file: Path, customer_name: str
+    customers_file: Path, clocks_file: Path, customer_name: str
 ) -> list[dict]:
     """List contracts for a customer with clock-derived hours."""
-    result = _find_customer_heading(kunden_file, customer_name)
+    result = _find_customer_heading(customers_file, customer_name)
     if result is None:
         raise ValueError(f"Customer not found: {customer_name}")
     _, h2 = result
@@ -361,7 +361,7 @@ def list_contracts(
 
 
 def add_contract(
-    kunden_file: Path,
+    customers_file: Path,
     customer_name: str,
     name: str,
     budget: float,
@@ -371,7 +371,7 @@ def add_contract(
     invoiced: bool = False,
 ) -> dict:
     """Add a named contract to a customer."""
-    result = _find_customer_heading(kunden_file, customer_name)
+    result = _find_customer_heading(customers_file, customer_name)
     if result is None:
         raise ValueError(f"Customer not found: {customer_name}")
     org_file, h2 = result
@@ -400,12 +400,12 @@ def add_contract(
     )
     h2.children.append(new_contract)
     h2.dirty = True
-    write_org_file(kunden_file, org_file)
+    write_org_file(customers_file, org_file)
     return _heading_to_contract(new_contract, h2.title.strip())
 
 
 def update_contract(
-    kunden_file: Path,
+    customers_file: Path,
     customer_name: str,
     contract_name: str,
     updates: dict,
@@ -413,7 +413,7 @@ def update_contract(
     """Update fields of a contract. Supported keys:
     name, budget, start_date, end_date, notes.
     """
-    result = _find_customer_heading(kunden_file, customer_name)
+    result = _find_customer_heading(customers_file, customer_name)
     if result is None:
         return None
     org_file, h2 = result
@@ -456,48 +456,48 @@ def update_contract(
                 child.properties.pop("INVOICED", None)
         child.dirty = True
         h2.dirty = True
-        write_org_file(kunden_file, org_file)
+        write_org_file(customers_file, org_file)
         return _heading_to_contract(child, h2.title.strip())
     return None
 
 
 def close_contract(
-    kunden_file: Path,
+    customers_file: Path,
     customer_name: str,
     contract_name: str,
     end_date: str,
 ) -> dict | None:
     """Set END_DATE on a contract, marking it closed."""
     return update_contract(
-        kunden_file, customer_name, contract_name,
+        customers_file, customer_name, contract_name,
         {"end_date": end_date},
     )
 
 
 def delete_customer(
-    kunden_file: Path,
+    customers_file: Path,
     customer_name: str,
 ) -> bool:
     """Delete a customer heading from the org file."""
-    org_file = parse_org_file(kunden_file, CUSTOMER_KEYWORDS)
+    org_file = parse_org_file(customers_file, CUSTOMER_KEYWORDS)
     name_lower = customer_name.lower()
     for h1 in org_file.headings:
         for i, h2 in enumerate(h1.children):
             if h2.title.strip().lower() == name_lower:
                 h1.children.pop(i)
                 h1.dirty = True
-                write_org_file(kunden_file, org_file)
+                write_org_file(customers_file, org_file)
                 return True
     return False
 
 
 def delete_contract(
-    kunden_file: Path,
+    customers_file: Path,
     customer_name: str,
     contract_name: str,
 ) -> bool:
     """Delete a contract from a customer."""
-    result = _find_customer_heading(kunden_file, customer_name)
+    result = _find_customer_heading(customers_file, customer_name)
     if result is None:
         return False
     org_file, h2 = result
@@ -507,7 +507,7 @@ def delete_contract(
                 and child.title.strip().lower() == name_lower):
             h2.children.pop(i)
             h2.dirty = True
-            write_org_file(kunden_file, org_file)
+            write_org_file(customers_file, org_file)
             return True
     return False
 

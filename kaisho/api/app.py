@@ -30,6 +30,7 @@ from .routers import settings as settings_router
 from .routers import settings_ai
 from .routers import settings_profiles
 from .routers import settings_states
+from .routers import version as version_router
 from ..cron.scheduler import build_scheduler
 from .watcher.service import watch_files
 
@@ -109,6 +110,7 @@ app.include_router(github.router)
 app.include_router(advisor.router)
 app.include_router(dashboard.router)
 app.include_router(ws_router.router)
+app.include_router(version_router.router)
 
 
 @app.get("/health")

@@ -256,7 +256,7 @@ def get_kb_sources(settings: dict, cfg=None) -> list[dict]:
 
     Each entry: {"label": str, "path": str}.
     Default: a "knowledge" folder in the user's data dir,
-    plus WISSEN_DIR/RESEARCH_DIR from config.
+    plus KNOWLEDGE_DIR/RESEARCH_DIR from config.
     """
     sources = settings.get("kb_sources")
     if sources:
@@ -275,7 +275,7 @@ def get_kb_sources(settings: dict, cfg=None) -> list[dict]:
     ]
     # Add legacy dirs if they exist
     for label, path_attr in [
-        ("wissen", cfg.WISSEN_DIR),
+        ("knowledge", cfg.KNOWLEDGE_DIR),
         ("research", cfg.RESEARCH_DIR),
     ]:
         p = path_attr.expanduser()

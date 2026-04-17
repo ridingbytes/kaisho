@@ -1,9 +1,19 @@
 name: Build Desktop App
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
+    inputs:
+      channel:
+        description: "Release channel"
+        required: true
+        default: "stable"
+        type: choice
+        options:
+          - stable
+          - develop
 
 permissions:
   contents: write
@@ -16,12 +26,16 @@ jobs:
         include:
           - platform: macos-latest
             target: aarch64-apple-darwin
+            sidecar_script: bash scripts/build-sidecar.sh
           - platform: macos-13
             target: x86_64-apple-darwin
+            sidecar_script: bash scripts/build-sidecar.sh
           - platform: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
+            sidecar_script: bash scripts/build-sidecar.sh
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
+            sidecar_script: pwsh scripts/build-sidecar.ps1
 
     runs-on: ${{ matrix.platform }}
 
@@ -63,13 +77,28 @@ jobs:
           pip install -e .
           pip install pyinstaller
 
-      - name: Install frontend deps
-        run: |
-          cd frontend
-          pnpm install
-
       - name: Build sidecar
-        run: bash scripts/build-sidecar.sh
+        env:
+          BUILD_TARGET: ${{ matrix.target }}
+        run: ${{ matrix.sidecar_script }} "$BUILD_TARGET"
+
+      - name: Determine release channel
+        id: channel
+        shell: bash
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          INPUT_CHANNEL: ${{ github.event.inputs.channel }}
+        run: |
+          if [[ "$TAG_NAME" == *"-dev"* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "channel=develop" >> "$GITHUB_OUTPUT"
+          elif [[ "$INPUT_CHANNEL" == "develop" ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "channel=develop" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "channel=stable" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -82,8 +111,8 @@ jobs:
           tauriScript: npx tauri
           tagName: v__VERSION__
           releaseName: "Kaisho v__VERSION__"
-          releaseBody: "See the release notes for details."
+          releaseBody: "See CHANGELOG.md for details."
           releaseDraft: true
-          prerelease: false
+          prerelease: ${{ steps.channel.outputs.prerelease }}
           includeUpdaterJson: true
           args: --target ${{ matrix.target }}

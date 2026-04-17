@@ -46,6 +46,7 @@ import {
 import { ViewContext } from "./context/ViewContext";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { schedulePanelAction } from "./utils/panelActions";
+import { WhatsNewDialog } from "./components/common/WhatsNewDialog";
 
 export type View =
   | "dashboard"
@@ -632,6 +633,7 @@ export function App() {
       <ShortcutsProvider>
         <ToastProvider>
           <AppShell />
+          <WhatsNewDialog />
         </ToastProvider>
       </ShortcutsProvider>
     </QueryClientProvider>

@@ -50,7 +50,7 @@ export function KnowledgeView() {
   const [selectedPath, setSelectedPath] =
     useState<string | null>(null);
   const [selectedLabel, setSelectedLabel] =
-    useState<string>("wissen");
+    useState<string>("knowledge");
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [editing, setEditing] = useState(false);

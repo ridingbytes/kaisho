@@ -86,9 +86,8 @@ def get_paths():
     paths = settings_svc.get_path_settings(data, cfg)
     sql_dsn = paths.get("sql_dsn", "")
     if not sql_dsn:
-        sql_dsn = (
-            f"sqlite:///{cfg.PROFILE_DIR / 'kaisho.db'}"
-        )
+        db_path = cfg.PROFILE_DIR / "kaisho.db"
+        sql_dsn = f"sqlite:///{db_path.as_posix()}"
     return {
         "org_dir": paths["org_dir"],
         "markdown_dir": paths["markdown_dir"],

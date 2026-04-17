@@ -335,7 +335,7 @@ def make_backend_from_spec(
 
             Delegates unknown attributes to the real
             config so make_org_backend can access
-            WISSEN_DIR, RESEARCH_DIR, etc.
+            KNOWLEDGE_DIR, RESEARCH_DIR, etc.
             """
             ORG_DIR = directory
             TODOS_FILE = directory / "todos.org"

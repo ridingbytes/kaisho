@@ -10,7 +10,9 @@ from ..org.writer import write_org_file
 CUSTOMER_RE = re.compile(r"^\[([^\]]+)\]:\s*")
 CREATED_FMT = "%Y-%m-%d %a %H:%M"
 _WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-ARCHIVE_HEADING = "Archiv"
+ARCHIVE_HEADING = "Archive"
+# Accept legacy German heading for backwards compatibility
+_ARCHIVE_HEADINGS = {"Archive", "Archiv"}
 _STATE_LOG_RE = re.compile(r'^- State "')
 _STATE_CHANGE_RE = re.compile(
     r'^- State "([^"]+)"\s+from "([^"]+)"\s+'
@@ -396,33 +398,42 @@ def archive_task(
     else:
         archive_org = parse_org_file(archive_file, keywords)
 
-    # Find or create the '* Archiv' heading
-    archiv = _find_or_create_archiv_heading(archive_org)
+    # Find or create the '* Archive' heading
+    archive = _find_or_create_archive_heading(archive_org)
 
     # Prepare heading as level-2 child with archive properties
     _add_archive_properties(heading, todos_file, original_keyword)
     heading.level = 2
     heading.dirty = True
-    archiv.children.append(heading)
-    archiv.dirty = True
+    archive.children.append(heading)
+    archive.dirty = True
 
     write_org_file(archive_file, archive_org)
     return True
 
 
-def _find_or_create_archiv_heading(archive_org: OrgFile) -> Heading:
-    """Return the '* Archiv' top-level heading, creating it if absent."""
+def _find_or_create_archive_heading(
+    archive_org: OrgFile,
+) -> Heading:
+    """Return the '* Archive' heading, creating if absent.
+
+    Accepts the legacy '* Archiv' heading for backwards
+    compatibility with existing org files.
+    """
     for h in archive_org.headings:
-        if h.level == 1 and h.title.strip() == ARCHIVE_HEADING:
+        if (
+            h.level == 1
+            and h.title.strip() in _ARCHIVE_HEADINGS
+        ):
             return h
-    archiv = Heading(
+    archive = Heading(
         level=1,
         keyword=None,
         title=ARCHIVE_HEADING,
         dirty=True,
     )
-    archive_org.headings.append(archiv)
-    return archiv
+    archive_org.headings.append(archive)
+    return archive
 
 
 def _add_archive_properties(
@@ -491,9 +502,9 @@ def list_archived_tasks(
     if not archive_file.exists():
         return []
     archive_org = parse_org_file(archive_file, keywords)
-    archiv = _find_or_create_archiv_heading(archive_org)
+    archive_root = _find_or_create_archive_heading(archive_org)
     tasks = []
-    for i, h in enumerate(archiv.children):
+    for i, h in enumerate(archive_root.children):
         task = _heading_to_archived_task(h, _archive_task_id(i + 1))
         task_id = h.properties.get("TASK_ID", "")
         if clocks_file and task_id:
@@ -522,12 +533,12 @@ def delete_archived_task(
     if not task_id.startswith("a") or not task_id[1:].isdigit():
         return False
     archive_org = parse_org_file(archive_file, keywords)
-    archiv = _find_or_create_archiv_heading(archive_org)
+    archive_root = _find_or_create_archive_heading(archive_org)
     idx = int(task_id[1:]) - 1
-    if idx < 0 or idx >= len(archiv.children):
+    if idx < 0 or idx >= len(archive_root.children):
         return False
-    archiv.children.pop(idx)
-    archiv.dirty = True
+    archive_root.children.pop(idx)
+    archive_root.dirty = True
     write_org_file(archive_file, archive_org)
     return True
 
@@ -552,18 +563,18 @@ def unarchive_task(
     if not archive_file.exists():
         return False
     archive_org = parse_org_file(archive_file, keywords)
-    archiv = _find_or_create_archiv_heading(archive_org)
+    archive_root = _find_or_create_archive_heading(archive_org)
 
     # Resolve index from task_id (e.g. "a3" -> index 2)
     if not task_id.startswith("a") or not task_id[1:].isdigit():
         return False
     idx = int(task_id[1:]) - 1
-    if idx < 0 or idx >= len(archiv.children):
+    if idx < 0 or idx >= len(archive_root.children):
         return False
 
-    heading = archiv.children[idx]
-    archiv.children.pop(idx)
-    archiv.dirty = True
+    heading = archive_root.children[idx]
+    archive_root.children.pop(idx)
+    archive_root.dirty = True
     write_org_file(archive_file, archive_org)
 
     # Restore heading for todos.org

@@ -355,7 +355,7 @@ class TestClockBackend:
 class TestInboxBackend:
     def test_add_and_list(self, inbox_backend):
         item = inbox_backend.add_item(
-            text="New idea", item_type="IDEE"
+            text="New idea", item_type="IDEA"
         )
         assert item["title"] == "New idea"
         items = inbox_backend.list_items()

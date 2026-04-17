@@ -24,12 +24,25 @@ def _escape_body(text: str) -> list[str]:
     return lines
 CUSTOMER_RE = re.compile(r"\[([^\]]+)\]")
 TITLE_TYPE_RE = re.compile(
-    r"^(EMAIL|LEAD|IDEE|NOTIZ|NOTE|IDEA)\s+", re.IGNORECASE
+    r"^(EMAIL|LEAD|IDEA|IDEE|NOTE|NOTIZ)\s+",
+    re.IGNORECASE,
 )
 
-EMAIL_KEYWORDS = {"email", "von:", "from:", "betreff"}
-IDEE_KEYWORDS = {"idee", "idea", "vielleicht"}
-LEAD_KEYWORDS = {"lead", "anfrage", "interessent"}
+EMAIL_KEYWORDS = {
+    "email", "from:", "subject:",
+    # Legacy German keywords
+    "von:", "betreff",
+}
+IDEA_KEYWORDS = {
+    "idea",
+    # Legacy German keywords
+    "idee", "vielleicht",
+}
+LEAD_KEYWORDS = {
+    "lead", "inquiry",
+    # Legacy German keywords
+    "anfrage", "interessent",
+}
 
 
 def _detect_type(text: str) -> str:
@@ -37,11 +50,11 @@ def _detect_type(text: str) -> str:
     lower = text.lower()
     if any(kw in lower for kw in EMAIL_KEYWORDS):
         return "EMAIL"
-    if any(kw in lower for kw in IDEE_KEYWORDS):
-        return "IDEE"
+    if any(kw in lower for kw in IDEA_KEYWORDS):
+        return "IDEA"
     if any(kw in lower for kw in LEAD_KEYWORDS):
         return "LEAD"
-    return "NOTIZ"
+    return "NOTE"
 
 
 def _extract_type(heading: Heading) -> str:

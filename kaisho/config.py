@@ -17,9 +17,9 @@ class Settings(BaseSettings):
 
     # Core paths
     ORG_DIR: Path = Path("data/org")
-    WISSEN_DIR: Path = Path("data/knowledge")
+    KNOWLEDGE_DIR: Path = Path("data/knowledge")
     RESEARCH_DIR: Path = Path("data/research")
-    KUNDEN_DIR: Path = Path("data/kunden")
+    CUSTOMERS_DIR: Path = Path("data/customers")
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     HOST: str = "0.0.0.0"
     PORT: int = 8765

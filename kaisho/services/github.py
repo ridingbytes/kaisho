@@ -1,7 +1,7 @@
 """GitHub service.
 
 Fetches issues and PRs via the GitHub REST API using urllib.request.
-Repos are resolved from the customer's REPO property in kunden.org.
+Repos are resolved from the customer's REPO property in customers.org.
 """
 import json
 import urllib.request

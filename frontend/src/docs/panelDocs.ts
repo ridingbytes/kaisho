@@ -143,7 +143,7 @@ kai customer entry-delete ACME 3
   knowledge: `
 # Knowledge
 
-Browse and search the knowledge base files from \`WISSEN_DIR\` and
+Browse and search the knowledge base files from \`KNOWLEDGE_DIR\` and
 \`RESEARCH_DIR\`.
 
 **Tree** — left panel lists all files grouped by directory. Click a
@@ -158,7 +158,7 @@ with file path and snippet.
 
 \`\`\`bash
 kai kb list
-kai kb show wissen/project-notes.md
+kai kb show knowledge/project-notes.md
 kai kb search API authentication --limit 10
 \`\`\`
 
@@ -166,7 +166,7 @@ Environment variables:
 
 | Variable       | Default                          |
 |----------------|----------------------------------|
-| \`WISSEN_DIR\`   | \`~/ownCloud/cowork/wissen\`       |
+| \`KNOWLEDGE_DIR\`   | \`~/ownCloud/cowork/knowledge\`       |
 | \`RESEARCH_DIR\` | \`~/ownCloud/cowork/research\`     |
 `,
 
