@@ -141,6 +141,9 @@ def _stream_ask(body: AskRequest) -> Generator[
     ) -> None:
         q.put((event_type, data))
 
+    # Emit the resolved model so the UI can display it
+    q.put(("model", {"model": model_str}))
+
     def run() -> None:
         try:
             answer = ask(

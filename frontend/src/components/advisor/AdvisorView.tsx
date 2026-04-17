@@ -86,6 +86,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
   const cloudAi = cloudStatus?.use_cloud_ai;
 
   const [model, setModel] = useState("");
+  const [resolvedModel, setResolvedModel] = useState("");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -176,7 +177,11 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
       question, model, history: messages,
       signal: ctrl.signal,
       onEvent: (type, data) => {
-        if (type === "tool_call") {
+        if (type === "model") {
+          setResolvedModel(
+            data.model as string,
+          );
+        } else if (type === "tool_call") {
           const name = data.name as string;
           setSteps((p) => [...p, `Calling ${name}...`]);
         } else if (type === "tool_result") {
@@ -288,6 +293,11 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
                 ollama: | claude: | openrouter: | openai:
               </span>
             </>
+          )}
+          {resolvedModel && (
+            <span className="text-[9px] text-stone-400 font-mono">
+              {resolvedModel}
+            </span>
           )}
         </div>
         <HelpButton title="Advisor" doc={DOCS.advisor} view="advisor" />
