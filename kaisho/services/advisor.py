@@ -681,17 +681,20 @@ def ask(
             system_prompt=sp, on_event=on_event,
         )
     if provider == "kaisho":
-        from .cloud_sync import cloud_ai_agentic
-        return cloud_ai_agentic(
+        from .cloud_sync import cloud_ai_complete
+        if on_event:
+            on_event("thinking", {})
+        resp = cloud_ai_complete(
             cloud_url=cloud_url,
             api_key=cloud_api_key,
             system=sp,
-            prompt=prompt,
-            tools=openai_tools(),
-            tool_executor=execute_tool,
+            messages=[{
+                "role": "user",
+                "content": prompt,
+            }],
             max_tokens=4096,
-            on_event=on_event,
         )
+        return resp.get("text", "")
     answer = ask_ollama(
         model_name, prompt, ollama_base_url,
         system_prompt=sp, on_event=on_event,
