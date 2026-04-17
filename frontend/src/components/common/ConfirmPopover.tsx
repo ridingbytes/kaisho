@@ -1,5 +1,6 @@
 import { Check, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface ConfirmPopoverProps {
   /** The trigger element (typically a button). */
@@ -14,8 +15,9 @@ interface ConfirmPopoverProps {
 
 /**
  * Wraps a trigger element with a small confirmation
- * popover that appears on click. Clicking outside or
- * pressing the X dismisses it.
+ * popover that appears on click. Rendered via a portal
+ * so it's never clipped by parent overflow or stacking
+ * contexts. Clicking outside or pressing X dismisses.
  */
 export function ConfirmPopover({
   children,
@@ -24,14 +26,27 @@ export function ConfirmPopover({
   disabled,
 }: ConfirmPopoverProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     if (!open) return;
+    // Position below the trigger element
+    if (triggerRef.current) {
+      const rect =
+        triggerRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + 4,
+        left: Math.max(8, rect.right - 180),
+      });
+    }
     function onMouseDown(e: MouseEvent) {
       if (
-        ref.current &&
-        !ref.current.contains(e.target as Node)
+        popRef.current &&
+        !popRef.current.contains(e.target as Node) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node)
       ) {
         setOpen(false);
       }
@@ -44,22 +59,17 @@ export function ConfirmPopover({
       );
   }, [open]);
 
-  return (
-    <div className="relative" ref={ref}>
-      <div
-        onClick={(e) => {
-          if (disabled) return;
-          e.stopPropagation();
-          setOpen(true);
-        }}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        {children}
-      </div>
-      {open && (
+  const popover = open
+    ? createPortal(
         <div
+          ref={popRef}
+          style={{
+            position: "fixed",
+            top: pos.top,
+            left: pos.left,
+            zIndex: 9999,
+          }}
           className={[
-            "absolute right-0 top-full mt-1 z-50",
             "flex items-center gap-1 px-2 py-1",
             "rounded bg-surface-overlay",
             "border border-border shadow-lg",
@@ -94,8 +104,25 @@ export function ConfirmPopover({
           >
             <X size={10} />
           </button>
-        </div>
-      )}
-    </div>
+        </div>,
+        document.body,
+      )
+    : null;
+
+  return (
+    <>
+      <div
+        ref={triggerRef}
+        onClick={(e) => {
+          if (disabled) return;
+          e.stopPropagation();
+          setOpen(true);
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+      {popover}
+    </>
   );
 }
