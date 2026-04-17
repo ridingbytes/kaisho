@@ -348,6 +348,25 @@ def cloud_ai_complete(
     return resp.get("text", "")
 
 
+def wipe_cloud_entries(
+    cloud_url: str, api_key: str,
+) -> dict:
+    """Delete all clock entries for the user on the cloud.
+
+    Called during disconnect to ensure the cloud is a
+    clean slate. The local org file is the single source
+    of truth — the cloud is rebuilt from a full push on
+    the next connect.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :returns: ``{deleted: <count>}``.
+    :raises CloudUnavailable: On network failure.
+    """
+    url = f"{cloud_url}/sync/entries"
+    return safe_request(url, api_key, "DELETE")
+
+
 def cloud_status(
     cloud_url: str, api_key: str,
 ) -> dict | None:

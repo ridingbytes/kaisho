@@ -120,17 +120,48 @@ def connect(body: ConnectBody):
 def disconnect():
     """Disconnect from the Kaisho Cloud service.
 
-    Clears sync state so reconnecting (even to the same
-    account) starts with a fresh full sync. Tombstones
-    from the old account are discarded — they're
-    irrelevant for any future connection.
+    Runs a final pull so any mobile-only entries are
+    saved to the local org file (the single source of
+    truth), then wipes all entries from the cloud. On
+    the next connect, a full push rebuilds the cloud
+    from local state.
+
+    Order of operations:
+      1. Final pull → save mobile entries locally
+      2. Wipe cloud entries → clean slate
+      3. Clear local sync state (cursor + tombstones)
+      4. Disable cloud sync in settings
     """
-    cfg = get_config()
+    data, cfg = _sync_settings()
+    url, key = _cloud_creds(data)
+
+    # Step 1: final pull to save mobile-only entries.
+    if url and key:
+        try:
+            from ...backends import get_backend
+            backend = get_backend()
+            sync_svc.run_sync_cycle(
+                cloud_url=url,
+                api_key=key,
+                profile_dir=cfg.PROFILE_DIR,
+                clocks_file=backend.clocks.data_file,
+            )
+        except Exception:
+            pass  # Best-effort; don't block disconnect.
+
+        # Step 2: wipe cloud entries.
+        try:
+            sync_svc.wipe_cloud_entries(url, key)
+        except sync_svc.CloudUnavailable:
+            pass  # Offline; entries stay on cloud.
+
+    # Step 3: clear local sync state.
     sync_state.save_cursor(
         cfg.PROFILE_DIR, sync_state.DEFAULT_CURSOR,
     )
     sync_state.save_tombstones(cfg.PROFILE_DIR, [])
 
+    # Step 4: disable cloud sync.
     settings_svc.set_cloud_sync_settings(
         cfg.SETTINGS_FILE,
         {"enabled": False, "api_key": "", "url": ""},
