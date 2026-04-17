@@ -6,10 +6,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$ProjectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-if (-not $ProjectRoot) {
-    $ProjectRoot = (Get-Item $PSScriptRoot).Parent.FullName
-}
+# $PSScriptRoot is scripts/, parent is the repo root
+$ProjectRoot = Split-Path -Parent $PSScriptRoot
 $TauriDir = Join-Path $ProjectRoot "desktop\src-tauri"
 $BinDir = Join-Path $TauriDir "binaries"
 

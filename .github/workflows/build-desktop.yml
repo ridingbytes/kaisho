@@ -77,6 +77,9 @@ jobs:
           pip install -e .
           pip install pyinstaller
 
+      - name: Install desktop deps
+        run: cd desktop && pnpm install
+
       - name: Build sidecar
         env:
           BUILD_TARGET: ${{ matrix.target }}
