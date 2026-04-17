@@ -81,7 +81,12 @@ def status():
 
 @router.post("/connect")
 def connect(body: ConnectBody):
-    """Connect to the Kaisho Cloud service."""
+    """Connect to the Kaisho Cloud service.
+
+    Resets the sync cursor and tombstones so a fresh
+    sync starts clean — no stale state from a previous
+    account carries over.
+    """
     url = body.url.rstrip("/")
     stats = sync_svc.cloud_stats(url, body.api_key)
     if stats is None:
@@ -91,6 +96,13 @@ def connect(body: ConnectBody):
         )
 
     cfg = get_config()
+    # Reset sync state so all local entries push to the
+    # new account and the pull cursor starts from epoch.
+    sync_state.save_cursor(
+        cfg.PROFILE_DIR, sync_state.DEFAULT_CURSOR,
+    )
+    sync_state.save_tombstones(cfg.PROFILE_DIR, [])
+
     settings_svc.set_cloud_sync_settings(
         cfg.SETTINGS_FILE,
         {
@@ -106,8 +118,19 @@ def connect(body: ConnectBody):
 
 @router.post("/disconnect")
 def disconnect():
-    """Disconnect from the Kaisho Cloud service."""
+    """Disconnect from the Kaisho Cloud service.
+
+    Clears sync state so reconnecting (even to the same
+    account) starts with a fresh full sync. Tombstones
+    from the old account are discarded — they're
+    irrelevant for any future connection.
+    """
     cfg = get_config()
+    sync_state.save_cursor(
+        cfg.PROFILE_DIR, sync_state.DEFAULT_CURSOR,
+    )
+    sync_state.save_tombstones(cfg.PROFILE_DIR, [])
+
     settings_svc.set_cloud_sync_settings(
         cfg.SETTINGS_FILE,
         {"enabled": False, "api_key": "", "url": ""},
