@@ -159,7 +159,7 @@ def _stream_ask(body: AskRequest) -> Generator[
                 on_event=on_event,
             )
             q.put(("answer", {"answer": answer}))
-        except RuntimeError as exc:
+        except Exception as exc:
             q.put(("error", {"detail": str(exc)}))
         finally:
             q.put(_SENTINEL)

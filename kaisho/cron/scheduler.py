@@ -308,9 +308,12 @@ def sync_jobs(jobs_file: Path) -> None:
             except Exception:
                 pass
 
-    # Remove jobs that no longer exist in YAML
+    # Remove user jobs that no longer exist in YAML.
+    # System jobs (prefixed with __) must be preserved.
     scheduled_ids = {j.id for j in _scheduler.get_jobs()}
     for job_id in scheduled_ids - enabled_ids:
+        if job_id.startswith("__"):
+            continue
         try:
             _scheduler.remove_job(job_id)
         except Exception:

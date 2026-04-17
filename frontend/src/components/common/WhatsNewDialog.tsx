@@ -29,7 +29,6 @@ export function WhatsNewDialog() {
     const seen = localStorage.getItem(SEEN_KEY);
     if (seen !== data.version && parsed.length > 0) {
       setOpen(true);
-      localStorage.setItem(SEEN_KEY, data.version);
     }
   }, [data]);
 
@@ -105,7 +104,14 @@ export function WhatsNewDialog() {
 
         <div className="px-5 py-3 border-t border-border-subtle flex justify-end">
           <button
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              if (data?.version) {
+                localStorage.setItem(
+                  SEEN_KEY, data.version,
+                );
+              }
+              setOpen(false);
+            }}
             className="px-4 py-1.5 rounded text-sm bg-cta text-white hover:bg-cta-hover transition-colors"
           >
             Got it

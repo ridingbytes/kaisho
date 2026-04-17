@@ -193,6 +193,7 @@ def _parse_model(model_str: str) -> tuple[str, str]:
         if provider in (
             "ollama", "claude", "claude_cli",
             "lm_studio", "openrouter", "openai",
+            "kaisho",
         ):
             return provider, name
     return "ollama", model_str

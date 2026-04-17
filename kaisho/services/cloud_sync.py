@@ -512,14 +512,20 @@ def tombstone_to_wire(tombstone: dict) -> dict:
         "description": (
             tombstone.get("description") or ""
         ),
-        "start": tombstone["start"],
-        "end": tombstone.get("end"),
+        "start": _local_to_utc(tombstone["start"]),
+        "end": _local_to_utc(
+            tombstone.get("end") or "",
+        ) or None,
         "task_id": tombstone.get("task_id") or None,
         "contract": tombstone.get("contract") or None,
         "notes": tombstone.get("notes") or "",
         "invoiced": bool(tombstone.get("invoiced")),
-        "updated_at": tombstone["updated_at"],
-        "deleted_at": tombstone["deleted_at"],
+        "updated_at": _local_to_utc(
+            tombstone["updated_at"],
+        ),
+        "deleted_at": _local_to_utc(
+            tombstone["deleted_at"],
+        ),
     }
 
 

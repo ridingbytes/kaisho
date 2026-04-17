@@ -82,16 +82,20 @@ def status():
 
 # ── PATCH /api/cloud-sync/cloud-ai ───────────────────
 
+
+class CloudAiToggle(BaseModel):
+    enabled: bool
+
+
 @router.patch("/cloud-ai")
-def toggle_cloud_ai(body: dict):
-    """Enable or disable cloud AI for the advisor."""
+def toggle_cloud_ai(body: CloudAiToggle):
+    """Enable or disable Kaisho AI for the advisor."""
     _, cfg = _sync_settings()
-    enabled = bool(body.get("enabled", False))
     settings_svc.set_cloud_sync_settings(
         cfg.SETTINGS_FILE,
-        {"use_cloud_ai": enabled},
+        {"use_cloud_ai": body.enabled},
     )
-    return {"use_cloud_ai": enabled}
+    return {"use_cloud_ai": body.enabled}
 
 
 # ── POST /api/cloud-sync/connect ──────────────────────

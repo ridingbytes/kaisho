@@ -217,14 +217,20 @@ export function CloudSyncSection(): JSX.Element {
               <button
                 onClick={() => {
                   const next = !status?.use_cloud_ai;
-                  toggleCloudAi(next).then(() => {
-                    void qc.invalidateQueries({
-                      queryKey: [
-                        "settings",
-                        "cloud_sync",
-                      ],
+                  toggleCloudAi(next)
+                    .then(() => {
+                      void qc.invalidateQueries({
+                        queryKey: [
+                          "settings",
+                          "cloud_sync",
+                        ],
+                      });
+                    })
+                    .catch((e: { message?: string }) => {
+                      setErr(
+                        e?.message || "Toggle failed",
+                      );
                     });
-                  });
                 }}
                 className={[
                   "relative w-9 h-5 rounded-full",

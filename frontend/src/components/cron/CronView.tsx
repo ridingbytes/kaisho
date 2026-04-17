@@ -467,7 +467,7 @@ function AddJobForm({
   const [schedule, setSchedule] = useState("0 9 * * 1-5");
   const [model, setModel] = useState("ollama:qwen3:14b");
   const [output, setOutput] = useState("inbox");
-  const [timeout, setTimeout] = useState("120");
+  const [jobTimeout, setJobTimeout] = useState("120");
   const [promptContent, setPromptContent] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
@@ -480,7 +480,7 @@ function AddJobForm({
         model,
         prompt_content: promptContent,
         output,
-        timeout: Number(timeout),
+        timeout: Number(jobTimeout),
         enabled: true,
       },
       { onSuccess: onClose }
@@ -577,8 +577,8 @@ function AddJobForm({
           <input
             className={fieldCls}
             type="number"
-            value={timeout}
-            onChange={(e) => setTimeout(e.target.value)}
+            value={jobTimeout}
+            onChange={(e) => setJobTimeout(e.target.value)}
             placeholder="120"
           />
         </label>
