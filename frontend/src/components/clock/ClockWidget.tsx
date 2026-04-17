@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useActiveTimer } from "../../hooks/useClocks";
 import { useCloudActiveTimer } from "../../hooks/useSettings";
+import { syncNow } from "../../api/client";
 import { ActiveTimer } from "./ActiveTimer";
 import { CloudTimer } from "./CloudTimer";
 import { CalendarWidget } from "./CalendarWidget";
@@ -31,6 +32,24 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
   const { data: timer } = useActiveTimer();
   const { data: cloudTimer } = useCloudActiveTimer();
   const qc = useQueryClient();
+
+  // When the cloud timer disappears (stopped on mobile),
+  // trigger an immediate sync so the completed entry
+  // appears locally without waiting for the 5-minute cycle.
+  const prevCloudActive = useRef(false);
+  useEffect(() => {
+    const active = cloudTimer?.active === true;
+    if (prevCloudActive.current && !active) {
+      syncNow()
+        .then(() => {
+          qc.invalidateQueries({
+            queryKey: ["clocks"],
+          });
+        })
+        .catch(() => {});
+    }
+    prevCloudActive.current = active;
+  }, [cloudTimer?.active, qc]);
 
   const refreshCloudTimer = () => {
     qc.invalidateQueries({
