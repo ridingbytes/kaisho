@@ -636,6 +636,8 @@ def ask(
     openrouter_api_key: str = "",
     openai_base_url: str = "",
     openai_api_key: str = "",
+    cloud_url: str = "",
+    cloud_api_key: str = "",
     data_dir: str = "data",
     user_meta: dict | None = None,
     on_event: EventCallback = None,
@@ -676,6 +678,17 @@ def ask(
             base_url=openai_base_url,
             api_key=openai_api_key,
             system_prompt=sp, on_event=on_event,
+        )
+    if provider == "cloud":
+        from .cloud_sync import cloud_ai_complete
+        return cloud_ai_complete(
+            cloud_url=cloud_url,
+            api_key=cloud_api_key,
+            system=sp,
+            messages=[{
+                "role": "user",
+                "content": prompt,
+            }],
         )
     answer = ask_ollama(
         model_name, prompt, ollama_base_url,

@@ -113,11 +113,22 @@ def _stream_ask(body: AskRequest) -> Generator[
         except (GhError, FileNotFoundError):
             pass
 
-    ai = settings_svc.get_ai_settings(
-        settings_svc.load_settings(cfg.SETTINGS_FILE),
-    )
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    ai = settings_svc.get_ai_settings(data)
+    sync = data.get("cloud_sync", {})
+    use_cloud = sync.get("use_cloud_ai", False)
+    cloud_url = sync.get("url", "")
+    cloud_key = sync.get("api_key", "")
+
     from ...config import load_user_yaml
     user_meta = load_user_yaml(cfg)
+
+    # When Cloud AI is enabled, override the model
+    model_str = (
+        "cloud:default"
+        if use_cloud and cloud_url and cloud_key
+        else body.model
+    )
 
     question = _format_question_with_history(
         body.question, body.history,
@@ -134,10 +145,12 @@ def _stream_ask(body: AskRequest) -> Generator[
         try:
             answer = ask(
                 question=question,
-                model_str=body.model,
+                model_str=model_str,
                 **ctx,
                 github_issues=github_issues,
                 **_ai_provider_kwargs(ai),
+                cloud_url=cloud_url,
+                cloud_api_key=cloud_key,
                 data_dir=str(cfg.PROFILE_DIR),
                 user_meta=user_meta,
                 on_event=on_event,

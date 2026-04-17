@@ -7,6 +7,7 @@ import { askAdvisor } from "../../api/client";
 import {
   useAiSettings,
   useAvailableModels,
+  useCloudSyncStatus,
   useUpdateAiSettings,
 } from "../../hooks/useSettings";
 import { Markdown } from "../common/Markdown";
@@ -80,7 +81,9 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
   const qc = useQueryClient();
   const { data: aiSettings } = useAiSettings();
   const { data: models = [] } = useAvailableModels();
+  const { data: cloudStatus } = useCloudSyncStatus();
   const updateAi = useUpdateAiSettings();
+  const cloudAi = cloudStatus?.use_cloud_ai;
 
   const [model, setModel] = useState("");
   const [input, setInput] = useState("");
@@ -252,32 +255,40 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             <Trash2 size={13} />
           </button>
         )}
-        <datalist id="advisor-model-list">
-          {models.map((m) => (
-            <option key={m} value={m} />
-          ))}
-        </datalist>
         <div className="ml-auto flex flex-col items-end gap-0.5">
-          <input
-            type="text"
-            list="advisor-model-list"
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            onBlur={() => {
-              if (model && model !== aiSettings?.advisor_model) {
-                updateAi.mutate({ advisor_model: model });
-              }
-            }}
-            placeholder="provider:model"
-            className={[
-              "w-64 px-2 py-1 rounded-lg text-xs font-mono",
-              "bg-surface-raised border border-border text-stone-800",
-              "placeholder-stone-500 focus:outline-none",
-            ].join(" ")}
-          />
-          <span className="text-[9px] text-stone-400 font-mono">
-            ollama: | claude_cli: | claude: | openrouter: | openai:
-          </span>
+          {cloudAi ? (
+            <span className="px-3 py-1 rounded-lg text-xs font-medium bg-cta/10 text-cta border border-cta/30">
+              Cloud AI
+            </span>
+          ) : (
+            <>
+              <datalist id="advisor-model-list">
+                {models.map((m) => (
+                  <option key={m} value={m} />
+                ))}
+              </datalist>
+              <input
+                type="text"
+                list="advisor-model-list"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                onBlur={() => {
+                  if (model && model !== aiSettings?.advisor_model) {
+                    updateAi.mutate({ advisor_model: model });
+                  }
+                }}
+                placeholder="provider:model"
+                className={[
+                  "w-64 px-2 py-1 rounded-lg text-xs font-mono",
+                  "bg-surface-raised border border-border text-stone-800",
+                  "placeholder-stone-500 focus:outline-none",
+                ].join(" ")}
+              />
+              <span className="text-[9px] text-stone-400 font-mono">
+                ollama: | claude: | openrouter: | openai:
+              </span>
+            </>
+          )}
         </div>
         <HelpButton title="Advisor" doc={DOCS.advisor} view="advisor" />
       </div>
