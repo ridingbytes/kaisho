@@ -194,22 +194,19 @@ def _on_cloud_ws_event(
 ) -> None:
     """Handle real-time events from the cloud WebSocket.
 
-    Triggers an immediate sync cycle for data changes
-    and broadcasts timer events to the local WebSocket
-    so the frontend updates instantly.
+    Timer events are broadcast immediately to the local
+    WebSocket for instant UI updates. Data changes
+    trigger a background sync so the WS handler thread
+    is not blocked.
     """
     import logging
+    import threading
     log = logging.getLogger(__name__)
     log.info("Cloud WS event: %s", event)
 
-    if event in ("entries:changed", "entries:deleted"):
-        # Trigger immediate sync instead of waiting
-        # for the 15-minute fallback
-        _run_cloud_sync()
-
+    # Timer events: broadcast immediately so the
+    # desktop UI shows the cloud timer widget
     if event in ("timer:started", "timer:stopped"):
-        # Broadcast to local WebSocket so the desktop
-        # UI updates the cloud timer widget instantly
         try:
             from ..api.ws.manager import broadcast
             broadcast({
@@ -219,6 +216,19 @@ def _on_cloud_ws_event(
             })
         except Exception:
             pass
+
+    # Data changes: sync in background thread to
+    # avoid blocking the WS receive loop
+    if event in (
+        "entries:changed",
+        "entries:deleted",
+        "timer:stopped",
+    ):
+        threading.Thread(
+            target=_run_cloud_sync,
+            daemon=True,
+            name="cloud-ws-sync",
+        ).start()
 
 
 def _start_cloud_ws_if_enabled() -> None:
