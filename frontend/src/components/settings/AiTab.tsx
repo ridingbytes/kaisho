@@ -8,7 +8,7 @@ import {
   useAdvisorSkills,
   useAiSettings,
   useAvailableModels,
-  useClaudeCliStatus,
+  useCloudSyncStatus,
   useCreateSkill,
   useDeleteSkill,
   useUpdateAdvisorFiles,
@@ -467,8 +467,9 @@ export function AiSection(): JSX.Element {
   const { data: aiSettings, isLoading } =
     useAiSettings();
   const { data: models = [] } = useAvailableModels();
-  const { data: cliStatus } = useClaudeCliStatus();
+  const { data: cloudStatus } = useCloudSyncStatus();
   const update = useUpdateAiSettings();
+  const cloudAi = cloudStatus?.use_cloud_ai;
 
   const [form, setForm] = useState<AiSettings>({
     ollama_url: "",
@@ -521,6 +522,20 @@ export function AiSection(): JSX.Element {
         ))}
       </datalist>
 
+      {cloudAi && (
+        <div className="mb-4 px-4 py-3 rounded-xl bg-cta/10 border border-cta/30">
+          <p className="text-xs text-cta font-medium">
+            Cloud AI is active
+          </p>
+          <p className="text-[10px] text-stone-500 mt-1">
+            The advisor and cron jobs use OpenRouter
+            via your Cloud Sync subscription. Local
+            model settings below are not used while
+            Cloud AI is enabled.
+          </p>
+        </div>
+      )}
+
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         {/* Local / subscription providers */}
         <div className="px-4 py-3 border-b border-border-subtle">
@@ -568,29 +583,6 @@ export function AiSection(): JSX.Element {
             </label>
           </div>
         </div>
-
-        {/* Claude CLI status */}
-        {cliStatus && cliStatus.installed && (
-          <div className="px-4 py-3 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
-              Claude CLI (Subscription)
-            </p>
-            <div className="flex items-center gap-3 text-xs">
-              <span className="text-amber-500">
-                Limited
-              </span>
-              <span className="text-stone-500">
-                {cliStatus.version}
-              </span>
-            </div>
-            <p className="text-[10px] text-stone-400 mt-1">
-              Claude CLI no longer supports tool calls
-              without extra usage (since April 2025).
-              Use Ollama or the Claude API for full
-              functionality.
-            </p>
-          </div>
-        )}
 
         {/* Cloud API keys */}
         <div className="px-4 py-3 border-b border-border-subtle">

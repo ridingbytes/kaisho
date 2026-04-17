@@ -10,6 +10,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { inputCls, saveBtnCls } from "./styles";
 
+const PLAN_LABELS: Record<string, string> = {
+  free: "Free",
+  sync: "Cloud Sync",
+  sync_ai: "Sync + AI",
+};
+
+function planLabel(plan: string): string {
+  return PLAN_LABELS[plan] || plan;
+}
+
 export function CloudSyncSection(): JSX.Element {
   const { data: status, isLoading } =
     useCloudSyncStatus();
@@ -146,7 +156,7 @@ export function CloudSyncSection(): JSX.Element {
               </span>
               {status?.plan && (
                 <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-raised text-stone-600 border border-border-subtle">
-                  {status.plan}
+                  {planLabel(status.plan)}
                 </span>
               )}
             </div>
