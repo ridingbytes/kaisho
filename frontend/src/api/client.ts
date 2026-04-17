@@ -1220,6 +1220,21 @@ export function disconnectCloudSync(): Promise<{
   return post("/cloud-sync/disconnect", {});
 }
 
+/** Fetch AI token usage from the cloud. */
+export interface AiUsage {
+  total_tokens: number;
+  cap: number;
+  request_count: number;
+  month: string;
+  input_tokens?: number;
+  output_tokens?: number;
+  error?: string;
+}
+
+export function fetchAiUsage(): Promise<AiUsage> {
+  return get<AiUsage>("/cloud-sync/ai-usage");
+}
+
 /** Toggle cloud AI for the advisor/cron system. */
 export function toggleCloudAi(
   enabled: boolean,

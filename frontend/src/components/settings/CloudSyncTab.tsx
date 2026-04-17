@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { useCloudSyncStatus } from "../../hooks/useSettings";
+import {
+  useAiUsage,
+  useCloudSyncStatus,
+} from "../../hooks/useSettings";
 import {
   connectCloudSync,
   disconnectCloudSync,
@@ -23,6 +26,7 @@ function planLabel(plan: string): string {
 export function CloudSyncSection(): JSX.Element {
   const { data: status, isLoading } =
     useCloudSyncStatus();
+  const { data: aiUsage } = useAiUsage();
   const qc = useQueryClient();
 
   const [url, setUrl] = useState("");
@@ -253,6 +257,52 @@ export function CloudSyncSection(): JSX.Element {
               </button>
             </label>
           </div>
+
+          {/* AI token usage meter */}
+          {status?.use_cloud_ai && aiUsage && (
+            <div className="px-4 py-3 border-b border-border-subtle">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+                AI Usage ({aiUsage.month || "---"})
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-2 rounded-full bg-stone-200 overflow-hidden">
+                  <div
+                    className={[
+                      "h-full rounded-full transition-all",
+                      (aiUsage.total_tokens /
+                        aiUsage.cap) > 0.9
+                        ? "bg-red-400"
+                        : (aiUsage.total_tokens /
+                            aiUsage.cap) > 0.7
+                          ? "bg-amber-400"
+                          : "bg-cta",
+                    ].join(" ")}
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        (aiUsage.total_tokens /
+                          aiUsage.cap) * 100,
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <span className="text-[10px] text-stone-600 tabular-nums whitespace-nowrap">
+                  {(
+                    aiUsage.total_tokens / 1000
+                  ).toFixed(1)}K
+                  {" / "}
+                  {(aiUsage.cap / 1000).toFixed(0)}K
+                </span>
+              </div>
+              <p className="text-[10px] text-stone-400 mt-1">
+                {aiUsage.request_count} request
+                {aiUsage.request_count !== 1
+                  ? "s"
+                  : ""}{" "}
+                this month
+              </p>
+            </div>
+          )}
 
           <div className="px-4 py-3 flex items-center gap-3">
             <button

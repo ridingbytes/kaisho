@@ -30,6 +30,7 @@ import {
   fetchCloudSyncStatus,
   fetchInvoiceExportSettings,
   fetchCurrentUser,
+  fetchAiUsage,
   fetchVersionInfo,
   pruneBackupsRemote,
   runBackup,
@@ -658,5 +659,13 @@ export function useVersionInfo() {
     queryKey: ["version"],
     queryFn: fetchVersionInfo,
     staleTime: 300_000,
+  });
+}
+
+export function useAiUsage() {
+  return useQuery({
+    queryKey: ["cloud", "ai_usage"],
+    queryFn: fetchAiUsage,
+    staleTime: 60_000,
   });
 }

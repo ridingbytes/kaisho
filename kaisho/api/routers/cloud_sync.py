@@ -98,6 +98,35 @@ def toggle_cloud_ai(body: CloudAiToggle):
     return {"use_cloud_ai": body.enabled}
 
 
+# ── GET /api/cloud-sync/ai-usage ─────────────────────
+
+@router.get("/ai-usage")
+def ai_usage():
+    """Fetch AI token usage from the cloud gateway."""
+    data, cfg = _sync_settings()
+    url, key = _cloud_creds(data)
+    if not url or not key:
+        return {
+            "total_tokens": 0,
+            "cap": 200000,
+            "request_count": 0,
+            "month": "",
+        }
+    try:
+        resp = sync_svc.safe_request(
+            f"{url}/ai/usage", key, "GET",
+        )
+        return resp
+    except sync_svc.CloudUnavailable:
+        return {
+            "total_tokens": 0,
+            "cap": 200000,
+            "request_count": 0,
+            "month": "",
+            "error": "Cloud unreachable",
+        }
+
+
 # ── POST /api/cloud-sync/connect ──────────────────────
 
 @router.post("/connect")
