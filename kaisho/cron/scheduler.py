@@ -338,12 +338,13 @@ def build_scheduler(jobs_file: Path) -> BackgroundScheduler:
             continue
         _add_job_to_scheduler(_scheduler, job)
 
-    # Cloud sync — runs every 15 minutes as fallback.
-    # Real-time sync is handled by the cloud WebSocket.
+    # Cloud sync — runs every 5 minutes. The cloud WS
+    # triggers immediate sync on data changes; this is
+    # the polling fallback.
     _scheduler.add_job(
         _run_cloud_sync,
         "interval",
-        minutes=15,
+        minutes=5,
         id="__cloud_sync__",
         name="Cloud Sync",
         replace_existing=True,

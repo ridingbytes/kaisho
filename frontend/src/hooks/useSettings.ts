@@ -346,16 +346,15 @@ export function useCloudSyncStatus() {
   });
 }
 
-/** Fetch the cloud-side running timer (e.g. mobile app).
- *  Real-time updates come via the cloud WebSocket which
- *  triggers a local sync cycle + file watcher broadcast.
- *  Refetch on window focus as a fallback. */
+/** Poll the cloud-side running timer every 5s so
+ *  timers started on mobile appear on the desktop
+ *  quickly. */
 export function useCloudActiveTimer() {
   return useQuery({
     queryKey: ["clocks", "cloud_active"],
     queryFn: fetchCloudActiveTimer,
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
+    refetchInterval: 5_000,
+    staleTime: 2_500,
   });
 }
 
