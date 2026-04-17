@@ -682,10 +682,17 @@ def ask(
         )
     if provider == "kaisho":
         from .cloud_sync import cloud_ai_complete
+        no_tools = (
+            "\n\nIMPORTANT: Answer directly using "
+            "only the context provided. Do not "
+            "attempt to call tools, functions, or "
+            "fetch external URLs. Do not use XML "
+            "tags or function_calls markup."
+        )
         return cloud_ai_complete(
             cloud_url=cloud_url,
             api_key=cloud_api_key,
-            system=sp,
+            system=sp + no_tools,
             messages=[{
                 "role": "user",
                 "content": prompt,

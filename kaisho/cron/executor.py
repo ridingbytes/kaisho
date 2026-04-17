@@ -604,8 +604,18 @@ def _dispatch_prompt(
         )
         return cloud_ai_complete(
             cloud_url, cloud_api_key,
-            system="You are the Kaisho AI advisor.",
-            messages=[{"role": "user", "content": prompt}],
+            system=(
+                "You are the Kaisho AI advisor. "
+                "Answer the prompt directly using "
+                "only the context provided. Do not "
+                "attempt to call tools, functions, "
+                "or fetch external URLs. Do not use "
+                "XML tags or function_calls markup."
+            ),
+            messages=[{
+                "role": "user",
+                "content": prompt,
+            }],
         )
     if provider == "claude_cli":
         return _run_claude_cli(
