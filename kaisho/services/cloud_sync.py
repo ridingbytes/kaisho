@@ -931,6 +931,13 @@ def run_sync_cycle(
         "error": "",
     }
 
+    # On the first sync after connect the push cursor is
+    # at EPOCH. We must push *all* local entries, not
+    # just those modified after the pull cursor.
+    is_initial = (
+        cursor["last_push_cursor"] == sync_state.EPOCH
+    )
+
     # Step 1: Pull
     try:
         new_cursor, up, dl = pull_and_apply(
@@ -954,13 +961,21 @@ def run_sync_cycle(
         return result
 
     # Step 2 + 3: Push
+    # On initial sync, use EPOCH to push all local
+    # entries. The cloud's /sync/apply uses LWW so
+    # re-pushing already-synced entries is harmless.
+    push_since = (
+        sync_state.EPOCH
+        if is_initial
+        else cursor["last_push_cursor"]
+    )
     try:
         result["pushed_deletes"] = push_tombstone(
             backend, cloud_url, api_key, profile_dir,
         )
         result["pushed_live"] = push_local_entry(
             backend, cloud_url, api_key,
-            cursor["last_push_cursor"],
+            push_since,
         )
         cursor["last_push_cursor"] = started
         cursor["last_push_at"] = started

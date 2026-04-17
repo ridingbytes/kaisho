@@ -294,14 +294,23 @@ class TestSyncCycle:
             "updated_at": "2026-04-15T11:00:00",
             "deleted_at": None,
         }
+        # First cycle is initial (cursor at EPOCH) — it
+        # pushes all local entries including the just-
+        # pulled one (the cloud LWW handles the echo).
         sync_svc.run_sync_cycle(
             cloud_url="http://fake",
             api_key="key",
             profile_dir=profile_dir,
             clocks_file=backend.data_file,
         )
-        # The pull should not create an echo push of the
-        # entry back to the cloud.
+        # On a second cycle the echo must not happen.
+        fake_cloud.applied_calls.clear()
+        sync_svc.run_sync_cycle(
+            cloud_url="http://fake",
+            api_key="key",
+            profile_dir=profile_dir,
+            clocks_file=backend.data_file,
+        )
         all_pushes = sum(
             len(p["entries"])
             for p in fake_cloud.applied_calls
