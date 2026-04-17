@@ -351,8 +351,8 @@ export function useCloudActiveTimer() {
   return useQuery({
     queryKey: ["clocks", "cloud_active"],
     queryFn: fetchCloudActiveTimer,
-    refetchInterval: 10_000,
-    staleTime: 5_000,
+    refetchInterval: 5_000,
+    staleTime: 2_500,
   });
 }
 

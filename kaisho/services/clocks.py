@@ -1,12 +1,29 @@
 import re
+import uuid
 from datetime import date, datetime, timedelta
+from pathlib import Path
 
 from ..time_utils import local_now_naive as local_now
-from pathlib import Path
 
 from ..org.models import Clock, Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
+
+
+def _now_iso() -> str:
+    """Return the current local time as an ISO string.
+
+    Keeps microsecond precision so string-lexicographic
+    comparisons in the sync cursor logic match datetime
+    ordering without needing to parse.
+    """
+    return local_now().isoformat()
+
+
+def _new_sync_id() -> str:
+    """Return a fresh UUIDv4 for a clock entry identity."""
+    return str(uuid.uuid4())
+
 
 # Heading title format: [DATE] [CUSTOMER]: description
 # Also supports legacy format: [CUSTOMER]: description
@@ -67,13 +84,21 @@ def _clock_to_entry(
     invoiced: bool = False,
     notes: str | None = None,
     contract: str | None = None,
+    sync_id: str | None = None,
+    updated_at: str | None = None,
 ) -> dict:
-    """Convert a Clock to a clock entry dict."""
+    """Convert a Clock to a clock entry dict.
+
+    ``sync_id`` and ``updated_at`` surface the bidirectional
+    sync identity so callers can push or diff entries
+    against the cloud.
+    """
     duration_minutes = None
     if clock.end is not None:
         delta = clock.end - clock.start
         duration_minutes = int(delta.total_seconds() / 60)
     return {
+        "sync_id": sync_id,
         "customer": customer,
         "description": description,
         "start": clock.start.isoformat(),
@@ -83,6 +108,7 @@ def _clock_to_entry(
         "invoiced": invoiced,
         "notes": notes or "",
         "contract": contract or None,
+        "updated_at": updated_at,
     }
 
 
@@ -90,6 +116,54 @@ def _heading_notes(heading: Heading) -> str | None:
     """Extract body text from a clock heading as notes."""
     text = "\n".join(heading.body).strip()
     return text or None
+
+
+def _ensure_sync_identity(
+    heading: Heading,
+    default_updated_at: str | None = None,
+) -> tuple[str, str]:
+    """Ensure the heading has SYNC_ID and UPDATED_AT.
+
+    Generates a UUIDv4 and stamps ``UPDATED_AT`` with
+    ``default_updated_at`` (or now) when missing. Marks the
+    heading dirty so the next write persists the backfill.
+    Returns ``(sync_id, updated_at)``.
+    """
+    sync_id = heading.properties.get("SYNC_ID") or ""
+    updated_at = heading.properties.get("UPDATED_AT") or ""
+    changed = False
+    if not sync_id:
+        sync_id = _new_sync_id()
+        heading.properties["SYNC_ID"] = sync_id
+        changed = True
+    if not updated_at:
+        updated_at = default_updated_at or _now_iso()
+        heading.properties["UPDATED_AT"] = updated_at
+        changed = True
+    if changed:
+        heading.dirty = True
+    return sync_id, updated_at
+
+
+def _heading_to_entry(
+    heading: Heading, clock: Clock,
+) -> dict:
+    """Read all entry fields off a heading / clock pair."""
+    customer, desc = _parse_entry_title(heading.title)
+    task_id = heading.properties.get("TASK_ID") or None
+    invoiced = (
+        heading.properties.get(
+            "INVOICED", "",
+        ).lower() == "true"
+    )
+    notes = _heading_notes(heading)
+    contract = heading.properties.get("CONTRACT") or None
+    sync_id, updated_at = _ensure_sync_identity(heading)
+    return _clock_to_entry(
+        clock, customer, desc,
+        task_id, invoiced, notes, contract,
+        sync_id=sync_id, updated_at=updated_at,
+    )
 
 
 def _collect_clock_entries(org_file: OrgFile) -> list[dict]:
@@ -101,21 +175,22 @@ def _collect_clock_entries(org_file: OrgFile) -> list[dict]:
     """
     entries = []
     for h1 in org_file.headings:
-        customer, desc = _parse_entry_title(h1.title)
-        task_id = h1.properties.get("TASK_ID") or None
-        invoiced = (
-            h1.properties.get("INVOICED", "").lower() == "true"
-        )
-        notes = _heading_notes(h1)
-        contract = h1.properties.get("CONTRACT") or None
         for clock in h1.logbook:
-            entries.append(
-                _clock_to_entry(
-                    clock, customer, desc,
-                    task_id, invoiced, notes, contract,
-                )
-            )
+            entries.append(_heading_to_entry(h1, clock))
     return entries
+
+
+def _backfill_and_persist(
+    clocks_file: Path, org_file: OrgFile,
+) -> bool:
+    """Persist any identity backfill from a parse pass.
+
+    Returns True if the file was rewritten.
+    """
+    dirty = any(h.dirty for h in org_file.headings)
+    if dirty:
+        write_org_file(clocks_file, org_file)
+    return dirty
 
 
 def _entry_date(entry: dict) -> date | None:
@@ -204,6 +279,7 @@ def list_entries(
         return []
     org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
     all_entries = _collect_clock_entries(org_file)
+    _backfill_and_persist(clocks_file, org_file)
     result = []
     for entry in all_entries:
         if customer and entry["customer"] != customer:
@@ -226,17 +302,13 @@ def get_active_timer(clocks_file: Path) -> dict | None:
         return None
     org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
     for h1 in org_file.headings:
-        customer, desc = _parse_entry_title(h1.title)
-        task_id = h1.properties.get("TASK_ID") or None
-        invoiced = h1.properties.get("INVOICED", "").lower() == "true"
-        notes = _heading_notes(h1)
-        contract = h1.properties.get("CONTRACT") or None
         for clock in h1.logbook:
             if clock.end is None:
-                return _clock_to_entry(
-                    clock, customer, desc,
-                    task_id, invoiced, notes, contract,
+                entry = _heading_to_entry(h1, clock)
+                _backfill_and_persist(
+                    clocks_file, org_file,
                 )
+                return entry
     return None
 
 
@@ -249,6 +321,8 @@ def quick_book(
     contract: str | None = None,
     target_date: date | None = None,
     notes: str | None = None,
+    sync_id: str | None = None,
+    updated_at: str | None = None,
 ) -> dict:
     """Book time on a specific date (or today)."""
     minutes = _parse_duration(duration_str)
@@ -268,14 +342,18 @@ def quick_book(
         if start.date() < end.date():
             start = end.replace(hour=0, minute=0)
     clock = Clock(start=start, end=end)
+    sid = sync_id or _new_sync_id()
+    ts = updated_at or _now_iso()
 
     _append_clock_entry(
         clocks_file, customer, description,
         clock, task_id, contract, notes,
+        sync_id=sid, updated_at=ts,
     )
     return _clock_to_entry(
         clock, customer, description,
         task_id, notes=notes, contract=contract,
+        sync_id=sid, updated_at=ts,
     )
 
 
@@ -285,6 +363,9 @@ def start_timer(
     description: str,
     task_id: str | None = None,
     contract: str | None = None,
+    sync_id: str | None = None,
+    updated_at: str | None = None,
+    start_at: datetime | None = None,
 ) -> dict:
     """Start an open CLOCK entry."""
     active = get_active_timer(clocks_file)
@@ -294,17 +375,28 @@ def start_timer(
             f"{active['description']}"
         )
 
-    start = local_now().replace(microsecond=0)
+    start = (
+        start_at or local_now().replace(microsecond=0)
+    )
     clock = Clock(start=start, end=None)
+    sid = sync_id or _new_sync_id()
+    ts = updated_at or _now_iso()
     _append_clock_entry(
-        clocks_file, customer, description, clock, task_id, contract
+        clocks_file, customer, description, clock,
+        task_id, contract,
+        sync_id=sid, updated_at=ts,
     )
     return _clock_to_entry(
-        clock, customer, description, task_id, contract=contract
+        clock, customer, description, task_id,
+        contract=contract,
+        sync_id=sid, updated_at=ts,
     )
 
 
-def stop_timer(clocks_file: Path) -> dict:
+def stop_timer(
+    clocks_file: Path,
+    end_at: datetime | None = None,
+) -> dict:
     """Close the open CLOCK entry."""
     if not clocks_file.exists():
         raise ValueError("No active timer found")
@@ -325,19 +417,19 @@ def stop_timer(clocks_file: Path) -> dict:
     if found_clock is None or found_heading is None:
         raise ValueError("No active timer found")
 
-    end = datetime.now().replace(microsecond=0)
+    end = end_at or datetime.now().replace(microsecond=0)
     delta = end - found_clock.start
     total_minutes = int(delta.total_seconds() / 60)
     hours = total_minutes // 60
     mins = total_minutes % 60
     found_clock.end = end
     found_clock.duration = f"{hours}:{mins:02d}"
+    found_heading.properties["UPDATED_AT"] = _now_iso()
     found_heading.dirty = True
 
     write_org_file(clocks_file, org_file)
 
-    customer, desc = _parse_entry_title(found_heading.title)
-    return _clock_to_entry(found_clock, customer, desc)
+    return _heading_to_entry(found_heading, found_clock)
 
 
 def get_summary(
@@ -530,38 +622,194 @@ def update_clock_entry(
     _apply_property_updates(
         heading, task_id, invoiced, notes, contract,
     )
+    heading.properties["UPDATED_AT"] = _now_iso()
+    _ensure_sync_identity(heading)
+    heading.dirty = True
 
     write_org_file(clocks_file, org_file)
-    return _clock_to_entry(
-        clock, cur_cust, cur_desc,
-        heading.properties.get("TASK_ID") or None,
-        heading.properties.get(
-            "INVOICED", "",
-        ).lower() == "true",
-        _heading_notes(heading),
-        heading.properties.get("CONTRACT") or None,
+    return _heading_to_entry(heading, clock)
+
+
+def update_clock_entry_by_sync_id(
+    clocks_file: Path,
+    sync_id: str,
+    fields: dict,
+) -> dict | None:
+    """Replace fields of an entry identified by sync_id.
+
+    Used by the sync protocol to apply a cloud-origin
+    change. Applies last-writer-wins: a stale incoming
+    payload is silently ignored. Returns the resulting
+    entry (freshly written or existing unchanged), or
+    ``None`` if no local heading matches ``sync_id``.
+    """
+    if not clocks_file.exists():
+        return None
+    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
+    found = _find_heading_by_sync_id(org_file, sync_id)
+    if found is None:
+        return None
+    clock, heading = found
+
+    existing_updated = heading.properties.get(
+        "UPDATED_AT", "",
     )
+    incoming_updated = fields.get("updated_at", "")
+    if (
+        existing_updated and incoming_updated
+        and incoming_updated <= existing_updated
+    ):
+        return _heading_to_entry(heading, clock)
+
+    _apply_sync_payload(heading, clock, fields)
+    write_org_file(clocks_file, org_file)
+    return _heading_to_entry(heading, clock)
+
+
+def insert_clock_entry_from_sync(
+    clocks_file: Path,
+    fields: dict,
+) -> dict:
+    """Insert a new entry from the sync protocol.
+
+    ``fields`` is the cloud's wire payload (with ``id``
+    aliased to ``sync_id``). Honours the incoming
+    ``updated_at`` verbatim.
+    """
+    start = datetime.fromisoformat(fields["start"])
+    end_raw = fields.get("end")
+    end = datetime.fromisoformat(end_raw) if end_raw else None
+    clock = Clock(start=start, end=end)
+    _append_clock_entry(
+        clocks_file,
+        customer=fields.get("customer") or "",
+        description=fields.get("description") or "",
+        clock=clock,
+        task_id=fields.get("task_id"),
+        contract=fields.get("contract"),
+        notes=fields.get("notes") or None,
+        sync_id=fields["sync_id"],
+        updated_at=fields["updated_at"],
+        invoiced=bool(fields.get("invoiced")),
+    )
+    return _clock_to_entry(
+        clock,
+        customer=fields.get("customer") or "",
+        description=fields.get("description") or "",
+        task_id=fields.get("task_id"),
+        invoiced=bool(fields.get("invoiced")),
+        notes=fields.get("notes"),
+        contract=fields.get("contract"),
+        sync_id=fields["sync_id"],
+        updated_at=fields["updated_at"],
+    )
+
+
+def delete_clock_entry_by_sync_id(
+    clocks_file: Path,
+    sync_id: str,
+) -> dict | None:
+    """Delete a clock entry by sync_id. Returns the deleted
+    entry (for tombstone recording) or None if not found."""
+    if not clocks_file.exists():
+        return None
+    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
+    found = _find_heading_by_sync_id(org_file, sync_id)
+    if found is None:
+        return None
+    clock, heading = found
+    entry = _heading_to_entry(heading, clock)
+    org_file.headings.remove(heading)
+    write_org_file(clocks_file, org_file)
+    return entry
 
 
 def delete_clock_entry(
     clocks_file: Path,
     start_iso: str,
-) -> bool:
-    """Delete a clock entry by removing its heading."""
+) -> dict | None:
+    """Delete a clock entry by its start timestamp.
+
+    Returns the deleted entry (for tombstone recording) or
+    ``None`` if nothing matched.
+    """
     if not clocks_file.exists():
-        return False
+        return None
     org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
     try:
         target = datetime.fromisoformat(start_iso)
     except ValueError:
-        return False
+        return None
     for h1 in org_file.headings:
         for clock in h1.logbook:
             if clock.start == target:
+                entry = _heading_to_entry(h1, clock)
                 org_file.headings.remove(h1)
                 write_org_file(clocks_file, org_file)
-                return True
-    return False
+                return entry
+    return None
+
+
+def _find_heading_by_sync_id(
+    org_file: OrgFile, sync_id: str,
+) -> tuple[Clock, Heading] | None:
+    """Find a (clock, heading) pair by SYNC_ID property."""
+    for h1 in org_file.headings:
+        if h1.properties.get("SYNC_ID") != sync_id:
+            continue
+        if h1.logbook:
+            return h1.logbook[0], h1
+    return None
+
+
+def _apply_sync_payload(
+    heading: Heading, clock: Clock, fields: dict,
+) -> None:
+    """Apply a cloud-origin payload to a heading in place."""
+    start = datetime.fromisoformat(fields["start"])
+    end_raw = fields.get("end")
+    end = datetime.fromisoformat(end_raw) if end_raw else None
+
+    clock.start = start
+    clock.end = end
+    if end is not None:
+        delta = end - start
+        total_minutes = int(delta.total_seconds() / 60)
+        h = total_minutes // 60
+        m = total_minutes % 60
+        clock.duration = f"{h}:{m:02d}"
+    else:
+        clock.duration = None
+
+    customer = fields.get("customer") or ""
+    desc = fields.get("description") or ""
+    heading.title = _entry_title(customer, desc, start)
+
+    props = heading.properties
+    _set_or_pop(props, "TASK_ID", fields.get("task_id"))
+    _set_or_pop(props, "CONTRACT", fields.get("contract"))
+    if fields.get("invoiced"):
+        props["INVOICED"] = "true"
+    else:
+        props.pop("INVOICED", None)
+    props["SYNC_ID"] = fields["sync_id"]
+    props["UPDATED_AT"] = fields["updated_at"]
+
+    notes = fields.get("notes") or ""
+    heading.body = (
+        notes.splitlines() if notes.strip() else []
+    )
+    heading.dirty = True
+
+
+def _set_or_pop(
+    props: dict, key: str, value: str | None,
+) -> None:
+    """Set ``key=value`` if truthy, pop it otherwise."""
+    if value:
+        props[key] = value
+    else:
+        props.pop(key, None)
 
 
 def _append_clock_entry(
@@ -572,11 +820,18 @@ def _append_clock_entry(
     task_id: str | None = None,
     contract: str | None = None,
     notes: str | None = None,
+    sync_id: str | None = None,
+    updated_at: str | None = None,
+    invoiced: bool = False,
 ) -> None:
     """Append a clock entry to clocks.org.
 
     Each clock gets its own heading with the format:
     * [DATE] [Customer]: Description
+
+    ``sync_id`` and ``updated_at`` are mandatory for new
+    entries; callers that omit them get fresh values so
+    readers always see a well-formed identity.
     """
     if not clocks_file.exists():
         clocks_file.parent.mkdir(parents=True, exist_ok=True)
@@ -592,6 +847,12 @@ def _append_clock_entry(
         heading.properties["TASK_ID"] = task_id
     if contract:
         heading.properties["CONTRACT"] = contract
+    if invoiced:
+        heading.properties["INVOICED"] = "true"
+    heading.properties["SYNC_ID"] = sync_id or _new_sync_id()
+    heading.properties["UPDATED_AT"] = (
+        updated_at or _now_iso()
+    )
     if notes:
         heading.body = notes.splitlines()
     heading.logbook.append(clock)

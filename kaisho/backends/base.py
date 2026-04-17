@@ -189,8 +189,12 @@ class ClockBackend(ABC):
         """Update fields of a clock entry."""
 
     @abstractmethod
-    def delete_entry(self, start_iso: str) -> bool:
-        """Delete a clock entry by start time. Return False if not found."""
+    def delete_entry(self, start_iso: str) -> dict | None:
+        """Delete a clock entry by start time.
+
+        Returns the deleted entry (so callers can record a
+        sync tombstone) or ``None`` if nothing matched.
+        """
 
 
 class InboxBackend(ABC):

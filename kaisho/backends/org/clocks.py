@@ -109,8 +109,32 @@ class OrgClockBackend(ClockBackend):
             contract=contract,
         )
 
-    def delete_entry(self, start_iso: str) -> bool:
+    def delete_entry(self, start_iso: str) -> dict | None:
         return clocks.delete_clock_entry(
             clocks_file=self._clocks_file,
             start_iso=start_iso,
+        )
+
+    def delete_entry_by_sync_id(
+        self, sync_id: str,
+    ) -> dict | None:
+        return clocks.delete_clock_entry_by_sync_id(
+            clocks_file=self._clocks_file,
+            sync_id=sync_id,
+        )
+
+    def apply_sync_payload(
+        self, fields: dict,
+    ) -> dict:
+        """Upsert a cloud-origin payload by sync_id."""
+        existing = clocks.update_clock_entry_by_sync_id(
+            clocks_file=self._clocks_file,
+            sync_id=fields["sync_id"],
+            fields=fields,
+        )
+        if existing is not None:
+            return existing
+        return clocks.insert_clock_entry_from_sync(
+            clocks_file=self._clocks_file,
+            fields=fields,
         )

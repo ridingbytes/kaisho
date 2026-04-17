@@ -980,8 +980,8 @@ class SqlClockBackend(ClockBackend):
             session.close()
         return _enrich_clock(result)
 
-    def delete_entry(self, start_iso) -> bool:
-        """Delete a clock entry. Return False if not found."""
+    def delete_entry(self, start_iso) -> dict | None:
+        """Delete a clock entry. Return deleted dict or None."""
         session = self._eng.session()
         try:
             row = (
@@ -990,10 +990,11 @@ class SqlClockBackend(ClockBackend):
                 .first()
             )
             if row is None:
-                return False
+                return None
+            snapshot = _clock_row_to_dict(row)
             session.delete(row)
             session.commit()
-            return True
+            return _enrich_clock(snapshot)
         finally:
             session.close()
 

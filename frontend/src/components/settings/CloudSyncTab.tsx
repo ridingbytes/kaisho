@@ -58,17 +58,28 @@ export function CloudSyncSection(): JSX.Element {
     setErr("");
     syncNow()
       .then((res) => {
-        const parts = [];
-        if (res.pulled > 0) {
+        const parts: string[] = [];
+        if (res.pulled_up > 0) {
+          parts.push(`${res.pulled_up} pulled`);
+        }
+        if (res.pulled_del > 0) {
+          parts.push(`${res.pulled_del} removed`);
+        }
+        if (res.pushed_live > 0) {
+          parts.push(`${res.pushed_live} pushed`);
+        }
+        if (res.pushed_deletes > 0) {
           parts.push(
-            `${res.pulled} entries pulled`,
+            `${res.pushed_deletes} tombstones`,
           );
         }
-        if (res.pushed) parts.push("snapshot pushed");
+        if (res.snapshot_pushed) {
+          parts.push("snapshot");
+        }
         if (res.error) parts.push(res.error);
         setMsg(
           parts.length
-            ? parts.join(", ")
+            ? parts.join(" · ")
             : "Up to date",
         );
         void qc.invalidateQueries({
@@ -123,12 +134,42 @@ export function CloudSyncSection(): JSX.Element {
             <p className="text-xs text-stone-500">
               {status?.url}
             </p>
-            {(status?.pending ?? 0) > 0 && (
+            {(status?.pending_deletes ?? 0) > 0 && (
               <p className="text-xs text-amber-600 mt-1">
-                {status?.pending} unassigned entries
-                need triage
+                {status?.pending_deletes} tombstones
+                waiting to push
               </p>
             )}
+            {status?.last_error && (
+              <p className="text-xs text-red-400 mt-1">
+                Last error: {status.last_error}
+              </p>
+            )}
+            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-stone-500">
+              <dt>Last pull</dt>
+              <dd className="text-stone-700">
+                {status?.last_pull_at
+                  ? new Date(status.last_pull_at)
+                      .toLocaleString()
+                  : "never"}
+              </dd>
+              <dt>Last push</dt>
+              <dd className="text-stone-700">
+                {status?.last_push_at
+                  ? new Date(status.last_push_at)
+                      .toLocaleString()
+                  : "never"}
+              </dd>
+              {status?.cloud_entry_count !==
+                undefined && (
+                <>
+                  <dt>Cloud entries</dt>
+                  <dd className="text-stone-700 tabular-nums">
+                    {status.cloud_entry_count}
+                  </dd>
+                </>
+              )}
+            </dl>
           </div>
 
           <div className="px-4 py-3 flex items-center gap-3">

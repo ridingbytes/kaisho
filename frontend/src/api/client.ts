@@ -1141,13 +1141,24 @@ export interface CloudSyncStatus {
   interval: number;
   connected: boolean;
   plan: string | null;
-  pending: number;
+  last_pull_cursor: string;
+  last_push_cursor: string;
+  last_pull_at: string | null;
+  last_push_at: string | null;
+  last_error: string | null;
+  pending_deletes: number;
+  cloud_entry_count?: number;
+  cloud_last_change_at?: string | null;
+  cloud_active_timer_id?: string | null;
 }
 
-/** Result of a sync operation. */
+/** Result of a bidirectional sync cycle. */
 export interface CloudSyncResult {
-  pulled: number;
-  pushed: boolean;
+  pulled_up: number;
+  pulled_del: number;
+  pushed_live: number;
+  pushed_deletes: number;
+  snapshot_pushed: boolean;
   error?: string;
 }
 
@@ -1173,6 +1184,16 @@ export interface CloudActiveTimer {
 export function fetchCloudActiveTimer():
   Promise<CloudActiveTimer> {
   return get<CloudActiveTimer>("/cloud-sync/active");
+}
+
+/** Stop the currently running cloud timer. */
+export function stopCloudTimer(id?: string): Promise<{
+  id: string;
+  start: string;
+  end: string;
+}> {
+  const qs = id ? `?id=${encodeURIComponent(id)}` : "";
+  return post(`/cloud-sync/stop-cloud-timer${qs}`, {});
 }
 
 /** Connect to a cloud sync server with URL and

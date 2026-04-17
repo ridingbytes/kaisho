@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronLeft,
@@ -29,6 +30,14 @@ interface ClockWidgetProps {
 export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
   const { data: timer } = useActiveTimer();
   const { data: cloudTimer } = useCloudActiveTimer();
+  const qc = useQueryClient();
+
+  const refreshCloudTimer = () => {
+    qc.invalidateQueries({
+      queryKey: ["clocks", "cloud_active"],
+    });
+    qc.invalidateQueries({ queryKey: ["clocks"] });
+  };
   const [booking, setBooking] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(
     () => localStorage.getItem("clock_calendar_open") !== "false"
@@ -102,7 +111,10 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
         {/* Cloud timer (running on mobile). Hidden when
             a local timer is running to avoid clutter. */}
         {!isRunning && cloudTimer?.active && (
-          <CloudTimer timer={cloudTimer} />
+          <CloudTimer
+            timer={cloudTimer}
+            onStopped={refreshCloudTimer}
+          />
         )}
 
         {/* Start timer form */}

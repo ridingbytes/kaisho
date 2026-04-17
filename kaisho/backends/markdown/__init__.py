@@ -1161,17 +1161,22 @@ class MarkdownClockBackend(ClockBackend):
             return self._enrich(entry)
         return None
 
-    def delete_entry(self, start_iso) -> bool:
-        """Delete a clock entry. Return False if not found."""
+    def delete_entry(self, start_iso) -> dict | None:
+        """Delete a clock entry. Return the deleted entry or
+        None if not found."""
         entries = self._load_entries()
-        new = [
+        deleted = next(
+            (e for e in entries
+             if e.get("start") == start_iso),
+            None,
+        )
+        if deleted is None:
+            return None
+        self._save_entries([
             e for e in entries
             if e.get("start") != start_iso
-        ]
-        if len(new) == len(entries):
-            return False
-        self._save_entries(new)
-        return True
+        ])
+        return self._enrich(deleted)
 
 
 # -- Inbox heading helpers ------------------------------------------

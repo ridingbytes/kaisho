@@ -1,20 +1,26 @@
 import { useEffect, useState } from "react";
-import { Smartphone } from "lucide-react";
+import { Smartphone, Square } from "lucide-react";
 import { elapsed } from "../../utils/formatting";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
-import type { CloudActiveTimer } from "../../api/client";
+import {
+  stopCloudTimer,
+  type CloudActiveTimer,
+} from "../../api/client";
 
 interface Props {
   timer: CloudActiveTimer;
+  onStopped?: () => void;
 }
 
 /**
- * Read-only display of a timer running on another device
- * (typically the Kaisho Cloud mobile app). Ticks the
- * elapsed time but cannot stop or edit the entry.
+ * Display of a timer running on another device (typically
+ * the Kaisho Cloud mobile app). Ticks the elapsed time and
+ * exposes a Stop button so the user can end the session
+ * from the desktop without unlocking their phone.
  */
-export function CloudTimer({ timer }: Props) {
+export function CloudTimer({ timer, onStopped }: Props) {
   const [tick, setTick] = useState(0);
+  const [stopping, setStopping] = useState(false);
   const customerColors = useCustomerColors();
 
   useEffect(() => {
@@ -29,6 +35,19 @@ export function CloudTimer({ timer }: Props) {
   const custColor = timer.customer
     ? customerColors[timer.customer]
     : undefined;
+
+  async function handleStop() {
+    setStopping(true);
+    try {
+      await stopCloudTimer(timer.id);
+    } catch {
+      // Swallow: polling will reconcile or show the
+      // timer as still active on next tick.
+    } finally {
+      setStopping(false);
+      onStopped?.();
+    }
+  }
 
   return (
     <div
@@ -110,6 +129,23 @@ export function CloudTimer({ timer }: Props) {
           </p>
         </div>
       )}
+
+      <button
+        type="button"
+        onClick={handleStop}
+        disabled={stopping}
+        className={[
+          "mt-3 inline-flex items-center gap-1.5",
+          "px-3 py-1.5 rounded-md text-xs font-medium",
+          "border border-border bg-surface-raised",
+          "text-stone-600 hover:text-red-600",
+          "hover:border-red-400 transition-colors",
+          "disabled:opacity-60 disabled:cursor-wait",
+        ].join(" ")}
+      >
+        <Square size={11} />
+        {stopping ? "Stopping..." : "Stop"}
+      </button>
     </div>
   );
 }

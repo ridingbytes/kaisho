@@ -173,6 +173,7 @@ def get_active():
 @router.post("/quick-book", status_code=201)
 def quick_book(body: QuickBookRequest):
     """Book a clock entry with a fixed duration."""
+    from ...services import cloud_sync as sync_svc
     try:
         from datetime import date as date_cls
         target_date = (
@@ -180,7 +181,7 @@ def quick_book(body: QuickBookRequest):
             if body.date
             else None
         )
-        return get_backend().clocks.quick_book(
+        entry = get_backend().clocks.quick_book(
             duration_str=body.duration,
             customer=body.customer,
             description=body.description,
@@ -189,6 +190,8 @@ def quick_book(body: QuickBookRequest):
             target_date=target_date,
             notes=body.notes,
         )
+        sync_svc.schedule_push()
+        return entry
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -196,13 +199,16 @@ def quick_book(body: QuickBookRequest):
 @router.post("/start", status_code=201)
 def start_timer(body: TimerStart):
     """Start a new running timer."""
+    from ...services import cloud_sync as sync_svc
     try:
-        return get_backend().clocks.start(
+        entry = get_backend().clocks.start(
             customer=body.customer,
             description=body.description,
             task_id=body.task_id,
             contract=body.contract,
         )
+        sync_svc.schedule_push()
+        return entry
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
@@ -210,8 +216,11 @@ def start_timer(body: TimerStart):
 @router.post("/stop")
 def stop_timer():
     """Stop the active timer and save the entry."""
+    from ...services import cloud_sync as sync_svc
     try:
-        return get_backend().clocks.stop()
+        entry = get_backend().clocks.stop()
+        sync_svc.schedule_push()
+        return entry
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -225,6 +234,7 @@ def get_summary(period: str = "month"):
 @router.patch("/entries")
 def update_entry(start: str, body: EntryUpdate):
     """Update fields of an existing clock entry."""
+    from ...services import cloud_sync as sync_svc
     result = get_backend().clocks.update_entry(
         start_iso=start,
         customer=body.customer,
@@ -239,17 +249,24 @@ def update_entry(start: str, body: EntryUpdate):
     )
     if result is None:
         raise HTTPException(status_code=404, detail="Entry not found")
+    sync_svc.schedule_push()
     return result
 
 
 @router.delete("/entries", status_code=204)
 def delete_entry(start: str):
-    """Delete a clock entry by its start timestamp."""
-    found = get_backend().clocks.delete_entry(start_iso=start)
-    if not found:
+    """Delete a clock entry by its start timestamp.
+
+    Records a sync tombstone so the deletion propagates to
+    the cloud on the next push cycle.
+    """
+    from ...services import cloud_sync as sync_svc
+    entry = get_backend().clocks.delete_entry(start_iso=start)
+    if entry is None:
         raise HTTPException(
             status_code=404, detail="Entry not found",
         )
+    sync_svc.on_local_delete(entry)
 
 
 # ── Invoice preparation ──────────────────────────────

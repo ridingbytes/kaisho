@@ -1,18 +1,16 @@
 """Cloud Sync API router.
 
 Exposes endpoints for connecting to the Kaisho Cloud
-service, triggering sync, and triaging unassigned
-clock entries. All endpoints are no-ops when cloud
-sync is disabled.
+service, triggering sync, and reporting sync state. All
+endpoints are no-ops when cloud sync is disabled.
 """
-import urllib.error
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ...config import get_config
-from ...services import settings as settings_svc
 from ...services import cloud_sync as sync_svc
+from ...services import settings as settings_svc
+from ...services import sync_state
 
 router = APIRouter(
     prefix="/api/cloud-sync", tags=["cloud-sync"],
@@ -24,30 +22,27 @@ class ConnectBody(BaseModel):
     api_key: str
 
 
-class TriageEntry(BaseModel):
-    start: str
-    customer: str | None = None
-    task_id: str | None = None
-    contract: str | None = None
-
-
-class TriageBody(BaseModel):
-    entries: list[TriageEntry]
-
-
 def _sync_settings():
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     return data, cfg
 
 
+def _cloud_creds(data: dict) -> tuple[str, str]:
+    """Return (url, api_key) from raw settings dict."""
+    sync = data.get("cloud_sync", {})
+    return sync.get("url", ""), sync.get("api_key", "")
+
+
 # ── GET /api/cloud-sync/status ────────────────────────
 
 @router.get("/status")
 def status():
-    """Return cloud sync connection status."""
+    """Return connection + local sync state."""
     data, cfg = _sync_settings()
     sync = settings_svc.get_cloud_sync_settings(data)
+    cursor = sync_state.load_cursor(cfg.PROFILE_DIR)
+    tombstones = sync_state.load_tombstones(cfg.PROFILE_DIR)
     result = {
         "enabled": sync["enabled"],
         "api_key_set": sync["api_key_set"],
@@ -55,22 +50,30 @@ def status():
         "interval": sync.get("interval", 300),
         "connected": False,
         "plan": None,
-        "pending": 0,
+        "last_pull_cursor": cursor["last_pull_cursor"],
+        "last_push_cursor": cursor["last_push_cursor"],
+        "last_pull_at": cursor["last_pull_at"],
+        "last_push_at": cursor["last_push_at"],
+        "last_error": cursor["last_error"],
+        "pending_deletes": len(tombstones),
     }
     if not sync["enabled"] or not sync["api_key_set"]:
         return result
 
-    url = data.get("cloud_sync", {}).get("url", "")
-    key = settings_svc.get_cloud_sync_key(data)
-    try:
-        cloud = sync_svc.cloud_status(url, key)
-        if cloud:
-            result["connected"] = True
-            result["plan"] = cloud.get("plan")
-            result["pending"] = cloud.get("pending", 0)
-    except (urllib.error.URLError, OSError):
-        # Cloud unreachable; return defaults
-        pass
+    url, key = _cloud_creds(data)
+    stats = sync_svc.cloud_stats(url, key)
+    if stats:
+        result["connected"] = True
+        result["plan"] = stats.get("plan")
+        result["cloud_entry_count"] = stats.get(
+            "entry_count", 0,
+        )
+        result["cloud_last_change_at"] = stats.get(
+            "last_change_at",
+        )
+        result["cloud_active_timer_id"] = stats.get(
+            "active_timer_id",
+        )
     return result
 
 
@@ -80,14 +83,8 @@ def status():
 def connect(body: ConnectBody):
     """Connect to the Kaisho Cloud service."""
     url = body.url.rstrip("/")
-    try:
-        cloud = sync_svc.cloud_status(url, body.api_key)
-    except (urllib.error.URLError, OSError) as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Cannot reach cloud: {exc}",
-        )
-    if cloud is None:
+    stats = sync_svc.cloud_stats(url, body.api_key)
+    if stats is None:
         raise HTTPException(
             status_code=401,
             detail="Invalid API key or cloud URL",
@@ -102,10 +99,7 @@ def connect(body: ConnectBody):
             "api_key": body.api_key,
         },
     )
-    return {
-        "ok": True,
-        "plan": cloud.get("plan"),
-    }
+    return {"ok": True, "plan": stats.get("plan")}
 
 
 # ── POST /api/cloud-sync/disconnect ──────────────────
@@ -131,8 +125,7 @@ def active():
     if not sync.get("enabled"):
         return {"active": False}
 
-    url = sync.get("url", "")
-    key = sync.get("api_key", "")
+    url, key = _cloud_creds(data)
     if not url or not key:
         return {"active": False}
 
@@ -140,25 +133,53 @@ def active():
     return result or {"active": False}
 
 
+# ── POST /api/cloud-sync/stop-cloud-timer ─────────────
+
+@router.post("/stop-cloud-timer")
+def stop_cloud_timer(id: str | None = None):
+    """Stop whatever timer is running on the cloud.
+
+    The local CloudTimer card routes its "Stop" button
+    through here so the mobile PWA and the local app reach
+    consistent state without waiting for the next cron.
+    """
+    data, _ = _sync_settings()
+    sync = data.get("cloud_sync", {})
+    if not sync.get("enabled"):
+        raise HTTPException(
+            status_code=400, detail="Cloud sync disabled",
+        )
+    url, key = _cloud_creds(data)
+    try:
+        result = sync_svc.stop_active(
+            url, key, {"id": id} if id else {},
+        )
+    except sync_svc.CloudUnavailable as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Cloud unreachable: {exc}",
+        )
+    sync_svc.schedule_push()
+    return result
+
+
 # ── POST /api/cloud-sync/sync-now ────────────────────
 
 @router.post("/sync-now")
 def sync_now():
-    """Trigger an immediate cloud sync cycle."""
+    """Trigger an immediate sync cycle (blocking)."""
     data, cfg = _sync_settings()
     sync = data.get("cloud_sync", {})
     if not sync.get("enabled"):
-        return {"pulled": 0, "pushed": False}
+        return {"enabled": False}
 
-    url = sync.get("url", "")
-    key = sync.get("api_key", "")
+    url, key = _cloud_creds(data)
     if not url or not key:
-        return {"pulled": 0, "pushed": False}
+        return {"enabled": False}
 
     from ...backends import get_backend
     backend = get_backend()
-
-    result = sync_svc.run_sync_cycle(
+    return sync_svc.run_sync_cycle(
         cloud_url=url,
         api_key=key,
         profile_dir=cfg.PROFILE_DIR,
@@ -168,14 +189,13 @@ def sync_now():
             include_done=False,
         ),
     )
-    return result
 
 
 # ── GET /api/cloud-sync/pending ──────────────────────
 
 @router.get("/pending")
 def pending():
-    """Return clock entries with empty customer."""
+    """Return local clock entries with empty customer."""
     from ...backends import get_backend
     backend = get_backend()
     all_entries = backend.clocks.list_entries(
@@ -188,6 +208,17 @@ def pending():
 
 
 # ── POST /api/cloud-sync/triage ──────────────────────
+
+class TriageEntry(BaseModel):
+    start: str
+    customer: str | None = None
+    task_id: str | None = None
+    contract: str | None = None
+
+
+class TriageBody(BaseModel):
+    entries: list[TriageEntry]
+
 
 @router.post("/triage")
 def triage(body: TriageBody):
@@ -209,4 +240,6 @@ def triage(body: TriageBody):
             )
             if result is not None:
                 updated += 1
+    if updated:
+        sync_svc.schedule_push()
     return {"updated": updated}

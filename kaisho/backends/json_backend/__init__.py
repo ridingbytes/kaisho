@@ -592,17 +592,21 @@ class JsonClockBackend(ClockBackend):
             return self._enrich(entry)
         return None
 
-    def delete_entry(self, start_iso) -> bool:
-        """Delete a clock entry. Return False if not found."""
+    def delete_entry(self, start_iso) -> dict | None:
+        """Delete a clock entry. Return deleted entry or None."""
         entries = _read_json(self._clocks_file)
-        new = [
+        deleted = next(
+            (e for e in entries
+             if e.get("start") == start_iso),
+            None,
+        )
+        if deleted is None:
+            return None
+        _write_json(self._clocks_file, [
             e for e in entries
             if e.get("start") != start_iso
-        ]
-        if len(new) == len(entries):
-            return False
-        _write_json(self._clocks_file, new)
-        return True
+        ])
+        return self._enrich(deleted)
 
 
 # ====================================================================
