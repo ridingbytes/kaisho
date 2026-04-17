@@ -1,10 +1,18 @@
 # Build the Python backend as a standalone binary using
 # PyInstaller on Windows. Mirrors build-sidecar.sh.
 param(
-    [string]$Target = "x86_64-pc-windows-msvc"
+    [string]$Target = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+# Use env var if param is empty (CI passes via env)
+if (-not $Target) {
+    $Target = $env:BUILD_TARGET
+}
+if (-not $Target) {
+    $Target = "x86_64-pc-windows-msvc"
+}
 
 # $PSScriptRoot is scripts/, parent is the repo root
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
