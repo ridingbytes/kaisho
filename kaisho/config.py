@@ -1,3 +1,4 @@
+import sys
 from functools import lru_cache
 from pathlib import Path
 
@@ -5,11 +6,10 @@ import yaml
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 def _get_project_root() -> Path:
     """Return the project root, handling PyInstaller."""
-    import sys
     if getattr(sys, "frozen", False):
-        # PyInstaller bundles data into sys._MEIPASS
         return Path(sys._MEIPASS)
     return Path(__file__).parent.parent
 

@@ -354,5 +354,5 @@ def api_move_run_output(entry_id: int, body: MoveRunRequest):
 
     raise HTTPException(
         status_code=400,
-        detail="destination must be 'todo', 'note', or 'kb'",
+        detail="destination must be 'inbox', 'todo', 'note', or 'kb'",
     )

@@ -134,8 +134,10 @@ def _mount_frontend():
     import os
     from pathlib import Path
 
-    if os.environ.get("SERVE_FRONTEND", "").lower() \
-            not in ("1", "true", "yes"):
+    serve = os.environ.get(
+        "SERVE_FRONTEND", "",
+    ).lower()
+    if serve not in ("1", "true", "yes"):
         return
 
     from fastapi.staticfiles import StaticFiles

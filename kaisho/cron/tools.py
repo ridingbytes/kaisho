@@ -910,9 +910,13 @@ def _trigger_cron_job(job_id: str) -> dict:
             load_settings(cfg.SETTINGS_FILE),
         )
         try:
+            # execute_job already calls write_output
+            # internally — do not call it again here.
             output = execute_job(
                 job,
-                project_root=Path(__file__).parent.parent.parent,
+                project_root=(
+                    Path(__file__).parent.parent.parent
+                ),
                 ollama_base_url=ai["ollama_url"],
                 lm_studio_base_url=ai.get(
                     "lm_studio_url", "",
@@ -932,11 +936,6 @@ def _trigger_cron_job(job_id: str) -> dict:
                 openai_api_key=ai.get(
                     "openai_api_key", "",
                 ),
-            )
-            write_output(
-                job.get("output", "none"),
-                output,
-                job.get("name", job_id),
             )
             finish_run(
                 cfg.PROFILE_DIR, run_id,

@@ -279,7 +279,7 @@ def active():
 # ── POST /api/cloud-sync/stop-cloud-timer ─────────────
 
 @router.post("/stop-cloud-timer")
-def stop_cloud_timer(id: str | None = None):
+def stop_cloud_timer(timer_id: str | None = None):
     """Stop whatever timer is running on the cloud.
 
     The local CloudTimer card routes its "Stop" button

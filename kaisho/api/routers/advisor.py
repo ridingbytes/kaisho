@@ -2,6 +2,7 @@ import json
 import queue
 import threading
 from collections.abc import Generator
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -197,7 +198,6 @@ def api_ask(body: AskRequest):
 def get_skills():
     """List available advisor skills."""
     cfg = get_config()
-    from pathlib import Path
     return list_skills(Path(str(cfg.PROFILE_DIR)))
 
 
@@ -209,7 +209,6 @@ class SkillBody(BaseModel):
 @router.post("/skills")
 def create_skill(body: SkillBody):
     """Create a new advisor skill."""
-    from pathlib import Path
     cfg = get_config()
     data_dir = Path(str(cfg.PROFILE_DIR))
     return save_skill(data_dir, body.name, body.content)
@@ -218,7 +217,6 @@ def create_skill(body: SkillBody):
 @router.put("/skills/{name}")
 def update_skill(name: str, body: SkillBody):
     """Update an existing advisor skill."""
-    from pathlib import Path
     cfg = get_config()
     data_dir = Path(str(cfg.PROFILE_DIR))
     skill_path = data_dir / "SKILLS" / f"{name}.md"
@@ -232,7 +230,6 @@ def update_skill(name: str, body: SkillBody):
 @router.delete("/skills/{name}")
 def remove_skill(name: str):
     """Delete an advisor skill."""
-    from pathlib import Path
     cfg = get_config()
     data_dir = Path(str(cfg.PROFILE_DIR))
     skill_path = data_dir / "SKILLS" / f"{name}.md"

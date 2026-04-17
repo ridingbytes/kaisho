@@ -307,7 +307,6 @@ DEFAULT_PATHS: dict = {
 
 def _default_org_dir(cfg) -> str:
     """Profile-local org dir, unless an explicit env override exists."""
-    from pathlib import Path
     builtin = Path("data/org").expanduser()
     if cfg.ORG_DIR.expanduser() != builtin:
         return str(cfg.ORG_DIR.expanduser())
@@ -316,7 +315,6 @@ def _default_org_dir(cfg) -> str:
 
 def _default_markdown_dir(cfg) -> str:
     """Profile-local markdown dir."""
-    from pathlib import Path
     builtin = Path("data/markdown").expanduser()
     if cfg.MARKDOWN_DIR.expanduser() != builtin:
         return str(cfg.MARKDOWN_DIR.expanduser())
@@ -325,7 +323,6 @@ def _default_markdown_dir(cfg) -> str:
 
 def _default_json_dir(cfg) -> str:
     """Profile-local JSON dir."""
-    from pathlib import Path
     builtin = Path("data/json").expanduser()
     if cfg.JSON_DIR.expanduser() != builtin:
         return str(cfg.JSON_DIR.expanduser())

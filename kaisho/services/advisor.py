@@ -605,8 +605,10 @@ def ask_claude_cli(model: str, prompt: str) -> str:
             text=True,
             timeout=300,
         )
-    except subprocess.TimeoutExpired:
-        raise RuntimeError("Claude CLI timed out after 300s")
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            "Claude CLI timed out after 300s",
+        ) from exc
     if result.returncode != 0:
         err = result.stderr.strip() or "unknown error"
         raise RuntimeError(f"Claude CLI failed: {err}")
