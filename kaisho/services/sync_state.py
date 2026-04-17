@@ -23,22 +23,40 @@ EPOCH = "1970-01-01T00:00:00Z"
 # ── Paths ─────────────────────────────────────────────
 
 def sync_dir(profile_dir: Path) -> Path:
-    """Return the sync state directory for a profile."""
+    """Return the sync state directory for a profile.
+
+    :param profile_dir: Root directory of the profile.
+    :returns: Path to the ``sync/`` subdirectory.
+    """
     return profile_dir / "sync"
 
 
 def cursor_path(profile_dir: Path) -> Path:
+    """Return the path to the cursor state file.
+
+    :param profile_dir: Root directory of the profile.
+    :returns: Path to ``sync/cursor.json``.
+    """
     return sync_dir(profile_dir) / "cursor.json"
 
 
 def tombstones_path(profile_dir: Path) -> Path:
+    """Return the path to the tombstones file.
+
+    :param profile_dir: Root directory of the profile.
+    :returns: Path to ``sync/tombstones.json``.
+    """
     return sync_dir(profile_dir) / "tombstones.json"
 
 
 # ── Atomic JSON I/O ───────────────────────────────────
 
-def _atomic_write_json(path: Path, data: dict) -> None:
-    """Write JSON atomically (tmp + rename)."""
+def atomic_write_json(path: Path, data: dict) -> None:
+    """Write *data* as JSON atomically via tmp + rename.
+
+    :param path: Destination file path.
+    :param data: Dictionary to serialize as JSON.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(
         dir=path.parent, suffix=".tmp",
@@ -53,8 +71,14 @@ def _atomic_write_json(path: Path, data: dict) -> None:
         raise
 
 
-def _read_json(path: Path, default: dict) -> dict:
-    """Read JSON or return ``default`` on any error."""
+def read_json(path: Path, default: dict) -> dict:
+    """Read JSON from *path*, falling back to *default*.
+
+    :param path: File to read.
+    :param default: Value returned when the file is missing
+        or contains invalid JSON.
+    :returns: Parsed dictionary or *default*.
+    """
     if not path.exists():
         return default
     try:
@@ -77,21 +101,33 @@ DEFAULT_CURSOR: dict = {
 
 
 def load_cursor(profile_dir: Path) -> dict:
-    """Load the sync cursor state for a profile."""
-    raw = _read_json(cursor_path(profile_dir), {})
+    """Load the sync cursor state for a profile.
+
+    :param profile_dir: Root directory of the profile.
+    :returns: Cursor dict with defaults for missing keys.
+    """
+    raw = read_json(cursor_path(profile_dir), {})
     return {**DEFAULT_CURSOR, **raw}
 
 
 def save_cursor(profile_dir: Path, state: dict) -> None:
-    """Persist cursor state atomically."""
-    _atomic_write_json(cursor_path(profile_dir), state)
+    """Persist cursor state atomically.
+
+    :param profile_dir: Root directory of the profile.
+    :param state: Cursor dictionary to write.
+    """
+    atomic_write_json(cursor_path(profile_dir), state)
 
 
 # ── Tombstones ────────────────────────────────────────
 
 def load_tombstones(profile_dir: Path) -> list[dict]:
-    """Return the list of pending delete tombstones."""
-    raw = _read_json(
+    """Return the list of pending delete tombstones.
+
+    :param profile_dir: Root directory of the profile.
+    :returns: List of tombstone dicts (may be empty).
+    """
+    raw = read_json(
         tombstones_path(profile_dir), {"tombstones": []},
     )
     return raw.get("tombstones", [])
@@ -100,8 +136,12 @@ def load_tombstones(profile_dir: Path) -> list[dict]:
 def save_tombstones(
     profile_dir: Path, tombstones: list[dict],
 ) -> None:
-    """Persist tombstones atomically."""
-    _atomic_write_json(
+    """Persist tombstones atomically.
+
+    :param profile_dir: Root directory of the profile.
+    :param tombstones: List of tombstone dicts to write.
+    """
+    atomic_write_json(
         tombstones_path(profile_dir),
         {"tombstones": tombstones},
     )
@@ -115,6 +155,10 @@ def record_tombstone(
     The entry must carry at least ``sync_id`` and
     ``deleted_at``. Duplicate ids are collapsed (later
     write wins).
+
+    :param profile_dir: Root directory of the profile.
+    :param entry: Deleted entry dict (must contain
+        ``sync_id``).
     """
     sid = entry.get("sync_id")
     if not sid:
@@ -130,7 +174,11 @@ def record_tombstone(
 def clear_tombstones(
     profile_dir: Path, sync_ids: list[str],
 ) -> None:
-    """Remove tombstones by ``sync_id``."""
+    """Remove tombstones by ``sync_id``.
+
+    :param profile_dir: Root directory of the profile.
+    :param sync_ids: IDs of tombstones to discard.
+    """
     if not sync_ids:
         return
     keep = [

@@ -1,23 +1,30 @@
-"""Bidirectional Cloud Sync service.
+"""Bidirectional cloud sync service.
 
-Design (see kaisho-suite docs for rationale):
+Handles all communication between the local kaisho app and
+the Kaisho Cloud API. Runs a symmetric sync cycle:
 
-- Identity   : shared UUID per clock entry, stored locally
-               as ``:SYNC_ID:`` on the heading, and as
-               ``clock_entries.id`` on the cloud.
-- Conflicts  : last-writer-wins by ``updated_at``. Entries
-               with the same logical content but different
-               ``sync_id`` are both kept.
-- Deletes    : soft on cloud (``deleted_at``), tombstone
-               file on local; both propagate through the
-               same ``POST /sync/apply`` path.
-- Active tmr : a separate pair of endpoints with a "later
-               start_at wins" tiebreak (see ``start_active``
-               and ``stop_active``).
+1. **Pull** — fetch changed entries from the cloud,
+   apply them locally (last-writer-wins).
+2. **Push** — send local changes (completed entries,
+   tombstones, running timers) up to the cloud.
+3. **Snapshot** — push customer/task reference data so
+   the mobile PWA has dropdown options.
 
-All calls are best-effort: network failures never raise
-out of this module; they flip ``last_error`` in the cursor
-state instead.
+Design decisions:
+
+- **Identity**: shared UUID per entry (``SYNC_ID`` on the
+  org heading, ``clock_entries.id`` on the cloud).
+- **Conflicts**: last-writer-wins by ``updated_at``.
+  Entries with the same content but different UUIDs are
+  both kept (no content-based dedup).
+- **Deletes**: soft on cloud (``deleted_at`` column),
+  tombstone file on local. Both propagate through
+  ``POST /sync/apply``.
+- **Active timer**: ``/sync/active/start|stop`` with a
+  "later ``start_at`` wins" tiebreak.
+- **Best-effort**: network failures never raise out of
+  the sync cycle. They set ``last_error`` on the cursor
+  and the next cycle retries.
 """
 import json
 import logging
@@ -33,23 +40,45 @@ from . import sync_state
 
 log = logging.getLogger(__name__)
 
-_TIMEOUT = 30
+HTTP_TIMEOUT = 30
 
-# Serialize background push runs so rapid-fire mutations
-# don't stack up parallel sync cycles against the cloud.
+# Serialize background pushes so rapid-fire local
+# mutations don't stack up parallel sync cycles.
 _push_lock = threading.Lock()
 
 
-# ── HTTP helpers ──────────────────────────────────────
+# -- HTTP transport -------------------------------------------
 
-def _request(
+class CloudUnavailable(Exception):
+    """The cloud API could not be reached or returned a
+    non-2xx response.
+
+    Callers catch this to log an error and retry on the
+    next cycle — network failures should never crash the
+    app.
+    """
+
+
+def http_request(
     url: str,
     api_key: str,
     method: str = "GET",
     data: dict | None = None,
-    timeout: int = _TIMEOUT,
+    timeout: int = HTTP_TIMEOUT,
 ) -> dict | list | None:
-    """Make an authenticated JSON request to the cloud."""
+    """Send an authenticated JSON request to the cloud.
+
+    :param url: Full URL (e.g.
+        ``https://cloud.kaisho.dev/sync/changes``).
+    :param api_key: Bearer token for the
+        ``Authorization`` header.
+    :param method: HTTP method (``GET``, ``POST``, etc.).
+    :param data: Request body (serialized to JSON).
+    :param timeout: Socket timeout in seconds.
+    :returns: Parsed JSON response, or ``None`` for empty
+        bodies.
+    :raises urllib.error.URLError: On network failure.
+    """
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -62,29 +91,36 @@ def _request(
     req = urllib.request.Request(
         url, data=body, headers=headers, method=method,
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+    with urllib.request.urlopen(
+        req, timeout=timeout,
+    ) as resp:
         raw = resp.read().decode("utf-8")
         return json.loads(raw) if raw.strip() else None
 
 
-class CloudUnavailable(Exception):
-    """Raised when the cloud cannot be reached."""
-
-
-def _safe_request(
+def safe_request(
     url: str,
     api_key: str,
     method: str = "GET",
     data: dict | None = None,
 ) -> Any:
-    """Wrap ``_request`` to raise a single domain error."""
+    """Like ``http_request`` but raises ``CloudUnavailable``
+    on any network or HTTP error.
+
+    :param url: Full URL.
+    :param api_key: Bearer token.
+    :param method: HTTP method.
+    :param data: Request body.
+    :returns: Parsed JSON response.
+    :raises CloudUnavailable: On any failure.
+    """
     try:
-        return _request(url, api_key, method, data)
+        return http_request(url, api_key, method, data)
     except (urllib.error.URLError, OSError) as exc:
         raise CloudUnavailable(str(exc)) from exc
 
 
-# ── Pull changes ──────────────────────────────────────
+# -- Cloud API calls ------------------------------------------
 
 def pull_changes(
     cloud_url: str,
@@ -92,24 +128,48 @@ def pull_changes(
     since: str,
     limit: int = 200,
 ) -> dict:
-    """GET ``/sync/changes?since=`` (paginated)."""
+    """Fetch entries changed after ``since`` from the cloud.
+
+    Calls ``GET /sync/changes?since=<cursor>&limit=<n>``.
+    Returns ``{now, cursor, entries, has_more}``.
+
+    :param cloud_url: Base URL (e.g.
+        ``https://cloud.kaisho.dev``).
+    :param api_key: API key for authentication.
+    :param since: ISO cursor — only entries with
+        ``updated_at > since`` are returned.
+    :param limit: Max entries per page (capped at 500 on
+        the cloud).
+    :returns: Response dict with ``entries`` list and
+        ``cursor`` for the next page.
+    :raises CloudUnavailable: On network failure.
+    """
     qs = urllib.parse.urlencode({
         "since": since, "limit": limit,
     })
     url = f"{cloud_url}/sync/changes?{qs}"
-    return _safe_request(url, api_key)
+    return safe_request(url, api_key)
 
-
-# ── Push changes ──────────────────────────────────────
 
 def push_changes(
     cloud_url: str,
     api_key: str,
     entries: list[dict],
 ) -> dict:
-    """POST ``/sync/apply`` with a batch of wire entries."""
+    """Push a batch of entries to the cloud.
+
+    Calls ``POST /sync/apply``. The cloud applies
+    last-writer-wins and returns counts of inserted,
+    updated, skipped, and errored entries.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param entries: List of wire-format entry dicts.
+    :returns: ``{inserted, updated, skipped, errors}``.
+    :raises CloudUnavailable: On network failure.
+    """
     url = f"{cloud_url}/sync/apply"
-    return _safe_request(
+    return safe_request(
         url, api_key, "POST", {"entries": entries},
     )
 
@@ -119,29 +179,42 @@ def ack_entries(
     api_key: str,
     entry_ids: list[str],
 ) -> dict:
-    """POST ``/sync/ack`` to stamp ``synced_at``."""
+    """Acknowledge pulled entries on the cloud.
+
+    Stamps ``synced_at`` so the mobile UI can show
+    whether the local app has seen each entry.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param entry_ids: List of entry UUIDs to acknowledge.
+    :returns: ``{acked: <count>}``.
+    :raises CloudUnavailable: On network failure.
+    """
     url = f"{cloud_url}/sync/ack"
-    return _safe_request(
+    return safe_request(
         url, api_key, "POST", {"ids": entry_ids},
     )
 
 
-# ── Active timer ──────────────────────────────────────
-
 def cloud_active(
     cloud_url: str, api_key: str,
 ) -> dict | None:
-    """Return the cloud-side active timer, or None if the
-    cloud is unreachable / returns ``{active: false}``."""
+    """Fetch the cloud-side running timer.
+
+    Returns the timer dict (with ``active: true``), or
+    ``None`` if the cloud is unreachable or no timer is
+    running.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :returns: Timer dict or ``None``.
+    """
     try:
-        resp = _request(
+        return http_request(
             f"{cloud_url}/sync/active", api_key,
         )
-    except (urllib.error.URLError, urllib.error.HTTPError):
+    except (urllib.error.URLError, OSError):
         return None
-    except OSError:
-        return None
-    return resp
 
 
 def start_active(
@@ -149,8 +222,21 @@ def start_active(
     api_key: str,
     payload: dict,
 ) -> dict:
-    """POST ``/sync/active/start``."""
-    return _safe_request(
+    """Start or reconcile a running timer on the cloud.
+
+    Calls ``POST /sync/active/start``. If another timer
+    is already running, the cloud applies
+    "later ``start_at`` wins" — the older timer is
+    auto-stopped and the newer one becomes active.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param payload: ``{id, customer, description, start,
+        task_id, contract}``.
+    :returns: ``{active, winner, ...entry fields}``.
+    :raises CloudUnavailable: On network failure.
+    """
+    return safe_request(
         f"{cloud_url}/sync/active/start",
         api_key, "POST", payload,
     )
@@ -161,14 +247,23 @@ def stop_active(
     api_key: str,
     payload: dict,
 ) -> dict:
-    """POST ``/sync/active/stop``."""
-    return _safe_request(
+    """Stop the running timer on the cloud.
+
+    Calls ``POST /sync/active/stop``. Idempotent — if
+    the timer is already stopped, returns the completed
+    entry.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param payload: ``{id?, end?}``.
+    :returns: Completed entry dict.
+    :raises CloudUnavailable: On network failure.
+    """
+    return safe_request(
         f"{cloud_url}/sync/active/stop",
         api_key, "POST", payload,
     )
 
-
-# ── Snapshot (unchanged) ──────────────────────────────
 
 def push_snapshot(
     cloud_url: str,
@@ -176,9 +271,22 @@ def push_snapshot(
     customers: list[dict],
     tasks: list[dict],
 ) -> dict:
-    """POST ``/sync/push-snapshot`` (reference data)."""
+    """Push customer/task reference data to the cloud.
+
+    The mobile PWA reads this for dropdown options in the
+    timer start and quick-book forms.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param customers: List of customer dicts with
+        ``name`` and ``contracts``.
+    :param tasks: List of task dicts with ``id``,
+        ``title``, ``customer``, ``status``.
+    :returns: ``{ok: true}``.
+    :raises CloudUnavailable: On network failure.
+    """
     url = f"{cloud_url}/sync/push-snapshot"
-    return _safe_request(
+    return safe_request(
         url, api_key, "POST",
         {
             "customers": customers,
@@ -191,19 +299,59 @@ def push_snapshot(
 def cloud_stats(
     cloud_url: str, api_key: str,
 ) -> dict | None:
-    """GET ``/sync/stats``; returns None on failure."""
+    """Fetch sync statistics from the cloud.
+
+    Returns ``{entry_count, last_change_at,
+    active_timer_id, plan}``, or ``None`` on failure.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :returns: Stats dict or ``None``.
+    """
     try:
-        return _safe_request(
+        return safe_request(
             f"{cloud_url}/sync/stats", api_key,
         )
     except CloudUnavailable:
         return None
 
 
-# ── Wire helpers ──────────────────────────────────────
+def cloud_status(
+    cloud_url: str, api_key: str,
+) -> dict | None:
+    """Legacy status probe (``GET /sync/status``).
 
-def _entry_to_wire(entry: dict) -> dict:
-    """Shape a local clocks-service entry for /sync/apply."""
+    Kept for backwards compatibility with older cloud
+    builds. Prefer ``cloud_stats`` for new code.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :returns: Status dict or ``None``.
+    """
+    try:
+        return safe_request(
+            f"{cloud_url}/sync/status", api_key,
+        )
+    except CloudUnavailable:
+        return None
+
+
+# -- Wire format conversion -----------------------------------
+#
+# "Wire format" is the JSON shape sent over the network.
+# Local entries use ``sync_id``; wire entries use ``id``.
+# These converters bridge the two.
+
+def entry_to_wire(entry: dict) -> dict:
+    """Convert a local entry dict to the wire format used
+    by ``POST /sync/apply``.
+
+    Maps ``sync_id`` → ``id`` and normalises optional
+    fields.
+
+    :param entry: Local clock entry dict.
+    :returns: Wire-format dict for the cloud API.
+    """
     return {
         "id": entry["sync_id"],
         "customer": entry.get("customer") or None,
@@ -221,8 +369,15 @@ def _entry_to_wire(entry: dict) -> dict:
     }
 
 
-def _wire_to_local(entry: dict) -> dict:
-    """Shape a /sync wire entry for the clocks service."""
+def wire_to_local(entry: dict) -> dict:
+    """Convert a wire-format entry from ``/sync/changes``
+    into the local dict shape.
+
+    Maps ``id`` → ``sync_id`` and normalises fields.
+
+    :param entry: Wire-format entry from the cloud.
+    :returns: Local entry dict for the clocks service.
+    """
     return {
         "sync_id": entry["id"],
         "customer": entry.get("customer") or "",
@@ -238,12 +393,23 @@ def _wire_to_local(entry: dict) -> dict:
     }
 
 
-def _tombstone_to_wire(tombstone: dict) -> dict:
-    """Shape a local tombstone for /sync/apply."""
+def tombstone_to_wire(tombstone: dict) -> dict:
+    """Convert a local tombstone into wire format for
+    ``POST /sync/apply``.
+
+    Tombstones carry ``deleted_at`` so the cloud knows
+    to soft-delete the entry.
+
+    :param tombstone: Tombstone dict from
+        ``sync_state.load_tombstones()``.
+    :returns: Wire-format dict with ``deleted_at`` set.
+    """
     return {
         "id": tombstone["sync_id"],
         "customer": tombstone.get("customer") or None,
-        "description": tombstone.get("description") or "",
+        "description": (
+            tombstone.get("description") or ""
+        ),
         "start": tombstone["start"],
         "end": tombstone.get("end"),
         "task_id": tombstone.get("task_id") or None,
@@ -255,19 +421,20 @@ def _tombstone_to_wire(tombstone: dict) -> dict:
     }
 
 
-# ── On-mutation hooks ─────────────────────────────────
+# -- Mutation hooks -------------------------------------------
 #
-# The clocks router calls these after every local write
-# so deletes end up in the tombstone file and eager
-# push can schedule itself. We avoid importing the
-# cursor here to keep the path dependency-light; the
-# scheduler / router will pick up the tombstone on next
-# push cycle.
-
+# Called by the clocks router after every local create,
+# update, or delete. Records tombstones and triggers an
+# eager background sync so changes propagate without
+# waiting for the 5-minute cron cycle.
 
 def on_local_delete(entry: dict) -> None:
-    """Record a tombstone for a locally-deleted entry and
-    schedule a background push."""
+    """Record a tombstone for a deleted local entry and
+    schedule a background push.
+
+    :param entry: The entry that was just deleted (must
+        contain ``sync_id``).
+    """
     from ..config import get_config
     if not entry or not entry.get("sync_id"):
         return
@@ -278,25 +445,33 @@ def on_local_delete(entry: dict) -> None:
         "deleted_at": now,
         "updated_at": now,
     }
-    sync_state.record_tombstone(cfg.PROFILE_DIR, tombstone)
+    sync_state.record_tombstone(
+        cfg.PROFILE_DIR, tombstone,
+    )
     schedule_push()
 
 
 def schedule_push() -> None:
-    """Fire-and-forget a sync cycle in a background thread.
+    """Trigger a sync cycle in a background thread.
 
     No-op when cloud sync is disabled or when another
-    push is already running. The 5-min cron job acts as
-    the safety net.
+    push is already in progress. The 5-minute cron job
+    acts as the safety net for any missed pushes.
     """
     thread = threading.Thread(
-        target=_run_scheduled_push, daemon=True,
+        target=run_background_sync, daemon=True,
     )
     thread.start()
 
 
-def _run_scheduled_push() -> None:
-    """Worker that runs ``run_sync_cycle`` if possible."""
+def run_background_sync() -> None:
+    """Background worker: runs a full sync cycle if the
+    push lock is available.
+
+    Acquires a non-blocking lock so concurrent mutation
+    events don't pile up parallel HTTP requests. Errors
+    are logged and swallowed — the next cycle will retry.
+    """
     if not _push_lock.acquire(blocking=False):
         return
     try:
@@ -305,7 +480,9 @@ def _run_scheduled_push() -> None:
         from . import settings as settings_svc
 
         cfg = get_config()
-        data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+        data = settings_svc.load_settings(
+            cfg.SETTINGS_FILE,
+        )
         sync = data.get("cloud_sync", {})
         if not sync.get("enabled"):
             return
@@ -320,34 +497,46 @@ def _run_scheduled_push() -> None:
             api_key=key,
             profile_dir=cfg.PROFILE_DIR,
             clocks_file=backend.clocks.data_file,
-            customers_fn=backend.customers.list_customers,
+            customers_fn=(
+                backend.customers.list_customers
+            ),
             tasks_fn=lambda: backend.tasks.list_tasks(
                 include_done=False,
             ),
         )
     except Exception as exc:  # noqa: BLE001
-        log.warning("Scheduled push failed: %s", exc)
+        log.warning("Background sync failed: %s", exc)
     finally:
         _push_lock.release()
 
 
-# ── Sync cycle ────────────────────────────────────────
+# -- Sync cycle steps -----------------------------------------
 
-def _apply_pulled_entries(
+def apply_pulled_entry(
     entries: list[dict], backend,
 ) -> tuple[int, int, list[str]]:
-    """Apply pulled entries to local state.
+    """Apply a batch of pulled entries to local state.
 
-    Returns ``(upserts, deletes, pulled_ids)``.
-    ``pulled_ids`` contains the IDs of successfully applied
-    entries so the caller can ack them on the cloud.
+    For each entry:
+    - If ``deleted_at`` is set, delete the local entry
+      (propagate the cloud-side deletion).
+    - Otherwise, upsert via
+      ``backend.clocks.apply_sync_payload``.
+
+    Also auto-creates local customer records for any new
+    customer names typed on the mobile app.
+
+    :param entries: Wire-format entries from the cloud.
+    :param backend: Kaisho backend instance.
+    :returns: ``(upserts, deletes, pulled_ids)`` — the
+        ``pulled_ids`` are used by the caller to ack.
     """
     upserts = 0
     deletes = 0
     pulled_ids: list[str] = []
     customer_names: set[str] = set()
     for wire in entries:
-        local = _wire_to_local(wire)
+        local = wire_to_local(wire)
         if local.get("deleted_at"):
             backend.clocks.delete_entry_by_sync_id(
                 local["sync_id"],
@@ -361,19 +550,23 @@ def _apply_pulled_entries(
         name = local.get("customer") or ""
         if name:
             customer_names.add(name)
-    _autocreate_customers(backend, customer_names)
+    autocreate_customer(backend, customer_names)
     return upserts, deletes, pulled_ids
 
 
-def _autocreate_customers(
+def autocreate_customer(
     backend, names: set[str],
 ) -> None:
-    """Ensure each customer referenced by a synced entry
-    has a matching record in the customer backend.
+    """Create local customer records for names that don't
+    exist yet.
 
-    Mobile clients are allowed to type free-text customer
-    names; this is how those names become first-class
-    customers on the desktop.
+    Mobile users can type free-text customer names when
+    starting a timer. When those entries sync to the
+    desktop, this function ensures the customer appears
+    in the customer list without manual setup.
+
+    :param backend: Kaisho backend instance.
+    :param names: Set of customer names to check.
     """
     if not names:
         return
@@ -396,32 +589,44 @@ def _autocreate_customers(
             )
 
 
-def _collect_local_changes(
+def collect_local_change(
     backend, since: str,
 ) -> list[dict]:
-    """Return local live entries with ``updated_at > since``.
+    """Collect local entries modified after ``since``.
 
-    ``since`` is compared lexicographically — safe for
-    ISO-8601 timestamps of equal precision.
+    Timestamps are compared lexicographically — safe for
+    ISO-8601 strings of consistent precision.
+
+    :param backend: Kaisho backend instance.
+    :param since: ISO cursor timestamp.
+    :returns: List of wire-format entry dicts.
     """
     all_entries = backend.clocks.list_entries(period="all")
-    out = []
-    for entry in all_entries:
-        ts = entry.get("updated_at") or ""
-        if ts and ts > since:
-            out.append(_entry_to_wire(entry))
-    return out
+    return [
+        entry_to_wire(entry)
+        for entry in all_entries
+        if (entry.get("updated_at") or "") > since
+    ]
 
 
-def _push_tombstones(
+def push_tombstone(
     backend, cloud_url: str, api_key: str,
     profile_dir: Path,
 ) -> int:
-    """Push pending tombstones; clear on success."""
+    """Push pending tombstones to the cloud and clear
+    them locally on success.
+
+    :param backend: Kaisho backend instance.
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param profile_dir: Profile directory.
+    :returns: Number of tombstones pushed.
+    :raises CloudUnavailable: On network failure.
+    """
     tombstones = sync_state.load_tombstones(profile_dir)
     if not tombstones:
         return 0
-    wire = [_tombstone_to_wire(t) for t in tombstones]
+    wire = list(map(tombstone_to_wire, tombstones))
     push_changes(cloud_url, api_key, wire)
     sync_state.clear_tombstones(
         profile_dir,
@@ -430,22 +635,33 @@ def _push_tombstones(
     return len(tombstones)
 
 
-def _push_local_live(
+def push_local_entry(
     backend, cloud_url: str, api_key: str,
     since: str,
 ) -> int:
-    """Push locally-changed live entries since cursor.
+    """Push locally-changed entries to the cloud.
 
     Running timers (``end=null``) are routed through
-    ``/sync/active/start`` so the cloud's
-    active-timer uniqueness + later-start_at-wins logic
-    applies. Completed entries are batched through
-    ``/sync/apply``.
+    ``/sync/active/start`` so the cloud's active-timer
+    uniqueness and "later start_at wins" logic applies.
+    Completed entries go through ``/sync/apply`` in
+    400-entry batches.
+
+    :param backend: Kaisho backend instance.
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param since: Only push entries with
+        ``updated_at > since``.
+    :returns: Total number of entries pushed.
+    :raises CloudUnavailable: On network failure.
     """
-    changes = _collect_local_changes(backend, since)
+    changes = collect_local_change(backend, since)
     if not changes:
         return 0
 
+    # Running timers need the active-start endpoint
+    # because the cloud enforces at-most-one-active with
+    # a unique index. Bulk /sync/apply would violate it.
     running = [c for c in changes if not c.get("end")]
     completed = [c for c in changes if c.get("end")]
 
@@ -468,13 +684,18 @@ def _push_local_live(
     return pushed
 
 
-def _pull_all(
+def pull_and_apply(
     backend, cloud_url: str, api_key: str, since: str,
 ) -> tuple[str, int, int]:
-    """Pull pages until exhausted. Returns (cursor, up, del).
+    """Pull all pages from the cloud, apply each to local,
+    and ack the pulled IDs.
 
-    After applying, acks the pulled IDs so the mobile UI
-    can show a synced indicator.
+    :param backend: Kaisho backend instance.
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param since: Pull cursor.
+    :returns: ``(new_cursor, upserts, deletes)``.
+    :raises CloudUnavailable: On network failure.
     """
     cursor = since
     total_up = 0
@@ -484,7 +705,7 @@ def _pull_all(
         resp = pull_changes(cloud_url, api_key, cursor)
         entries = resp.get("entries", [])
         if entries:
-            up, dl, ids = _apply_pulled_entries(
+            up, dl, ids = apply_pulled_entry(
                 entries, backend,
             )
             total_up += up
@@ -493,21 +714,30 @@ def _pull_all(
         cursor = resp.get("cursor", cursor)
         if not resp.get("has_more"):
             break
+    # Ack so the mobile UI shows a synced indicator.
+    # Best-effort — if it fails the next cycle retries.
     if all_ids:
         try:
             ack_entries(cloud_url, api_key, all_ids)
         except CloudUnavailable:
-            pass  # Best-effort; next cycle retries.
+            pass
     return cursor, total_up, total_del
 
 
-def _push_reference_snapshot(
+def push_reference_snapshot(
     cloud_url: str,
     api_key: str,
     customers_fn: Callable[[], list[dict]] | None,
     tasks_fn: Callable[[], list[dict]] | None,
 ) -> bool:
-    """Push customer/task reference snapshot, best-effort."""
+    """Push customer/task reference data (best-effort).
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param customers_fn: Callable returning customer list.
+    :param tasks_fn: Callable returning task list.
+    :returns: ``True`` on success, ``False`` on failure.
+    """
     if customers_fn is None or tasks_fn is None:
         return False
     try:
@@ -545,30 +775,45 @@ def _push_reference_snapshot(
         return False
 
 
+# -- Main sync cycle ------------------------------------------
+
 def run_sync_cycle(
     cloud_url: str,
     api_key: str,
     profile_dir: Path,
-    clocks_file: Path,   # kept for call-site compatibility
+    clocks_file: Path,
     customers_fn: Callable[[], list[dict]] | None = None,
     tasks_fn: Callable[[], list[dict]] | None = None,
 ) -> dict:
-    """Run one bidirectional sync cycle.
+    """Run one complete bidirectional sync cycle.
 
-    Order of operations:
-      1. Pull (apply) cloud changes first — cloud is the
-         rendezvous point for multi-device edits.
-      2. Push tombstones, then push local live changes.
-      3. Push reference snapshot (customers/tasks) last;
-         mobile reads this for dropdowns.
+    **Order of operations** (important for consistency):
 
-    Cursor semantics:
-      - ``last_pull_cursor`` follows the cloud's
-        ``updated_at`` of the last pulled entry.
-      - ``last_push_cursor`` is bumped to ``last_pull``
-        after a pull (so just-pulled entries don't
-        round-trip), and to ``now`` after a successful
-        push.
+    1. Pull cloud changes first — the cloud is the
+       rendezvous point for multi-device edits.
+    2. Push tombstones (local deletes).
+    3. Push local live changes.
+    4. Push reference snapshot last — the mobile reads
+       this for dropdown options.
+
+    **Cursor semantics:**
+
+    - ``last_pull_cursor`` tracks the cloud's
+      ``updated_at`` of the last pulled entry.
+    - ``last_push_cursor`` is bumped to ``last_pull``
+      after a pull (so just-pulled entries don't
+      round-trip), and to ``now`` after a successful
+      push.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param profile_dir: Profile directory.
+    :param clocks_file: Path to clocks.org (kept for
+        call-site compatibility; the function uses
+        ``get_backend()`` internally).
+    :param customers_fn: Callable returning customer list.
+    :param tasks_fn: Callable returning task list.
+    :returns: Result dict with counts and error message.
     """
     from ..backends import get_backend
     backend = get_backend()
@@ -584,16 +829,19 @@ def run_sync_cycle(
         "error": "",
     }
 
+    # Step 1: Pull
     try:
-        new_pull_cursor, up, dl = _pull_all(
+        new_cursor, up, dl = pull_and_apply(
             backend, cloud_url, api_key,
             cursor["last_pull_cursor"],
         )
-        cursor["last_pull_cursor"] = new_pull_cursor
+        cursor["last_pull_cursor"] = new_cursor
         cursor["last_pull_at"] = started
+        # Bump push cursor past pulled entries so they
+        # don't echo back on the next push.
         cursor["last_push_cursor"] = max(
             cursor.get("last_push_cursor") or "",
-            new_pull_cursor,
+            new_cursor,
         )
         result["pulled_up"] = up
         result["pulled_del"] = dl
@@ -603,25 +851,25 @@ def run_sync_cycle(
         result["error"] = cursor["last_error"]
         return result
 
+    # Step 2 + 3: Push
     try:
-        pushed_deletes = _push_tombstones(
+        result["pushed_deletes"] = push_tombstone(
             backend, cloud_url, api_key, profile_dir,
         )
-        pushed_live = _push_local_live(
+        result["pushed_live"] = push_local_entry(
             backend, cloud_url, api_key,
             cursor["last_push_cursor"],
         )
         cursor["last_push_cursor"] = started
         cursor["last_push_at"] = started
-        result["pushed_deletes"] = pushed_deletes
-        result["pushed_live"] = pushed_live
     except CloudUnavailable as exc:
         cursor["last_error"] = f"push: {exc}"
         sync_state.save_cursor(profile_dir, cursor)
         result["error"] = cursor["last_error"]
         return result
 
-    if _push_reference_snapshot(
+    # Step 4: Reference snapshot
+    if push_reference_snapshot(
         cloud_url, api_key, customers_fn, tasks_fn,
     ):
         cursor["last_snapshot_push"] = started
@@ -630,17 +878,3 @@ def run_sync_cycle(
     cursor["last_error"] = None
     sync_state.save_cursor(profile_dir, cursor)
     return result
-
-
-# ── Back-compat shim ──────────────────────────────────
-
-def cloud_status(
-    cloud_url: str, api_key: str,
-) -> dict | None:
-    """Legacy status probe. Prefer ``cloud_stats``."""
-    try:
-        return _safe_request(
-            f"{cloud_url}/sync/status", api_key,
-        )
-    except CloudUnavailable:
-        return None

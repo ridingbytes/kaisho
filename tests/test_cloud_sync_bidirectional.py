@@ -146,7 +146,7 @@ def fake_cloud(monkeypatch):
     # Neutralize the reference-data snapshot path; it's
     # not exercised by these tests.
     monkeypatch.setattr(
-        sync_svc, "_push_reference_snapshot",
+        sync_svc, "push_reference_snapshot",
         lambda *a, **kw: False,
     )
     return cloud
@@ -609,7 +609,7 @@ class TestSyncState:
 
 class TestWireHelpers:
     def test_entry_to_wire_keys(self):
-        out = sync_svc._entry_to_wire({
+        out = sync_svc.entry_to_wire({
             "sync_id": "x",
             "customer": "A",
             "description": "d",
@@ -625,7 +625,7 @@ class TestWireHelpers:
         assert "sync_id" not in out
 
     def test_wire_to_local_keys(self):
-        out = sync_svc._wire_to_local({
+        out = sync_svc.wire_to_local({
             "id": "x",
             "customer": "A",
             "description": "",
