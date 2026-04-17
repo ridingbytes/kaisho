@@ -60,7 +60,7 @@ class TaskRow(Base):
     archive_status = Column(String, nullable=True)
 
 
-class ClockRow(Base):
+class ClockRow(Base):  # noqa: E302
     __tablename__ = "clocks"
     id = Column(
         Integer, primary_key=True, autoincrement=True
@@ -73,6 +73,8 @@ class ClockRow(Base):
     contract = Column(String, nullable=True)
     invoiced = Column(Boolean, default=False)
     notes = Column(Text, default="")
+    sync_id = Column(String, nullable=True)
+    updated_at = Column(String, nullable=True)
 
 
 class InboxRow(Base):
@@ -294,6 +296,8 @@ def _clock_row_to_dict(row: ClockRow) -> dict:
         "contract": row.contract or "",
         "invoiced": bool(row.invoiced),
         "notes": row.notes or "",
+        "sync_id": row.sync_id or "",
+        "updated_at": row.updated_at or "",
     }
 
 
@@ -391,10 +395,17 @@ def _compute_duration_minutes(
 
 
 def _enrich_clock(entry: dict) -> dict:
-    """Add computed duration_minutes field."""
+    """Add computed fields and ensure sync identity."""
     entry["duration_minutes"] = _compute_duration_minutes(
         entry.get("start", ""), entry.get("end")
     )
+    if not entry.get("sync_id"):
+        import uuid
+        entry["sync_id"] = str(uuid.uuid4())
+    if not entry.get("updated_at"):
+        entry["updated_at"] = (
+            datetime.now().isoformat()
+        )
     return entry
 
 
@@ -793,7 +804,9 @@ class SqlClockBackend(ClockBackend):
             raise ValueError(
                 "A clock entry is already running"
             )
+        import uuid as _uuid
         now = _local_now().isoformat()
+        sid = str(_uuid.uuid4())
         row = ClockRow(
             customer=customer,
             description=description,
@@ -803,6 +816,8 @@ class SqlClockBackend(ClockBackend):
             contract=contract or "",
             invoiced=False,
             notes="",
+            sync_id=sid,
+            updated_at=now,
         )
         session = self._eng.session()
         try:
@@ -819,6 +834,8 @@ class SqlClockBackend(ClockBackend):
             "contract": contract or "",
             "invoiced": False,
             "notes": "",
+            "sync_id": sid,
+            "updated_at": now,
         }
         return _enrich_clock(entry)
 
@@ -835,6 +852,7 @@ class SqlClockBackend(ClockBackend):
                 raise ValueError("No running clock entry")
             now = _local_now().isoformat()
             row.end = now
+            row.updated_at = now
             session.commit()
             entry = _clock_row_to_dict(row)
         finally:

@@ -10,11 +10,12 @@ import hashlib
 import json
 import re
 import tempfile
+import uuid
 from collections import Counter
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from ...time_utils import local_now_naive as _local_now
+from ...time_utils import local_now_naive as _local_now  # noqa: E402
 
 from ..base import (
     ClockBackend,
@@ -368,10 +369,16 @@ class JsonClockBackend(ClockBackend):
         )
 
     def _enrich(self, entry: dict) -> dict:
-        """Add computed duration_minutes field."""
+        """Add computed fields and ensure sync identity."""
         entry["duration_minutes"] = (
             self._duration_minutes(entry)
         )
+        # Backfill sync_id/updated_at on read so legacy
+        # entries (created before sync) get an identity.
+        if not entry.get("sync_id"):
+            entry["sync_id"] = str(uuid.uuid4())
+        if not entry.get("updated_at"):
+            entry["updated_at"] = _local_now().isoformat()
         return entry
 
     # -- queries -------------------------------------------------
@@ -468,6 +475,8 @@ class JsonClockBackend(ClockBackend):
             "contract": contract or "",
             "invoiced": False,
             "notes": "",
+            "sync_id": str(uuid.uuid4()),
+            "updated_at": _local_now().isoformat(),
         }
         entries.append(entry)
         _write_json(self._clocks_file, entries)
@@ -479,6 +488,7 @@ class JsonClockBackend(ClockBackend):
         for entry in entries:
             if entry.get("end") is None:
                 entry["end"] = _local_now().isoformat()
+                entry["updated_at"] = _local_now().isoformat()
                 _write_json(self._clocks_file, entries)
                 return self._enrich(entry)
         raise ValueError("No running clock entry")
@@ -511,6 +521,8 @@ class JsonClockBackend(ClockBackend):
             "contract": contract or "",
             "invoiced": False,
             "notes": "",
+            "sync_id": str(uuid.uuid4()),
+            "updated_at": _local_now().isoformat(),
         }
         entries.append(entry)
         _write_json(self._clocks_file, entries)
@@ -588,6 +600,7 @@ class JsonClockBackend(ClockBackend):
                     entry["end"] = (
                         old_end + delta
                     ).isoformat()
+            entry["updated_at"] = _local_now().isoformat()
             _write_json(self._clocks_file, entries)
             return self._enrich(entry)
         return None
@@ -607,6 +620,110 @@ class JsonClockBackend(ClockBackend):
             if e.get("start") != start_iso
         ])
         return self._enrich(deleted)
+
+    # -- Sync methods -------------------------------------------
+
+    def delete_entry_by_sync_id(
+        self, sync_id: str,
+    ) -> dict | None:
+        """Delete a clock entry by sync UUID."""
+        entries = _read_json(self._clocks_file)
+        deleted = next(
+            (e for e in entries
+             if e.get("sync_id") == sync_id),
+            None,
+        )
+        if deleted is None:
+            return None
+        _write_json(self._clocks_file, [
+            e for e in entries
+            if e.get("sync_id") != sync_id
+        ])
+        return self._enrich(deleted)
+
+    def apply_sync_payload(
+        self, fields: dict,
+    ) -> dict:
+        """Upsert a cloud-origin entry by sync_id.
+
+        Last-writer-wins: if a local entry with the same
+        sync_id has a newer updated_at, the incoming
+        change is skipped. Content-match fallback handles
+        the case where sync_id was lost.
+        """
+        sid = fields["sync_id"]
+        entries = _read_json(self._clocks_file)
+
+        # Try to find by sync_id first.
+        for entry in entries:
+            if entry.get("sync_id") != sid:
+                continue
+            # LWW: skip if local is newer.
+            local_ts = entry.get("updated_at", "")
+            remote_ts = fields.get("updated_at", "")
+            if local_ts and remote_ts and (
+                remote_ts <= local_ts
+            ):
+                return self._enrich(entry)
+            self._apply_fields(entry, fields)
+            _write_json(self._clocks_file, entries)
+            return self._enrich(entry)
+
+        # Content-match fallback: entry exists but lost
+        # its sync_id (e.g. manual edit).
+        start = fields.get("start", "")
+        customer = fields.get("customer") or ""
+        desc = fields.get("description") or ""
+        for entry in entries:
+            if (
+                entry.get("start") == start
+                and entry.get("customer", "") == customer
+                and entry.get("description", "") == desc
+                and not any(
+                    e.get("sync_id") == sid
+                    for e in entries
+                )
+            ):
+                entry["sync_id"] = sid
+                entry["updated_at"] = _local_now().isoformat()
+                _write_json(self._clocks_file, entries)
+                return self._enrich(entry)
+
+        # New entry — insert.
+        entry = {
+            "customer": fields.get("customer") or "",
+            "description": (
+                fields.get("description") or ""
+            ),
+            "start": fields["start"],
+            "end": fields.get("end"),
+            "task_id": fields.get("task_id") or "",
+            "contract": fields.get("contract") or "",
+            "invoiced": bool(fields.get("invoiced")),
+            "notes": fields.get("notes") or "",
+            "sync_id": sid,
+            "updated_at": fields.get("updated_at", ""),
+        }
+        entries.append(entry)
+        _write_json(self._clocks_file, entries)
+        return self._enrich(entry)
+
+    def _apply_fields(
+        self, entry: dict, fields: dict,
+    ) -> None:
+        """Overwrite entry fields from a sync payload."""
+        for key in (
+            "customer", "description", "start", "end",
+            "task_id", "contract", "notes",
+        ):
+            if key in fields:
+                entry[key] = fields[key] or ""
+        if "invoiced" in fields:
+            entry["invoiced"] = bool(fields["invoiced"])
+        entry["sync_id"] = fields["sync_id"]
+        entry["updated_at"] = fields.get(
+            "updated_at", _local_now().isoformat(),
+        )
 
 
 # ====================================================================

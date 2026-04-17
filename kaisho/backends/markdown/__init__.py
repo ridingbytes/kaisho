@@ -9,11 +9,12 @@ Set BACKEND=markdown in .env to activate.
 import hashlib
 import re
 import tempfile
+import uuid
 from collections import Counter
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from ...time_utils import local_now_naive as _local_now
+from ...time_utils import local_now_naive as _local_now  # noqa: E402
 
 from ..base import (
     ClockBackend,
@@ -932,6 +933,10 @@ class MarkdownClockBackend(ClockBackend):
         entry["duration_minutes"] = (
             self._duration_minutes(entry)
         )
+        if not entry.get("sync_id"):
+            entry["sync_id"] = str(uuid.uuid4())
+        if not entry.get("updated_at"):
+            entry["updated_at"] = _local_now().isoformat()
         return entry
 
     # -- queries -------------------------------------------------
@@ -1028,6 +1033,8 @@ class MarkdownClockBackend(ClockBackend):
             "contract": contract or "",
             "invoiced": False,
             "notes": "",
+            "sync_id": str(uuid.uuid4()),
+            "updated_at": _local_now().isoformat(),
         }
         entries.append(entry)
         self._save_entries(entries)
@@ -1041,6 +1048,7 @@ class MarkdownClockBackend(ClockBackend):
                 entry["end"] = (
                     _local_now().isoformat()
                 )
+                entry["updated_at"] = _local_now().isoformat()
                 self._save_entries(entries)
                 return self._enrich(entry)
         raise ValueError("No running clock entry")
@@ -1073,6 +1081,8 @@ class MarkdownClockBackend(ClockBackend):
             "contract": contract or "",
             "invoiced": False,
             "notes": "",
+            "sync_id": str(uuid.uuid4()),
+            "updated_at": _local_now().isoformat(),
         }
         entries.append(entry)
         self._save_entries(entries)
@@ -1157,6 +1167,7 @@ class MarkdownClockBackend(ClockBackend):
                     entry["end"] = (
                         old_end + delta
                     ).isoformat()
+            entry["updated_at"] = _local_now().isoformat()
             self._save_entries(entries)
             return self._enrich(entry)
         return None
@@ -1177,6 +1188,102 @@ class MarkdownClockBackend(ClockBackend):
             if e.get("start") != start_iso
         ])
         return self._enrich(deleted)
+
+    # -- Sync methods -------------------------------------------
+
+    def delete_entry_by_sync_id(
+        self, sync_id: str,
+    ) -> dict | None:
+        """Delete a clock entry by sync UUID."""
+        entries = self._load_entries()
+        deleted = next(
+            (e for e in entries
+             if e.get("sync_id") == sync_id),
+            None,
+        )
+        if deleted is None:
+            return None
+        self._save_entries([
+            e for e in entries
+            if e.get("sync_id") != sync_id
+        ])
+        return self._enrich(deleted)
+
+    def apply_sync_payload(
+        self, fields: dict,
+    ) -> dict:
+        """Upsert a cloud-origin entry by sync_id with
+        last-writer-wins and content-match fallback."""
+        sid = fields["sync_id"]
+        entries = self._load_entries()
+
+        for entry in entries:
+            if entry.get("sync_id") != sid:
+                continue
+            local_ts = entry.get("updated_at", "")
+            remote_ts = fields.get("updated_at", "")
+            if local_ts and remote_ts and (
+                remote_ts <= local_ts
+            ):
+                return self._enrich(entry)
+            self._apply_fields(entry, fields)
+            self._save_entries(entries)
+            return self._enrich(entry)
+
+        # Content-match fallback.
+        start = fields.get("start", "")
+        customer = fields.get("customer") or ""
+        desc = fields.get("description") or ""
+        for entry in entries:
+            if (
+                entry.get("start") == start
+                and entry.get("customer", "") == customer
+                and entry.get("description", "") == desc
+                and not any(
+                    e.get("sync_id") == sid
+                    for e in entries
+                )
+            ):
+                entry["sync_id"] = sid
+                entry["updated_at"] = _local_now().isoformat()
+                self._save_entries(entries)
+                return self._enrich(entry)
+
+        entry = {
+            "customer": fields.get("customer") or "",
+            "description": (
+                fields.get("description") or ""
+            ),
+            "start": fields["start"],
+            "end": fields.get("end"),
+            "task_id": fields.get("task_id") or "",
+            "contract": fields.get("contract") or "",
+            "invoiced": bool(fields.get("invoiced")),
+            "notes": fields.get("notes") or "",
+            "sync_id": sid,
+            "updated_at": fields.get(
+                "updated_at", "",
+            ),
+        }
+        entries.append(entry)
+        self._save_entries(entries)
+        return self._enrich(entry)
+
+    def _apply_fields(
+        self, entry: dict, fields: dict,
+    ) -> None:
+        for key in (
+            "customer", "description", "start", "end",
+            "task_id", "contract", "notes",
+        ):
+            if key in fields:
+                entry[key] = fields[key] or ""
+        if "invoiced" in fields:
+            entry["invoiced"] = bool(fields["invoiced"])
+        entry["sync_id"] = fields["sync_id"]
+        entry["updated_at"] = fields.get(
+            "updated_at", _local_now().isoformat(),
+        )
 
 
 # -- Inbox heading helpers ------------------------------------------

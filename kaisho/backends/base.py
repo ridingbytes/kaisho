@@ -196,6 +196,54 @@ class ClockBackend(ABC):
         sync tombstone) or ``None`` if nothing matched.
         """
 
+    # -- Sync methods -----------------------------------------
+    #
+    # These are required for bidirectional cloud sync.
+    # Every backend must store ``sync_id`` and
+    # ``updated_at`` per entry so the sync protocol can
+    # identify, merge, and propagate changes.
+
+    def delete_entry_by_sync_id(
+        self, sync_id: str,
+    ) -> dict | None:
+        """Delete a clock entry by its sync UUID.
+
+        Used by the sync protocol when the cloud
+        propagates a deletion. Returns the deleted entry
+        for tombstone recording, or ``None`` if not found.
+
+        :param sync_id: UUID of the entry to delete.
+        :returns: Deleted entry dict, or ``None``.
+        """
+        # Default: scan all entries and match by sync_id.
+        # Backends can override for efficiency.
+        entries = self.list_entries(period="all")
+        for entry in entries:
+            if entry.get("sync_id") == sync_id:
+                return self.delete_entry(entry["start"])
+        return None
+
+    def apply_sync_payload(
+        self, fields: dict,
+    ) -> dict:
+        """Upsert a cloud-origin entry by sync_id.
+
+        If a local entry with the same ``sync_id``
+        exists, apply last-writer-wins. Otherwise insert
+        a new entry. Handles the case where a user
+        removed the sync_id manually (content-match
+        fallback).
+
+        :param fields: Wire payload with ``sync_id``,
+            ``start``, ``end``, ``customer``, etc.
+        :returns: The resulting entry dict.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} does not support "
+            f"sync yet. Use the org backend or implement "
+            f"apply_sync_payload."
+        )
+
 
 class InboxBackend(ABC):
     """Read/write inbox capture items."""
