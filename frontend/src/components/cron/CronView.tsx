@@ -168,6 +168,7 @@ function JobCard({
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const trigger = useTriggerCronJob();
+  const [triggered, setTriggered] = useState(false);
   const updateJob = useUpdateCronJob();
   const deleteJob = useDeleteCronJob();
   const savePrompt = useSaveJobPrompt();
@@ -261,18 +262,26 @@ function JobCard({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              trigger.mutate(job.id);
+              setTriggered(true);
+              trigger.mutate(job.id, {
+                onSettled: () => {
+                  setTimeout(
+                    () => setTriggered(false),
+                    3000,
+                  );
+                },
+              });
             }}
-            disabled={trigger.isPending}
+            disabled={trigger.isPending || triggered}
             className={[
               "flex items-center gap-1 px-2 py-1 rounded-lg",
               "text-xs bg-surface-raised border border-border",
               "text-stone-800 hover:bg-surface-overlay transition-colors",
-              "disabled:opacity-50",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
             ].join(" ")}
           >
             <Play size={10} />
-            {trigger.isPending ? "…" : "Run"}
+            {triggered ? "Running…" : "Run"}
           </button>
           <ConfirmPopover
             label={`Delete "${job.name}"?`}

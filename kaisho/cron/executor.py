@@ -666,7 +666,7 @@ def execute_job(
         job["prompt_file"], project_root,
     )
 
-    # Cloud AI override: route everything through the
+    # Kaisho AI override: route everything through the
     # cloud gateway when the user has opted in.
     if use_cloud_ai and cloud_url and cloud_api_key:
         provider = "kaisho"

@@ -186,24 +186,33 @@ def api_disable_job(job_id: str):
 
 def _run_job_bg(job: dict, run_id: int) -> None:
     cfg = get_config()
-    ai = settings_svc.get_ai_settings(
-        settings_svc.load_settings(cfg.SETTINGS_FILE)
-    )
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    ai = settings_svc.get_ai_settings(data)
+    sync = data.get("cloud_sync", {})
     try:
         output = execute_job(
             job,
             project_root=_project_root(),
             ollama_base_url=ai["ollama_url"],
-            lm_studio_base_url=ai.get("lm_studio_url", ""),
+            lm_studio_base_url=ai.get(
+                "lm_studio_url", "",
+            ),
             claude_api_key=ai.get("claude_api_key", ""),
             openrouter_base_url=ai.get(
-                "openrouter_url", ""
+                "openrouter_url", "",
             ),
             openrouter_api_key=ai.get(
-                "openrouter_api_key", ""
+                "openrouter_api_key", "",
             ),
             openai_base_url=ai.get("openai_url", ""),
             openai_api_key=ai.get("openai_api_key", ""),
+            cloud_url=sync.get("url", ""),
+            cloud_api_key=settings_svc.get_cloud_sync_key(
+                data,
+            ),
+            use_cloud_ai=bool(
+                sync.get("use_cloud_ai"),
+            ),
         )
         finish_run(_profile(), run_id, "ok", output=output[:4000])
     except ExecutorError as exc:
