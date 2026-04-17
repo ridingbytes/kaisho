@@ -399,7 +399,11 @@ def cloud_ai_complete(
 # Max turns for the cloud agentic loop. Each turn is
 # one LLM call + tool execution. Prevents runaway loops
 # and limits cost exposure.
-_MAX_CLOUD_TURNS = 15
+_MAX_CLOUD_TURNS = 8
+
+# Max cumulative tokens per agentic run. Aborts the loop
+# if token usage exceeds this to prevent cost blowout.
+_MAX_TOKENS_PER_RUN = 50000
 
 
 def cloud_ai_agentic(
@@ -434,6 +438,7 @@ def cloud_ai_agentic(
         {"role": "user", "content": prompt},
     ]
     last_text = ""
+    total_tokens = 0
 
     for turn in range(_MAX_CLOUD_TURNS):
         resp = cloud_ai_complete(
@@ -444,11 +449,29 @@ def cloud_ai_agentic(
         tool_calls = resp.get("tool_calls")
         finish = resp.get("finish_reason", "stop")
 
+        # Track cumulative token usage
+        usage = resp.get("usage", {})
+        total_tokens += (
+            usage.get("input_tokens", 0)
+            + usage.get("output_tokens", 0)
+        )
+
         if text:
             last_text = text
 
         # No tool calls → done
         if not tool_calls or finish == "stop":
+            break
+
+        # Abort if token budget exceeded
+        if total_tokens > _MAX_TOKENS_PER_RUN:
+            log.warning(
+                "Agentic loop aborted: %d tokens "
+                "exceeded %d budget after %d turns",
+                total_tokens,
+                _MAX_TOKENS_PER_RUN,
+                turn + 1,
+            )
             break
 
         # Append assistant message with tool_calls

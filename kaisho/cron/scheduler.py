@@ -35,7 +35,12 @@ def _project_root() -> Path:
 def _run_job(job: dict) -> None:
     cfg = get_config()
     profile = cfg.PROFILE_DIR
-    run_id = start_run(profile, job["id"], job.get("model", ""))
+    model_label = (
+        "kaisho:ai"
+        if job.get("use_kaisho_ai")
+        else job.get("model", "")
+    )
+    run_id = start_run(profile, job["id"], model_label)
     completed = False
     try:
         from ..services.settings import (
