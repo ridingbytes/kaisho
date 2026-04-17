@@ -297,8 +297,9 @@ def _parse_model(model_str: str) -> tuple[str, str]:
     if ":" in model_str:
         provider, name = model_str.split(":", 1)
         if provider in (
-            "ollama", "claude", "claude_cli", "lm_studio",
-            "openrouter", "openai",
+            "ollama", "claude", "claude_cli",
+            "lm_studio", "openrouter", "openai",
+            "cloud",
         ):
             return provider, name
     return "ollama", model_str
