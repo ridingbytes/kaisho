@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.1
+
+- Fix desktop app: set SERVE_FRONTEND=true for sidecar
+- Fix Windows build: PowerShell reads BUILD_TARGET from env
+- Batch sync/apply: single SELECT + batch INSERT (20s to 3s)
+- Auth cache: SHA-256 fast cache (5 min TTL, skips bcrypt)
+- Plan cache: 60s TTL eliminates Supabase round-trip per request
+- WebSocket refactoring: error logging, reconnect jitter,
+  safe disconnect, consistent async broadcasts
+- Mobile: editable start time and duration in entry editor
+- Mobile: hash-based routing (stays on tab after reload)
+- Mobile: full-screen edit modal for iOS compatibility
+- HTTP timeout increased to 60s for initial sync
+- Sync cursor properly saved after successful push
+- Code cleanup: remove dead code, fix imports, update docs
+
 ## 0.3.0
 
 - Kaisho AI with full agentic tool calling through OpenRouter

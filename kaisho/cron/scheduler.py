@@ -1,12 +1,17 @@
 """APScheduler-based cron runner.
 
-Loads job definitions from jobs.yaml and schedules enabled jobs.
-Each job is executed via cron/executor.py and history is written
-to cron_history.json in the profile directory.
+Loads job definitions from jobs.yaml and schedules enabled
+jobs. Each job is executed via cron/executor.py and history
+is written to cron_history.json in the profile directory.
 """
+import logging
+import threading
+import time
 from pathlib import Path
 
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.background import (
+    BackgroundScheduler,
+)
 from apscheduler.triggers.cron import CronTrigger
 
 from ..config import get_config
@@ -140,7 +145,6 @@ def _run_backup() -> None:
             profile=cfg.PROFILE,
         )
     except Exception as exc:  # noqa: BLE001
-        import logging
         logging.getLogger(__name__).warning(
             "Scheduled backup failed: %s", exc,
         )
@@ -188,10 +192,6 @@ def sync_backup_job() -> None:
         replace_existing=True,
     )
 
-
-import logging
-import threading
-import time
 
 _ws_log = logging.getLogger(__name__ + ".ws")
 
@@ -381,12 +381,10 @@ def _run_recurring_tasks() -> None:
         backend = get_backend()
         created = process_recurring_tasks(backend)
         if created:
-            import logging
             logging.getLogger(__name__).info(
                 "Recurring tasks: created %d", created,
             )
     except Exception as exc:
-        import logging
         logging.getLogger(__name__).warning(
             "Recurring tasks failed: %s", exc,
         )

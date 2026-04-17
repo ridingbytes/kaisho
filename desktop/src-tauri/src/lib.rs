@@ -31,6 +31,7 @@ pub fn run() {
             let (mut rx, child) = shell
                 .sidecar("kai-server")
                 .expect("kai-server sidecar not found")
+                .env("SERVE_FRONTEND", "true")
                 .args(["serve", "--host", "127.0.0.1"])
                 .spawn()?;
 
