@@ -252,7 +252,12 @@ output path, or timeout.
 **Run now** — trigger a job immediately regardless of its schedule.
 
 **Add Job** — create a new job with the "Add Job" button. Supported
-model prefixes: \`ollama:\`, \`lm_studio:\`, \`claude:\`.
+model prefixes: \`ollama:\`, \`lm_studio:\`, \`claude:\`,
+\`openrouter:\`, \`openai:\`.
+
+**Cloud AI** — when enabled in Cloud Sync settings, all jobs
+route through OpenRouter via your Sync + AI subscription. The
+per-job model field is overridden and shows "Cloud AI".
 
 **Output** — set to \`inbox\` to capture output as an inbox item, or
 provide a file path (e.g. \`~/reports/brief-{date}.md\`).
@@ -297,8 +302,11 @@ cron syntax. \`{date}\` in output path is substituted with
   settings: `
 # Settings
 
-**AI** — configure Ollama URL, LM Studio URL, Claude API key, and
-default models for the Advisor and Cron jobs.
+**AI** — configure local AI providers (Ollama, LM Studio) or cloud
+API keys (Claude, OpenRouter, OpenAI). Set default models for the
+Advisor and Cron jobs. When Cloud AI is enabled in Cloud Sync
+settings, all AI requests route through OpenRouter via your
+subscription and local model settings are not used.
 
 **Task States** — ordered list of kanban columns. Configured via CLI
 (\`kai config\`). States marked "done" are hidden from the board by
@@ -342,8 +350,12 @@ Ask the AI a question. Context from all Kaisho data sources
 injected into the prompt automatically.
 
 **Model** — type or select a model string. The dropdown lists all
-models detected from your configured providers. You can also type
-any valid model string directly.
+models detected from your configured providers.
+
+**Cloud AI** — when enabled in Cloud Sync settings, the model
+selector is replaced with a "Cloud AI" badge. All requests route
+through OpenRouter via your Sync + AI subscription. No local
+model configuration needed.
 
 ## Model prefixes
 
@@ -353,18 +365,14 @@ any valid model string directly.
 |--------|----------|---------|
 | \`ollama:\` | Local Ollama | \`ollama:qwen3:14b\` |
 | \`lm_studio:\` | Local LM Studio | \`lm_studio:qwen2.5-7b\` |
-| \`claude_cli:\` | Claude CLI (subscription) | \`claude_cli:claude-sonnet-4-6\` |
 
 **Cloud (API key in Settings > AI):**
 
 | Prefix | Provider | Example |
 |--------|----------|---------|
 | \`claude:\` | Anthropic API | \`claude:claude-sonnet-4-6\` |
-| \`openrouter:\` | OpenRouter | \`openrouter:anthropic/claude-3.5-sonnet\` |
+| \`openrouter:\` | OpenRouter | \`openrouter:anthropic/claude-sonnet-4\` |
 | \`openai:\` | OpenAI | \`openai:gpt-4o\` |
-
-\`claude_cli:\` uses your Claude Code login token (run
-\`claude login\` once). No API key or separate billing needed.
 
 Models are auto-detected when the provider is reachable.
 

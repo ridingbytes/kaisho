@@ -548,9 +548,13 @@ is injected into the prompt automatically.
 kai ask <QUESTION...> [--model MODEL] [--no-github] [--no-context]
 ```
 
-Model format: `ollama:<model>` for a local Ollama instance,
-`lm_studio:<model>` for LM Studio, `claude:<model>` for the
-Anthropic API. Default: `ollama:qwen3:14b`.
+Model format: `ollama:<model>` for Ollama, `lm_studio:<model>` for
+LM Studio, `claude:<model>` for the Anthropic API,
+`openrouter:<model>` for OpenRouter, `openai:<model>` for OpenAI.
+Default: `ollama:qwen3:14b`.
+
+When Cloud AI is enabled in Cloud Sync settings, the model flag is
+ignored and all requests route through OpenRouter via the cloud.
 
 ```bash
 kai ask What should I focus on today?
