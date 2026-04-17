@@ -114,6 +114,18 @@ def push_changes(
     )
 
 
+def ack_entries(
+    cloud_url: str,
+    api_key: str,
+    entry_ids: list[str],
+) -> dict:
+    """POST ``/sync/ack`` to stamp ``synced_at``."""
+    url = f"{cloud_url}/sync/ack"
+    return _safe_request(
+        url, api_key, "POST", {"ids": entry_ids},
+    )
+
+
 # ── Active timer ──────────────────────────────────────
 
 def cloud_active(
@@ -323,13 +335,16 @@ def _run_scheduled_push() -> None:
 
 def _apply_pulled_entries(
     entries: list[dict], backend,
-) -> tuple[int, int]:
+) -> tuple[int, int, list[str]]:
     """Apply pulled entries to local state.
 
-    Returns ``(upserts, deletes)``.
+    Returns ``(upserts, deletes, pulled_ids)``.
+    ``pulled_ids`` contains the IDs of successfully applied
+    entries so the caller can ack them on the cloud.
     """
     upserts = 0
     deletes = 0
+    pulled_ids: list[str] = []
     customer_names: set[str] = set()
     for wire in entries:
         local = _wire_to_local(wire)
@@ -338,14 +353,16 @@ def _apply_pulled_entries(
                 local["sync_id"],
             )
             deletes += 1
+            pulled_ids.append(wire["id"])
             continue
         backend.clocks.apply_sync_payload(local)
         upserts += 1
+        pulled_ids.append(wire["id"])
         name = local.get("customer") or ""
         if name:
             customer_names.add(name)
     _autocreate_customers(backend, customer_names)
-    return upserts, deletes
+    return upserts, deletes, pulled_ids
 
 
 def _autocreate_customers(
@@ -454,20 +471,33 @@ def _push_local_live(
 def _pull_all(
     backend, cloud_url: str, api_key: str, since: str,
 ) -> tuple[str, int, int]:
-    """Pull pages until exhausted. Returns (cursor, up, del)."""
+    """Pull pages until exhausted. Returns (cursor, up, del).
+
+    After applying, acks the pulled IDs so the mobile UI
+    can show a synced indicator.
+    """
     cursor = since
     total_up = 0
     total_del = 0
+    all_ids: list[str] = []
     while True:
         resp = pull_changes(cloud_url, api_key, cursor)
         entries = resp.get("entries", [])
         if entries:
-            up, dl = _apply_pulled_entries(entries, backend)
+            up, dl, ids = _apply_pulled_entries(
+                entries, backend,
+            )
             total_up += up
             total_del += dl
+            all_ids.extend(ids)
         cursor = resp.get("cursor", cursor)
         if not resp.get("has_more"):
             break
+    if all_ids:
+        try:
+            ack_entries(cloud_url, api_key, all_ids)
+        except CloudUnavailable:
+            pass  # Best-effort; next cycle retries.
     return cursor, total_up, total_del
 
 
