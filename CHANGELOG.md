@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.0
+
+- Advisor tool calling: kai CLI commands via Kaisho AI
+- Full codebase refactoring for maintainability
+- API key cache invalidated on key rotation (security fix)
+- Zod validation schemas on all AI endpoints
+- Shared utility modules (formatElapsed, time formatters)
+- Plan cache cleared on Stripe webhook (no stale plan)
+- OpenRouter key + token quota extracted as middleware
+- Stripe client reused from module-level instance
+- Silent catch blocks replaced with console.warn/log
+- Dead code removed (double write_output, unused functions)
+- Exception chaining in claude_cli timeout
+- Consistent datetime.now() vs local_now() usage
+- Imports sorted and deduplicated throughout
+
 ## 0.3.2
 
 - Fix desktop app startup: PyInstaller-aware path resolution
