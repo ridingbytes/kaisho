@@ -345,10 +345,7 @@ def cloud_ai_complete(
         "messages": messages,
         "max_tokens": max_tokens,
     })
-    content = resp.get("content", [])
-    if content and isinstance(content, list):
-        return content[0].get("text", "")
-    return str(resp.get("content", ""))
+    return resp.get("text", "")
 
 
 def cloud_status(
