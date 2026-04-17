@@ -189,18 +189,51 @@ def sync_backup_job() -> None:
     )
 
 
+_ws_sync_pending = False
+_ws_sync_lock = __import__("threading").Lock()
+
+
+def _debounced_sync() -> None:
+    """Run a sync if one is pending, with dedup."""
+    global _ws_sync_pending
+    import time
+    # Short delay to coalesce rapid events
+    time.sleep(2)
+    with _ws_sync_lock:
+        if not _ws_sync_pending:
+            return
+        _ws_sync_pending = False
+    try:
+        _run_cloud_sync()
+    except Exception:
+        pass
+
+
+def _schedule_ws_sync() -> None:
+    """Schedule a debounced sync from a WS event."""
+    global _ws_sync_pending
+    import threading
+    with _ws_sync_lock:
+        if _ws_sync_pending:
+            return  # Already scheduled
+        _ws_sync_pending = True
+    threading.Thread(
+        target=_debounced_sync,
+        daemon=True,
+        name="cloud-ws-sync",
+    ).start()
+
+
 def _on_cloud_ws_event(
     event: str, data: dict,
 ) -> None:
     """Handle real-time events from the cloud WebSocket.
 
     Timer events are broadcast immediately to the local
-    WebSocket for instant UI updates. Data changes
-    trigger a background sync so the WS handler thread
-    is not blocked.
+    WebSocket. Data changes schedule a debounced sync
+    (coalesces rapid events into one sync cycle).
     """
     import logging
-    import threading
     log = logging.getLogger(__name__)
     log.info("Cloud WS event: %s", event)
 
@@ -217,18 +250,13 @@ def _on_cloud_ws_event(
         except Exception:
             pass
 
-    # Data changes: sync in background thread to
-    # avoid blocking the WS receive loop
+    # Data changes: schedule debounced background sync
     if event in (
         "entries:changed",
         "entries:deleted",
         "timer:stopped",
     ):
-        threading.Thread(
-            target=_run_cloud_sync,
-            daemon=True,
-            name="cloud-ws-sync",
-        ).start()
+        _schedule_ws_sync()
 
 
 def _start_cloud_ws_if_enabled() -> None:
