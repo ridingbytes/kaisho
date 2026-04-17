@@ -34,11 +34,14 @@ def _run_job(job: dict) -> None:
     completed = False
     try:
         from ..services.settings import (
-            get_ai_settings, load_settings,
+            get_ai_settings,
+            get_cloud_sync_key,
+            get_cloud_sync_settings,
+            load_settings,
         )
-        ai = get_ai_settings(
-            load_settings(cfg.SETTINGS_FILE)
-        )
+        data = load_settings(cfg.SETTINGS_FILE)
+        ai = get_ai_settings(data)
+        sync = data.get("cloud_sync", {})
         output = execute_job(
             job,
             project_root=_project_root(),
@@ -55,6 +58,11 @@ def _run_job(job: dict) -> None:
             ),
             openai_base_url=ai.get("openai_url", ""),
             openai_api_key=ai.get("openai_api_key", ""),
+            cloud_url=sync.get("url", ""),
+            cloud_api_key=get_cloud_sync_key(data),
+            use_cloud_ai=bool(
+                sync.get("use_cloud_ai"),
+            ),
         )
         finish_run(
             profile, run_id, "ok", output=output[:4000]

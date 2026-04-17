@@ -587,8 +587,25 @@ def _dispatch_prompt(
     openrouter_api_key: str = "",
     openai_base_url: str = "",
     openai_api_key: str = "",
+    cloud_url: str = "",
+    cloud_api_key: str = "",
 ) -> str:
-    """Route a prompt to the correct AI provider."""
+    """Route a prompt to the correct AI provider.
+
+    The ``cloud`` provider sends the prompt through the
+    kaisho-cloud AI gateway (``POST /ai/complete``),
+    which proxies to Claude and meters usage against
+    the user's sync_ai quota.
+    """
+    if provider == "cloud":
+        from ..services.cloud_sync import (
+            cloud_ai_complete,
+        )
+        return cloud_ai_complete(
+            cloud_url, cloud_api_key,
+            system="You are the Kaisho AI advisor.",
+            messages=[{"role": "user", "content": prompt}],
+        )
     if provider == "claude_cli":
         return _run_claude_cli(
             model_name,
@@ -634,27 +651,42 @@ def execute_job(
     openrouter_api_key: str = "",
     openai_base_url: str = "",
     openai_api_key: str = "",
+    cloud_url: str = "",
+    cloud_api_key: str = "",
+    use_cloud_ai: bool = False,
 ) -> str:
-    """Run a cron job end-to-end and return the output."""
-    err = verify_model(
-        job.get("model", ""),
-        ollama_base_url=ollama_base_url,
-        lm_studio_base_url=lm_studio_base_url,
-        claude_api_key=claude_api_key,
-        openrouter_api_key=openrouter_api_key,
-        openai_api_key=openai_api_key,
-    )
-    if err:
-        raise ExecutorError(
-            f"Model not accessible: {err}",
-        )
+    """Run a cron job end-to-end and return the output.
 
+    When ``use_cloud_ai`` is True, all AI requests are
+    routed through the kaisho-cloud gateway regardless
+    of the job's configured model. This uses the user's
+    sync_ai token quota instead of local resources.
+    """
     prompt = load_prompt(
         job["prompt_file"], project_root,
     )
-    provider, model_name = _parse_model(
-        job.get("model", ""),
-    )
+
+    # Cloud AI override: route everything through the
+    # cloud gateway when the user has opted in.
+    if use_cloud_ai and cloud_url and cloud_api_key:
+        provider = "cloud"
+        model_name = ""
+    else:
+        err = verify_model(
+            job.get("model", ""),
+            ollama_base_url=ollama_base_url,
+            lm_studio_base_url=lm_studio_base_url,
+            claude_api_key=claude_api_key,
+            openrouter_api_key=openrouter_api_key,
+            openai_api_key=openai_api_key,
+        )
+        if err:
+            raise ExecutorError(
+                f"Model not accessible: {err}",
+            )
+        provider, model_name = _parse_model(
+            job.get("model", ""),
+        )
 
     output_text = _dispatch_prompt(
         provider, model_name, prompt,
@@ -666,6 +698,8 @@ def execute_job(
         openrouter_api_key=openrouter_api_key,
         openai_base_url=openai_base_url,
         openai_api_key=openai_api_key,
+        cloud_url=cloud_url,
+        cloud_api_key=cloud_api_key,
     )
 
     write_output(

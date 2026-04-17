@@ -316,6 +316,41 @@ def cloud_stats(
         return None
 
 
+def cloud_ai_complete(
+    cloud_url: str,
+    api_key: str,
+    system: str,
+    messages: list[dict],
+    max_tokens: int = 1024,
+) -> str:
+    """Send a prompt to the cloud AI gateway and return
+    the assistant's text response.
+
+    Used by the advisor executor when ``use_cloud_ai``
+    is enabled in settings. Routes through
+    ``POST /ai/complete`` which proxies to Claude and
+    meters usage.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param system: System prompt.
+    :param messages: List of ``{role, content}`` dicts.
+    :param max_tokens: Max response tokens.
+    :returns: The assistant's text response.
+    :raises CloudUnavailable: On network failure.
+    """
+    url = f"{cloud_url}/ai/complete"
+    resp = safe_request(url, api_key, "POST", {
+        "system": system,
+        "messages": messages,
+        "max_tokens": max_tokens,
+    })
+    content = resp.get("content", [])
+    if content and isinstance(content, list):
+        return content[0].get("text", "")
+    return str(resp.get("content", ""))
+
+
 def cloud_status(
     cloud_url: str, api_key: str,
 ) -> dict | None:
