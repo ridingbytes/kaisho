@@ -56,6 +56,9 @@ def status():
         "last_push_at": cursor["last_push_at"],
         "last_error": cursor["last_error"],
         "pending_deletes": len(tombstones),
+        "use_cloud_ai": sync.get(
+            "use_cloud_ai", False,
+        ),
     }
     if not sync["enabled"] or not sync["api_key_set"]:
         return result
@@ -75,6 +78,20 @@ def status():
             "active_timer_id",
         )
     return result
+
+
+# ── PATCH /api/cloud-sync/cloud-ai ───────────────────
+
+@router.patch("/cloud-ai")
+def toggle_cloud_ai(body: dict):
+    """Enable or disable cloud AI for the advisor."""
+    _, cfg = _sync_settings()
+    enabled = bool(body.get("enabled", False))
+    settings_svc.set_cloud_sync_settings(
+        cfg.SETTINGS_FILE,
+        {"use_cloud_ai": enabled},
+    )
+    return {"use_cloud_ai": enabled}
 
 
 # ── POST /api/cloud-sync/connect ──────────────────────

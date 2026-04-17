@@ -4,6 +4,7 @@ import {
   connectCloudSync,
   disconnectCloudSync,
   syncNow,
+  toggleCloudAi,
 } from "../../api/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmPopover } from "../common/ConfirmPopover";
@@ -188,6 +189,53 @@ export function CloudSyncSection(): JSX.Element {
                 </>
               )}
             </dl>
+          </div>
+
+          {/* Cloud AI toggle */}
+          <div className="px-4 py-3 border-b border-border-subtle">
+            <label className="flex items-center justify-between cursor-pointer">
+              <div>
+                <p className="text-xs font-medium text-stone-700">
+                  Use Cloud AI
+                </p>
+                <p className="text-[10px] text-stone-500 mt-0.5">
+                  Route advisor and cron jobs through
+                  OpenRouter instead of local models.
+                  Requires Sync + AI plan.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  const next = !status?.use_cloud_ai;
+                  toggleCloudAi(next).then(() => {
+                    void qc.invalidateQueries({
+                      queryKey: [
+                        "settings",
+                        "cloud_sync",
+                      ],
+                    });
+                  });
+                }}
+                className={[
+                  "relative w-9 h-5 rounded-full",
+                  "transition-colors shrink-0 ml-4",
+                  status?.use_cloud_ai
+                    ? "bg-cta"
+                    : "bg-stone-300",
+                ].join(" ")}
+              >
+                <span
+                  className={[
+                    "absolute top-0.5 left-0.5",
+                    "w-4 h-4 rounded-full bg-white",
+                    "shadow transition-transform",
+                    status?.use_cloud_ai
+                      ? "translate-x-4"
+                      : "",
+                  ].join(" ")}
+                />
+              </button>
+            </label>
           </div>
 
           <div className="px-4 py-3 flex items-center gap-3">

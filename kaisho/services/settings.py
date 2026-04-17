@@ -128,6 +128,7 @@ def get_cloud_sync_settings(settings: dict) -> dict:
         "url": raw["url"],
         "api_key_set": bool(raw.get("api_key")),
         "interval": raw["interval"],
+        "use_cloud_ai": raw.get("use_cloud_ai", False),
     }
 
 

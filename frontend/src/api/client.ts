@@ -1150,6 +1150,7 @@ export interface CloudSyncStatus {
   cloud_entry_count?: number;
   cloud_last_change_at?: string | null;
   cloud_active_timer_id?: string | null;
+  use_cloud_ai?: boolean;
 }
 
 /** Result of a bidirectional sync cycle. */
@@ -1216,6 +1217,16 @@ export function disconnectCloudSync(): Promise<{
   wipe_error: string | null;
 }> {
   return post("/cloud-sync/disconnect", {});
+}
+
+/** Toggle cloud AI for the advisor/cron system. */
+export function toggleCloudAi(
+  enabled: boolean,
+): Promise<{ use_cloud_ai: boolean }> {
+  return patch<{ use_cloud_ai: boolean }>(
+    "/cloud-sync/cloud-ai",
+    { enabled },
+  );
 }
 
 /** Trigger an immediate cloud sync (push + pull). */
