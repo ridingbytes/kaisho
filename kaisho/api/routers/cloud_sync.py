@@ -162,8 +162,12 @@ def disconnect():
     data, cfg = _sync_settings()
     url, key = _cloud_creds(data)
 
-    # Step 1: final pull to save mobile-only entries.
+    pull_error = None
+    wipe_error = None
+    wiped = 0
+
     if url and key:
+        # Step 1: final pull to save mobile-only entries.
         try:
             from ...backends import get_backend
             backend = get_backend()
@@ -173,14 +177,17 @@ def disconnect():
                 profile_dir=cfg.PROFILE_DIR,
                 clocks_file=backend.clocks.data_file,
             )
-        except Exception:
-            pass  # Best-effort; don't block disconnect.
+        except Exception as exc:
+            pull_error = str(exc)
 
         # Step 2: wipe cloud entries.
         try:
-            sync_svc.wipe_cloud_entries(url, key)
-        except sync_svc.CloudUnavailable:
-            pass  # Offline; entries stay on cloud.
+            result = sync_svc.wipe_cloud_entries(url, key)
+            wiped = result.get("deleted", 0) if result else 0
+        except sync_svc.CloudUnavailable as exc:
+            wipe_error = str(exc)
+    else:
+        wipe_error = "No cloud URL or API key configured"
 
     # Step 3: clear local sync state.
     sync_state.save_cursor(
@@ -193,7 +200,12 @@ def disconnect():
         cfg.SETTINGS_FILE,
         {"enabled": False, "api_key": "", "url": ""},
     )
-    return {"ok": True}
+    return {
+        "ok": True,
+        "wiped": wiped,
+        "pull_error": pull_error,
+        "wipe_error": wipe_error,
+    }
 
 
 # ── GET /api/cloud-sync/active ────────────────────────
