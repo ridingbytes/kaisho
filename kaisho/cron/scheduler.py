@@ -241,8 +241,8 @@ def _on_cloud_ws_event(
     # desktop UI shows the cloud timer widget
     if event in ("timer:started", "timer:stopped"):
         try:
-            from ..api.ws.manager import broadcast
-            broadcast({
+            from ..api.ws.manager import broadcast_sync
+            broadcast_sync({
                 "resource": "clocks",
                 "type": event,
                 "data": data,

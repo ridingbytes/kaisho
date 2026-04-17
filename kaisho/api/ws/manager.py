@@ -40,3 +40,23 @@ class ConnectionManager:
 
 
 manager = ConnectionManager()
+
+
+def broadcast_sync(message: dict) -> None:
+    """Broadcast from a non-async context (e.g. scheduler
+    thread). Schedules the async broadcast on the running
+    event loop.
+    """
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.run_coroutine_threadsafe(
+                manager.broadcast(message), loop,
+            )
+        else:
+            loop.run_until_complete(
+                manager.broadcast(message),
+            )
+    except RuntimeError:
+        # No event loop available — skip
+        pass
