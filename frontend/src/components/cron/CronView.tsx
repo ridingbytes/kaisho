@@ -298,7 +298,7 @@ function JobCard({
         <span className="text-stone-400">|</span>
         <span title="Model">
           {cloudAi ? (
-            <span className="text-cta">Cloud AI</span>
+            <span className="text-cta">Kaisho AI</span>
           ) : (
             job.model
           )}
@@ -334,7 +334,7 @@ function JobCard({
                   </span>
                   {cloudAi ? (
                     <span className="px-2 py-1 rounded text-xs font-medium bg-cta/10 text-cta border border-cta/30">
-                      Cloud AI
+                      Kaisho AI
                     </span>
                   ) : (
                     <input
@@ -539,7 +539,7 @@ function AddJobForm({
           </span>
           {cloudAi ? (
             <span className="px-2 py-1 rounded text-xs font-medium bg-cta/10 text-cta border border-cta/30">
-              Cloud AI
+              Kaisho AI
             </span>
           ) : (
             <input

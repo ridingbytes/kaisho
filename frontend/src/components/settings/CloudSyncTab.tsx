@@ -201,12 +201,12 @@ export function CloudSyncSection(): JSX.Element {
             </dl>
           </div>
 
-          {/* Cloud AI toggle */}
+          {/* Kaisho AI toggle */}
           <div className="px-4 py-3 border-b border-border-subtle">
             <label className="flex items-center justify-between cursor-pointer">
               <div>
                 <p className="text-xs font-medium text-stone-700">
-                  Use Cloud AI
+                  Use Kaisho AI
                 </p>
                 <p className="text-[10px] text-stone-500 mt-0.5">
                   Route advisor and cron jobs through

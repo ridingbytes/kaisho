@@ -255,9 +255,9 @@ output path, or timeout.
 model prefixes: \`ollama:\`, \`lm_studio:\`, \`claude:\`,
 \`openrouter:\`, \`openai:\`.
 
-**Cloud AI** — when enabled in Cloud Sync settings, all jobs
+**Kaisho AI** — when enabled in Cloud Sync settings, all jobs
 route through OpenRouter via your Sync + AI subscription. The
-per-job model field is overridden and shows "Cloud AI".
+per-job model field is overridden and shows "Kaisho AI".
 
 **Output** — set to \`inbox\` to capture output as an inbox item, or
 provide a file path (e.g. \`~/reports/brief-{date}.md\`).
@@ -304,7 +304,7 @@ cron syntax. \`{date}\` in output path is substituted with
 
 **AI** — configure local AI providers (Ollama, LM Studio) or cloud
 API keys (Claude, OpenRouter, OpenAI). Set default models for the
-Advisor and Cron jobs. When Cloud AI is enabled in Cloud Sync
+Advisor and Cron jobs. When Kaisho AI is enabled in Cloud Sync
 settings, all AI requests route through OpenRouter via your
 subscription and local model settings are not used.
 
@@ -352,8 +352,8 @@ injected into the prompt automatically.
 **Model** — type or select a model string. The dropdown lists all
 models detected from your configured providers.
 
-**Cloud AI** — when enabled in Cloud Sync settings, the model
-selector is replaced with a "Cloud AI" badge. All requests route
+**Kaisho AI** — when enabled in Cloud Sync settings, the model
+selector is replaced with a "Kaisho AI" badge. All requests route
 through OpenRouter via your Sync + AI subscription. No local
 model configuration needed.
 

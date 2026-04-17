@@ -258,7 +258,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
         <div className="ml-auto flex flex-col items-end gap-0.5">
           {cloudAi ? (
             <span className="px-3 py-1 rounded-lg text-xs font-medium bg-cta/10 text-cta border border-cta/30">
-              Cloud AI
+              Kaisho AI
             </span>
           ) : (
             <>

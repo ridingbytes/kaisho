@@ -553,7 +553,7 @@ LM Studio, `claude:<model>` for the Anthropic API,
 `openrouter:<model>` for OpenRouter, `openai:<model>` for OpenAI.
 Default: `ollama:qwen3:14b`.
 
-When Cloud AI is enabled in Cloud Sync settings, the model flag is
+When Kaisho AI is enabled in Cloud Sync settings, the model flag is
 ignored and all requests route through OpenRouter via the cloud.
 
 ```bash

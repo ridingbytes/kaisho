@@ -525,13 +525,13 @@ export function AiSection(): JSX.Element {
       {cloudAi && (
         <div className="mb-4 px-4 py-3 rounded-xl bg-cta/10 border border-cta/30">
           <p className="text-xs text-cta font-medium">
-            Cloud AI is active
+            Kaisho AI is active
           </p>
           <p className="text-[10px] text-stone-500 mt-1">
             The advisor and cron jobs use OpenRouter
             via your Cloud Sync subscription. Local
             model settings below are not used while
-            Cloud AI is enabled.
+            Kaisho AI is enabled.
           </p>
         </div>
       )}
