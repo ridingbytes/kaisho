@@ -56,8 +56,11 @@ def _run_job(job: dict) -> None:
             job,
             project_root=_project_root(),
             ollama_base_url=ai["ollama_url"],
+            ollama_api_key=ai.get(
+                "ollama_api_key", "",
+            ),
             lm_studio_base_url=ai.get(
-                "lm_studio_url", ""
+                "lm_studio_url", "",
             ),
             claude_api_key=ai.get("claude_api_key", ""),
             openrouter_base_url=ai.get(

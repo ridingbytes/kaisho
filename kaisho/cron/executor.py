@@ -359,15 +359,23 @@ def run_prompt_claude(
 
 def run_prompt_ollama(
     model: str, prompt: str, base_url: str,
+    api_key: str = "",
 ) -> str:
-    """Run an agentic Ollama session with tools."""
+    """Run an agentic Ollama session with tools.
+
+    Supports Ollama Cloud via the api_key parameter.
+    """
     _reset_write_counter()
     tools = openai_tools()
     messages: list[dict] = [
         {"role": "user", "content": prompt},
     ]
     url = base_url.rstrip("/") + "/api/chat"
-    headers = {"Content-Type": "application/json"}
+    headers: dict[str, str] = {
+        "Content-Type": "application/json",
+    }
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
 
     for _ in range(MAX_TOOL_ITERATIONS):
         payload = json.dumps({
@@ -583,6 +591,7 @@ def _dispatch_prompt(
     timeout: int = 300,
     claude_api_key: str = "",
     ollama_base_url: str = "",
+    ollama_api_key: str = "",
     lm_studio_base_url: str = "",
     openrouter_base_url: str = "",
     openrouter_api_key: str = "",
@@ -647,7 +656,7 @@ def _dispatch_prompt(
         )
     # Default: Ollama
     return run_prompt_ollama(
-        model_name, prompt, ollama_base_url,
+        model_name, prompt, ollama_base_url, ollama_api_key,
     )
 
 
@@ -655,6 +664,7 @@ def execute_job(
     job: dict,
     project_root: Path,
     ollama_base_url: str,
+    ollama_api_key: str = "",
     lm_studio_base_url: str = "",
     claude_api_key: str = "",
     openrouter_base_url: str = "",
@@ -709,6 +719,7 @@ def execute_job(
         timeout=job.get("timeout", 300),
         claude_api_key=claude_api_key,
         ollama_base_url=ollama_base_url,
+        ollama_api_key=ollama_api_key,
         lm_studio_base_url=lm_studio_base_url,
         openrouter_base_url=openrouter_base_url,
         openrouter_api_key=openrouter_api_key,

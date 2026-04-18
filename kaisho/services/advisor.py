@@ -367,17 +367,26 @@ def _http_post(url: str, payload: bytes, headers: dict) -> dict:
 
 def ask_ollama(
     model: str, prompt: str, base_url: str,
+    api_key: str = "",
     system_prompt: str = "",
     on_event: EventCallback = None,
 ) -> str:
-    """Run an agentic Ollama session with tools."""
+    """Run an agentic Ollama session with tools.
+
+    Supports both local Ollama and Ollama Cloud
+    (https://ollama.com) via the api_key parameter.
+    """
     tools = openai_tools()
     messages: list[dict] = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
     ]
     url = base_url.rstrip("/") + "/api/chat"
-    headers = {"Content-Type": "application/json"}
+    headers: dict[str, str] = {
+        "Content-Type": "application/json",
+    }
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
 
     tools_called = False
     for _ in range(_MAX_TURNS):
@@ -633,6 +642,7 @@ def ask(
     customers: list[dict],
     github_issues: list[dict],
     ollama_base_url: str,
+    ollama_api_key: str = "",
     lm_studio_base_url: str = "",
     claude_api_key: str = "",
     openrouter_base_url: str = "",
@@ -727,6 +737,7 @@ def ask(
         )
     answer = ask_ollama(
         model_name, prompt, ollama_base_url,
+        api_key=ollama_api_key,
         system_prompt=sp, on_event=on_event,
     )
     return _strip_model_prefix(answer, model_name)

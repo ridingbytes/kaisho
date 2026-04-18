@@ -73,6 +73,9 @@ def _ai_provider_kwargs(ai: dict) -> dict:
     """Extract AI provider connection settings."""
     return {
         "ollama_base_url": ai["ollama_url"],
+        "ollama_api_key": ai.get(
+            "ollama_api_key", "",
+        ),
         "lm_studio_base_url": ai.get(
             "lm_studio_url", "",
         ),

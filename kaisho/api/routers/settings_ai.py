@@ -121,6 +121,7 @@ def _fetch_openai_compatible_models(
 
 class AiSettingsUpdate(BaseModel):
     ollama_url: str | None = None
+    ollama_api_key: str | None = None
     lm_studio_url: str | None = None
     claude_api_key: str | None = None
     openrouter_url: str | None = None
@@ -184,7 +185,9 @@ def get_claude_cli_status():
     return _claude_cli_status()
 
 
-def _probe_url(url: str, timeout: int = 3) -> bool:
+def _probe_url(
+    url: str, api_key: str = "", timeout: int = 3,
+) -> bool:
     """Check if a URL is reachable."""
     if not url:
         return False
@@ -192,6 +195,10 @@ def _probe_url(url: str, timeout: int = 3) -> bool:
         req = urllib.request.Request(
             url, method="GET",
         )
+        if api_key:
+            req.add_header(
+                "Authorization", f"Bearer {api_key}",
+            )
         urllib.request.urlopen(req, timeout=timeout)
         return True
     except Exception:
@@ -211,6 +218,7 @@ def probe_providers():
     return {
         "ollama": _probe_url(
             ai.get("ollama_url", ""),
+            ai.get("ollama_api_key", ""),
         ),
         "lm_studio": _probe_url(
             ai.get("lm_studio_url", ""),

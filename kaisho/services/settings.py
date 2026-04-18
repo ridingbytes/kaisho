@@ -18,6 +18,7 @@ DEFAULT_INBOX_CHANNELS: list[str] = [
 
 DEFAULT_AI: dict = {
     "ollama_url": "http://localhost:11434",
+    "ollama_api_key": "",
     "lm_studio_url": "http://localhost:1234",
     "claude_api_key": "",
     "openrouter_url": "https://openrouter.ai/api/v1",

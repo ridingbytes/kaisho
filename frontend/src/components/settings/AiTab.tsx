@@ -475,6 +475,7 @@ export function AiSection(): JSX.Element {
 
   const [form, setForm] = useState<AiSettings>({
     ollama_url: "",
+    ollama_api_key: "",
     lm_studio_url: "",
     claude_api_key: "",
     openrouter_url: "",
@@ -601,6 +602,23 @@ export function AiSection(): JSX.Element {
                   set("ollama_url", e.target.value)
                 }
                 placeholder="http://localhost:11434"
+                className={inputCls}
+              />
+            </label>
+            <label className="flex items-center gap-3">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
+                Ollama API Key
+              </span>
+              <input
+                type="password"
+                value={form.ollama_api_key}
+                onChange={(e) =>
+                  set(
+                    "ollama_api_key",
+                    e.target.value,
+                  )
+                }
+                placeholder="Optional (for Ollama Cloud)"
                 className={inputCls}
               />
             </label>
