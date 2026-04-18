@@ -1,7 +1,9 @@
 "use strict";
 
-var POLL_INTERVAL_MS = 500;
-var MAX_WAIT_MS = 60000;
+// The sidecar starts in the background. After a brief
+// delay for startup, we redirect to the backend URL.
+// Tauri's custom protocol (tauri://) blocks fetch() to
+// http://localhost, so we use a simple timed redirect.
 
 var statusEl = document.getElementById("status");
 
@@ -11,63 +13,12 @@ function setStatus(text) {
   }
 }
 
-function getBackendUrl() {
-  return "http://127.0.0.1:8765";
-}
+setStatus("Starting\u2026");
 
-async function isBackendReady() {
-  try {
-    var res = await fetch(
-      getBackendUrl() + "/health",
-      { method: "GET", cache: "no-store" },
-    );
-    return res.ok;
-  } catch (_err) {
-    return false;
-  }
-}
-
-function sleep(ms) {
-  return new Promise(
-    function (resolve) { setTimeout(resolve, ms); },
-  );
-}
-
-function showMacHint() {
-  if (!statusEl) return;
-  // Use safe DOM methods (no innerHTML)
-  statusEl.textContent = "";
-
-  var line1 = document.createElement("span");
-  line1.textContent = "Backend did not start.";
-  statusEl.appendChild(line1);
-
-  statusEl.appendChild(document.createElement("br"));
-
-  var hint = document.createElement("span");
-  hint.style.fontSize = "11px";
-  hint.style.color = "#a1a1aa";
-  hint.textContent =
-    "On macOS, run in Terminal: "
-    + "xattr -cr /Applications/Kaisho.app"
-    + " — then reopen the app.";
-  statusEl.appendChild(hint);
-}
-
-async function waitAndRedirect() {
-  var started = Date.now();
-  setStatus("Starting\u2026");
-
-  while (Date.now() - started < MAX_WAIT_MS) {
-    if (await isBackendReady()) {
-      setStatus("Ready");
-      window.location.replace(getBackendUrl());
-      return;
-    }
-    await sleep(POLL_INTERVAL_MS);
-  }
-
-  showMacHint();
-}
-
-waitAndRedirect();
+// Wait 4 seconds for the sidecar to start, then
+// redirect. The first load of the React app will
+// show a loading state if the API isn't ready yet.
+setTimeout(function () {
+  setStatus("Ready");
+  window.location.replace("http://127.0.0.1:8765");
+}, 4000);
