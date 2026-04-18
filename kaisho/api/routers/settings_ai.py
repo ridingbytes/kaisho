@@ -173,9 +173,10 @@ def list_models():
             ai.get("openai_api_key", ""),
             "openai",
         )
-        + _CLAUDE_CLI_MODELS
-        + _CLAUDE_API_MODELS
     )
+    # Only show Claude models when an API key is set
+    if ai.get("claude_api_key"):
+        models += _CLAUDE_API_MODELS
     return {"models": models}
 
 
