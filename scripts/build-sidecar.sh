@@ -70,6 +70,7 @@ DATA=(
     --add-data "templates:templates"
     --add-data "prompts:prompts"
     --add-data "CHANGELOG.md:."
+    --add-data "pyproject.toml:."
 )
 
 mkdir -p "$BIN_DIR"
