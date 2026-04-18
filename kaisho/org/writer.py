@@ -40,12 +40,33 @@ def _format_logbook(heading: Heading) -> list[str]:
     return lines
 
 
+def _sanitize_body_line(line: str) -> str:
+    """Escape org-mode keywords in body text so they
+    are not misinterpreted by the parser.
+
+    Prefixes dangerous lines with a zero-width space
+    (U+200B) that is invisible but prevents matching.
+    """
+    stripped = line.lstrip()
+    if (
+        stripped.startswith("* ")
+        or stripped == ":PROPERTIES:"
+        or stripped == ":LOGBOOK:"
+        or stripped == ":END:"
+        or stripped.startswith("CLOCK: ")
+    ):
+        return "\u200b" + line
+    return line
+
+
 def _format_heading(heading: Heading) -> list[str]:
     """Reconstruct a heading from its fields."""
     lines = [format_heading_line(heading)]
     lines.extend(_format_properties(heading))
     lines.extend(_format_logbook(heading))
-    lines.extend(heading.body)
+    lines.extend(
+        _sanitize_body_line(ln) for ln in heading.body
+    )
     for child in heading.children:
         lines.extend(_render_heading(child))
     return lines

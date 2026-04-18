@@ -113,10 +113,13 @@ def _parse_md_sections(
         )
         meta = {}
         body = after_heading
-        prop_match = PROP_BLOCK_RE.search(after_heading)
+        # Match only at the start of the body to avoid
+        # confusing user HTML comments with metadata.
+        stripped = after_heading.lstrip("\n")
+        prop_match = PROP_BLOCK_RE.match(stripped)
         if prop_match:
             meta = _parse_props(prop_match.group(1))
-            body = after_heading[
+            body = stripped[
                 prop_match.end():
             ].strip("\n")
         body = _unescape_body(body)
