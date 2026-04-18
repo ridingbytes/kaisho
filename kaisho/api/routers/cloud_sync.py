@@ -295,7 +295,8 @@ def stop_cloud_timer(timer_id: str | None = None):
     url, key = _cloud_creds(data)
     try:
         result = sync_svc.stop_active(
-            url, key, {"id": id} if id else {},
+            url, key,
+            {"id": timer_id} if timer_id else {},
         )
     except sync_svc.CloudUnavailable as exc:
         raise HTTPException(
