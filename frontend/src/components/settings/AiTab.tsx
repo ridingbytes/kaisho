@@ -6,6 +6,7 @@ import {
 import {
   useAdvisorFiles,
   useAdvisorSkills,
+  useAiProbe,
   useAiSettings,
   useAvailableModels,
   useCloudSyncStatus,
@@ -468,6 +469,7 @@ export function AiSection(): JSX.Element {
     useAiSettings();
   const { data: models = [] } = useAvailableModels();
   const { data: cloudStatus } = useCloudSyncStatus();
+  const { data: probe } = useAiProbe();
   const update = useUpdateAiSettings();
   const cloudAi = cloudStatus?.use_cloud_ai;
 
@@ -539,9 +541,47 @@ export function AiSection(): JSX.Element {
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         {/* Local / subscription providers */}
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
-            Local / Subscription
-          </p>
+          <div className="flex items-center gap-2 mb-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+              Local
+            </p>
+            {probe && (
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={[
+                    "w-1.5 h-1.5 rounded-full",
+                    probe.ollama
+                      ? "bg-green-400"
+                      : "bg-stone-300",
+                  ].join(" ")}
+                  title={
+                    probe.ollama
+                      ? "Ollama reachable"
+                      : "Ollama not running"
+                  }
+                />
+                <span className="text-[9px] text-stone-400">
+                  Ollama
+                </span>
+                <span
+                  className={[
+                    "w-1.5 h-1.5 rounded-full ml-1",
+                    probe.lm_studio
+                      ? "bg-green-400"
+                      : "bg-stone-300",
+                  ].join(" ")}
+                  title={
+                    probe.lm_studio
+                      ? "LM Studio reachable"
+                      : "LM Studio not running"
+                  }
+                />
+                <span className="text-[9px] text-stone-400">
+                  LM Studio
+                </span>
+              </div>
+            )}
+          </div>
           <p className="text-[10px] text-stone-400 mb-2">
             No API key needed. Ollama and LM Studio run
             locally. Recommended model:{" "}
@@ -586,9 +626,42 @@ export function AiSection(): JSX.Element {
 
         {/* Cloud API keys */}
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
-            Cloud API Keys
-          </p>
+          <div className="flex items-center gap-2 mb-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+              Cloud API Keys
+            </p>
+            {probe && (
+              <div className="flex items-center gap-1.5">
+                {[
+                  ["claude", "Claude"],
+                  ["openrouter", "OpenRouter"],
+                  ["openai", "OpenAI"],
+                ].map(([key, label]) => (
+                  <span
+                    key={key}
+                    className="flex items-center gap-0.5 ml-1"
+                  >
+                    <span
+                      className={[
+                        "w-1.5 h-1.5 rounded-full",
+                        probe[key]
+                          ? "bg-green-400"
+                          : "bg-stone-300",
+                      ].join(" ")}
+                      title={
+                        probe[key]
+                          ? `${label} key set`
+                          : `${label} not configured`
+                      }
+                    />
+                    <span className="text-[9px] text-stone-400">
+                      {label}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
           <p className="text-[10px] text-stone-400 mb-2">
             Billed per token. Set keys only for the
             providers you want to use.

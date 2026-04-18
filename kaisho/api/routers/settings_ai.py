@@ -182,3 +182,42 @@ def list_models():
 def get_claude_cli_status():
     """Check if the Claude CLI is installed."""
     return _claude_cli_status()
+
+
+def _probe_url(url: str, timeout: int = 3) -> bool:
+    """Check if a URL is reachable."""
+    if not url:
+        return False
+    try:
+        req = urllib.request.Request(
+            url, method="GET",
+        )
+        urllib.request.urlopen(req, timeout=timeout)
+        return True
+    except Exception:
+        return False
+
+
+@router.get("/ai/probe")
+def probe_providers():
+    """Check reachability of configured AI providers.
+
+    Returns a dict with provider names as keys and
+    boolean reachability as values.
+    """
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    ai = settings_svc.get_ai_settings(data)
+    return {
+        "ollama": _probe_url(
+            ai.get("ollama_url", ""),
+        ),
+        "lm_studio": _probe_url(
+            ai.get("lm_studio_url", ""),
+        ),
+        "openrouter": bool(
+            ai.get("openrouter_api_key"),
+        ),
+        "openai": bool(ai.get("openai_api_key")),
+        "claude": bool(ai.get("claude_api_key")),
+    }

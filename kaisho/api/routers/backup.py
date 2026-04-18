@@ -83,6 +83,35 @@ def prune_backups(body: PruneBody | None = None):
     return {"removed": [b.to_dict() for b in removed]}
 
 
+@router.post("/restore/{filename}")
+def restore_backup(filename: str):
+    """Restore a backup archive into the data directory.
+
+    Only files inside the profile directory are restored.
+    External paths (e.g. ~/ownCloud) are NOT part of
+    backups and are unaffected.
+    """
+    if "/" in filename or ".." in filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid filename",
+        )
+    path = _backup_dir() / filename
+    if not path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="Backup not found",
+        )
+    cfg = get_config()
+    count = backup_svc.restore_backup(
+        path, cfg.DATA_DIR,
+    )
+    return {
+        "restored": count,
+        "filename": filename,
+    }
+
+
 @router.get("/download/{filename}")
 def download_backup(filename: str):
     """Serve a backup archive for download."""

@@ -3,12 +3,16 @@
  * and schedule; trigger ad-hoc backups and download
  * existing archives.
  */
-import { Download, Play, Trash2 } from "lucide-react";
+import {
+  Download, Play, RotateCcw, Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   backupDownloadUrl,
+  restoreBackup,
   type BackupSettings,
 } from "../../api/client";
+import { ConfirmPopover } from "../common/ConfirmPopover";
 import {
   useBackups,
   useBackupSettings,
@@ -213,6 +217,14 @@ export function BackupSection(): JSX.Element {
         </button>
       </div>
 
+      <p className="text-[10px] text-stone-400 leading-relaxed">
+        Backups contain profile data only (settings, tasks,
+        clock entries, knowledge base files inside the profile
+        directory). Files stored in external paths (e.g.
+        ~/ownCloud) are not included and must be backed up
+        separately.
+      </p>
+
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle flex items-center justify-between">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
@@ -254,10 +266,26 @@ export function BackupSection(): JSX.Element {
                   <td className="px-4 py-2 text-right text-stone-500 tabular-nums">
                     {humanSize(b.size_bytes)}
                   </td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="px-4 py-2 text-right flex items-center justify-end gap-2">
+                    <ConfirmPopover
+                      label="Restore this backup?"
+                      onConfirm={() => {
+                        restoreBackup(b.filename)
+                          .then(() =>
+                            window.location.reload(),
+                          );
+                      }}
+                    >
+                      <button
+                        className="text-stone-500 hover:text-cta transition-colors"
+                        title="Restore"
+                      >
+                        <RotateCcw size={12} />
+                      </button>
+                    </ConfirmPopover>
                     <a
                       href={backupDownloadUrl(b.filename)}
-                      className="inline-flex items-center gap-1 text-stone-600 hover:text-cta transition-colors"
+                      className="text-stone-600 hover:text-cta transition-colors"
                       title="Download"
                     >
                       <Download size={12} />

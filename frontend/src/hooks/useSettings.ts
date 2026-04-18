@@ -31,6 +31,7 @@ import {
   fetchInvoiceExportSettings,
   fetchCurrentUser,
   fetchAiUsage,
+  probeAiProviders,
   fetchVersionInfo,
   pruneBackupsRemote,
   runBackup,
@@ -667,5 +668,13 @@ export function useAiUsage() {
     queryKey: ["cloud", "ai_usage"],
     queryFn: fetchAiUsage,
     staleTime: 60_000,
+  });
+}
+
+export function useAiProbe() {
+  return useQuery({
+    queryKey: ["settings", "ai", "probe"],
+    queryFn: probeAiProviders,
+    staleTime: 120_000,
   });
 }

@@ -148,6 +148,45 @@ def _describe(path: Path) -> BackupInfo:
     )
 
 
+def restore_backup(
+    archive_path: Path,
+    target_dir: Path,
+) -> int:
+    """Restore a backup archive into ``target_dir``.
+
+    Extracts all files from the zip, overwriting existing
+    files. Only files inside the profile directory are
+    included in backups — external paths (e.g. ~/ownCloud)
+    are NOT backed up and therefore NOT restored.
+
+    :param archive_path: Path to the .zip backup.
+    :param target_dir: Directory to restore into.
+    :returns: Number of files restored.
+    """
+    if not archive_path.is_file():
+        raise ValueError(
+            f"Backup not found: {archive_path}",
+        )
+    target_dir.mkdir(parents=True, exist_ok=True)
+    count = 0
+    with zipfile.ZipFile(archive_path, "r") as zf:
+        for member in zf.namelist():
+            if member.endswith("/") or ".." in member:
+                continue
+            dest = target_dir / member
+            dest.parent.mkdir(
+                parents=True, exist_ok=True,
+            )
+            with zf.open(member) as src:
+                dest.write_bytes(src.read())
+            count += 1
+    _LOG.info(
+        "Restored %d files from %s into %s",
+        count, archive_path.name, target_dir,
+    )
+    return count
+
+
 def list_backups(backup_dir: Path) -> list[BackupInfo]:
     """Return backups in ``backup_dir`` newest first."""
     if not backup_dir.is_dir():

@@ -215,6 +215,13 @@ export function fetchClaudeCliStatus(): Promise<{
   return get("/settings/ai/claude_cli");
 }
 
+/** Probe AI provider reachability. */
+export function probeAiProviders(): Promise<
+  Record<string, boolean>
+> {
+  return get("/settings/ai/probe");
+}
+
 /** Fetch configured file paths for each backend
  *  (org dir, markdown dir, etc.). */
 export function fetchPaths(): Promise<Record<string, string>> {
@@ -1462,6 +1469,16 @@ export function pruneBackupsRemote(
   return post<{ removed: BackupInfo[] }>(
     "/backup/prune",
     keep !== undefined ? { keep } : {},
+  );
+}
+
+/** Restore a backup archive into the data directory. */
+export function restoreBackup(
+  filename: string,
+): Promise<{ restored: number; filename: string }> {
+  return post(
+    `/backup/restore/${encodeURIComponent(filename)}`,
+    {},
   );
 }
 
