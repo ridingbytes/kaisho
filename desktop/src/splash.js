@@ -1,7 +1,7 @@
 "use strict";
 
 var POLL_INTERVAL_MS = 500;
-var MAX_WAIT_MS = 60000;
+var MAX_WAIT_MS = 30000;
 
 var statusEl = document.getElementById("status");
 
@@ -34,6 +34,27 @@ function sleep(ms) {
   );
 }
 
+function showMacHint() {
+  if (!statusEl) return;
+  // Use safe DOM methods (no innerHTML)
+  statusEl.textContent = "";
+
+  var line1 = document.createElement("span");
+  line1.textContent = "Backend did not start.";
+  statusEl.appendChild(line1);
+
+  statusEl.appendChild(document.createElement("br"));
+
+  var hint = document.createElement("span");
+  hint.style.fontSize = "11px";
+  hint.style.color = "#a1a1aa";
+  hint.textContent =
+    "On macOS, run in Terminal: "
+    + "xattr -cr /Applications/Kaisho.app"
+    + " — then reopen the app.";
+  statusEl.appendChild(hint);
+}
+
 async function waitAndRedirect() {
   var started = Date.now();
   setStatus("Starting\u2026");
@@ -47,10 +68,7 @@ async function waitAndRedirect() {
     await sleep(POLL_INTERVAL_MS);
   }
 
-  setStatus(
-    "Backend did not start in time. "
-    + "Check the application logs.",
-  );
+  showMacHint();
 }
 
 waitAndRedirect();
