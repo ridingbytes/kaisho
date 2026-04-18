@@ -1,7 +1,7 @@
 "use strict";
 
 var POLL_INTERVAL_MS = 500;
-var MAX_WAIT_MS = 30000;
+var MAX_WAIT_MS = 60000;
 
 var statusEl = document.getElementById("status");
 
@@ -12,8 +12,7 @@ function setStatus(text) {
 }
 
 function getBackendUrl() {
-  var port = window.__KAISHO_PORT__ || 8765;
-  return "http://127.0.0.1:" + port;
+  return "http://127.0.0.1:8765";
 }
 
 async function isBackendReady() {
