@@ -58,9 +58,18 @@ pnpm build
 # Build the Python binary
 echo "Building Python sidecar..."
 cd "$PROJECT_ROOT"
+# On macOS, PyInstaller must ad-hoc sign the binary
+# and its embedded Python framework so Gatekeeper
+# accepts them inside the Tauri app bundle.
+CODESIGN_ARG=""
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    CODESIGN_ARG="--codesign-identity=-"
+fi
+
 pyinstaller \
     --onefile \
     --name "kai-server-${TARGET}" \
+    $CODESIGN_ARG \
     --add-data "frontend/dist:frontend/dist" \
     --add-data "templates:templates" \
     --add-data "prompts:prompts" \
