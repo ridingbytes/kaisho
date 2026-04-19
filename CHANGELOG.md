@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.2
+
+- Fix SSL globally for all HTTPS requests in desktop app
+- Reject cloud connect on free plan
+- Enforce paid plan on all cloud sync endpoints
+
 ## 0.6.1
 
 - Fix cloud sync: SSL certs for PyInstaller bundle
