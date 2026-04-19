@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.5
+
+- i18n: react-i18next with 483 translation keys
+- English + German locale files (9 namespaces)
+- Language selector in Settings > General
+- Ollama Local/Cloud preset dropdown
+- Fix CSV export freeze in desktop app (Tauri save dialog)
+- TRANSLATING.md contributor guide
+
 ## 0.6.4
 
 - Updated documentation and in-app help panels
