@@ -114,7 +114,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         shell: bash
         run: |
-          APP_DIR=$(find desktop/src-tauri/target \
+          APP_DIR=$(find "$PWD/desktop/src-tauri/target" \
             -path "*/bundle/macos/*.app" -maxdepth 6 \
             | head -1)
           if [ -z "$APP_DIR" ]; then
@@ -125,8 +125,7 @@ jobs:
           tar czf "$TARBALL" \
             -C "$(dirname "$APP_DIR")" \
             "$(basename "$APP_DIR")"
-          # Sign the tarball for the updater
-          cd desktop && npx tauri signer sign \
+          npx --prefix desktop tauri signer sign \
             -k "$TAURI_SIGNING_PRIVATE_KEY" \
             -p "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" \
             "$TARBALL"
@@ -139,18 +138,21 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         shell: bash
         run: |
-          AI=$(find desktop/src-tauri/target \
+          AI=$(find "$PWD/desktop/src-tauri/target" \
             -path "*/bundle/appimage/*.AppImage" \
             -maxdepth 6 | head -1)
-          if [ -n "$AI" ] && [ ! -f "${AI}.tar.gz" ]; then
-            echo "Creating ${AI}.tar.gz"
-            tar czf "${AI}.tar.gz" \
-              -C "$(dirname "$AI")" "$(basename "$AI")"
+          if [ -z "$AI" ]; then
+            echo "No AppImage found"; exit 0
           fi
           TARBALL="${AI}.tar.gz"
-          if [ -f "$TARBALL" ] && \
-             [ ! -f "${TARBALL}.sig" ]; then
-            cd desktop && npx tauri signer sign \
+          if [ ! -f "$TARBALL" ]; then
+            echo "Creating $TARBALL"
+            tar czf "$TARBALL" \
+              -C "$(dirname "$AI")" \
+              "$(basename "$AI")"
+          fi
+          if [ ! -f "${TARBALL}.sig" ]; then
+            npx --prefix desktop tauri signer sign \
               -k "$TAURI_SIGNING_PRIVATE_KEY" \
               -p "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" \
               "$TARBALL"
