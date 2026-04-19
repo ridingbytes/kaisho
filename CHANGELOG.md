@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.5
+
+- Fix Tags & Types settings panel (stuck on Loading)
+- Fix 500 error on AI models endpoint without providers
+- Show version number in header bar
+- Remove Intel Mac from build matrix (Apple Silicon only)
+
 ## 0.5.4
 
 - Fix updater: allow IPC from localhost webview
