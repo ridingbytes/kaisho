@@ -44,11 +44,20 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def DATA_DIR(self) -> Path:
-        """Root data dir: KAISHO_HOME > ~/.kaisho > ./data."""
+        """Root data dir: KAISHO_HOME > ~/.kaisho > ./data.
+
+        In production (PyInstaller), always uses ~/.kaisho
+        so user data lives outside the app bundle.
+        In development, falls back to ./data if ~/.kaisho
+        does not exist.
+        """
         if self.KAISHO_HOME:
             return self.KAISHO_HOME.expanduser()
         home_dir = Path.home() / ".kaisho"
         if home_dir.is_dir():
+            return home_dir
+        if getattr(sys, "frozen", False):
+            home_dir.mkdir(parents=True, exist_ok=True)
             return home_dir
         return _PROJECT_ROOT / "data"
 
