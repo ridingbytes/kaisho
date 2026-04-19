@@ -5,15 +5,6 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
-    inputs:
-      channel:
-        description: "Release channel"
-        required: true
-        default: "stable"
-        type: choice
-        options:
-          - stable
-          - develop
 
 permissions:
   contents: write
@@ -89,21 +80,6 @@ jobs:
             -name "kai-server-*" \
             -exec codesign --force --sign - {} \;
 
-      - name: Determine release channel
-        id: channel
-        shell: bash
-        env:
-          TAG_NAME: ${{ github.ref_name }}
-          INPUT_CHANNEL: ${{ github.event.inputs.channel }}
-        run: |
-          if [[ "$TAG_NAME" == *"-dev"* ]]; then
-            echo "prerelease=true" >> "$GITHUB_OUTPUT"
-          elif [[ "$INPUT_CHANNEL" == "develop" ]]; then
-            echo "prerelease=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Import Apple certificate (macOS)
         if: startsWith(matrix.platform, 'macos')
         env:
@@ -122,57 +98,91 @@ jobs:
           rm /tmp/cert.p12
 
       - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0.5
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        with:
-          projectPath: desktop
-          tauriScript: npx tauri
-          tagName: v__VERSION__
-          releaseName: "Kaisho v__VERSION__"
-          releaseBody: "See CHANGELOG.md for details."
-          releaseDraft: true
-          prerelease: ${{ steps.channel.outputs.prerelease }}
-          args: --target ${{ matrix.target }}
+        run: cd desktop && npx tauri build --target ${{ matrix.target }}
 
-      - name: Collect and upload updater signatures
+      - name: Collect build artifacts
+        id: collect
         shell: bash
         run: |
-          mkdir -p /tmp/sigs
+          mkdir -p /tmp/release
           find desktop/src-tauri/target \
             -path "*/bundle/*" \
-            -name "*.sig" \
-            -exec cp -v {} /tmp/sigs/ \;
-          ls -la /tmp/sigs/ || true
+            \( -name "*.dmg" \
+            -o -name "*.app.tar.gz" \
+            -o -name "*.app.tar.gz.sig" \
+            -o -name "*.deb" \
+            -o -name "*.rpm" \
+            -o -name "*.AppImage" \
+            -o -name "*.AppImage.tar.gz" \
+            -o -name "*.AppImage.tar.gz.sig" \
+            -o -name "*.msi" \
+            -o -name "*.msi.zip" \
+            -o -name "*.msi.zip.sig" \
+            -o -name "*-setup.exe" \
+            -o -name "*-setup.nsis.zip" \
+            -o -name "*-setup.nsis.zip.sig" \
+            \) \
+            -not -path "*/deps/*" \
+            -exec cp -v {} /tmp/release/ \;
+          echo "Collected:"
+          ls -la /tmp/release/
 
-      - name: Upload signatures artifact
+      - name: Upload release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: sigs-${{ matrix.target }}
-          path: /tmp/sigs/
-          if-no-files-found: warn
+          name: release-${{ matrix.target }}
+          path: /tmp/release/
 
-  updater-json:
+  release:
     needs: build
     runs-on: ubuntu-22.04
     steps:
-      - name: Download all signature artifacts
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            CHANGELOG.md
+
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: sigs
-          pattern: sigs-*
+          path: artifacts
+          pattern: release-*
           merge-multiple: true
 
-      - name: List signatures
-        run: ls -la sigs/ 2>/dev/null || echo "No sigs"
+      - name: List artifacts
+        run: ls -la artifacts/
 
-      - name: Build and upload latest.json
+      - name: Create release and upload
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+
+          # Create draft release
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "Kaisho v${VERSION}" \
+            --notes "See CHANGELOG.md for details." \
+            --draft
+
+          # Upload all non-sig artifacts
+          for f in artifacts/*; do
+            name=$(basename "$f")
+            case "$name" in *.sig) continue ;; esac
+            echo "Uploading $name"
+            gh release upload "$TAG" "$f" \
+              --repo "${{ github.repository }}"
+          done
+
+      - name: Generate and upload latest.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
@@ -182,57 +192,45 @@ jobs:
           export PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           export BASE="https://github.com/${{ github.repository }}/releases/download/${TAG}"
 
-          # Read signature files
           read_sig() {
-            local f=$(find sigs/ -name "$1" 2>/dev/null | head -1)
+            local f=$(find artifacts/ -name "$1" \
+              2>/dev/null | head -1)
             if [ -n "$f" ] && [ -f "$f" ]; then
               cat "$f"
             fi
           }
 
           export MAC_SIG=$(read_sig "*.app.tar.gz.sig")
-          export LINUX_SIG=$(read_sig "*AppImage.tar.gz.sig")
-          export WIN_SIG=$(read_sig "*setup.nsis.zip.sig")
+          export LINUX_SIG=$(read_sig \
+            "*AppImage.tar.gz.sig")
+          export WIN_SIG=$(read_sig \
+            "*setup.nsis.zip.sig")
 
-          # Get release asset names
-          ASSETS=$(gh release view "$TAG" \
-            --repo "${{ github.repository }}" \
-            --json assets -q '.assets[].name')
-
-          export MAC_TAR=$(echo "$ASSETS" \
-            | grep "app.tar.gz" | head -1)
-          export LINUX_AI=$(echo "$ASSETS" \
+          # Find asset names from uploaded files
+          export MAC_TAR=$(ls artifacts/ \
+            | grep "app.tar.gz$" | head -1)
+          export LINUX_AI=$(ls artifacts/ \
             | grep "AppImage$" | head -1)
-          export WIN_EXE=$(echo "$ASSETS" \
-            | grep "setup.exe" | head -1)
+          export WIN_EXE=$(ls artifacts/ \
+            | grep "setup.exe$" | head -1)
 
-          # Build JSON with python for safety
           python3 << 'PYEOF'
           import json, os
           platforms = {}
-          mac_sig = os.environ.get("MAC_SIG", "")
-          linux_sig = os.environ.get("LINUX_SIG", "")
-          win_sig = os.environ.get("WIN_SIG", "")
           base = os.environ["BASE"]
-          mac_tar = os.environ.get("MAC_TAR", "")
-          linux_ai = os.environ.get("LINUX_AI", "")
-          win_exe = os.environ.get("WIN_EXE", "")
 
-          if mac_sig and mac_tar:
-              platforms["darwin-aarch64"] = {
-                  "signature": mac_sig,
-                  "url": f"{base}/{mac_tar}",
-              }
-          if linux_sig and linux_ai:
-              platforms["linux-x86_64"] = {
-                  "signature": linux_sig,
-                  "url": f"{base}/{linux_ai}",
-              }
-          if win_sig and win_exe:
-              platforms["windows-x86_64"] = {
-                  "signature": win_sig,
-                  "url": f"{base}/{win_exe}",
-              }
+          for key, sig_var, file_var in [
+              ("darwin-aarch64", "MAC_SIG", "MAC_TAR"),
+              ("linux-x86_64", "LINUX_SIG", "LINUX_AI"),
+              ("windows-x86_64", "WIN_SIG", "WIN_EXE"),
+          ]:
+              sig = os.environ.get(sig_var, "")
+              fname = os.environ.get(file_var, "")
+              if sig and fname:
+                  platforms[key] = {
+                      "signature": sig,
+                      "url": f"{base}/{fname}",
+                  }
 
           data = {
               "version": os.environ["VERSION"],
