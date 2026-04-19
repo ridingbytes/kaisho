@@ -768,8 +768,8 @@ export function updateContract(
   },
 ): Promise<Contract> {
   return patch<Contract>(
-    `/customers/${encodeURIComponent(customerName)}/contracts/` +
-      contractName,
+    `/customers/${encodeURIComponent(customerName)}` +
+      `/contracts/${encodeURIComponent(contractName)}`,
     updates
   );
 }
@@ -780,8 +780,8 @@ export function deleteContract(
   contractName: string,
 ): Promise<void> {
   return del(
-    `/customers/${encodeURIComponent(customerName)}/contracts/` +
-      contractName
+    `/customers/${encodeURIComponent(customerName)}` +
+      `/contracts/${encodeURIComponent(contractName)}`
   );
 }
 
