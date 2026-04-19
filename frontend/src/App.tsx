@@ -25,6 +25,7 @@ import {
   useCreateProfile,
   useCurrentUser,
   useSwitchProfile,
+  useVersionInfo,
 } from "./hooks/useSettings";
 import { PixelAvatar } from "./components/common/PixelAvatar";
 import { useEffect, useRef, useState } from "react";
@@ -414,6 +415,7 @@ function AppShell() {
   const { data: timerData } = useActiveTimer();
   const timerActive = timerData?.active === true;
   const { data: cloudStatus } = useCloudSyncStatus();
+  const { data: versionData } = useVersionInfo();
 
   const [appTitle, setAppTitle] = useState(
     () => localStorage.getItem("kaisho_app_title") || "KAISHO",
@@ -598,6 +600,11 @@ function AppShell() {
         >
           {appTitle}
         </button>
+        {versionData?.version && (
+          <span className="text-[9px] text-stone-400 font-mono hidden sm:block">
+            v{versionData.version}
+          </span>
+        )}
         <div className="ml-auto flex items-center gap-2">
           {/* Cloud badge + mobile link */}
           {cloudStatus?.connected && (
