@@ -107,6 +107,55 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: cd desktop && npx tauri build --target ${{ matrix.target }}
 
+      - name: Create updater bundle (macOS)
+        if: startsWith(matrix.platform, 'macos')
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          APP_DIR=$(find desktop/src-tauri/target \
+            -path "*/bundle/macos/*.app" -maxdepth 6 \
+            | head -1)
+          if [ -z "$APP_DIR" ]; then
+            echo "No .app found"; exit 1
+          fi
+          TARBALL="${APP_DIR}.tar.gz"
+          echo "Creating $TARBALL"
+          tar czf "$TARBALL" \
+            -C "$(dirname "$APP_DIR")" \
+            "$(basename "$APP_DIR")"
+          # Sign the tarball for the updater
+          cd desktop && npx tauri signer sign \
+            -k "$TAURI_SIGNING_PRIVATE_KEY" \
+            -p "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" \
+            "$TARBALL"
+          ls -la "$TARBALL" "${TARBALL}.sig"
+
+      - name: Create updater bundle (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          AI=$(find desktop/src-tauri/target \
+            -path "*/bundle/appimage/*.AppImage" \
+            -maxdepth 6 | head -1)
+          if [ -n "$AI" ] && [ ! -f "${AI}.tar.gz" ]; then
+            echo "Creating ${AI}.tar.gz"
+            tar czf "${AI}.tar.gz" \
+              -C "$(dirname "$AI")" "$(basename "$AI")"
+          fi
+          TARBALL="${AI}.tar.gz"
+          if [ -f "$TARBALL" ] && \
+             [ ! -f "${TARBALL}.sig" ]; then
+            cd desktop && npx tauri signer sign \
+              -k "$TAURI_SIGNING_PRIVATE_KEY" \
+              -p "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" \
+              "$TARBALL"
+          fi
+
       - name: Collect build artifacts
         id: collect
         shell: bash
