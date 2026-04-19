@@ -30,7 +30,7 @@ export function CloudSyncSection(): JSX.Element {
   const { data: aiUsage } = useAiUsage();
   const qc = useQueryClient();
 
-  const [url, setUrl] = useState("");
+  const CLOUD_URL = "https://cloud.kaisho.dev";
   const [apiKey, setApiKey] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] =
@@ -40,10 +40,10 @@ export function CloudSyncSection(): JSX.Element {
   const [err, setErr] = useState("");
 
   function handleConnect() {
-    if (!url.trim() || !apiKey.trim()) return;
+    if (!apiKey.trim()) return;
     setConnecting(true);
     setErr("");
-    connectCloudSync(url.trim(), apiKey.trim())
+    connectCloudSync(CLOUD_URL, apiKey.trim())
       .then((res) => {
         setMsg(
           `Connected (plan: ${res.plan || "free"})`,
@@ -404,24 +404,10 @@ export function CloudSyncSection(): JSX.Element {
               Connect
             </p>
             <p className="text-[10px] text-stone-400 mb-3">
-              Enter the Cloud URL and API key from
-              your confirmation email.
+              Enter the API key from your
+              confirmation email.
             </p>
             <div className="flex flex-col gap-2">
-              <label className="flex items-center gap-3">
-                <span className="text-xs text-stone-700 w-24 shrink-0">
-                  Cloud URL
-                </span>
-                <input
-                  type="text"
-                  value={url}
-                  onChange={(e) =>
-                    setUrl(e.target.value)
-                  }
-                  placeholder="https://cloud.kaisho.dev"
-                  className={inputCls}
-                />
-              </label>
               <label className="flex items-center gap-3">
                 <span className="text-xs text-stone-700 w-24 shrink-0">
                   API Key
@@ -442,9 +428,7 @@ export function CloudSyncSection(): JSX.Element {
             <button
               onClick={handleConnect}
               disabled={
-                connecting ||
-                !url.trim() ||
-                !apiKey.trim()
+                connecting || !apiKey.trim()
               }
               className={saveBtnCls}
             >
