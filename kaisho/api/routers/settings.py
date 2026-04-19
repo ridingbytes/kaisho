@@ -30,6 +30,8 @@ def get_settings():
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     merged = dict(data)
+    merged.setdefault("task_states", [])
+    merged.setdefault("tags", [])
     merged["customer_types"] = (
         settings_svc.get_customer_types(data)
     )

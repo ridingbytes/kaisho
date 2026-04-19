@@ -443,6 +443,10 @@ export function TagsAndTypesTab(): JSX.Element {
 
   return (
     <div className="flex flex-col gap-8">
+      <TaskStatesSection
+        states={settings.task_states ?? []}
+      />
+      <TagsSection tags={settings.tags ?? []} />
       <StringListSection
         title="Customer Types"
         items={settings.customer_types ?? []}
@@ -467,8 +471,6 @@ export function TagsAndTypesTab(): JSX.Element {
         addPending={addInbChan.isPending}
         deletePending={delInbChan.isPending}
       />
-      <TaskStatesSection states={settings.task_states} />
-      <TagsSection tags={settings.tags} />
     </div>
   );
 }
