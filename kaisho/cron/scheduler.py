@@ -47,7 +47,6 @@ def _run_job(job: dict) -> None:
         from ..services.settings import (
             get_ai_settings,
             get_cloud_sync_key,
-            get_cloud_sync_settings,
             load_settings,
         )
         data = load_settings(cfg.SETTINGS_FILE)

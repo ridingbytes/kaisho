@@ -902,7 +902,7 @@ def _trigger_cron_job(job_id: str) -> dict:
 
     def run_bg() -> None:
         from pathlib import Path
-        from .executor import execute_job, write_output
+        from .executor import execute_job
         from ..services.settings import (
             get_ai_settings, load_settings,
         )

@@ -10,7 +10,6 @@ After import, discovered task states and tags are
 auto-added to settings.
 """
 import re
-from datetime import date
 from pathlib import Path
 
 from ..backends import Backend

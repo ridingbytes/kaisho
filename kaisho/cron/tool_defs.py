@@ -28,7 +28,7 @@ TOOL_DEFS: list[dict] = [
                 },
                 "include_done": {
                     "type": "boolean",
-                    "description": "Include completed/archived tasks (default false)",
+                    "description": "Include completed/archived tasks",
                 },
             },
         },

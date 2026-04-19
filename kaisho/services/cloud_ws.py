@@ -15,7 +15,6 @@ import json
 import logging
 import random
 import threading
-import time
 from typing import Any, Callable
 
 log = logging.getLogger(__name__)

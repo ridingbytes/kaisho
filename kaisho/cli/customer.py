@@ -127,5 +127,3 @@ def customer_edit():
         click.echo("This backend has no editable file.", err=True)
         sys.exit(1)
     open_in_editor(f)
-
-

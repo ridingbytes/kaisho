@@ -510,4 +510,3 @@ def delete_contract(
             write_org_file(customers_file, org_file)
             return True
     return False
-

@@ -14,7 +14,6 @@ from ..services.cron import (
     list_jobs,
     set_enabled,
     start_run,
-    update_job,
 )
 
 _PROJECT_ROOT = None

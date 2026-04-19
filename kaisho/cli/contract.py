@@ -11,7 +11,6 @@ def _format_contract(contract: dict) -> str:
     name = contract["name"].ljust(20)
     budget = contract["budget"]
     used = contract.get("used", 0.0)
-    rest = contract.get("rest", budget)
     start = contract.get("start_date", "")
     end = contract.get("end_date") or "active"
     if budget > 0:

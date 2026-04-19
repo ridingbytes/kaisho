@@ -1,5 +1,4 @@
 import re
-from datetime import datetime
 from pathlib import Path
 
 from ..org.models import Heading, OrgFile
@@ -175,10 +174,6 @@ def reorder_tasks(
         if tid in id_to_heading
     ]
     reordered_set = set(id(h) for h in reordered)
-    others = [
-        h for h in org_file.headings
-        if id(h) not in reordered_set
-    ]
 
     # Rebuild: place reordered headings at the
     # positions where they originally appeared

@@ -88,6 +88,7 @@ def _utc_to_local(iso: str) -> str:
     except (ValueError, TypeError):
         return iso
 
+
 # Serialize background pushes so rapid-fire local
 # mutations don't stack up parallel sync cycles.
 _push_lock = threading.Lock()
@@ -595,8 +596,10 @@ def entry_to_wire(entry: dict) -> dict:
         "customer": entry.get("customer") or None,
         "description": entry.get("description") or "",
         "start": _local_to_utc(entry["start"]),
-        "end": _local_to_utc(entry.get("end") or "")
-            or None,
+        "end": (
+            _local_to_utc(entry.get("end") or "")
+            or None
+        ),
         "task_id": entry.get("task_id") or None,
         "contract": entry.get("contract") or None,
         "notes": entry.get("notes") or "",
@@ -624,8 +627,10 @@ def wire_to_local(entry: dict) -> dict:
         "customer": entry.get("customer") or "",
         "description": entry.get("description") or "",
         "start": _utc_to_local(entry["start"]),
-        "end": _utc_to_local(entry.get("end") or "")
-            or None,
+        "end": (
+            _utc_to_local(entry.get("end") or "")
+            or None
+        ),
         "task_id": entry.get("task_id") or None,
         "contract": entry.get("contract") or None,
         "notes": entry.get("notes") or "",

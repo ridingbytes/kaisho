@@ -522,7 +522,6 @@ def _run_claude_cli(
     return result.stdout.strip()
 
 
-
 def verify_model(
     model_str: str,
     ollama_base_url: str = "",

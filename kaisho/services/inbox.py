@@ -1,5 +1,4 @@
 import re
-from datetime import datetime
 from pathlib import Path
 
 from ..org.models import Heading, OrgFile
@@ -11,6 +10,8 @@ from ..time_utils import local_now
 
 INBOX_KEYWORDS: set[str] = set()
 CREATED_FMT = "%Y-%m-%d %a %H:%M"
+
+
 def _escape_body(text: str) -> list[str]:
     """Split text into lines, escaping any that start
     with * (org headings, markdown bold, bullets). Adds
@@ -23,6 +24,8 @@ def _escape_body(text: str) -> list[str]:
         else:
             lines.append(line)
     return lines
+
+
 CUSTOMER_RE = re.compile(r"\[([^\]]+)\]")
 TITLE_TYPE_RE = re.compile(
     r"^(EMAIL|LEAD|IDEA|IDEE|NOTE|NOTIZ)\s+",
