@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.3
+
+- Code review: fix path traversal, iCal UID collisions,
+  SSL init, AI endpoint crashes, dead code
+- Consistent local_now() across all services
+- Flake8 clean (0 errors), lint step in CI
+- 30 new FastAPI TestClient tests (244 total)
+- Updated documentation across all repos
+- Security: WS auth via first-message, rate-limited
+  password reset, paid plan enforcement on sync
+- Accessibility: ARIA roles, keyboard nav, focus trapping
+
 ## 0.6.2
 
 - Fix SSL globally for all HTTPS requests in desktop app
