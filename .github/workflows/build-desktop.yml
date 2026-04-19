@@ -141,13 +141,21 @@ jobs:
           prerelease: ${{ steps.channel.outputs.prerelease }}
           args: --target ${{ matrix.target }}
 
-      - name: Upload updater signature
+      - name: Collect and upload updater signatures
+        shell: bash
+        run: |
+          mkdir -p /tmp/sigs
+          find desktop/src-tauri/target \
+            -path "*/bundle/*" \
+            -name "*.sig" \
+            -exec cp -v {} /tmp/sigs/ \;
+          ls -la /tmp/sigs/ || true
+
+      - name: Upload signatures artifact
         uses: actions/upload-artifact@v4
         with:
           name: sigs-${{ matrix.target }}
-          path: |
-            desktop/src-tauri/target/**/bundle/**/*.sig
-            !desktop/src-tauri/target/**/deps/**
+          path: /tmp/sigs/
           if-no-files-found: warn
 
   updater-json:

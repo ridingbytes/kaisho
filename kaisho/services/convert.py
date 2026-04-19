@@ -276,7 +276,8 @@ def _convert_clocks(
 ) -> int:
     """Copy clock entries, skipping duplicates.
 
-    Matches by start timestamp + customer + description.
+    Preserves original start/end times. Matches by
+    start timestamp + customer + description.
     """
     entries = source.clocks.list_entries(period="all")
     existing = target.clocks.list_entries(period="all")
@@ -295,18 +296,13 @@ def _convert_clocks(
         h = int(mins // 60)
         m = int(mins % 60)
         dur_str = f"{h}h{m}m" if m else f"{h}h"
-        tgt_date = None
-        if e.get("start"):
-            tgt_date = date.fromisoformat(
-                e["start"][:10]
-            )
         target.clocks.quick_book(
             duration_str=dur_str,
             customer=e["customer"],
             description=e.get("description", ""),
             task_id=e.get("task_id"),
             contract=e.get("contract"),
-            target_date=tgt_date,
+            start_time=e.get("start"),
         )
         count += 1
     return count

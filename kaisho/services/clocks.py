@@ -969,24 +969,15 @@ def quick_book(
     notes: str | None = None,
     sync_id: str | None = None,
     updated_at: str | None = None,
+    start_time: str | None = None,
 ) -> dict:
     """Book a completed time entry with a duration string.
 
-    When ``target_date`` is set, the entry is placed at
-    noon on that date. Otherwise, ``end`` is now and
+    When ``start_time`` is set (ISO format), the entry
+    uses that exact start and computes end from it.
+    When only ``target_date`` is set, the entry is
+    placed at noon. Otherwise, ``end`` is now and
     ``start`` is computed backwards from the duration.
-
-    :param clocks_file: Path to clocks.org.
-    :param duration_str: Human-readable duration like
-        ``"1h30m"``.
-    :param customer: Customer name.
-    :param description: Entry description.
-    :param target_date: Optional date to place the entry.
-    :param notes: Optional free-form notes.
-    :param sync_id: Sync UUID (generated if omitted).
-    :param updated_at: Timestamp (generated if omitted).
-    :returns: The new entry dict.
-    :raises ValueError: If the duration is unparseable.
     """
     minutes = parse_duration(duration_str)
     if minutes is None:
@@ -994,9 +985,10 @@ def quick_book(
             f"Invalid duration: {duration_str}"
         )
 
-    if target_date:
-        # Book at noon so the entry sorts naturally in
-        # day views without overlapping real work.
+    if start_time:
+        start = datetime.fromisoformat(start_time)
+        end = start + timedelta(minutes=minutes)
+    elif target_date:
         start = datetime(
             target_date.year, target_date.month,
             target_date.day, 12, 0, 0,

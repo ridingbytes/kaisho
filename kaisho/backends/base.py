@@ -169,6 +169,7 @@ class ClockBackend(ABC):
         contract: str | None = None,
         target_date: date | None = None,
         notes: str | None = None,
+        start_time: str | None = None,
     ) -> dict:
         """Book time retroactively.  duration_str e.g. "2h", "30min"."""
 

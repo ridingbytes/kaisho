@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.9
+
+- Fix clock import: preserve original start/end times
+- Add syntax highlighting for code blocks (rehype-highlight)
+- Fix updater workflow: collect sig files correctly
+- URL-encode contract names in API client
+
 ## 0.5.8
 
 - Fix settings endpoint hidden by SPA catch-all

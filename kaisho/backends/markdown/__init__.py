@@ -1064,15 +1064,23 @@ class MarkdownClockBackend(ClockBackend):
         task_id=None,
         contract=None,
         target_date=None,
+        notes=None,
+        start_time=None,
     ) -> dict:
         """Book time retroactively from a duration string."""
         minutes = _parse_duration_minutes(duration_str)
-        if not target_date:
-            target_date = date.today()
-        start = datetime(
-            target_date.year, target_date.month,
-            target_date.day, 12, 0, 0,
-        )
+        if start_time:
+            start = datetime.fromisoformat(start_time)
+        elif target_date:
+            start = datetime(
+                target_date.year, target_date.month,
+                target_date.day, 12, 0, 0,
+            )
+        else:
+            start = datetime(
+                date.today().year, date.today().month,
+                date.today().day, 12, 0, 0,
+            )
         end = start + timedelta(minutes=minutes)
         entries = self._load_entries()
         entry = {
