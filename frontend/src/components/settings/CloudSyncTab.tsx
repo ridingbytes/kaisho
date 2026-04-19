@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import {
   useAiUsage,
   useCloudSyncStatus,
@@ -32,6 +33,7 @@ export function CloudSyncSection(): JSX.Element {
 
   const CLOUD_URL = "https://cloud.kaisho.dev";
   const [apiKey, setApiKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] =
     useState(false);
@@ -55,8 +57,9 @@ export function CloudSyncSection(): JSX.Element {
         setTimeout(() => setMsg(""), 3000);
       })
       .catch((e) => {
+        const msg = e?.message || "Connection failed"
         setErr(
-          e?.message || "Connection failed",
+          `${msg} (URL: ${CLOUD_URL})`,
         );
       })
       .finally(() => setConnecting(false));
@@ -412,15 +415,33 @@ export function CloudSyncSection(): JSX.Element {
                 <span className="text-xs text-stone-700 w-24 shrink-0">
                   API Key
                 </span>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) =>
-                    setApiKey(e.target.value)
-                  }
-                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx"
-                  className={inputCls}
-                />
+                <div className="flex-1 flex items-center gap-1">
+                  <input
+                    type={showKey ? "text" : "password"}
+                    value={apiKey}
+                    onChange={(e) =>
+                      setApiKey(e.target.value)
+                    }
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx"
+                    className={inputCls}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowKey((v) => !v)
+                    }
+                    className="p-1 rounded text-stone-400 hover:text-stone-700 transition-colors shrink-0"
+                    title={
+                      showKey ? "Hide" : "Show"
+                    }
+                  >
+                    {showKey ? (
+                      <EyeOff size={14} />
+                    ) : (
+                      <Eye size={14} />
+                    )}
+                  </button>
+                </div>
               </label>
             </div>
           </div>
