@@ -487,7 +487,6 @@ export function ClockList({
   selectedDate,
 }: ClockListProps) {
   const effectiveDate = selectedDate ?? todayIso();
-  const isToday = effectiveDate === todayIso();
   const { data: entries = [], isLoading } = useClockEntries(
     "today",
     effectiveDate
@@ -522,7 +521,7 @@ export function ClockList({
           key={`${group.customer}|${group.description}`}
           group={group}
           isRunning={isRunning}
-          showResume={isToday}
+          showResume
           tasks={allTasks}
           customerColors={customerColors}
           invoicedSet={invoicedSet}
