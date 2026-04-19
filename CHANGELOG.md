@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.7
+
+- Fix data directory: always use ~/.kaisho in desktop app
+- Hide JSON and SQL backends from UI (org + markdown only)
+- Better API error reporting (detect non-JSON responses)
+- Fix auto-updater latest.json generation
+
 ## 0.5.6
 
 - Fix Tags & Types panel on fresh/reset profile
