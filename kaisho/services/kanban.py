@@ -3,7 +3,6 @@ from datetime import datetime
 from pathlib import Path
 
 from ..org.models import Heading, OrgFile
-from ..org.parser import KEYWORDS as DEFAULT_KEYWORDS  # noqa: F401
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 
@@ -46,13 +45,19 @@ def _state_history(heading: Heading) -> list[dict]:
 
 def _user_body(heading: Heading) -> str:
     """Return user-editable body text, excluding state log entries."""
-    lines = [l for l in heading.body if not _STATE_LOG_RE.match(l)]
+    lines = [
+        line for line in heading.body
+        if not _STATE_LOG_RE.match(line)
+    ]
     return "\n".join(lines).strip()
 
 
 def _update_body(heading: Heading, new_body: str) -> None:
     """Replace user body lines, preserving state log entries at top."""
-    log_lines = [l for l in heading.body if _STATE_LOG_RE.match(l)]
+    log_lines = [
+        line for line in heading.body
+        if _STATE_LOG_RE.match(line)
+    ]
     user_lines = new_body.splitlines() if new_body.strip() else []
     heading.body = log_lines + user_lines
 

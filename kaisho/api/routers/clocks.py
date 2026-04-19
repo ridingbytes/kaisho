@@ -1,3 +1,4 @@
+import hashlib
 from datetime import date
 
 from fastapi import APIRouter, HTTPException
@@ -31,13 +32,17 @@ def _entry_to_vevent(entry: dict) -> str:
     notes = entry.get("notes") or ""
     minutes = entry.get("duration_minutes") or 0
 
-    # UID: stable identifier per entry
-    import hashlib
-    raw = f"{start}-{customer}-{desc}"
-    uid = hashlib.sha1(
-        raw.encode(), usedforsecurity=False,
-    ).hexdigest()[:16]
-    uid = f"{uid}@kaisho"
+    # UID: prefer sync_id for uniqueness, fall back
+    # to content hash for entries without one.
+    sync_id = entry.get("sync_id", "")
+    if sync_id:
+        uid = f"{sync_id}@kaisho"
+    else:
+        raw = f"{start}-{customer}-{desc}"
+        uid = hashlib.sha1(
+            raw.encode(), usedforsecurity=False,
+        ).hexdigest()[:16]
+        uid = f"{uid}@kaisho"
 
     def fmt(iso: str) -> str:
         """Convert ISO timestamp to iCal format.
