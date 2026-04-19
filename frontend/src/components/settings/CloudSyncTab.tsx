@@ -33,6 +33,8 @@ export function CloudSyncSection(): JSX.Element {
   const [url, setUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] =
+    useState(false);
   const [syncing, setSyncing] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
@@ -59,9 +61,6 @@ export function CloudSyncSection(): JSX.Element {
       })
       .finally(() => setConnecting(false));
   }
-
-  const [disconnecting, setDisconnecting] = useState(false);
-
   function handleDisconnect() {
     setDisconnecting(true);
     setErr("");

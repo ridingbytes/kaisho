@@ -56,8 +56,6 @@ _CLAUDE_API_MODELS = [
     "claude:claude-haiku-4-5-20251001",
 ]
 
-_CLAUDE_CLI_MODELS: list[str] = []
-
 
 def _fetch_ollama_models(base_url: str) -> list[str]:
     """Fetch available model names from Ollama."""

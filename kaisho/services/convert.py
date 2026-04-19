@@ -116,7 +116,11 @@ def _auto_populate_settings(
                 "description": "",
             })
 
-    if states_list or tags_list:
+    added_states = len(states_list) > len(
+        existing_states
+    )
+    added_tags = len(tags_list) > len(existing_tags)
+    if added_states or added_tags:
         data["task_states"] = states_list
         data["tags"] = tags_list
         save_settings(settings_file, data)

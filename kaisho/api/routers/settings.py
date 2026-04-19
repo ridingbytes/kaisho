@@ -178,7 +178,6 @@ def import_data(body: ImportData):
         convert_backend,
         make_backend_from_spec,
     )
-    from ...config import get_config
     source = make_backend_from_spec(
         body.source_format, body.source_path,
     )

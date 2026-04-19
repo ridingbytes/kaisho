@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.8
+
+- Fix settings endpoint hidden by SPA catch-all
+- Fix input height mismatches in settings selects
+- Remove unused update channel selector
+- Code cleanup: remove unused variables, fix state
+  ordering, fix import write-on-no-change bug
+
 ## 0.5.7
 
 - Fix data directory: always use ~/.kaisho in desktop app

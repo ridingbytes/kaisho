@@ -60,7 +60,6 @@ export function Sidebar({
 }: SidebarProps) {
   const unread = useUnreadBadges(active);
   const { config } = useShortcutsContext();
-  const visibleItems = NAV_ITEMS;
 
   // On mobile the sidebar is in an overlay, always expanded.
   // On desktop, the open prop controls collapsed/expanded.
@@ -98,7 +97,7 @@ export function Sidebar({
       </button>
 
       {/* Nav items */}
-      {visibleItems.map(({ id, label, icon: Icon }) => {
+      {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
         const isActive = active === id;
         const badge = unread[id] ?? 0;
         return (
