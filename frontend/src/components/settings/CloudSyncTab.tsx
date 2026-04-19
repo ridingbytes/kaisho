@@ -277,21 +277,32 @@ export function CloudSyncSection(): JSX.Element {
             </dl>
           </div>
 
-          {/* Kaisho AI toggle */}
+          {/* Kaisho AI toggle — only available on
+              sync_ai plan */}
           <div className="px-4 py-3 border-b border-border-subtle">
-            <label className="flex items-center justify-between cursor-pointer">
+            <label className={[
+              "flex items-center justify-between",
+              status?.plan === "sync_ai"
+                ? "cursor-pointer"
+                : "cursor-not-allowed opacity-50",
+            ].join(" ")}>
               <div>
                 <p className="text-xs font-medium text-stone-700">
                   Use Kaisho AI
                 </p>
                 <p className="text-[10px] text-stone-500 mt-0.5">
-                  Route advisor and cron jobs through
-                  OpenRouter instead of local models.
-                  Requires Sync + AI plan.
+                  {status?.plan === "sync_ai"
+                    ? "Route advisor and cron jobs " +
+                      "through OpenRouter instead of " +
+                      "local models."
+                    : "Requires the Sync + AI plan. " +
+                      "Upgrade to enable cloud AI."}
                 </p>
               </div>
               <button
+                disabled={status?.plan !== "sync_ai"}
                 onClick={() => {
+                  if (status?.plan !== "sync_ai") return;
                   const next = !status?.use_cloud_ai;
                   toggleCloudAi(next)
                     .then(() => {
