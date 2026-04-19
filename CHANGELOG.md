@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.6
+
+- Globe icon in header bar for quick language switching
+- German translation active across all UI components
+- 26 components wired with react-i18next
+- Disable Kaisho AI toggle on non-sync_ai plans
+
 ## 0.6.5
 
 - i18n: react-i18next with 483 translation keys
