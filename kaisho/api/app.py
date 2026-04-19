@@ -175,6 +175,12 @@ def _mount_frontend():
     # SPA fallback: serve index.html for all non-API paths
     @app.get("/{path:path}")
     async def _spa(path: str):
+        if path.startswith("api/"):
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                {"detail": "Not Found"},
+                status_code=404,
+            )
         file = dist / path
         if file.is_file():
             return FileResponse(file)

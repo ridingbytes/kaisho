@@ -24,7 +24,7 @@ router = APIRouter(
 # ── General ──────────────────────────────────────────
 
 
-@router.get("/")
+@router.get("")
 def get_settings():
     """Return all application settings."""
     cfg = get_config()
