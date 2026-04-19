@@ -1,5 +1,7 @@
 import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
+import "highlight.js/styles/github.min.css";
 
 interface MarkdownProps {
   children: string;
@@ -149,6 +151,7 @@ export function Markdown({
     <div className={className}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeHighlight]}
         components={merged as never}
       >
         {children}
