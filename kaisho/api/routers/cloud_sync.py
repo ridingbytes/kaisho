@@ -150,6 +150,17 @@ def connect(body: ConnectBody):
             detail="Invalid API key or cloud URL",
         )
 
+    plan = stats.get("plan", "free")
+    if plan not in ("sync", "sync_ai"):
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Cloud Sync requires a paid plan. "
+                "Visit kaisho.dev/#pricing to "
+                "upgrade."
+            ),
+        )
+
     cfg = get_config()
 
     # Single-profile guard: only one profile can sync
