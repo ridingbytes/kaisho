@@ -17,13 +17,13 @@ DEFAULT_INBOX_CHANNELS: list[str] = [
 ]
 
 DEFAULT_AI: dict = {
-    "ollama_url": "http://localhost:11434",
+    "ollama_url": "",
     "ollama_api_key": "",
-    "lm_studio_url": "http://localhost:1234",
+    "lm_studio_url": "",
     "claude_api_key": "",
-    "openrouter_url": "https://openrouter.ai/api/v1",
+    "openrouter_url": "",
     "openrouter_api_key": "",
-    "openai_url": "https://api.openai.com/v1",
+    "openai_url": "",
     "openai_api_key": "",
     "brave_api_key": "",
     "tavily_api_key": "",

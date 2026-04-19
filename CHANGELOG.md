@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.10
+
+- Empty AI settings on fresh profiles (no pre-filled URLs)
+- Rewrite build workflow for reliable auto-updater
+
 ## 0.5.9
 
 - Fix clock import: preserve original start/end times
