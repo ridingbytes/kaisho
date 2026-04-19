@@ -28,6 +28,7 @@ Design decisions:
 """
 import json
 import logging
+import ssl
 import threading
 import urllib.error
 import urllib.parse
@@ -37,6 +38,24 @@ from pathlib import Path
 from typing import Any, Callable
 
 from . import sync_state
+
+
+def _ssl_context() -> ssl.SSLContext:
+    """Return an SSL context with bundled CA certs.
+
+    PyInstaller bundles don't inherit the system cert
+    store on macOS. ``certifi`` provides a portable
+    CA bundle that works in all environments.
+
+    :returns: Configured SSL context.
+    """
+    try:
+        import certifi
+        return ssl.create_default_context(
+            cafile=certifi.where(),
+        )
+    except ImportError:
+        return ssl.create_default_context()
 
 log = logging.getLogger(__name__)
 
@@ -136,8 +155,9 @@ def http_request(
     req = urllib.request.Request(
         url, data=body, headers=headers, method=method,
     )
+    ctx = _ssl_context()
     with urllib.request.urlopen(
-        req, timeout=timeout,
+        req, timeout=timeout, context=ctx,
     ) as resp:
         raw = resp.read().decode("utf-8")
         return json.loads(raw) if raw.strip() else None
@@ -357,7 +377,11 @@ def cloud_stats(
         return safe_request(
             f"{cloud_url}/sync/stats", api_key,
         )
-    except CloudUnavailable:
+    except CloudUnavailable as exc:
+        log.warning(
+            "cloud_stats failed: %s -> %s",
+            cloud_url, exc,
+        )
         return None
 
 

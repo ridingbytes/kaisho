@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+- Fix cloud sync: SSL certs for PyInstaller bundle
+- Eye toggle to verify API key in connect form
+- Better error messages for cloud connection failures
+
 ## 0.6.0
 
 - Resume button visible on all clock entries (not just today)
