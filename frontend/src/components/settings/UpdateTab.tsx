@@ -4,33 +4,17 @@ import {
   Download,
   Sparkles,
   ExternalLink,
-  AlertTriangle,
 } from "lucide-react";
 import { useVersionInfo } from "../../hooks/useSettings";
 import { openWhatsNew } from "../common/WhatsNewDialog";
 import { isTauri } from "../../utils/tauri";
-import {
-  parseChangelog,
-} from "../../utils/changelog";
+import { parseChangelog } from "../../utils/changelog";
 import { saveBtnCls } from "./styles";
-
-type Channel = "stable" | "develop";
-
-const CHANNEL_KEY = "kaisho_update_channel";
-
-function getChannel(): Channel {
-  const stored = localStorage.getItem(CHANNEL_KEY);
-  if (stored === "develop") return "develop";
-  return "stable";
-}
 
 export function UpdateSection(): JSX.Element {
   const { data, isLoading } = useVersionInfo();
   const inTauri = isTauri();
 
-  const [channel, setChannel] = useState<Channel>(
-    getChannel,
-  );
   const [checking, setChecking] = useState(false);
   const [checkResult, setCheckResult] = useState<
     string | null
@@ -39,34 +23,11 @@ export function UpdateSection(): JSX.Element {
   const [updateProgress, setUpdateProgress] = useState<
     string | null
   >(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [pendingChannel, setPendingChannel] =
-    useState<Channel | null>(null);
 
   const entries = data
     ? parseChangelog(data.changelog)
     : [];
   const currentVersion = data?.version ?? "...";
-
-  function handleChannelChange(
-    newChannel: Channel,
-  ) {
-    if (newChannel === channel) return;
-    if (newChannel === "develop") {
-      setPendingChannel(newChannel);
-      setShowConfirm(true);
-    } else {
-      applyChannel(newChannel);
-    }
-  }
-
-  function applyChannel(ch: Channel) {
-    setChannel(ch);
-    localStorage.setItem(CHANNEL_KEY, ch);
-    setShowConfirm(false);
-    setPendingChannel(null);
-    setCheckResult(null);
-  }
 
   async function handleCheckUpdate() {
     if (!inTauri) return;
@@ -82,7 +43,9 @@ export function UpdateSection(): JSX.Element {
           `Version ${update.version} available`,
         );
       } else {
-        setCheckResult("You're on the latest version");
+        setCheckResult(
+          "You're on the latest version",
+        );
       }
     } catch (err) {
       setCheckResult(
@@ -212,7 +175,8 @@ export function UpdateSection(): JSX.Element {
                 ))}
               {entries[0].items.length > 5 && (
                 <li className="text-xs text-stone-400 pl-3">
-                  +{entries[0].items.length - 5} more
+                  +{entries[0].items.length - 5}{" "}
+                  more
                 </li>
               )}
             </ul>
@@ -223,47 +187,6 @@ export function UpdateSection(): JSX.Element {
       {/* Update controls (Tauri only) */}
       {inTauri && (
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
-          <div className="px-4 py-3 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
-              Update Channel
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() =>
-                  handleChannelChange("stable")
-                }
-                className={[
-                  "px-3 py-1 rounded text-xs font-medium transition-colors",
-                  channel === "stable"
-                    ? "bg-cta text-white"
-                    : "bg-surface-raised text-stone-600 hover:text-stone-800 border border-border",
-                ].join(" ")}
-              >
-                Stable
-              </button>
-              <button
-                onClick={() =>
-                  handleChannelChange("develop")
-                }
-                className={[
-                  "px-3 py-1 rounded text-xs font-medium transition-colors",
-                  channel === "develop"
-                    ? "bg-amber-500 text-white"
-                    : "bg-surface-raised text-stone-600 hover:text-stone-800 border border-border",
-                ].join(" ")}
-              >
-                Develop
-              </button>
-            </div>
-            {channel === "develop" && (
-              <p className="mt-2 flex items-center gap-1 text-[10px] text-amber-600">
-                <AlertTriangle size={10} />
-                Development builds may contain
-                untested features
-              </p>
-            )}
-          </div>
-
           <div className="px-4 py-3 flex items-center gap-3 flex-wrap">
             <button
               onClick={handleCheckUpdate}
@@ -349,61 +272,6 @@ export function UpdateSection(): JSX.Element {
               <ExternalLink size={12} />
               View latest release on GitHub
             </a>
-          </div>
-        </div>
-      )}
-
-      {/* Channel switch confirmation */}
-      {showConfirm && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
-          onClick={() => {
-            setShowConfirm(false);
-            setPendingChannel(null);
-          }}
-        >
-          <div
-            className="bg-surface-card rounded-xl border border-border shadow-2xl w-full max-w-sm mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-5 py-4 border-b border-border-subtle">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle
-                  size={16}
-                  className="text-amber-500"
-                />
-                <h3 className="text-sm font-semibold text-stone-800">
-                  Switch to Develop Channel?
-                </h3>
-              </div>
-              <p className="text-xs text-stone-600 leading-relaxed">
-                Development builds include
-                unreleased features that may be
-                unstable or incomplete. You can
-                switch back to stable at any time.
-              </p>
-            </div>
-            <div className="px-5 py-3 flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowConfirm(false);
-                  setPendingChannel(null);
-                }}
-                className="px-3 py-1.5 rounded text-xs text-stone-600 hover:text-stone-800 border border-border transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  if (pendingChannel) {
-                    applyChannel(pendingChannel);
-                  }
-                }}
-                className="px-3 py-1.5 rounded text-xs bg-amber-500 text-white hover:bg-amber-600 transition-colors"
-              >
-                Switch to Develop
-              </button>
-            </div>
           </div>
         </div>
       )}
