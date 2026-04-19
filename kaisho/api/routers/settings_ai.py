@@ -61,6 +61,8 @@ _CLAUDE_CLI_MODELS: list[str] = []
 
 def _fetch_ollama_models(base_url: str) -> list[str]:
     """Fetch available model names from Ollama."""
+    if not base_url:
+        return []
     url = base_url.rstrip("/") + "/api/tags"
     try:
         with urllib.request.urlopen(
@@ -71,7 +73,10 @@ def _fetch_ollama_models(base_url: str) -> list[str]:
             f"ollama:{m['name']}"
             for m in data.get("models", [])
         ]
-    except (urllib.error.URLError, OSError, KeyError):
+    except (
+        urllib.error.URLError, OSError,
+        KeyError, ValueError,
+    ):
         return []
 
 
@@ -91,7 +96,10 @@ def _fetch_lm_studio_models(
             f"lm_studio:{m['id']}"
             for m in data.get("data", [])
         ]
-    except (urllib.error.URLError, OSError, KeyError):
+    except (
+        urllib.error.URLError, OSError,
+        KeyError, ValueError,
+    ):
         return []
 
 
@@ -99,12 +107,10 @@ def _fetch_openai_compatible_models(
     base_url: str, api_key: str, prefix: str,
 ) -> list[str]:
     """Fetch models from an OpenAI-compatible endpoint."""
-    if not base_url:
+    if not base_url or not api_key:
         return []
     url = base_url.rstrip("/") + "/models"
-    headers: dict[str, str] = {}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
+    headers = {"Authorization": f"Bearer {api_key}"}
     req = urllib.request.Request(url, headers=headers)
     try:
         with urllib.request.urlopen(
@@ -115,7 +121,10 @@ def _fetch_openai_compatible_models(
             f"{prefix}:{m['id']}"
             for m in data.get("data", [])
         ]
-    except (urllib.error.URLError, OSError, KeyError):
+    except (
+        urllib.error.URLError, OSError,
+        KeyError, ValueError,
+    ):
         return []
 
 
@@ -158,23 +167,23 @@ def list_models():
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     ai = settings_svc.get_ai_settings(data)
-    models = (
-        _fetch_ollama_models(ai["ollama_url"])
-        + _fetch_lm_studio_models(
-            ai.get("lm_studio_url", ""),
-        )
-        + _fetch_openai_compatible_models(
-            ai.get("openrouter_url", ""),
-            ai.get("openrouter_api_key", ""),
-            "openrouter",
-        )
-        + _fetch_openai_compatible_models(
-            ai.get("openai_url", ""),
-            ai.get("openai_api_key", ""),
-            "openai",
-        )
+    models: list[str] = []
+    models += _fetch_ollama_models(
+        ai.get("ollama_url", ""),
     )
-    # Only show Claude models when an API key is set
+    models += _fetch_lm_studio_models(
+        ai.get("lm_studio_url", ""),
+    )
+    models += _fetch_openai_compatible_models(
+        ai.get("openrouter_url", ""),
+        ai.get("openrouter_api_key", ""),
+        "openrouter",
+    )
+    models += _fetch_openai_compatible_models(
+        ai.get("openai_url", ""),
+        ai.get("openai_api_key", ""),
+        "openai",
+    )
     if ai.get("claude_api_key"):
         models += _CLAUDE_API_MODELS
     return {"models": models}
