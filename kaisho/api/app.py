@@ -45,8 +45,8 @@ async def lifespan(app: FastAPI):
     if saved != cfg.PROFILE:
         os.environ["PROFILE"] = saved
         cfg = reset_config()
-    if cfg.PROFILE_DIR.is_dir():
-        init_data_dir(cfg)
+    cfg.PROFILE_DIR.mkdir(parents=True, exist_ok=True)
+    init_data_dir(cfg)
 
     # Capture the event loop so background threads
     # (scheduler, cloud WS) can schedule async broadcasts.

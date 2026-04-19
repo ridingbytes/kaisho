@@ -424,7 +424,9 @@ function StringListSection({
 // -----------------------------------------------------------------
 
 export function TagsAndTypesTab(): JSX.Element {
-  const { data: settings, isLoading } = useSettings();
+  const {
+    data: settings, isLoading, isError, error,
+  } = useSettings();
   const addCustType = useAddCustomerType();
   const delCustType = useDeleteCustomerType();
   const addInbType = useAddInboxType();
@@ -436,6 +438,16 @@ export function TagsAndTypesTab(): JSX.Element {
     return (
       <p className="text-sm text-stone-500">
         Loading...
+      </p>
+    );
+  }
+  if (isError) {
+    return (
+      <p className="text-sm text-red-400">
+        Failed to load settings
+        {error instanceof Error
+          ? `: ${error.message}`
+          : "."}
       </p>
     );
   }
