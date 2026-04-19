@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.4
+
+- Updated documentation and in-app help panels
+- Cloud Sync and Import help in settings panel
+- Website format examples match actual org/md structure
+- Consolidated planning docs, removed duplicates
+
 ## 0.6.3
 
 - Code review: fix path traversal, iCal UID collisions,
