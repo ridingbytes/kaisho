@@ -951,6 +951,23 @@ export function CronView() {
       )}
 
       <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
+        {!cloudAi && models.length === 0 && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+            <p className="text-xs font-medium text-stone-700 mb-1">
+              No AI provider configured
+            </p>
+            <p className="text-[11px] text-stone-500 leading-relaxed">
+              Cron jobs need a local model (Ollama,
+              LM Studio) or a cloud API key to run.
+              Configure one in{" "}
+              <strong>Settings &gt; AI</strong>, or
+              enable <strong>Kaisho AI</strong> via{" "}
+              <strong>
+                Settings &gt; Cloud Sync
+              </strong>.
+            </p>
+          </div>
+        )}
         {/* Jobs section */}
         <section>
           <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">

@@ -1,9 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Clock,
+  CloudCog,
   Menu,
   Moon,
   Settings,
+  Smartphone,
   Sun,
   X,
 } from "lucide-react";
@@ -17,6 +19,7 @@ import { CalendarWidget } from "./components/clock/CalendarWidget";
 import { ClockList } from "./components/clock/ClockList";
 import { StartForm } from "./components/clock/StartForm";
 import {
+  useCloudSyncStatus,
   useCreateProfile,
   useCurrentUser,
   useSwitchProfile,
@@ -211,6 +214,64 @@ const queryClient = new QueryClient({
 
 type Theme = "dark" | "light";
 
+const NUDGE_DISMISS_KEY = "kaisho_cloud_nudge_dismissed";
+const NUDGE_DISMISS_DAYS = 14;
+
+function CloudNudgeBanner({
+  show,
+  onOpenSettings,
+}: {
+  show: boolean;
+  onOpenSettings: () => void;
+}) {
+  const [dismissed, setDismissed] = useState(() => {
+    const ts = localStorage.getItem(NUDGE_DISMISS_KEY);
+    if (!ts) return false;
+    const elapsed = Date.now() - Number(ts);
+    return elapsed < NUDGE_DISMISS_DAYS * 86400000;
+  });
+
+  if (!show || dismissed) return null;
+
+  function handleDismiss() {
+    localStorage.setItem(
+      NUDGE_DISMISS_KEY, String(Date.now()),
+    );
+    setDismissed(true);
+  }
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-1.5 bg-cta/10 border-b border-cta/20 shrink-0">
+      <p className="flex-1 text-[11px] text-stone-700">
+        Unlock AI advisor, cloud sync, and
+        mobile access —{" "}
+        <a
+          href="https://kaisho.dev/#pricing"
+          target="_blank"
+          rel="noreferrer"
+          className="text-cta hover:underline font-medium"
+        >
+          See plans
+        </a>
+        {" "}or{" "}
+        <button
+          onClick={onOpenSettings}
+          className="text-cta hover:underline font-medium"
+        >
+          connect now
+        </button>
+      </p>
+      <button
+        onClick={handleDismiss}
+        className="text-stone-400 hover:text-stone-700 transition-colors shrink-0"
+        title="Dismiss for 14 days"
+      >
+        <X size={12} />
+      </button>
+    </div>
+  );
+}
+
 function AppShell() {
   useWebSocket();
   const [view, setView] = useState<View>(viewFromHash);
@@ -238,6 +299,7 @@ function AppShell() {
   );
   const { data: timerData } = useActiveTimer();
   const timerActive = timerData?.active === true;
+  const { data: cloudStatus } = useCloudSyncStatus();
 
   const [appTitle, setAppTitle] = useState(
     () => localStorage.getItem("kaisho_app_title") || "KAISHO",
@@ -423,6 +485,43 @@ function AppShell() {
           {appTitle}
         </button>
         <div className="ml-auto flex items-center gap-2">
+          {/* Cloud badge + mobile link */}
+          {cloudStatus?.connected && (
+            <>
+              <button
+                onClick={() => setView("settings")}
+                className={[
+                  "hidden sm:flex items-center gap-1.5",
+                  "px-2 py-1 rounded-lg text-[10px]",
+                  "font-semibold tracking-wide uppercase",
+                  "bg-cta/10 text-cta border border-cta/20",
+                  "hover:bg-cta/20 transition-colors",
+                ].join(" ")}
+                title="Cloud Sync settings"
+              >
+                <CloudCog size={12} />
+                {cloudStatus.plan === "sync_ai"
+                  ? "Sync+AI"
+                  : cloudStatus.plan === "sync"
+                    ? "Cloud"
+                    : "Free"}
+              </button>
+              <a
+                href="https://cloud.kaisho.dev/m"
+                target="_blank"
+                rel="noreferrer"
+                className={[
+                  "hidden sm:flex items-center",
+                  "p-1 rounded text-stone-500",
+                  "hover:text-cta hover:bg-cta-muted",
+                  "transition-colors",
+                ].join(" ")}
+                title="Open mobile app"
+              >
+                <Smartphone size={14} />
+              </a>
+            </>
+          )}
           {/* Mobile timer button */}
           <button
             onClick={() => setMobileTimerOpen(true)}
@@ -581,7 +680,11 @@ function AppShell() {
             />
           </div>
 
-          <main className="flex-1 min-w-0 overflow-hidden relative">
+          <main className="flex-1 min-w-0 overflow-hidden relative flex flex-col">
+            <CloudNudgeBanner
+              show={!cloudStatus?.connected}
+              onOpenSettings={() => setView("settings")}
+            />
             {view === "dashboard" && <DashboardView />}
             {view === "board" && <KanbanBoard />}
             {view === "inbox" && <InboxView />}

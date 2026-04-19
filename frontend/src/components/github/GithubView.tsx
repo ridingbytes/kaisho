@@ -9,6 +9,7 @@ import type {
 } from "../../types";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
+import { useGithubSettings } from "../../hooks/useSettings";
 
 // ------------------------------------------------------------------
 // Shared
@@ -322,6 +323,8 @@ export function GithubView() {
   const [tab, setTab] = useState<Tab>("issues");
   const [customerFilter, setCustomerFilter] = useState("");
   const [showClosed, setShowClosed] = useState(false);
+  const { data: ghSettings } = useGithubSettings();
+  const hasToken = !!(ghSettings && ghSettings.token_set);
 
   const { data: issueGroups = [] } = useGithubIssues();
   const { data: projectGroups = [] } = useGithubProjects();
@@ -399,10 +402,24 @@ export function GithubView() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
-        {tab === "issues" && (
+        {!hasToken && (
+          <div className="max-w-md mx-auto mt-12 text-center space-y-3">
+            <p className="text-sm font-medium text-stone-700">
+              No GitHub token configured
+            </p>
+            <p className="text-xs text-stone-500 leading-relaxed">
+              Add a GitHub personal access token in{" "}
+              <strong>Settings &gt; GitHub</strong> to
+              see your issues and projects here. The
+              token needs <em>repo</em> and{" "}
+              <em>read:project</em> scopes.
+            </p>
+          </div>
+        )}
+        {hasToken && tab === "issues" && (
           <IssuesPane customerFilter={customerFilter} />
         )}
-        {tab === "projects" && (
+        {hasToken && tab === "projects" && (
           <ProjectsPane
             showClosed={showClosed}
             customerFilter={customerFilter}

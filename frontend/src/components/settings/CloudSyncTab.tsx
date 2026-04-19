@@ -141,11 +141,76 @@ export function CloudSyncSection(): JSX.Element {
 
   return (
     <section>
-      <p className="text-xs text-stone-500 leading-relaxed mb-4">
-        Connect to Kaisho Cloud to track time from your
-        phone. Clock entries sync back to this local
-        instance automatically.
-      </p>
+      {!connected && (
+        <div className="mb-5 rounded-xl border border-cta/30 bg-cta/5 overflow-hidden">
+          <div className="px-4 py-3">
+            <p className="text-sm font-semibold text-stone-900 mb-1">
+              Unlock Cloud Sync, Mobile App
+              &amp; AI
+            </p>
+            <p className="text-xs text-stone-600 leading-relaxed mb-3">
+              Connect your Kaisho instance to the cloud
+              to sync time entries with the{" "}
+              <a
+                href="https://cloud.kaisho.dev/m"
+                target="_blank"
+                rel="noreferrer"
+                className="text-cta hover:underline"
+              >
+                mobile app
+              </a>
+              , enable the AI advisor and cron jobs
+              without a local model, and access your
+              data from anywhere.
+            </p>
+            <ul className="text-xs text-stone-600 space-y-1 mb-3">
+              <li className="flex items-start gap-2">
+                <span className="text-cta mt-0.5">
+                  *
+                </span>
+                <span>
+                  <strong>Cloud Sync</strong> — real-time
+                  bidirectional sync of clock entries
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-cta mt-0.5">
+                  *
+                </span>
+                <span>
+                  <strong>Mobile App</strong> — start
+                  and stop timers from your phone
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-cta mt-0.5">
+                  *
+                </span>
+                <span>
+                  <strong>Kaisho AI</strong> — AI
+                  advisor and automated cron jobs
+                  without local GPU
+                </span>
+              </li>
+            </ul>
+            <a
+              href="https://kaisho.dev/#pricing"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block px-4 py-1.5 rounded-lg text-xs font-medium bg-cta text-white hover:bg-cta-hover transition-colors"
+            >
+              View plans &amp; pricing
+            </a>
+          </div>
+          <div className="px-4 py-2.5 bg-amber-500/10 border-t border-amber-500/20">
+            <p className="text-[10px] text-amber-700">
+              After signing up, check your spam folder
+              for the confirmation email. Some providers
+              may flag it initially.
+            </p>
+          </div>
+        </div>
+      )}
 
       {connected ? (
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
@@ -331,8 +396,12 @@ export function CloudSyncSection(): JSX.Element {
       ) : (
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
               Connect
+            </p>
+            <p className="text-[10px] text-stone-400 mb-3">
+              Enter the Cloud URL and API key from
+              your confirmation email.
             </p>
             <div className="flex flex-col gap-2">
               <label className="flex items-center gap-3">

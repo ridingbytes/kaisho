@@ -295,7 +295,35 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
-        {messages.length === 0 && !loading && (
+        {messages.length === 0 && !loading && !cloudAi && !model && models.length === 0 && (
+          <div className="max-w-md mx-auto mt-12 text-center space-y-3">
+            <p className="text-sm font-medium text-stone-700">
+              No AI provider configured
+            </p>
+            <p className="text-xs text-stone-500 leading-relaxed">
+              The advisor needs a local model
+              (Ollama, LM Studio) or a cloud API
+              key (Claude, OpenRouter, OpenAI) to
+              work. Configure one in{" "}
+              <strong>Settings &gt; AI</strong>, or
+              enable{" "}
+              <strong>Kaisho AI</strong> via{" "}
+              <strong>
+                Settings &gt; Cloud Sync
+              </strong>{" "}
+              to use it without local hardware.
+            </p>
+            <a
+              href="https://kaisho.dev/#pricing"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block text-xs text-cta hover:underline"
+            >
+              Learn about Kaisho Cloud plans
+            </a>
+          </div>
+        )}
+        {messages.length === 0 && !loading && (cloudAi || model || models.length > 0) && (
           <div className="mt-8 space-y-3">
             <p className="text-sm text-stone-500 text-center">
               Ask a question or pick a template:
