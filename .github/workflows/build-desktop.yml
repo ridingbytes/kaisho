@@ -179,9 +179,9 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          VERSION="${TAG#v}"
-          PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          BASE="https://github.com/${{ github.repository }}/releases/download/${TAG}"
+          export VERSION="${TAG#v}"
+          export PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          export BASE="https://github.com/${{ github.repository }}/releases/download/${TAG}"
 
           # Read signature files
           read_sig() {
@@ -191,20 +191,20 @@ jobs:
             fi
           }
 
-          MAC_SIG=$(read_sig "*.app.tar.gz.sig")
-          LINUX_SIG=$(read_sig "*AppImage.tar.gz.sig")
-          WIN_SIG=$(read_sig "*setup.nsis.zip.sig")
+          export MAC_SIG=$(read_sig "*.app.tar.gz.sig")
+          export LINUX_SIG=$(read_sig "*AppImage.tar.gz.sig")
+          export WIN_SIG=$(read_sig "*setup.nsis.zip.sig")
 
           # Get release asset names
           ASSETS=$(gh release view "$TAG" \
             --repo "${{ github.repository }}" \
             --json assets -q '.assets[].name')
 
-          MAC_TAR=$(echo "$ASSETS" \
+          export MAC_TAR=$(echo "$ASSETS" \
             | grep "app.tar.gz" | head -1)
-          LINUX_AI=$(echo "$ASSETS" \
+          export LINUX_AI=$(echo "$ASSETS" \
             | grep "AppImage$" | head -1)
-          WIN_EXE=$(echo "$ASSETS" \
+          export WIN_EXE=$(echo "$ASSETS" \
             | grep "setup.exe" | head -1)
 
           # Build JSON with python for safety
