@@ -365,7 +365,7 @@ def _transcribe_youtube(url: str, languages: str = "en,de") -> dict:
     langs = [c.strip() for c in languages.split(",") if c.strip()]
     try:
         return transcribe(url, languages=langs)
-    except Exception as exc:
+    except (OSError, ValueError) as exc:
         return {"error": str(exc)}
 
 
@@ -444,7 +444,7 @@ def _fetch_url(url: str, accept: str = "") -> dict:
     if pypi_url:
         try:
             return _fetch_pypi(pypi_url)
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             return {"error": str(exc)}
 
     domain = _extract_domain(url)
@@ -465,7 +465,7 @@ def _fetch_url(url: str, accept: str = "") -> dict:
             )
             body = raw.decode(charset, errors="replace")
             truncated = len(raw) >= 50_000
-    except Exception as exc:
+    except (OSError, ValueError) as exc:
         return {"error": str(exc)}
     return {"body": body, "truncated": truncated}
 
@@ -668,7 +668,7 @@ def _web_search(query: str, max_results: int = 5) -> dict:
     for search_fn in providers:
         try:
             return search_fn()
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             last_error = str(exc)
     return {"error": f"All search providers failed: {last_error}"}
 

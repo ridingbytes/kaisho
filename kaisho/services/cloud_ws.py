@@ -78,7 +78,7 @@ class CloudWsClient:
                 delay = _MIN_DELAY
             except (OSError, ValueError) as exc:
                 log.warning("Cloud WS error: %s", exc)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 log.warning(
                     "Cloud WS unexpected error",
                     exc_info=True,
@@ -115,7 +115,7 @@ class CloudWsClient:
         finally:
             try:
                 ws.close()
-            except Exception:
+            except OSError:
                 pass
             log.info("Cloud WS disconnected")
 
@@ -152,7 +152,7 @@ class CloudWsClient:
             data = msg.get("data", {})
             try:
                 self._on_event(event, data)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 log.exception(
                     "Event handler error for %s",
                     event,

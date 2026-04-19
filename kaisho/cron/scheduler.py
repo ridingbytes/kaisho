@@ -9,6 +9,7 @@ import threading
 import time
 from pathlib import Path
 
+from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.background import (
     BackgroundScheduler,
 )
@@ -189,7 +190,7 @@ def sync_backup_job() -> None:
     if trigger is None:
         try:
             _scheduler.remove_job(_BACKUP_JOB_ID)
-        except Exception:
+        except JobLookupError:
             pass
         return
     _scheduler.add_job(
@@ -221,7 +222,7 @@ def _debounced_sync() -> None:
         _ws_sync_pending = False
     try:
         _run_cloud_sync()
-    except Exception:
+    except Exception:  # noqa: BLE001
         _ws_log.warning(
             "WS-triggered sync failed", exc_info=True,
         )
@@ -265,7 +266,7 @@ def _on_cloud_ws_event(
                 "type": event,
                 "data": data,
             })
-        except Exception:
+        except Exception:  # noqa: BLE001
             _ws_log.warning(
                 "Failed to broadcast timer event",
                 exc_info=True,
@@ -429,5 +430,5 @@ def sync_jobs(jobs_file: Path) -> None:
             continue
         try:
             _scheduler.remove_job(job_id)
-        except Exception:
+        except JobLookupError:
             pass

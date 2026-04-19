@@ -401,7 +401,7 @@ def ask_ollama(
         }).encode()
         try:
             data = _http_post(url, payload, headers)
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             raise RuntimeError(
                 f"Ollama request failed: {exc}"
             ) from exc
@@ -465,7 +465,7 @@ def ask_openai_compatible(
         }).encode()
         try:
             data = _http_post(url, payload, headers)
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             raise RuntimeError(
                 f"Request to {base_url} failed: {exc}"
             ) from exc

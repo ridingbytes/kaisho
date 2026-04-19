@@ -116,7 +116,7 @@ def _prefetch_urls(urls: list[str]) -> str:
                 )
                 text = raw.decode(charset, errors="replace")
             parts.append(f"--- {url} ---\n{text}\n")
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             parts.append(
                 f"--- {url} ---\n[ERROR: {exc}]\n"
             )
@@ -386,7 +386,7 @@ def run_prompt_ollama(
         }).encode()
         try:
             data = _http_post(url, payload, headers)
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             raise ExecutorError(
                 f"Ollama request failed: {exc}"
             ) from exc
@@ -436,7 +436,7 @@ def run_prompt_openai_compatible(
         }).encode()
         try:
             data = _http_post(url, payload, headers)
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             raise ExecutorError(
                 f"Request to {base_url} failed: {exc}"
             ) from exc

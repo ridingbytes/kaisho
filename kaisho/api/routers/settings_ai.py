@@ -202,7 +202,7 @@ def _probe_url(
             )
         urllib.request.urlopen(req, timeout=timeout)
         return True
-    except Exception:
+    except (OSError, ValueError):
         return False
 
 

@@ -141,7 +141,11 @@ def api_get_prompt(job_id: str):
     try:
         content = load_prompt(job["prompt_file"], _project_root())
     except ExecutorError as exc:
-        return {"content": "", "path": job.get("prompt_file", ""), "error": str(exc)}
+        return {
+            "content": "",
+            "path": job.get("prompt_file", ""),
+            "error": str(exc),
+        }
     return {"content": content, "path": job.get("prompt_file", "")}
 
 

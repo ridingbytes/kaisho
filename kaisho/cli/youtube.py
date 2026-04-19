@@ -32,12 +32,19 @@ def transcribe_cmd(url, lang, timestamps):
     languages = [code.strip() for code in lang.split(",") if code.strip()]
     click.echo(f"Fetching transcript for {url} …", err=True)
     try:
-        result = transcribe(url, languages=languages, include_timestamps=timestamps)
+        result = transcribe(
+            url,
+            languages=languages,
+            include_timestamps=timestamps,
+        )
     except ValueError as exc:
         click.echo(f"Error: {exc}", err=True)
         sys.exit(1)
-    except Exception as exc:
-        click.echo(f"Error fetching transcript: {exc}", err=True)
+    except OSError as exc:
+        click.echo(
+            f"Error fetching transcript: {exc}",
+            err=True,
+        )
         sys.exit(1)
 
     click.echo(
@@ -60,7 +67,7 @@ def languages_cmd(url):
     except ValueError as exc:
         click.echo(f"Error: {exc}", err=True)
         sys.exit(1)
-    except Exception as exc:
+    except OSError as exc:
         click.echo(f"Error: {exc}", err=True)
         sys.exit(1)
 
