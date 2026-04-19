@@ -73,25 +73,17 @@ function ImportDataSection() {
           >
             <option value="org">Org-mode</option>
             <option value="markdown">Markdown</option>
-            <option value="json">JSON</option>
-            <option value="sql">SQL (DSN)</option>
           </select>
         </div>
         <div className="flex-1 flex flex-col gap-1">
           <label className="text-[10px] font-medium text-stone-500">
-            {format === "sql"
-              ? "DSN"
-              : "Source directory"}
+            Source directory
           </label>
           <input
             type="text"
             value={path}
             onChange={(e) => setPath(e.target.value)}
-            placeholder={
-              format === "sql"
-                ? "sqlite:///path/to/db"
-                : "/path/to/data"
-            }
+            placeholder="/path/to/data"
             className="px-2 py-1.5 rounded-lg text-xs bg-surface-card border border-border text-stone-800 placeholder-stone-400"
           />
         </div>
@@ -132,8 +124,6 @@ export function PathsSection(): JSX.Element {
   const updateKb = useUpdateKbSources();
   const [orgDir, setOrgDir] = useState("");
   const [mdDir, setMdDir] = useState("");
-  const [jsonDir, setJsonDir] = useState("");
-  const [sqlDsn, setSqlDsn] = useState("");
   const [backend, setBackend] = useState("org");
   const [sources, setSources] = useState<
     { label: string; path: string }[]
@@ -144,8 +134,6 @@ export function PathsSection(): JSX.Element {
     if (paths) {
       setOrgDir(paths.org_dir ?? "");
       setMdDir(paths.markdown_dir ?? "");
-      setJsonDir(paths.json_dir ?? "");
-      setSqlDsn(paths.sql_dsn ?? "");
       setBackend(paths.backend ?? "org");
     }
   }, [paths]);
@@ -163,8 +151,6 @@ export function PathsSection(): JSX.Element {
       {
         org_dir: orgDir,
         markdown_dir: mdDir,
-        json_dir: jsonDir,
-        sql_dsn: sqlDsn,
       },
       {
         onSuccess: () => {
@@ -241,12 +227,6 @@ export function PathsSection(): JSX.Element {
               <option value="markdown">
                 Markdown (*.md files)
               </option>
-              <option value="json">
-                JSON (*.json files)
-              </option>
-              <option value="sql">
-                SQL (SQLite / PostgreSQL)
-              </option>
             </select>
             <button
               onClick={handleSwitchBackend}
@@ -299,34 +279,6 @@ export function PathsSection(): JSX.Element {
               }
               className={inputCls}
               placeholder="data/markdown"
-            />
-          </label>
-          <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
-              JSON_DIR
-            </span>
-            <input
-              type="text"
-              value={jsonDir}
-              onChange={(e) =>
-                setJsonDir(e.target.value)
-              }
-              className={inputCls}
-              placeholder="data/json"
-            />
-          </label>
-          <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
-              SQL_DSN
-            </span>
-            <input
-              type="text"
-              value={sqlDsn}
-              onChange={(e) =>
-                setSqlDsn(e.target.value)
-              }
-              className={inputCls}
-              placeholder="sqlite:///path/to/kaisho.db"
             />
           </label>
           <div className="flex items-center gap-3 px-4 py-2.5">
@@ -457,8 +409,8 @@ export function PathsSection(): JSX.Element {
           </div>
         </div>
         <p className="mt-2 text-[10px] text-stone-400">
-          Backend, ORG_DIR, and MARKDOWN_DIR are stored
-          per profile. DATA_DIR, HOST, PORT are global
+          Backend and data directories are stored per
+          profile. DATA_DIR, HOST, PORT are global
           (.env).
         </p>
       </div>
