@@ -7,7 +7,7 @@ kaisho/
 ├── backends/          # Pluggable storage drivers
 │   ├── base.py        # Abstract base classes (the interface contract)
 │   ├── org/           # Org-mode implementation (default)
-│   └── markdown/      # Markdown stub (signatures in place)
+│   └── markdown/      # Markdown implementation
 ├── org/               # Low-level org-mode parser and writer
 │   ├── models.py      # Heading, Clock, OrgFile dataclasses
 │   ├── parser.py      # Text → OrgFile tree
@@ -124,8 +124,8 @@ elif backend_type == "myformat":
 
 5. Set `BACKEND=myformat` in `.env`.
 
-The markdown stub in `backends/markdown/` is a ready-made starting
-point with all method signatures in place.
+The markdown backend in `backends/markdown/` is a complete
+reference implementation.
 
 ## Return types
 

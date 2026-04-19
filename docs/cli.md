@@ -662,26 +662,12 @@ kai convert --from FORMAT --to FORMAT \
     --source PATH --target PATH
 ```
 
-Convert data between backends. Supported formats:
-`org`, `markdown`, `json`, `sql`.
-
-For file-based backends (org, markdown, json), the path
-is a directory. For SQL, it is a DSN string.
+Convert data between backends. Supported formats: `org`, `markdown`.
 
 ```bash
 # Org to markdown
 kai convert --from org --to markdown \
     --source ~/data/org --target ~/data/md
-
-# Markdown to SQLite
-kai convert --from markdown --to sql \
-    --source ~/data/md \
-    --target sqlite:///~/data/kaisho.db
-
-# JSON to PostgreSQL
-kai convert --from json --to sql \
-    --source ~/data/json \
-    --target postgresql://user:pass@host/db
 ```
 
 Conversion order: customers, tasks, clocks, inbox, notes.
@@ -709,8 +695,7 @@ development. Interactive API docs available at `/docs`.
 | `KNOWLEDGE_DIR`       | `~/ownCloud/cowork/knowledge`   | Knowledge base directory                           |
 | `RESEARCH_DIR`     | `~/ownCloud/cowork/research` | Research / AI output directory                     |
 | `CUSTOMERS_DIR`       | `~/ownCloud/cowork/customers`   | Customer markdown files (markdown backend)         |
-| `BACKEND`          | `org`                        | Storage driver: `org`, `markdown`, `json`, or `sql`|
-| `SQL_DSN`          |                              | SQL DSN (sqlite:/// or postgresql://)              |
+| `BACKEND`          | `org`                        | Storage driver: `org` or `markdown`                |
 | `JOBS_FILE`        | `./jobs.yaml`                | Cron job definitions                               |
 | `DATA_DIR`         | `./data`                     | SQLite database directory (cron history)            |
 | `OLLAMA_BASE_URL`  | `http://localhost:11434`     | Ollama API base URL                                |

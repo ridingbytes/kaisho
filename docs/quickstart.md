@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Python 3.12+
-- Node.js 18+ and pnpm
+- Node.js 20+ and pnpm
 - An org-mode or markdown file store (default: `~/ownCloud/cowork/org/`)
 
 ## Backend setup
@@ -33,8 +33,8 @@ PORT=8765
 BACKEND=org
 ```
 
-All variables have sensible defaults. `BACKEND` selects the storage
-driver (`org` or `markdown`).
+All variables have sensible defaults. `BACKEND` selects the
+storage driver (`org` or `markdown`).
 
 ## First run
 

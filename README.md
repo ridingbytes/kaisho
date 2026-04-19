@@ -27,7 +27,7 @@ arts -- the position of readiness.
   budget bars, usage alerts, billable tracking
 - **Inbox** -- quick capture, triage, promote to task
 - **AI Advisor** -- context-aware assistant with 32 tools
-  (Ollama, Claude, OpenRouter, Gemini, LM Studio)
+  (Ollama, LM Studio, Claude API, OpenRouter, OpenAI)
 - **Scheduled Automation** -- cron jobs for daily
   briefings, project reports, business scouting
 - **Knowledge Base** -- search and browse documents
@@ -39,10 +39,13 @@ arts -- the position of readiness.
 - **Dark / Light Theme** -- Zinc palette (true neutral)
 - **Multiple Profiles** -- different backends per profile
 - **Docker Ready** -- single-container deployment
-- **Desktop App** -- native macOS window via Tauri
+- **Desktop App** -- native window via Tauri for macOS
+  (Apple Silicon), Windows, and Linux
   (see [`desktop/`](desktop/))
-- **Cloud Sync** (optional) -- mobile clock tracking that
-  syncs back to the local app, via
+- **Cloud Sync** (paid plan) -- mobile clock tracking via
+  PWA at cloud.kaisho.dev/m with password reset, markdown
+  advisor, and plan badge. Entries sync back to the local
+  app. Requires a sync or sync_ai plan via
   [kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud)
 - **Calendar Feed** -- subscribe any CalDAV/iCal client
   (iCloud, Google, Outlook) to
@@ -109,8 +112,6 @@ kaisho/              Python package (backend)
   backends/          Storage backends
     org/             Org-mode backend
     markdown/        Markdown backend
-    json_backend/    JSON backend
-    sql/             SQLAlchemy backend
   cli/               Click CLI commands
   cron/              Scheduler, executor, tools
   services/          Business logic
@@ -122,10 +123,10 @@ frontend/            React SPA
                      toast)
   src/api/           API client
   src/utils/         Utilities
-desktop/             Tauri v2 wrapper (native macOS app)
-  src-tauri/         Rust shell (spawns kai serve)
+desktop/             Tauri v2 wrapper (native desktop app)
+  src-tauri/         Rust shell (sidecar, auto-updater)
   src/               Splash screen
-tests/               pytest tests (183 tests)
+tests/               pytest tests (244 tests)
 templates/           Default profile templates
 prompts/             AI cron job prompt templates
 scripts/             Screenshots, demo data
@@ -138,12 +139,11 @@ scripts/             Screenshots, demo data
   pydantic-settings, APScheduler, SQLAlchemy
 - **Frontend**: React 18, TypeScript, Vite,
   Tailwind CSS, TanStack React Query, dnd-kit
-- **Data**: pluggable backends (org-mode, Markdown,
-  JSON, SQL via SQLAlchemy)
+- **Data**: pluggable backends (org-mode, Markdown)
 - **Real-time**: WebSocket + file watcher for live
   updates on external file changes
 - **AI**: agentic tool loop with 32 tools, supports
-  Ollama, Claude API, OpenRouter, OpenAI, LM Studio
+  Ollama, LM Studio, Claude API, OpenRouter, OpenAI
 
 
 ## Configuration
@@ -181,21 +181,24 @@ data/
 ## Development
 
 ```bash
-pytest                     # Run 183 tests
+pytest                     # Run 244 tests
 cd frontend && pnpm build  # Production build
 ```
 
 
 ## Companion projects
 
-- **[desktop/](desktop/)** — Tauri v2 wrapper that opens
-  Kaisho in a native macOS window and auto-starts the
-  backend. No terminal needed.
-- **[kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud)** —
-  optional cloud sync service. Provides a mobile PWA for
-  time tracking on the go; entries sync back to your local
-  kaisho when it connects. Configure via
-  Settings → Cloud Sync.
+- **[desktop/](desktop/)** -- Tauri v2 wrapper that opens
+  Kaisho in a native window on macOS (Apple Silicon),
+  Windows, and Linux. Bundles a sidecar binary and
+  includes an auto-updater. No terminal needed.
+- **[kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud)** --
+  cloud sync service (requires paid sync or sync_ai plan).
+  Provides a mobile PWA at cloud.kaisho.dev/m for time
+  tracking on the go with password reset, markdown
+  advisor, and plan badge. Entries sync back to your
+  local kaisho when it connects. Configure via
+  Settings -> Cloud Sync.
 
 
 ## License

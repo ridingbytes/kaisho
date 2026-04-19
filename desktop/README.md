@@ -1,36 +1,42 @@
 # Kaisho Desktop App
 
-Tauri v2 wrapper that opens Kaisho in a native macOS window
-without a terminal. Auto-starts `kai serve` on launch and
-stops it when you close the window.
+Tauri v2 wrapper that opens Kaisho in a native window
+without a terminal. Supported platforms: macOS (Apple
+Silicon), Windows, and Linux. No Intel Mac build.
+
+Auto-starts the backend via a bundled sidecar binary on
+launch and stops it when you close the window. Includes
+an auto-updater that checks for new releases via
+`latest.json` on GitHub Releases.
 
 ## Architecture
 
 ```
 Tauri App (native window)
   |
-  +-- Splash screen (polls http://localhost:8765/health)
+  +-- Splash screen (polls http://127.0.0.1:8765)
   |
-  +-- Webview -> http://localhost:8765 once ready
+  +-- Webview -> http://127.0.0.1:8765 once ready
   |
-  +-- Child process: `kai serve`
+  +-- Sidecar: kai-server (bundled binary)
         |
         +-- FastAPI on :8765 (API + built frontend)
+  |
+  +-- Auto-updater plugin (latest.json endpoint)
 ```
 
-The window shows the Kaisho splash screen until the backend
-responds on `/health`, then redirects to the served frontend.
-Closing the window kills the child process.
+The window shows the Kaisho splash screen until the
+backend responds, then navigates to the served frontend.
+Closing the window kills the sidecar process.
 
-No sidecar binary, no auto-updater — the app relies on a
-working `kai` CLI being installed and on your PATH.
+The sidecar binary (`binaries/kai-server`) is bundled
+into the app at build time via Tauri's `externalBin`
+mechanism.
 
 ## Prerequisites
 
 - Rust toolchain (via [rustup.rs](https://rustup.rs))
 - Node.js 20+ and pnpm
-- `kai` CLI installed (`pip install -e ..` from the kaisho
-  repo root)
 
 ## Development
 
@@ -40,8 +46,9 @@ pnpm install
 pnpm dev
 ```
 
-First launch takes a minute while Rust compiles Tauri. After
-that, `pnpm dev` opens the native window in a few seconds.
+First launch takes a minute while Rust compiles Tauri.
+After that, `pnpm dev` opens the native window in a few
+seconds.
 
 ## Production Build
 
@@ -50,19 +57,23 @@ cd desktop
 pnpm build
 ```
 
-Produces `src-tauri/target/release/bundle/macos/Kaisho.app`
-which you can drag into /Applications.
+On macOS this produces
+`src-tauri/target/release/bundle/macos/Kaisho.app`.
+On Windows and Linux, the corresponding platform bundles
+are created in the same `bundle/` directory.
 
-### Caveat: pyenv + Finder launch
+## Auto-Updater
 
-Apps launched from Finder don't inherit your shell PATH, so
-pyenv shims may not resolve. If `kai` is only available
-through pyenv, the bundled app will fail to spawn the backend.
+The app checks for updates on startup via the endpoint
+configured in `tauri.conf.json`:
 
-Workarounds:
-- Launch from terminal: `open src-tauri/target/release/bundle/macos/Kaisho.app`
-- Hardcode the full path to `kai` in `src-tauri/src/lib.rs`
-- Install `kai` to a system-wide location like `/usr/local/bin`
+```
+https://github.com/ridingbytes/kaisho/releases/latest/download/latest.json
+```
+
+The `latest.json` file contains version, release notes,
+and download URLs for each platform. The updater plugin
+verifies signatures using the public key in the config.
 
 ## Files
 
@@ -72,13 +83,13 @@ desktop/
   src/
     index.html               Splash screen
     splash.css
-    splash.js                Polls /health, redirects on ready
+    splash.js                Polls backend, redirects
   src-tauri/
     Cargo.toml
-    tauri.conf.json          Window size, identifier, icons
+    tauri.conf.json          Window, sidecar, updater
     src/
       main.rs                Entry point
-      lib.rs                 App setup, kai process lifecycle
+      lib.rs                 Sidecar lifecycle, updater
     capabilities/default.json
-    icons/                   Generated from logos/kaisho-logo.svg
+    icons/                   Generated from logo SVG
 ```
