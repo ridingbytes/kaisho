@@ -3,6 +3,11 @@
 Reads all entities from a source backend and writes them
 to a target backend. Handles dependency ordering:
 customers first, then tasks, clocks, inbox, notes.
+
+Supports upsert: existing entries (matched by ID or
+content) are skipped, new entries are created.
+After import, discovered task states and tags are
+auto-added to settings.
 """
 import re
 from datetime import date
@@ -17,15 +22,30 @@ _STATUS_KEYWORDS = {
 }
 _INBOX_TYPE_RE = re.compile(r"^[A-Za-z][\w-]*$")
 
+# Default colors for auto-discovered states
+_STATE_COLORS = {
+    "TODO": "#64748b",
+    "NEXT": "#2563eb",
+    "IN-PROGRESS": "#d97706",
+    "WAIT": "#7c3aed",
+    "DONE": "#16a34a",
+    "CANCELLED": "#dc2626",
+}
+_DONE_STATES = {"DONE", "CANCELLED"}
+
 
 def convert_backend(
     source: Backend,
     target: Backend,
+    settings_file: Path | None = None,
 ) -> dict[str, int]:
     """Convert all data from source to target.
 
     Returns a summary dict mapping entity names to the
     number of records converted.
+
+    When ``settings_file`` is provided, auto-populates
+    task_states and tags from discovered data.
 
     >>> convert_backend(empty_src, empty_tgt)
     {'customers': 0, 'tasks': 0, 'clocks': 0, \
@@ -36,9 +56,9 @@ def convert_backend(
     summary["customers"] = _convert_customers(
         source, target,
     )
-    summary["tasks"] = _convert_tasks(
-        source, target,
-    )
+    tasks_result = _convert_tasks(source, target)
+    summary["tasks"] = tasks_result["count"]
+
     summary["clocks"] = _convert_clocks(
         source, target,
     )
@@ -48,7 +68,58 @@ def convert_backend(
     summary["notes"] = _convert_notes(
         source, target,
     )
+
+    if settings_file:
+        _auto_populate_settings(
+            settings_file,
+            tasks_result["states"],
+            tasks_result["tags"],
+        )
+
     return summary
+
+
+def _auto_populate_settings(
+    settings_file: Path,
+    discovered_states: set[str],
+    discovered_tags: set[str],
+) -> None:
+    """Add missing task states and tags to settings."""
+    from .settings import load_settings, save_settings
+
+    data = load_settings(settings_file)
+    existing_states = {
+        s["name"] for s in data.get("task_states", [])
+    }
+    existing_tags = {
+        t["name"] for t in data.get("tags", [])
+    }
+
+    states_list = list(data.get("task_states", []))
+    for state in sorted(discovered_states):
+        if state not in existing_states:
+            states_list.append({
+                "name": state,
+                "label": state.replace("-", " ").title(),
+                "color": _STATE_COLORS.get(
+                    state, "#64748b",
+                ),
+                "done": state in _DONE_STATES,
+            })
+
+    tags_list = list(data.get("tags", []))
+    for tag in sorted(discovered_tags):
+        if tag not in existing_tags:
+            tags_list.append({
+                "name": tag,
+                "color": "",
+                "description": "",
+            })
+
+    if states_list or tags_list:
+        data["task_states"] = states_list
+        data["tags"] = tags_list
+        save_settings(settings_file, data)
 
 
 def _convert_customers(
@@ -127,15 +198,32 @@ def _clean_title(title: str) -> str:
 
 def _convert_tasks(
     source: Backend, target: Backend,
-) -> int:
-    """Copy tasks (open + done + archived)."""
+) -> dict:
+    """Copy tasks with upsert by task ID.
+
+    Returns dict with count, discovered states, and
+    discovered tags.
+    """
     tasks = source.tasks.list_tasks(include_done=True)
+    existing = target.tasks.list_tasks(
+        include_done=True,
+    )
+    existing_ids = {t["id"] for t in existing}
+    discovered_states: set[str] = set()
+    discovered_tags: set[str] = set()
     count = 0
+
     for t in tasks:
+        status = t.get("status", "TODO")
+        discovered_states.add(status)
+        for tag in t.get("tags") or []:
+            discovered_tags.add(tag)
+        if t.get("id") in existing_ids:
+            continue
         target.tasks.add_task(
             customer=t.get("customer") or "",
             title=_clean_title(t["title"]),
-            status=t.get("status", "TODO"),
+            status=status,
             tags=t.get("tags"),
             body=t.get("body"),
             github_url=t.get("github_url"),
@@ -143,31 +231,62 @@ def _convert_tasks(
         count += 1
 
     archived = source.tasks.list_archived()
+    archived_ids = {
+        a["id"] for a in target.tasks.list_archived()
+    }
     for a in archived:
+        status = a.get("archive_status", "DONE")
+        discovered_states.add(status)
+        for tag in a.get("tags") or []:
+            discovered_tags.add(tag)
+        if a.get("id") in archived_ids:
+            continue
         added = target.tasks.add_task(
             customer=a.get("customer") or "",
             title=_clean_title(a["title"]),
-            status=a.get("archive_status", "DONE"),
+            status=status,
             tags=a.get("tags"),
             body=a.get("body"),
             github_url=a.get("github_url"),
         )
         target.tasks.archive_task(added["id"])
         count += 1
-    return count
+
+    return {
+        "count": count,
+        "states": discovered_states,
+        "tags": discovered_tags,
+    }
+
+
+def _clock_fingerprint(entry: dict) -> str:
+    """Create a dedup key from clock entry content."""
+    start = (entry.get("start") or "")[:16]
+    customer = entry.get("customer", "")
+    desc = entry.get("description", "")
+    return f"{start}|{customer}|{desc}"
 
 
 def _convert_clocks(
     source: Backend, target: Backend,
 ) -> int:
-    """Copy clock entries."""
+    """Copy clock entries, skipping duplicates.
+
+    Matches by start timestamp + customer + description.
+    """
     entries = source.clocks.list_entries(period="all")
+    existing = target.clocks.list_entries(period="all")
+    existing_fps = {
+        _clock_fingerprint(e) for e in existing
+    }
     count = 0
     for e in entries:
         if e.get("end") is None:
             continue
         mins = e.get("duration_minutes") or 0
         if mins <= 0:
+            continue
+        if _clock_fingerprint(e) in existing_fps:
             continue
         h = int(mins // 60)
         m = int(mins % 60)
@@ -189,7 +308,9 @@ def _convert_clocks(
     return count
 
 
-def _clean_inbox_title(title: str, item_type: str) -> str:
+def _clean_inbox_title(
+    title: str, item_type: str,
+) -> str:
     """Strip leading type word from inbox title if it
     matches the item's type (avoids duplication)."""
     parts = title.split(None, 1)
@@ -201,17 +322,34 @@ def _clean_inbox_title(title: str, item_type: str) -> str:
     return title
 
 
+def _inbox_fingerprint(item: dict) -> str:
+    """Create a dedup key from inbox item content."""
+    title = item.get("title", "")
+    body = (item.get("body") or "")[:100]
+    return f"{title}|{body}"
+
+
 def _convert_inbox(
     source: Backend, target: Backend,
 ) -> int:
-    """Copy inbox items."""
+    """Copy inbox items, skipping duplicates."""
     items = source.inbox.list_items()
+    existing = target.inbox.list_items()
+    existing_fps = {
+        _inbox_fingerprint(e) for e in existing
+    }
     count = 0
     for item in items:
         title = _clean_inbox_title(
             _clean_title(item["title"]),
             item.get("type", ""),
         )
+        fp = _inbox_fingerprint({
+            "title": title,
+            "body": item.get("body"),
+        })
+        if fp in existing_fps:
+            continue
         target.inbox.add_item(
             text=title,
             item_type=item.get("type") or None,
@@ -224,13 +362,27 @@ def _convert_inbox(
     return count
 
 
+def _note_fingerprint(note: dict) -> str:
+    """Create a dedup key from note content."""
+    title = note.get("title", "")
+    body = (note.get("body") or "")[:100]
+    return f"{title}|{body}"
+
+
 def _convert_notes(
     source: Backend, target: Backend,
 ) -> int:
-    """Copy notes."""
+    """Copy notes, skipping duplicates."""
     notes = source.notes.list_notes()
+    existing = target.notes.list_notes()
+    existing_fps = {
+        _note_fingerprint(n) for n in existing
+    }
     count = 0
     for n in notes:
+        fp = _note_fingerprint(n)
+        if fp in existing_fps:
+            continue
         target.notes.add_note(
             title=n["title"],
             body=n.get("body", ""),
@@ -341,7 +493,9 @@ def make_backend_from_spec(
             TODOS_FILE = directory / "todos.org"
             ARCHIVE_FILE = directory / "archive.org"
             CLOCKS_FILE = directory / "clocks.org"
-            CUSTOMERS_FILE = directory / "customers.org"
+            CUSTOMERS_FILE = (
+                directory / "customers.org"
+            )
             INBOX_FILE = directory / "inbox.org"
             NOTES_FILE = directory / "notes.org"
             SETTINGS_FILE = cfg.SETTINGS_FILE
@@ -359,4 +513,6 @@ def make_backend_from_spec(
             watch_paths=[],
         )
 
-    raise ValueError(f"Unknown backend format: {fmt}")
+    raise ValueError(
+        f"Unknown backend format: {fmt}"
+    )
