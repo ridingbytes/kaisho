@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.3
+
+- Cloud onboarding: pricing links, feature overview, spam email hint
+- Top-bar cloud plan badge and mobile app link when connected
+- Dismissable cloud nudge banner (14-day cooldown)
+- Advisor, Cron, GitHub panels always visible in sidebar
+- Empty-state hints when no AI provider or GitHub token configured
+- Ollama API Key moved to Cloud API Keys section
+- Cron Run button disabled when no model configured
+- Fix updater ACL permissions for in-app updates
+- Fix version display (bundle pyproject.toml in sidecar)
+- Claude models only shown when API key is set
+
 ## 0.4.0
 
 - Advisor tool calling: kai CLI commands via Kaisho AI
