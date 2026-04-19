@@ -1,1 +1,23 @@
-{}
+{
+  "inbox": "Inbox",
+  "addItem": "+ Add",
+  "captureSomething": "Capture something...",
+  "inboxEmpty": "Inbox is empty",
+  "inboxEmptyHint": "Click \"+ Add\" to capture something",
+  "autoType": "Auto type",
+  "anyChannel": "Any channel",
+  "anyDirection": "Any direction",
+  "bodyOptional": "Body (optional)",
+  "inboxItemCaptured": "Inbox item captured",
+  "inboxItemDeleted": "Inbox item deleted",
+  "inboxItemUpdated": "Inbox item updated",
+  "movedTo": "Moved to {{destination}}",
+  "promotedToTask": "Promoted to task",
+  "in": "In",
+  "out": "Out",
+  "any": "Any",
+  "emailChannel": "Email",
+  "phoneChannel": "Phone",
+  "chatChannel": "Chat",
+  "otherChannel": "Other"
+}

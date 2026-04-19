@@ -1,1 +1,15 @@
-{}
+{
+  "dashboard": "Dashboard",
+  "openTasks": "Open tasks",
+  "inboxItems": "Inbox items",
+  "hoursThisMonth": "Hours this month",
+  "budgetsAtRisk": "Budgets at risk",
+  "unassignedEntries": "Unassigned entries",
+  "inboxOlderThan7Days": "Inbox > 7 days",
+  "budgetStatus": "Budget Status",
+  "timeInsights": "Time Insights",
+  "activity": "Activity",
+  "billableSplit": "Billable Split",
+  "byCustomer": "By Customer",
+  "loadingInsights": "Loading insights..."
+}

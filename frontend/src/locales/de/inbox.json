@@ -1,1 +1,23 @@
-{}
+{
+  "inbox": "Posteingang",
+  "addItem": "+ Neu",
+  "captureSomething": "Etwas erfassen...",
+  "inboxEmpty": "Posteingang ist leer",
+  "inboxEmptyHint": "Klicke auf \"+ Neu\" um etwas zu erfassen",
+  "autoType": "Automatischer Typ",
+  "anyChannel": "Beliebiger Kanal",
+  "anyDirection": "Beliebige Richtung",
+  "bodyOptional": "Inhalt (optional)",
+  "inboxItemCaptured": "Posteingangseintrag erfasst",
+  "inboxItemDeleted": "Posteingangseintrag gel\u00f6scht",
+  "inboxItemUpdated": "Posteingangseintrag aktualisiert",
+  "movedTo": "Verschoben nach {{destination}}",
+  "promotedToTask": "Als Aufgabe erstellt",
+  "in": "Eingang",
+  "out": "Ausgang",
+  "any": "Alle",
+  "emailChannel": "E-Mail",
+  "phoneChannel": "Telefon",
+  "chatChannel": "Chat",
+  "otherChannel": "Sonstiges"
+}

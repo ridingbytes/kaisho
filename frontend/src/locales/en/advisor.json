@@ -1,1 +1,27 @@
-{}
+{
+  "advisor": "Advisor",
+  "clearChat": "Clear chat (/reset)",
+  "kaishoAi": "Kaisho AI",
+  "noAiProvider": "No AI provider configured",
+  "noAiProviderHint": "The advisor needs a local model (Ollama, LM Studio) or a cloud API key (Claude, OpenRouter, OpenAI) to work. Configure one in Settings > AI, or enable Kaisho AI via Settings > Cloud Sync to use it without local hardware.",
+  "askOrPick": "Ask a question or pick a template:",
+  "askAnything": "Ask anything... (/ for commands)",
+  "thinking": "Thinking...",
+  "focusToday": "What should I focus on today?",
+  "budgetLimit": "Which customers are close to budget limit?",
+  "summarizeWeek": "Summarize my week",
+  "overdueTasks": "Any overdue tasks or follow-ups?",
+  "bookTime": "Book 1h for ...",
+  "createTask": "Create a task for ...",
+  "monthHours": "How many hours did I log this month?",
+  "openIssues": "Show open issues across all customers",
+  "slashReset": "Clear the chat",
+  "slashModel": "Switch model (e.g. /model ollama:qwen3:14b)",
+  "slashHelp": "Show available commands",
+  "providerModel": "provider:model",
+  "stopped": "*Stopped.*",
+  "requestFailed": "Request failed.",
+  "calling": "Calling {{name}}...",
+  "done": "{{name}} done",
+  "failed": "{{name}} failed"
+}

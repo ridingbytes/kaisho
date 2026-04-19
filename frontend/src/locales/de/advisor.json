@@ -1,1 +1,27 @@
-{}
+{
+  "advisor": "Berater",
+  "clearChat": "Chat leeren (/reset)",
+  "kaishoAi": "Kaisho AI",
+  "noAiProvider": "Kein KI-Provider konfiguriert",
+  "noAiProviderHint": "Der Berater braucht ein lokales Modell (Ollama, LM Studio) oder einen Cloud-API-Schl\u00fcssel (Claude, OpenRouter, OpenAI). Konfiguriere eines unter Einstellungen > KI oder aktiviere Kaisho AI unter Einstellungen > Cloud Sync.",
+  "askOrPick": "Stelle eine Frage oder w\u00e4hle eine Vorlage:",
+  "askAnything": "Frag mich etwas... (/ f\u00fcr Befehle)",
+  "thinking": "Denke nach...",
+  "focusToday": "Worauf sollte ich mich heute konzentrieren?",
+  "budgetLimit": "Welche Kunden sind nah am Budgetlimit?",
+  "summarizeWeek": "Fasse meine Woche zusammen",
+  "overdueTasks": "\u00dcberf\u00e4llige Aufgaben oder Follow-ups?",
+  "bookTime": "Buche 1h f\u00fcr ...",
+  "createTask": "Erstelle eine Aufgabe f\u00fcr ...",
+  "monthHours": "Wie viele Stunden habe ich diesen Monat erfasst?",
+  "openIssues": "Zeige offene Issues aller Kunden",
+  "slashReset": "Chat leeren",
+  "slashModel": "Modell wechseln (z.B. /model ollama:qwen3:14b)",
+  "slashHelp": "Verf\u00fcgbare Befehle anzeigen",
+  "providerModel": "provider:modell",
+  "stopped": "*Gestoppt.*",
+  "requestFailed": "Anfrage fehlgeschlagen.",
+  "calling": "Rufe {{name}} auf...",
+  "done": "{{name}} abgeschlossen",
+  "failed": "{{name}} fehlgeschlagen"
+}

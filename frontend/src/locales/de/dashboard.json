@@ -1,1 +1,15 @@
-{}
+{
+  "dashboard": "Dashboard",
+  "openTasks": "Offene Aufgaben",
+  "inboxItems": "Posteingang",
+  "hoursThisMonth": "Stunden diesen Monat",
+  "budgetsAtRisk": "Budgets gef\u00e4hrdet",
+  "unassignedEntries": "Nicht zugewiesene Eintr\u00e4ge",
+  "inboxOlderThan7Days": "Posteingang > 7 Tage",
+  "budgetStatus": "Budgetstatus",
+  "timeInsights": "Zeitauswertung",
+  "activity": "Aktivit\u00e4t",
+  "billableSplit": "Abrechenbar/Nicht abrechenbar",
+  "byCustomer": "Nach Kunde",
+  "loadingInsights": "Auswertung laden..."
+}
