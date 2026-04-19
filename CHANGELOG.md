@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.4
+
+- Fix updater: allow IPC from localhost webview
+- External links open in system browser (not webview)
+- Automatic update notifier on app startup
+- What's New dialog shows only latest version
+- Import: upsert by ID (no duplicates on re-import)
+- Import: auto-populate task states and tags in settings
+- Hide advisor model selector when no AI configured
+- Disable cron enable toggle without a model
+- Narrow exception handling to specific types
+
 ## 0.5.3
 
 - Cloud onboarding: pricing links, feature overview, spam email hint
