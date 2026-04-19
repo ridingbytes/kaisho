@@ -593,17 +593,55 @@ export function AiSection(): JSX.Element {
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                Ollama URL
+                Ollama
               </span>
-              <input
-                type="text"
-                value={form.ollama_url}
-                onChange={(e) =>
-                  set("ollama_url", e.target.value)
-                }
-                placeholder="http://localhost:11434"
-                className={inputCls}
-              />
+              <div className="flex-1 flex gap-2">
+                <select
+                  value={
+                    form.ollama_url ===
+                      "https://api.ollama.com"
+                      ? "cloud"
+                      : form.ollama_url ===
+                          "http://localhost:11434" ||
+                        !form.ollama_url
+                        ? "local"
+                        : "custom"
+                  }
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "local") {
+                      set(
+                        "ollama_url",
+                        "http://localhost:11434",
+                      );
+                    } else if (v === "cloud") {
+                      set(
+                        "ollama_url",
+                        "https://api.ollama.com",
+                      );
+                    }
+                  }}
+                  className={
+                    "w-24 shrink-0 px-2 py-1.5 " +
+                    "rounded border border-border " +
+                    "bg-surface-card text-xs " +
+                    "text-stone-700"
+                  }
+                >
+                  <option value="local">Local</option>
+                  <option value="cloud">Cloud</option>
+                  <option value="custom">Custom</option>
+                </select>
+                <input
+                  type="text"
+                  value={form.ollama_url}
+                  onChange={(e) =>
+                    set("ollama_url", e.target.value)
+                  }
+                  placeholder="http://localhost:11434"
+                  className={inputCls}
+                />
+              </div>
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
