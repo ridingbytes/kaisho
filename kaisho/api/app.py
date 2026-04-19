@@ -35,7 +35,6 @@ from ..cron.scheduler import build_scheduler
 from .watcher.service import watch_files
 
 
-@asynccontextmanager
 def _init_ssl():
     """Set default SSL context for urllib.
 

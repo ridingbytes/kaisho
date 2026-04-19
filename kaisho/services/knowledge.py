@@ -11,14 +11,24 @@ KB_EXTENSIONS = {"*.md", "*.org", "*.rst", "*.txt"}
 
 
 def _safe_path(base: Path, rel_path: str) -> Path:
-    """Resolve rel_path under base and verify it stays inside.
+    """Resolve rel_path under base and verify it
+    stays inside.
 
-    Raises ValueError if the resolved path escapes the base
-    directory (path traversal attack).
+    Uses ``Path.relative_to()`` which is immune to
+    prefix-overlap bypasses (e.g. ``/data/kbevil``
+    matching ``/data/kb`` via string comparison).
+
+    :param base: Base directory.
+    :param rel_path: Untrusted relative path.
+    :returns: Resolved absolute path.
+    :raises ValueError: If the resolved path escapes
+        the base directory (path traversal attack).
     """
     candidate = (base / rel_path).resolve()
     base_resolved = base.resolve()
-    if not str(candidate).startswith(str(base_resolved)):
+    try:
+        candidate.relative_to(base_resolved)
+    except ValueError:
         raise ValueError(
             f"Path traversal blocked: {rel_path!r}"
         )
