@@ -125,6 +125,7 @@ jobs:
           rm /tmp/cert.p12
 
       - name: Build Tauri app
+        id: tauri
         uses: tauri-apps/tauri-action@v0.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -144,3 +145,98 @@ jobs:
           prerelease: ${{ steps.channel.outputs.prerelease }}
           includeUpdaterJson: true
           args: --target ${{ matrix.target }}
+
+      - name: Upload sig files
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          find desktop/src-tauri/target -name "*.sig" \
+            -not -path "*/deps/*" | while read sig; do
+            name=$(basename "$sig")
+            echo "Uploading $name"
+            gh release upload "$TAG" "$sig" \
+              --clobber 2>/dev/null || true
+          done
+
+  updater-json:
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate latest.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}"
+
+          # Download sig files
+          mkdir -p /tmp/sigs
+          gh release download "$TAG" \
+            --pattern "*.sig" \
+            --dir /tmp/sigs 2>/dev/null || true
+
+          read_sig() {
+            local pattern="$1"
+            local f=$(find /tmp/sigs -name "$pattern" | head -1)
+            if [ -n "$f" ]; then cat "$f"; else echo ""; fi
+          }
+
+          MAC_SIG=$(read_sig "*.app.tar.gz.sig")
+          LINUX_SIG=$(read_sig "*AppImage.tar.gz.sig")
+          WIN_NSIS_SIG=$(read_sig "*setup.nsis.zip.sig")
+          WIN_MSI_SIG=$(read_sig "*x64_en-US.msi.sig")
+
+          # Find actual asset names
+          ASSETS=$(gh release view "$TAG" \
+            --json assets -q '.assets[].name')
+          MAC_TAR=$(echo "$ASSETS" | grep "app.tar.gz" | head -1)
+          LINUX_IMG=$(echo "$ASSETS" | grep "AppImage" | grep -v sig | head -1)
+          WIN_NSIS=$(echo "$ASSETS" | grep "setup.exe" | grep -v sig | head -1)
+
+          cat > /tmp/latest.json << ENDJSON
+          {
+            "version": "${VERSION}",
+            "pub_date": "${PUB_DATE}",
+            "platforms": {
+              "darwin-aarch64": {
+                "signature": "${MAC_SIG}",
+                "url": "${RELEASE_URL}/${MAC_TAR}"
+              },
+              "linux-x86_64": {
+                "signature": "${LINUX_SIG}",
+                "url": "${RELEASE_URL}/${LINUX_IMG}"
+              },
+              "windows-x86_64": {
+                "signature": "${WIN_NSIS_SIG}",
+                "url": "${RELEASE_URL}/${WIN_NSIS}"
+              }
+            }
+          }
+          ENDJSON
+
+          # Clean up indentation
+          python3 -c "
+          import json, sys
+          with open('/tmp/latest.json') as f:
+              data = json.load(f)
+          # Remove platforms with empty signatures
+          data['platforms'] = {
+              k: v for k, v in data['platforms'].items()
+              if v.get('signature')
+          }
+          with open('/tmp/latest.json', 'w') as f:
+              json.dump(data, f, indent=2)
+          "
+
+          echo "Generated latest.json:"
+          cat /tmp/latest.json
+
+          gh release upload "$TAG" /tmp/latest.json \
+            --clobber

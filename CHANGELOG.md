@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.6
+
+- Fix Tags & Types panel on fresh/reset profile
+- Create profile directory on startup if missing
+- Fix auto-updater: generate latest.json correctly
+- Reset local preferences button in Settings
+- Settings endpoint: robust defaults for all fields
+
 ## 0.5.5
 
 - Fix Tags & Types settings panel (stuck on Loading)
