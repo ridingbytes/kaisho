@@ -3,11 +3,15 @@
   "identifier": "default",
   "description": "Default capabilities for the Kaisho desktop app.",
   "windows": ["main"],
+  "remote": {
+    "urls": ["http://127.0.0.1:8765/*"]
+  },
   "permissions": [
     "core:default",
     "shell:allow-spawn",
     "shell:allow-kill",
     "shell:allow-stdin-write",
+    "shell:allow-open",
     {
       "identifier": "shell:allow-execute",
       "allow": [

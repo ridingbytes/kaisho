@@ -13,6 +13,7 @@ import {
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
+import { openExternal } from "../../utils/tauri";
 
 const QUESTION_TEMPLATES = [
   "What should I focus on today?",
@@ -313,14 +314,16 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
               </strong>{" "}
               to use it without local hardware.
             </p>
-            <a
-              href="https://kaisho.dev/#pricing"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-block text-xs text-cta hover:underline"
+            <button
+              onClick={() =>
+                openExternal(
+                  "https://kaisho.dev/#pricing",
+                )
+              }
+              className="text-xs text-cta hover:underline"
             >
               Learn about Kaisho Cloud plans
-            </a>
+            </button>
           </div>
         )}
         {messages.length === 0 && !loading && (cloudAi || model || models.length > 0) && (

@@ -49,7 +49,7 @@ import {
   useShortcutsContext,
 } from "./context/ShortcutsContext";
 import { ViewContext } from "./context/ViewContext";
-import { isTauri } from "./utils/tauri";
+import { isTauri, openExternal } from "./utils/tauri";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { schedulePanelAction } from "./utils/panelActions";
 import { WhatsNewDialog } from "./components/common/WhatsNewDialog";
@@ -248,14 +248,16 @@ function CloudNudgeBanner({
       <p className="flex-1 text-[11px] text-stone-700">
         Unlock AI advisor, cloud sync, and
         mobile access —{" "}
-        <a
-          href="https://kaisho.dev/#pricing"
-          target="_blank"
-          rel="noreferrer"
+        <button
+          onClick={() =>
+            openExternal(
+              "https://kaisho.dev/#pricing",
+            )
+          }
           className="text-cta hover:underline font-medium"
         >
           See plans
-        </a>
+        </button>
         {" "}or{" "}
         <button
           onClick={onOpenSettings}
@@ -618,10 +620,12 @@ function AppShell() {
                     ? "Cloud"
                     : "Free"}
               </button>
-              <a
-                href="https://cloud.kaisho.dev/m"
-                target="_blank"
-                rel="noreferrer"
+              <button
+                onClick={() =>
+                  openExternal(
+                    "https://cloud.kaisho.dev/m",
+                  )
+                }
                 className={[
                   "hidden sm:flex items-center",
                   "p-1 rounded text-stone-500",
@@ -631,7 +635,7 @@ function AppShell() {
                 title="Open mobile app"
               >
                 <Smartphone size={14} />
-              </a>
+              </button>
             </>
           )}
           {/* Mobile timer button */}

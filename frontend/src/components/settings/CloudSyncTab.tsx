@@ -11,6 +11,7 @@ import {
 } from "../../api/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { openExternal } from "../../utils/tauri";
 import { inputCls, saveBtnCls } from "./styles";
 
 const PLAN_LABELS: Record<string, string> = {
@@ -151,14 +152,16 @@ export function CloudSyncSection(): JSX.Element {
             <p className="text-xs text-stone-600 leading-relaxed mb-3">
               Connect your Kaisho instance to the cloud
               to sync time entries with the{" "}
-              <a
-                href="https://cloud.kaisho.dev/m"
-                target="_blank"
-                rel="noreferrer"
+              <button
+                onClick={() =>
+                  openExternal(
+                    "https://cloud.kaisho.dev/m",
+                  )
+                }
                 className="text-cta hover:underline"
               >
                 mobile app
-              </a>
+              </button>
               , enable the AI advisor and cron jobs
               without a local model, and access your
               data from anywhere.
@@ -193,14 +196,16 @@ export function CloudSyncSection(): JSX.Element {
                 </span>
               </li>
             </ul>
-            <a
-              href="https://kaisho.dev/#pricing"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-block px-4 py-1.5 rounded-lg text-xs font-medium bg-cta text-white hover:bg-cta-hover transition-colors"
+            <button
+              onClick={() =>
+                openExternal(
+                  "https://kaisho.dev/#pricing",
+                )
+              }
+              className="px-4 py-1.5 rounded-lg text-xs font-medium bg-cta text-white hover:bg-cta-hover transition-colors"
             >
               View plans &amp; pricing
-            </a>
+            </button>
           </div>
           <div className="px-4 py-2.5 bg-amber-500/10 border-t border-amber-500/20">
             <p className="text-[10px] text-amber-700">
