@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0
+
+- Resume button visible on all clock entries (not just today)
+- Hardcode cloud.kaisho.dev URL (no manual URL input)
+- Password reset flow in mobile PWA
+- Markdown rendering + syntax highlighting in PWA advisor
+- Advisor templates populate input (don't auto-send)
+- Stop button for in-flight advisor requests
+- Redesigned PWA home screen icon
+
 ## 0.5.10
 
 - Empty AI settings on fresh profiles (no pre-filled URLs)
