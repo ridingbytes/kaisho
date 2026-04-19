@@ -172,6 +172,8 @@ function JobCard({
 
   const trigger = useTriggerCronJob();
   const [triggered, setTriggered] = useState(false);
+  const hasModel =
+    (job.use_kaisho_ai && cloudAi) || !!job.model;
   const updateJob = useUpdateCronJob();
   const deleteJob = useDeleteCronJob();
   const savePrompt = useSaveJobPrompt();
@@ -277,13 +279,22 @@ function JobCard({
                 },
               });
             }}
-            disabled={trigger.isPending || triggered}
+            disabled={
+              !hasModel
+              || trigger.isPending
+              || triggered
+            }
             className={[
               "flex items-center gap-1 px-2 py-1 rounded-lg",
               "text-xs bg-surface-raised border border-border",
               "text-stone-800 hover:bg-surface-overlay transition-colors",
               "disabled:opacity-50 disabled:cursor-not-allowed",
             ].join(" ")}
+            title={
+              hasModel
+                ? "Run this job now"
+                : "Configure a model first"
+            }
           >
             <Play size={10} />
             {triggered ? "Running…" : "Run"}
@@ -313,8 +324,12 @@ function JobCard({
         <span title="Model">
           {job.use_kaisho_ai && cloudAi ? (
             <span className="text-cta">Kaisho AI</span>
-          ) : (
+          ) : job.model ? (
             job.model
+          ) : (
+            <span className="text-amber-500">
+              No model
+            </span>
           )}
         </span>
         <span className="text-stone-400">|</span>
