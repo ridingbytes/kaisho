@@ -146,9 +146,36 @@ function columnHeaders(
 
 // ── Download helper ──────────────────────────────────
 
-function triggerDownload(
+async function triggerDownload(
   blob: Blob, filename: string,
-): void {
+): Promise<void> {
+  if ("__TAURI_INTERNALS__" in window) {
+    try {
+      const { save } = await import(
+        "@tauri-apps/plugin-dialog"
+      );
+      const { writeTextFile } = await import(
+        "@tauri-apps/plugin-fs"
+      );
+      const path = await save({
+        defaultPath: filename,
+        filters: [{
+          name: filename.endsWith(".xlsx")
+            ? "Excel" : "CSV",
+          extensions: [
+            filename.split(".").pop() || "csv",
+          ],
+        }],
+      });
+      if (path) {
+        const text = await blob.text();
+        await writeTextFile(path, text);
+      }
+      return;
+    } catch {
+      // fall through to browser download
+    }
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
