@@ -572,10 +572,69 @@ function ResetLocalStorageSection() {
   );
 }
 
+// -----------------------------------------------------------------
+// Language
+// -----------------------------------------------------------------
+
+const LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "de", label: "Deutsch" },
+];
+
+function LanguageSection() {
+  const [, forceUpdate] = useState(0);
+  // Dynamic import so this compiles even before
+  // the i18n module exists.
+  const lang = (
+    localStorage.getItem("kaisho_lang")
+    || navigator.language.split("-")[0]
+    || "en"
+  );
+
+  function switchLang(code: string) {
+    import("../../i18n").then(({ setLanguage }) => {
+      setLanguage(code);
+      forceUpdate((n) => n + 1);
+    });
+  }
+
+  return (
+    <section>
+      <h3
+        className={
+          "text-[10px] font-semibold uppercase " +
+          "tracking-wider text-stone-500 mb-3"
+        }
+      >
+        Language
+      </h3>
+      <div className="flex gap-2">
+        {LANGUAGES.map((l) => (
+          <button
+            key={l.code}
+            onClick={() => switchLang(l.code)}
+            className={[
+              "px-3 py-1.5 rounded text-sm",
+              "border transition-colors",
+              lang === l.code
+                ? "border-cta bg-cta text-white"
+                : "border-border text-stone-600 " +
+                  "hover:border-stone-400",
+            ].join(" ")}
+          >
+            {l.label}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function GeneralTab(): JSX.Element {
   return (
     <div className="flex flex-col gap-8">
       <AppTitleSection />
+      <LanguageSection />
       <UserProfileSection />
       <ProfilesTab />
       <ResetLocalStorageSection />
