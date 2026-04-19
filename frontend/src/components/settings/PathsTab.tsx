@@ -69,7 +69,7 @@ function ImportDataSection() {
             onChange={(e) =>
               setFormat(e.target.value)
             }
-            className="px-2 py-1.5 rounded-lg text-xs bg-surface-card border border-border text-stone-800"
+            className="px-2 h-[30px] rounded-lg text-xs bg-surface-card border border-border text-stone-800"
           >
             <option value="org">Org-mode</option>
             <option value="markdown">Markdown</option>
@@ -84,7 +84,7 @@ function ImportDataSection() {
             value={path}
             onChange={(e) => setPath(e.target.value)}
             placeholder="/path/to/data"
-            className="px-2 py-1.5 rounded-lg text-xs bg-surface-card border border-border text-stone-800 placeholder-stone-400"
+            className="px-2 h-[30px] rounded-lg text-xs bg-surface-card border border-border text-stone-800 placeholder-stone-400"
           />
         </div>
         <button
@@ -218,7 +218,7 @@ export function PathsSection(): JSX.Element {
               }
               className={[
                 fieldCls,
-                "flex-1",
+                "flex-1 h-[34px]",
               ].join(" ")}
             >
               <option value="org">
@@ -342,8 +342,8 @@ export function PathsSection(): JSX.Element {
                 }
                 placeholder="Label"
                 className={[
-                  fieldCls,
-                  "w-28 shrink-0",
+                  inputCls,
+                  "w-28 shrink-0 !flex-none",
                 ].join(" ")}
               />
               <input
