@@ -133,7 +133,13 @@ function StatusPill({ status }: { status: CronRun["status"] }) {
   );
 }
 
-function EnableToggle({ job }: { job: CronJob }) {
+function EnableToggle({
+  job,
+  hasModel,
+}: {
+  job: CronJob;
+  hasModel: boolean;
+}) {
   const enable = useEnableCronJob();
   const disable = useDisableCronJob();
   const pending = enable.isPending || disable.isPending;
@@ -141,8 +147,12 @@ function EnableToggle({ job }: { job: CronJob }) {
   return (
     <Toggle
       checked={job.enabled}
-      onChange={(on) => (on ? enable.mutate(job.id) : disable.mutate(job.id))}
-      disabled={pending}
+      onChange={(on) =>
+        on
+          ? enable.mutate(job.id)
+          : disable.mutate(job.id)
+      }
+      disabled={pending || !hasModel}
     />
   );
 }
@@ -258,7 +268,10 @@ function JobCard({
           <p className="text-[10px] text-stone-500 font-mono">{job.id}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <EnableToggle job={job} />
+          <EnableToggle
+            job={job}
+            hasModel={hasModel}
+          />
           <button
             onClick={startEdit}
             className="text-stone-500 hover:text-cta transition-colors"

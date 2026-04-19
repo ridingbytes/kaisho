@@ -261,7 +261,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             <span className="px-3 py-1 rounded-lg text-xs font-medium bg-cta/10 text-cta border border-cta/30">
               Kaisho AI
             </span>
-          ) : (
+          ) : models.length > 0 ? (
             <>
               <datalist id="advisor-model-list">
                 {models.map((m) => (
@@ -289,7 +289,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
                 ollama: | claude: | openrouter: | openai:
               </span>
             </>
-          )}
+          ) : null}
         </div>
         <HelpButton title="Advisor" doc={DOCS.advisor} view="advisor" />
       </div>
