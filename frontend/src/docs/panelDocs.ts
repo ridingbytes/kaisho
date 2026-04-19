@@ -340,6 +340,25 @@ kai config move-state REVIEW --after IN-PROGRESS
 
 Settings are stored in \`settings.yaml\` (path: \`SETTINGS_FILE\` env
 var, default \`./settings.yaml\`).
+
+**Cloud Sync** — connect the desktop app to Kaisho Cloud
+for bidirectional sync of clock entries with the mobile
+PWA. Enter your API key (from your confirmation email or
+the mobile app Profile tab) and click Connect.
+
+- **Sync + AI plan** enables cloud-routed AI for the
+  advisor and cron jobs without a local GPU.
+- **Sync Now** triggers an immediate pull/push cycle.
+- **Disconnect** wipes all cloud entries and resets sync.
+
+Cloud Sync requires a paid plan. Visit kaisho.dev for
+pricing.
+
+**Import Data** — import org-mode or Markdown files from
+another directory. Import is additive and uses upsert:
+existing entries (matched by ID) are skipped, new ones
+are created. Task states and tags are auto-populated
+from the imported data.
 `,
 
   advisor: `
