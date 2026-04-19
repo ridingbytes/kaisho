@@ -978,6 +978,20 @@ def quick_book(
     When only ``target_date`` is set, the entry is
     placed at noon. Otherwise, ``end`` is now and
     ``start`` is computed backwards from the duration.
+
+    :param clocks_file: Path to clocks.org.
+    :param duration_str: Human-readable duration like
+        ``"1h30m"``.
+    :param customer: Customer name.
+    :param description: Entry description.
+    :param target_date: Optional date to place the entry.
+    :param notes: Optional free-form notes.
+    :param sync_id: Sync UUID (generated if omitted).
+    :param updated_at: Timestamp (generated if omitted).
+    :param start_time: ISO start time; preserves
+        original timestamps during import.
+    :returns: The new entry dict.
+    :raises ValueError: If the duration is unparseable.
     """
     minutes = parse_duration(duration_str)
     if minutes is None:
