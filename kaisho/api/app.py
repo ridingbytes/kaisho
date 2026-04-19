@@ -36,6 +36,30 @@ from .watcher.service import watch_files
 
 
 @asynccontextmanager
+def _init_ssl():
+    """Set default SSL context for urllib.
+
+    PyInstaller bundles on macOS don't inherit the
+    system certificate store, so urllib HTTPS requests
+    fail with SSL errors. This sets the global default
+    context to use certifi's bundled CA certs.
+    """
+    import ssl
+    try:
+        import certifi
+        ctx = ssl.create_default_context(
+            cafile=certifi.where(),
+        )
+        ssl._create_default_https_context = (
+            lambda: ctx
+        )
+    except ImportError:
+        pass
+
+
+_init_ssl()
+
+
 async def lifespan(app: FastAPI):
     import os
     # Always restore the persisted profile, even if
