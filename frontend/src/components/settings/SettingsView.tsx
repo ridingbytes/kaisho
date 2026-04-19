@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
 import { GeneralTab } from "./GeneralTab";
@@ -24,17 +25,17 @@ type TabId =
   | "paths"
   | "updates";
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: "general", label: "General" },
-  { id: "tags", label: "Tags & Types" },
-  { id: "ai", label: "AI" },
-  { id: "github", label: "GitHub" },
-  { id: "cloud", label: "Cloud Sync" },
-  { id: "backup", label: "Backup" },
-  { id: "export", label: "Export" },
-  { id: "shortcuts", label: "Shortcuts" },
-  { id: "paths", label: "Paths" },
-  { id: "updates", label: "Updates" },
+const TABS: { id: TabId; labelKey: string }[] = [
+  { id: "general", labelKey: "general" },
+  { id: "tags", labelKey: "tagsAndTypes" },
+  { id: "ai", labelKey: "ai" },
+  { id: "github", labelKey: "github" },
+  { id: "cloud", labelKey: "cloudSync" },
+  { id: "backup", labelKey: "backup" },
+  { id: "export", labelKey: "export" },
+  { id: "shortcuts", labelKey: "shortcuts" },
+  { id: "paths", labelKey: "paths" },
+  { id: "updates", labelKey: "updates" },
 ];
 
 interface TabBarProps {
@@ -43,6 +44,7 @@ interface TabBarProps {
 }
 
 function TabBar({ active, onChange }: TabBarProps) {
+  const { t } = useTranslation("settings");
   return (
     <div className="flex flex-wrap gap-1 border-b border-border-subtle mb-6">
       {TABS.map((tab) => (
@@ -57,7 +59,7 @@ function TabBar({ active, onChange }: TabBarProps) {
               : "text-stone-600 hover:text-stone-900",
           ].join(" ")}
         >
-          {tab.label}
+          {t(tab.labelKey)}
         </button>
       ))}
     </div>
@@ -65,6 +67,7 @@ function TabBar({ active, onChange }: TabBarProps) {
 }
 
 export function SettingsView(): JSX.Element {
+  const { t } = useTranslation("settings");
   const [activeTab, setActiveTab] = useState<TabId>(
     () =>
       (localStorage.getItem("settings_tab") as TabId) ||
@@ -80,7 +83,7 @@ export function SettingsView(): JSX.Element {
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
         <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
-          Settings
+          {t("settings")}
         </h1>
         <HelpButton
           title="Settings"

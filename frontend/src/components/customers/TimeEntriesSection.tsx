@@ -3,6 +3,7 @@
  * entries for a customer with pagination.
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CollapsibleSection } from "../common/CollapsibleSection";
 import { TimeEntryRow } from "./TimeEntryRow";
 import { useCustomerClockEntries } from "../../hooks/useClocks";
@@ -22,6 +23,8 @@ export function TimeEntriesSection({
   customerName,
   contracts,
 }: TimeEntriesSectionProps) {
+  const { t } = useTranslation("customers");
+  const { t: tc } = useTranslation("common");
   const { data: entries = [] } =
     useCustomerClockEntries(customerName);
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -34,7 +37,7 @@ export function TimeEntriesSection({
 
   return (
     <CollapsibleSection
-      label="Time Entries"
+      label={t("timeEntries")}
       count={entries.length}
     >
       <div className="ml-5">
@@ -44,7 +47,7 @@ export function TimeEntriesSection({
               "text-[10px] text-stone-500 py-1"
             }
           >
-            No entries
+            {t("noEntries")}
           </p>
         ) : (
           <>
@@ -66,12 +69,7 @@ export function TimeEntriesSection({
                   "hover:text-cta transition-colors",
                 ].join(" ")}
               >
-                Show{" "}
-                {Math.min(
-                  PAGE_SIZE,
-                  entries.length - limit,
-                )}{" "}
-                more
+                {tc("showMore", { count: Math.min(PAGE_SIZE, entries.length - limit) })}
               </button>
             )}
           </>

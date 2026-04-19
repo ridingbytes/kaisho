@@ -4,6 +4,7 @@
  * the edit button.
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, X } from "lucide-react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
@@ -30,6 +31,8 @@ export function EditForm({
   entry,
   onClose,
 }: EditFormProps) {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const [entryDate, setEntryDate] = useState(
     entry.start.slice(0, 10),
   );
@@ -162,7 +165,7 @@ export function EditForm({
             }
             onKeyDown={handleKeyDown}
             className={smallInputCls}
-            title="Start time"
+            title={t("startTime")}
           />
         </td>
         {/* Customer */}
@@ -223,7 +226,7 @@ export function EditForm({
               setDescription(e.target.value)
             }
             onKeyDown={handleKeyDown}
-            placeholder="Description"
+            placeholder={tc("description")}
             className={smallInputCls}
           />
         </td>
@@ -288,7 +291,7 @@ export function EditForm({
               }
               if (e.key === "Escape") onClose();
             }}
-            placeholder="Notes (optional)"
+            placeholder={tc("notesOptional")}
             rows={2}
             className={
               `${smallInputCls} w-full resize-y`
@@ -309,7 +312,7 @@ export function EditForm({
                 "focus:ring-cta"
               }
             />
-            Invoiced
+            {tc("invoiced")}
           </label>
         </td>
       </tr>

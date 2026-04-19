@@ -4,6 +4,7 @@
  * ClockView toolbar.
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { useContracts } from "../../hooks/useContracts";
@@ -20,6 +21,8 @@ export interface BookFormProps {
  * duration, customer, contract, description and task.
  */
 export function BookForm({ onClose }: BookFormProps) {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const [duration, setDuration] = useState("");
   const [customer, setCustomer] = useState("");
   const [contract, setContract] = useState("");
@@ -77,19 +80,19 @@ export function BookForm({ onClose }: BookFormProps) {
     >
       <div className="flex flex-col gap-1">
         <label className="text-[10px] text-stone-600 uppercase tracking-wider">
-          Duration *
+          {tc("duration")} *
         </label>
         <input
           autoFocus
           className={`${inputCls} w-28`}
-          placeholder="e.g. 2h, 30min"
+          placeholder={t("durationPlaceholder")}
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
         />
       </div>
       <div className="flex flex-col gap-1">
         <label className="text-[10px] text-stone-600 uppercase tracking-wider">
-          Customer *
+          {tc("customer")} *
         </label>
         <CustomerAutocomplete
           value={customer}
@@ -104,7 +107,7 @@ export function BookForm({ onClose }: BookFormProps) {
       {contracts.length > 0 && (
         <div className="flex flex-col gap-1">
           <label className="text-[10px] text-stone-600 uppercase tracking-wider">
-            Contract
+            {tc("contract")}
           </label>
           <select
             value={contract}
@@ -113,11 +116,11 @@ export function BookForm({ onClose }: BookFormProps) {
             }
             className={`${inputCls} w-36`}
           >
-            <option value="">— none —</option>
+            <option value="">{tc("noNone")}</option>
             {contracts.map((c) => (
               <option key={c.name} value={c.name}>
                 {c.name}
-                {c.end_date ? " (closed)" : ""}
+                {c.end_date ? ` (${tc("closed")})` : ""}
               </option>
             ))}
           </select>
@@ -125,11 +128,11 @@ export function BookForm({ onClose }: BookFormProps) {
       )}
       <div className="flex flex-col gap-1 flex-1 min-w-40">
         <label className="text-[10px] text-stone-600 uppercase tracking-wider">
-          Description
+          {tc("description")}
         </label>
         <input
           className={inputCls}
-          placeholder="What did you work on?"
+          placeholder={t("whatDidYouWorkOn")}
           value={description}
           onChange={(e) =>
             setDescription(e.target.value)
@@ -138,7 +141,7 @@ export function BookForm({ onClose }: BookFormProps) {
       </div>
       <div className="flex flex-col gap-1">
         <label className="text-[10px] text-stone-600 uppercase tracking-wider">
-          Task
+          {tc("task")}
         </label>
         <TaskAutocomplete
           taskId={taskId}
@@ -170,7 +173,7 @@ export function BookForm({ onClose }: BookFormProps) {
             "text-xs font-semibold disabled:opacity-40"
           }
         >
-          {book.isPending ? "Booking…" : "Book"}
+          {book.isPending ? t("booking") : t("book")}
         </button>
         <button
           type="button"
@@ -180,7 +183,7 @@ export function BookForm({ onClose }: BookFormProps) {
             "text-stone-700 text-xs"
           }
         >
-          Cancel
+          {tc("cancel")}
         </button>
       </div>
       {book.isError && (

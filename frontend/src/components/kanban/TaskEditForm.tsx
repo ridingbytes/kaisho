@@ -2,6 +2,7 @@
  * TaskEditForm -- Inline edit form for a task card, allowing
  * edits to customer, title, description, GitHub URL, and tags.
  */
+import { useTranslation } from "react-i18next";
 import { Check, X } from "lucide-react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TagDropdown } from "../common/TagDropdown";
@@ -57,6 +58,8 @@ export function TaskEditForm({
   onSave,
   onCancel,
 }: TaskEditFormProps) {
+  const { t: tc } = useTranslation("common");
+
   function handleKeyDown(e: React.KeyboardEvent) {
     if (
       (e.metaKey || e.ctrlKey) &&
@@ -83,14 +86,14 @@ export function TaskEditForm({
         value={editTitle}
         onChange={(e) => onTitleChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Title"
+        placeholder={tc("title")}
         className={editInputCls}
       />
       <textarea
         value={editBody}
         onChange={(e) => onBodyChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Description (optional)"
+        placeholder={tc("descriptionOptional")}
         rows={3}
         className={[editInputCls, "resize-none"].join(
           " ",
@@ -117,7 +120,7 @@ export function TaskEditForm({
       </div>
       <div className="flex gap-1 justify-end items-center">
         <span className="text-[10px] text-stone-400 mr-auto">
-          ⌘↵ to save
+          {tc("cmdSaveClose")}
         </span>
         <button
           onPointerDown={(e) => e.stopPropagation()}

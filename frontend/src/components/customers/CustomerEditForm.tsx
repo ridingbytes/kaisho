@@ -3,6 +3,7 @@
  * customer properties (name, status, type, color,
  * budget, repo).
  */
+import { useTranslation } from "react-i18next";
 import { Check, X } from "lucide-react";
 import { smallInputCls } from "../../styles/formStyles";
 import { useSettings } from "../../hooks/useSettings";
@@ -60,6 +61,8 @@ export function CustomerEditForm({
   setForm,
   onClose,
 }: CustomerEditFormProps) {
+  const { t } = useTranslation("customers");
+  const { t: tc } = useTranslation("common");
   const update = useUpdateCustomer();
   const { data: settings } = useSettings();
   const customerTypes = settings?.customer_types ?? [];
@@ -124,7 +127,7 @@ export function CustomerEditForm({
           style={{
             background: form.color || "#71717a",
           }}
-          title="Pick color"
+          title={t("pickColor")}
         >
           <input
             type="color"
@@ -144,7 +147,7 @@ export function CustomerEditForm({
           )}
           value={form.name}
           onChange={set("name")}
-          placeholder="Name"
+          placeholder={tc("name")}
           autoFocus
         />
       </div>
@@ -166,7 +169,7 @@ export function CustomerEditForm({
           value={form.type}
           onChange={set("type")}
         >
-          <option value="">{"— type —"}</option>
+          <option value="">{t("typeNone")}</option>
           {customerTypes.map((t) => (
             <option key={t} value={t}>
               {t}
@@ -188,7 +191,7 @@ export function CustomerEditForm({
                 + "uppercase tracking-wider"
               }
             >
-              Budget h
+              {t("budgetHLabel")}
             </span>
             <input
               type="number"
@@ -210,7 +213,7 @@ export function CustomerEditForm({
                 + "uppercase tracking-wider"
               }
             >
-              Offset h
+              {t("offsetH")}
             </span>
             <input
               type="number"
@@ -228,7 +231,7 @@ export function CustomerEditForm({
         className={fieldClass()}
         value={form.repo}
         onChange={set("repo")}
-        placeholder="Repo URL"
+        placeholder={t("repoUrl")}
       />
 
       <div className="flex gap-2 justify-end mt-1">
@@ -238,7 +241,7 @@ export function CustomerEditForm({
             "p-1.5 rounded-md text-stone-500 "
             + "hover:text-stone-900 transition-colors"
           }
-          title="Cancel"
+          title={tc("cancel")}
         >
           <X size={14} />
         </button>
@@ -250,7 +253,7 @@ export function CustomerEditForm({
             + "hover:bg-cta-muted transition-colors "
             + "disabled:opacity-40"
           }
-          title="Save"
+          title={tc("save")}
         >
           <Check size={14} />
         </button>

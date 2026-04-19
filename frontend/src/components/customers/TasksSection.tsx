@@ -3,6 +3,7 @@
  * linked to a customer with pagination.
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CollapsibleSection } from "../common/CollapsibleSection";
 import { useTasks } from "../../hooks/useTasks";
 import { useSetView } from "../../context/ViewContext";
@@ -19,6 +20,8 @@ export interface TasksSectionProps {
 export function TasksSection({
   customerName,
 }: TasksSectionProps) {
+  const { t } = useTranslation("customers");
+  const { t: tc } = useTranslation("common");
   const { data: allTasks = [] } = useTasks(true);
   const setView = useSetView();
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -34,7 +37,7 @@ export function TasksSection({
 
   return (
     <CollapsibleSection
-      label="Tasks"
+      label={t("tasks")}
       count={tasks.length}
     >
       <div className="ml-5">
@@ -44,7 +47,7 @@ export function TasksSection({
               "text-[10px] text-stone-500 py-1"
             }
           >
-            No tasks
+            {t("noTasks")}
           </p>
         ) : (
           <>
@@ -117,12 +120,7 @@ export function TasksSection({
                   "hover:text-cta transition-colors",
                 ].join(" ")}
               >
-                Show{" "}
-                {Math.min(
-                  PAGE_SIZE,
-                  tasks.length - limit,
-                )}{" "}
-                more
+                {tc("showMore", { count: Math.min(PAGE_SIZE, tasks.length - limit) })}
               </button>
             )}
           </>

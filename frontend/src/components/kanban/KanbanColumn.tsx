@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus, X, Check, GripVertical } from "lucide-react";
 import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -28,6 +29,7 @@ export function KanbanColumn({
   onCustomerClick,
   columnWidth,
 }: KanbanColumnProps) {
+  const { t } = useTranslation("kanban");
   const {
     setNodeRef,
     attributes,
@@ -107,7 +109,7 @@ export function KanbanColumn({
           {...attributes}
           {...listeners}
           className="cursor-grab active:cursor-grabbing text-stone-400 hover:text-stone-600 shrink-0 touch-none"
-          title="Drag to reorder column"
+          title={t("dragToReorder")}
         >
           <GripVertical size={12} />
         </div>
@@ -134,7 +136,7 @@ export function KanbanColumn({
               ? "text-cta bg-cta-muted"
               : "text-stone-500 hover:text-cta hover:bg-cta-muted",
           ].join(" ")}
-          title="Add task"
+          title={t("addTask")}
         >
           <Plus size={13} strokeWidth={2} />
         </button>
@@ -167,7 +169,7 @@ export function KanbanColumn({
 
         {tasks.length === 0 && !adding && (
           <div className="flex items-center justify-center h-16">
-            <span className="text-xs text-stone-400">Empty</span>
+            <span className="text-xs text-stone-400">{t("empty")}</span>
           </div>
         )}
 
@@ -183,7 +185,7 @@ export function KanbanColumn({
             />
             <input
               type="text"
-              placeholder="Task title"
+              placeholder={t("taskTitle")}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -191,7 +193,7 @@ export function KanbanColumn({
             />
             <input
               type="text"
-              placeholder="GitHub URL (optional)"
+              placeholder={t("githubUrlOptional")}
               value={githubUrl}
               onChange={(e) => setGithubUrl(e.target.value)}
               onKeyDown={handleKeyDown}

@@ -13,6 +13,7 @@ import {
   arrayMove,
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useTranslation } from "react-i18next";
 import {
   ChevronDown,
   ChevronRight,
@@ -134,6 +135,8 @@ interface ArchiveDrawerProps {
 }
 
 function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
+  const { t } = useTranslation("kanban");
+  const { t: tc } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const { data: archived = [] } = useArchivedTasks();
   const unarchive = useUnarchiveTask();
@@ -153,14 +156,14 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
           <ChevronRight size={12} />
         )}
         <span className="font-semibold uppercase tracking-wide">
-          Archive
+          {t("archive")}
         </span>
         <span className="ml-1 text-stone-500">({archived.length})</span>
       </button>
       {open && (
         <div className="px-6 pb-4 max-h-64 overflow-y-auto">
           {archived.length === 0 ? (
-            <p className="text-xs text-stone-500 py-2">No archived tasks.</p>
+            <p className="text-xs text-stone-500 py-2">{t("noArchivedTasks")}</p>
           ) : (
             <table
               ref={tableRef}
@@ -177,25 +180,25 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
               <thead className="group/thead">
                 <tr className="text-[10px] uppercase tracking-wider text-stone-500">
                   <th className="relative text-left pb-1 pr-3 font-medium">
-                    Archived
+                    {t("archive")}
                     <ResizeHandle
                       onMouseDown={(e) => startResize(0, e)}
                     />
                   </th>
                   <th className="relative text-left pb-1 pr-3 font-medium">
-                    Customer
+                    {tc("customer")}
                     <ResizeHandle
                       onMouseDown={(e) => startResize(1, e)}
                     />
                   </th>
                   <th className="relative text-left pb-1 pr-3 font-medium">
-                    Title
+                    {tc("title")}
                     <ResizeHandle
                       onMouseDown={(e) => startResize(2, e)}
                     />
                   </th>
                   <th className="relative text-left pb-1 pr-3 font-medium">
-                    Status
+                    {tc("status")}
                     <ResizeHandle
                       onMouseDown={(e) => startResize(3, e)}
                     />
@@ -247,7 +250,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                           <button
                             onClick={() => unarchive.mutate(task.id)}
                             disabled={unarchive.isPending}
-                            title="Unarchive"
+                            title={tc("unarchive")}
                             className="p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-all disabled:opacity-40"
                           >
                             <ArchiveRestore size={11} />
@@ -263,7 +266,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                             }
                           >
                             <button
-                              title="Delete permanently"
+                              title={t("deletePermanently")}
                               className="p-1 rounded text-stone-500 hover:text-red-400 transition-all"
                             >
                               <Trash2 size={11} />
@@ -331,6 +334,9 @@ function matchesSearch(
 }
 
 export function KanbanBoard() {
+  const { t } = useTranslation("kanban");
+  const { t: tc } = useTranslation("common");
+  const { t: tNav } = useTranslation("nav");
   const [showDone, setShowDone] = useState(
     () => localStorage.getItem("board_show_done") === "true"
   );
@@ -530,7 +536,7 @@ export function KanbanBoard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-stone-500 text-sm">Loading tasks…</div>
+        <div className="text-stone-500 text-sm">{t("loadingTasks")}</div>
       </div>
     );
   }
@@ -544,15 +550,15 @@ export function KanbanBoard() {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3 border-b border-border-subtle shrink-0">
         <h1 className="text-sm font-semibold text-stone-800 tracking-wide uppercase">
-          Board
+          {t("board")}
         </h1>
         <button
           onClick={() => setOpenAddInFirst(true)}
           className="flex items-center gap-1 px-2 py-1 rounded text-xs text-stone-600 hover:text-cta hover:bg-cta-muted transition-colors"
-          title="New task (double-tap B)"
+          title={t("newTask")}
         >
           <Plus size={12} />
-          New
+          {tc("new")}
         </button>
         <div className="flex items-center gap-1.5 ml-2">
           <div className="relative flex items-center">
@@ -586,8 +592,8 @@ export function KanbanBoard() {
               }}
               placeholder={
                 parseSearchTokens(search).length
-                  ? "Add text…"
-                  : "Search tasks…"
+                  ? tNav("addText")
+                  : tNav("searchTasks")
               }
               className={[
                 "pl-6 pr-6 py-1 text-xs rounded",
@@ -615,11 +621,11 @@ export function KanbanBoard() {
               </button>
             )}
           </div>
-          {parseSearchTokens(search).map((t) => (
+          {parseSearchTokens(search).map((tok) => (
             <button
-              key={t.prefix}
+              key={tok.prefix}
               onClick={() =>
-                setSearch((s) => removeSearchToken(s, t.prefix))
+                setSearch((s) => removeSearchToken(s, tok.prefix))
               }
               className={[
                 "inline-flex items-center gap-1",
@@ -629,12 +635,12 @@ export function KanbanBoard() {
                 "hover:bg-red-100 hover:text-red-600",
                 "group/badge",
               ].join(" ")}
-              title={`Remove ${t.prefix} filter`}
+              title={tNav("removeFilter", { prefix: tok.prefix })}
             >
               <span className="uppercase tracking-wider">
-                {t.prefix}
+                {tok.prefix}
               </span>
-              <span className="font-normal">{t.value}</span>
+              <span className="font-normal">{tok.value}</span>
               <X
                 size={9}
                 className={[
@@ -652,14 +658,14 @@ export function KanbanBoard() {
                 "hover:text-stone-700 hover:bg-stone-100",
                 "transition-colors",
               ].join(" ")}
-              title="Clear all filters"
+              title={tc("clearAllFilters")}
             >
               <X size={11} />
             </button>
           )}
         </div>
         <label className="flex items-center gap-2 ml-auto cursor-pointer">
-          <span className="text-xs text-stone-600">Show done</span>
+          <span className="text-xs text-stone-600">{t("showDone")}</span>
           <Toggle
             checked={showDone}
             onChange={(v) => {

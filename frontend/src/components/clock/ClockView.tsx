@@ -3,6 +3,7 @@
  * quick-book form, cloud triage panel, and the
  * sortable entries table.
  */
+import { useTranslation } from "react-i18next";
 import { Download, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BookForm } from "./BookForm";
@@ -157,6 +158,8 @@ const CLOCK_COLUMNS = [
  * entries table.
  */
 export function ClockView() {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const [period, setPeriod] = useState<Period>(loadPeriod);
   const [specificDate, setSpecificDate] = useState("");
   const [search, setSearch] = useState("");
@@ -265,13 +268,13 @@ export function ClockView() {
           "text-xs font-semibold tracking-wider " +
           "uppercase text-stone-700"
         }>
-          Clock Entries
+          {t("clockEntries")}
         </h1>
         <SearchInput
           value={search}
           onChange={setSearch}
           placeholder={
-            "Search customer / description…"
+            t("searchCustomerDescription")
           }
           inputClassName={
             "px-2 py-1 rounded-lg text-xs " +
@@ -295,23 +298,23 @@ export function ClockView() {
             );
           }}
         >
-          <option value="today">Today</option>
-          <option value="week">This week</option>
-          <option value="month">This month</option>
-          <option value="year">This year</option>
+          <option value="today">{t("periodToday")}</option>
+          <option value="week">{t("periodWeek")}</option>
+          <option value="month">{t("periodMonth")}</option>
+          <option value="year">{t("periodYear")}</option>
         </select>
         <input
           type="date"
           className={`${smallInputCls} !w-36`}
           value={specificDate}
-          title="Filter by specific date"
+          title={t("filterByDate")}
           onChange={(e) =>
             setSpecificDate(e.target.value)
           }
         />
         {!isLoading && filtered.length > 0 && (
           <span className="text-xs text-stone-600">
-            {filtered.length} entries ·{" "}
+            {t("entriesCount", { count: filtered.length })} ·{" "}
             {totalHours(filtered)}h
           </span>
         )}
@@ -331,7 +334,7 @@ export function ClockView() {
                 "hover:text-cta hover:bg-cta-muted " +
                 "transition-colors"
               }
-              title="Download CSV"
+              title={t("downloadCsv")}
             >
               <Download size={11} />
               CSV
@@ -350,7 +353,7 @@ export function ClockView() {
                 "hover:text-cta hover:bg-cta-muted " +
                 "transition-colors"
               }
-              title="Download Excel"
+              title={t("downloadExcel")}
             >
               <Download size={11} />
               XLS
@@ -368,7 +371,7 @@ export function ClockView() {
           }
         >
           <Plus size={11} />
-          Book
+          {t("book")}
         </button>
         <HelpButton
           title="Clock Entries"
@@ -394,7 +397,7 @@ export function ClockView() {
             "text-sm text-stone-500 " +
             "text-center py-8"
           }>
-            Loading…
+            {tc("loading")}
           </p>
         )}
         {!isLoading && sorted.length === 0 && (
@@ -402,7 +405,7 @@ export function ClockView() {
             "text-sm text-stone-500 " +
             "text-center py-8"
           }>
-            No entries found.
+            {t("noEntriesFound")}
           </p>
         )}
         {sorted.length > 0 && (
@@ -424,49 +427,49 @@ export function ClockView() {
                 "sticky top-0 bg-surface-card z-10"
               }>
                 <SortTh
-                  label="Date"
+                  label={tc("date")}
                   col="date"
                   sort={sort}
                   onSort={toggleSort}
                   onResizeStart={(e) => startResize(0, e)}
                 />
                 <SortTh
-                  label="Time"
+                  label={tc("time")}
                   col="time"
                   sort={sort}
                   onSort={toggleSort}
                   onResizeStart={(e) => startResize(1, e)}
                 />
                 <SortTh
-                  label="Customer"
+                  label={tc("customer")}
                   col="customer"
                   sort={sort}
                   onSort={toggleSort}
                   onResizeStart={(e) => startResize(2, e)}
                 />
                 <SortTh
-                  label="Contract"
+                  label={tc("contract")}
                   col="contract"
                   sort={sort}
                   onSort={toggleSort}
                   onResizeStart={(e) => startResize(3, e)}
                 />
                 <SortTh
-                  label="Task"
+                  label={tc("task")}
                   col="task"
                   sort={sort}
                   onSort={toggleSort}
                   onResizeStart={(e) => startResize(4, e)}
                 />
                 <SortTh
-                  label="Description"
+                  label={tc("description")}
                   col="description"
                   sort={sort}
                   onSort={toggleSort}
                   onResizeStart={(e) => startResize(5, e)}
                 />
                 <SortTh
-                  label="Duration"
+                  label={tc("duration")}
                   col="duration"
                   sort={sort}
                   onSort={toggleSort}

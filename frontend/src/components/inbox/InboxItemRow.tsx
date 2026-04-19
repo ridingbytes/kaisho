@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   ArrowRightLeft,
   Check,
@@ -20,18 +21,18 @@ import type { InboxItem } from "../../types";
 
 import { useSettings } from "../../hooks/useSettings";
 
-const CHANNELS = [
-  { value: "", label: "Any" },
-  { value: "email", label: "Email" },
-  { value: "phone", label: "Phone" },
-  { value: "chat", label: "Chat" },
-  { value: "other", label: "Other" },
+const CHANNEL_KEYS = [
+  { value: "", labelKey: "anyChannel" },
+  { value: "email", labelKey: "emailChannel" },
+  { value: "phone", labelKey: "phoneChannel" },
+  { value: "chat", labelKey: "chatChannel" },
+  { value: "other", labelKey: "otherChannel" },
 ] as const;
 
-const DIRECTIONS = [
-  { value: "", label: "Any" },
-  { value: "in", label: "In" },
-  { value: "out", label: "Out" },
+const DIRECTION_KEYS = [
+  { value: "", labelKey: "anyDirection" },
+  { value: "in", labelKey: "in" },
+  { value: "out", labelKey: "out" },
 ] as const;
 
 const TYPE_STYLES: Record<string, string> = {
@@ -75,6 +76,8 @@ interface Props {
 }
 
 export function InboxItemRow({ item }: Props) {
+  const { t } = useTranslation("inbox");
+  const { t: tc } = useTranslation("common");
   const setView = useSetView();
   const { data: settings } = useSettings();
   const inboxTypes: string[] =
@@ -268,7 +271,7 @@ export function InboxItemRow({ item }: Props) {
         {/* Actions */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <button
-            title="Edit"
+            title={tc("edit")}
             onClick={startEdit}
             className="p-1.5 rounded-md text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
           >
@@ -276,7 +279,7 @@ export function InboxItemRow({ item }: Props) {
           </button>
           <div className="relative">
             <button
-              title="Move"
+              title={tc("move")}
               onClick={openMovePanel}
               className={[
                 "p-1.5 rounded-md transition-colors",
@@ -301,7 +304,7 @@ export function InboxItemRow({ item }: Props) {
                     disabled={move.isPending}
                     className="w-full text-left px-2 py-1 rounded text-xs text-stone-800 hover:bg-surface-raised transition-colors capitalize disabled:opacity-40"
                   >
-                    {d === "kb" ? "Knowledge" : d}
+                    {d === "kb" ? tc("knowledge") : d === "todo" ? tc("todo") : d === "archive" ? tc("archive") : d}
                   </button>
                 ))}
                 <button
@@ -319,7 +322,7 @@ export function InboxItemRow({ item }: Props) {
           <div className="relative">
             {!confirmDel ? (
               <button
-                title="Delete"
+                title={tc("delete")}
                 onClick={(e) => {
                   e.stopPropagation();
                   setConfirmDel(true);
@@ -335,7 +338,7 @@ export function InboxItemRow({ item }: Props) {
                 className="absolute right-0 top-full mt-1 z-50 flex items-center gap-1 px-2 py-1 rounded bg-surface-overlay border border-border shadow-lg whitespace-nowrap"
               >
                 <span className="text-[10px] text-stone-700">
-                  Delete?
+                  {tc("deleteConfirm")}
                 </span>
                 <button
                   onClick={(e) => {
@@ -383,7 +386,7 @@ export function InboxItemRow({ item }: Props) {
                 <CustomerAutocomplete
                   value={editCustomer}
                   onChange={setEditCustomer}
-                  placeholder="Customer"
+                  placeholder={tc("customer")}
                   className="flex-1 min-w-0"
                   inputClassName={fieldCls}
                 />
@@ -394,9 +397,9 @@ export function InboxItemRow({ item }: Props) {
                   onChange={(e) => setEditChannel(e.target.value)}
                   className={`${fieldCls} flex-1`}
                 >
-                  {CHANNELS.map((c) => (
+                  {CHANNEL_KEYS.map((c) => (
                     <option key={c.value} value={c.value}>
-                      {c.label}
+                      {t(c.labelKey)}
                     </option>
                   ))}
                 </select>
@@ -405,9 +408,9 @@ export function InboxItemRow({ item }: Props) {
                   onChange={(e) => setEditDirection(e.target.value)}
                   className={`${fieldCls} flex-1`}
                 >
-                  {DIRECTIONS.map((d) => (
+                  {DIRECTION_KEYS.map((d) => (
                     <option key={d.value} value={d.value}>
-                      {d.label}
+                      {t(d.labelKey)}
                     </option>
                   ))}
                 </select>
@@ -416,13 +419,13 @@ export function InboxItemRow({ item }: Props) {
                 type="text"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Title"
+                placeholder={tc("title")}
                 className={`${fieldCls} w-full`}
               />
               <textarea
                 value={editBody}
                 onChange={(e) => setEditBody(e.target.value)}
-                placeholder="Body (optional)"
+                placeholder={t("bodyOptional")}
                 rows={3}
                 className={`${fieldCls} w-full resize-none`}
               />
@@ -433,14 +436,14 @@ export function InboxItemRow({ item }: Props) {
                   className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-cta text-white disabled:opacity-40"
                 >
                   <Check size={11} />
-                  {update.isPending ? "Saving…" : "Save"}
+                  {update.isPending ? tc("saving") : tc("save")}
                 </button>
                 <button
                   onClick={cancelEdit}
                   className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
                 >
                   <X size={11} />
-                  Cancel
+                  {tc("cancel")}
                 </button>
               </div>
             </div>
@@ -478,7 +481,7 @@ export function InboxItemRow({ item }: Props) {
                   }
                   className="px-2 py-1 rounded-md text-xs font-semibold bg-cta text-white disabled:opacity-40"
                 >
-                  {move.isPending ? "…" : "Move"}
+                  {move.isPending ? "…" : tc("move")}
                 </button>
                 <button
                   onClick={() => { setMoveDest(null); setMoving(false); }}
@@ -513,7 +516,7 @@ export function InboxItemRow({ item }: Props) {
                   }
                   className="px-2 py-1 rounded-md text-xs font-semibold bg-cta text-white disabled:opacity-40"
                 >
-                  {move.isPending ? "…" : "Move"}
+                  {move.isPending ? "…" : tc("move")}
                 </button>
                 <button
                   onClick={() => { setMoveDest(null); setMoving(false); }}

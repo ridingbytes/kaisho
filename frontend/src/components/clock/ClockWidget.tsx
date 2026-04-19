@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
@@ -33,6 +34,8 @@ interface ClockWidgetProps {
 }
 
 export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const { data: timer } = useActiveTimer();
   const { data: cloudTimer } = useCloudActiveTimer();
   const qc = useQueryClient();
@@ -102,7 +105,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
         <button
           onClick={onToggle}
           className="py-3 text-stone-500 hover:text-stone-900 transition-colors"
-          title="Expand time tracking"
+          title={t("expandTimeTracking")}
         >
           <ChevronLeft size={14} />
         </button>
@@ -115,13 +118,13 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
       {/* Header (hidden on mobile -- modal provides its own) */}
       <div className="hidden md:flex items-center px-4 py-3 border-b border-border-subtle shrink-0">
         <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-700 flex-1">
-          Time Tracking
+          {t("timeTracking")}
         </h2>
         <HelpButton title="Time Tracking" doc={DOCS.clock} />
         <button
           onClick={onToggle}
           className="ml-1 p-0.5 rounded text-stone-500 hover:text-stone-900 transition-colors"
-          title="Collapse"
+          title={tc("collapse")}
         >
           <ChevronRight size={14} />
         </button>
@@ -156,7 +159,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
               : <ChevronRight size={10} className="text-stone-500 group-hover:text-stone-700 transition-colors" />
             }
             <h3 className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 group-hover:text-stone-700 transition-colors">
-              Calendar
+              {t("calendar")}
             </h3>
           </button>
           {calendarOpen && (
@@ -174,7 +177,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
           <div className="flex items-center gap-2 mb-2">
             <h3 className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 flex-1">
               {!selectedDate || selectedDate === todayIso()
-                ? "Today"
+                ? tc("today")
                 : formatDateHeading(selectedDate)}
             </h3>
             <button
@@ -185,7 +188,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
                   ? "text-cta bg-cta-muted"
                   : "text-stone-500 hover:text-cta",
               ].join(" ")}
-              title="Add time entry"
+              title={t("addTimeEntry")}
             >
               <Plus size={12} />
             </button>

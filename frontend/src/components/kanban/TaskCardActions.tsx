@@ -2,6 +2,7 @@
  * TaskCardActions -- Hover-revealed action buttons for a task
  * card: mark done, start timer, edit, and archive.
  */
+import { useTranslation } from "react-i18next";
 import {
   Check,
   Clock,
@@ -48,6 +49,9 @@ export function TaskCardActions({
   onEdit,
   onArchive,
 }: TaskCardActionsProps) {
+  const { t } = useTranslation("kanban");
+  const { t: tc } = useTranslation("common");
+  const { t: tClocks } = useTranslation("clocks");
   return (
     <div className="flex flex-col items-center gap-1 px-1 py-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
       {status !== "DONE" &&
@@ -59,7 +63,7 @@ export function TaskCardActions({
             onClick={onMarkDone}
             disabled={isMarkDonePending}
             className="p-1 rounded text-stone-400 hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
-            title="Mark as done"
+            title={t("markAsDone")}
           >
             <Check size={11} />
           </button>
@@ -74,7 +78,7 @@ export function TaskCardActions({
             isStartClockPending || isStopClockPending
           }
           className="p-1 rounded text-stone-400 hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
-          title="Start timer"
+          title={tClocks("startTimer")}
         >
           <Clock size={11} />
         </button>
@@ -83,19 +87,19 @@ export function TaskCardActions({
         onPointerDown={(e) => e.stopPropagation()}
         onClick={onEdit}
         className="p-1 rounded text-stone-400 hover:text-cta hover:bg-cta-muted transition-colors"
-        title="Edit"
+        title={tc("edit")}
       >
         <Pencil size={11} />
       </button>
       <ConfirmPopover
-        label="Archive?"
+        label={t("archiveConfirm")}
         onConfirm={onArchive}
         disabled={isArchivePending}
       >
         <button
           disabled={isArchivePending}
           className="p-1 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
-          title="Archive"
+          title={tc("archive")}
         >
           <Trash2 size={11} />
         </button>

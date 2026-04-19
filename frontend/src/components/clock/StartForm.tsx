@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { useStartTimer } from "../../hooks/useClocks";
@@ -9,6 +10,8 @@ interface Props {
 }
 
 export function StartForm({ onStarted }: Props) {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const [customer, setCustomer] = useState("");
   const [description, setDescription] = useState("");
   const [contract, setContract] = useState("");
@@ -63,18 +66,18 @@ export function StartForm({ onStarted }: Props) {
           onChange={(e) => setContract(e.target.value)}
           className={inputCls}
         >
-          <option value="">— no contract —</option>
+          <option value="">{tc("noContract")}</option>
           {contracts.map((c) => (
             <option key={c.name} value={c.name}>
               {c.name}
-              {c.end_date ? " (closed)" : ""}
+              {c.end_date ? ` (${tc("closed")})` : ""}
             </option>
           ))}
         </select>
       )}
       <input
         type="text"
-        placeholder="Description (optional)"
+        placeholder={tc("descriptionOptional")}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         className={inputCls}
@@ -107,7 +110,7 @@ export function StartForm({ onStarted }: Props) {
           "disabled:opacity-40 disabled:cursor-not-allowed",
         ].join(" ")}
       >
-        {start.isPending ? "Starting…" : "Start Timer"}
+        {start.isPending ? t("starting") : t("startTimer")}
       </button>
     </form>
   );

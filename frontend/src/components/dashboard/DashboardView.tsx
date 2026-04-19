@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
   Check,
@@ -120,6 +121,7 @@ function ClockEntryRow({
   entry: ClockEntry;
   customerName: string;
 }) {
+  const { t: tc } = useTranslation("common");
   const [editing, setEditing] = useState(false);
   const [desc, setDesc] = useState(entry.description);
   const [hours, setHours] = useState(
@@ -178,7 +180,7 @@ function ClockEntryRow({
           className={smallInputCls + " flex-1 min-w-0"}
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
-          placeholder="Description"
+          placeholder={tc("description")}
         />
         <input
           className={smallInputCls + " w-14 text-right"}
@@ -207,7 +209,7 @@ function ClockEntryRow({
             "p-0.5 rounded text-green-400 " +
             "hover:text-green-300 transition-colors"
           }
-          title="Save"
+          title={tc("save")}
         >
           <Check size={13} strokeWidth={2} />
         </button>
@@ -217,7 +219,7 @@ function ClockEntryRow({
             "p-0.5 rounded text-stone-600 " +
             "hover:text-stone-900 transition-colors"
           }
-          title="Cancel"
+          title={tc("cancel")}
         >
           <X size={13} strokeWidth={2} />
         </button>
@@ -250,12 +252,12 @@ function ClockEntryRow({
         }
       >
         {entry.description || (
-          <em className="text-stone-500">no description</em>
+          <em className="text-stone-500">{tc("noDescription")}</em>
         )}
         {entry.notes && (
           <ContentPopup
             content={entry.notes}
-            title="Notes"
+            title={tc("notes")}
             icon="notes"
           />
         )}
@@ -293,7 +295,7 @@ function ClockEntryRow({
             "p-0.5 rounded text-stone-500 " +
             "hover:text-stone-900 transition-colors"
           }
-          title="Edit"
+          title={tc("edit")}
         >
           <Pencil size={12} strokeWidth={2} />
         </button>
@@ -307,7 +309,7 @@ function ClockEntryRow({
               "p-0.5 rounded text-stone-500 " +
               "hover:text-red-400 transition-colors"
             }
-            title="Delete"
+            title={tc("delete")}
           >
             <Trash2 size={12} strokeWidth={2} />
           </button>
@@ -324,13 +326,15 @@ function CustomerClockEntries({
 }: {
   customerName: string;
 }) {
+  const { t: tClocks } = useTranslation("clocks");
+  const { t: tCommon } = useTranslation("common");
   const { data: entries, isLoading } =
     useCustomerClockEntries(customerName);
 
   if (isLoading) {
     return (
       <p className="text-xs text-stone-500 py-2 pl-1">
-        Loading...
+        {tCommon("loading")}
       </p>
     );
   }
@@ -342,7 +346,7 @@ function CustomerClockEntries({
   if (completed.length === 0) {
     return (
       <p className="text-xs text-stone-500 py-2 pl-1">
-        No clock entries
+        {tClocks("noClockEntries")}
       </p>
     );
   }
@@ -369,12 +373,14 @@ function BudgetRow({
   onToggle,
   dotColor,
 }: {
+
   b: BudgetSummary;
   onNameClick: () => void;
   expanded: boolean;
   onToggle: () => void;
   dotColor?: string;
 }) {
+  const { t: tc } = useTranslation("common");
   const hasContracts = b.contracts.length > 0;
   const activeContracts = b.contracts.filter(
     (c) => !c.invoiced,
@@ -415,7 +421,7 @@ function BudgetRow({
               "hover:text-stone-900 transition-colors"
             }
             aria-label={
-              expanded ? "Collapse" : "Expand"
+              expanded ? tc("collapse") : tc("expand")
             }
           >
             <ChevronIcon size={14} strokeWidth={2} />
@@ -525,6 +531,9 @@ function BudgetRow({
 /* ---- Main dashboard ---- */
 
 export function DashboardView() {
+  const { t } = useTranslation("dashboard");
+  const { t: tc } = useTranslation("common");
+  const { t: tClocks } = useTranslation("clocks");
   const { data } = useDashboard();
   const { data: timer } = useActiveTimer();
   const stopTimer = useStopTimer();
@@ -553,7 +562,7 @@ export function DashboardView() {
         }
       >
         <p className="text-sm text-stone-500">
-          Loading...
+          {tc("loading")}
         </p>
       </div>
     );
@@ -573,7 +582,7 @@ export function DashboardView() {
             "uppercase text-stone-700 flex-1"
           }
         >
-          Dashboard
+          {t("dashboard")}
         </h1>
         <HelpButton
           title="Dashboard"
@@ -633,7 +642,7 @@ export function DashboardView() {
                 "hover:bg-red-500/10 " +
                 "transition-colors disabled:opacity-40"
               }
-              title="Stop timer"
+              title={tClocks("stopTimer")}
             >
               <span className="block w-3.5 h-3.5 rounded-sm bg-red-500" />
             </button>
@@ -643,14 +652,14 @@ export function DashboardView() {
         {/* Stat cards */}
         <div className="grid grid-cols-2 gap-3">
           <StatCard
-            label="Open tasks"
+            label={t("openTasks")}
             value={data.open_task_count}
             icon={CheckSquare}
             cta="#18181b"
             onClick={() => setView("board")}
           />
           <StatCard
-            label="Inbox items"
+            label={t("inboxItems")}
             value={data.inbox_count}
             icon={Inbox}
             cta="#d97706"
@@ -658,7 +667,7 @@ export function DashboardView() {
           />
           {data.month_hours > 0 && (
             <StatCard
-              label="Hours this month"
+              label={t("hoursThisMonth")}
               value={data.month_hours}
               icon={Clock}
               cta="#16a34a"
@@ -667,7 +676,7 @@ export function DashboardView() {
           )}
           {data.budgets_warning > 0 && (
             <StatCard
-              label="Budgets at risk"
+              label={t("budgetsAtRisk")}
               value={data.budgets_warning}
               icon={AlertTriangle}
               cta="#dc2626"
@@ -676,7 +685,7 @@ export function DashboardView() {
           )}
           {data.unassigned_cloud > 0 && (
             <StatCard
-              label="Unassigned entries"
+              label={t("unassignedEntries")}
               value={data.unassigned_cloud}
               icon={CloudOff}
               cta="#7c3aed"
@@ -685,7 +694,7 @@ export function DashboardView() {
           )}
           {data.aging_inbox > 0 && (
             <StatCard
-              label="Inbox > 7 days"
+              label={t("inboxOlderThan7Days")}
               value={data.aging_inbox}
               icon={Inbox}
               cta="#dc2626"
@@ -708,7 +717,7 @@ export function DashboardView() {
                 "uppercase text-stone-600 mb-4"
               }
             >
-              Budget Status
+              {t("budgetStatus")}
             </h2>
             {data.budgets
               .filter((b) => b.budget > 0)

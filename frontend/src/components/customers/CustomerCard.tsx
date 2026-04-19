@@ -4,6 +4,7 @@
  * contracts, time entries, tasks, quick-book, invoicing).
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Clock,
   Download,
@@ -35,6 +36,8 @@ interface Props {
 
 /** Top-level customer card composing all sections. */
 export function CustomerCard({ customer: c }: Props) {
+  const { t } = useTranslation("customers");
+  const { t: tc } = useTranslation("common");
   const [editing, setEditing] = useState(false);
   const [booking, setBooking] = useState(false);
   const [invoicing, setInvoicing] = useState(false);
@@ -174,12 +177,12 @@ export function CustomerCard({ customer: c }: Props) {
                   + "hover:bg-cta-muted "
                   + "transition-colors"
                 }
-                title="Edit"
+                title={tc("edit")}
               >
                 <Pencil size={11} />
               </button>
               <ConfirmPopover
-                label={`Delete ${c.name}?`}
+                label={t("deleteCustomerConfirm", { name: c.name })}
                 onConfirm={() =>
                   remove.mutate(c.name)
                 }
@@ -194,7 +197,7 @@ export function CustomerCard({ customer: c }: Props) {
                     + "transition-colors "
                     + "disabled:opacity-40"
                   }
-                  title="Delete customer"
+                  title={t("deleteCustomer")}
                 >
                   <Trash2 size={11} />
                 </button>
@@ -270,21 +273,21 @@ export function CustomerCard({ customer: c }: Props) {
                   className={actionBtnCls}
                 >
                   <Plus size={10} />
-                  Add contract
+                  {t("addContract")}
                 </button>
                 <button
                   onClick={() => setBooking(true)}
                   className={actionBtnCls}
                 >
                   <Clock size={10} />
-                  Book time
+                  {t("bookTime")}
                 </button>
                 <button
                   onClick={() => setInvoicing(true)}
                   className={actionBtnCls}
                 >
                   <Download size={10} />
-                  Invoice
+                  {t("invoice")}
                 </button>
               </div>
             )}

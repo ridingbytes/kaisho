@@ -4,6 +4,7 @@
  * {@link EditForm} on edit.
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Check,
   Copy,
@@ -47,6 +48,8 @@ export function EntryRow({
   tasks,
   invoicedSet,
 }: EntryRowProps) {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const [mode, setMode] = useState<"view" | "edit">(
     "view",
   );
@@ -205,7 +208,7 @@ export function EntryRow({
           {entry.notes && (
             <ContentPopup
               content={entry.notes}
-              title="Notes"
+              title={tc("notes")}
               icon="notes"
             />
           )}
@@ -224,9 +227,9 @@ export function EntryRow({
               "text-[9px] font-semibold " +
               "bg-emerald-500/10 text-emerald-600"
             }
-            title="Invoiced"
+            title={tc("invoiced")}
           >
-            <Check size={9} /> inv
+            <Check size={9} /> {t("inv")}
           </span>
         )}
         <span className="mr-2">
@@ -256,8 +259,8 @@ export function EntryRow({
             ].join(" ")}
             title={
               entry.invoiced
-                ? "Unmark invoiced"
-                : "Mark as invoiced"
+                ? t("unmarkInvoiced")
+                : t("markAsInvoiced")
             }
           >
             <Check size={11} />
@@ -268,7 +271,7 @@ export function EntryRow({
               "p-0.5 rounded text-stone-600 " +
               "hover:text-stone-900"
             }
-            title="Edit"
+            title={tc("edit")}
           >
             <Pencil size={11} />
           </button>
@@ -279,7 +282,7 @@ export function EntryRow({
               "p-0.5 rounded text-stone-600 " +
               "hover:text-cta disabled:opacity-40"
             }
-            title="Duplicate for today"
+            title={t("duplicateForToday")}
           >
             <Copy size={11} />
           </button>
@@ -296,7 +299,7 @@ export function EntryRow({
                 "hover:text-red-400 " +
                 "disabled:opacity-40"
               }
-              title="Delete"
+              title={tc("delete")}
             >
               <Trash2 size={11} />
             </button>

@@ -2,6 +2,7 @@
  * ContractsSection renders the list of active and
  * invoiced contracts for a customer.
  */
+import { useTranslation } from "react-i18next";
 import { CollapsibleSection } from "../common/CollapsibleSection";
 import { ContractRow } from "./ContractRow";
 import { useContracts } from "../../hooks/useContracts";
@@ -16,6 +17,7 @@ export interface ContractsSectionProps {
 export function ContractsSection({
   customer,
 }: ContractsSectionProps) {
+  const { t: tc } = useTranslation("common");
   const hasContracts = customer.contracts.length > 0;
   const { data: contracts = [] } = useContracts(
     hasContracts ? customer.name : null,
@@ -37,7 +39,7 @@ export function ContractsSection({
       ))}
       {invoiced.length > 0 && (
         <CollapsibleSection
-          label="Invoiced"
+          label={tc("invoiced")}
           count={invoiced.length}
         >
           {invoiced.map((c) => (

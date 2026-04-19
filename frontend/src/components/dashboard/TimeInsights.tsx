@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useTimeInsights } from "../../hooks/useDashboard";
@@ -20,11 +21,11 @@ import type {
 
 type Period = "week" | "month" | "quarter" | "year";
 
-const PERIODS: { value: Period; label: string }[] = [
-  { value: "week", label: "Week" },
-  { value: "month", label: "Month" },
-  { value: "quarter", label: "Quarter" },
-  { value: "year", label: "Year" },
+const PERIODS: { value: Period; labelKey: string }[] = [
+  { value: "week", labelKey: "week" },
+  { value: "month", labelKey: "month" },
+  { value: "quarter", labelKey: "quarter" },
+  { value: "year", labelKey: "year" },
 ];
 
 // -------------------------------------------------------
@@ -291,6 +292,7 @@ function BillableSplit({
   nonBillableMin: number;
   byCustomer: TimeInsightsCustomer[];
 }) {
+  const { t: tc } = useTranslation("common");
   const [expanded, setExpanded] = useState<
     "billable" | "non-billable" | null
   >(null);
@@ -318,7 +320,7 @@ function BillableSplit({
     <div>
       <div className="flex items-center gap-2 mb-1.5">
         <span className="text-[10px] text-stone-500 uppercase tracking-wider w-16 shrink-0">
-          Billable
+          {tc("billable")}
         </span>
         <div
           className={[
@@ -369,11 +371,11 @@ function BillableSplit({
       <div className="flex gap-3 text-[10px] text-stone-500 mb-2">
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-sm bg-emerald-500" />
-          Billable {formatHours(billableMin)}
+          {tc("billable")} {formatHours(billableMin)}
         </span>
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-sm bg-amber-400" />
-          Non-billable {formatHours(nonBillableMin)}
+          {tc("nonBillable")} {formatHours(nonBillableMin)}
         </span>
       </div>
       {expanded && (
@@ -400,6 +402,8 @@ function BillableSplit({
 // -------------------------------------------------------
 
 export function TimeInsights() {
+  const { t } = useTranslation("dashboard");
+  const { t: tc } = useTranslation("common");
   const [period, setPeriod] = useState<Period>("month");
   const { data, isLoading } = useTimeInsights(period);
   const { data: yearData } = useTimeInsights("year");
@@ -410,7 +414,7 @@ export function TimeInsights() {
   if (isLoading || !data) {
     return (
       <div className="text-xs text-stone-500 py-4">
-        Loading insights...
+        {t("loadingInsights")}
       </div>
     );
   }
@@ -443,7 +447,7 @@ export function TimeInsights() {
             "uppercase text-stone-600",
           ].join(" ")}
         >
-          Time Insights
+          {t("timeInsights")}
         </h2>
         <div
           className={[
@@ -466,7 +470,7 @@ export function TimeInsights() {
                   : "text-stone-600 hover:bg-surface-raised",
               ].join(" ")}
             >
-              {p.label}
+              {tc(p.labelKey)}
             </button>
           ))}
         </div>
@@ -480,7 +484,7 @@ export function TimeInsights() {
             "tracking-wider text-stone-500 mb-2",
           ].join(" ")}
         >
-          Activity
+          {t("activity")}
         </h3>
         <ActivityHeatmap
           daily={yearData?.daily ?? data.daily}
@@ -526,7 +530,7 @@ export function TimeInsights() {
             "tracking-wider text-stone-500 mb-2",
           ].join(" ")}
         >
-          Billable Split
+          {t("billableSplit")}
         </h3>
         <BillableSplit
           billableMin={data.billable_total_min}
@@ -543,7 +547,7 @@ export function TimeInsights() {
             "tracking-wider text-stone-500 mb-2",
           ].join(" ")}
         >
-          By Customer
+          {t("byCustomer")}
         </h3>
         {data.by_customer.map((cust) => (
           <CustomerBar

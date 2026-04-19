@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   Bot,
   BookOpen,
@@ -22,25 +23,26 @@ import { useUnreadBadges } from "../../hooks/useUnreadBadges";
 
 interface NavItem {
   id: View;
-  label: string;
+  /** i18n key inside the "nav" namespace. */
+  labelKey: string;
   icon: React.ElementType;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "board", label: "Board", icon: Columns2 },
-  { id: "inbox", label: "Inbox", icon: Inbox },
-  { id: "notes", label: "Notes", icon: NotebookPen },
-  { id: "customers", label: "Customers", icon: Users },
-  { id: "knowledge", label: "Knowledge", icon: BookOpen },
-  { id: "github", label: "GitHub", icon: GitPullRequest },
-  { id: "clocks", label: "Clocks", icon: History },
-  { id: "cron", label: "Cron", icon: Clock4 },
-  { id: "advisor", label: "Advisor", icon: Bot },
+  { id: "dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+  { id: "board", labelKey: "board", icon: Columns2 },
+  { id: "inbox", labelKey: "inbox", icon: Inbox },
+  { id: "notes", labelKey: "notes", icon: NotebookPen },
+  { id: "customers", labelKey: "customers", icon: Users },
+  { id: "knowledge", labelKey: "knowledge", icon: BookOpen },
+  { id: "github", labelKey: "github", icon: GitPullRequest },
+  { id: "clocks", labelKey: "clocks", icon: History },
+  { id: "cron", labelKey: "cron", icon: Clock4 },
+  { id: "advisor", labelKey: "advisor", icon: Bot },
 ];
 
 const BOTTOM_NAV: NavItem[] = [
-  { id: "settings", label: "Settings", icon: Settings },
+  { id: "settings", labelKey: "settings", icon: Settings },
 ];
 
 interface SidebarProps {
@@ -58,6 +60,7 @@ export function Sidebar({
   onToggle,
   advisorUnread,
 }: SidebarProps) {
+  const { t } = useTranslation("nav");
   const unread = useUnreadBadges(active);
   const { config } = useShortcutsContext();
 
@@ -97,9 +100,10 @@ export function Sidebar({
       </button>
 
       {/* Nav items */}
-      {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+      {NAV_ITEMS.map(({ id, labelKey, icon: Icon }) => {
         const isActive = active === id;
         const badge = unread[id] ?? 0;
+        const label = t(labelKey);
         return (
           <button
             key={id}
@@ -157,8 +161,9 @@ export function Sidebar({
       <div className="flex-1" />
 
       {/* Bottom nav (settings) */}
-      {BOTTOM_NAV.map(({ id, label, icon: Icon }) => {
+      {BOTTOM_NAV.map(({ id, labelKey, icon: Icon }) => {
         const isActive = active === id;
+        const label = t(labelKey);
         return (
           <button
             key={id}

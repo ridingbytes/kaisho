@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Pencil, RotateCw, Trash2 } from "lucide-react";
 import { EditFooter } from "../common/EditFooter";
 import { ConfirmPopover } from "../common/ConfirmPopover";
@@ -73,6 +74,7 @@ function ContractSelect({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const { t: tc } = useTranslation("common");
   const { data: allContracts = [] } = useContracts(
     customer || null,
   );
@@ -86,11 +88,11 @@ function ContractSelect({
       onChange={(e) => onChange(e.target.value)}
       className={smallInputCls}
     >
-      <option value="">— no contract —</option>
+      <option value="">{tc("noContract")}</option>
       {contracts.map((c) => (
         <option key={c.name} value={c.name}>
           {c.name}
-          {c.end_date ? " (closed)" : ""}
+          {c.end_date ? ` (${tc("closed")})` : ""}
         </option>
       ))}
     </select>
@@ -106,6 +108,8 @@ interface SlotRowProps {
 }
 
 function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [editCustomer, setEditCustomer] = useState("");
   const setView = useSetView();
@@ -221,7 +225,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
               setEditDesc(e.target.value)
             }
             onKeyDown={handleKeyDown}
-            placeholder="Description"
+            placeholder={tc("description")}
             className={smallInputCls}
           />
           <TaskAutocomplete
@@ -263,7 +267,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
               }
               onKeyDown={handleKeyDown}
               className={smallInputCls}
-              title="Start time"
+              title={t("startTime")}
             />
             <input
               value={editHours}
@@ -271,7 +275,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
                 setEditHours(e.target.value)
               }
               onKeyDown={handleKeyDown}
-              placeholder="Hours"
+              placeholder={tc("hours")}
               className={smallInputCls}
             />
           </div>
@@ -281,7 +285,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
               setEditNotes(e.target.value)
             }
             onKeyDown={handleTextareaKeyDown}
-            placeholder="Notes"
+            placeholder={tc("notes")}
             rows={2}
             className={[smallInputCls, "resize-y"].join(
               " ",
@@ -330,7 +334,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
       {entry.invoiced && (
         <span
           className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"
-          title="Invoiced"
+          title={tc("invoiced")}
         />
       )}
       <span className={`text-[10px] text-stone-500 tabular-nums ${entry.invoiced ? "" : "ml-auto"}`}>
@@ -341,7 +345,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
       {entry.notes && (
         <ContentPopup
           content={entry.notes}
-          title="Notes"
+          title={tc("notes")}
           icon="notes"
           iconSize={10}
         />
@@ -349,7 +353,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
       <button
         onClick={startEdit}
         className={actionBtn}
-        title="Edit"
+        title={tc("edit")}
       >
         <Pencil size={10} />
       </button>
@@ -360,7 +364,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
         <button
           disabled={deleteEntry.isPending}
           className={[actionBtn, "hover:text-red-400 hover:bg-red-500/10"].join(" ")}
-          title="Delete"
+          title={tc("delete")}
         >
           <Trash2 size={10} />
         </button>
@@ -388,6 +392,8 @@ function TaskGroupRow({
   customerColors,
   invoicedSet,
 }: TaskGroupRowProps) {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const resumeTimer = useStartTimer();
   const setView = useSetView();
   const latest = group.entries[group.entries.length - 1];
@@ -420,7 +426,7 @@ function TaskGroupRow({
               <span className="inline-flex items-center gap-1 px-1.5 py-px rounded-full bg-green-500/10">
                 <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
                 <span className="text-[9px] font-semibold tracking-wider uppercase text-green-600">
-                  Active
+                  {tc("active")}
                 </span>
               </span>
             )}
@@ -446,7 +452,7 @@ function TaskGroupRow({
                 "opacity-0 group-hover:opacity-100",
                 "disabled:cursor-not-allowed",
               ].join(" ")}
-              title="Resume"
+              title={t("resume")}
             >
               <RotateCw size={10} />
             </button>
@@ -486,6 +492,8 @@ export function ClockList({
   isRunning,
   selectedDate,
 }: ClockListProps) {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const effectiveDate = selectedDate ?? todayIso();
   const { data: entries = [], isLoading } = useClockEntries(
     "today",
@@ -502,14 +510,14 @@ export function ClockList({
 
   if (isLoading) {
     return (
-      <p className="text-xs text-stone-400 text-center py-4">Loading…</p>
+      <p className="text-xs text-stone-400 text-center py-4">{tc("loading")}</p>
     );
   }
 
   if (groups.length === 0) {
     return (
       <p className="text-xs text-stone-400 text-center py-4">
-        No entries
+        {tc("noEntries")}
       </p>
     );
   }
@@ -529,7 +537,7 @@ export function ClockList({
       ))}
       <div className="flex justify-between pt-2 mt-1">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-          Total today
+          {t("totalToday")}
         </span>
         <span className="text-[11px] font-semibold text-stone-700 tabular-nums">
           {totalH}h {totalM}m

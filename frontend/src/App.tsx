@@ -1,8 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { setLanguage } from "./i18n";
 import {
   Clock,
   CloudCog,
   Download,
+  Globe,
   Menu,
   Moon,
   RefreshCw,
@@ -80,6 +83,7 @@ function MobileTimerModal({
 }: {
   onClose: () => void;
 }) {
+  const { t: tClocks } = useTranslation("clocks");
   const { data: timer } = useActiveTimer();
   const [selectedDate, setSelectedDate] = useState<
     string | null
@@ -100,7 +104,7 @@ function MobileTimerModal({
             "uppercase text-stone-700 flex-1",
           ].join(" ")}
         >
-          Time Tracking
+          {tClocks("timeTracking")}
         </h2>
         <button
           onClick={onClose}
@@ -142,6 +146,8 @@ function ActiveTimerWidget({
 }: {
   timer: { customer: string; description?: string; start: string };
 }) {
+  const { t: tClocks } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const [, setTick] = useState(0);
   const stop = useStopTimer();
 
@@ -177,7 +183,7 @@ function ActiveTimerWidget({
         {h}:{m}:{s}
       </span>
       <span className="text-xs text-emerald-500 font-semibold uppercase">
-        Active
+        {tc("active")}
       </span>
       <p className="text-sm text-stone-700 text-center">
         <span className="font-semibold">
@@ -199,7 +205,7 @@ function ActiveTimerWidget({
           "disabled:opacity-40",
         ].join(" ")}
       >
-        {stop.isPending ? "Stopping..." : "Stop Timer"}
+        {stop.isPending ? tc("stopping") : tClocks("stopTimer")}
       </button>
     </div>
   );
@@ -389,6 +395,7 @@ function UpdateBanner() {
 
 function AppShell() {
   useWebSocket();
+  const { i18n } = useTranslation();
   const [view, setView] = useState<View>(viewFromHash);
   const [pendingSearch, setPendingSearch] = useState("");
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -664,6 +671,24 @@ function AppShell() {
             className={headerBtn}
           >
             {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
+          <button
+            onClick={() => {
+              const next = i18n.language === "en"
+                ? "de"
+                : "en";
+              setLanguage(next);
+            }}
+            className={
+              headerBtn
+              + " flex items-center gap-1"
+            }
+            title="Language"
+          >
+            <Globe size={14} />
+            <span className="text-[10px] font-semibold">
+              {i18n.language.toUpperCase()}
+            </span>
           </button>
 
           {/* User menu */}

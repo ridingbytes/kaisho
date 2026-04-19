@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pencil, Square } from "lucide-react";
 import { useStopTimer, useUpdateClockEntry } from "../../hooks/useClocks";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
@@ -10,6 +11,8 @@ interface Props {
 }
 
 export function ActiveTimer({ timer }: Props) {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const [tick, setTick] = useState(0);
   const [notesOpen, setNotesOpen] = useState(false);
   const [notes, setNotes] = useState(timer.notes ?? "");
@@ -75,7 +78,7 @@ export function ActiveTimer({ timer }: Props) {
         <button
           onClick={() => stop.mutate()}
           disabled={stop.isPending}
-          title="Stop timer"
+          title={t("stopTimer")}
           className={[
             "p-1.5 rounded-lg transition-colors",
             "text-red-400 hover:text-red-500",
@@ -92,7 +95,7 @@ export function ActiveTimer({ timer }: Props) {
         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-500/10">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
           <span className="text-[10px] font-semibold tracking-wider uppercase text-green-600">
-            Active
+            {tc("active")}
           </span>
         </div>
       </div>
@@ -122,7 +125,7 @@ export function ActiveTimer({ timer }: Props) {
         </p>
         <button
           onClick={() => setNotesOpen((v) => !v)}
-          title="Edit description and notes"
+          title={t("editDescriptionNotes")}
           className={[
             "p-1 rounded transition-colors shrink-0",
             notesOpen
@@ -140,7 +143,7 @@ export function ActiveTimer({ timer }: Props) {
             value={notes}
             onChange={(e) => handleNotesChange(e.target.value)}
             onKeyDown={handleNotesKeyDown}
-            placeholder="Session notes…"
+            placeholder={t("sessionNotes")}
             rows={3}
             className={[
               "w-full px-2 py-1.5 rounded-lg text-xs resize-none",
@@ -150,7 +153,7 @@ export function ActiveTimer({ timer }: Props) {
             ].join(" ")}
           />
           <p className="text-[9px] text-stone-400 mt-1 text-right">
-            ⌘↵ save &amp; close
+            {tc("cmdSaveClose")}
           </p>
         </div>
       )}
