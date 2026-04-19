@@ -2,8 +2,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Clock,
   CloudCog,
+  Download,
   Menu,
   Moon,
+  RefreshCw,
   Settings,
   Smartphone,
   Sun,
@@ -47,6 +49,7 @@ import {
   useShortcutsContext,
 } from "./context/ShortcutsContext";
 import { ViewContext } from "./context/ViewContext";
+import { isTauri } from "./utils/tauri";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { schedulePanelAction } from "./utils/panelActions";
 import { WhatsNewDialog } from "./components/common/WhatsNewDialog";
@@ -268,6 +271,115 @@ function CloudNudgeBanner({
       >
         <X size={12} />
       </button>
+    </div>
+  );
+}
+
+function UpdateBanner() {
+  const [version, setVersion] = useState("");
+  const [installing, setInstalling] = useState(false);
+  const [progress, setProgress] = useState("");
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    if (!isTauri()) return;
+    const timer = setTimeout(async () => {
+      try {
+        const { check } = await import(
+          "@tauri-apps/plugin-updater"
+        );
+        const update = await check();
+        if (update) setVersion(update.version);
+      } catch {
+        // silently ignore — user can still check
+        // manually in Settings > Updates
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!version || dismissed) return null;
+
+  async function handleInstall() {
+    setInstalling(true);
+    setProgress("Checking...");
+    try {
+      const { check } = await import(
+        "@tauri-apps/plugin-updater"
+      );
+      const update = await check();
+      if (!update) {
+        setProgress("Already up to date");
+        setInstalling(false);
+        return;
+      }
+      setProgress(`Downloading v${update.version}...`);
+      let downloaded = 0;
+      let total = 0;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await update.downloadAndInstall((e: any) => {
+        if (e.event === "Started") {
+          total = e.data?.contentLength ?? 0;
+        } else if (e.event === "Progress") {
+          downloaded += e.data?.chunkLength ?? 0;
+          if (total > 0) {
+            const pct = Math.round(
+              (downloaded / total) * 100,
+            );
+            setProgress(`Downloading... ${pct}%`);
+          }
+        } else if (e.event === "Finished") {
+          setProgress("Restarting...");
+        }
+      });
+      const { relaunch } = await import(
+        "@tauri-apps/plugin-process"
+      );
+      await relaunch();
+    } catch (err) {
+      setProgress(
+        `Failed: ${
+          err instanceof Error
+            ? err.message
+            : String(err)
+        }`,
+      );
+      setInstalling(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-1.5 bg-green-500/10 border-b border-green-500/20 shrink-0">
+      {installing ? (
+        <p className="flex-1 flex items-center gap-2 text-[11px] text-stone-700">
+          <RefreshCw
+            size={11}
+            className="animate-spin text-green-600"
+          />
+          {progress}
+        </p>
+      ) : (
+        <>
+          <p className="flex-1 text-[11px] text-stone-700">
+            Kaisho <strong>v{version}</strong> is
+            available.
+          </p>
+          <button
+            onClick={handleInstall}
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium text-green-700 bg-green-500/20 hover:bg-green-500/30 transition-colors"
+          >
+            <Download size={11} />
+            Install &amp; restart
+          </button>
+          <button
+            onClick={() => setDismissed(true)}
+            className="text-stone-400 hover:text-stone-700 transition-colors shrink-0"
+            title="Dismiss"
+          >
+            <X size={12} />
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -681,6 +793,7 @@ function AppShell() {
           </div>
 
           <main className="flex-1 min-w-0 overflow-hidden relative flex flex-col">
+            <UpdateBanner />
             <CloudNudgeBanner
               show={!cloudStatus?.connected}
               onOpenSettings={() => setView("settings")}
