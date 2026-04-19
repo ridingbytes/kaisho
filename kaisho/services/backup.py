@@ -17,6 +17,7 @@ import zipfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from ..time_utils import local_now
 
 _LOG = logging.getLogger(__name__)
 
@@ -113,7 +114,7 @@ def create_backup(
             f"source_dir does not exist: {source_dir}"
         )
     backup_dir.mkdir(parents=True, exist_ok=True)
-    ts = timestamp or datetime.now()
+    ts = timestamp or local_now()
     filename = _build_filename(profile, ts)
     dest = backup_dir / filename
 

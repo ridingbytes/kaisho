@@ -7,6 +7,7 @@ from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 from .kanban import add_task
 from . import notes as notes_service
+from ..time_utils import local_now
 
 INBOX_KEYWORDS: set[str] = set()
 CREATED_FMT = "%Y-%m-%d %a %H:%M"
@@ -131,7 +132,7 @@ def add_item(
     else:
         title = text
 
-    now = datetime.now()
+    now = local_now()
     created_str = now.strftime(CREATED_FMT)
 
     new_heading = Heading(

@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from . import sync_state
+from ..time_utils import local_now
 
 log = logging.getLogger(__name__)
 
@@ -336,7 +337,7 @@ def push_snapshot(
         {
             "customers": customers,
             "tasks": tasks,
-            "snapshot_at": datetime.now().isoformat(),
+            "snapshot_at": local_now().isoformat(),
         },
     )
 
@@ -602,7 +603,7 @@ def entry_to_wire(entry: dict) -> dict:
         "invoiced": bool(entry.get("invoiced")),
         "updated_at": _local_to_utc(
             entry.get("updated_at")
-            or datetime.now().isoformat()
+            or local_now().isoformat()
         ),
     }
 
@@ -688,7 +689,7 @@ def on_local_delete(entry: dict) -> None:
     if not entry or not entry.get("sync_id"):
         return
     cfg = get_config()
-    now = datetime.now().isoformat()
+    now = local_now().isoformat()
     tombstone = {
         **entry,
         "deleted_at": now,
@@ -1068,7 +1069,7 @@ def run_sync_cycle(
     backend = get_backend()
 
     cursor = sync_state.load_cursor(profile_dir)
-    started = datetime.now().isoformat()
+    started = local_now().isoformat()
     result = {
         "pulled_up": 0,
         "pulled_del": 0,

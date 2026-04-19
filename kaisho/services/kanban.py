@@ -5,6 +5,7 @@ from pathlib import Path
 from ..org.models import Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
+from ..time_utils import local_now
 
 CUSTOMER_RE = re.compile(r"^\[([^\]]+)\]:\s*")
 CREATED_FMT = "%Y-%m-%d %a %H:%M"
@@ -270,7 +271,7 @@ def add_task(
     org_file = parse_org_file(todos_file, keywords)
 
     full_title = f"[{customer}]: {title}"
-    now = datetime.now()
+    now = local_now()
     created_str = now.strftime(CREATED_FMT)
 
     new_heading = Heading(
@@ -307,7 +308,7 @@ def move_task(
     if heading is None:
         raise ValueError(f"Task not found: {task_id}")
 
-    now = datetime.now()
+    now = local_now()
     old_status = heading.keyword or "TODO"
     log_entry = (
         f'- State "{new_status}"'
@@ -447,7 +448,7 @@ def _add_archive_properties(
     original_keyword: str | None,
 ) -> None:
     """Add standard org archive properties to a heading."""
-    now = datetime.now()
+    now = local_now()
     day = _WEEKDAYS[now.weekday()]
     archive_time = now.strftime(f"%Y-%m-%d {day} %H:%M")
     heading.properties["ARCHIVE_TIME"] = archive_time

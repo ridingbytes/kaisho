@@ -1109,7 +1109,7 @@ def stop_timer(
     if found_clock is None or found_heading is None:
         raise ValueError("No active timer found")
 
-    end = end_at or datetime.now().replace(microsecond=0)
+    end = end_at or local_now().replace(microsecond=0)
     delta = end - found_clock.start
     total_minutes = int(delta.total_seconds() / 60)
     hours = total_minutes // 60

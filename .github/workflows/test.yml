@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
+      - name: Lint
+        run: flake8 kaisho/ --max-line-length=80 --count --statistics --exclude=__pycache__
+
       - name: Run tests
         run: pytest --tb=short -q
 

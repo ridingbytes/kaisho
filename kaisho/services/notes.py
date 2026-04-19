@@ -5,6 +5,7 @@ from pathlib import Path
 from ..org.models import Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
+from ..time_utils import local_now
 
 NOTES_KEYWORDS: set[str] = set()
 CREATED_FMT = "%Y-%m-%d %a %H:%M"
@@ -59,7 +60,7 @@ def add_note(
     task_id: str | None = None,
 ) -> dict:
     """Append a new note to notes.org and return its dict."""
-    now = datetime.now()
+    now = local_now()
     created_str = now.strftime(CREATED_FMT)
 
     heading_title = f"[{customer}] {title}" if customer else title
