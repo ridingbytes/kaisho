@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import {
-  X, Check, Copy, Pencil, Trash2,
+  X, Check, Copy, Pencil, RotateCcw, Trash2,
 } from "lucide-react";
+import { ConfirmPopover } from "../common/ConfirmPopover";
 import { PixelAvatar } from "../common/PixelAvatar";
 import {
   useCurrentUser,
@@ -541,12 +542,43 @@ function ProfilesTab() {
 // Main export
 // -----------------------------------------------------------------
 
+function ResetLocalStorageSection() {
+  return (
+    <section>
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        Local Preferences
+      </h2>
+      <p className="text-[10px] text-stone-400 mb-3">
+        Clears cached UI state: theme, sidebar,
+        dismissed banners, advisor chat history,
+        and other browser-local preferences.
+        Server data is not affected.
+      </p>
+      <ConfirmPopover
+        label="Clear all local preferences and reload?"
+        onConfirm={() => {
+          localStorage.clear();
+          window.location.reload();
+        }}
+      >
+        <button
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs text-stone-600 border border-border hover:text-red-600 hover:border-red-300 transition-colors"
+        >
+          <RotateCcw size={12} />
+          Reset local preferences
+        </button>
+      </ConfirmPopover>
+    </section>
+  );
+}
+
 export function GeneralTab(): JSX.Element {
   return (
     <div className="flex flex-col gap-8">
       <AppTitleSection />
       <UserProfileSection />
       <ProfilesTab />
+      <ResetLocalStorageSection />
     </div>
   );
 }
