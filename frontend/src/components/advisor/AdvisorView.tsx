@@ -3,8 +3,9 @@ import {
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Send, Square, Trash2 } from "lucide-react";
-import { askAdvisor } from "../../api/client";
+import { Check, Inbox, Send, Square, Trash2 } from "lucide-react";
+import { askAdvisor, captureInboxItem } from "../../api/client";
+import { useToast } from "../../context/ToastContext";
 import {
   useAiSettings,
   useAvailableModels,
@@ -30,6 +31,8 @@ const QUESTION_TEMPLATE_KEYS = [
 export interface AdvisorMessage {
   role: "user" | "assistant";
   text: string;
+  timestamp?: string;
+  model?: string;
 }
 
 function UserBubble({ text }: { text: string }) {
@@ -42,13 +45,55 @@ function UserBubble({ text }: { text: string }) {
   );
 }
 
+function CopyToInboxBtn({ text }: { text: string }) {
+  const { t } = useTranslation("advisor");
+  const toast = useToast();
+  const [done, setDone] = useState(false);
+  const [pending, setPending] = useState(false);
+
+  function handleClick() {
+    if (pending || done) return;
+    setPending(true);
+    captureInboxItem({ text })
+      .then(() => {
+        setDone(true);
+        toast(t("copiedToInbox"), "success");
+        setTimeout(() => setDone(false), 2000);
+      })
+      .finally(() => setPending(false));
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={pending || done}
+      className={[
+        "p-1 rounded transition-colors",
+        done
+          ? "text-green-400"
+          : "text-stone-400 hover:text-cta hover:bg-cta-muted",
+        "disabled:opacity-60",
+      ].join(" ")}
+      title={t("copyToInbox")}
+    >
+      {done ? <Check size={12} /> : <Inbox size={12} />}
+    </button>
+  );
+}
+
 function AssistantBubble({
   text,
   thinking,
+  timestamp,
+  model,
 }: {
   text: string;
   thinking?: boolean;
+  timestamp?: string;
+  model?: string;
 }) {
+  const meta = [timestamp, model].filter(Boolean).join(" \u00b7 ");
+
   return (
     <div className="flex justify-start mb-3">
       <div
@@ -58,6 +103,14 @@ function AssistantBubble({
           thinking ? "text-sm text-stone-500 italic" : "",
         ].join(" ")}
       >
+        {!thinking && meta && (
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-[10px] text-stone-400 font-mono">
+              {meta}
+            </span>
+            <CopyToInboxBtn text={text} />
+          </div>
+        )}
         {thinking ? (
           text
         ) : (
@@ -206,9 +259,17 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
       },
     })
       .then((result) => {
+        const ts = new Date().toLocaleTimeString(
+          [], { hour: "2-digit", minute: "2-digit" },
+        );
         onMessagesChange((prev) => [
           ...prev,
-          { role: "assistant", text: result.answer },
+          {
+            role: "assistant",
+            text: result.answer,
+            timestamp: ts,
+            model: model || undefined,
+          },
         ]);
         for (const key of ADVISOR_INVALIDATIONS) {
           void qc.invalidateQueries({
@@ -352,7 +413,12 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
           msg.role === "user" ? (
             <UserBubble key={i} text={msg.text} />
           ) : (
-            <AssistantBubble key={i} text={msg.text} />
+            <AssistantBubble
+              key={i}
+              text={msg.text}
+              timestamp={msg.timestamp}
+              model={msg.model}
+            />
           )
         )}
         {loading && (

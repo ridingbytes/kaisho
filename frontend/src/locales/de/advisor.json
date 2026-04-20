@@ -23,5 +23,7 @@
   "requestFailed": "Anfrage fehlgeschlagen.",
   "calling": "Rufe {{name}} auf...",
   "done": "{{name}} abgeschlossen",
-  "failed": "{{name}} fehlgeschlagen"
+  "failed": "{{name}} fehlgeschlagen",
+  "copyToInbox": "In Posteingang kopieren",
+  "copiedToInbox": "In Posteingang kopiert"
 }

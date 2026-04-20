@@ -617,7 +617,15 @@ function AppShell() {
           {cloudStatus?.connected && (
             <>
               <button
-                onClick={() => setView("settings")}
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent(
+                      "navigate-settings-tab",
+                      { detail: "cloud" },
+                    ),
+                  );
+                  setView("settings");
+                }}
                 className={[
                   "hidden sm:flex items-center gap-1.5",
                   "px-2 py-1 rounded-lg text-[10px]",

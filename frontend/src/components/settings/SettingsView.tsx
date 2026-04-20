@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
@@ -78,6 +78,21 @@ export function SettingsView(): JSX.Element {
     setActiveTab(id);
     localStorage.setItem("settings_tab", id);
   }
+
+  useEffect(() => {
+    function handleNavigate(e: Event) {
+      const tab = (e as CustomEvent<string>).detail as TabId;
+      if (TABS.some((t) => t.id === tab)) {
+        changeTab(tab);
+      }
+    }
+    window.addEventListener(
+      "navigate-settings-tab", handleNavigate,
+    );
+    return () => window.removeEventListener(
+      "navigate-settings-tab", handleNavigate,
+    );
+  }, []);
 
   return (
     <div className="flex flex-col h-full">

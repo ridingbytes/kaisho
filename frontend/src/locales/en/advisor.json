@@ -23,5 +23,7 @@
   "requestFailed": "Request failed.",
   "calling": "Calling {{name}}...",
   "done": "{{name}} done",
-  "failed": "{{name}} failed"
+  "failed": "{{name}} failed",
+  "copyToInbox": "Copy to inbox",
+  "copiedToInbox": "Copied to inbox"
 }
