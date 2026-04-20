@@ -24,6 +24,7 @@
         "url": "tray.html",
         "visible": false,
         "decorations": false,
+        "transparent": true,
         "alwaysOnTop": true,
         "skipTaskbar": true,
         "width": 320,

@@ -174,27 +174,10 @@ export function TrayPanel() {
       window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Close when the window loses focus (click outside).
-  // Use a longer delay so that clicking the tray icon
-  // itself doesn't immediately re-hide the panel.
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    function onBlur() {
-      timer = setTimeout(() => {
-        invokeTauri("hide_tray_window");
-      }, 500);
-    }
-    function onFocus() {
-      clearTimeout(timer);
-    }
-    window.addEventListener("blur", onBlur);
-    window.addEventListener("focus", onFocus);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("blur", onBlur);
-      window.removeEventListener("focus", onFocus);
-    };
-  }, []);
+  // No auto-close on blur — the tray icon toggle
+  // and Escape key handle closing. Blur fires too
+  // aggressively on macOS when the tray icon is
+  // clicked.
 
   const isRunning =
     timer?.active === true && !!timer.start;
@@ -232,7 +215,7 @@ export function TrayPanel() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-surface-base text-stone-800 overflow-hidden select-none rounded-xl border border-border shadow-lg">
+    <div className="m-1 flex flex-col flex-1 bg-surface-base text-stone-800 overflow-hidden select-none rounded-xl border border-border shadow-2xl">
       {/* Timer or start form */}
       <TimerSection
         timer={timer}
