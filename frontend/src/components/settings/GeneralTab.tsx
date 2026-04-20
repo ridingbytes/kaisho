@@ -579,6 +579,7 @@ function ResetLocalStorageSection() {
 const LANGUAGES = [
   { code: "en", label: "English" },
   { code: "de", label: "Deutsch" },
+  { code: "es", label: "Español" },
 ];
 
 function LanguageSection() {
@@ -608,24 +609,22 @@ function LanguageSection() {
       >
         Language
       </h3>
-      <div className="flex gap-2">
+      <select
+        value={lang}
+        onChange={(e) => switchLang(e.target.value)}
+        className={
+          "px-3 py-1.5 rounded text-sm border border-border " +
+          "bg-surface text-stone-700 cursor-pointer " +
+          "hover:border-stone-400 focus:outline-none " +
+          "focus:border-cta transition-colors"
+        }
+      >
         {LANGUAGES.map((l) => (
-          <button
-            key={l.code}
-            onClick={() => switchLang(l.code)}
-            className={[
-              "px-3 py-1.5 rounded text-sm",
-              "border transition-colors",
-              lang === l.code
-                ? "border-cta bg-cta text-white"
-                : "border-border text-stone-600 " +
-                  "hover:border-stone-400",
-            ].join(" ")}
-          >
+          <option key={l.code} value={l.code}>
             {l.label}
-          </button>
+          </option>
         ))}
-      </div>
+      </select>
     </section>
   );
 }

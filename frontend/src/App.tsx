@@ -680,24 +680,23 @@ function AppShell() {
           >
             {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
           </button>
-          <button
-            onClick={() => {
-              const next = i18n.language === "en"
-                ? "de"
-                : "en";
-              setLanguage(next);
-            }}
-            className={
-              headerBtn
-              + " flex items-center gap-1"
-            }
-            title="Language"
-          >
-            <Globe size={14} />
-            <span className="text-[10px] font-semibold">
-              {i18n.language.toUpperCase()}
-            </span>
-          </button>
+          <div className="flex items-center gap-1 px-1.5 py-1">
+            <Globe size={14} className="text-stone-500 shrink-0" />
+            <select
+              value={i18n.language}
+              onChange={(e) => setLanguage(e.target.value)}
+              title="Language"
+              className={
+                "text-[10px] font-semibold bg-transparent " +
+                "border-none outline-none cursor-pointer " +
+                "text-stone-700 hover:text-stone-900"
+              }
+            >
+              <option value="en">English</option>
+              <option value="de">Deutsch</option>
+              <option value="es">Español</option>
+            </select>
+          </div>
 
           {/* User menu */}
           {currentUser && (

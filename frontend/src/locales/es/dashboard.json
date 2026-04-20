@@ -1,0 +1,15 @@
+{
+  "dashboard": "Dashboard",
+  "openTasks": "Tareas abiertas",
+  "inboxItems": "Elementos en bandeja",
+  "hoursThisMonth": "Horas este mes",
+  "budgetsAtRisk": "Presupuestos en riesgo",
+  "unassignedEntries": "Entradas sin asignar",
+  "inboxOlderThan7Days": "Bandeja > 7 d\u00edas",
+  "budgetStatus": "Estado del presupuesto",
+  "timeInsights": "An\u00e1lisis de tiempo",
+  "activity": "Actividad",
+  "billableSplit": "Distribuci\u00f3n facturable",
+  "byCustomer": "Por cliente",
+  "loadingInsights": "Cargando an\u00e1lisis..."
+}

@@ -26,6 +26,21 @@ import cronEn from "./locales/en/cron.json";
 import knowledgeEn from "./locales/en/knowledge.json";
 import notesEn from "./locales/en/notes.json";
 
+// -- Spanish ---------------------------------------------
+
+import commonEs from "./locales/es/common.json";
+import navEs from "./locales/es/nav.json";
+import clocksEs from "./locales/es/clocks.json";
+import kanbanEs from "./locales/es/kanban.json";
+import customersEs from "./locales/es/customers.json";
+import settingsEs from "./locales/es/settings.json";
+import inboxEs from "./locales/es/inbox.json";
+import advisorEs from "./locales/es/advisor.json";
+import dashboardEs from "./locales/es/dashboard.json";
+import cronEs from "./locales/es/cron.json";
+import knowledgeEs from "./locales/es/knowledge.json";
+import notesEs from "./locales/es/notes.json";
+
 // -- German ----------------------------------------------
 
 import commonDe from "./locales/de/common.json";
@@ -49,7 +64,7 @@ function detectLanguage(): string {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) return stored;
   const browser = navigator.language.split("-")[0];
-  return ["en", "de"].includes(browser) ? browser : "en";
+  return ["en", "de", "es"].includes(browser) ? browser : "en";
 }
 
 // -- Init ------------------------------------------------
@@ -83,6 +98,20 @@ i18n.use(initReactI18next).init({
       cron: cronDe,
       knowledge: knowledgeDe,
       notes: notesDe,
+    },
+    es: {
+      common: commonEs,
+      nav: navEs,
+      clocks: clocksEs,
+      kanban: kanbanEs,
+      customers: customersEs,
+      settings: settingsEs,
+      inbox: inboxEs,
+      advisor: advisorEs,
+      dashboard: dashboardEs,
+      cron: cronEs,
+      knowledge: knowledgeEs,
+      notes: notesEs,
     },
   },
   lng: detectLanguage(),

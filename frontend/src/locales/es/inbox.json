@@ -1,0 +1,23 @@
+{
+  "inbox": "Bandeja de entrada",
+  "addItem": "+ A\u00f1adir",
+  "captureSomething": "Captura algo...",
+  "inboxEmpty": "La bandeja est\u00e1 vac\u00eda",
+  "inboxEmptyHint": "Haz clic en \"+ A\u00f1adir\" para capturar algo",
+  "autoType": "Tipo autom\u00e1tico",
+  "anyChannel": "Cualquier canal",
+  "anyDirection": "Cualquier direcci\u00f3n",
+  "bodyOptional": "Cuerpo (opcional)",
+  "inboxItemCaptured": "Elemento capturado en la bandeja",
+  "inboxItemDeleted": "Elemento eliminado de la bandeja",
+  "inboxItemUpdated": "Elemento de bandeja actualizado",
+  "movedTo": "Movido a {{destination}}",
+  "promotedToTask": "Convertido en tarea",
+  "in": "Entrada",
+  "out": "Salida",
+  "any": "Cualquiera",
+  "emailChannel": "Correo electr\u00f3nico",
+  "phoneChannel": "Tel\u00e9fono",
+  "chatChannel": "Chat",
+  "otherChannel": "Otro"
+}

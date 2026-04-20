@@ -1,0 +1,9 @@
+{
+  "notes": "Notas",
+  "titlePlaceholder": "T\u00edtulo",
+  "bodyOptional": "Cuerpo (opcional)",
+  "addNote": "+ A\u00f1adir",
+  "noNotesYet": "A\u00fan no hay notas.",
+  "noMatchingNotes": "No hay notas que coincidan.",
+  "deleted": "[eliminado]"
+}

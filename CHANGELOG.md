@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.2
+
+- Spanish translations (12 namespace files, full coverage)
+- Language selector changed from toggle to dropdown
+  (English, Deutsch, Español) in header and settings
+- Mobile PWA now fully translated (EN, DE, ES) with
+  language selector in Profile > Appearance
+- Fix advisor not recognizing ollama_cloud: model prefix
+
 ## 0.7.1
 
 - Unified app icon: same dark bracket-palm design on
