@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.7.3
+
+- Menu bar tray timer: crisp icons, transparent popover
+  panel with rounded corners, dark/light theme sync,
+  language sync, proper positioning below tray icon
+- Left-click opens panel, right-click shows context menu
+- Timer toggle calls backend API directly (no crash)
+- Advisor model badge: read-only, click navigates to
+  Settings > AI (removed inline model override)
+- Fix Ollama Cloud model prefix (ollama_cloud: instead
+  of ollama:), fix /v1/models endpoint path
+- Local Ollama fetch skips remote URLs
+- Dock icon with proper padding for macOS
+- Desktop app refactored into modules (sidecar, tray,
+  http, lib)
+- Sidecar cache uses content hash to avoid stale builds
+- dev-desktop.sh script for local Tauri dev loop
+
 ## 0.7.2
 
 - Spanish translations (12 namespace files, full coverage)
