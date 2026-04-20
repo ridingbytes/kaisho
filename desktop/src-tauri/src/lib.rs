@@ -91,7 +91,12 @@ fn toggle_tray_window(
     if let Some(win) =
         app.get_webview_window("tray")
     {
-        if win.is_visible().unwrap_or(false) {
+        let visible = win.is_visible().unwrap_or(false);
+        eprintln!(
+            "[tray] toggle: visible={}",
+            visible,
+        );
+        if visible {
             let _ = win.hide();
             return;
         }
@@ -420,16 +425,23 @@ pub fn run() {
                 })
                 .on_tray_icon_event(
                     move |_tray, event| {
-                        if let tauri::tray::TrayIconEvent::Click {
-                            button: tauri::tray::MouseButton::Left,
-                            position,
-                            ..
-                        } = event
-                        {
-                            toggle_tray_window(
-                                &handle_click,
-                                Some(position),
-                            );
+                        match event {
+                            tauri::tray::TrayIconEvent::Click {
+                                button: tauri::tray::MouseButton::Left,
+                                button_state: tauri::tray::MouseButtonState::Up,
+                                position,
+                                ..
+                            } => {
+                                eprintln!(
+                                    "[tray] click at ({}, {})",
+                                    position.x, position.y,
+                                );
+                                toggle_tray_window(
+                                    &handle_click,
+                                    Some(position),
+                                );
+                            }
+                            _ => {}
                         }
                     },
                 )
