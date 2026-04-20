@@ -128,7 +128,16 @@ fn toggle_tray_window(
         }
 
         let _ = win.show();
-        let _ = win.set_focus();
+
+        // Delay focus so macOS doesn't immediately
+        // bring the main window forward
+        let w = win.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(
+                100,
+            ));
+            let _ = w.set_focus();
+        });
     }
 }
 
