@@ -159,6 +159,10 @@ def _convert_customers(
                         "start_date", "",
                     ),
                     notes=ct.get("notes", ""),
+                    billable=ct.get("billable", True),
+                    invoiced=ct.get(
+                        "invoiced", False,
+                    ),
                 )
             except ValueError:
                 continue
