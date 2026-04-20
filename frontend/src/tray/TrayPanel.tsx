@@ -174,17 +174,26 @@ export function TrayPanel() {
       window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Close on click outside (blur)
+  // Close when the window loses focus (click outside).
+  // Use a longer delay so that clicking the tray icon
+  // itself doesn't immediately re-hide the panel.
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
     function onBlur() {
-      // Small delay to avoid closing on tray click
-      setTimeout(() => {
+      timer = setTimeout(() => {
         invokeTauri("hide_tray_window");
-      }, 200);
+      }, 500);
+    }
+    function onFocus() {
+      clearTimeout(timer);
     }
     window.addEventListener("blur", onBlur);
-    return () =>
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearTimeout(timer);
       window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   const isRunning =

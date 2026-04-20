@@ -127,7 +127,7 @@ fn toggle_tray_window(app: &tauri::AppHandle) {
                     let sf = win.scale_factor()
                         .unwrap_or(1.0);
                     let x = (s.width as f64 / sf)
-                        as i32 - 340;
+                        as i32 - 330;
                     let _ = win.set_position(
                         tauri::Position::Logical(
                             tauri::LogicalPosition {
