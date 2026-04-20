@@ -173,9 +173,13 @@ jobs:
           fi
           ZIPFILE="${EXE%.exe}.nsis.zip"
           echo "Creating $ZIPFILE"
+          # Convert Git Bash path to Windows path for
+          # PowerShell's Compress-Archive
+          WIN_EXE=$(cygpath -w "$EXE")
+          WIN_ZIP=$(cygpath -w "$ZIPFILE")
           powershell -Command \
-            "Compress-Archive -Path '$EXE' \
-            -DestinationPath '$ZIPFILE'"
+            "Compress-Archive -Path '$WIN_EXE' \
+            -DestinationPath '$WIN_ZIP'"
           npx --prefix desktop tauri signer sign \
             -k "$TAURI_SIGNING_PRIVATE_KEY" \
             -p "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" \
