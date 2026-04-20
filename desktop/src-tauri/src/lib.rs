@@ -78,24 +78,43 @@ fn toggle_tray_window(app: &tauri::AppHandle) {
         if win.is_visible().unwrap_or(false) {
             let _ = win.hide();
         } else {
-            // Position near top-right (menu bar area)
-            let _ = win.set_position(
-                tauri::Position::Physical(
-                    tauri::PhysicalPosition {
-                        x: 0,
-                        y: 0,
-                    },
-                ),
-            );
-            // Use the positioner plugin if available,
-            // otherwise let the OS place it
+            // Try to position below the tray icon.
+            // The positioner plugin may panic if the
+            // tray position hasn't been set yet, so
+            // catch that and fall back to top-right.
             #[cfg(target_os = "macos")]
             {
                 use tauri_plugin_positioner::{
                     Position, WindowExt,
                 };
-                let _ = win.move_window(
-                    Position::TrayBottomCenter,
+                let w = win.clone();
+                let ok = std::panic::catch_unwind(
+                    std::panic::AssertUnwindSafe(|| {
+                        w.move_window(
+                            Position::TrayBottomCenter,
+                        )
+                    }),
+                );
+                if ok.is_err() {
+                    let _ = win.set_position(
+                        tauri::Position::Physical(
+                            tauri::PhysicalPosition {
+                                x: 1000,
+                                y: 30,
+                            },
+                        ),
+                    );
+                }
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                let _ = win.set_position(
+                    tauri::Position::Physical(
+                        tauri::PhysicalPosition {
+                            x: 0,
+                            y: 0,
+                        },
+                    ),
                 );
             }
             let _ = win.show();
