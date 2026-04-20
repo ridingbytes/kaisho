@@ -71,6 +71,60 @@ def clock_stop(as_json):
         click.echo(f"Timer stopped: {_format_entry(result)}")
 
 
+@clock.command("desc")
+@click.argument("description", nargs=-1, required=True)
+@click.option("--json", "as_json", is_flag=True)
+def clock_desc(description, as_json):
+    """Set the description on the running timer."""
+    backend = get_backend()
+    timer = backend.clocks.get_active()
+    if timer is None:
+        click.echo("No active timer.", err=True)
+        sys.exit(1)
+    desc = " ".join(description)
+    result = backend.clocks.update_entry(
+        start_iso=timer["start"],
+        description=desc,
+    )
+    if result is None:
+        click.echo("Entry not found.", err=True)
+        sys.exit(1)
+    if as_json:
+        click.echo(json.dumps(result, default=str))
+    else:
+        click.echo(f"Description set: {desc}")
+
+
+@clock.command("note")
+@click.argument("text", nargs=-1, required=True)
+@click.option("--json", "as_json", is_flag=True)
+def clock_note(text, as_json):
+    """Add notes to the running timer."""
+    backend = get_backend()
+    timer = backend.clocks.get_active()
+    if timer is None:
+        click.echo("No active timer.", err=True)
+        sys.exit(1)
+    existing = timer.get("notes", "") or ""
+    new_note = " ".join(text)
+    combined = (
+        f"{existing}\n{new_note}".strip()
+        if existing
+        else new_note
+    )
+    result = backend.clocks.update_entry(
+        start_iso=timer["start"],
+        notes=combined,
+    )
+    if result is None:
+        click.echo("Entry not found.", err=True)
+        sys.exit(1)
+    if as_json:
+        click.echo(json.dumps(result, default=str))
+    else:
+        click.echo(f"Note added: {new_note}")
+
+
 @clock.command("status")
 @click.option("--json", "as_json", is_flag=True)
 def clock_status(as_json):

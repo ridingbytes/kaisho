@@ -36,6 +36,8 @@ const HELP_TEXT = [
   "Common commands:",
   "  clock start <customer> [description]",
   "  clock stop",
+  "  clock desc <description>",
+  "  clock note <text>",
   "  clock book <duration> <customer> [desc]",
   "  clock status",
   "  clock list [--week|--month|--customer X]",
@@ -239,6 +241,7 @@ function now(): string {
 
 const CMD_NAMES = [
   "clock start", "clock stop", "clock book",
+  "clock desc", "clock note",
   "clock status", "clock list", "clock summary",
   "task add", "task list",
   "customer list", "customer add",
