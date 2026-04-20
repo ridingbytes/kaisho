@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pencil, RotateCcw } from "lucide-react";
 import {
   DEFAULT_SHORTCUTS,
@@ -11,34 +12,49 @@ import {
 // Constants
 // -----------------------------------------------------------------
 
-const SHORTCUT_ROWS: {
-  key: string;
-  label: string;
-}[] = [
-  { key: "dashboard", label: "Dashboard" },
-  { key: "board", label: "Board" },
-  { key: "inbox", label: "Inbox" },
-  { key: "notes", label: "Notes" },
-  { key: "customers", label: "Customers" },
-  { key: "knowledge", label: "Knowledge" },
-  { key: "github", label: "GitHub Issues" },
-  { key: "clocks", label: "Clock Entries" },
-  { key: "cron", label: "Cron Jobs" },
-  { key: "settings", label: "Settings" },
-  { key: "advisor", label: "Advisor" },
+const SHORTCUT_ROW_KEYS: string[] = [
+  "dashboard",
+  "board",
+  "inbox",
+  "notes",
+  "customers",
+  "knowledge",
+  "github",
+  "clocks",
+  "cron",
+  "settings",
+  "advisor",
 ];
 
-const ACTION_ROWS: {
-  key: string;
-  label: string;
-}[] = [
-  { key: "new:board", label: "New Task" },
-  { key: "new:inbox", label: "New Inbox Item" },
-  { key: "new:notes", label: "New Note" },
-  { key: "new:clocks", label: "New Clock Entry" },
-  { key: "new:knowledge", label: "New KB File" },
-  { key: "new:customers", label: "New Customer" },
+const ACTION_ROW_KEYS: string[] = [
+  "new:board",
+  "new:inbox",
+  "new:notes",
+  "new:clocks",
+  "new:knowledge",
+  "new:customers",
 ];
+
+// Nav label keys for SHORTCUT_ROWS and ACTION_ROWS
+const NAV_LABEL_MAP: Record<string, string> = {
+  "dashboard": "dashboard",
+  "board": "board",
+  "inbox": "inbox",
+  "notes": "notes",
+  "customers": "customers",
+  "knowledge": "knowledge",
+  "github": "github",
+  "clocks": "clockEntries",
+  "cron": "cronJobs",
+  "settings": "settings",
+  "advisor": "advisor",
+  "new:board": "newTask",
+  "new:inbox": "newInboxItem",
+  "new:notes": "newNote",
+  "new:clocks": "newClockEntry",
+  "new:knowledge": "newKbFile",
+  "new:customers": "newCustomer",
+};
 
 // -----------------------------------------------------------------
 // Key capture
@@ -51,6 +67,7 @@ function KeyCapture({
   onCapture: (s: string) => void;
   onCancel: () => void;
 }) {
+  const { t: tc } = useTranslation("common");
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -78,7 +95,7 @@ function KeyCapture({
       tabIndex={-1}
       className="text-xs text-stone-600 italic focus:outline-none"
     >
-      Press a key...
+      {tc("pressKey")}
     </span>
   );
 }
@@ -88,6 +105,8 @@ function KeyCapture({
 // -----------------------------------------------------------------
 
 export function ShortcutsSection(): JSX.Element {
+  const { t } = useTranslation("settings");
+  const { t: tn } = useTranslation("nav");
   const {
     config,
     setViewShortcut,
@@ -98,6 +117,17 @@ export function ShortcutsSection(): JSX.Element {
   const [recording, setRecording] = useState<
     string | null
   >(null);
+
+  const SHORTCUT_ROWS = SHORTCUT_ROW_KEYS.map(
+    (key) => ({
+      key,
+      label: tn(NAV_LABEL_MAP[key] ?? key),
+    }),
+  );
+  const ACTION_ROWS = ACTION_ROW_KEYS.map((key) => ({
+    key,
+    label: tn(NAV_LABEL_MAP[key] ?? key),
+  }));
 
   function findConflict(
     s: string,
@@ -220,7 +250,7 @@ export function ShortcutsSection(): JSX.Element {
                       resetOne(row.key)
                     }
                     className="text-[10px] text-stone-400 hover:text-stone-700 transition-colors shrink-0"
-                    title="Reset this shortcut"
+                    title={t("resetThisShortcut")}
                   >
                     reset
                   </button>
@@ -240,7 +270,7 @@ export function ShortcutsSection(): JSX.Element {
                       setRecording(row.key)
                     }
                     className="flex items-center gap-2 group/edit"
-                    title="Click to reassign"
+                    title={t("clickToReassign")}
                   >
                     <kbd className="text-[10px] font-mono text-stone-700 border border-border rounded px-1.5 py-0.5 group-hover/edit:border-cta group-hover/edit:text-cta transition-colors">
                       {current
@@ -265,29 +295,27 @@ export function ShortcutsSection(): JSX.Element {
     <section>
       <div className="flex items-center gap-3 mb-3">
         <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
-          Keyboard Shortcuts
+          {t("keyboardShortcuts")}
         </h2>
         <button
           onClick={resetToDefaults}
           className="ml-auto flex items-center gap-1 text-xs text-stone-500 hover:text-stone-900 transition-colors"
-          title="Reset to defaults"
+          title={t("resetToDefaults")}
         >
           <RotateCcw size={11} />
-          Reset
+          {t("resetToDefaults")}
         </button>
       </div>
-      {renderGroup("General", [
+      {renderGroup(tn("commandPalette"), [
         {
           key: "_palette",
-          label: "Command palette",
+          label: tn("commandPalette"),
         },
       ])}
-      {renderGroup("Navigate", SHORTCUT_ROWS)}
-      {renderGroup("Actions", ACTION_ROWS)}
+      {renderGroup(t("navigate"), SHORTCUT_ROWS)}
+      {renderGroup(t("actions"), ACTION_ROWS)}
       <p className="mt-2 text-[10px] text-stone-400">
-        Shortcuts fire when no text field is focused.
-        Click a shortcut to reassign it by pressing any
-        key.
+        {t("shortcutsHint")}
       </p>
     </section>
   );

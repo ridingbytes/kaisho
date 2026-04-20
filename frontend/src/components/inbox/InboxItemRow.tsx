@@ -314,7 +314,7 @@ export function InboxItemRow({ item }: Props) {
                   }}
                   className="w-full text-left px-2 py-1 rounded text-[10px] text-stone-500 hover:text-stone-900"
                 >
-                  Cancel
+                  {tc("cancel")}
                 </button>
               </div>
             )}

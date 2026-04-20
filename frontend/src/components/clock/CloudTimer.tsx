@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Smartphone, Square } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { elapsed } from "../../utils/formatting";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
 import {
@@ -19,6 +20,7 @@ interface Props {
  * from the desktop without unlocking their phone.
  */
 export function CloudTimer({ timer, onStopped }: Props) {
+  const { t } = useTranslation("clocks");
   const [tick, setTick] = useState(0);
   const [stopping, setStopping] = useState(false);
   const customerColors = useCustomerColors();
@@ -84,7 +86,7 @@ export function CloudTimer({ timer, onStopped }: Props) {
               + "uppercase text-stone-500"
             }
           >
-            Running on mobile
+            {t("runningOnMobile")}
           </span>
         </div>
       </div>
@@ -144,7 +146,9 @@ export function CloudTimer({ timer, onStopped }: Props) {
         ].join(" ")}
       >
         <Square size={11} />
-        {stopping ? "Stopping..." : "Stop"}
+        {stopping
+          ? t("starting")
+          : t("stopTimer")}
       </button>
     </div>
   );

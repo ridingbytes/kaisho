@@ -22,6 +22,9 @@ import settingsEn from "./locales/en/settings.json";
 import inboxEn from "./locales/en/inbox.json";
 import advisorEn from "./locales/en/advisor.json";
 import dashboardEn from "./locales/en/dashboard.json";
+import cronEn from "./locales/en/cron.json";
+import knowledgeEn from "./locales/en/knowledge.json";
+import notesEn from "./locales/en/notes.json";
 
 // -- German ----------------------------------------------
 
@@ -34,6 +37,9 @@ import settingsDe from "./locales/de/settings.json";
 import inboxDe from "./locales/de/inbox.json";
 import advisorDe from "./locales/de/advisor.json";
 import dashboardDe from "./locales/de/dashboard.json";
+import cronDe from "./locales/de/cron.json";
+import knowledgeDe from "./locales/de/knowledge.json";
+import notesDe from "./locales/de/notes.json";
 
 // -- Detect language -------------------------------------
 
@@ -60,6 +66,9 @@ i18n.use(initReactI18next).init({
       inbox: inboxEn,
       advisor: advisorEn,
       dashboard: dashboardEn,
+      cron: cronEn,
+      knowledge: knowledgeEn,
+      notes: notesEn,
     },
     de: {
       common: commonDe,
@@ -71,6 +80,9 @@ i18n.use(initReactI18next).init({
       inbox: inboxDe,
       advisor: advisorDe,
       dashboard: dashboardDe,
+      cron: cronDe,
+      knowledge: knowledgeDe,
+      notes: notesDe,
     },
   },
   lng: detectLanguage(),

@@ -10,6 +10,7 @@
 
 import { FilePlus, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useCreateKnowledgeFolder,
   useDeleteKnowledgeFile,
@@ -47,6 +48,8 @@ import type { KnowledgeFile } from "../../types";
  * file viewer into a full-height layout.
  */
 export function KnowledgeView() {
+  const { t } = useTranslation("knowledge");
+  const { t: tc } = useTranslation("common");
   const [selectedPath, setSelectedPath] =
     useState<string | null>(null);
   const [selectedLabel, setSelectedLabel] =
@@ -282,12 +285,12 @@ export function KnowledgeView() {
             "uppercase text-stone-700"
           }
         >
-          Knowledge
+          {t("knowledge")}
         </h1>
         {!editing && (
           <input
             type="text"
-            placeholder="Search…"
+            placeholder={t("searchPlaceholder")}
             value={searchInput}
             onChange={(e) =>
               setSearchInput(e.target.value)
@@ -313,7 +316,7 @@ export function KnowledgeView() {
             }
           >
             <FilePlus size={12} />
-            New
+            {t("newFile")}
           </button>
         )}
         {!editing &&
@@ -331,11 +334,11 @@ export function KnowledgeView() {
               }
             >
               <Pencil size={12} />
-              Edit
+              {t("editFile")}
             </button>
           )}
         <HelpButton
-          title="Knowledge"
+          title={t("knowledge")}
           doc={DOCS.knowledge}
           view="knowledge"
         />
@@ -390,14 +393,14 @@ export function KnowledgeView() {
           <div className="flex-1 overflow-y-auto p-6">
             {fileLoading && (
               <p className="text-sm text-stone-500">
-                Loading…
+                {tc("loading")}
               </p>
             )}
             {!fileLoading &&
               !fileData &&
               !selectedPath && (
                 <p className="text-sm text-stone-500">
-                  Select a file to view its contents.
+                  {t("selectFile")}
                 </p>
               )}
             {!fileLoading && fileData && (

@@ -3,6 +3,7 @@
  * sub-components for display, editing, status picking,
  * hover actions, and state history.
  */
+import { useTranslation } from "react-i18next";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
@@ -53,6 +54,7 @@ export function TaskCard({
   onTagClick,
   onCustomerClick,
 }: TaskCardProps) {
+  const { t } = useTranslation("kanban");
   const {
     attributes,
     listeners,
@@ -194,7 +196,7 @@ export function TaskCard({
               "shrink-0",
             ].join(" ")}
             style={{ backgroundColor: statusColor }}
-            title="Change status"
+            title={t("changeStatus")}
           />
           {statePicker && (
             <StatusPicker

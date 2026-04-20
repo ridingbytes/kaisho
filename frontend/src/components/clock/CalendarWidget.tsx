@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { formatHours } from "../../utils/formatting";
 import type { ClockEntry } from "../../types";
 
@@ -64,13 +65,28 @@ function groupByDate(entries: ClockEntry[]): Map<string, number> {
   return map;
 }
 
-const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
+function localeDayLabels(lang: string): string[] {
+  const base = new Date(2024, 0, 1); // Monday
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(base);
+    d.setDate(1 + i);
+    // Use narrow (single-letter) weekday
+    return d.toLocaleDateString(lang, {
+      weekday: "narrow",
+    });
+  });
+}
 
-const MONTH_NAMES = [
-  "January", "February", "March", "April",
-  "May", "June", "July", "August",
-  "September", "October", "November", "December",
-];
+function localeMonthName(
+  year: number,
+  month: number,
+  lang: string,
+): string {
+  return new Date(year, month - 1, 1).toLocaleDateString(
+    lang,
+    { month: "long", year: "numeric" },
+  );
+}
 
 interface CalendarWidgetProps {
   selectedDate: string | null;
@@ -81,6 +97,7 @@ export function CalendarWidget({
   selectedDate,
   onDateChange,
 }: CalendarWidgetProps) {
+  const { t: tc, i18n } = useTranslation("common");
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
@@ -135,7 +152,7 @@ export function CalendarWidget({
           <ChevronLeft size={12} />
         </button>
         <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-600">
-          {MONTH_NAMES[month - 1]} {year}
+          {localeMonthName(year, month, i18n.language)}
         </span>
         <button
           onClick={nextMonth}
@@ -147,14 +164,16 @@ export function CalendarWidget({
 
       {/* Day headers */}
       <div className="grid grid-cols-7">
-        {DAY_LABELS.map((label, i) => (
-          <div
-            key={i}
-            className="text-center text-[9px] font-semibold uppercase text-stone-400 py-0.5"
-          >
-            {label}
-          </div>
-        ))}
+        {localeDayLabels(i18n.language).map(
+          (label, i) => (
+            <div
+              key={i}
+              className="text-center text-[9px] font-semibold uppercase text-stone-400 py-0.5"
+            >
+              {label}
+            </div>
+          ),
+        )}
       </div>
 
       {/* Calendar grid */}
@@ -200,7 +219,7 @@ export function CalendarWidget({
           onClick={goToday}
           className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors self-end"
         >
-          Today
+          {tc("today")}
         </button>
       )}
     </div>

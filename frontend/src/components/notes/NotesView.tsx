@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { tagBadgeStyle } from "../../utils/tagColors";
 import { RelDate } from "../common/RelDate";
@@ -63,6 +64,8 @@ function NoteRow({
   onDelete: () => void;
   onTagClick: (tag: string) => void;
 }) {
+  const { t } = useTranslation("notes");
+  const { t: tc } = useTranslation("common");
   const setView = useSetView();
   const { data: tasks = [] } = useTasks();
   const [expanded, setExpanded] = useState(false);
@@ -222,14 +225,14 @@ function NoteRow({
           </span>
         )}
         {note.task_id && (() => {
-          const t = tasks.find(
+          const task = tasks.find(
             (tk) => tk.id === note.task_id
           );
-          return t ? (
+          return task ? (
             <span
               onClick={(e) => {
                 e.stopPropagation();
-                setView("board", t.title);
+                setView("board", task.title);
               }}
               className={[
                 "inline-flex items-center",
@@ -239,13 +242,13 @@ function NoteRow({
                 "cursor-pointer hover:bg-cta/20",
                 "shrink-0 max-w-[10rem] truncate",
               ].join(" ")}
-              title={t.title}
+              title={task.title}
             >
-              {t.title}
+              {task.title}
             </span>
           ) : (
             <span className="text-[10px] text-stone-500 italic shrink-0">
-              [deleted]
+              {t("deleted")}
             </span>
           );
         })()}
@@ -353,7 +356,7 @@ function NoteRow({
                       doSave();
                     }
                   }}
-                  placeholder="Title"
+                  placeholder={t("titlePlaceholder")}
                   className={`${smallFieldCls} flex-1`}
                   autoFocus
                 />
@@ -389,7 +392,7 @@ function NoteRow({
                     doSave();
                   }
                 }}
-                placeholder="Body (optional)"
+                placeholder={t("bodyOptional")}
                 rows={4}
                 className={`${smallFieldCls} w-full resize-none`}
               />
@@ -407,7 +410,7 @@ function NoteRow({
                     onClick={cancelEdit}
                     className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
                   >
-                    <X size={11} /> Cancel
+                    <X size={11} /> {tc("cancel")}
                   </button>
                   <button
                     onClick={handleSave}
@@ -415,7 +418,9 @@ function NoteRow({
                     className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-cta text-white disabled:opacity-40"
                   >
                     <Check size={11} />
-                    {updateNote.isPending ? "Saving…" : "Save"}
+                    {updateNote.isPending
+                      ? tc("saving")
+                      : tc("save")}
                   </button>
                 </div>
               </div>
@@ -544,6 +549,8 @@ function NoteRow({
 }
 
 function AddNoteForm({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation("notes");
+  const { t: tc } = useTranslation("common");
   const addNote = useAddNote();
   const { data: settings } = useSettings();
   const allTags = settings?.tags ?? [];
@@ -590,7 +597,7 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="Title"
+          placeholder={t("titlePlaceholder")}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -622,7 +629,7 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
         inputClassName={fieldCls}
       />
       <textarea
-        placeholder="Body (optional)"
+        placeholder={t("bodyOptional")}
         value={body}
         onChange={(e) => setBody(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -644,14 +651,16 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             className="px-3 py-1.5 rounded-lg text-sm text-stone-700 hover:text-stone-900 transition-colors"
           >
-            Cancel
+            {tc("cancel")}
           </button>
           <button
             type="submit"
             disabled={addNote.isPending}
             className="px-4 py-1.5 rounded-lg text-sm bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-50"
           >
-            {addNote.isPending ? "Adding…" : "Add"}
+            {addNote.isPending
+              ? tc("adding")
+              : tc("add")}
           </button>
         </div>
       </div>
@@ -660,6 +669,9 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
 }
 
 export function NotesView() {
+  const { t } = useTranslation("notes");
+  const { t: tn } = useTranslation("nav");
+  const { t: tc } = useTranslation("common");
   const { data: notes = [], isLoading } = useNotes();
   const { data: settings } = useSettings();
   const allTags = settings?.tags ?? [];
@@ -703,7 +715,7 @@ export function NotesView() {
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-border-subtle shrink-0 flex-wrap">
         <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
-          Notes
+          {tn("notes")}
         </h1>
         <SearchInput
           value={search}
@@ -728,9 +740,9 @@ export function NotesView() {
           onClick={() => setShowForm((v) => !v)}
           className="ml-auto px-3 py-1 rounded-lg text-xs bg-cta text-white hover:bg-cta-hover transition-colors"
         >
-          + Add
+          {t("addNote")}
         </button>
-        <HelpButton title="Notes" doc={DOCS.notes} view="notes" />
+        <HelpButton title={t("notes")} doc={DOCS.notes} view="notes" />
       </div>
 
       {showForm && (
@@ -740,14 +752,14 @@ export function NotesView() {
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
           <p className="text-sm text-stone-500 text-center py-8">
-            Loading…
+            {tc("loading")}
           </p>
         )}
         {!isLoading && filtered.length === 0 && (
           <p className="text-sm text-stone-500 text-center py-8">
             {notes.length === 0
-              ? "No notes yet."
-              : "No matching notes."}
+              ? t("noNotesYet")
+              : t("noMatchingNotes")}
           </p>
         )}
         {filtered.map((note) => (

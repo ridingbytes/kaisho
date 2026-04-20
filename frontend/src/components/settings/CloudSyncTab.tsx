@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 import {
   useAiUsage,
@@ -15,21 +16,21 @@ import { ConfirmPopover } from "../common/ConfirmPopover";
 import { openExternal } from "../../utils/tauri";
 import { inputCls, saveBtnCls } from "./styles";
 
-const PLAN_LABELS: Record<string, string> = {
-  free: "Free",
-  sync: "Cloud Sync",
-  sync_ai: "Sync + AI",
-};
-
-function planLabel(plan: string): string {
-  return PLAN_LABELS[plan] || plan;
-}
-
 export function CloudSyncSection(): JSX.Element {
+  const { t } = useTranslation("settings");
   const { data: status, isLoading } =
     useCloudSyncStatus();
   const { data: aiUsage } = useAiUsage();
   const qc = useQueryClient();
+
+  function planLabel(plan: string): string {
+    const map: Record<string, string> = {
+      free: t("planFree"),
+      sync: t("planSync"),
+      sync_ai: t("planSyncAi"),
+    };
+    return map[plan] || plan;
+  }
 
   const CLOUD_URL = "https://cloud.kaisho.dev";
   const [apiKey, setApiKey] = useState("");
@@ -148,54 +149,29 @@ export function CloudSyncSection(): JSX.Element {
         <div className="mb-5 rounded-xl border border-cta/30 bg-cta/5 overflow-hidden">
           <div className="px-4 py-3">
             <p className="text-sm font-semibold text-stone-900 mb-1">
-              Unlock Cloud Sync, Mobile App
-              &amp; AI
+              {t("unlockCloudSync")}
             </p>
             <p className="text-xs text-stone-600 leading-relaxed mb-3">
-              Connect your Kaisho instance to the cloud
-              to sync time entries with the{" "}
-              <button
-                onClick={() =>
-                  openExternal(
-                    "https://cloud.kaisho.dev/m",
-                  )
-                }
-                className="text-cta hover:underline"
-              >
-                mobile app
-              </button>
-              , enable the AI advisor and cron jobs
-              without a local model, and access your
-              data from anywhere.
+              {t("unlockCloudSyncHint")}
             </p>
             <ul className="text-xs text-stone-600 space-y-1 mb-3">
               <li className="flex items-start gap-2">
                 <span className="text-cta mt-0.5">
                   *
                 </span>
-                <span>
-                  <strong>Cloud Sync</strong> — real-time
-                  bidirectional sync of clock entries
-                </span>
+                <span>{t("cloudSyncFeature")}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-cta mt-0.5">
                   *
                 </span>
-                <span>
-                  <strong>Mobile App</strong> — start
-                  and stop timers from your phone
-                </span>
+                <span>{t("mobileAppFeature")}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-cta mt-0.5">
                   *
                 </span>
-                <span>
-                  <strong>Kaisho AI</strong> — AI
-                  advisor and automated cron jobs
-                  without local GPU
-                </span>
+                <span>{t("kaishoAiFeature")}</span>
               </li>
             </ul>
             <button
@@ -206,14 +182,12 @@ export function CloudSyncSection(): JSX.Element {
               }
               className="px-4 py-1.5 rounded-lg text-xs font-medium bg-cta text-white hover:bg-cta-hover transition-colors"
             >
-              View plans &amp; pricing
+              {t("viewPlans")}
             </button>
           </div>
           <div className="px-4 py-2.5 bg-amber-500/10 border-t border-amber-500/20">
             <p className="text-[10px] text-amber-700">
-              After signing up, check your spam folder
-              for the confirmation email. Some providers
-              may flag it initially.
+              {t("spamFolderHint")}
             </p>
           </div>
         </div>
@@ -223,12 +197,12 @@ export function CloudSyncSection(): JSX.Element {
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border-subtle">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
-              Connection
+              {t("connection")}
             </p>
             <div className="flex items-center gap-2 mb-2">
               <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
               <span className="text-xs text-green-400">
-                Connected
+                {t("connected")}
               </span>
               {status?.plan && (
                 <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-raised text-stone-600 border border-border-subtle">
@@ -241,34 +215,37 @@ export function CloudSyncSection(): JSX.Element {
             </p>
             {(status?.pending_deletes ?? 0) > 0 && (
               <p className="text-xs text-amber-600 mt-1">
-                {status?.pending_deletes} tombstones
-                waiting to push
+                {t("tombstonesWaiting", {
+                  count: status?.pending_deletes,
+                })}
               </p>
             )}
             {status?.last_error && (
               <p className="text-xs text-red-400 mt-1">
-                Last error: {status.last_error}
+                {t("lastError", {
+                  error: status.last_error,
+                })}
               </p>
             )}
             <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-stone-500">
-              <dt>Last pull</dt>
+              <dt>{t("lastPull")}</dt>
               <dd className="text-stone-700">
                 {status?.last_pull_at
                   ? new Date(status.last_pull_at)
                       .toLocaleString()
-                  : "never"}
+                  : t("never")}
               </dd>
-              <dt>Last push</dt>
+              <dt>{t("lastPush")}</dt>
               <dd className="text-stone-700">
                 {status?.last_push_at
                   ? new Date(status.last_push_at)
                       .toLocaleString()
-                  : "never"}
+                  : t("never")}
               </dd>
               {status?.cloud_entry_count !==
                 undefined && (
                 <>
-                  <dt>Cloud entries</dt>
+                  <dt>{t("cloudEntries")}</dt>
                   <dd className="text-stone-700 tabular-nums">
                     {status.cloud_entry_count}
                   </dd>
@@ -288,15 +265,13 @@ export function CloudSyncSection(): JSX.Element {
             ].join(" ")}>
               <div>
                 <p className="text-xs font-medium text-stone-700">
-                  Use Kaisho AI
+                  {t("useKaishoAi")}
                 </p>
                 <p className="text-[10px] text-stone-500 mt-0.5">
                   {status?.plan === "sync_ai"
-                    ? "Route advisor and cron jobs " +
-                      "through OpenRouter instead of " +
-                      "local models."
-                    : "Requires the Sync + AI plan. " +
-                      "Upgrade to enable cloud AI."}
+                    ? t("useKaishoAiHint")
+                    : t("planSyncAi") +
+                      " plan required."}
                 </p>
               </div>
               <button
@@ -345,7 +320,7 @@ export function CloudSyncSection(): JSX.Element {
           {status?.use_cloud_ai && aiUsage && (
             <div className="px-4 py-3 border-b border-border-subtle">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
-                AI Usage ({aiUsage.month || "---"})
+                {t("aiUsage")} ({aiUsage.month || "---"})
               </p>
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-2 rounded-full bg-stone-200 overflow-hidden">
@@ -378,11 +353,9 @@ export function CloudSyncSection(): JSX.Element {
                 </span>
               </div>
               <p className="text-[10px] text-stone-400 mt-1">
-                {aiUsage.request_count} request
-                {aiUsage.request_count !== 1
-                  ? "s"
-                  : ""}{" "}
-                this month
+                {t("requestsThisMonth", {
+                  count: aiUsage.request_count,
+                })}
               </p>
             </div>
           )}
@@ -393,10 +366,10 @@ export function CloudSyncSection(): JSX.Element {
               disabled={syncing}
               className={saveBtnCls}
             >
-              {syncing ? "Syncing..." : "Sync Now"}
+              {syncing ? t("syncing") : t("syncNow")}
             </button>
             <ConfirmPopover
-              label="Wipe cloud data and disconnect?"
+              label={t("disconnectConfirm")}
               onConfirm={handleDisconnect}
               disabled={disconnecting}
             >
@@ -405,8 +378,8 @@ export function CloudSyncSection(): JSX.Element {
                 className="px-4 py-1.5 rounded text-sm text-stone-600 hover:text-red-600 border border-border hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-wait"
               >
                 {disconnecting
-                  ? "Flushing cloud data..."
-                  : "Disconnect"}
+                  ? t("disconnecting")
+                  : t("disconnect")}
               </button>
             </ConfirmPopover>
           </div>
@@ -415,16 +388,15 @@ export function CloudSyncSection(): JSX.Element {
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border-subtle">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
-              Connect
+              {t("connect")}
             </p>
             <p className="text-[10px] text-stone-400 mb-3">
-              Enter the API key from your
-              confirmation email.
+              {t("apiKeyHint")}
             </p>
             <div className="flex flex-col gap-2">
               <label className="flex items-center gap-3">
                 <span className="text-xs text-stone-700 w-24 shrink-0">
-                  API Key
+                  {t("apiKey")}
                 </span>
                 <div className="flex-1 flex items-center gap-1">
                   <input
@@ -443,7 +415,9 @@ export function CloudSyncSection(): JSX.Element {
                     }
                     className="p-1 rounded text-stone-400 hover:text-stone-700 transition-colors shrink-0"
                     title={
-                      showKey ? "Hide" : "Show"
+                      showKey
+                        ? t("hideKey")
+                        : t("showKey")
                     }
                   >
                     {showKey ? (
@@ -465,8 +439,8 @@ export function CloudSyncSection(): JSX.Element {
               className={saveBtnCls}
             >
               {connecting
-                ? "Connecting..."
-                : "Connect"}
+                ? t("connecting")
+                : t("connect")}
             </button>
           </div>
         </div>
@@ -483,8 +457,7 @@ export function CloudSyncSection(): JSX.Element {
         </p>
       )}
       <p className="mt-2 text-[10px] text-stone-400">
-        Cloud sync is optional. The app works fully
-        standalone without a cloud connection.
+        {t("cloudSyncOptionalHint")}
       </p>
     </section>
   );

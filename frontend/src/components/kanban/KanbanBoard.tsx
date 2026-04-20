@@ -258,8 +258,11 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                           <ConfirmPopover
                             label={
                               task.clock_count > 0
-                                ? `Delete? (${task.clock_count} clock ${task.clock_count === 1 ? "entry" : "entries"} will lose task link)`
-                                : "Delete?"
+                                ? t("deleteConfirmEntries", {
+                                    count: task.clock_count,
+                                    entries: task.clock_count === 1 ? tc("entry") : tc("entries"),
+                                  })
+                                : undefined
                             }
                             onConfirm={() =>
                               deleteArchived.mutate(task.id)

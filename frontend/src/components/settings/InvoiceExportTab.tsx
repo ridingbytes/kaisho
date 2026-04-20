@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useInvoiceExportSettings } from "../../hooks/useSettings";
 import {
@@ -17,6 +18,8 @@ import {
 import { saveBtnCls } from "./styles";
 
 export function InvoiceExportSection(): JSX.Element {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const { data: settings, isLoading } =
     useInvoiceExportSettings();
   const qc = useQueryClient();
@@ -122,9 +125,7 @@ export function InvoiceExportSection(): JSX.Element {
   return (
     <section>
       <p className="text-xs text-stone-500 leading-relaxed mb-4">
-        Configure which columns appear in CSV and Excel
-        exports. Drag to reorder. The same layout applies
-        to both the Clock view and Invoice panel exports.
+        {t("exportHint")}
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -132,13 +133,13 @@ export function InvoiceExportSection(): JSX.Element {
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
           <div className="px-4 py-2 border-b border-border-subtle">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-              Selected columns
+              {t("selectedColumns")}
             </p>
           </div>
           <div className="p-2">
             {columns.length === 0 && (
               <p className="text-xs text-stone-400 text-center py-4">
-                No columns selected
+                {t("noColumnsSelected")}
               </p>
             )}
             {columns.map((col, idx) => {
@@ -203,13 +204,13 @@ export function InvoiceExportSection(): JSX.Element {
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
           <div className="px-4 py-2 border-b border-border-subtle">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-              Available fields
+              {t("availableFields")}
             </p>
           </div>
           <div className="p-2">
             {available.length === 0 && (
               <p className="text-xs text-stone-400 text-center py-4">
-                All fields selected
+                {t("allFieldsSelected")}
               </p>
             )}
             {available.map((f) => (
@@ -232,17 +233,17 @@ export function InvoiceExportSection(): JSX.Element {
           disabled={saving}
           className={saveBtnCls}
         >
-          {saving ? "Saving..." : "Save"}
+          {saving ? tc("saving") : tc("save")}
         </button>
         <button
           onClick={handleReset}
           className="px-4 py-1.5 rounded text-sm text-stone-600 hover:text-stone-900 border border-border hover:border-stone-400 transition-colors"
         >
-          Reset to default
+          {tc("resetToDefault")}
         </button>
         {saved && (
           <span className="text-xs text-green-400">
-            Saved.
+            {tc("saved")}
           </span>
         )}
       </div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { formatHours } from "../../utils/formatting";
 import type { ClockEntry } from "../../types";
 
@@ -79,12 +80,26 @@ function sumMinutes(entries: ClockEntry[]): number {
   );
 }
 
-const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+function localeDayLabels(lang: string): string[] {
+  // Generate Mon–Sun labels using the browser's locale engine
+  const base = new Date(2024, 0, 1); // 2024-01-01 is a Monday
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(base);
+    d.setDate(1 + i);
+    return d.toLocaleDateString(lang, { weekday: "short" });
+  });
+}
 
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
+function localeMonthName(
+  year: number,
+  month: number,
+  lang: string,
+): string {
+  return new Date(year, month - 1, 1).toLocaleDateString(
+    lang,
+    { month: "long", year: "numeric" },
+  );
+}
 
 interface DayCellProps {
   date: Date;
@@ -151,10 +166,11 @@ interface EntryListProps {
 }
 
 function EntryList({ entries, dateLabel }: EntryListProps) {
+  const { t } = useTranslation("clocks");
   if (entries.length === 0) {
     return (
       <div className="px-4 py-3 text-xs text-stone-500">
-        No entries for {dateLabel}.
+        {t("noEntriesFound")} {dateLabel}
       </div>
     );
   }
@@ -185,6 +201,7 @@ function EntryList({ entries, dateLabel }: EntryListProps) {
 }
 
 export function CalendarView() {
+  const { t, i18n } = useTranslation("clocks");
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
@@ -232,12 +249,15 @@ export function CalendarView() {
     : [];
 
   const selectedLabel = selectedDate
-    ? new Date(selectedDate + "T00:00:00").toLocaleDateString("en-GB", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
+    ? new Date(selectedDate + "T00:00:00").toLocaleDateString(
+        i18n.language,
+        {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        },
+      )
     : "";
 
   return (
@@ -245,7 +265,7 @@ export function CalendarView() {
       {/* Toolbar */}
       <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
         <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
-          Calendar
+          {t("calendar")}
         </h1>
       </div>
 
@@ -261,7 +281,7 @@ export function CalendarView() {
               <ChevronLeft size={16} />
             </button>
             <h2 className="text-sm font-semibold text-stone-900">
-              {MONTH_NAMES[month - 1]} {year}
+              {localeMonthName(year, month, i18n.language)}
             </h2>
             <button
               onClick={nextMonth}
@@ -274,20 +294,22 @@ export function CalendarView() {
 
           {/* Day header row */}
           <div className="grid grid-cols-7 mb-1">
-            {DAY_LABELS.map((label) => (
-              <div
-                key={label}
-                className="text-center text-[10px] font-semibold uppercase tracking-wider text-stone-500 py-1"
-              >
-                {label}
-              </div>
-            ))}
+            {localeDayLabels(i18n.language).map(
+              (label, i) => (
+                <div
+                  key={i}
+                  className="text-center text-[10px] font-semibold uppercase tracking-wider text-stone-500 py-1"
+                >
+                  {label}
+                </div>
+              ),
+            )}
           </div>
 
           {/* Calendar grid */}
           {isLoading ? (
             <div className="flex items-center justify-center h-48 text-sm text-stone-500">
-              Loading…
+              {t("noEntriesFound")}
             </div>
           ) : (
             <div className="grid grid-cols-7 bg-surface-card rounded-xl border border-border overflow-hidden">

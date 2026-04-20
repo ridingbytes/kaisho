@@ -1,6 +1,7 @@
 import { Check, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 
 interface ConfirmPopoverProps {
   /** The trigger element (typically a button). */
@@ -21,10 +22,12 @@ interface ConfirmPopoverProps {
  */
 export function ConfirmPopover({
   children,
-  label = "Delete?",
+  label,
   onConfirm,
   disabled,
 }: ConfirmPopoverProps) {
+  const { t: tc } = useTranslation("common");
+  const resolvedLabel = label ?? tc("deleteConfirm");
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
@@ -77,7 +80,7 @@ export function ConfirmPopover({
           ].join(" ")}
         >
           <span className="text-[10px] text-stone-700">
-            {label}
+            {resolvedLabel}
           </span>
           <button
             onClick={(e) => {

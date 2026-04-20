@@ -6,6 +6,7 @@
 import ReactDOM from "react-dom";
 import { useRef, useState } from "react";
 import { GitBranch } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface GithubIssue {
   number: number;
@@ -35,6 +36,8 @@ export function GithubIssueInput({
   onChange,
   inputClassName,
 }: GithubIssueInputProps) {
+  const { t } = useTranslation("kanban");
+  const { t: tc } = useTranslation("common");
   const [issues, setIssues] = useState<GithubIssue[]>(
     [],
   );
@@ -80,7 +83,7 @@ export function GithubIssueInput({
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="GitHub issue URL"
+          placeholder={t("githubIssueUrl")}
           className={[inputClassName, "flex-1"].join(
             " ",
           )}
@@ -91,7 +94,7 @@ export function GithubIssueInput({
             type="button"
             onClick={fetchIssues}
             disabled={loading}
-            title="Pick GitHub issue"
+            title={t("pickGithubIssue")}
             className="px-2 rounded bg-surface-raised border border-border text-stone-600 hover:text-cta hover:border-cta transition-colors disabled:opacity-40"
           >
             <GitBranch size={11} />
@@ -129,7 +132,7 @@ export function GithubIssueInput({
                   setFilter("");
                 }
               }}
-              placeholder="Filter issues..."
+              placeholder={t("filterIssues")}
               autoFocus
               className="w-full px-3 py-1.5 text-xs border-b border-border bg-transparent text-stone-800 placeholder-stone-400 outline-none"
             />
@@ -163,7 +166,7 @@ export function GithubIssueInput({
                   }}
                   className="w-full text-left px-3 py-1 text-[10px] text-stone-500 hover:text-stone-700"
                 >
-                  Close
+                  {tc("close")}
                 </button>
               </li>
             </ul>

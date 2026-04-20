@@ -4,6 +4,7 @@
  * tags, creation date, and clock entries.
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ChevronDown,
   ChevronRight,
@@ -66,6 +67,8 @@ export function TaskCardContent({
   onHistoryOpen,
   openOverlay,
 }: TaskCardContentProps) {
+  const { t } = useTranslation("kanban");
+  const { t: tc } = useTranslation("common");
   const [bodyExpanded, setBodyExpanded] = useState(
     false,
   );
@@ -128,7 +131,7 @@ export function TaskCardContent({
               ) : (
                 <ChevronRight size={10} />
               )}
-              Description
+              {tc("description")}
             </button>
             <span
               onPointerDown={(e) =>
@@ -241,7 +244,7 @@ export function TaskCardContent({
               }
               onClick={() => setTagging(true)}
               className="p-0.5 rounded text-stone-400 hover:text-cta transition-colors"
-              title="Edit tags"
+              title={t("editTags")}
             >
               <Tag size={10} />
             </button>
@@ -260,7 +263,7 @@ export function TaskCardContent({
                 }
                 onClick={onHistoryOpen}
                 className="p-0.5 rounded text-stone-400 hover:text-cta transition-colors"
-                title="State history"
+                title={t("stateHistory")}
               >
                 <ListRestart size={9} />
               </button>

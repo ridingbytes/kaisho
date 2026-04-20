@@ -39,5 +39,7 @@
   "noUnbilledEntries": "Keine offenen Eintr\u00e4ge gefunden.",
   "markEntriesInvoiced": "{{count}} Eintr\u00e4ge als abgerechnet markieren?",
   "markAsInvoiced": "Als abgerechnet markieren",
-  "entriesMarkedInvoiced": "{{count}} Eintr\u00e4ge als abgerechnet markiert"
+  "entriesMarkedInvoiced": "{{count}} Eintr\u00e4ge als abgerechnet markiert",
+  "hUsed": "h verbraucht",
+  "hLeft": "h \u00fcbrig"
 }

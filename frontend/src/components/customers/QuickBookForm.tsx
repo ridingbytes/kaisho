@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { Check, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { useQuickBook } from "../../hooks/useClocks";
 import type { Contract } from "../../types";
@@ -26,6 +27,8 @@ export function QuickBookForm({
   defaultContract,
   onDone,
 }: QuickBookFormProps) {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const today = new Date().toISOString().slice(0, 10);
   const [duration, setDuration] = useState("");
   const [date, setDate] = useState(today);
@@ -78,7 +81,7 @@ export function QuickBookForm({
         <input
           autoFocus
           type="text"
-          placeholder="Duration (e.g. 1h30m)"
+          placeholder={t("durationExample")}
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
           className={`w-32 shrink-0 ${cls}`}
@@ -91,7 +94,7 @@ export function QuickBookForm({
         />
         <input
           type="text"
-          placeholder="Description (optional)"
+          placeholder={tc("descriptionOptional")}
           value={description}
           onChange={(e) =>
             setDescription(e.target.value)
@@ -106,7 +109,7 @@ export function QuickBookForm({
           className={`w-full ${cls}`}
         >
           <option value="">
-            {"— no contract —"}
+            {tc("noContract")}
           </option>
           {contracts.map((c) => (
             <option key={c.name} value={c.name}>

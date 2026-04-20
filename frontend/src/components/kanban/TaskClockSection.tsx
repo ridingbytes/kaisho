@@ -3,6 +3,7 @@
  * entries linked to a task, with total duration.
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Clock,
   ChevronDown,
@@ -34,6 +35,7 @@ interface TaskClockSectionProps {
 export function TaskClockSection({
   task,
 }: TaskClockSectionProps) {
+  const { t } = useTranslation("kanban");
   const { data: entries = [] } = useTaskClockEntries(
     task.id,
   );
@@ -62,8 +64,11 @@ export function TaskClockSection({
           )}
           <Clock size={10} />
           <span className="truncate">
-            {entries.length}{" "}
-            {entries.length === 1 ? "entry" : "entries"}
+            {entries.length === 1
+              ? t("entryCount", { count: 1 })
+              : t("entriesCount", {
+                  count: entries.length,
+                })}
             {" · "}
             {formatHours(totalAll)}
           </span>

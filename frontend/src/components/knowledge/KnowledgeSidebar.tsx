@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import React, { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { TreeNodeRow } from "./TreeNodeRow";
 import { MAX_WIDTH, MIN_WIDTH } from "./knowledgeEditorUtils";
 import {
@@ -108,6 +109,8 @@ export function KnowledgeSidebar({
   onDelete,
   onCreateFolder,
 }: KnowledgeSidebarProps) {
+  const { t } = useTranslation("knowledge");
+  const { t: tc } = useTranslation("common");
   const isDragging = useRef(false);
   const dragStartX = useRef(0);
   const dragStartWidth = useRef(0);
@@ -171,7 +174,7 @@ export function KnowledgeSidebar({
               "uppercase tracking-wider"
             }
           >
-            Files
+            {t("files")}
           </span>
           <button
             onClick={() => onSetSidebarOpen(false)}
@@ -179,7 +182,7 @@ export function KnowledgeSidebar({
               "p-0.5 rounded text-stone-500 " +
               "hover:text-stone-900 transition-colors"
             }
-            title="Collapse sidebar"
+            title={tc("collapse")}
           >
             <ChevronLeft size={12} />
           </button>
@@ -202,7 +205,7 @@ export function KnowledgeSidebar({
                 "text-xs text-stone-500 px-4 py-2"
               }
             >
-              Loading…
+              {tc("loading")}
             </p>
           ) : (
             labels.map((label) => (
@@ -247,7 +250,7 @@ export function KnowledgeSidebar({
               "hover:text-stone-900 " +
               "transition-colors"
             }
-            title="Expand sidebar"
+            title={tc("expand")}
           >
             <ChevronRight size={10} />
           </button>
@@ -292,6 +295,7 @@ function LabelSection({
   onDelete,
   onCreateFolder,
 }: LabelSectionProps) {
+  const { t } = useTranslation("knowledge");
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const folderPaths = collectFolderPaths(nodes);
@@ -353,7 +357,7 @@ function LabelSection({
             + "hover:text-cta hover:bg-cta-muted "
             + "transition-colors shrink-0"
           }
-          title="Add folder"
+          title={t("addFolder")}
         >
           <FolderPlus size={11} />
         </button>
@@ -374,7 +378,7 @@ function LabelSection({
               if (e.key === "Enter") handleAdd();
               if (e.key === "Escape") setAdding(false);
             }}
-            placeholder="folder name"
+            placeholder={t("folderName")}
             className={
               "flex-1 min-w-0 px-1 py-0.5 text-xs "
               + "rounded bg-surface-raised border "
@@ -444,17 +448,19 @@ function SearchResultsList({
   results,
   onSelect,
 }: SearchResultsListProps) {
+  const { t } = useTranslation("knowledge");
+  const { t: tc } = useTranslation("common");
   if (loading) {
     return (
       <p className="text-xs text-stone-500 px-4 py-2">
-        Loading…
+        {tc("loading")}
       </p>
     );
   }
   if (results.length === 0) {
     return (
       <p className="text-xs text-stone-500 px-4 py-2">
-        No results.
+        {t("noResults")}
       </p>
     );
   }
@@ -473,7 +479,7 @@ function SearchResultsList({
             {r.label}/{r.path.split("/").pop()}
           </p>
           <p className="text-xs text-stone-600">
-            Line {r.line_number}
+            {t("line", { n: r.line_number })}
           </p>
           <p
             className={

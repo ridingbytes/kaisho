@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useGithubSettings,
   useUpdateGithubSettings,
@@ -6,6 +7,8 @@ import {
 import { inputCls, saveBtnCls } from "./styles";
 
 export function GithubSection(): JSX.Element {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const { data: githubSettings, isLoading } =
     useGithubSettings();
   const update = useUpdateGithubSettings();
@@ -56,13 +59,11 @@ export function GithubSection(): JSX.Element {
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
-            Authentication
+            {t("authentication")}
           </p>
           <div className="flex flex-col gap-2">
             <p className="text-xs text-stone-500 leading-relaxed mb-1">
-              A Personal Access Token (PAT) is a GitHub
-              credential that grants API access without a
-              password. Create a classic PAT at{" "}
+              {t("patHint")} Create a classic PAT at{" "}
               <a
                 href="https://github.com/settings/tokens"
                 target="_blank"
@@ -82,13 +83,13 @@ export function GithubSection(): JSX.Element {
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
                 <span className="text-xs text-green-400">
-                  Token configured
+                  {t("tokenConfigured")}
                 </span>
               </div>
             )}
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                Personal Access Token
+                {t("personalAccessToken")}
               </span>
               <input
                 type="password"
@@ -105,11 +106,11 @@ export function GithubSection(): JSX.Element {
 
         <div className="px-4 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
-            API
+            {t("apiSection")}
           </p>
           <label className="flex items-center gap-3">
             <span className="text-xs text-stone-700 w-32 shrink-0">
-              Base URL
+              {t("baseUrl")}
             </span>
             <input
               type="text"
@@ -130,22 +131,21 @@ export function GithubSection(): JSX.Element {
           disabled={update.isPending}
           className={saveBtnCls}
         >
-          {update.isPending ? "Saving..." : "Save"}
+          {update.isPending ? tc("saving") : tc("save")}
         </button>
         {saved && (
           <span className="text-xs text-green-400">
-            Saved.
+            {tc("saved")}
           </span>
         )}
         {update.isError && (
           <span className="text-xs text-red-400">
-            Save failed.
+            {tc("saveFailed")}
           </span>
         )}
       </div>
       <p className="mt-2 text-[10px] text-stone-400">
-        Token is stored in settings.yaml. It is never
-        sent to the browser in full.
+        {t("tokenStorageHint")}
       </p>
     </section>
   );

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   useCustomers,
   useCreateCustomer,
@@ -37,9 +38,12 @@ export function CustomerAutocomplete({
   onKeyDown,
   className,
   inputClassName = "",
-  placeholder = "Customer",
+  placeholder,
   autoFocus,
 }: Props) {
+  const { t: tc } = useTranslation("common");
+  const resolvedPlaceholder =
+    placeholder ?? tc("customer");
   const { data: customers = [] } = useCustomers(true);
   const createCustomer = useCreateCustomer();
 
@@ -91,7 +95,7 @@ export function CustomerAutocomplete({
       onKeyDown={onKeyDown}
       className={className}
       inputClassName={inputClassName}
-      placeholder={placeholder}
+      placeholder={resolvedPlaceholder}
       autoFocus={autoFocus}
     />
   );

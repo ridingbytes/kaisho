@@ -2,6 +2,7 @@ import {
   useCallback, useEffect, useRef, useState,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Send, Square, Trash2 } from "lucide-react";
 import { askAdvisor } from "../../api/client";
 import {
@@ -15,16 +16,16 @@ import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
 import { openExternal } from "../../utils/tauri";
 
-const QUESTION_TEMPLATES = [
-  "What should I focus on today?",
-  "Which customers are close to budget limit?",
-  "Summarize my week",
-  "Any overdue tasks or follow-ups?",
-  "Book 1h for ...",
-  "Create a task for ...",
-  "How many hours did I log this month?",
-  "Show open issues across all customers",
-];
+const QUESTION_TEMPLATE_KEYS = [
+  "focusToday",
+  "budgetLimit",
+  "summarizeWeek",
+  "overdueTasks",
+  "bookTime",
+  "createTask",
+  "monthHours",
+  "openIssues",
+] as const;
 
 export interface AdvisorMessage {
   role: "user" | "assistant";
@@ -79,6 +80,10 @@ const ADVISOR_INVALIDATIONS = [
 ];
 
 export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
+  const { t } = useTranslation("advisor");
+  const { t: tn } = useTranslation("nav");
+  const { t: tc } = useTranslation("common");
+  const { t: ts } = useTranslation("settings");
   const qc = useQueryClient();
   const { data: aiSettings } = useAiSettings();
   const { data: models = [] } = useAvailableModels();
@@ -121,18 +126,18 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
     action: (arg: string) => void;
   }> = {
     "/reset": {
-      desc: "Clear the chat",
+      desc: t("slashReset"),
       action: () => clearMessages(),
     },
     "/model": {
-      desc: "Switch model (e.g. /model ollama:qwen3:14b)",
+      desc: t("slashModel"),
       action: (arg) => {
         if (arg) setModel(arg);
         else setError("Usage: /model provider:name");
       },
     },
     "/help": {
-      desc: "Show available commands",
+      desc: t("slashHelp"),
       action: () => {
         const lines = Object.entries(SLASH_COMMANDS)
           .map(([cmd, { desc }]) => `**${cmd}** — ${desc}`)
@@ -179,7 +184,10 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
       onEvent: (type, data) => {
         if (type === "tool_call") {
           const name = data.name as string;
-          setSteps((p) => [...p, `Calling ${name}...`]);
+          setSteps((p) => [
+            ...p,
+            t("calling", { name }),
+          ]);
         } else if (type === "tool_result") {
           const name = data.name as string;
           const result = data.result as Record<
@@ -189,11 +197,11 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
           setSteps((p) => [
             ...p,
             hasError
-              ? `${name} failed`
-              : `${name} done`,
+              ? t("failed", { name })
+              : t("done", { name }),
           ]);
         } else if (type === "thinking") {
-          setSteps((p) => [...p, "Thinking..."]);
+          setSteps((p) => [...p, t("thinking")]);
         }
       },
     })
@@ -213,12 +221,12 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
           && err.name === "AbortError") {
           onMessagesChange((prev) => [
             ...prev,
-            { role: "assistant", text: "*Stopped.*" },
+            { role: "assistant", text: t("stopped") },
           ]);
           return;
         }
         const msg = err instanceof Error
-          ? err.message : "Request failed.";
+          ? err.message : t("requestFailed");
         setError(msg);
       })
       .finally(() => {
@@ -245,12 +253,12 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
       {/* Toolbar */}
       <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
         <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
-          Advisor
+          {tn("advisor")}
         </h1>
         {messages.length > 0 && (
           <button
             onClick={clearMessages}
-            title="Clear chat (/reset)"
+            title={t("clearChat")}
             className="p-1 rounded text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
           >
             <Trash2 size={13} />
@@ -259,7 +267,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
         <div className="ml-auto flex flex-col items-end gap-0.5">
           {cloudAi ? (
             <span className="px-3 py-1 rounded-lg text-xs font-medium bg-cta/10 text-cta border border-cta/30">
-              Kaisho AI
+              {t("kaishoAi")}
             </span>
           ) : models.length > 0 ? (
             <>
@@ -291,7 +299,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             </>
           ) : null}
         </div>
-        <HelpButton title="Advisor" doc={DOCS.advisor} view="advisor" />
+        <HelpButton title={t("advisor")} doc={DOCS.advisor} view="advisor" />
       </div>
 
       {/* Messages */}
@@ -299,20 +307,10 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
         {messages.length === 0 && !loading && !cloudAi && !model && models.length === 0 && (
           <div className="max-w-md mx-auto mt-12 text-center space-y-3">
             <p className="text-sm font-medium text-stone-700">
-              No AI provider configured
+              {t("noAiProvider")}
             </p>
             <p className="text-xs text-stone-500 leading-relaxed">
-              The advisor needs a local model
-              (Ollama, LM Studio) or a cloud API
-              key (Claude, OpenRouter, OpenAI) to
-              work. Configure one in{" "}
-              <strong>Settings &gt; AI</strong>, or
-              enable{" "}
-              <strong>Kaisho AI</strong> via{" "}
-              <strong>
-                Settings &gt; Cloud Sync
-              </strong>{" "}
-              to use it without local hardware.
+              {t("noAiProviderHint")}
             </p>
             <button
               onClick={() =>
@@ -322,20 +320,20 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
               }
               className="text-xs text-cta hover:underline"
             >
-              Learn about Kaisho Cloud plans
+              {ts("learnKaishoCloud")}
             </button>
           </div>
         )}
         {messages.length === 0 && !loading && (cloudAi || model || models.length > 0) && (
           <div className="mt-8 space-y-3">
             <p className="text-sm text-stone-500 text-center">
-              Ask a question or pick a template:
+              {t("askOrPick")}
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
-              {QUESTION_TEMPLATES.map((q) => (
+              {QUESTION_TEMPLATE_KEYS.map((key) => (
                 <button
-                  key={q}
-                  onClick={() => { setInput(q); }}
+                  key={key}
+                  onClick={() => { setInput(t(key)); }}
                   className={[
                     "px-3 py-1.5 rounded-lg text-xs",
                     "bg-surface-raised border border-border",
@@ -344,7 +342,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
                     "text-left",
                   ].join(" ")}
                 >
-                  {q}
+                  {t(key)}
                 </button>
               ))}
             </div>
@@ -388,7 +386,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
                     "text-sm text-stone-500 italic"
                   }
                 >
-                  Thinking...
+                  {t("thinking")}
                 </span>
               )}
             </div>
@@ -439,7 +437,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask anything… (/ for commands)"
+          placeholder={t("askAnything")}
           className={[
             "flex-1 px-3 py-2 rounded-xl resize-none",
             "bg-surface-raised border border-border text-sm text-stone-900",
@@ -458,7 +456,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             ].join(" ")}
           >
             <Square size={12} />
-            Stop
+            {tc("stop")}
           </button>
         ) : (
           <button
@@ -472,7 +470,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             ].join(" ")}
           >
             <Send size={14} />
-            Send
+            {tc("send")}
           </button>
         )}
         </div>

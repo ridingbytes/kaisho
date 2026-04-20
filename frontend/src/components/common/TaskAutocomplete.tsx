@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useTasks, useAddTask } from "../../hooks/useTasks";
 import {
   CUSTOMER_PREFIX_RE,
@@ -70,6 +71,7 @@ export function TaskAutocomplete({
   onKeyDown,
   autoFocus,
 }: Props) {
+  const { t: tc } = useTranslation("common");
   const { data: tasks = [] } = useTasks();
   const addTask = useAddTask();
 
@@ -141,7 +143,9 @@ export function TaskAutocomplete({
       onKeyDown={onKeyDown}
       className={className}
       inputClassName={inputClassName}
-      placeholder="Task (optional)"
+      placeholder={
+        `${tc("task")} (${tc("optional").toLowerCase()})`
+      }
       autoFocus={autoFocus}
     />
   );

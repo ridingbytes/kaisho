@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Check, Plus, Pencil } from "lucide-react";
 import {
   useSettings,
@@ -254,10 +255,11 @@ function TaskStatesSection({
     done: boolean;
   }[];
 }) {
+  const { t } = useTranslation("settings");
   return (
     <section>
       <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-        Task States
+        {t("taskStates")}
       </h2>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         {states.map((state, i) => (
@@ -277,18 +279,19 @@ function TaskStatesSection({
 // -----------------------------------------------------------------
 
 function TagsSection({ tags }: { tags: ConfigTag[] }) {
+  const { t } = useTranslation("settings");
   const [adding, setAdding] = useState(false);
 
   return (
     <section>
       <div className="flex items-center gap-3 mb-3">
         <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
-          Tags
+          {t("tags")}
         </h2>
         <button
           onClick={() => setAdding((v) => !v)}
           className="ml-auto p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
-          title="Add tag"
+          title={t("addTag")}
         >
           <Plus size={12} />
         </button>
@@ -296,7 +299,7 @@ function TagsSection({ tags }: { tags: ConfigTag[] }) {
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         {tags.length === 0 && !adding && (
           <p className="px-4 py-3 text-xs text-stone-500">
-            No tags defined.
+            {t("noTagsDefined")}
           </p>
         )}
         {tags.map((tag) => (
@@ -331,6 +334,7 @@ function StringListSection({
   addPending: boolean;
   deletePending: boolean;
 }) {
+  const { t } = useTranslation("settings");
   const [adding, setAdding] = useState(false);
   const [newItem, setNewItem] = useState("");
 
@@ -359,7 +363,7 @@ function StringListSection({
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         {items.length === 0 && !adding && (
           <p className="px-4 py-3 text-xs text-stone-500">
-            No entries defined.
+            {t("noEntriesDefined")}
           </p>
         )}
         {items.map((t, i) => (
@@ -396,7 +400,7 @@ function StringListSection({
               value={newItem}
               onChange={(e) => setNewItem(e.target.value)}
               className={`${fieldCls} flex-1`}
-              placeholder="New entry"
+              placeholder={t("newEntry")}
             />
             <button
               type="button"
@@ -424,6 +428,7 @@ function StringListSection({
 // -----------------------------------------------------------------
 
 export function TagsAndTypesTab(): JSX.Element {
+  const { t } = useTranslation("settings");
   const {
     data: settings, isLoading, isError, error,
   } = useSettings();
@@ -444,7 +449,7 @@ export function TagsAndTypesTab(): JSX.Element {
   if (isError) {
     return (
       <p className="text-sm text-red-400">
-        Failed to load settings
+        {t("failedToLoadSettings")}
         {error instanceof Error
           ? `: ${error.message}`
           : "."}
@@ -460,7 +465,7 @@ export function TagsAndTypesTab(): JSX.Element {
       />
       <TagsSection tags={settings.tags ?? []} />
       <StringListSection
-        title="Customer Types"
+        title={t("customerTypes")}
         items={settings.customer_types ?? []}
         onAdd={(n) => addCustType.mutate(n)}
         onDelete={(n) => delCustType.mutate(n)}
@@ -468,7 +473,7 @@ export function TagsAndTypesTab(): JSX.Element {
         deletePending={delCustType.isPending}
       />
       <StringListSection
-        title="Inbox Types"
+        title={t("inboxTypes")}
         items={settings.inbox_types ?? []}
         onAdd={(n) => addInbType.mutate(n)}
         onDelete={(n) => delInbType.mutate(n)}
@@ -476,7 +481,7 @@ export function TagsAndTypesTab(): JSX.Element {
         deletePending={delInbType.isPending}
       />
       <StringListSection
-        title="Inbox Channels"
+        title={t("inboxChannels")}
         items={settings.inbox_channels ?? []}
         onAdd={(n) => addInbChan.mutate(n)}
         onDelete={(n) => delInbChan.mutate(n)}

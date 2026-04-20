@@ -1,4 +1,5 @@
 import { Check, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface EditFooterProps {
   onSave: () => void;
@@ -18,11 +19,12 @@ export function EditFooter({
   isPending,
   showHint = true,
 }: EditFooterProps) {
+  const { t: tc } = useTranslation("common");
   return (
     <div className="flex gap-1 justify-end items-center mt-1">
       {showHint && (
         <span className="text-[9px] text-stone-400 mr-auto">
-          ⌘↵ save
+          {tc("cmdSave")}
         </span>
       )}
       <button

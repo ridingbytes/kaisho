@@ -57,10 +57,19 @@ _CLAUDE_API_MODELS = [
 ]
 
 
-def _fetch_ollama_models(base_url: str) -> list[str]:
-    """Fetch available model names from Ollama."""
+def _fetch_ollama_models(
+    base_url: str, api_key: str = "",
+) -> list[str]:
+    """Fetch available model names from Ollama.
+
+    Tries the native ``/api/tags`` endpoint first
+    (local Ollama). If that fails and an API key is
+    set, falls back to the OpenAI-compatible
+    ``/v1/models`` endpoint (Ollama Cloud / remote).
+    """
     if not base_url:
         return []
+    # Try native Ollama endpoint first
     url = base_url.rstrip("/") + "/api/tags"
     try:
         with urllib.request.urlopen(
@@ -75,7 +84,13 @@ def _fetch_ollama_models(base_url: str) -> list[str]:
         urllib.error.URLError, OSError,
         KeyError, ValueError,
     ):
+        pass
+    # Fallback: OpenAI-compatible endpoint with key
+    if not api_key:
         return []
+    return _fetch_openai_compatible_models(
+        base_url, api_key, "ollama",
+    )
 
 
 def _fetch_lm_studio_models(
@@ -168,6 +183,7 @@ def list_models():
     models: list[str] = []
     models += _fetch_ollama_models(
         ai.get("ollama_url", ""),
+        ai.get("ollama_api_key", ""),
     )
     models += _fetch_lm_studio_models(
         ai.get("lm_studio_url", ""),

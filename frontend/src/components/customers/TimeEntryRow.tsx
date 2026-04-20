@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { Check, Pencil, Trash2, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
 import { navigateToClockDate } from "../../utils/clockNavigation";
@@ -44,6 +45,7 @@ export function TimeEntryRow({
   entry,
   contracts,
 }: TimeEntryRowProps) {
+  const { t: tc } = useTranslation("common");
   const [editing, setEditing] = useState(false);
   const [desc, setDesc] = useState(entry.description);
   const [hrs, setHrs] = useState(
@@ -106,7 +108,7 @@ export function TimeEntryRow({
             }
             if (e.key === "Escape") setEditing(false);
           }}
-          placeholder="Description"
+          placeholder={tc("description")}
           rows={2}
           className={fieldClass("resize-none")}
         />
@@ -118,7 +120,7 @@ export function TimeEntryRow({
             value={hrs}
             onChange={(e) => setHrs(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Hours"
+            placeholder={tc("hours")}
             className={fieldClass(
               "w-16 shrink-0 tabular-nums",
             )}
@@ -132,7 +134,7 @@ export function TimeEntryRow({
             }
             className={fieldClass()}
           >
-            <option value="">-- no contract --</option>
+            <option value="">{tc("noContract")}</option>
             {contracts.map((ct) => (
               <option key={ct.name} value={ct.name}>
                 {ct.name}
@@ -242,7 +244,7 @@ export function TimeEntryRow({
             + "hover:text-cta hover:bg-cta-muted "
             + "transition-colors"
           }
-          title="Edit"
+          title={tc("edit")}
         >
           <Pencil size={10} />
         </button>
@@ -260,7 +262,7 @@ export function TimeEntryRow({
               + "hover:bg-red-500/10 "
               + "transition-colors"
             }
-            title="Delete"
+            title={tc("delete")}
           >
             <Trash2 size={10} />
           </button>

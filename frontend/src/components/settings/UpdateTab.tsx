@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   RefreshCw,
   Download,
@@ -12,6 +13,7 @@ import { parseChangelog } from "../../utils/changelog";
 import { saveBtnCls } from "./styles";
 
 export function UpdateSection(): JSX.Element {
+  const { t } = useTranslation("settings");
   const { data, isLoading } = useVersionInfo();
   const inTauri = isTauri();
 
@@ -40,12 +42,12 @@ export function UpdateSection(): JSX.Element {
       const update = await check();
       if (update) {
         setCheckResult(
-          `Version ${update.version} available`,
+          t("versionAvailable", {
+            version: update.version,
+          }),
         );
       } else {
-        setCheckResult(
-          "You're on the latest version",
-        );
+        setCheckResult(t("latestVersion"));
       }
     } catch (err) {
       setCheckResult(
@@ -139,7 +141,7 @@ export function UpdateSection(): JSX.Element {
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
         <div className="px-4 py-3 border-b border-border-subtle">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
-            Version
+            {t("version")}
           </p>
           <div className="flex items-center gap-3">
             <span className="text-sm font-mono font-semibold text-stone-800">
@@ -150,7 +152,7 @@ export function UpdateSection(): JSX.Element {
               className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] text-cta hover:bg-surface-raised border border-border-subtle transition-colors"
             >
               <Sparkles size={11} />
-              What's New
+              {t("whatsNew")}
             </button>
           </div>
         </div>
@@ -159,7 +161,7 @@ export function UpdateSection(): JSX.Element {
         {entries.length > 0 && (
           <div className="px-4 py-3">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
-              Latest Changes
+              {t("latestChanges")}
             </p>
             <ul className="space-y-1">
               {entries[0].items
@@ -175,8 +177,10 @@ export function UpdateSection(): JSX.Element {
                 ))}
               {entries[0].items.length > 5 && (
                 <li className="text-xs text-stone-400 pl-3">
-                  +{entries[0].items.length - 5}{" "}
-                  more
+                  {t("more", {
+                    count:
+                      entries[0].items.length - 5,
+                  })}
                 </li>
               )}
             </ul>
@@ -203,8 +207,8 @@ export function UpdateSection(): JSX.Element {
                 }
               />
               {checking
-                ? "Checking..."
-                : "Check for Updates"}
+                ? t("checking")
+                : t("checkForUpdates")}
             </button>
             {checkResult?.includes("available") && (
               <button
@@ -214,8 +218,8 @@ export function UpdateSection(): JSX.Element {
               >
                 <Download size={13} />
                 {updating
-                  ? "Updating..."
-                  : "Install Update"}
+                  ? t("updating")
+                  : t("installUpdate")}
               </button>
             )}
           </div>
@@ -260,8 +264,7 @@ export function UpdateSection(): JSX.Element {
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
           <div className="px-4 py-3">
             <p className="text-xs text-stone-500 mb-2">
-              Running in browser mode. Download the
-              desktop app for automatic updates.
+              {t("browserModeHint")}
             </p>
             <a
               href="https://github.com/ridingbytes/kaisho/releases/latest"
@@ -270,7 +273,7 @@ export function UpdateSection(): JSX.Element {
               className="flex items-center gap-1.5 text-xs text-cta hover:underline"
             >
               <ExternalLink size={12} />
-              View latest release on GitHub
+              {t("viewLatestRelease")}
             </a>
           </div>
         </div>

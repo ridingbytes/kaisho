@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { Check, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAddContract } from "../../hooks/useContracts";
 import { smallInputCls } from "../../styles/formStyles";
 
@@ -23,6 +24,8 @@ export function AddContractForm({
   customerName,
   onDone,
 }: AddContractFormProps) {
+  const { t } = useTranslation("customers");
+  const { t: tc } = useTranslation("common");
   const today = new Date().toISOString().slice(0, 10);
   const [name, setName] = useState("");
   const [hours, setHours] = useState("");
@@ -61,7 +64,7 @@ export function AddContractForm({
         <input
           autoFocus
           type="text"
-          placeholder="Contract name"
+          placeholder={t("contractName")}
           value={name}
           onChange={(e) => setName(e.target.value)}
           className={
@@ -76,7 +79,7 @@ export function AddContractForm({
           type="number"
           min="0"
           step="1"
-          placeholder="Hours"
+          placeholder={tc("hours")}
           value={hours}
           onChange={(e) => setHours(e.target.value)}
           className={
@@ -111,7 +114,7 @@ export function AddContractForm({
             + "focus:ring-cta"
           }
         />
-        Billable
+        {tc("billable")}
       </label>
       <div className="flex gap-1 justify-end">
         <button

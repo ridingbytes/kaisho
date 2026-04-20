@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   fetchPendingCloudEntries,
   triageCloudEntries,
@@ -26,6 +27,8 @@ function formatDuration(minutes: number | null): string {
 }
 
 function TriageRow({ entry }: { entry: ClockEntry }) {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const [customer, setCustomer] = useState("");
   const [taskId, setTaskId] = useState<string | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
@@ -69,7 +72,7 @@ function TriageRow({ entry }: { entry: ClockEntry }) {
           {formatTime(entry.start)}
         </span>
         <span className="flex-1 text-stone-700 truncate">
-          {entry.description || "(no description)"}
+          {entry.description || tc("noDescription")}
         </span>
         <span className="text-stone-500 tabular-nums font-medium">
           {formatDuration(entry.duration_minutes)}
@@ -83,7 +86,7 @@ function TriageRow({ entry }: { entry: ClockEntry }) {
             setContract("");
           }}
           inputClassName={smallInputCls}
-          placeholder="Customer"
+          placeholder={tc("customer")}
         />
         <TaskAutocomplete
           taskId={taskId}
@@ -120,7 +123,7 @@ function TriageRow({ entry }: { entry: ClockEntry }) {
           onClick={handleAssign}
           disabled={saving || !customer.trim()}
           className="p-1 rounded text-cta hover:bg-cta-muted disabled:opacity-40"
-          title="Assign"
+          title={t("assign")}
         >
           <Check size={14} />
         </button>
@@ -130,6 +133,8 @@ function TriageRow({ entry }: { entry: ClockEntry }) {
 }
 
 export function CloudTriagePanel() {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ["cloud-triage"],
     queryFn: fetchPendingCloudEntries,
@@ -139,7 +144,7 @@ export function CloudTriagePanel() {
   if (isLoading) {
     return (
       <p className="text-xs text-stone-500 text-center py-4">
-        Loading...
+        {tc("loading")}
       </p>
     );
   }
@@ -150,7 +155,9 @@ export function CloudTriagePanel() {
     <div className="border border-amber-200 bg-amber-50 rounded-lg overflow-hidden">
       <div className="px-3 py-2 border-b border-amber-200">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-700">
-          Unassigned cloud entries ({entries.length})
+          {t("unassignedCloudEntries", {
+            count: entries.length,
+          })}
         </p>
       </div>
       {entries.map((entry) => (

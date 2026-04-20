@@ -3,6 +3,7 @@
  * detach, and delete actions.
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Pencil,
   Trash2,
@@ -38,6 +39,7 @@ export function ClockEntryRow({
   updateEntry,
   deleteEntry,
 }: ClockEntryRowProps) {
+  const { t } = useTranslation("clocks");
   const [editing, setEditing] = useState(false);
   const [desc, setDesc] = useState(entry.description);
   const [hours, setHours] = useState(
@@ -130,7 +132,7 @@ export function ClockEntryRow({
       </span>
       <button
         onClick={startEdit}
-        title="Edit entry"
+        title={t("editEntry")}
         className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-stone-900"
       >
         <Pencil size={9} />
@@ -143,7 +145,7 @@ export function ClockEntryRow({
           })
         }
         disabled={updateEntry.isPending}
-        title="Detach from task"
+        title={t("detachFromTask")}
         className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-stone-900 disabled:opacity-40"
       >
         <X size={9} />
@@ -156,7 +158,7 @@ export function ClockEntryRow({
       >
         <button
           disabled={deleteEntry.isPending}
-          title="Delete entry"
+          title={t("deleteEntry")}
           className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-red-400 disabled:opacity-40"
         >
           <Trash2 size={9} />

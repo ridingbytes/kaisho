@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { Fragment, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
@@ -59,6 +60,7 @@ const fieldCls =
   "focus:border-border-strong font-mono";
 
 function CopyToInboxBtn({ runId }: { runId: number }) {
+  const { t } = useTranslation("cron");
   const moveOutput = useMoveCronOutput();
   const [done, setDone] = useState(false);
 
@@ -83,7 +85,7 @@ function CopyToInboxBtn({ runId }: { runId: number }) {
           : "text-stone-500 hover:text-cta hover:bg-cta-muted",
         "disabled:opacity-60",
       ].join(" ")}
-      title="Copy to inbox"
+      title={t("copyToInbox")}
     >
       {done ? <Check size={12} /> : <Inbox size={12} />}
     </button>
@@ -97,6 +99,7 @@ function OutputSelect({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const { t } = useTranslation("cron");
   const { data: sources = [] } = useKbSources();
   return (
     <select
@@ -104,8 +107,8 @@ function OutputSelect({
       value={value}
       onChange={(e) => onChange(e.target.value)}
     >
-      <option value="none">None (panel only)</option>
-      <option value="inbox">Inbox</option>
+      <option value="none">{t("outputNone")}</option>
+      <option value="inbox">{t("outputInbox")}</option>
       {sources.map((s) => (
         <option key={s.label} value={s.label}>
           KB: {s.label}
@@ -164,6 +167,7 @@ function JobCard({
   job: CronJob;
   cloudAi: boolean;
 }) {
+  const { t } = useTranslation("cron");
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editSchedule, setEditSchedule] = useState(job.schedule);
@@ -275,7 +279,7 @@ function JobCard({
           <button
             onClick={startEdit}
             className="text-stone-500 hover:text-cta transition-colors"
-            title="Edit fields"
+            title={t("editFields")}
           >
             <Pencil size={12} />
           </button>
@@ -305,12 +309,12 @@ function JobCard({
             ].join(" ")}
             title={
               hasModel
-                ? "Run this job now"
-                : "Configure a model first"
+                ? t("runThisJob")
+                : t("configureModelFirst")
             }
           >
             <Play size={10} />
-            {triggered ? "Running…" : "Run"}
+            {triggered ? t("running") : t("run")}
           </button>
           <ConfirmPopover
             label={`Delete "${job.name}"?`}
@@ -332,21 +336,23 @@ function JobCard({
         className="flex gap-3 px-4 pb-3 text-[10px] text-stone-600 font-mono cursor-pointer"
         onClick={handleExpand}
       >
-        <span title="Schedule">{job.schedule}</span>
+        <span title={t("schedule")}>{job.schedule}</span>
         <span className="text-stone-400">|</span>
-        <span title="Model">
+        <span title={t("model")}>
           {job.use_kaisho_ai && cloudAi ? (
-            <span className="text-cta">Kaisho AI</span>
+            <span className="text-cta">
+              {t("kaishoAi")}
+            </span>
           ) : job.model ? (
             job.model
           ) : (
             <span className="text-amber-500">
-              No model
+              {t("noModel")}
             </span>
           )}
         </span>
         <span className="text-stone-400">|</span>
-        <span title="Output">{job.output}</span>
+        <span title={t("output")}>{job.output}</span>
       </div>
 
       {/* Expanded body */}
@@ -361,7 +367,7 @@ function JobCard({
               <div className="grid grid-cols-2 gap-2">
                 <label className="flex flex-col gap-1">
                   <span className="text-[10px] text-stone-500 uppercase tracking-wide">
-                    Schedule
+                    {t("schedule")}
                   </span>
                   <input
                     className={fieldCls}
@@ -372,7 +378,7 @@ function JobCard({
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="text-[10px] text-stone-500 uppercase tracking-wide">
-                    Model
+                    {t("model")}
                   </span>
                   {cloudAi && (
                     <label className="flex items-center gap-2 mb-1">
@@ -402,13 +408,13 @@ function JobCard({
                         />
                       </button>
                       <span className="text-[10px] text-stone-600">
-                        Kaisho AI
+                        {t("kaishoAi")}
                       </span>
                     </label>
                   )}
                   {editKaishoAi && cloudAi ? (
                     <span className="px-2 py-1 rounded text-xs font-medium bg-cta/10 text-cta border border-cta/30">
-                      Kaisho AI
+                      {t("kaishoAi")}
                     </span>
                   ) : (
                     <input
@@ -424,7 +430,7 @@ function JobCard({
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="text-[10px] text-stone-500 uppercase tracking-wide">
-                    Output
+                    {t("output")}
                   </span>
                   <OutputSelect
                     value={editOutput}
@@ -433,7 +439,7 @@ function JobCard({
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="text-[10px] text-stone-500 uppercase tracking-wide">
-                    Timeout (s)
+                    {t("timeoutS")}
                   </span>
                   <input
                     className={fieldCls}
@@ -450,13 +456,15 @@ function JobCard({
                   disabled={updateJob.isPending}
                   className="px-3 py-1 rounded-lg text-xs bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-50"
                 >
-                  {updateJob.isPending ? "Saving…" : "Save"}
+                  {updateJob.isPending
+                    ? t("saving")
+                    : t("save", { ns: "common" })}
                 </button>
                 <button
                   onClick={() => setEditing(false)}
                   className="px-3 py-1 rounded-lg text-xs text-stone-700 hover:text-stone-900 transition-colors"
                 >
-                  Cancel
+                  {t("cancel", { ns: "common" })}
                 </button>
               </div>
             </div>
@@ -466,7 +474,7 @@ function JobCard({
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] text-stone-500 uppercase tracking-wide">
-                Prompt
+                {t("prompt")}
               </span>
               {promptData?.path && (
                 <span className="text-[10px] text-stone-400 font-mono">
@@ -487,7 +495,7 @@ function JobCard({
               ].join(" ")}
               value={promptContent}
               onChange={(e) => setPromptDraft(e.target.value)}
-              placeholder="Enter the prompt text that will be sent to the model…"
+              placeholder={t("enterPrompt")}
             />
             <div className="flex items-center gap-2">
               <button
@@ -496,19 +504,19 @@ function JobCard({
                 className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-50"
               >
                 {savePrompt.isPending ? (
-                  "Saving…"
+                  t("saving")
                 ) : promptSaved ? (
                   <>
                     <Check size={11} />
-                    Saved
+                    {t("promptSaved")}
                   </>
                 ) : (
-                  "Save prompt"
+                  t("savePrompt")
                 )}
               </button>
               {savePrompt.isError && (
                 <span className="text-xs text-red-400">
-                  Save failed
+                  {t("promptSaveFailed")}
                 </span>
               )}
             </div>
@@ -526,6 +534,7 @@ function AddJobForm({
   onClose: () => void;
   cloudAi: boolean;
 }) {
+  const { t } = useTranslation("cron");
   const addJob = useAddCronJob();
   const [id, setId] = useState("");
   const [name, setName] = useState("");
@@ -561,7 +570,7 @@ function AddJobForm({
     >
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-stone-700 uppercase tracking-wide">
-          New Cron Job
+          {t("newCronJob")}
         </span>
         <button
           type="button"
@@ -575,7 +584,7 @@ function AddJobForm({
       <div className="grid grid-cols-2 gap-2">
         <label className="flex flex-col gap-1">
           <span className="text-[10px] text-stone-500 uppercase tracking-wide">
-            ID
+            {t("id")}
           </span>
           <input
             className={fieldCls}
@@ -587,7 +596,7 @@ function AddJobForm({
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-[10px] text-stone-500 uppercase tracking-wide">
-            Name
+            {t("name", { ns: "common" })}
           </span>
           <input
             className={fieldCls}
@@ -599,7 +608,7 @@ function AddJobForm({
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-[10px] text-stone-500 uppercase tracking-wide">
-            Schedule
+            {t("schedule")}
           </span>
           <input
             className={fieldCls}
@@ -611,7 +620,7 @@ function AddJobForm({
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-[10px] text-stone-500 uppercase tracking-wide">
-            Model
+            {t("model")}
           </span>
           {cloudAi && (
             <label className="flex items-center gap-2 mb-1">
@@ -641,13 +650,13 @@ function AddJobForm({
                 />
               </button>
               <span className="text-[10px] text-stone-600">
-                Kaisho AI
+                {t("kaishoAi")}
               </span>
             </label>
           )}
           {useKaishoAi && cloudAi ? (
             <span className="px-2 py-1 rounded text-xs font-medium bg-cta/10 text-cta border border-cta/30">
-              Kaisho AI
+              {t("kaishoAi")}
             </span>
           ) : (
             <input
@@ -662,7 +671,7 @@ function AddJobForm({
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-[10px] text-stone-500 uppercase tracking-wide">
-            Output
+            {t("output")}
           </span>
           <OutputSelect
             value={output}
@@ -671,7 +680,7 @@ function AddJobForm({
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-[10px] text-stone-500 uppercase tracking-wide">
-            Timeout (s)
+            {t("timeoutS")}
           </span>
           <input
             className={fieldCls}
@@ -685,7 +694,7 @@ function AddJobForm({
 
       <label className="flex flex-col gap-1">
         <span className="text-[10px] text-stone-500 uppercase tracking-wide">
-          Prompt
+          {t("prompt")}
         </span>
         <textarea
           className={[
@@ -697,7 +706,7 @@ function AddJobForm({
           ].join(" ")}
           value={promptContent}
           onChange={(e) => setPromptContent(e.target.value)}
-          placeholder="Enter the prompt that will be sent to the model on each run…"
+          placeholder={t("enterPromptNew")}
         />
       </label>
 
@@ -707,14 +716,16 @@ function AddJobForm({
           onClick={onClose}
           className="px-3 py-1.5 rounded-lg text-sm text-stone-700 hover:text-stone-900 transition-colors"
         >
-          Cancel
+          {t("cancel", { ns: "common" })}
         </button>
         <button
           type="submit"
           disabled={addJob.isPending}
           className="px-4 py-1.5 rounded-lg text-sm bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-50"
         >
-          {addJob.isPending ? "Creating…" : "Create"}
+          {addJob.isPending
+            ? t("creating")
+            : t("create", { ns: "common" })}
         </button>
       </div>
     </form>
@@ -731,6 +742,8 @@ function HistoryTable({
   jobs: CronJob[];
   onDelete: (id: number) => void;
 }) {
+  const { t } = useTranslation("cron");
+  const { t: tc } = useTranslation("common");
   const [expandedId, setExpandedId] = useState<number | null>(
     null
   );
@@ -741,7 +754,7 @@ function HistoryTable({
   if (runs.length === 0) {
     return (
       <p className="text-sm text-stone-500 py-4">
-        No history yet.
+        {t("noHistoryYet")}
       </p>
     );
   }
@@ -776,37 +789,37 @@ function HistoryTable({
               />
             </th>
             <th className={resizable}>
-              Job
+              {t("jobs")}
               <ResizeHandle
                 onMouseDown={(e) => startResize(2, e)}
               />
             </th>
             <th className={resizable}>
-              Model
+              {t("model")}
               <ResizeHandle
                 onMouseDown={(e) => startResize(3, e)}
               />
             </th>
             <th className={resizable}>
-              Started
+              {t("started")}
               <ResizeHandle
                 onMouseDown={(e) => startResize(4, e)}
               />
             </th>
             <th className={resizable}>
-              Finished
+              {t("finished")}
               <ResizeHandle
                 onMouseDown={(e) => startResize(5, e)}
               />
             </th>
             <th className={resizable}>
-              Status
+              {tc("status")}
               <ResizeHandle
                 onMouseDown={(e) => startResize(6, e)}
               />
             </th>
             <th className={resizable}>
-              Error
+              {tc("error")}
               <ResizeHandle
                 onMouseDown={(e) => startResize(7, e)}
               />
@@ -887,7 +900,7 @@ function HistoryTable({
                         onDelete(run.id);
                       }}
                       className="text-stone-400 hover:text-red-400 transition-colors"
-                      title="Delete run"
+                      title={t("deleteRun")}
                     >
                       <Trash2 size={11} />
                     </button>
@@ -903,7 +916,7 @@ function HistoryTable({
                         <CopyToInboxBtn runId={run.id} />
                         <ContentPopup
                           content={run.output}
-                          title="Run Output"
+                          title={t("runOutput")}
                           markdown
                         />
                       </div>
@@ -921,6 +934,10 @@ function HistoryTable({
 }
 
 export function CronView() {
+  const { t } = useTranslation("cron");
+  const { t: ts } = useTranslation("settings");
+  const { t: tn } = useTranslation("nav");
+  const { t: tc } = useTranslation("common");
   const [showForm, setShowForm] = useState(false);
   const { data: jobs = [], isLoading: jobsLoading } = useCronJobs();
   const { data: history = [], isLoading: historyLoading } =
@@ -942,7 +959,7 @@ export function CronView() {
       {/* Toolbar */}
       <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
         <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
-          Cron
+          {tn("cron")}
         </h1>
         <div className="ml-auto flex items-center gap-3">
           <button
@@ -950,7 +967,7 @@ export function CronView() {
             className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs bg-cta text-white hover:bg-cta-hover transition-colors"
           >
             <Plus size={12} />
-            Add Job
+            {t("addJob")}
           </button>
           <HelpButton title="Cron" doc={DOCS.cron} view="cron" />
         </div>
@@ -967,30 +984,27 @@ export function CronView() {
         {!cloudAi && models.length === 0 && (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
             <p className="text-xs font-medium text-stone-700 mb-1">
-              No AI provider configured
+              {ts("noAiProviderCron")}
             </p>
             <p className="text-[11px] text-stone-500 leading-relaxed">
-              Cron jobs need a local model (Ollama,
-              LM Studio) or a cloud API key to run.
-              Configure one in{" "}
-              <strong>Settings &gt; AI</strong>, or
-              enable <strong>Kaisho AI</strong> via{" "}
-              <strong>
-                Settings &gt; Cloud Sync
-              </strong>.
+              {ts("noAiProviderCronHint")}
             </p>
           </div>
         )}
         {/* Jobs section */}
         <section>
           <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-            Jobs
+            {t("jobs")}
           </h2>
           {jobsLoading && (
-            <p className="text-sm text-stone-500">Loading…</p>
+            <p className="text-sm text-stone-500">
+              {tc("loading")}
+            </p>
           )}
           {!jobsLoading && jobs.length === 0 && (
-            <p className="text-sm text-stone-500">No jobs configured.</p>
+            <p className="text-sm text-stone-500">
+              {t("noJobsConfigured")}
+            </p>
           )}
           <div className="flex flex-col gap-3">
             {jobs.map((job) => (
@@ -1006,10 +1020,12 @@ export function CronView() {
         {/* History section */}
         <section>
           <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-            History
+            {t("history")}
           </h2>
           {historyLoading ? (
-            <p className="text-sm text-stone-500">Loading…</p>
+            <p className="text-sm text-stone-500">
+              {tc("loading")}
+            </p>
           ) : (
             <HistoryTable
               runs={history}

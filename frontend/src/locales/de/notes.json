@@ -1,0 +1,9 @@
+{
+  "notes": "Notizen",
+  "titlePlaceholder": "Titel",
+  "bodyOptional": "Text (optional)",
+  "addNote": "+ Hinzuf\u00fcgen",
+  "noNotesYet": "Noch keine Notizen.",
+  "noMatchingNotes": "Keine passenden Notizen.",
+  "deleted": "[gel\u00f6scht]"
+}

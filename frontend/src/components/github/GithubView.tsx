@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { RefreshCcw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useGithubIssues, useGithubProjects } from "../../hooks/useGithub";
 import { useQueryClient } from "@tanstack/react-query";
 import type {
@@ -65,26 +66,28 @@ function IssueRow({ issue }: { issue: GithubIssue }) {
 }
 
 function IssuesPane({ customerFilter }: { customerFilter: string }) {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const { data: groups = [], isLoading, error } = useGithubIssues();
   const filtered = customerFilter
     ? groups.filter((g) => g.customer === customerFilter)
     : groups;
   const totalIssues = filtered.reduce((s, g) => s + g.issues.length, 0);
 
-  if (isLoading) return <p className="text-sm text-stone-500">Loading…</p>;
+  if (isLoading) {
+    return <p className="text-sm text-stone-500">{tc("loading")}</p>;
+  }
   if (error) {
     return (
       <p className="text-sm text-red-400">
-        GitHub API error or no token configured.
+        {t("githubApiError")}
       </p>
     );
   }
   if (totalIssues === 0) {
     return (
       <p className="text-sm text-stone-500">
-        {customerFilter
-          ? "No open issues for this customer."
-          : "No open issues."}
+        {t("noOpenIssues")}
       </p>
     );
   }
@@ -259,16 +262,20 @@ function ProjectsPane({
   showClosed: boolean;
   customerFilter: string;
 }) {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const { data: groups = [], isLoading, error } = useGithubProjects();
   const filtered = customerFilter
     ? groups.filter((g) => g.customer === customerFilter)
     : groups;
 
-  if (isLoading) return <p className="text-sm text-stone-500">Loading…</p>;
+  if (isLoading) {
+    return <p className="text-sm text-stone-500">{tc("loading")}</p>;
+  }
   if (error) {
     return (
       <p className="text-sm text-red-400">
-        GitHub API error or no token configured.
+        {t("githubApiError")}
       </p>
     );
   }
@@ -279,7 +286,7 @@ function ProjectsPane({
   if (!hasAny) {
     return (
       <p className="text-sm text-stone-500">
-        {customerFilter ? "No projects for this customer." : "No projects found."}
+        {t("noProjects")}
       </p>
     );
   }
@@ -319,6 +326,8 @@ function ProjectsPane({
 type Tab = "issues" | "projects";
 
 export function GithubView() {
+  const { t } = useTranslation("settings");
+  const { t: tNav } = useTranslation("nav");
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("issues");
   const [customerFilter, setCustomerFilter] = useState("");
@@ -353,17 +362,17 @@ export function GithubView() {
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-border-subtle shrink-0">
         <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
-          GitHub
+          {tNav("github")}
         </h1>
         <div className="flex items-center gap-1">
           <button className={tabCls("issues")} onClick={() => switchTab("issues")}>
-            Issues
+            {t("issues")}
           </button>
           <button
             className={tabCls("projects")}
             onClick={() => switchTab("projects")}
           >
-            Projects
+            {t("projects")}
           </button>
         </div>
         {customers.length > 0 && (
@@ -372,7 +381,7 @@ export function GithubView() {
             onChange={(e) => setCustomerFilter(e.target.value)}
             className="text-xs bg-surface-raised border border-border rounded px-2 py-1 text-stone-800 focus:outline-none focus:border-cta"
           >
-            <option value="">All customers</option>
+            <option value="">{t("allCustomers")}</option>
             {customers.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
@@ -386,7 +395,7 @@ export function GithubView() {
               onChange={(e) => setShowClosed(e.target.checked)}
               className="accent-cta"
             />
-            Show closed
+            {t("showClosed")}
           </label>
         )}
         <button
@@ -405,14 +414,10 @@ export function GithubView() {
         {!hasToken && (
           <div className="max-w-md mx-auto mt-12 text-center space-y-3">
             <p className="text-sm font-medium text-stone-700">
-              No GitHub token configured
+              {t("noGithubToken")}
             </p>
             <p className="text-xs text-stone-500 leading-relaxed">
-              Add a GitHub personal access token in{" "}
-              <strong>Settings &gt; GitHub</strong> to
-              see your issues and projects here. The
-              token needs <em>repo</em> and{" "}
-              <em>read:project</em> scopes.
+              {t("noGithubTokenHint")}
             </p>
           </div>
         )}

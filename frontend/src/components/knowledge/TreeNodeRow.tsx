@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import type { TreeNode } from "./knowledgeTree";
 
@@ -38,6 +39,7 @@ function MovePicker({
     old: string, oldLabel: string, newLabel: string,
   ) => void;
 }) {
+  const { t } = useTranslation("knowledge");
   const fileName = filePath.split("/").pop() ?? "";
   const currentDir = filePath.includes("/")
     ? filePath.slice(0, filePath.lastIndexOf("/"))
@@ -78,13 +80,13 @@ function MovePicker({
         + "text-stone-400 hover:text-stone-700 "
         + "cursor-pointer"
       }
-      title="Move to..."
+      title={t("moveTo")}
     >
-      <option value="">Move...</option>
+      <option value="">{t("moveOption")}</option>
       {hasFolders && (
-        <optgroup label="Folders">
+        <optgroup label={t("folders")}>
           {showRoot && (
-            <option value="/">(root)</option>
+            <option value="/">{t("rootOption")}</option>
           )}
           {availableFolders.map((f) => (
             <option key={f} value={f}>{f}</option>
@@ -92,7 +94,7 @@ function MovePicker({
         </optgroup>
       )}
       {otherLabels.length > 0 && (
-        <optgroup label="Sources">
+        <optgroup label={t("sources")}>
           {otherLabels.map((l) => (
             <option key={l} value={`label:${l}`}>
               {l}
@@ -154,6 +156,7 @@ export function TreeNodeRow({
   onDelete,
   onCreateFolder,
 }: TreeNodeRowProps) {
+  const { t } = useTranslation("knowledge");
   const indent = depth * 16;
   const [renaming, setRenaming] = useState(false);
   const [renamePath, setRenamePath] = useState("");
@@ -265,7 +268,7 @@ export function TreeNodeRow({
               "p-0.5 rounded text-stone-400 " +
               "hover:text-cta transition-colors"
             }
-            title="Rename"
+            title={t("editFile")}
           >
             <Pencil size={9} />
           </button>
@@ -285,7 +288,7 @@ export function TreeNodeRow({
                 "p-0.5 rounded text-stone-400 " +
                 "hover:text-red-400 transition-colors"
               }
-              title="Delete (irreversible)"
+              title={t("deleteFile")}
             >
               <Trash2 size={9} />
             </button>
@@ -353,7 +356,7 @@ export function TreeNodeRow({
             + "hover:text-cta hover:bg-cta-muted "
             + "transition-colors shrink-0"
           }
-          title="Add subfolder"
+          title={t("addSubfolder")}
         >
           <FolderPlus size={11} />
         </button>
@@ -376,7 +379,7 @@ export function TreeNodeRow({
                 setAddingFolder(false);
               }
             }}
-            placeholder="folder name"
+            placeholder={t("folderName")}
             className={
               "flex-1 min-w-0 px-1 py-0.5 text-xs "
               + "rounded bg-surface-raised border "

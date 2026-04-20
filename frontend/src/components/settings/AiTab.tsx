@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   X, Check, Plus, ChevronDown, ChevronRight,
   Trash2,
@@ -61,6 +62,8 @@ function ModelInput({
 // -----------------------------------------------------------------
 
 function AdvisorPersonalitySection() {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const { data: files } = useAdvisorFiles();
   const update = useUpdateAdvisorFiles();
   const [soul, setSoul] = useState("");
@@ -89,16 +92,15 @@ function AdvisorPersonalitySection() {
   return (
     <div className="mt-6">
       <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-        Advisor Personality
+        {t("advisorPersonality")}
       </h2>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
-            SOUL.md
+            {t("soulMd")}
           </p>
           <p className="text-[10px] text-stone-400 mb-2">
-            Defines the advisor personality, tone, and
-            behavioral guidelines.
+            {t("soulMdHint")}
           </p>
           <textarea
             value={soul}
@@ -113,12 +115,10 @@ function AdvisorPersonalitySection() {
         </div>
         <div className="px-4 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
-            USER.md
+            {t("userMd")}
           </p>
           <p className="text-[10px] text-stone-400 mb-2">
-            Personal context about the user (role,
-            preferences, working style) that the advisor
-            uses for tailored responses.
+            {t("userMdHint")}
           </p>
           <textarea
             value={user}
@@ -138,16 +138,16 @@ function AdvisorPersonalitySection() {
           disabled={update.isPending}
           className={saveBtnCls}
         >
-          {update.isPending ? "Saving..." : "Save"}
+          {update.isPending ? tc("saving") : tc("save")}
         </button>
         {saved && (
           <span className="text-xs text-green-400">
-            Saved.
+            {tc("saved")}
           </span>
         )}
         {update.isError && (
           <span className="text-xs text-red-400">
-            Save failed.
+            {tc("saveFailed")}
           </span>
         )}
       </div>
@@ -160,6 +160,8 @@ function AdvisorPersonalitySection() {
 // -----------------------------------------------------------------
 
 function UrlAllowlistSection() {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const { data: allowlist } = useUrlAllowlist();
   const update = useUpdateUrlAllowlist();
   const [domains, setDomains] = useState<string[]>([]);
@@ -192,19 +194,17 @@ function UrlAllowlistSection() {
   return (
     <div className="mt-6">
       <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-        URL Allowlist
+        {t("urlAllowlist")}
       </h2>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-3">
           <p className="text-[10px] text-stone-400 mb-3">
-            Domains the advisor and cron jobs may fetch.
-            Requests to unlisted domains require user
-            approval.
+            {t("urlAllowlistHint")}
           </p>
           <div className="flex flex-wrap gap-1.5 mb-3">
             {domains.length === 0 && (
               <span className="text-xs text-stone-500">
-                No domains allowed yet.
+                {t("noDomainsAllowed")}
               </span>
             )}
             {domains.map((d) => (
@@ -240,7 +240,7 @@ function UrlAllowlistSection() {
               disabled={!newDomain.trim()}
               className={saveBtnCls}
             >
-              Add
+              {tc("add")}
             </button>
           </form>
         </div>
@@ -258,6 +258,8 @@ function SkillCard({
 }: {
   skill: { name: string; content: string };
 }) {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState(skill.content);
   const [saved, setSaved] = useState(false);
@@ -319,8 +321,8 @@ function SkillCard({
               className={saveBtnCls}
             >
               {updateMut.isPending
-                ? "Saving..."
-                : "Save"}
+                ? tc("saving")
+                : tc("save")}
             </button>
             <button
               onClick={() =>
@@ -328,13 +330,13 @@ function SkillCard({
               }
               disabled={deleteMut.isPending}
               className="p-1.5 rounded text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-              title="Delete skill"
+              title={t("deleteSkill")}
             >
               <Trash2 size={13} />
             </button>
             {saved && (
               <span className="text-xs text-green-400">
-                Saved.
+                {tc("saved")}
               </span>
             )}
           </div>
@@ -353,6 +355,7 @@ function AddSkillForm({
 }: {
   onDone: () => void;
 }) {
+  const { t } = useTranslation("settings");
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const createMut = useCreateSkill();
@@ -378,7 +381,7 @@ function AddSkillForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           className={[fieldCls, "flex-1"].join(" ")}
-          placeholder="skill-name (kebab-case)"
+          placeholder={t("skillNamePlaceholder")}
         />
         <button
           type="button"
@@ -405,7 +408,7 @@ function AddSkillForm({
           inputCls,
           "w-full resize-y",
         ].join(" ")}
-        placeholder="Skill instructions..."
+        placeholder={t("skillInstructions")}
       />
     </form>
   );
@@ -416,6 +419,7 @@ function AddSkillForm({
 // -----------------------------------------------------------------
 
 function SkillsSection() {
+  const { t } = useTranslation("settings");
   const { data: skills = [] } = useAdvisorSkills();
   const [adding, setAdding] = useState(false);
 
@@ -423,12 +427,12 @@ function SkillsSection() {
     <div className="mt-6">
       <div className="flex items-center gap-3 mb-3">
         <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
-          Skills
+          {t("skills")}
         </h2>
         <button
           onClick={() => setAdding((v) => !v)}
           className="ml-auto p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
-          title="Add skill"
+          title={t("addSkill")}
         >
           <Plus size={12} />
         </button>
@@ -436,15 +440,12 @@ function SkillsSection() {
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
           <p className="text-[10px] text-stone-400">
-            Reusable prompt templates applied
-            automatically when the user&apos;s request
-            matches. The advisor can also create skills
-            via tool call.
+            {t("skillsHint")}
           </p>
         </div>
         {skills.length === 0 && !adding && (
           <p className="px-4 py-3 text-xs text-stone-500">
-            No skills defined yet.
+            {t("noSkillsDefined")}
           </p>
         )}
         {skills.map((s) => (
@@ -465,6 +466,8 @@ function SkillsSection() {
 // -----------------------------------------------------------------
 
 export function AiSection(): JSX.Element {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const { data: aiSettings, isLoading } =
     useAiSettings();
   const { data: models = [] } = useAvailableModels();
@@ -528,13 +531,10 @@ export function AiSection(): JSX.Element {
       {cloudAi && (
         <div className="mb-4 px-4 py-3 rounded-xl bg-cta/10 border border-cta/30">
           <p className="text-xs text-cta font-medium">
-            Kaisho AI is active
+            {t("kaishoAiActive")}
           </p>
           <p className="text-[10px] text-stone-500 mt-1">
-            The advisor and cron jobs use OpenRouter
-            via your Cloud Sync subscription. Local
-            model settings below are not used while
-            Kaisho AI is enabled.
+            {t("kaishoAiActiveHint")}
           </p>
         </div>
       )}
@@ -544,7 +544,7 @@ export function AiSection(): JSX.Element {
         <div className="px-4 py-3 border-b border-border-subtle">
           <div className="flex items-center gap-2 mb-1">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-              Local
+              {t("local")}
             </p>
             {probe && (
               <div className="flex items-center gap-1.5">
@@ -557,12 +557,12 @@ export function AiSection(): JSX.Element {
                   ].join(" ")}
                   title={
                     probe.ollama
-                      ? "Ollama reachable"
-                      : "Ollama not running"
+                      ? t("ollamaReachable")
+                      : t("ollamaNotRunning")
                   }
                 />
                 <span className="text-[9px] text-stone-400">
-                  Ollama
+                  {t("ollamaLabel")}
                 </span>
                 <span
                   className={[
@@ -573,8 +573,8 @@ export function AiSection(): JSX.Element {
                   ].join(" ")}
                   title={
                     probe.lm_studio
-                      ? "LM Studio reachable"
-                      : "LM Studio not running"
+                      ? t("lmStudioReachable")
+                      : t("lmStudioNotRunning")
                   }
                 />
                 <span className="text-[9px] text-stone-400">
@@ -584,8 +584,7 @@ export function AiSection(): JSX.Element {
             )}
           </div>
           <p className="text-[10px] text-stone-400 mb-2">
-            No API key needed. Ollama and LM Studio run
-            locally. Recommended model:{" "}
+            {t("localHint")} Recommended model:{" "}
             <strong>gemma4</strong> (Google) — use{" "}
             <em>gemma4:e2b</em> for cron jobs and{" "}
             <em>gemma4:latest</em> for the advisor.
@@ -593,7 +592,7 @@ export function AiSection(): JSX.Element {
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                Ollama
+                {t("ollamaLabel")}
               </span>
               <div className="flex-1 flex gap-2">
                 <select
@@ -628,9 +627,15 @@ export function AiSection(): JSX.Element {
                     "text-stone-700"
                   }
                 >
-                  <option value="local">Local</option>
-                  <option value="cloud">Cloud</option>
-                  <option value="custom">Custom</option>
+                  <option value="local">
+                    {t("optionLocal")}
+                  </option>
+                  <option value="cloud">
+                    {t("optionCloud")}
+                  </option>
+                  <option value="custom">
+                    {t("optionCustom")}
+                  </option>
                 </select>
                 <input
                   type="text"
@@ -645,7 +650,7 @@ export function AiSection(): JSX.Element {
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                LM Studio URL
+                {t("lmStudioUrl")}
               </span>
               <input
                 type="text"
@@ -667,7 +672,7 @@ export function AiSection(): JSX.Element {
         <div className="px-4 py-3 border-b border-border-subtle">
           <div className="flex items-center gap-2 mb-1">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-              Cloud API Keys
+              {t("cloudApiKeys")}
             </p>
             {probe && (
               <div className="flex items-center gap-1.5">
@@ -702,13 +707,12 @@ export function AiSection(): JSX.Element {
             )}
           </div>
           <p className="text-[10px] text-stone-400 mb-2">
-            Billed per token. Set keys only for the
-            providers you want to use.
+            {t("cloudApiKeysHint")}
           </p>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                Claude API Key
+                {t("claudeApiKey")}
               </span>
               <input
                 type="password"
@@ -725,7 +729,7 @@ export function AiSection(): JSX.Element {
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                Ollama Cloud Key
+                {t("ollamaCloudKey")}
               </span>
               <input
                 type="password"
@@ -736,13 +740,15 @@ export function AiSection(): JSX.Element {
                     e.target.value,
                   )
                 }
-                placeholder="Optional (for Ollama Cloud)"
+                placeholder={t(
+                  "ollamaCloudKeyPlaceholder",
+                )}
                 className={inputCls}
               />
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                OpenRouter URL
+                {t("openrouterUrl")}
               </span>
               <input
                 type="text"
@@ -759,7 +765,7 @@ export function AiSection(): JSX.Element {
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                OpenRouter Key
+                {t("openrouterKey")}
               </span>
               <input
                 type="password"
@@ -776,7 +782,7 @@ export function AiSection(): JSX.Element {
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                OpenAI URL
+                {t("openaiUrl")}
               </span>
               <input
                 type="text"
@@ -790,7 +796,7 @@ export function AiSection(): JSX.Element {
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                OpenAI Key
+                {t("openaiKey")}
               </span>
               <input
                 type="password"
@@ -811,17 +817,15 @@ export function AiSection(): JSX.Element {
         {/* Web search API keys */}
         <div className="px-4 py-3 border-b border-border-subtle">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
-            Web Search
+            {t("webSearch")}
           </p>
           <p className="text-[10px] text-stone-400 mb-2">
-            Used by the advisor&apos;s web_search tool.
-            Priority: Brave &gt; Tavily &gt; DuckDuckGo
-            (free fallback).
+            {t("webSearchHint")}
           </p>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                Brave API Key
+                {t("braveApiKey")}
               </span>
               <input
                 type="password"
@@ -838,7 +842,7 @@ export function AiSection(): JSX.Element {
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                Tavily API Key
+                {t("tavilyApiKey")}
               </span>
               <input
                 type="password"
@@ -858,12 +862,12 @@ export function AiSection(): JSX.Element {
 
         <div className="px-4 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
-            Default models
+            {t("defaultModels")}
           </p>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                Advisor
+                {t("advisorModel")}
               </span>
               <div className="flex-1">
                 <ModelInput
@@ -877,7 +881,7 @@ export function AiSection(): JSX.Element {
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                Cron default
+                {t("cronModel")}
               </span>
               <div className="flex-1">
                 <ModelInput
@@ -892,10 +896,9 @@ export function AiSection(): JSX.Element {
           </div>
           {models.length > 0 && (
             <p className="text-[10px] text-stone-400 mt-2">
-              {models.length} model
-              {models.length !== 1 ? "s" : ""}{" "}
-              available — type to filter or enter any
-              model string.
+              {t("modelsAvailable", {
+                count: models.length,
+              })}
             </p>
           )}
         </div>
@@ -907,16 +910,16 @@ export function AiSection(): JSX.Element {
           disabled={update.isPending}
           className={saveBtnCls}
         >
-          {update.isPending ? "Saving..." : "Save"}
+          {update.isPending ? tc("saving") : tc("save")}
         </button>
         {saved && (
           <span className="text-xs text-green-400">
-            Saved.
+            {tc("saved")}
           </span>
         )}
         {update.isError && (
           <span className="text-xs text-red-400">
-            Save failed.
+            {tc("saveFailed")}
           </span>
         )}
       </div>

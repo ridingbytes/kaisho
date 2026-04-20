@@ -14,6 +14,7 @@ import {
   Settings,
   Users,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { View } from "../../App";
 import {
   displayShortcut,
@@ -33,39 +34,40 @@ interface Command {
   actionKey?: string;
 }
 
-const COMMANDS: Command[] = [
-  // Navigation
-  { id: "goto-dashboard", label: "Dashboard", hint: "Go to", view: "dashboard", icon: LayoutDashboard },
-  { id: "goto-board", label: "Board", hint: "Go to", view: "board", icon: Columns2 },
-  { id: "goto-inbox", label: "Inbox", hint: "Go to", view: "inbox", icon: Inbox },
-  { id: "goto-notes", label: "Notes", hint: "Go to", view: "notes", icon: NotebookPen },
-  { id: "goto-customers", label: "Customers", hint: "Go to", view: "customers", icon: Users },
-  { id: "goto-knowledge", label: "Knowledge", hint: "Go to", view: "knowledge", icon: BookOpen },
-  { id: "goto-github", label: "GitHub Issues", hint: "Go to", view: "github", icon: GitPullRequest },
-  { id: "goto-clocks", label: "Clock Entries", hint: "Go to", view: "clocks", icon: History },
-  { id: "goto-cron", label: "Cron Jobs", hint: "Go to", view: "cron", icon: Clock4 },
-  { id: "goto-settings", label: "Settings", hint: "Go to", view: "settings", icon: Settings },
-  { id: "goto-advisor", label: "Advisor", hint: "Go to", view: "advisor", icon: Bot },
-  // Create
-  { id: "new-task", label: "New Task", hint: "Create", view: "board", icon: Plus, panelAction: "open_form", actionKey: "new:board" },
-  { id: "new-inbox", label: "New Inbox Item", hint: "Create", view: "inbox", icon: Plus, panelAction: "open_form", actionKey: "new:inbox" },
-  { id: "new-note", label: "New Note", hint: "Create", view: "notes", icon: Plus, panelAction: "open_form", actionKey: "new:notes" },
-  { id: "new-clock", label: "New Clock Entry", hint: "Create", view: "clocks", icon: Plus, panelAction: "open_form", actionKey: "new:clocks" },
-  { id: "new-kb", label: "New KB File", hint: "Create", view: "knowledge", icon: Plus, panelAction: "open_form", actionKey: "new:knowledge" },
-  { id: "new-customer", label: "New Customer", hint: "Create", view: "customers", icon: Plus, panelAction: "open_form", actionKey: "new:customers" },
-];
-
 interface Props {
   onNavigate: (view: View) => void;
   onClose: () => void;
 }
 
 export function CommandPalette({ onNavigate, onClose }: Props) {
+  const { t } = useTranslation("nav");
   const { config } = useShortcutsContext();
   const [query, setQuery] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+
+  const COMMANDS: Command[] = [
+    // Navigation
+    { id: "goto-dashboard", label: t("dashboard"), hint: t("goTo"), view: "dashboard", icon: LayoutDashboard },
+    { id: "goto-board", label: t("board"), hint: t("goTo"), view: "board", icon: Columns2 },
+    { id: "goto-inbox", label: t("inbox"), hint: t("goTo"), view: "inbox", icon: Inbox },
+    { id: "goto-notes", label: t("notes"), hint: t("goTo"), view: "notes", icon: NotebookPen },
+    { id: "goto-customers", label: t("customers"), hint: t("goTo"), view: "customers", icon: Users },
+    { id: "goto-knowledge", label: t("knowledge"), hint: t("goTo"), view: "knowledge", icon: BookOpen },
+    { id: "goto-github", label: t("githubIssues"), hint: t("goTo"), view: "github", icon: GitPullRequest },
+    { id: "goto-clocks", label: t("clockEntries"), hint: t("goTo"), view: "clocks", icon: History },
+    { id: "goto-cron", label: t("cronJobs"), hint: t("goTo"), view: "cron", icon: Clock4 },
+    { id: "goto-settings", label: t("settings"), hint: t("goTo"), view: "settings", icon: Settings },
+    { id: "goto-advisor", label: t("advisor"), hint: t("goTo"), view: "advisor", icon: Bot },
+    // Create
+    { id: "new-task", label: t("newTask"), hint: t("createAction"), view: "board", icon: Plus, panelAction: "open_form", actionKey: "new:board" },
+    { id: "new-inbox", label: t("newInboxItem"), hint: t("createAction"), view: "inbox", icon: Plus, panelAction: "open_form", actionKey: "new:inbox" },
+    { id: "new-note", label: t("newNote"), hint: t("createAction"), view: "notes", icon: Plus, panelAction: "open_form", actionKey: "new:notes" },
+    { id: "new-clock", label: t("newClockEntry"), hint: t("createAction"), view: "clocks", icon: Plus, panelAction: "open_form", actionKey: "new:clocks" },
+    { id: "new-kb", label: t("newKbFile"), hint: t("createAction"), view: "knowledge", icon: Plus, panelAction: "open_form", actionKey: "new:knowledge" },
+    { id: "new-customer", label: t("newCustomer"), hint: t("createAction"), view: "customers", icon: Plus, panelAction: "open_form", actionKey: "new:customers" },
+  ];
 
   function execute(cmd: Command) {
     if (cmd.panelAction) schedulePanelAction(cmd.view, cmd.panelAction);

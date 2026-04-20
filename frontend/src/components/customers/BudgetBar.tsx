@@ -2,6 +2,7 @@
  * BudgetBar displays a horizontal progress bar for budget
  * consumption with color-coded thresholds.
  */
+import { useTranslation } from "react-i18next";
 
 export interface BudgetBarProps {
   /** Optional label displayed above the bar. */
@@ -34,6 +35,8 @@ export function BudgetBar({
   rest,
   closed,
 }: BudgetBarProps) {
+  const { t } = useTranslation("customers");
+  const { t: tc } = useTranslation("common");
   const pct =
     budget > 0
       ? Math.min(Math.round((used / budget) * 100), 100)
@@ -54,7 +57,7 @@ export function BudgetBar({
             {label}
             {closed && (
               <span className="ml-1 text-stone-400">
-                (closed)
+                ({tc("closed")})
               </span>
             )}
           </span>
@@ -82,9 +85,9 @@ export function BudgetBar({
         }
       >
         <span className="text-[10px] text-stone-600">
-          {used.toFixed(1)}h used
+          {used.toFixed(1)}{t("hUsed")}
           {" · "}
-          {rest.toFixed(1)}h left
+          {rest.toFixed(1)}{t("hLeft")}
         </span>
         <span
           className={

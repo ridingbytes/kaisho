@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { X, Plus } from "lucide-react";
 import {
@@ -19,6 +20,8 @@ import {
 // -----------------------------------------------------------------
 
 function ImportDataSection() {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const [format, setFormat] = useState("org");
   const [path, setPath] = useState("");
   const [importing, setImporting] = useState(false);
@@ -52,17 +55,15 @@ function ImportDataSection() {
   return (
     <div className="mb-6">
       <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-        Import Data
+        {t("importData")}
       </h2>
       <p className="text-[11px] text-stone-500 mb-3">
-        Import data from another backend into the current
-        profile. Import is additive -- clear existing
-        data files first to avoid duplicates.
+        {t("importDataHint")}
       </p>
       <div className="flex items-end gap-2">
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-medium text-stone-500">
-            Format
+            {t("format")}
           </label>
           <select
             value={format}
@@ -71,13 +72,17 @@ function ImportDataSection() {
             }
             className="px-2 h-[30px] rounded-lg text-xs bg-surface-card border border-border text-stone-800"
           >
-            <option value="org">Org-mode</option>
-            <option value="markdown">Markdown</option>
+            <option value="org">
+              {t("orgMode")}
+            </option>
+            <option value="markdown">
+              {t("markdown")}
+            </option>
           </select>
         </div>
         <div className="flex-1 flex flex-col gap-1">
           <label className="text-[10px] font-medium text-stone-500">
-            Source directory
+            {t("sourceDirectory")}
           </label>
           <input
             type="text"
@@ -92,12 +97,12 @@ function ImportDataSection() {
           disabled={importing || !path.trim()}
           className={saveBtnCls}
         >
-          {importing ? "Importing..." : "Import"}
+          {importing ? tc("importing") : tc("import")}
         </button>
       </div>
       {result && (
         <div className="mt-2 text-[11px] text-green-600">
-          Imported:{" "}
+          {t("imported")}:{" "}
           {Object.entries(result)
             .map(([k, v]) => `${v} ${k}`)
             .join(", ")}
@@ -117,6 +122,8 @@ function ImportDataSection() {
 // -----------------------------------------------------------------
 
 export function PathsSection(): JSX.Element {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const { data: paths } = usePaths();
   const update = useUpdatePaths();
   const switchBe = useSwitchBackend();
@@ -204,12 +211,12 @@ export function PathsSection(): JSX.Element {
       {/* Backend selector */}
       <div>
         <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-          Storage Backend
+          {t("storageBackend")}
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
           <div className="flex items-center gap-3 px-4 py-3">
             <span className="text-xs text-stone-700 w-32 shrink-0">
-              Backend
+              {t("backend")}
             </span>
             <select
               value={backend}
@@ -222,10 +229,10 @@ export function PathsSection(): JSX.Element {
               ].join(" ")}
             >
               <option value="org">
-                Org-mode (*.org files)
+                {t("orgMode")}
               </option>
               <option value="markdown">
-                Markdown (*.md files)
+                {t("markdown")}
               </option>
             </select>
             <button
@@ -238,19 +245,19 @@ export function PathsSection(): JSX.Element {
             >
               {switchBe.isPending
                 ? "Switching..."
-                : "Switch"}
+                : tc("switch")}
             </button>
           </div>
         </div>
         <p className="text-[10px] text-stone-400 mb-6">
-          Data is not migrated between backends.
+          {t("dataNotMigrated")}
         </p>
       </div>
 
       {/* Data directories */}
       <div>
         <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-          Data Directories
+          {t("dataDirectories")}
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
           <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
@@ -289,7 +296,7 @@ export function PathsSection(): JSX.Element {
               {paths?.data_dir ?? "data"}
             </span>
             <span className="text-[10px] text-stone-400">
-              (global, set via .env)
+              {t("globalSetViaEnv")}
             </span>
           </div>
         </div>
@@ -300,8 +307,8 @@ export function PathsSection(): JSX.Element {
             className={saveBtnCls}
           >
             {update.isPending
-              ? "Saving..."
-              : "Save Paths"}
+              ? tc("saving")
+              : t("savePaths")}
           </button>
           {saved && (
             <span className="text-xs text-green-400">
@@ -317,7 +324,7 @@ export function PathsSection(): JSX.Element {
       {/* KB sources */}
       <div>
         <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-          Knowledge Base Sources
+          {t("knowledgeBaseSources")}
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
           {sources.map((src, idx) => (
@@ -340,7 +347,7 @@ export function PathsSection(): JSX.Element {
                     e.target.value,
                   )
                 }
-                placeholder="Label"
+                placeholder={t("label")}
                 className={[
                   inputCls,
                   "w-28 shrink-0 !flex-none",
@@ -369,7 +376,7 @@ export function PathsSection(): JSX.Element {
           ))}
           {sources.length === 0 && (
             <p className="px-4 py-3 text-xs text-stone-500">
-              No KB sources defined. Add one below.
+              {t("noKbSources")}
             </p>
           )}
         </div>
@@ -379,7 +386,7 @@ export function PathsSection(): JSX.Element {
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-stone-700 bg-surface-raised border border-border hover:text-cta hover:border-cta/40 transition-colors"
           >
             <Plus size={12} />
-            Add source
+            {t("addSource")}
           </button>
           <button
             onClick={handleSaveKb}
@@ -387,8 +394,8 @@ export function PathsSection(): JSX.Element {
             className={saveBtnCls}
           >
             {updateKb.isPending
-              ? "Saving..."
-              : "Save KB Sources"}
+              ? tc("saving")
+              : t("saveKbSources")}
           </button>
         </div>
       </div>
@@ -396,12 +403,12 @@ export function PathsSection(): JSX.Element {
       {/* Read-only info */}
       <div>
         <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-          Info
+          {t("info")}
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-2.5">
             <span className="text-xs text-stone-600 w-32 shrink-0">
-              Settings file
+              {t("settingsFile")}
             </span>
             <span className="text-xs font-mono text-stone-700 truncate flex-1">
               {paths?.settings_file}
@@ -409,9 +416,7 @@ export function PathsSection(): JSX.Element {
           </div>
         </div>
         <p className="mt-2 text-[10px] text-stone-400">
-          Backend and data directories are stored per
-          profile. DATA_DIR, HOST, PORT are global
-          (.env).
+          {t("pathsHint")}
         </p>
       </div>
     </section>

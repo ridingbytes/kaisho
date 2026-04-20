@@ -8,6 +8,7 @@
 
 import { Check, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useDeleteKnowledgeFile,
   useSaveKnowledgeFile,
@@ -47,6 +48,8 @@ export function EditorPanel({
   onClose,
   onDeleted,
 }: EditorPanelProps) {
+  const { t } = useTranslation("knowledge");
+  const { t: tc } = useTranslation("common");
   const [content, setContent] = useState(initialContent);
   const [preview, setPreview] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -103,7 +106,7 @@ export function EditorPanel({
               "text-[10px] text-amber-500 shrink-0"
             }
           >
-            unsaved
+            {t("unsaved")}
           </span>
         )}
         <div className="ml-auto flex items-center gap-1">
@@ -116,7 +119,7 @@ export function EditorPanel({
                 : "text-stone-600 hover:text-stone-900",
             ].join(" ")}
           >
-            {preview ? "Edit" : "Preview"}
+            {preview ? t("editMode") : t("preview")}
           </button>
           <ConfirmPopover
             onConfirm={handleDelete}
@@ -127,7 +130,7 @@ export function EditorPanel({
                 "p-1 rounded text-stone-500 " +
                 "hover:text-red-400"
               }
-              title="Delete file"
+              title={t("deleteFile")}
             >
               <Trash2 size={13} />
             </button>
@@ -138,7 +141,7 @@ export function EditorPanel({
               "p-1 rounded text-stone-500 " +
               "hover:text-stone-900"
             }
-            title="Discard changes"
+            title={t("discardChanges")}
           >
             <X size={13} />
           </button>
@@ -152,7 +155,9 @@ export function EditorPanel({
             }
           >
             <Check size={11} />
-            {save.isPending ? "Saving\u2026" : "Save"}
+            {save.isPending
+              ? tc("saving")
+              : tc("save")}
           </button>
         </div>
       </div>

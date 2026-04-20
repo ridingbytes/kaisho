@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { Pencil, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { EditFooter } from "../common/EditFooter";
 import {
@@ -26,6 +27,8 @@ export function ContractRow({
   contract,
   customerName,
 }: ContractRowProps) {
+  const { t } = useTranslation("customers");
+  const { t: tc } = useTranslation("common");
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(contract.name);
   const [hours, setHours] = useState(
@@ -131,7 +134,7 @@ export function ContractRow({
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Name"
+            placeholder={tc("name")}
             className={smallInputCls}
           />
           <input
@@ -141,7 +144,7 @@ export function ContractRow({
             value={hours}
             onChange={(e) => setHours(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Budget h"
+            placeholder={t("budgetHLabel")}
             className={`${smallInputCls} tabular-nums`}
           />
           <input
@@ -151,8 +154,8 @@ export function ContractRow({
             value={offset}
             onChange={(e) => setOffset(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Offset h"
-            title="Used offset (hours)"
+            placeholder={t("offsetH")}
+            title={t("usedOffset")}
             className={`${smallInputCls} tabular-nums`}
           />
         </div>
@@ -174,7 +177,7 @@ export function ContractRow({
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="End date"
+            placeholder={t("endDate")}
             className={smallInputCls}
           />
         </div>
@@ -183,7 +186,7 @@ export function ContractRow({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Notes"
+          placeholder={tc("notes")}
           className={smallInputCls}
         />
         <div className="flex items-center gap-4">
@@ -204,7 +207,7 @@ export function ContractRow({
                 + "focus:ring-cta"
               }
             />
-            Billable
+            {tc("billable")}
           </label>
           <label
             className={
@@ -223,7 +226,7 @@ export function ContractRow({
                 + "focus:ring-cta"
               }
             />
-            Invoiced
+            {tc("invoiced")}
           </label>
         </div>
         <EditFooter
@@ -266,7 +269,7 @@ export function ContractRow({
               + "bg-surface-overlay text-stone-500"
             }
           >
-            closed
+            {tc("closed")}
           </span>
         )}
         {contract.billable === false && (
@@ -276,7 +279,7 @@ export function ContractRow({
               + "bg-amber-500/10 text-amber-600"
             }
           >
-            non-billable
+            {tc("nonBillable")}
           </span>
         )}
         {contract.invoiced && (
@@ -286,7 +289,7 @@ export function ContractRow({
               + "bg-emerald-500/10 text-emerald-600"
             }
           >
-            invoiced
+            {tc("invoiced")}
           </span>
         )}
         <div
@@ -301,7 +304,7 @@ export function ContractRow({
               + "hover:text-cta hover:bg-cta-muted "
               + "transition-colors"
             }
-            title="Edit"
+            title={tc("edit")}
           >
             <Pencil size={10} />
           </button>
@@ -322,7 +325,7 @@ export function ContractRow({
                 + "hover:bg-red-500/10 "
                 + "transition-colors"
               }
-              title="Delete"
+              title={tc("delete")}
             >
               <X size={10} />
             </button>

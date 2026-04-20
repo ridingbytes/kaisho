@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { useContracts } from "../../hooks/useContracts";
@@ -13,6 +14,8 @@ export function QuickBookForm({
   defaultDate,
   onDone,
 }: QuickBookFormProps = {}) {
+  const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const [duration, setDuration] = useState("");
   const [customer, setCustomer] = useState("");
   const [contract, setContract] = useState("");
@@ -78,7 +81,7 @@ export function QuickBookForm({
           onChange={(e) => setContract(e.target.value)}
           className={inputCls}
         >
-          <option value="">— no contract —</option>
+          <option value="">{tc("noContract")}</option>
           {contracts.map((c) => (
             <option key={c.name} value={c.name}>
               {c.name}{c.end_date ? " (closed)" : ""}
@@ -88,14 +91,14 @@ export function QuickBookForm({
       )}
       <input
         type="text"
-        placeholder="Description (optional)"
+        placeholder={tc("descriptionOptional")}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         className={inputCls}
       />
       <input
         type="text"
-        placeholder="Duration (2h, 30m)"
+        placeholder={t("durationShort")}
         value={duration}
         onChange={(e) => setDuration(e.target.value)}
         className={inputCls}
@@ -116,7 +119,7 @@ export function QuickBookForm({
         inputClassName={inputCls}
       />
       <textarea
-        placeholder="Notes (optional)"
+        placeholder={tc("notesOptional")}
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         rows={2}
@@ -137,7 +140,7 @@ export function QuickBookForm({
           "disabled:cursor-not-allowed",
         ].join(" ")}
       >
-        {book.isPending ? "Booking…" : "Book"}
+        {book.isPending ? t("booking") : t("book")}
       </button>
       {book.isError && (
         <p className="text-xs text-red-400">

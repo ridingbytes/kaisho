@@ -7,6 +7,7 @@ import {
   Download, Play, RotateCcw, Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   backupDownloadUrl,
   restoreBackup,
@@ -39,6 +40,8 @@ function formatDate(iso: string): string {
 }
 
 export function BackupSection(): JSX.Element {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const { data: cfg, isLoading } = useBackupSettings();
   const { data: backups = [] } = useBackups();
   const update = useUpdateBackupSettings();
@@ -84,11 +87,11 @@ export function BackupSection(): JSX.Element {
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
-            Storage
+            {t("storage")}
           </p>
           <label className="flex items-center gap-3">
             <span className="text-xs text-stone-700 w-32 shrink-0">
-              Backup folder
+              {t("backupFolder")}
             </span>
             <input
               type="text"
@@ -112,11 +115,11 @@ export function BackupSection(): JSX.Element {
 
         <div className="px-4 py-3 border-b border-border-subtle">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
-            Retention
+            {t("retention")}
           </p>
           <label className="flex items-center gap-3">
             <span className="text-xs text-stone-700 w-32 shrink-0">
-              Keep
+              {t("keep")}
             </span>
             <input
               type="number"
@@ -134,23 +137,21 @@ export function BackupSection(): JSX.Element {
               className={`${inputCls} !w-32 !flex-none`}
             />
             <span className="text-xs text-stone-500">
-              most recent backups
+              {t("mostRecentBackups")}
             </span>
           </label>
           <p className="mt-2 text-[10px] text-stone-400">
-            Older backups are removed automatically
-            after each run. Set to 0 to keep every
-            archive (no pruning).
+            {t("retentionHint")}
           </p>
         </div>
 
         <div className="px-4 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
-            Schedule
+            {t("schedule")}
           </p>
           <label className="flex items-center gap-3">
             <span className="text-xs text-stone-700 w-32 shrink-0">
-              Interval
+              {t("interval")}
             </span>
             <input
               type="number"
@@ -168,7 +169,7 @@ export function BackupSection(): JSX.Element {
               className={`${inputCls} !w-32 !flex-none`}
             />
             <span className="text-xs text-stone-500">
-              hours (0 = disabled)
+              {t("hoursDisabled")}
             </span>
           </label>
         </div>
@@ -180,11 +181,11 @@ export function BackupSection(): JSX.Element {
           disabled={update.isPending}
           className={saveBtnCls}
         >
-          {update.isPending ? "Saving..." : "Save"}
+          {update.isPending ? tc("saving") : tc("save")}
         </button>
         {saved && (
           <span className="text-xs text-green-400">
-            Saved.
+            {tc("saved")}
           </span>
         )}
         <div className="flex-1" />
@@ -199,7 +200,7 @@ export function BackupSection(): JSX.Element {
           ].join(" ")}
         >
           <Play size={12} />
-          {run.isPending ? "Running..." : "Back up now"}
+          {run.isPending ? tc("running") : t("backUpNow")}
         </button>
         <button
           onClick={() => prune.mutate(undefined)}
@@ -210,43 +211,40 @@ export function BackupSection(): JSX.Element {
             "hover:text-red-400 transition-colors",
             "disabled:opacity-50",
           ].join(" ")}
-          title="Prune old backups"
         >
           <Trash2 size={12} />
-          Prune now
+          {t("pruneNow")}
         </button>
       </div>
 
       <p className="text-[10px] text-stone-400 leading-relaxed">
-        Backups contain profile data only (settings, tasks,
-        clock entries, knowledge base files inside the profile
-        directory). Files stored in external paths (e.g.
-        ~/ownCloud) are not included and must be backed up
-        separately.
+        {t("backupsHint")}
       </p>
 
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle flex items-center justify-between">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-            Existing backups ({backups.length})
+            {t("existingBackups", {
+              count: backups.length,
+            })}
           </p>
         </div>
         {backups.length === 0 ? (
           <p className="px-4 py-4 text-xs text-stone-500">
-            No backups yet.
+            {t("noBackupsYet")}
           </p>
         ) : (
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border-subtle text-stone-500">
                 <th className="text-left px-4 py-2 font-medium">
-                  Filename
+                  {t("filename")}
                 </th>
                 <th className="text-left px-4 py-2 font-medium">
-                  Created
+                  {t("created")}
                 </th>
                 <th className="text-right px-4 py-2 font-medium">
-                  Size
+                  {t("size")}
                 </th>
                 <th className="px-4 py-2" />
               </tr>
@@ -268,7 +266,7 @@ export function BackupSection(): JSX.Element {
                   </td>
                   <td className="px-4 py-2 text-right flex items-center justify-end gap-2">
                     <ConfirmPopover
-                      label="Restore this backup?"
+                      label={t("restoreConfirm")}
                       onConfirm={() => {
                         restoreBackup(b.filename)
                           .then(() =>
@@ -278,7 +276,7 @@ export function BackupSection(): JSX.Element {
                     >
                       <button
                         className="text-stone-500 hover:text-cta transition-colors"
-                        title="Restore"
+                        title={t("restore")}
                       >
                         <RotateCcw size={12} />
                       </button>

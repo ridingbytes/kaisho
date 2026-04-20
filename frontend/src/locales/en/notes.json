@@ -1,0 +1,9 @@
+{
+  "notes": "Notes",
+  "titlePlaceholder": "Title",
+  "bodyOptional": "Body (optional)",
+  "addNote": "+ Add",
+  "noNotesYet": "No notes yet.",
+  "noMatchingNotes": "No matching notes.",
+  "deleted": "[deleted]"
+}

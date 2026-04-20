@@ -7,6 +7,7 @@
  */
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSaveKnowledgeFile } from "../../hooks/useKnowledge";
 import { inputCls } from "./knowledgeEditorUtils";
 import type { KnowledgeFile } from "../../types";
@@ -27,6 +28,8 @@ export function NewFileForm({
   onCreated,
   onClose,
 }: NewFileFormProps) {
+  const { t } = useTranslation("knowledge");
+  const { t: tc } = useTranslation("common");
   const [label, setLabel] = useState<
     "knowledge" | "research"
   >("knowledge");
@@ -70,7 +73,7 @@ export function NewFileForm({
             "uppercase tracking-wider"
           }
         >
-          Library
+          {t("library")}
         </label>
         <select
           className={`${inputCls} w-28`}
@@ -92,7 +95,7 @@ export function NewFileForm({
             "uppercase tracking-wider"
           }
         >
-          Path *
+          {t("pathRequired")}
         </label>
         <input
           autoFocus
@@ -111,7 +114,7 @@ export function NewFileForm({
             "text-xs font-semibold disabled:opacity-40"
           }
         >
-          Create
+          {tc("create")}
         </button>
         <button
           type="button"
@@ -121,7 +124,7 @@ export function NewFileForm({
             "text-stone-700 text-xs"
           }
         >
-          Cancel
+          {tc("cancel")}
         </button>
       </div>
       {save.isError && (

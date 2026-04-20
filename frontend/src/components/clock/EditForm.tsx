@@ -190,7 +190,7 @@ export function EditForm({
               }
               className={smallInputCls}
             >
-              <option value="">---</option>
+              <option value="">{tc("noContract")}</option>
               {contracts.map((c) => (
                 <option key={c.name} value={c.name}>
                   {c.name}

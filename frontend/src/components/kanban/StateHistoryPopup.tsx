@@ -3,6 +3,7 @@
  * history of status changes for a task.
  */
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { RelDate } from "../common/RelDate";
 
 interface StateHistoryEntry {
@@ -27,6 +28,7 @@ export function StateHistoryPopup({
   history,
   onClose,
 }: StateHistoryPopupProps) {
+  const { t } = useTranslation("kanban");
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
@@ -44,7 +46,7 @@ export function StateHistoryPopup({
       >
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
-            State History
+            {t("stateHistory")}
           </h3>
           <button
             onClick={onClose}
@@ -64,7 +66,7 @@ export function StateHistoryPopup({
                 {h.to}
               </span>
               <span className="text-stone-500">
-                from {h.from}
+                {t("from")} {h.from}
               </span>
               <RelDate
                 date={h.timestamp}

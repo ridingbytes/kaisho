@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   X, Check, Copy, Pencil, RotateCcw, Trash2,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import { inputCls, saveBtnCls } from "./styles";
 // -----------------------------------------------------------------
 
 function AppTitleSection() {
+  const { t } = useTranslation("settings");
   const [title, setTitle] = useState(
     () => localStorage.getItem("kaisho_app_title") || "",
   );
@@ -38,7 +40,7 @@ function AppTitleSection() {
   return (
     <section>
       <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-        App Title
+        {t("appTitle")}
       </h2>
       <div className="flex items-center gap-3">
         <input
@@ -58,7 +60,7 @@ function AppTitleSection() {
           ].join(" ")}
         />
         <span className="text-[10px] text-stone-400">
-          Shown in the header next to the logo
+          {t("appTitleHint")}
         </span>
       </div>
     </section>
@@ -70,6 +72,8 @@ function AppTitleSection() {
 // -----------------------------------------------------------------
 
 function UserProfileSection() {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const { data: userData } = useCurrentUser();
   const update = useUpdateUserProfile();
   const [name, setName] = useState("");
@@ -112,7 +116,7 @@ function UserProfileSection() {
   return (
     <section>
       <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-        User Profile
+        {t("userProfile")}
       </h2>
       <div className="bg-surface-card rounded-xl border border-border p-4 flex flex-col gap-4">
         {/* Avatar + username */}
@@ -130,7 +134,7 @@ function UserProfileSection() {
               onClick={randomizeAvatar}
               className="text-[10px] text-stone-500 hover:text-cta transition-colors text-left"
             >
-              Randomize avatar
+              {t("randomizeAvatar")}
             </button>
           </div>
         </div>
@@ -138,13 +142,13 @@ function UserProfileSection() {
         {/* Full name */}
         <label className="flex flex-col gap-1">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-            Full name
+            {t("fullName")}
           </span>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Full name"
+            placeholder={t("fullName")}
             className={inputCls}
           />
         </label>
@@ -152,13 +156,13 @@ function UserProfileSection() {
         {/* Email */}
         <label className="flex flex-col gap-1">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-            Email
+            {t("email")}
           </span>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
+            placeholder={t("email")}
             className={inputCls}
           />
         </label>
@@ -166,13 +170,13 @@ function UserProfileSection() {
         {/* Bio */}
         <label className="flex flex-col gap-1">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-            Bio
+            {t("bio")}
           </span>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={2}
-            placeholder="Short bio"
+            placeholder={t("shortBio")}
             className={[inputCls, "resize-y"].join(" ")}
           />
         </label>
@@ -184,11 +188,13 @@ function UserProfileSection() {
             disabled={update.isPending}
             className={saveBtnCls}
           >
-            {update.isPending ? "Saving..." : "Save"}
+            {update.isPending
+              ? tc("saving")
+              : tc("save")}
           </button>
           {saved && (
             <span className="text-xs text-green-400">
-              Saved
+              {tc("saved")}
             </span>
           )}
         </div>
@@ -202,6 +208,8 @@ function UserProfileSection() {
 // -----------------------------------------------------------------
 
 function ProfilesTab() {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const { data: userData } = useCurrentUser();
   const { data: profileData } = useProfiles();
   const switchProfile = useSwitchProfile();
@@ -283,11 +291,11 @@ function ProfilesTab() {
     <div className="flex flex-col gap-8">
       <section>
         <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-          Profiles
+          {t("profiles")}
         </h2>
         <p className="text-[10px] text-stone-500 mb-3">
-          User: {userData.name || userData.name || "kaisho"}
-          {" "}&middot; Active: {userData.profile}
+          {t("user")}: {userData.name || "kaisho"}
+          {" "}&middot; {t("activeProfile")}: {userData.profile}
         </p>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
           {(profileData.profiles ?? []).map(
@@ -331,7 +339,7 @@ function ProfilesTab() {
                           renameProfile.isPending
                         }
                         className="p-1 rounded text-green-500 hover:text-green-400 transition-colors"
-                        title="Save rename"
+                        title={t("saveRename")}
                       >
                         <Check
                           size={13}
@@ -351,11 +359,7 @@ function ProfilesTab() {
                   ) : isCopying ? (
                     <>
                       <span className="text-xs text-stone-500 shrink-0">
-                        Copy{" "}
-                        <strong className="text-stone-700">
-                          {p}
-                        </strong>{" "}
-                        to:
+                        {t("copyTo", { name: p })}
                       </span>
                       <input
                         autoFocus
@@ -379,7 +383,7 @@ function ProfilesTab() {
                           copyProfile.isPending
                         }
                         className="p-1 rounded text-green-500 hover:text-green-400 transition-colors"
-                        title="Create copy"
+                        title={t("createCopy")}
                       >
                         <Check
                           size={13}
@@ -399,11 +403,9 @@ function ProfilesTab() {
                   ) : isConfirmingDelete ? (
                     <>
                       <span className="text-xs text-stone-600 flex-1">
-                        Delete{" "}
-                        <strong className="text-stone-800">
-                          {p}
-                        </strong>
-                        ? All data will be lost.
+                        {t("deleteProfileConfirm", {
+                          name: p,
+                        })}
                       </span>
                       <button
                         onClick={() => handleDelete(p)}
@@ -412,7 +414,7 @@ function ProfilesTab() {
                         }
                         className="px-2 py-1 rounded text-xs bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
                       >
-                        Delete
+                        {tc("delete")}
                       </button>
                       <button
                         onClick={() =>
@@ -438,14 +440,14 @@ function ProfilesTab() {
                       {isActive ? (
                         <div className="flex items-center gap-1">
                           <span className="text-[10px] text-cta uppercase tracking-wider font-semibold">
-                            active
+                            {t("activeProfile")}
                           </span>
                           <button
                             onClick={() =>
                               startCopy(p)
                             }
                             className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
-                            title="Copy profile"
+                            title={tc("copyProfile")}
                           >
                             <Copy
                               size={12}
@@ -467,14 +469,14 @@ function ProfilesTab() {
                             }
                             className="px-2 py-1 rounded text-xs text-stone-600 hover:text-cta hover:bg-cta-muted transition-colors"
                           >
-                            Switch
+                            {tc("switch")}
                           </button>
                           <button
                             onClick={() =>
                               startCopy(p)
                             }
                             className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
-                            title="Copy profile"
+                            title={tc("copyProfile")}
                           >
                             <Copy
                               size={12}
@@ -486,7 +488,7 @@ function ProfilesTab() {
                               startRename(p)
                             }
                             className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
-                            title="Rename profile"
+                            title={tc("renameProfile")}
                           >
                             <Pencil
                               size={12}
@@ -498,7 +500,7 @@ function ProfilesTab() {
                               setConfirmDelete(p)
                             }
                             className="p-1 rounded text-stone-500 hover:text-red-500 transition-colors"
-                            title="Delete profile"
+                            title={tc("deleteProfile")}
                           >
                             <Trash2
                               size={12}
@@ -522,7 +524,7 @@ function ProfilesTab() {
             type="text"
             value={newProfile}
             onChange={(e) => setNewProfile(e.target.value)}
-            placeholder="New profile name"
+            placeholder={t("newProfileName")}
             className={inputCls}
           />
           <button
@@ -530,7 +532,7 @@ function ProfilesTab() {
             disabled={!newProfile.trim()}
             className={saveBtnCls}
           >
-            Create
+            {tc("create")}
           </button>
         </form>
       </section>
@@ -543,19 +545,17 @@ function ProfilesTab() {
 // -----------------------------------------------------------------
 
 function ResetLocalStorageSection() {
+  const { t } = useTranslation("settings");
   return (
     <section>
       <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-        Local Preferences
+        {t("localPreferences")}
       </h2>
       <p className="text-[10px] text-stone-400 mb-3">
-        Clears cached UI state: theme, sidebar,
-        dismissed banners, advisor chat history,
-        and other browser-local preferences.
-        Server data is not affected.
+        {t("localPreferencesHint")}
       </p>
       <ConfirmPopover
-        label="Clear all local preferences and reload?"
+        label={t("clearLocalPreferencesConfirm")}
         onConfirm={() => {
           localStorage.clear();
           window.location.reload();
@@ -565,7 +565,7 @@ function ResetLocalStorageSection() {
           className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs text-stone-600 border border-border hover:text-red-600 hover:border-red-300 transition-colors"
         >
           <RotateCcw size={12} />
-          Reset local preferences
+          {t("resetLocalPreferences")}
         </button>
       </ConfirmPopover>
     </section>

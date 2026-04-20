@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useVersionInfo } from "../../hooks/useSettings";
 import {
   parseChangelog,
@@ -15,6 +16,8 @@ const SEEN_KEY = "kaisho_seen_version";
  * Can also be opened manually via the exported trigger.
  */
 export function WhatsNewDialog() {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const { data } = useVersionInfo();
   const [open, setOpen] = useState(false);
   const [latest, setLatest] = useState<
@@ -66,7 +69,7 @@ export function WhatsNewDialog() {
               className="text-cta"
             />
             <h2 className="text-sm font-semibold text-stone-800">
-              What's New in {latest.version}
+              {t("whatsNew")} {latest.version}
             </h2>
           </div>
           <button
@@ -103,7 +106,7 @@ export function WhatsNewDialog() {
             }}
             className="px-4 py-1.5 rounded text-sm bg-cta text-white hover:bg-cta-hover transition-colors"
           >
-            Got it
+            {tc("ok")}
           </button>
         </div>
       </div>

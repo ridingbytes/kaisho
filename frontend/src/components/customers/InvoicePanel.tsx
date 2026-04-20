@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   batchInvoiceEntries,
   fetchInvoicePreview,
@@ -35,6 +36,8 @@ export function InvoicePanel({
   customer,
   onClose,
 }: Props) {
+  const { t } = useTranslation("customers");
+  const { t: tc } = useTranslation("common");
   const { data: contracts = [] } = useContracts(customer);
   const [contract, setContract] = useState("");
   const [fromDate, setFromDate] = useState("");
@@ -72,7 +75,9 @@ export function InvoicePanel({
     batchInvoiceEntries(starts)
       .then((res) => {
         toast(
-          `${res.invoiced} entries marked as invoiced`,
+          t("entriesMarkedInvoiced", {
+            count: res.invoiced,
+          }),
         );
         void qc.invalidateQueries({
           queryKey: ["invoice-preview"],
@@ -109,7 +114,7 @@ export function InvoicePanel({
     <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-600 flex-1">
-          Invoice: {customer}
+          {t("invoiceTitle", { customer })}
         </h3>
         <button
           onClick={onClose}
@@ -129,7 +134,7 @@ export function InvoicePanel({
             }
             className="px-2 py-1 rounded text-xs bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
           >
-            <option value="">All contracts</option>
+            <option value="">{t("allContracts")}</option>
             {contracts.map((c) => (
               <option key={c.name} value={c.name}>
                 {c.name}
@@ -145,7 +150,7 @@ export function InvoicePanel({
           }
           className="px-2 py-1 rounded text-xs bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
         />
-        <span className="text-xs text-stone-400">to</span>
+        <span className="text-xs text-stone-400">{t("to")}</span>
         <input
           type="date"
           value={toDate}
@@ -160,7 +165,9 @@ export function InvoicePanel({
       {preview && (
         <div className="flex items-center gap-4 px-4 py-2 border-b border-border-subtle">
           <span className="text-xs text-stone-600">
-            {preview.entry_count} unbilled entries
+            {t("unbilledEntries", {
+              count: preview.entry_count,
+            })}
           </span>
           <span className="text-xs font-semibold text-stone-900">
             {preview.total_hours}h
@@ -183,7 +190,9 @@ export function InvoicePanel({
             <Download size={11} /> XLS
           </button>
           <ConfirmPopover
-            label={`Mark ${entries.length} entries as invoiced?`}
+            label={t("markEntriesInvoiced", {
+              count: entries.length,
+            })}
             onConfirm={handleBookAll}
             disabled={booking || !entries.length}
           >
@@ -193,8 +202,8 @@ export function InvoicePanel({
             >
               <Check size={12} />
               {booking
-                ? "Saving..."
-                : "Mark as invoiced"}
+                ? tc("saving")
+                : t("markAsInvoiced")}
             </button>
           </ConfirmPopover>
         </div>
@@ -204,12 +213,12 @@ export function InvoicePanel({
       <div className="max-h-64 overflow-y-auto">
         {isLoading && (
           <p className="text-xs text-stone-500 text-center py-4">
-            Loading...
+            {tc("loading")}
           </p>
         )}
         {!isLoading && entries.length === 0 && (
           <p className="text-xs text-stone-500 text-center py-4">
-            No unbilled entries found.
+            {t("noUnbilledEntries")}
           </p>
         )}
         {entries.map((e: ClockEntry) => (
@@ -221,7 +230,7 @@ export function InvoicePanel({
               {formatDate(e.start)}
             </span>
             <span className="flex-1 text-stone-700 truncate">
-              {e.description || "(no description)"}
+              {e.description || tc("noDescription")}
             </span>
             {e.contract && (
               <span className="text-[10px] text-stone-400">

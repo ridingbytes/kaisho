@@ -39,5 +39,7 @@
   "noUnbilledEntries": "No unbilled entries found.",
   "markEntriesInvoiced": "Mark {{count}} entries as invoiced?",
   "markAsInvoiced": "Mark as invoiced",
-  "entriesMarkedInvoiced": "{{count}} entries marked as invoiced"
+  "entriesMarkedInvoiced": "{{count}} entries marked as invoiced",
+  "hUsed": "h used",
+  "hLeft": "h left"
 }
