@@ -74,10 +74,13 @@ DATA=(
 )
 
 mkdir -p "$BIN_DIR"
+rm -rf "$PROJECT_ROOT/dist/kai-server-${TARGET}" \
+       "$PROJECT_ROOT/build/kai-server-${TARGET}" \
+       2>/dev/null
 
 if $IS_MACOS; then
     echo "Building sidecar (macOS --onedir)..."
-    pyinstaller --onedir \
+    pyinstaller --noconfirm --onedir \
         --name "kai-server-${TARGET}" \
         "${DATA[@]}" "${HIDDEN[@]}" \
         kaisho_launcher.py
@@ -131,7 +134,7 @@ SFX
     echo "Size: $(du -h "$DST" | cut -f1)"
 else
     echo "Building sidecar (--onefile)..."
-    pyinstaller --onefile \
+    pyinstaller --noconfirm --onefile \
         --name "kai-server-${TARGET}" \
         "${DATA[@]}" "${HIDDEN[@]}" \
         kaisho/cli/main.py
