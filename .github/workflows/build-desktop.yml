@@ -162,7 +162,7 @@ jobs:
         id: collect
         shell: bash
         run: |
-          mkdir -p /tmp/release
+          mkdir -p ${RUNNER_TEMP}/release
           find desktop/src-tauri/target \
             -path "*/bundle/*" \
             \( -name "*.dmg" \
@@ -181,15 +181,15 @@ jobs:
             -o -name "*-setup.nsis.zip.sig" \
             \) \
             -not -path "*/deps/*" \
-            -exec cp -v {} /tmp/release/ \;
+            -exec cp -v {} ${RUNNER_TEMP}/release/ \;
           echo "Collected:"
-          ls -la /tmp/release/
+          ls -la ${RUNNER_TEMP}/release/
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.target }}
-          path: /tmp/release/
+          path: ${{ runner.temp }}/release/
 
   release:
     needs: build
