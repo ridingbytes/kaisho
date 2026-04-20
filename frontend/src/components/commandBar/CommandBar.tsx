@@ -18,7 +18,9 @@ import {
   quickBook,
   createTask,
   addNote,
+  askAdvisor,
   fetchActiveTimer,
+  fetchAiSettings,
   fetchCustomers,
 } from "../../api/client";
 
@@ -48,6 +50,8 @@ const HELP_TEXT = [
   "  note <title>",
   "  customer list",
   "  customer add <name>",
+  "  ask <question>",
+  "  clear",
   "  help",
 ].join("\n");
 
@@ -197,6 +201,30 @@ function parseCommand(
     };
   }
 
+  if (cmd === "ask") {
+    const question = tokens.slice(1).join(" ");
+    if (!question) {
+      return "Usage: ask <question>";
+    }
+    return {
+      execute: async () => {
+        const ai = await fetchAiSettings();
+        const model = ai.advisor_model || "";
+        if (!model) {
+          return (
+            "No advisor model configured. "
+            + "Set one in Settings > AI."
+          );
+        }
+        const { answer } = await askAdvisor({
+          question,
+          model,
+        });
+        return answer;
+      },
+    };
+  }
+
   // Fallback: send to the backend CLI endpoint
   return {
     execute: async () => {
@@ -251,7 +279,7 @@ const CMD_NAMES = [
   "customer list", "customer add",
   "inbox", "note",
   "contract list", "tag list",
-  "clear", "help",
+  "ask", "clear", "help",
 ];
 
 function getCompletions(
