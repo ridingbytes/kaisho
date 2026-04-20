@@ -137,7 +137,7 @@ else
     pyinstaller --noconfirm --onefile \
         --name "kai-server-${TARGET}" \
         "${DATA[@]}" "${HIDDEN[@]}" \
-        kaisho/cli/main.py
+        kaisho_launcher.py
 
     SRC="dist/kai-server-${TARGET}${EXE_SUFFIX}"
     DST="$BIN_DIR/kai-server-${TARGET}${EXE_SUFFIX}"

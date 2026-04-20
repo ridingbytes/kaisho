@@ -57,7 +57,7 @@ pyinstaller `
     --hidden-import "uvicorn.lifespan" `
     --hidden-import "uvicorn.lifespan.on" `
     --collect-submodules "kaisho" `
-    kaisho\cli\main.py
+    kaisho_launcher.py
 Pop-Location
 
 # Move binary to Tauri binaries dir
