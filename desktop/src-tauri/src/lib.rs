@@ -54,6 +54,19 @@ async fn wait_and_navigate(handle: tauri::AppHandle) {
                     .expect("invalid URL");
                 let _ = win.navigate(url);
             }
+            // Navigate the tray window to the backend
+            // so tray.html is served correctly
+            if let Some(win) =
+                handle.get_webview_window("tray")
+            {
+                let url = Url::parse(
+                    &format!(
+                        "{}/tray.html", BACKEND_URL,
+                    ),
+                )
+                .expect("invalid tray URL");
+                let _ = win.navigate(url);
+            }
             return;
         }
     }
