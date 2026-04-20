@@ -174,11 +174,6 @@ export function TrayPanel() {
       window.removeEventListener("keydown", onKey);
   }, []);
 
-  // No auto-close on blur — the tray icon toggle
-  // and Escape key handle closing. Blur fires too
-  // aggressively on macOS when the tray icon is
-  // clicked.
-
   const isRunning =
     timer?.active === true && !!timer.start;
   const completedToday = entries.filter(
