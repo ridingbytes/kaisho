@@ -12,6 +12,7 @@ use tauri::Manager;
 
 const TRAY_ID: &str = "kaisho-tray";
 const PANEL_WIDTH: f64 = 320.0;
+const PANEL_HEIGHT: f64 = 520.0;
 
 // -----------------------------------------------------------
 // Icon bytes (embedded at compile time)
@@ -166,9 +167,11 @@ pub fn toggle_window(
 // Internal helpers
 // -----------------------------------------------------------
 
-/// Place the panel below the tray icon click position.
-/// Falls back to top-right corner of the primary
-/// monitor if no position is provided.
+/// Place the panel near the tray icon click position.
+///
+/// On macOS the menu bar is at the top, so the panel
+/// opens below the click. On Windows/Linux the taskbar
+/// is typically at the bottom, so the panel opens above.
 fn position_panel(
     win: &tauri::WebviewWindow,
     position: Option<
@@ -177,21 +180,39 @@ fn position_panel(
 ) {
     let sf = win.scale_factor().unwrap_or(2.0);
     let panel_w = PANEL_WIDTH * sf;
+    let panel_h = PANEL_HEIGHT * sf;
+
+    let screen_h = win
+        .primary_monitor()
+        .ok()
+        .flatten()
+        .map(|m| m.size().height as f64)
+        .unwrap_or(1080.0 * sf);
 
     if let Some(pos) = position {
         let x = (pos.x - panel_w / 2.0).max(0.0);
+
+        // If the click is in the lower half of the
+        // screen (Windows/Linux bottom taskbar), open
+        // the panel above the click position.
+        let y = if pos.y > screen_h / 2.0 {
+            (pos.y - panel_h).max(0.0)
+        } else {
+            pos.y
+        };
+
         let _ = win.set_position(
             tauri::Position::Physical(
                 tauri::PhysicalPosition {
                     x: x as i32,
-                    y: pos.y as i32,
+                    y: y as i32,
                 },
             ),
         );
         return;
     }
 
-    // Fallback: top-right of primary monitor
+    // Fallback: near the top-right corner
     if let Some(m) =
         win.primary_monitor().ok().flatten()
     {
