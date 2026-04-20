@@ -133,7 +133,12 @@ def _fetch_openai_compatible_models(
     """Fetch models from an OpenAI-compatible endpoint."""
     if not base_url or not api_key:
         return []
-    url = base_url.rstrip("/") + "/models"
+    base = base_url.rstrip("/")
+    # Use /v1/models unless the URL already ends in /v1
+    if base.endswith("/v1"):
+        url = base + "/models"
+    else:
+        url = base + "/v1/models"
     headers = {"Authorization": f"Bearer {api_key}"}
     req = urllib.request.Request(url, headers=headers)
     try:
