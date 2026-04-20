@@ -21,5 +21,10 @@
   "discardChanges": "\u00c4nderungen verwerfen",
   "library": "Bibliothek",
   "pathRequired": "Pfad *",
-  "line": "Zeile {{n}}"
+  "line": "Zeile {{n}}",
+  "writeHere": "Hier schreiben\u2026",
+  "rename": "Umbenennen",
+  "deleteIrreversible": "L\u00f6schen (unwiderruflich)",
+  "collapseSidebar": "Seitenleiste zuklappen",
+  "expandSidebar": "Seitenleiste aufklappen"
 }

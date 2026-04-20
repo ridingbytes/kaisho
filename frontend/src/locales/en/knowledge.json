@@ -21,5 +21,10 @@
   "discardChanges": "Discard changes",
   "library": "Library",
   "pathRequired": "Path *",
-  "line": "Line {{n}}"
+  "line": "Line {{n}}",
+  "writeHere": "Write here\u2026",
+  "rename": "Rename",
+  "deleteIrreversible": "Delete (irreversible)",
+  "collapseSidebar": "Collapse sidebar",
+  "expandSidebar": "Expand sidebar"
 }

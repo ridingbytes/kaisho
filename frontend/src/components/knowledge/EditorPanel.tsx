@@ -218,7 +218,7 @@ export function EditorPanel({
               "placeholder-stone-500",
               "focus:outline-none",
             ].join(" ")}
-            placeholder="Write here\u2026"
+            placeholder={t("writeHere")}
             spellCheck={false}
           />
         </div>

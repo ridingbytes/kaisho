@@ -38,5 +38,6 @@
   "run": "Starten",
   "noHistoryYet": "Noch kein Verlauf.",
   "saving": "Speichern\u2026",
-  "creating": "Erstellen\u2026"
+  "creating": "Erstellen\u2026",
+  "jobNamePlaceholder": "z.B. T\u00e4gliches Briefing"
 }

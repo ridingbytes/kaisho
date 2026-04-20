@@ -395,7 +395,7 @@ function UpdateBanner() {
 
 function AppShell() {
   useWebSocket();
-  const { i18n } = useTranslation();
+  const { t: tc, i18n } = useTranslation("common");
   const [view, setView] = useState<View>(viewFromHash);
   const [pendingSearch, setPendingSearch] = useState("");
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -758,7 +758,7 @@ function AppShell() {
                         }
                         if (e.key === "Escape") setNewProfInput("");
                       }}
-                      placeholder="Profile name"
+                      placeholder={tc("name")}
                       className="w-full px-2 py-1 rounded text-xs bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
                     />
                   ) : (

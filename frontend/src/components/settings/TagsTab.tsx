@@ -22,6 +22,7 @@ import { fieldCls, inputCls } from "./styles";
 // -----------------------------------------------------------------
 
 function TagRow({ tag }: { tag: ConfigTag }) {
+  const { t: tc } = useTranslation("common");
   const [editing, setEditing] = useState(false);
   const [color, setColor] = useState(tag.color);
   const [description, setDescription] = useState(
@@ -59,7 +60,7 @@ function TagRow({ tag }: { tag: ConfigTag }) {
             if (e.key === "Escape") setEditing(false);
           }}
           className={`${fieldCls} flex-1`}
-          placeholder="Description"
+          placeholder={tc("description")}
         />
         <button
           onClick={() => setEditing(false)}
@@ -120,6 +121,7 @@ function AddTagForm({
 }: {
   onDone: () => void;
 }) {
+  const { t: tc } = useTranslation("common");
   const [name, setName] = useState("");
   const [color, setColor] = useState("#64748b");
   const [description, setDescription] = useState("");
@@ -151,14 +153,14 @@ function AddTagForm({
         value={name}
         onChange={(e) => setName(e.target.value)}
         className={`${fieldCls} w-28`}
-        placeholder="Name"
+        placeholder={tc("name")}
       />
       <input
         type="text"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         className={`${fieldCls} flex-1`}
-        placeholder="Description"
+        placeholder={tc("description")}
       />
       <button
         type="button"

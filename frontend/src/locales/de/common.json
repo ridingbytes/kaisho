@@ -99,5 +99,7 @@
   "noEntries": "Keine Eintr\u00e4ge",
   "noItems": "Keine Eintr\u00e4ge.",
   "knowledge": "Wissensbasis",
-  "todo": "Aufgabe"
+  "todo": "Aufgabe",
+  "filterHint": "Filter (Regex, Gross-/Kleinschreibung egal; Komma trennt ODER-Begriffe)",
+  "filterInvalid": "Ung\u00fcltiger Regex \u2014 Filter wird ignoriert"
 }

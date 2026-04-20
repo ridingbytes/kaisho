@@ -24,5 +24,7 @@
   "cronJobs": "Cron Jobs",
   "searchTasks": "Search tasks...",
   "addText": "Add text...",
-  "removeFilter": "Remove {{prefix}} filter"
+  "removeFilter": "Remove {{prefix}} filter",
+  "goToOrCreate": "Go to or create\u2026",
+  "noResults": "No results."
 }

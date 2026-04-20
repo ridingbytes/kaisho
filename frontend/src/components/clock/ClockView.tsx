@@ -98,6 +98,7 @@ function FilterInput({
   value,
   onChange,
 }: FilterInputProps) {
+  const { t: tc } = useTranslation("common");
   const valid = isValidQuery(value);
   return (
     <div className="relative">
@@ -105,13 +106,11 @@ function FilterInput({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Filter…"
+        placeholder={tc("filter")}
         title={
           valid
-            ? "Filter (case-insensitive regex; " +
-              "comma separates OR terms)"
-            : "Invalid regex \u2014 filter is ignored " +
-              "until you fix it"
+            ? tc("filterHint")
+            : tc("filterInvalid")
         }
         className={[
           "w-full px-2 py-0.5 rounded text-[11px]",

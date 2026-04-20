@@ -142,7 +142,7 @@ export function CommandPalette({ onNavigate, onClose }: Props) {
             <input
               ref={inputRef}
               type="text"
-              placeholder="Go to or create…"
+              placeholder={t("goToOrCreate")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}

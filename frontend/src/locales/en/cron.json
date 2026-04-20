@@ -38,5 +38,6 @@
   "run": "Run",
   "noHistoryYet": "No history yet.",
   "saving": "Saving\u2026",
-  "creating": "Creating\u2026"
+  "creating": "Creating\u2026",
+  "jobNamePlaceholder": "e.g. Daily Briefing"
 }

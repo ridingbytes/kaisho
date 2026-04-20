@@ -99,5 +99,7 @@
   "noEntries": "No entries",
   "noItems": "No items.",
   "knowledge": "Knowledge",
-  "todo": "Todo"
+  "todo": "Todo",
+  "filterHint": "Filter (case-insensitive regex; comma separates OR terms)",
+  "filterInvalid": "Invalid regex -- filter is ignored until you fix it"
 }

@@ -363,7 +363,7 @@ function NoteRow({
                 <CustomerAutocomplete
                   value={editCustomer}
                   onChange={setEditCustomer}
-                  placeholder="Customer"
+                  placeholder={tc("customer")}
                   className="w-32 shrink-0"
                   inputClassName={`w-full ${smallFieldCls}`}
                 />
@@ -608,7 +608,7 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
         <CustomerAutocomplete
           value={customer}
           onChange={setCustomer}
-          placeholder="Customer"
+          placeholder={tc("customer")}
           className="w-36 shrink-0"
           inputClassName={`w-full ${fieldCls}`}
         />

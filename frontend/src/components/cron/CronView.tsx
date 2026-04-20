@@ -602,7 +602,7 @@ function AddJobForm({
             className={fieldCls}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Daily Briefing"
+            placeholder={t("jobNamePlaceholder")}
             required
           />
         </label>
