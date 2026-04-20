@@ -297,9 +297,9 @@ def _parse_model(model_str: str) -> tuple[str, str]:
     if ":" in model_str:
         provider, name = model_str.split(":", 1)
         if provider in (
-            "ollama", "claude", "claude_cli",
-            "lm_studio", "openrouter", "openai",
-            "kaisho",
+            "ollama", "ollama_cloud", "claude",
+            "claude_cli", "lm_studio", "openrouter",
+            "openai", "kaisho",
         ):
             return provider, name
     return "ollama", model_str
@@ -643,6 +643,7 @@ def ask(
     github_issues: list[dict],
     ollama_base_url: str,
     ollama_api_key: str = "",
+    ollama_cloud_url: str = "",
     lm_studio_base_url: str = "",
     claude_api_key: str = "",
     openrouter_base_url: str = "",
@@ -735,9 +736,15 @@ def ask(
             max_tokens=4096,
             on_event=on_event,
         )
+    if provider == "ollama_cloud":
+        answer = ask_ollama(
+            model_name, prompt, ollama_cloud_url,
+            api_key=ollama_api_key,
+            system_prompt=sp, on_event=on_event,
+        )
+        return _strip_model_prefix(answer, model_name)
     answer = ask_ollama(
         model_name, prompt, ollama_base_url,
-        api_key=ollama_api_key,
         system_prompt=sp, on_event=on_event,
     )
     return _strip_model_prefix(answer, model_name)

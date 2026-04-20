@@ -72,9 +72,12 @@ def _collect_advisor_context(backend) -> dict:
 def _ai_provider_kwargs(ai: dict) -> dict:
     """Extract AI provider connection settings."""
     return {
-        "ollama_base_url": ai["ollama_url"],
+        "ollama_base_url": ai.get("ollama_url", ""),
         "ollama_api_key": ai.get(
             "ollama_api_key", "",
+        ),
+        "ollama_cloud_url": ai.get(
+            "ollama_cloud_url", "",
         ),
         "lm_studio_base_url": ai.get(
             "lm_studio_url", "",
