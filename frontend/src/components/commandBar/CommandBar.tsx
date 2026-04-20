@@ -215,23 +215,7 @@ function parseCommand(
     if (!question) {
       return "Usage: ask <question>";
     }
-    return {
-      execute: async () => {
-        const ai = await fetchAiSettings();
-        const model = ai.advisor_model || "";
-        if (!model) {
-          return (
-            "No advisor model configured. "
-            + "Set one in Settings > AI."
-          );
-        }
-        const { answer } = await askAdvisor({
-          question,
-          model,
-        });
-        return answer;
-      },
-    };
+    return "__ASK__";
   }
 
   // Fallback: send to the backend CLI endpoint
@@ -367,6 +351,7 @@ export function CommandBar({ open, onClose }: Props) {
     HistoryEntry[]
   >([]);
   const [histIdx, setHistIdx] = useState(-1);
+  const [loading, setLoading] = useState(false);
   const [customerNames, setCustomerNames] = useState<
     string[]
   >([]);
@@ -417,6 +402,75 @@ export function CommandBar({ open, onClose }: Props) {
         return;
       }
 
+      if (result === "__ASK__") {
+        const question = trimmed
+          .replace(/^ask\s+/i, "");
+        // Build conversation history from
+        // previous ask Q&A pairs
+        const chatHistory = history
+          .filter((h) =>
+            h.input.toLowerCase()
+              .startsWith("ask "),
+          )
+          .flatMap((h) => [
+            {
+              role: "user",
+              text: h.input.replace(
+                /^ask\s+/i, "",
+              ),
+            },
+            { role: "assistant", text: h.output },
+          ]);
+        setLoading(true);
+        try {
+          const ai = await fetchAiSettings();
+          const model = ai.advisor_model || "";
+          if (!model) {
+            setHistory((h) => [
+              ...h,
+              {
+                input: trimmed,
+                output:
+                  "No advisor model configured."
+                  + " Set one in Settings > AI.",
+                error: true,
+                ts: now(),
+              },
+            ]);
+            return;
+          }
+          const { answer } = await askAdvisor({
+            question,
+            model,
+            history: chatHistory,
+          });
+          setHistory((h) => [
+            ...h,
+            {
+              input: trimmed,
+              output: answer,
+              ts: now(),
+            },
+          ]);
+        } catch (err) {
+          const msg = err instanceof Error
+            ? err.message
+            : String(err);
+          setHistory((h) => [
+            ...h,
+            {
+              input: trimmed,
+              output: msg,
+              error: true,
+              ts: now(),
+            },
+          ]);
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
       if (typeof result === "string") {
         setHistory((h) => [
           ...h,
@@ -429,6 +483,7 @@ export function CommandBar({ open, onClose }: Props) {
         return;
       }
 
+      setLoading(true);
       try {
         const output = await result.execute();
         setHistory((h) => [
@@ -439,7 +494,6 @@ export function CommandBar({ open, onClose }: Props) {
             ts: now(),
           },
         ]);
-        // Invalidate relevant caches
         for (const key of [
           "clocks", "tasks", "inbox",
           "notes", "customers", "dashboard",
@@ -461,6 +515,8 @@ export function CommandBar({ open, onClose }: Props) {
             ts: now(),
           },
         ]);
+      } finally {
+        setLoading(false);
       }
     },
     [qc],
@@ -558,7 +614,7 @@ export function CommandBar({ open, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* History */}
-        {history.length > 0 && (
+        {(history.length > 0 || loading) && (
           <div className="flex-1 overflow-y-auto px-4 pt-3 pb-1 font-mono text-xs">
             {history.map((h, i) => (
               <div key={i} className="mb-2">
@@ -586,6 +642,14 @@ export function CommandBar({ open, onClose }: Props) {
                 </pre>
               </div>
             ))}
+            {loading && (
+              <div className="flex items-center gap-2 pl-4 py-1 text-stone-400">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-cta animate-pulse" />
+                <span className="text-[10px] italic">
+                  Thinking...
+                </span>
+              </div>
+            )}
             <div ref={bottomRef} />
           </div>
         )}
