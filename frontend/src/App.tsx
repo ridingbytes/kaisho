@@ -12,6 +12,7 @@ import {
   Settings,
   Smartphone,
   Sun,
+  Terminal,
   X,
 } from "lucide-react";
 import ReactDOM from "react-dom";
@@ -35,6 +36,7 @@ import { useEffect, useRef, useState } from "react";
 import type { AdvisorMessage } from "./components/advisor/AdvisorView";
 import { AdvisorView } from "./components/advisor/AdvisorView";
 import { CommandPalette } from "./components/commandPalette/CommandPalette";
+import { CommandBar } from "./components/commandBar/CommandBar";
 import { ClockWidget } from "./components/clock/ClockWidget";
 import { ClockView } from "./components/clock/ClockView";
 import { CronView } from "./components/cron/CronView";
@@ -399,6 +401,7 @@ function AppShell() {
   const [view, setView] = useState<View>(viewFromHash);
   const [pendingSearch, setPendingSearch] = useState("");
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [cmdBarOpen, setCmdBarOpen] = useState(false);
   const { config } = useShortcutsContext();
   const { data: currentUser } = useCurrentUser();
   const switchProf = useSwitchProfile();
@@ -515,6 +518,15 @@ function AppShell() {
     function handleKeyDown(e: KeyboardEvent) {
       // Skip if another handler already consumed the event
       if (e.defaultPrevented) return;
+      // Command bar: Cmd+K / Ctrl+K
+      if (
+        (e.metaKey || e.ctrlKey)
+        && e.key === "k"
+      ) {
+        e.preventDefault();
+        setCmdBarOpen((v) => !v);
+        return;
+      }
       // Command palette shortcut (always active)
       if (matchesShortcut(e, config.commandPalette)) {
         e.preventDefault();
@@ -526,8 +538,8 @@ function AppShell() {
         setPaletteOpen(false);
         return;
       }
-      // Shortcuts — ignore when palette is open or input focused
-      if (paletteOpen) return;
+      // Shortcuts — ignore when palette or cmd bar open
+      if (paletteOpen || cmdBarOpen) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (["INPUT", "TEXTAREA", "SELECT"].includes(tag)) return;
 
@@ -672,6 +684,13 @@ function AppShell() {
             title="Time tracking"
           >
             <Clock size={16} />
+          </button>
+          <button
+            onClick={() => setCmdBarOpen((v) => !v)}
+            className={headerBtn}
+            title="Command bar (Cmd+K)"
+          >
+            <Terminal size={14} />
           </button>
           <button
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
@@ -882,6 +901,11 @@ function AppShell() {
           onClose={() => setPaletteOpen(false)}
         />
       )}
+
+      <CommandBar
+        open={cmdBarOpen}
+        onClose={() => setCmdBarOpen(false)}
+      />
     </div>
   );
 }
