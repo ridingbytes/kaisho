@@ -18,6 +18,7 @@ DEFAULT_INBOX_CHANNELS: list[str] = [
 
 DEFAULT_AI: dict = {
     "ollama_url": "",
+    "ollama_cloud_url": "",
     "ollama_api_key": "",
     "lm_studio_url": "",
     "claude_api_key": "",

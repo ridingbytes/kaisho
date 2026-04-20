@@ -57,19 +57,13 @@ _CLAUDE_API_MODELS = [
 ]
 
 
-def _fetch_ollama_models(
-    base_url: str, api_key: str = "",
-) -> list[str]:
-    """Fetch available model names from Ollama.
+def _fetch_ollama_models(base_url: str) -> list[str]:
+    """Fetch available model names from local Ollama.
 
-    Tries the native ``/api/tags`` endpoint first
-    (local Ollama). If that fails and an API key is
-    set, falls back to the OpenAI-compatible
-    ``/v1/models`` endpoint (Ollama Cloud / remote).
+    Uses the native ``/api/tags`` endpoint.
     """
     if not base_url:
         return []
-    # Try native Ollama endpoint first
     url = base_url.rstrip("/") + "/api/tags"
     try:
         with urllib.request.urlopen(
@@ -84,12 +78,21 @@ def _fetch_ollama_models(
         urllib.error.URLError, OSError,
         KeyError, ValueError,
     ):
-        pass
-    # Fallback: OpenAI-compatible endpoint with key
-    if not api_key:
+        return []
+
+
+def _fetch_ollama_cloud_models(
+    base_url: str, api_key: str,
+) -> list[str]:
+    """Fetch available model names from Ollama Cloud.
+
+    Uses the OpenAI-compatible ``/v1/models`` endpoint
+    and prefixes results with ``ollama_cloud:``.
+    """
+    if not base_url or not api_key:
         return []
     return _fetch_openai_compatible_models(
-        base_url, api_key, "ollama",
+        base_url, api_key, "ollama_cloud",
     )
 
 
@@ -143,6 +146,7 @@ def _fetch_openai_compatible_models(
 
 class AiSettingsUpdate(BaseModel):
     ollama_url: str | None = None
+    ollama_cloud_url: str | None = None
     ollama_api_key: str | None = None
     lm_studio_url: str | None = None
     claude_api_key: str | None = None
@@ -183,6 +187,9 @@ def list_models():
     models: list[str] = []
     models += _fetch_ollama_models(
         ai.get("ollama_url", ""),
+    )
+    models += _fetch_ollama_cloud_models(
+        ai.get("ollama_cloud_url", ""),
         ai.get("ollama_api_key", ""),
     )
     models += _fetch_lm_studio_models(
@@ -242,7 +249,10 @@ def probe_providers():
     return {
         "ollama": _probe_url(
             ai.get("ollama_url", ""),
-            ai.get("ollama_api_key", ""),
+        ),
+        "ollama_cloud": bool(
+            ai.get("ollama_cloud_url")
+            and ai.get("ollama_api_key")
         ),
         "lm_studio": _probe_url(
             ai.get("lm_studio_url", ""),

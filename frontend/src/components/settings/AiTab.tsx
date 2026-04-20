@@ -478,6 +478,7 @@ export function AiSection(): JSX.Element {
 
   const [form, setForm] = useState<AiSettings>({
     ollama_url: "",
+    ollama_cloud_url: "",
     ollama_api_key: "",
     lm_studio_url: "",
     claude_api_key: "",
@@ -594,59 +595,15 @@ export function AiSection(): JSX.Element {
               <span className="text-xs text-stone-700 w-32 shrink-0">
                 {t("ollamaLabel")}
               </span>
-              <div className="flex-1 flex gap-2">
-                <select
-                  value={
-                    form.ollama_url ===
-                      "https://api.ollama.com"
-                      ? "cloud"
-                      : form.ollama_url ===
-                          "http://localhost:11434" ||
-                        !form.ollama_url
-                        ? "local"
-                        : "custom"
-                  }
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === "local") {
-                      set(
-                        "ollama_url",
-                        "http://localhost:11434",
-                      );
-                    } else if (v === "cloud") {
-                      set(
-                        "ollama_url",
-                        "https://api.ollama.com",
-                      );
-                    }
-                  }}
-                  className={
-                    "w-24 shrink-0 px-2 py-1.5 " +
-                    "rounded border border-border " +
-                    "bg-surface-card text-xs " +
-                    "text-stone-700"
-                  }
-                >
-                  <option value="local">
-                    {t("optionLocal")}
-                  </option>
-                  <option value="cloud">
-                    {t("optionCloud")}
-                  </option>
-                  <option value="custom">
-                    {t("optionCustom")}
-                  </option>
-                </select>
-                <input
-                  type="text"
-                  value={form.ollama_url}
-                  onChange={(e) =>
-                    set("ollama_url", e.target.value)
-                  }
-                  placeholder="http://localhost:11434"
-                  className={inputCls}
-                />
-              </div>
+              <input
+                type="text"
+                value={form.ollama_url}
+                onChange={(e) =>
+                  set("ollama_url", e.target.value)
+                }
+                placeholder="http://localhost:11434"
+                className={inputCls}
+              />
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
@@ -677,6 +634,7 @@ export function AiSection(): JSX.Element {
             {probe && (
               <div className="flex items-center gap-1.5">
                 {[
+                  ["ollama_cloud", "Ollama Cloud"],
                   ["claude", "Claude"],
                   ["openrouter", "OpenRouter"],
                   ["openai", "OpenAI"],
@@ -712,18 +670,18 @@ export function AiSection(): JSX.Element {
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
-                {t("claudeApiKey")}
+                {t("ollamaCloudUrl")}
               </span>
               <input
-                type="password"
-                value={form.claude_api_key}
+                type="text"
+                value={form.ollama_cloud_url}
                 onChange={(e) =>
                   set(
-                    "claude_api_key",
+                    "ollama_cloud_url",
                     e.target.value,
                   )
                 }
-                placeholder="sk-ant-..."
+                placeholder="https://ollama.com"
                 className={inputCls}
               />
             </label>
@@ -743,6 +701,23 @@ export function AiSection(): JSX.Element {
                 placeholder={t(
                   "ollamaCloudKeyPlaceholder",
                 )}
+                className={inputCls}
+              />
+            </label>
+            <label className="flex items-center gap-3">
+              <span className="text-xs text-stone-700 w-32 shrink-0">
+                {t("claudeApiKey")}
+              </span>
+              <input
+                type="password"
+                value={form.claude_api_key}
+                onChange={(e) =>
+                  set(
+                    "claude_api_key",
+                    e.target.value,
+                  )
+                }
+                placeholder="sk-ant-..."
                 className={inputCls}
               />
             </label>

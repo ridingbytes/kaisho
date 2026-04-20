@@ -918,6 +918,15 @@ def _trigger_cron_job(job_id: str) -> dict:
                     Path(__file__).parent.parent.parent
                 ),
                 ollama_base_url=ai["ollama_url"],
+                ollama_api_key=ai.get(
+                    "ollama_api_key", "",
+                ),
+                ollama_cloud_url=ai.get(
+                    "ollama_cloud_url", "",
+                ),
+                ollama_cloud_api_key=ai.get(
+                    "ollama_api_key", "",
+                ),
                 lm_studio_base_url=ai.get(
                     "lm_studio_url", "",
                 ),

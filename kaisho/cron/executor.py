@@ -191,7 +191,8 @@ def _parse_model(model_str: str) -> tuple[str, str]:
     if ":" in model_str:
         provider, name = model_str.split(":", 1)
         if provider in (
-            "ollama", "claude", "claude_cli",
+            "ollama", "ollama_cloud",
+            "claude", "claude_cli",
             "lm_studio", "openrouter", "openai",
             "kaisho",
         ):
@@ -525,6 +526,8 @@ def _run_claude_cli(
 def verify_model(
     model_str: str,
     ollama_base_url: str = "",
+    ollama_cloud_url: str = "",
+    ollama_cloud_api_key: str = "",
     lm_studio_base_url: str = "",
     claude_api_key: str = "",
     openrouter_api_key: str = "",
@@ -545,7 +548,17 @@ def verify_model(
             with urllib.request.urlopen(url, timeout=3):
                 return None
         except (urllib.error.URLError, OSError):
-            return f"Ollama not reachable at {ollama_base_url}"
+            return (
+                f"Ollama not reachable at "
+                f"{ollama_base_url}"
+            )
+
+    if provider == "ollama_cloud":
+        if not ollama_cloud_url:
+            return "Ollama Cloud URL not configured"
+        if not ollama_cloud_api_key:
+            return "Ollama Cloud API key not configured"
+        return None
 
     if provider == "lm_studio":
         if not lm_studio_base_url:
@@ -591,6 +604,8 @@ def _dispatch_prompt(
     claude_api_key: str = "",
     ollama_base_url: str = "",
     ollama_api_key: str = "",
+    ollama_cloud_url: str = "",
+    ollama_cloud_api_key: str = "",
     lm_studio_base_url: str = "",
     openrouter_base_url: str = "",
     openrouter_api_key: str = "",
@@ -653,9 +668,15 @@ def _dispatch_prompt(
         return run_prompt_openai_compatible(
             model_name, prompt, base, key,
         )
-    # Default: Ollama
+    if provider == "ollama_cloud":
+        return run_prompt_ollama(
+            model_name, prompt,
+            ollama_cloud_url, ollama_cloud_api_key,
+        )
+    # Default: local Ollama
     return run_prompt_ollama(
-        model_name, prompt, ollama_base_url, ollama_api_key,
+        model_name, prompt,
+        ollama_base_url, ollama_api_key,
     )
 
 
@@ -664,6 +685,8 @@ def execute_job(
     project_root: Path,
     ollama_base_url: str,
     ollama_api_key: str = "",
+    ollama_cloud_url: str = "",
+    ollama_cloud_api_key: str = "",
     lm_studio_base_url: str = "",
     claude_api_key: str = "",
     openrouter_base_url: str = "",
@@ -700,6 +723,8 @@ def execute_job(
         err = verify_model(
             job.get("model", ""),
             ollama_base_url=ollama_base_url,
+            ollama_cloud_url=ollama_cloud_url,
+            ollama_cloud_api_key=ollama_cloud_api_key,
             lm_studio_base_url=lm_studio_base_url,
             claude_api_key=claude_api_key,
             openrouter_api_key=openrouter_api_key,
@@ -719,6 +744,8 @@ def execute_job(
         claude_api_key=claude_api_key,
         ollama_base_url=ollama_base_url,
         ollama_api_key=ollama_api_key,
+        ollama_cloud_url=ollama_cloud_url,
+        ollama_cloud_api_key=ollama_cloud_api_key,
         lm_studio_base_url=lm_studio_base_url,
         openrouter_base_url=openrouter_base_url,
         openrouter_api_key=openrouter_api_key,

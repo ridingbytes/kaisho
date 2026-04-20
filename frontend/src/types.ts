@@ -46,6 +46,7 @@ export interface Settings {
 
 export interface AiSettings {
   ollama_url: string;
+  ollama_cloud_url: string;
   ollama_api_key: string;
   lm_studio_url: string;
   claude_api_key: string;
