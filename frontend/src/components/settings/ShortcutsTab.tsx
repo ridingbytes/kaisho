@@ -312,6 +312,20 @@ export function ShortcutsSection(): JSX.Element {
           label: tn("commandPalette"),
         },
       ])}
+
+      {/* Command bar — fixed shortcut, not editable */}
+      <h3 className="text-[10px] font-semibold tracking-wider uppercase text-stone-500 mt-4 mb-1.5">
+        Command Bar
+      </h3>
+      <div className="flex items-center gap-3 py-1">
+        <span className="text-xs text-stone-700 w-40">
+          Command Bar
+        </span>
+        <kbd className="text-[10px] font-mono text-stone-700 border border-border rounded px-1.5 py-0.5">
+          {displayShortcut("mod+j")}
+        </kbd>
+      </div>
+
       {renderGroup(t("navigate"), SHORTCUT_ROWS)}
       {renderGroup(t("actions"), ACTION_ROWS)}
       <p className="mt-2 text-[10px] text-stone-400">

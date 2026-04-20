@@ -579,6 +579,9 @@ export function CommandBar({ open, onClose }: Props) {
               className="flex-1 bg-transparent text-sm font-mono text-stone-900 placeholder-stone-400 focus:outline-none"
               autoFocus
             />
+            <span className="text-[9px] text-stone-400 whitespace-nowrap shrink-0">
+              Tab &#x21e5; &nbsp; ESC &#x2715;
+            </span>
             <button
               onClick={onClose}
               className="p-1 rounded text-stone-400 hover:text-stone-700 transition-colors"
