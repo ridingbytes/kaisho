@@ -91,44 +91,52 @@ fn toggle_tray_window(app: &tauri::AppHandle) {
         if win.is_visible().unwrap_or(false) {
             let _ = win.hide();
         } else {
-            // Try to position below the tray icon.
-            // The positioner plugin may panic if the
-            // tray position hasn't been set yet, so
-            // catch that and fall back to top-right.
-            #[cfg(target_os = "macos")]
-            {
-                use tauri_plugin_positioner::{
-                    Position, WindowExt,
-                };
-                let w = win.clone();
-                let ok = std::panic::catch_unwind(
-                    std::panic::AssertUnwindSafe(|| {
-                        w.move_window(
-                            Position::TrayBottomCenter,
-                        )
-                    }),
-                );
-                if ok.is_err() {
+            // Position below the tray icon. Use the
+            // positioner plugin, with a fallback to
+            // top-right if it panics (tray position
+            // not yet reported by macOS).
+            let positioned = {
+                #[cfg(target_os = "macos")]
+                {
+                    use tauri_plugin_positioner::{
+                        Position, WindowExt,
+                    };
+                    let w = win.clone();
+                    std::panic::catch_unwind(
+                        std::panic::AssertUnwindSafe(
+                            || {
+                                w.move_window(
+                                    Position::TrayBottomCenter,
+                                )
+                            },
+                        ),
+                    )
+                    .is_ok()
+                }
+                #[cfg(not(target_os = "macos"))]
+                {
+                    false
+                }
+            };
+            if !positioned {
+                // Fallback: top-right of primary monitor
+                if let Some(m) = win.primary_monitor()
+                    .ok().flatten()
+                {
+                    let s = m.size();
+                    let sf = win.scale_factor()
+                        .unwrap_or(1.0);
+                    let x = (s.width as f64 / sf)
+                        as i32 - 340;
                     let _ = win.set_position(
-                        tauri::Position::Physical(
-                            tauri::PhysicalPosition {
-                                x: 1000,
-                                y: 30,
+                        tauri::Position::Logical(
+                            tauri::LogicalPosition {
+                                x: x as f64,
+                                y: 30.0,
                             },
                         ),
                     );
                 }
-            }
-            #[cfg(not(target_os = "macos"))]
-            {
-                let _ = win.set_position(
-                    tauri::Position::Physical(
-                        tauri::PhysicalPosition {
-                            x: 0,
-                            y: 0,
-                        },
-                    ),
-                );
             }
             let _ = win.show();
             let _ = win.set_focus();
@@ -395,6 +403,7 @@ pub fn run() {
                 .icon_as_template(true)
                 .tooltip("Kaisho — no active timer")
                 .menu(&menu)
+                .menu_on_left_click(false)
                 .on_menu_event(move |_app, event| {
                     match event.id().as_ref() {
                         "open" => {
