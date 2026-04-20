@@ -44,5 +44,16 @@
   "deleteEntry": "Delete entry",
   "detachFromTask": "Detach from task",
   "inv": "inv",
-  "noClockEntries": "No clock entries"
+  "noClockEntries": "No clock entries",
+  "quickStart": "Quick Start",
+  "quickCapture": "Quick Capture",
+  "recentEntries": "Recent",
+  "noEntriesToday": "No entries today",
+  "openKaisho": "Open Kaisho",
+  "captured": "Captured!",
+  "captureFailed": "Capture failed",
+  "captureText": "Type something...",
+  "inbox": "Inbox",
+  "note": "Note",
+  "task": "Task"
 }

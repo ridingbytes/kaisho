@@ -2,12 +2,17 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Default capabilities for the Kaisho desktop app.",
-  "windows": ["main"],
+  "windows": ["main", "tray"],
   "remote": {
     "urls": ["http://127.0.0.1:8765/*"]
   },
   "permissions": [
     "core:default",
+    "core:window:default",
+    "core:window:allow-show",
+    "core:window:allow-hide",
+    "core:window:allow-set-focus",
+    "core:window:allow-close",
     "shell:allow-spawn",
     "shell:allow-kill",
     "shell:allow-stdin-write",
@@ -25,6 +30,9 @@
     "dialog:allow-save",
     "fs:default",
     "fs:allow-write-text-file",
-    "process:default"
+    "process:default",
+    "global-shortcut:allow-register",
+    "global-shortcut:allow-unregister",
+    "positioner:default"
   ]
 }

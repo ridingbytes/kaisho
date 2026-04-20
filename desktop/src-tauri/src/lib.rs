@@ -2,7 +2,12 @@ use std::net::TcpStream;
 use std::sync::Mutex;
 use std::time::Duration;
 
-use tauri::{Manager, RunEvent, State, WindowEvent};
+use tauri::image::Image;
+use tauri::menu::{MenuBuilder, MenuItemBuilder};
+use tauri::tray::TrayIconBuilder;
+use tauri::{
+    Emitter, Manager, RunEvent, State, WindowEvent,
+};
 use tauri::Url;
 use tauri_plugin_shell::process::{
     CommandChild, CommandEvent,
@@ -64,6 +69,106 @@ async fn wait_and_navigate(handle: tauri::AppHandle) {
     }
 }
 
+/// Toggle the tray popover window visibility and
+/// position it below the tray icon.
+fn toggle_tray_window(app: &tauri::AppHandle) {
+    if let Some(win) =
+        app.get_webview_window("tray")
+    {
+        if win.is_visible().unwrap_or(false) {
+            let _ = win.hide();
+        } else {
+            // Position near top-right (menu bar area)
+            let _ = win.set_position(
+                tauri::Position::Physical(
+                    tauri::PhysicalPosition {
+                        x: 0,
+                        y: 0,
+                    },
+                ),
+            );
+            // Use the positioner plugin if available,
+            // otherwise let the OS place it
+            #[cfg(target_os = "macos")]
+            {
+                use tauri_plugin_positioner::{
+                    Position, WindowExt,
+                };
+                let _ = win.move_window(
+                    Position::TrayBottomCenter,
+                );
+            }
+            let _ = win.show();
+            let _ = win.set_focus();
+        }
+    }
+}
+
+/// IPC command: update the tray icon based on timer
+/// state. Called from the tray panel JS after each
+/// poll cycle.
+#[tauri::command]
+fn update_tray_icon(
+    app: tauri::AppHandle,
+    state: String,
+    tooltip: String,
+) {
+    let icon_path = match state.as_str() {
+        "active" => {
+            include_bytes!("../icons/tray-active.png")
+                .as_slice()
+        }
+        "long" => {
+            include_bytes!("../icons/tray-long.png")
+                .as_slice()
+        }
+        "offline" => {
+            include_bytes!("../icons/tray-offline.png")
+                .as_slice()
+        }
+        _ => {
+            include_bytes!("../icons/tray-idle.png")
+                .as_slice()
+        }
+    };
+
+    if let Some(tray) = app.tray_by_id("kaisho-tray") {
+        if let Ok(img) = Image::from_bytes(icon_path) {
+            let _ = tray.set_icon(Some(img));
+        }
+        let _ = tray.set_tooltip(Some(&tooltip));
+    }
+}
+
+/// IPC command: hide the tray popover window.
+#[tauri::command]
+fn hide_tray_window(app: tauri::AppHandle) {
+    if let Some(win) =
+        app.get_webview_window("tray")
+    {
+        let _ = win.hide();
+    }
+}
+
+/// IPC command: show (focus) the main window.
+#[tauri::command]
+fn show_main_window(app: tauri::AppHandle) {
+    if let Some(win) =
+        app.get_webview_window("main")
+    {
+        let _ = win.show();
+        let _ = win.set_focus();
+    }
+}
+
+/// IPC command: toggle the timer (start or stop).
+/// Emits an event to the tray panel so it can
+/// call the API.
+#[tauri::command]
+fn toggle_timer(app: tauri::AppHandle) {
+    let _ = app.emit("toggle-timer", ());
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -74,7 +179,19 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_positioner::init())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .build(),
+        )
+        .invoke_handler(tauri::generate_handler![
+            update_tray_icon,
+            hide_tray_window,
+            show_main_window,
+            toggle_timer,
+        ])
         .setup(|app| {
+            // -- Sidecar ---------------------------------
             let shell = app.shell();
             let (mut rx, child) = shell
                 .sidecar("kai-server")
@@ -133,11 +250,142 @@ pub fn run() {
                 }
             });
 
+            // -- System tray -----------------------------
+            let handle = app.handle().clone();
+
+            let open_i = MenuItemBuilder::with_id(
+                "open", "Open Kaisho",
+            )
+            .build(app)?;
+            let toggle_i = MenuItemBuilder::with_id(
+                "toggle_timer", "Start / Stop Timer",
+            )
+            .build(app)?;
+            let quit_i = MenuItemBuilder::with_id(
+                "quit", "Quit",
+            )
+            .build(app)?;
+
+            let menu = MenuBuilder::new(app)
+                .item(&open_i)
+                .item(&toggle_i)
+                .separator()
+                .item(&quit_i)
+                .build()?;
+
+            let icon = Image::from_bytes(
+                include_bytes!("../icons/tray-idle.png"),
+            )?;
+
+            let handle_menu = handle.clone();
+            let handle_click = handle.clone();
+
+            TrayIconBuilder::with_id("kaisho-tray")
+                .icon(icon)
+                .icon_as_template(true)
+                .tooltip("Kaisho — no active timer")
+                .menu(&menu)
+                .on_menu_event(move |_app, event| {
+                    match event.id().as_ref() {
+                        "open" => {
+                            show_main_window(
+                                handle_menu.clone(),
+                            );
+                        }
+                        "toggle_timer" => {
+                            toggle_timer(
+                                handle_menu.clone(),
+                            );
+                        }
+                        "quit" => {
+                            std::process::exit(0);
+                        }
+                        _ => {}
+                    }
+                })
+                .on_tray_icon_event(
+                    move |_tray, event| {
+                        if let tauri::tray::TrayIconEvent::Click {
+                            button: tauri::tray::MouseButton::Left,
+                            ..
+                        } = event
+                        {
+                            toggle_tray_window(
+                                &handle_click,
+                            );
+                        }
+                    },
+                )
+                .build(app)?;
+
+            // -- Global shortcuts ------------------------
+            use tauri_plugin_global_shortcut::{
+                GlobalShortcutExt, Shortcut,
+            };
+
+            let handle_sc = app.handle().clone();
+
+            // Cmd+Shift+T — toggle tray popover
+            if let Ok(sc) =
+                "CommandOrControl+Shift+T".parse::<Shortcut>()
+            {
+                let h = handle_sc.clone();
+                let _ = app.global_shortcut().on_shortcut(
+                    sc,
+                    move |_app, _sc, _ev| {
+                        toggle_tray_window(&h);
+                    },
+                );
+            }
+
+            // Cmd+Shift+S — start/stop timer
+            if let Ok(sc) =
+                "CommandOrControl+Shift+S".parse::<Shortcut>()
+            {
+                let h = handle_sc.clone();
+                let _ = app.global_shortcut().on_shortcut(
+                    sc,
+                    move |_app, _sc, _ev| {
+                        toggle_timer(h.clone());
+                    },
+                );
+            }
+
             Ok(())
         })
         .build(tauri::generate_context!())
         .expect("error while building Kaisho")
         .run(|app_handle, event| match event {
+            RunEvent::WindowEvent {
+                label,
+                event: WindowEvent::CloseRequested {
+                    api, ..
+                },
+                ..
+            } => {
+                // When closing the main window, hide
+                // it instead of quitting — the tray
+                // stays active.
+                if label == "main" {
+                    api.prevent_close();
+                    if let Some(win) =
+                        app_handle
+                            .get_webview_window("main")
+                    {
+                        let _ = win.hide();
+                    }
+                }
+                // Tray window: just hide
+                if label == "tray" {
+                    api.prevent_close();
+                    if let Some(win) =
+                        app_handle
+                            .get_webview_window("tray")
+                    {
+                        let _ = win.hide();
+                    }
+                }
+            }
             RunEvent::WindowEvent {
                 event: WindowEvent::Destroyed,
                 ..
@@ -146,10 +394,10 @@ pub fn run() {
                     app_handle.state();
                 kill_kai(&state);
             }
-            RunEvent::ExitRequested { .. } => {
-                let state: State<KaiProcess> =
-                    app_handle.state();
-                kill_kai(&state);
+            RunEvent::ExitRequested { api, .. } => {
+                // Keep running when all windows are
+                // closed — the tray should stay alive.
+                api.prevent_exit();
             }
             RunEvent::Exit => {
                 let state: State<KaiProcess> =

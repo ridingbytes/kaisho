@@ -44,5 +44,16 @@
   "deleteEntry": "Eintrag l\u00f6schen",
   "detachFromTask": "Von Aufgabe trennen",
   "inv": "abg.",
-  "noClockEntries": "Keine Zeiteintr\u00e4ge"
+  "noClockEntries": "Keine Zeiteintr\u00e4ge",
+  "quickStart": "Schnellstart",
+  "quickCapture": "Schnellerfassung",
+  "recentEntries": "Letzte Eintr\u00e4ge",
+  "noEntriesToday": "Keine Eintr\u00e4ge heute",
+  "openKaisho": "Kaisho \u00f6ffnen",
+  "captured": "Erfasst!",
+  "captureFailed": "Erfassung fehlgeschlagen",
+  "captureText": "Etwas eingeben...",
+  "inbox": "Eingang",
+  "note": "Notiz",
+  "task": "Aufgabe"
 }
