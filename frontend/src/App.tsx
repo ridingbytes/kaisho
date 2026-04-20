@@ -518,10 +518,10 @@ function AppShell() {
     function handleKeyDown(e: KeyboardEvent) {
       // Skip if another handler already consumed the event
       if (e.defaultPrevented) return;
-      // Command bar: Cmd+K / Ctrl+K
+      // Command bar: Cmd+J / Ctrl+J
       if (
         (e.metaKey || e.ctrlKey)
-        && e.key === "k"
+        && e.key === "j"
       ) {
         e.preventDefault();
         setCmdBarOpen((v) => !v);
@@ -688,7 +688,7 @@ function AppShell() {
           <button
             onClick={() => setCmdBarOpen((v) => !v)}
             className={headerBtn}
-            title="Command bar (Cmd+K)"
+            title="Command bar (Cmd+J)"
           >
             <Terminal size={14} />
           </button>
