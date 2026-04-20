@@ -10,7 +10,6 @@ import {
   useAiSettings,
   useAvailableModels,
   useCloudSyncStatus,
-  useUpdateAiSettings,
 } from "../../hooks/useSettings";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
@@ -141,10 +140,11 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
   const { data: aiSettings } = useAiSettings();
   const { data: models = [] } = useAvailableModels();
   const { data: cloudStatus } = useCloudSyncStatus();
-  const updateAi = useUpdateAiSettings();
   const cloudAi = cloudStatus?.use_cloud_ai;
 
-  const [model, setModel] = useState("");
+  const model = cloudAi
+    ? "kaisho"
+    : (aiSettings?.advisor_model || "");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -157,13 +157,6 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
     abortRef.current = null;
     setLoading(false);
   }, []);
-
-  // Set model default once AI settings load
-  useEffect(() => {
-    if (aiSettings?.advisor_model && !model) {
-      setModel(aiSettings.advisor_model);
-    }
-  }, [aiSettings, model]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -181,13 +174,6 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
     "/reset": {
       desc: t("slashReset"),
       action: () => clearMessages(),
-    },
-    "/model": {
-      desc: t("slashModel"),
-      action: (arg) => {
-        if (arg) setModel(arg);
-        else setError("Usage: /model provider:name");
-      },
     },
     "/help": {
       desc: t("slashHelp"),
@@ -325,41 +311,29 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             <Trash2 size={13} />
           </button>
         )}
-        <div className="ml-auto flex flex-col items-end gap-0.5">
-          {cloudAi ? (
-            <span className="px-3 py-1 rounded-lg text-xs font-medium bg-cta/10 text-cta border border-cta/30">
-              {t("kaishoAi")}
-            </span>
-          ) : models.length > 0 ? (
-            <>
-              <datalist id="advisor-model-list">
-                {models.map((m) => (
-                  <option key={m} value={m} />
-                ))}
-              </datalist>
-              <input
-                type="text"
-                list="advisor-model-list"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                onBlur={() => {
-                  if (model && model !== aiSettings?.advisor_model) {
-                    updateAi.mutate({ advisor_model: model });
-                  }
-                }}
-                placeholder="provider:model"
-                className={[
-                  "w-64 px-2 py-1 rounded-lg text-xs font-mono",
-                  "bg-surface-raised border border-border text-stone-800",
-                  "placeholder-stone-500 focus:outline-none",
-                ].join(" ")}
-              />
-              <span className="text-[9px] text-stone-400 font-mono">
-                ollama: | claude: | openrouter: | openai:
-              </span>
-            </>
-          ) : null}
-        </div>
+        {model && (
+          <button
+            onClick={() => {
+              window.dispatchEvent(
+                new CustomEvent(
+                  "navigate-settings-tab",
+                  { detail: "ai" },
+                ),
+              );
+              window.location.hash = "settings";
+            }}
+            className={[
+              "ml-auto px-3 py-1 rounded-lg",
+              "text-xs font-medium font-mono",
+              "bg-cta/10 text-cta",
+              "border border-cta/30",
+              "hover:bg-cta/20 transition-colors",
+            ].join(" ")}
+            title={ts("ai")}
+          >
+            {cloudAi ? t("kaishoAi") : model}
+          </button>
+        )}
         <HelpButton title={t("advisor")} doc={DOCS.advisor} view="advisor" />
       </div>
 
