@@ -75,14 +75,29 @@ def run_command(body: CliRequest):
             "error": f"Command not allowed: {args[0]}",
         }
 
-    result = runner.invoke(cli, args, catch_exceptions=True)
+    result = runner.invoke(
+        cli, args, catch_exceptions=True,
+    )
+
+    output = result.output.rstrip()
+    error = None
+
+    if result.exception:
+        # Click returns SystemExit(2) for usage errors
+        # (unknown command, missing args). The helpful
+        # message is in result.output, not the exception.
+        if isinstance(
+            result.exception, SystemExit,
+        ):
+            error = output if output else (
+                f"Unknown command: {args[0]}"
+            )
+            output = ""
+        else:
+            error = str(result.exception)
 
     return {
-        "output": result.output.rstrip(),
+        "output": output,
         "exit_code": result.exit_code,
-        "error": (
-            str(result.exception)
-            if result.exception
-            else None
-        ),
+        "error": error,
     }

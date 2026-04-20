@@ -75,6 +75,10 @@ function parseCommand(
     return HELP_TEXT;
   }
 
+  if (cmd === "clear") {
+    return "__CLEAR__";
+  }
+
   if (cmd === "clock") {
     if (sub === "start") {
       const customer = tokens[2];
@@ -247,7 +251,7 @@ const CMD_NAMES = [
   "customer list", "customer add",
   "inbox", "note",
   "contract list", "tag list",
-  "help",
+  "clear", "help",
 ];
 
 function getCompletions(
@@ -364,6 +368,11 @@ export function CommandBar({ open, onClose }: Props) {
       if (!trimmed) return;
 
       const result = parseCommand(trimmed);
+
+      if (result === "__CLEAR__") {
+        setHistory([]);
+        return;
+      }
 
       if (typeof result === "string") {
         setHistory((h) => [
