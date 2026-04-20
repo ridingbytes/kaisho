@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.9
+
+- Ask command: query AI advisor from command bar
+- clock stop --desc/--notes/--customer options
+- Expanded autocomplete: 25 commands (briefing,
+  customer show/summary, kb search, cron list, etc.)
+
 ## 0.7.8
 
 - Fix command bar Cmd+J shortcut
