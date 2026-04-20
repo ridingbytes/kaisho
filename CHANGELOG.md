@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.4
+
+- Fix Linux/Windows sidecar startup (relative import)
+- Fix Windows installer missing from releases
+- Fix Ollama Cloud /v1/models endpoint path
+
 ## 0.7.3
 
 - Menu bar tray timer: crisp icons, transparent popover
