@@ -11,10 +11,14 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Kill any leftover kai-serve process on port 8765
-if lsof -ti :8765 &>/dev/null; then
-    echo "Killing existing process on port 8765..."
-    kill $(lsof -ti :8765) 2>/dev/null || true
+# Kill leftover processes from previous runs
+PIDS=$(lsof -ti :8765 2>/dev/null || true)
+PIDS="$PIDS $(pgrep -f 'kai-server' 2>/dev/null || true)"
+PIDS="$PIDS $(pgrep -f 'kaisho-desktop' 2>/dev/null || true)"
+PIDS=$(echo "$PIDS" | xargs -n1 | sort -u | xargs)
+if [[ -n "$PIDS" ]]; then
+    echo "Killing leftover processes: $PIDS"
+    kill $PIDS 2>/dev/null || true
     sleep 1
 fi
 
