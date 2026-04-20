@@ -1783,7 +1783,7 @@ dependencies = [
 
 [[package]]
 name = "kaisho-desktop"
-version = "0.7.9"
+version = "0.8.0"
 dependencies = [
  "serde",
  "serde_json",

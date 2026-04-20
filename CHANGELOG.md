@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0
+
+- Command bar thinking spinner while executing
+- Ask command sends conversation history for
+  follow-up questions in context
+
 ## 0.7.9
 
 - Ask command: query AI advisor from command bar
