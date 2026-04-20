@@ -154,7 +154,9 @@ async function triggerDownload(
       const { save } = await import(
         "@tauri-apps/plugin-dialog"
       );
-      const { writeTextFile } = await import(
+      const {
+        writeTextFile, writeFile,
+      } = await import(
         "@tauri-apps/plugin-fs"
       );
       const path = await save({
@@ -168,8 +170,13 @@ async function triggerDownload(
         }],
       });
       if (path) {
-        const text = await blob.text();
-        await writeTextFile(path, text);
+        if (filename.endsWith(".xlsx")) {
+          const buf = await blob.arrayBuffer();
+          await writeFile(path, new Uint8Array(buf));
+        } else {
+          const text = await blob.text();
+          await writeTextFile(path, text);
+        }
       }
       return;
     } catch {

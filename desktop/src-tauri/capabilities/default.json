@@ -30,6 +30,7 @@
     "dialog:allow-save",
     "fs:default",
     "fs:allow-write-text-file",
+    "fs:allow-write-file",
     "process:default",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister"
