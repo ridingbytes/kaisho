@@ -32,7 +32,6 @@
     "fs:allow-write-text-file",
     "process:default",
     "global-shortcut:allow-register",
-    "global-shortcut:allow-unregister",
-    "positioner:default"
+    "global-shortcut:allow-unregister"
   ]
 }

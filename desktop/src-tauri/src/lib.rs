@@ -84,63 +84,51 @@ async fn wait_and_navigate(handle: tauri::AppHandle) {
 
 /// Toggle the tray popover window visibility and
 /// position it below the tray icon.
-fn toggle_tray_window(app: &tauri::AppHandle) {
+fn toggle_tray_window(
+    app: &tauri::AppHandle,
+    position: Option<tauri::PhysicalPosition<f64>>,
+) {
     if let Some(win) =
         app.get_webview_window("tray")
     {
         if win.is_visible().unwrap_or(false) {
             let _ = win.hide();
-        } else {
-            // Position below the tray icon. Use the
-            // positioner plugin, with a fallback to
-            // top-right if it panics (tray position
-            // not yet reported by macOS).
-            let positioned = {
-                #[cfg(target_os = "macos")]
-                {
-                    use tauri_plugin_positioner::{
-                        Position, WindowExt,
-                    };
-                    let w = win.clone();
-                    std::panic::catch_unwind(
-                        std::panic::AssertUnwindSafe(
-                            || {
-                                w.move_window(
-                                    Position::TrayBottomCenter,
-                                )
-                            },
-                        ),
-                    )
-                    .is_ok()
-                }
-                #[cfg(not(target_os = "macos"))]
-                {
-                    false
-                }
-            };
-            if !positioned {
-                // Fallback: top-right of primary monitor
-                if let Some(m) = win.primary_monitor()
-                    .ok().flatten()
-                {
-                    let s = m.size();
-                    let sf = win.scale_factor()
-                        .unwrap_or(1.0);
-                    let x = (s.width as f64 / sf)
-                        as i32 - 330;
-                    let _ = win.set_position(
-                        tauri::Position::Logical(
-                            tauri::LogicalPosition {
-                                x: x as f64,
-                                y: 30.0,
-                            },
-                        ),
-                    );
-                }
-            }
-            let _ = win.show();
-            let _ = win.set_focus();
+            return;
         }
+
+        let sf = win.scale_factor().unwrap_or(2.0);
+        let win_w = 320.0 * sf;
+
+        if let Some(pos) = position {
+            // Center the panel horizontally under
+            // the tray icon click position
+            let x = pos.x - win_w / 2.0;
+            let _ = win.set_position(
+                tauri::Position::Physical(
+                    tauri::PhysicalPosition {
+                        x: x.max(0.0) as i32,
+                        y: pos.y as i32,
+                    },
+                ),
+            );
+        } else if let Some(m) = win.primary_monitor()
+            .ok().flatten()
+        {
+            let s = m.size();
+            let x = s.width as i32
+                - win_w as i32 - 20;
+            let _ = win.set_position(
+                tauri::Position::Physical(
+                    tauri::PhysicalPosition {
+                        x: x.max(0),
+                        y: (30.0 * sf) as i32,
+                    },
+                ),
+            );
+        }
+
+        let _ = win.show();
+        let _ = win.set_focus();
     }
 }
 
@@ -297,7 +285,6 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_positioner::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .build(),
@@ -426,11 +413,13 @@ pub fn run() {
                     move |_tray, event| {
                         if let tauri::tray::TrayIconEvent::Click {
                             button: tauri::tray::MouseButton::Left,
+                            position,
                             ..
                         } = event
                         {
                             toggle_tray_window(
                                 &handle_click,
+                                Some(position),
                             );
                         }
                     },
@@ -452,7 +441,7 @@ pub fn run() {
                 let _ = app.global_shortcut().on_shortcut(
                     sc,
                     move |_app, _sc, _ev| {
-                        toggle_tray_window(&h);
+                        toggle_tray_window(&h, None);
                     },
                 );
             }
