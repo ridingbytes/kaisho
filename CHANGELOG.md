@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.7.1
+
+- Unified app icon: same dark bracket-palm design on
+  desktop and mobile, centered and slightly larger
+- Ollama Cloud separated as distinct provider
+  (ollama_cloud: prefix, own URL field in Settings > AI)
+- Sync badge click navigates directly to Cloud Sync tab
+- Advisor responses show timestamp and model name
+- Copy advisor responses to inbox (inbox icon on bubbles)
+- AI token usage meter in mobile PWA profile
+- 14-day free trial for first-time subscribers
+- Complete i18n: all 47 remaining components wired,
+  3 new namespaces (cron, knowledge, notes), all
+  placeholders translated
+- Fix cron "No AI provider" when Ollama Cloud configured
+
+## 0.7.0
+
+- Menu bar tray timer with popover panel
+- Tray icon shows timer state (idle/active/long/offline)
+- Quick start, quick capture (inbox/note/task), recent
+  entries with resume in tray popover
+- Global shortcuts: Cmd+Shift+T (tray), Cmd+Shift+S
+  (start/stop timer)
+- Main window hides on close, tray stays active
+- Separate Vite entry point for slim tray bundle
+
 ## 0.6.6
 
 - Globe icon in header bar for quick language switching
