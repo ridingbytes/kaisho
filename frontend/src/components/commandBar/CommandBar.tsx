@@ -145,14 +145,10 @@ function parseCommand(
         },
       };
     }
-    return (
-      "clock subcommands: start, stop, "
-      + "book, status"
-    );
+    // Other clock subcommands → API fallback
   }
 
-  if (cmd === "task") {
-    if (sub === "add") {
+  if (cmd === "task" && sub === "add") {
       const customer = tokens[2];
       const title = tokens.slice(3).join(" ");
       if (!customer || !title) {
@@ -170,8 +166,7 @@ function parseCommand(
           return `Task added: ${title}`;
         },
       };
-    }
-    return "task subcommands: add";
+    // Other task subcommands → API fallback
   }
 
   if (cmd === "inbox") {
