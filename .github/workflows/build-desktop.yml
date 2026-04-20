@@ -158,6 +158,30 @@ jobs:
               "$TARBALL"
           fi
 
+      - name: Create updater bundle (Windows)
+        if: matrix.platform == 'windows-latest'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          EXE=$(find "$PWD/desktop/src-tauri/target" \
+            -path "*/bundle/nsis/*-setup.exe" \
+            -maxdepth 6 | head -1)
+          if [ -z "$EXE" ]; then
+            echo "No NSIS exe found"; exit 0
+          fi
+          ZIPFILE="${EXE%.exe}.nsis.zip"
+          echo "Creating $ZIPFILE"
+          powershell -Command \
+            "Compress-Archive -Path '$EXE' \
+            -DestinationPath '$ZIPFILE'"
+          npx --prefix desktop tauri signer sign \
+            -k "$TAURI_SIGNING_PRIVATE_KEY" \
+            -p "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" \
+            "$ZIPFILE"
+          ls -la "$ZIPFILE" "${ZIPFILE}.sig"
+
       - name: Collect build artifacts
         id: collect
         shell: bash
@@ -255,15 +279,15 @@ jobs:
           export LINUX_SIG=$(read_sig \
             "*AppImage.tar.gz.sig")
           export WIN_SIG=$(read_sig \
-            "*setup.nsis.zip.sig")
+            "*nsis.zip.sig")
 
           # Find asset names from uploaded files
           export MAC_TAR=$(ls artifacts/ \
             | grep "app.tar.gz$" | head -1)
           export LINUX_AI=$(ls artifacts/ \
             | grep "AppImage$" | head -1)
-          export WIN_EXE=$(ls artifacts/ \
-            | grep "setup.exe$" | head -1)
+          export WIN_ZIP=$(ls artifacts/ \
+            | grep "nsis.zip$" | head -1)
 
           python3 << 'PYEOF'
           import json, os
@@ -273,7 +297,7 @@ jobs:
           for key, sig_var, file_var in [
               ("darwin-aarch64", "MAC_SIG", "MAC_TAR"),
               ("linux-x86_64", "LINUX_SIG", "LINUX_AI"),
-              ("windows-x86_64", "WIN_SIG", "WIN_EXE"),
+              ("windows-x86_64", "WIN_SIG", "WIN_ZIP"),
           ]:
               sig = os.environ.get(sig_var, "")
               fname = os.environ.get(file_var, "")

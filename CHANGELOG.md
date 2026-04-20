@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.6
+
+- Fix Windows: remove transparent window ghost behind
+  tray panel, use opaque window with proper sizing
+- Fix Windows: colored 32x32 tray icons (white on dark
+  bg) instead of macOS template images
+- Fix Windows updater: generate NSIS zip + signature so
+  in-app updates work (was missing windows-x86_64 platform)
+- Fix Windows version showing "vdev" (bundle pyproject.toml)
+- Platform-specific tray icons: template images on macOS,
+  colored icons on Windows/Linux
+
 ## 0.7.5
 
 - Fix Windows: sharp square icons (no blurry rounded corners)

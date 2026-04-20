@@ -37,13 +37,18 @@ Pop-Location
 # Build the Python binary
 Write-Host "Building Python sidecar..."
 Push-Location $ProjectRoot
+if (Test-Path "dist\kai-server-$Target.exe") {
+    Remove-Item "dist\kai-server-$Target.exe" -Force
+}
 pyinstaller `
+    --noconfirm `
     --onefile `
     --name "kai-server-$Target" `
     --add-data "frontend\dist;frontend\dist" `
     --add-data "templates;templates" `
     --add-data "prompts;prompts" `
     --add-data "CHANGELOG.md;." `
+    --add-data "pyproject.toml;." `
     --hidden-import "kaisho" `
     --hidden-import "uvicorn" `
     --hidden-import "uvicorn.logging" `

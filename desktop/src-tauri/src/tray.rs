@@ -12,20 +12,39 @@ use tauri::Manager;
 
 const TRAY_ID: &str = "kaisho-tray";
 const PANEL_WIDTH: f64 = 320.0;
-const PANEL_HEIGHT: f64 = 520.0;
+const PANEL_HEIGHT: f64 = 480.0;
 
 // -----------------------------------------------------------
 // Icon bytes (embedded at compile time)
 // -----------------------------------------------------------
 
-const ICON_IDLE: &[u8] =
-    include_bytes!("../icons/tray-idle.png");
-const ICON_ACTIVE: &[u8] =
-    include_bytes!("../icons/tray-active.png");
-const ICON_LONG: &[u8] =
-    include_bytes!("../icons/tray-long.png");
-const ICON_OFFLINE: &[u8] =
-    include_bytes!("../icons/tray-offline.png");
+// macOS: 22x22 template images (black on transparent,
+//   auto-adapts to menu bar light/dark)
+// Windows/Linux: 32x32 colored icons (white on dark
+//   background, visible on any taskbar)
+#[cfg(target_os = "macos")]
+mod icons {
+    pub const IDLE: &[u8] =
+        include_bytes!("../icons/tray-idle.png");
+    pub const ACTIVE: &[u8] =
+        include_bytes!("../icons/tray-active.png");
+    pub const LONG: &[u8] =
+        include_bytes!("../icons/tray-long.png");
+    pub const OFFLINE: &[u8] =
+        include_bytes!("../icons/tray-offline.png");
+}
+
+#[cfg(not(target_os = "macos"))]
+mod icons {
+    pub const IDLE: &[u8] =
+        include_bytes!("../icons/tray-idle-32.png");
+    pub const ACTIVE: &[u8] =
+        include_bytes!("../icons/tray-active-32.png");
+    pub const LONG: &[u8] =
+        include_bytes!("../icons/tray-long-32.png");
+    pub const OFFLINE: &[u8] =
+        include_bytes!("../icons/tray-offline-32.png");
+}
 
 // -----------------------------------------------------------
 // Public API
@@ -58,14 +77,14 @@ pub fn setup(
         .item(&quit)
         .build()?;
 
-    let icon = Image::from_bytes(ICON_IDLE)?;
+    let icon = Image::from_bytes(icons::IDLE)?;
 
     let handle_menu = handle.clone();
     let handle_click = handle.clone();
 
     TrayIconBuilder::with_id(TRAY_ID)
         .icon(icon)
-        .icon_as_template(true)
+        .icon_as_template(cfg!(target_os = "macos"))
         .tooltip("Kaisho \u{2014} no active timer")
         .menu(&menu)
         .show_menu_on_left_click(false)
@@ -115,10 +134,10 @@ pub fn update_icon(
     tooltip: &str,
 ) {
     let bytes = match state {
-        "active" => ICON_ACTIVE,
-        "long" => ICON_LONG,
-        "offline" => ICON_OFFLINE,
-        _ => ICON_IDLE,
+        "active" => icons::ACTIVE,
+        "long" => icons::LONG,
+        "offline" => icons::OFFLINE,
+        _ => icons::IDLE,
     };
     if let Some(tray) = app.tray_by_id(TRAY_ID) {
         if let Ok(img) = Image::from_bytes(bytes) {

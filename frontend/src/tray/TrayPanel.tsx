@@ -210,7 +210,7 @@ export function TrayPanel() {
   }
 
   return (
-    <div className="m-1 flex flex-col bg-surface-base text-stone-800 overflow-hidden select-none rounded-xl border border-border shadow-2xl" style={{ maxHeight: "calc(100vh - 8px)" }}>
+    <div className="flex flex-col h-screen bg-surface-base text-stone-800 overflow-hidden select-none">
       {/* Timer or start form */}
       <TimerSection
         timer={timer}

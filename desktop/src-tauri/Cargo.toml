@@ -1,6 +1,6 @@
 [package]
 name = "kaisho-desktop"
-version = "0.7.5"
+version = "0.7.6"
 description = "Kaisho Desktop App"
 authors = ["Riding Bytes"]
 license = "MIT"
@@ -11,7 +11,7 @@ edition = "2021"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["devtools", "image-png", "tray-icon", "macos-private-api"] }
+tauri = { version = "2", features = ["devtools", "image-png", "tray-icon"] }
 tauri-plugin-shell = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-dialog = "2"
