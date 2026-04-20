@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.5
+
+- Fix Windows: sharp square icons (no blurry rounded corners)
+- Fix Windows/Linux: tray panel opens above bottom taskbar
+  instead of extending off-screen
+
 ## 0.7.4
 
 - Fix Linux/Windows sidecar startup (relative import)
