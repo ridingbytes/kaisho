@@ -100,13 +100,18 @@ if $IS_MACOS; then
     # extracts the bundle to ~/.kaisho/runtime/ where
     # macOS allows ad-hoc signed binaries.
     DST="$BIN_DIR/kai-server-${TARGET}"
+    # Compute a short hash of the payload so dev
+    # rebuilds always re-extract (version alone is
+    # not enough when content changes mid-version).
+    PAYLOAD_HASH=$(shasum "$TARBALL" | cut -c1-8)
+
     cat > "$DST" << 'SFX'
 #!/bin/bash
-VER="__VERSION__"
+VER="__VERSION__-__HASH__"
 RT="$HOME/.kaisho/runtime/$VER"
 BIN="$RT/kai-server-__TARGET__"
 if [ ! -x "$BIN" ]; then
-    rm -rf "$RT"
+    rm -rf "$HOME/.kaisho/runtime/__VERSION__"*
     mkdir -p "$RT"
     SKIP=$(awk '/^__PAYLOAD__$/{print NR+1;exit}' "$0")
     tail -n +"$SKIP" "$0" | tar xzf - -C "$RT"
@@ -117,6 +122,7 @@ __PAYLOAD__
 SFX
     sed -i '' "s/__TARGET__/${TARGET}/g" "$DST"
     sed -i '' "s/__VERSION__/$(grep '^version' pyproject.toml | head -1 | cut -d'"' -f2)/g" "$DST"
+    sed -i '' "s/__HASH__/${PAYLOAD_HASH}/g" "$DST"
     cat "$TARBALL" >> "$DST"
     chmod +x "$DST"
     rm "$TARBALL"

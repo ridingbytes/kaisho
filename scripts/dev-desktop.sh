@@ -27,6 +27,9 @@ if [[ "${1:-}" != "--skip" ]]; then
     cd "$ROOT/frontend"
     pnpm build
 
+    echo "Clearing sidecar cache..."
+    rm -rf ~/.kaisho/runtime/*
+
     echo "Building sidecar..."
     cd "$ROOT"
     ./scripts/build-sidecar.sh
