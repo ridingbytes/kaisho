@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.7
+
+- In-app command bar (Cmd+J): execute any kai CLI
+  command directly from the UI with autocomplete
+- Full CLI via /api/cli/run backend endpoint
+- Fix import: preserve billable, invoiced, and
+  used_offset on contracts
+- CLI: description is optional for clock start/book
+- Fix Excel export corruption in desktop app
+- Close tray panel on blur (Windows/Linux)
+- Windows: sharp ICO with 7 sizes up to 256x256
+
 ## 0.7.6
 
 - Fix Windows: remove transparent window ghost behind
