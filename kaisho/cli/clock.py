@@ -61,14 +61,42 @@ def clock_start(customer_name, description, as_json):
 
 
 @clock.command("stop")
+@click.option("--desc", default=None,
+              help="Set description before stopping")
+@click.option("--notes", default=None,
+              help="Set notes before stopping")
+@click.option("--customer", default=None,
+              help="Change customer before stopping")
 @click.option("--json", "as_json", is_flag=True)
-def clock_stop(as_json):
-    """Stop the active timer."""
-    result = get_backend().clocks.stop()
+def clock_stop(desc, notes, customer, as_json):
+    """Stop the active timer.
+
+    Optionally set description, notes, or customer
+    before stopping.
+    """
+    backend = get_backend()
+    # Apply updates before stopping
+    if desc or notes or customer:
+        timer = backend.clocks.get_active()
+        if timer and timer.get("start"):
+            updates = {}
+            if desc is not None:
+                updates["description"] = desc
+            if notes is not None:
+                updates["notes"] = notes
+            if customer is not None:
+                updates["customer"] = customer
+            backend.clocks.update_entry(
+                start_iso=timer["start"],
+                **updates,
+            )
+    result = backend.clocks.stop()
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
-        click.echo(f"Timer stopped: {_format_entry(result)}")
+        click.echo(
+            f"Timer stopped: {_format_entry(result)}",
+        )
 
 
 @clock.command("desc")
