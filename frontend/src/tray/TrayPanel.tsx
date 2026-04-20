@@ -140,7 +140,9 @@ export function TrayPanel() {
     }
   }, [timer]);
 
-  // Listen for toggle-timer event from global shortcut
+  // Listen for timer-changed event from Rust
+  // (tray menu or global shortcut triggered a
+  // start/stop — refresh to show updated state)
   useEffect(() => {
     if (!isTauri()) return;
     let unlisten: (() => void) | undefined;
@@ -150,26 +152,15 @@ export function TrayPanel() {
           "@tauri-apps/api/event"
         );
         unlisten = await listen(
-          "toggle-timer",
-          async () => {
-            if (timer?.active && timer.start) {
-              await stopTimer();
-            } else if (
-              customers.length > 0
-            ) {
-              await startTimer({
-                customer: customers[0].name,
-              });
-            }
-            refresh();
-          },
+          "timer-changed",
+          () => refresh(),
         );
       } catch {
         // not in Tauri
       }
     })();
     return () => unlisten?.();
-  }, [timer, customers, refresh]);
+  }, [refresh]);
 
   // Close on Escape
   useEffect(() => {

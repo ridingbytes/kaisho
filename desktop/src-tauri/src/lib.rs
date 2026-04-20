@@ -162,11 +162,89 @@ fn show_main_window(app: tauri::AppHandle) {
 }
 
 /// IPC command: toggle the timer (start or stop).
-/// Emits an event to the tray panel so it can
-/// call the API.
+/// Calls the backend API directly and notifies the
+/// tray panel to refresh.
 #[tauri::command]
 fn toggle_timer(app: tauri::AppHandle) {
-    let _ = app.emit("toggle-timer", ());
+    let handle = app.clone();
+    std::thread::spawn(move || {
+        let active = http_get("/api/clocks/active");
+        match active {
+            Ok(body)
+                if body.contains("\"active\":true") =>
+            {
+                let _ = http_post(
+                    "/api/clocks/stop", "{}",
+                );
+            }
+            Ok(_) => {
+                // No timer — show tray panel so the
+                // user can pick a customer
+                if let Some(win) =
+                    handle.get_webview_window("tray")
+                {
+                    let _ = win.show();
+                    let _ = win.set_focus();
+                }
+            }
+            Err(_) => {} // backend offline
+        }
+        let _ = handle.emit("timer-changed", "");
+    });
+}
+
+/// HTTP GET to the local backend. Returns the
+/// response body.
+fn http_get(path: &str) -> Result<String, String> {
+    use std::io::Read;
+    let addr = "127.0.0.1:8765";
+    let mut s = TcpStream::connect(addr)
+        .map_err(|e| format!("{e}"))?;
+    let req = format!(
+        "GET {path} HTTP/1.1\r\n\
+         Host: 127.0.0.1\r\n\
+         Connection: close\r\n\r\n",
+    );
+    std::io::Write::write_all(
+        &mut s, req.as_bytes(),
+    )
+    .map_err(|e| format!("{e}"))?;
+    let mut buf = String::new();
+    s.read_to_string(&mut buf)
+        .map_err(|e| format!("{e}"))?;
+    match buf.find("\r\n\r\n") {
+        Some(i) => Ok(buf[i + 4..].to_string()),
+        None => Ok(buf),
+    }
+}
+
+/// HTTP POST JSON to the local backend.
+fn http_post(
+    path: &str, body: &str,
+) -> Result<String, String> {
+    use std::io::Read;
+    let addr = "127.0.0.1:8765";
+    let mut s = TcpStream::connect(addr)
+        .map_err(|e| format!("{e}"))?;
+    let req = format!(
+        "POST {path} HTTP/1.1\r\n\
+         Host: 127.0.0.1\r\n\
+         Content-Type: application/json\r\n\
+         Content-Length: {}\r\n\
+         Connection: close\r\n\r\n{body}",
+        body.len(),
+    );
+    std::io::Write::write_all(
+        &mut s, req.as_bytes(),
+    )
+    .map_err(|e| format!("{e}"))?;
+    let mut buf = String::new();
+    s.read_to_string(&mut buf)
+        .map_err(|e| format!("{e}"))?;
+    match buf.find("\r\n\r\n") {
+        Some(i) => Ok(buf[i + 4..].to_string()),
+        None => Ok(buf),
+    }
 }
 
 pub fn run() {
