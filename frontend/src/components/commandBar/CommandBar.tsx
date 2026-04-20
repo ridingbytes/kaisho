@@ -31,14 +31,22 @@ interface ParsedCommand {
 }
 
 const HELP_TEXT = [
-  "clock start <customer> [description]",
-  "clock stop",
-  "clock book <duration> <customer> [desc]",
-  "clock status",
-  "task add <customer> <title>",
-  "inbox <text>",
-  "note <title>",
-  "help",
+  "All kai CLI commands are supported.",
+  "",
+  "Common commands:",
+  "  clock start <customer> [description]",
+  "  clock stop",
+  "  clock book <duration> <customer> [desc]",
+  "  clock status",
+  "  clock list [--week|--month|--customer X]",
+  "  clock summary [--week]",
+  "  task add <customer> <title>",
+  "  task list",
+  "  inbox <text>",
+  "  note <title>",
+  "  customer list",
+  "  customer add <name>",
+  "  help",
 ].join("\n");
 
 /** Split input respecting quoted strings. */
@@ -188,7 +196,29 @@ function parseCommand(
     };
   }
 
-  return `Unknown command: ${cmd}. Type "help".`;
+  // Fallback: send to the backend CLI endpoint
+  return {
+    execute: async () => {
+      const res = await fetch("/api/cli/run", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          command: input.trim(),
+        }),
+      });
+      const data = await res.json() as {
+        output: string;
+        exit_code: number;
+        error: string | null;
+      };
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      return data.output || "(no output)";
+    },
+  };
 }
 
 // -----------------------------------------------------------
@@ -214,7 +244,11 @@ function now(): string {
 
 const CMD_NAMES = [
   "clock start", "clock stop", "clock book",
-  "clock status", "task add", "inbox", "note",
+  "clock status", "clock list", "clock summary",
+  "task add", "task list",
+  "customer list", "customer add",
+  "inbox", "note",
+  "contract list", "tag list",
   "help",
 ];
 
