@@ -60,9 +60,17 @@ _CLAUDE_API_MODELS = [
 def _fetch_ollama_models(base_url: str) -> list[str]:
     """Fetch available model names from local Ollama.
 
-    Uses the native ``/api/tags`` endpoint.
+    Uses the native ``/api/tags`` endpoint.  Skips
+    remote URLs — those should use ``ollama_cloud_url``
+    instead.
     """
     if not base_url:
+        return []
+    lower = base_url.lower()
+    if not (
+        "localhost" in lower
+        or "127.0.0.1" in lower
+    ):
         return []
     url = base_url.rstrip("/") + "/api/tags"
     try:
