@@ -145,7 +145,7 @@
   "dataDirectories": "Datenverzeichnisse",
   "savePaths": "Pfade speichern",
   "importData": "Daten importieren",
-  "importDataHint": "Importiere Daten aus einem anderen Backend in das aktuelle Profil. Der Import ist additiv — lösche bestehende Datendateien vorher, um Duplikate zu vermeiden.",
+  "importDataHint": "Importiere Daten aus einem anderen Backend in das aktuelle Profil. Bestehende Eintr\u00e4ge werden anhand von ID oder Inhalt erkannt und \u00fcbersprungen, erneutes Importieren ist sicher.",
   "format": "Format",
   "sourceDirectory": "Quellverzeichnis",
   "imported": "Importiert",

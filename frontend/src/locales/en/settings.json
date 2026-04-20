@@ -145,7 +145,7 @@
   "dataDirectories": "Data Directories",
   "savePaths": "Save Paths",
   "importData": "Import Data",
-  "importDataHint": "Import data from another backend into the current profile. Import is additive -- clear existing data files first to avoid duplicates.",
+  "importDataHint": "Import data from another backend into the current profile. Existing entries are matched by ID or content and skipped, so re-importing is safe.",
   "format": "Format",
   "sourceDirectory": "Source directory",
   "imported": "Imported",

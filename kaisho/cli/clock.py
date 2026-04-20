@@ -28,7 +28,7 @@ def clock():
 @clock.command("book")
 @click.argument("duration")
 @click.argument("customer_name")
-@click.argument("description", nargs=-1, required=True)
+@click.argument("description", nargs=-1, required=False)
 @click.option("--json", "as_json", is_flag=True)
 def clock_book(duration, customer_name, description, as_json):
     """Book time retroactively (e.g. 2h, 30min)."""
@@ -45,7 +45,7 @@ def clock_book(duration, customer_name, description, as_json):
 
 @clock.command("start")
 @click.argument("customer_name")
-@click.argument("description", nargs=-1, required=True)
+@click.argument("description", nargs=-1, required=False)
 @click.option("--json", "as_json", is_flag=True)
 def clock_start(customer_name, description, as_json):
     """Start a timer."""

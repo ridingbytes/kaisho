@@ -1089,6 +1089,7 @@ class JsonCustomerBackend(CustomerBackend):
                 if con["name"] == contract_name:
                     for key in (
                         "name", "budget",
+                        "used_offset",
                         "start_date", "end_date",
                         "notes", "billable", "invoiced",
                     ):
