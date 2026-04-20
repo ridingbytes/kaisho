@@ -403,7 +403,7 @@ pub fn run() {
                 .icon_as_template(true)
                 .tooltip("Kaisho — no active timer")
                 .menu(&menu)
-                .menu_on_left_click(false)
+                .show_menu_on_left_click(false)
                 .on_menu_event(move |_app, event| {
                     match event.id().as_ref() {
                         "open" => {
