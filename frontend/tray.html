@@ -21,8 +21,19 @@
           else delete document.documentElement.dataset.theme;
         }
         apply();
-        window.addEventListener("storage",apply);
-        document.addEventListener("visibilitychange",apply);
+        window.addEventListener("storage",function(e){
+          apply();
+          if(e.key==="kaisho_lang"&&e.newValue&&window.__i18n){
+            window.__i18n.changeLanguage(e.newValue);
+          }
+        });
+        document.addEventListener("visibilitychange",function(){
+          apply();
+          var l=localStorage.getItem("kaisho_lang");
+          if(l&&window.__i18n&&window.__i18n.language!==l){
+            window.__i18n.changeLanguage(l);
+          }
+        });
       })()
     </script>
     <div id="tray-root"></div>
