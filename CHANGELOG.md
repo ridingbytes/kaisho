@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.8
+
+- Fix command bar Cmd+J shortcut
+- Add clear command to flush command bar history
+- Fix unknown commands showing exit code instead of
+  error message
+- Add clock desc and clock note CLI commands for
+  updating running timer description and notes
+
 ## 0.7.7
 
 - In-app command bar (Cmd+J): execute any kai CLI
