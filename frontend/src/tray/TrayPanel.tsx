@@ -174,6 +174,23 @@ export function TrayPanel() {
       window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Close on blur (click outside the panel).
+  // On macOS, blur fires too aggressively when
+  // clicking the tray icon itself, so we skip it
+  // there — the tray icon toggle handles closing.
+  useEffect(() => {
+    const isMac = navigator.platform
+      .toUpperCase()
+      .includes("MAC");
+    if (isMac) return;
+    function onBlur() {
+      invokeTauri("hide_tray_window");
+    }
+    window.addEventListener("blur", onBlur);
+    return () =>
+      window.removeEventListener("blur", onBlur);
+  }, []);
+
   const isRunning =
     timer?.active === true && !!timer.start;
   const completedToday = entries.filter(
