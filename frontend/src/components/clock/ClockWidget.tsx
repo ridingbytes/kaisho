@@ -164,13 +164,19 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
                 {t("calendar")}
               </h3>
             </button>
-            <a
-              href="/api/clocks/calendar.ics"
+            <button
+              onClick={() => {
+                const base = window.location.origin;
+                const url = `webcal://${
+                  base.replace(/^https?:\/\//, "")
+                }/api/clocks/calendar.ics`;
+                window.open(url);
+              }}
               title={t("icalFeed")}
               className="p-0.5 rounded text-stone-400 hover:text-cta transition-colors"
             >
               <Rss size={10} />
-            </a>
+            </button>
           </div>
           {calendarOpen && (
             <CalendarWidget
