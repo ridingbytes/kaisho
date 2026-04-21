@@ -303,14 +303,17 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
           {messages.length > 0 && (
             <button
               onClick={clearMessages}
-              title={t("clearChat")}
               className={[
-                "p-1 rounded text-stone-500",
-                "hover:text-red-400 hover:bg-red-500/10",
+                "flex items-center gap-1.5",
+                "px-3 py-1 rounded-lg text-xs",
+                "text-stone-500 border border-border",
+                "hover:text-red-500",
+                "hover:border-red-300",
                 "transition-colors",
               ].join(" ")}
             >
-              <Trash2 size={13} />
+              <Trash2 size={12} />
+              {tc("clear")}
             </button>
           )}
         </>}
