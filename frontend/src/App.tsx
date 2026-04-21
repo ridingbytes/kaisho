@@ -628,13 +628,17 @@ function AppShell() {
             <>
               <button
                 onClick={() => {
-                  window.dispatchEvent(
-                    new CustomEvent(
-                      "navigate-settings-tab",
-                      { detail: "cloud" },
-                    ),
-                  );
                   setView("settings");
+                  // Dispatch after the view renders
+                  // so the listener exists
+                  setTimeout(() => {
+                    window.dispatchEvent(
+                      new CustomEvent(
+                        "navigate-settings-tab",
+                        { detail: "cloud" },
+                      ),
+                    );
+                  }, 50);
                 }}
                 className={[
                   "hidden sm:flex items-center gap-1.5",

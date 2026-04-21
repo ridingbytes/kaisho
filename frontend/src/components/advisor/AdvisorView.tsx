@@ -314,13 +314,15 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
         {model && (
           <button
             onClick={() => {
-              window.dispatchEvent(
-                new CustomEvent(
-                  "navigate-settings-tab",
-                  { detail: "ai" },
-                ),
-              );
               window.location.hash = "settings";
+              setTimeout(() => {
+                window.dispatchEvent(
+                  new CustomEvent(
+                    "navigate-settings-tab",
+                    { detail: "ai" },
+                  ),
+                );
+              }, 50);
             }}
             className={[
               "ml-auto px-3 py-1 rounded-lg",
