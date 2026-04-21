@@ -205,7 +205,7 @@ export function InboxItemRow({ item }: Props) {
   return (
     <div className="group border-b border-border-subtle last:border-0">
       <div
-        className="flex items-start gap-3 px-4 py-3 hover:bg-surface-raised/40 transition-colors cursor-pointer"
+        className="flex items-start gap-3 pl-1 pr-4 py-3 hover:bg-surface-raised/40 transition-colors cursor-pointer"
         onClick={() => !editing && setExpanded((v) => !v)}
       >
         {/* Type badge */}
