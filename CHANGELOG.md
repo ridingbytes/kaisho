@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.2
+
+- Fix Windows updater crash (sign .exe directly, no zip)
+- Refactoring: narrow exception handling, fix imports,
+  add error checks in command bar and sync
+
 ## 0.8.1
 
 - Tray mode toggle in Settings > General (defaults off
