@@ -334,16 +334,24 @@ def sync_now():
 
     from ...backends import get_backend
     backend = get_backend()
-    return sync_svc.run_sync_cycle(
-        cloud_url=url,
-        api_key=key,
-        profile_dir=cfg.PROFILE_DIR,
-        clocks_file=backend.clocks.data_file,
-        customers_fn=backend.customers.list_customers,
-        tasks_fn=lambda: backend.tasks.list_tasks(
-            include_done=False,
-        ),
-    )
+    try:
+        return sync_svc.run_sync_cycle(
+            cloud_url=url,
+            api_key=key,
+            profile_dir=cfg.PROFILE_DIR,
+            clocks_file=backend.clocks.data_file,
+            customers_fn=(
+                backend.customers.list_customers
+            ),
+            tasks_fn=lambda: backend.tasks.list_tasks(
+                include_done=False,
+            ),
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Sync failed: {exc}",
+        ) from exc
 
 
 # ── GET /api/cloud-sync/pending ──────────────────────
