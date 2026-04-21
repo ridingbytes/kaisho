@@ -6,18 +6,21 @@
  * Compact: used in inline edits, table cells, sidebars.
  */
 
-/** Standard form input (text-sm, rounded). */
+/** Standard form input (text-sm, rounded).
+ *  Fixed height ensures inputs and selects align. */
 export const inputCls = [
-  "w-full px-3 py-2 rounded text-sm",
+  "w-full px-3 py-1.5 rounded text-sm h-8",
   "bg-surface-raised border border-border",
   "text-stone-900 placeholder-stone-500",
   "focus:outline-none focus:border-cta",
   "transition-colors",
 ].join(" ");
 
-/** Compact form input (text-xs, smaller padding). */
+/** Compact form input (text-xs, smaller padding).
+ *  Use for toolbar inputs, selects, and date pickers
+ *  that must share the same row height. */
 export const smallInputCls = [
-  "w-full px-2 py-1 rounded text-xs",
+  "w-full px-2 py-1 rounded text-xs h-7",
   "bg-surface-raised border border-border",
   "text-stone-900 placeholder-stone-500",
   "focus:outline-none focus:border-cta",

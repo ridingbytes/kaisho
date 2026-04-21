@@ -15,6 +15,7 @@ import {
 import { EntryRow } from "./EntryRow";
 import { HelpButton } from "../common/HelpButton";
 import { SearchInput } from "../common/SearchInput";
+import { Toggle } from "../common/Toggle";
 import { DOCS } from "../../docs/panelDocs";
 import { useClockEntries } from "../../hooks/useClocks";
 import { useInvoicedContracts } from "../../hooks/useInvoicedContracts";
@@ -298,11 +299,7 @@ export function ClockView() {
             t("searchCustomerDescription")
           }
           inputClassName={
-            "px-2 py-1 rounded-lg text-xs " +
-            "bg-surface-raised border border-border " +
-            "text-stone-900 placeholder-stone-500 " +
-            "focus:outline-none focus:border-cta " +
-            "w-52 pr-6"
+            `${smallInputCls} !w-52 !pr-6 !rounded-lg`
           }
           className="w-52"
         />
@@ -333,21 +330,6 @@ export function ClockView() {
             setSpecificDate(e.target.value)
           }
         />
-        <label className="flex items-center gap-1.5 text-xs text-stone-600 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={hideInvoiced}
-            onChange={(e) => {
-              setHideInvoiced(e.target.checked);
-              localStorage.setItem(
-                "clocks_hide_invoiced",
-                String(e.target.checked),
-              );
-            }}
-            className="rounded border-border accent-cta"
-          />
-          {t("hideInvoiced")}
-        </label>
         {!isLoading && invoiceFiltered.length > 0 && (
           <span className="text-xs text-stone-600">
             {t("entriesCount", {
@@ -356,6 +338,21 @@ export function ClockView() {
             {totalHours(invoiceFiltered)}h
           </span>
         )}
+        <label className="flex items-center gap-2 ml-auto cursor-pointer">
+          <span className="text-xs text-stone-600">
+            {t("hideInvoiced")}
+          </span>
+          <Toggle
+            checked={hideInvoiced}
+            onChange={(v) => {
+              setHideInvoiced(v);
+              localStorage.setItem(
+                "clocks_hide_invoiced",
+                String(v),
+              );
+            }}
+          />
+        </label>
         {!isLoading && sorted.length > 0 && (
           <>
             <button
