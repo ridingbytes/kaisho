@@ -41,7 +41,10 @@ export function UpdateSection(): JSX.Element {
         "@tauri-apps/plugin-updater"
       );
       const update = await check();
-      if (update) {
+      if (
+        update
+        && update.version !== currentVersion
+      ) {
         setUpdateReady(true);
         setCheckResult(
           t("versionAvailable", {
