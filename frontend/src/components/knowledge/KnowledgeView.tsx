@@ -392,7 +392,7 @@ export function KnowledgeView() {
               title={selectedPath}
             />
           ) : (
-          <div className="flex-1 overflow-y-auto p-3">
+          <div className="flex-1 overflow-y-auto p-5">
             {fileLoading && (
               <p className="text-sm text-stone-500">
                 {tc("loading")}

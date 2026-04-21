@@ -24,6 +24,13 @@ class OrgInboxBackend(InboxBackend):
     def list_items(self) -> list[dict]:
         return inbox.list_items(inbox_file=self._inbox_file)
 
+    def reorder_items(
+        self, item_ids: list[str],
+    ) -> list[dict]:
+        return inbox.reorder_items(
+            self._inbox_file, item_ids,
+        )
+
     def add_item(
         self,
         text: str,

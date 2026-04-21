@@ -615,6 +615,13 @@ export function fetchInboxItems(): Promise<InboxItem[]> {
   return get<InboxItem[]>("/inbox/");
 }
 
+/** Persist the display order of inbox items. */
+export function reorderInboxItems(
+  itemIds: string[],
+): Promise<unknown> {
+  return put("/inbox/order", itemIds);
+}
+
 /** Params for capturing a new inbox item. */
 export interface CaptureInboxParams {
   text: string;

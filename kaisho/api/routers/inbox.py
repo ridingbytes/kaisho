@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 
 from ...backends import get_backend
@@ -25,6 +25,14 @@ class PromoteRequest(BaseModel):
 def list_items():
     """List all inbox items."""
     return get_backend().inbox.list_items()
+
+
+@router.put("/order")
+def reorder_items(
+    item_ids: list[str] = Body(...),
+):
+    """Persist inbox item order."""
+    return get_backend().inbox.reorder_items(item_ids)
 
 
 @router.post("/capture", status_code=201)

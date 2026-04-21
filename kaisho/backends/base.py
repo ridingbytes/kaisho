@@ -261,6 +261,12 @@ class InboxBackend(ABC):
         Each dict: id, type, customer, title, created, properties
         """
 
+    def reorder_items(
+        self, item_ids: list[str],
+    ) -> list[dict]:
+        """Reorder items. Default: no-op."""
+        return self.list_items()
+
     @abstractmethod
     def add_item(
         self,

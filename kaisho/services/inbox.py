@@ -117,6 +117,33 @@ def list_items(inbox_file: Path) -> list[dict]:
     return items
 
 
+def reorder_items(
+    inbox_file: Path, item_ids: list[str],
+) -> list[dict]:
+    """Reorder inbox items to match the given ID list."""
+    if not inbox_file.exists():
+        return []
+    org_file = parse_org_file(
+        inbox_file, INBOX_KEYWORDS,
+    )
+    old = list(org_file.headings)
+    by_id = {str(i): h for i, h in enumerate(old, 1)}
+    ordered = [
+        by_id[iid] for iid in item_ids
+        if iid in by_id
+    ]
+    seen = set(item_ids)
+    for i, h in enumerate(old, 1):
+        if str(i) not in seen:
+            ordered.append(h)
+    org_file.headings = ordered
+    write_org_file(inbox_file, org_file)
+    return [
+        _heading_to_item(h, str(i))
+        for i, h in enumerate(ordered, start=1)
+    ]
+
+
 def add_item(
     inbox_file: Path,
     text: str,

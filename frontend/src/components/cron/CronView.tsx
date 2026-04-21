@@ -981,7 +981,7 @@ export function CronView() {
         />
       )}
 
-      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-8">
+      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-8">
         {!cloudAi && models.length === 0 && (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
             <p className="text-xs font-medium text-stone-700 mb-1">

@@ -223,7 +223,7 @@ export function CustomersView() {
       {adding && <AddCustomerForm onClose={() => setAdding(false)} />}
 
       {/* Grid */}
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto p-5">
         {isLoading && (
           <p className="text-sm text-stone-500 text-center py-8">
             {tc("loading")}
