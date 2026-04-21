@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.4
+
+- PDF text extraction: pdftotext (poppler) with pypdf
+  fallback, cached in memory
+- PDF content limit 8K for advisor tool calls
+- Settings toolbar uses PanelToolbar, no title
+- Language selector styled consistently
+- KB sidebar resize fixed with PDF iframe overlay
+- Advisor clear button with icon + label
+- Fix updater re-offering same version
+- Suppress pypdf warnings for malformed PDFs
+
 ## 0.8.3
 
 - PanelToolbar component: consistent toolbar layout
