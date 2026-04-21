@@ -17,7 +17,7 @@ interface SearchInputProps {
 
 const defaultInputCls = [
   smallInputCls,
-  "!pl-7 !pr-6 !rounded-lg",
+  "!pl-7 !pr-6",
 ].join(" ");
 
 export function SearchInput({

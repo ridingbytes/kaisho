@@ -24,7 +24,7 @@ export function PanelToolbar({
     <div
       className={[
         "flex flex-wrap items-center",
-        "gap-x-3 gap-y-2 px-4 py-2.5",
+        "gap-x-3 gap-y-2 px-3 py-2.5",
         "border-b border-border-subtle shrink-0",
       ].join(" ")}
     >

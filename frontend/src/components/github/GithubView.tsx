@@ -12,6 +12,7 @@ import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { DOCS } from "../../docs/panelDocs";
 import { useGithubSettings } from "../../hooks/useSettings";
+import { smallInputCls } from "../../styles/formStyles";
 
 // ------------------------------------------------------------------
 // Shared
@@ -382,12 +383,7 @@ export function GithubView() {
               onChange={(e) =>
                 setCustomerFilter(e.target.value)
               }
-              className={[
-                "text-xs bg-surface-raised border",
-                "border-border rounded px-2 py-1",
-                "text-stone-800 focus:outline-none",
-                "focus:border-cta",
-              ].join(" ")}
+              className={`${smallInputCls} !w-40`}
             >
               <option value="">{t("allCustomers")}</option>
               {customers.map((c) => (
@@ -436,7 +432,7 @@ export function GithubView() {
         </>}
       />
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-3">
         {!hasToken && (
           <div className="max-w-md mx-auto mt-12 text-center space-y-3">
             <p className="text-sm font-medium text-stone-700">
