@@ -118,6 +118,10 @@ def create_folder(
 def _extract_pdf_text(path: Path) -> str | None:
     """Extract text from a PDF file using pypdf."""
     try:
+        import logging
+        logging.getLogger("pypdf").setLevel(
+            logging.ERROR,
+        )
         from pypdf import PdfReader
         reader = PdfReader(str(path))
         pages = []
