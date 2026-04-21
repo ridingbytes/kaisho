@@ -54,14 +54,15 @@ function SortableInboxRow({
       }}
       className="border-b border-border-subtle"
     >
-      <div className="flex items-center">
+      <div className="flex items-start">
         <button
           {...attributes}
           {...listeners}
           className={[
-            "cursor-grab shrink-0 px-1",
+            "cursor-grab shrink-0",
+            "pl-3 pr-1 pt-4",
             "text-stone-300 hover:text-stone-500",
-            "touch-none self-stretch flex items-center",
+            "touch-none",
           ].join(" ")}
         >
           <GripVertical size={12} />
