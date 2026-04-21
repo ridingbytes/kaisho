@@ -112,6 +112,7 @@ export function ShortcutsSection(): JSX.Element {
     setViewShortcut,
     setActionShortcut,
     setCommandPaletteShortcut,
+    setCommandBarShortcut,
     resetToDefaults,
   } = useShortcutsContext();
   const [recording, setRecording] = useState<
@@ -138,6 +139,11 @@ export function ShortcutsSection(): JSX.Element {
       config.commandPalette === s
     )
       return "Command palette";
+    if (
+      excludeKey !== "_cmdbar" &&
+      config.commandBar === s
+    )
+      return "Command bar";
     for (const r of SHORTCUT_ROWS) {
       if (r.key !== excludeKey && config.views[r.key] === s)
         return r.label;
@@ -159,6 +165,9 @@ export function ShortcutsSection(): JSX.Element {
         ...(config.commandPalette === s
           ? [{ key: "_palette" }]
           : []),
+        ...(config.commandBar === s
+          ? [{ key: "_cmdbar" }]
+          : []),
         ...SHORTCUT_ROWS.filter(
           (r) => config.views[r.key] === s,
         ),
@@ -169,6 +178,8 @@ export function ShortcutsSection(): JSX.Element {
       if (cKey) {
         if (cKey.key === "_palette") {
           setCommandPaletteShortcut("");
+        } else if (cKey.key === "_cmdbar") {
+          setCommandBarShortcut("");
         } else if (cKey.key.startsWith("new:")) {
           setActionShortcut(cKey.key, "");
         } else {
@@ -178,6 +189,8 @@ export function ShortcutsSection(): JSX.Element {
     }
     if (rowKey === "_palette") {
       setCommandPaletteShortcut(s);
+    } else if (rowKey === "_cmdbar") {
+      setCommandBarShortcut(s);
     } else if (rowKey.startsWith("new:")) {
       setActionShortcut(rowKey, s);
     } else {
@@ -189,6 +202,8 @@ export function ShortcutsSection(): JSX.Element {
   function currentFor(key: string): string {
     if (key === "_palette")
       return config.commandPalette;
+    if (key === "_cmdbar")
+      return config.commandBar;
     if (key.startsWith("new:"))
       return config.actions[key] ?? "";
     return config.views[key] ?? "";
@@ -197,6 +212,8 @@ export function ShortcutsSection(): JSX.Element {
   function defaultFor(key: string): string {
     if (key === "_palette")
       return DEFAULT_SHORTCUTS.commandPalette;
+    if (key === "_cmdbar")
+      return DEFAULT_SHORTCUTS.commandBar;
     if (key.startsWith("new:"))
       return DEFAULT_SHORTCUTS.actions[key] ?? "";
     return DEFAULT_SHORTCUTS.views[key] ?? "";
@@ -206,6 +223,8 @@ export function ShortcutsSection(): JSX.Element {
     const def = defaultFor(key);
     if (key === "_palette") {
       setCommandPaletteShortcut(def);
+    } else if (key === "_cmdbar") {
+      setCommandBarShortcut(def);
     } else if (key.startsWith("new:")) {
       setActionShortcut(key, def);
     } else {
@@ -311,20 +330,11 @@ export function ShortcutsSection(): JSX.Element {
           key: "_palette",
           label: tn("commandPalette"),
         },
+        {
+          key: "_cmdbar",
+          label: "Command Bar",
+        },
       ])}
-
-      {/* Command bar — fixed shortcut, not editable */}
-      <h3 className="text-[10px] font-semibold tracking-wider uppercase text-stone-500 mt-4 mb-1.5">
-        Command Bar
-      </h3>
-      <div className="flex items-center gap-3 py-1">
-        <span className="text-xs text-stone-700 w-40">
-          Command Bar
-        </span>
-        <kbd className="text-[10px] font-mono text-stone-700 border border-border rounded px-1.5 py-0.5">
-          {displayShortcut("mod+j")}
-        </kbd>
-      </div>
 
       {renderGroup(t("navigate"), SHORTCUT_ROWS)}
       {renderGroup(t("actions"), ACTION_ROWS)}

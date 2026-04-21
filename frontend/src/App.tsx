@@ -51,6 +51,7 @@ import { Sidebar } from "./components/nav/Sidebar";
 import { SettingsView } from "./components/settings/SettingsView";
 import {
   ShortcutsProvider,
+  displayShortcut,
   matchesShortcut,
   useShortcutsContext,
 } from "./context/ShortcutsContext";
@@ -518,11 +519,8 @@ function AppShell() {
     function handleKeyDown(e: KeyboardEvent) {
       // Skip if another handler already consumed the event
       if (e.defaultPrevented) return;
-      // Command bar: Cmd+J / Ctrl+J
-      if (
-        (e.metaKey || e.ctrlKey)
-        && e.key === "j"
-      ) {
+      // Command bar shortcut (configurable)
+      if (matchesShortcut(e, config.commandBar)) {
         e.preventDefault();
         setCmdBarOpen((v) => !v);
         return;
@@ -688,7 +686,7 @@ function AppShell() {
           <button
             onClick={() => setCmdBarOpen((v) => !v)}
             className={headerBtn}
-            title="Command bar (Cmd+J)"
+            title={`Command bar (${displayShortcut(config.commandBar)})`}
           >
             <Terminal size={14} />
           </button>

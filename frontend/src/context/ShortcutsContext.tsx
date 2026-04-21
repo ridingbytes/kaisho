@@ -8,12 +8,14 @@ import {
 
 export interface ShortcutsConfig {
   commandPalette: string;
+  commandBar: string;
   views: Record<string, string>;
   actions: Record<string, string>;
 }
 
 export const DEFAULT_SHORTCUTS: ShortcutsConfig = {
   commandPalette: "mod+k",
+  commandBar: "mod+j",
   views: {
     dashboard: "d",
     board: "b",
@@ -47,6 +49,8 @@ function loadConfig(): ShortcutsConfig {
       return {
         commandPalette:
           saved.commandPalette ?? DEFAULT_SHORTCUTS.commandPalette,
+        commandBar:
+          saved.commandBar ?? DEFAULT_SHORTCUTS.commandBar,
         views: { ...DEFAULT_SHORTCUTS.views, ...(saved.views ?? {}) },
         actions: { ...DEFAULT_SHORTCUTS.actions, ...(saved.actions ?? {}) },
       };
@@ -96,6 +100,7 @@ interface ShortcutsContextValue {
   setViewShortcut: (view: string, key: string) => void;
   setActionShortcut: (action: string, key: string) => void;
   setCommandPaletteShortcut: (key: string) => void;
+  setCommandBarShortcut: (key: string) => void;
   resetToDefaults: () => void;
 }
 
@@ -149,6 +154,19 @@ export function ShortcutsProvider({
     []
   );
 
+  const setCommandBarShortcut = useCallback(
+    (key: string) => {
+      setConfig((prev) => {
+        const next = { ...prev, commandBar: key };
+        localStorage.setItem(
+          STORAGE_KEY, JSON.stringify(next),
+        );
+        return next;
+      });
+    },
+    []
+  );
+
   const resetToDefaults = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
     setConfig(DEFAULT_SHORTCUTS);
@@ -163,9 +181,16 @@ export function ShortcutsProvider({
       setViewShortcut,
       setActionShortcut,
       setCommandPaletteShortcut,
+      setCommandBarShortcut,
       resetToDefaults,
     }),
-    [config, setViewShortcut, setActionShortcut, setCommandPaletteShortcut, resetToDefaults]
+    [
+      config, setViewShortcut,
+      setActionShortcut,
+      setCommandPaletteShortcut,
+      setCommandBarShortcut,
+      resetToDefaults,
+    ],
   );
 
   return (

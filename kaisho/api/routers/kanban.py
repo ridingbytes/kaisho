@@ -53,8 +53,21 @@ def reorder_tasks(task_ids: list[str] = Body(...)):
 
 @router.post("/tasks", status_code=201)
 def create_task(body: TaskCreate):
-    """Create a new kanban task."""
-    return get_backend().tasks.add_task(
+    """Create a new kanban task.
+
+    Auto-creates the customer if it doesn't exist.
+    """
+    backend = get_backend()
+    if body.customer:
+        existing = {
+            c["name"].lower()
+            for c in backend.customers.list_customers()
+        }
+        if body.customer.lower() not in existing:
+            backend.customers.add_customer(
+                name=body.customer,
+            )
+    return backend.tasks.add_task(
         customer=body.customer,
         title=body.title,
         status=body.status,
