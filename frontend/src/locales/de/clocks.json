@@ -56,5 +56,6 @@
   "inbox": "Eingang",
   "note": "Notiz",
   "task": "Aufgabe",
-  "hideInvoiced": "Abgerechnete ausblenden"
+  "hideInvoiced": "Abgerechnete ausblenden",
+  "icalFeed": "Kalender abonnieren (iCal)"
 }

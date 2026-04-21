@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  Rss,
 } from "lucide-react";
 import { useActiveTimer } from "../../hooks/useClocks";
 import { useCloudActiveTimer } from "../../hooks/useSettings";
@@ -150,18 +151,27 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
 
         {/* Calendar — collapsible, persistent */}
         <div>
-          <button
-            onClick={toggleCalendar}
-            className="w-full flex items-center gap-1 group mb-1"
-          >
-            {calendarOpen
-              ? <ChevronDown size={10} className="text-stone-500 group-hover:text-stone-700 transition-colors" />
-              : <ChevronRight size={10} className="text-stone-500 group-hover:text-stone-700 transition-colors" />
-            }
-            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 group-hover:text-stone-700 transition-colors">
-              {t("calendar")}
-            </h3>
-          </button>
+          <div className="flex items-center gap-1 mb-1">
+            <button
+              onClick={toggleCalendar}
+              className="flex items-center gap-1 group flex-1"
+            >
+              {calendarOpen
+                ? <ChevronDown size={10} className="text-stone-500 group-hover:text-stone-700 transition-colors" />
+                : <ChevronRight size={10} className="text-stone-500 group-hover:text-stone-700 transition-colors" />
+              }
+              <h3 className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 group-hover:text-stone-700 transition-colors">
+                {t("calendar")}
+              </h3>
+            </button>
+            <a
+              href="/api/clocks/calendar.ics"
+              title={t("icalFeed")}
+              className="p-0.5 rounded text-stone-400 hover:text-cta transition-colors"
+            >
+              <Rss size={10} />
+            </a>
+          </div>
           {calendarOpen && (
             <CalendarWidget
               selectedDate={selectedDate}

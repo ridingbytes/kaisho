@@ -56,5 +56,6 @@
   "inbox": "Inbox",
   "note": "Note",
   "task": "Task",
-  "hideInvoiced": "Hide invoiced"
+  "hideInvoiced": "Hide invoiced",
+  "icalFeed": "Subscribe to calendar (iCal)"
 }

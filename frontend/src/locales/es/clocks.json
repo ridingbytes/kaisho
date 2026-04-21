@@ -56,5 +56,6 @@
   "inbox": "Bandeja",
   "note": "Nota",
   "task": "Tarea",
-  "hideInvoiced": "Ocultar facturados"
+  "hideInvoiced": "Ocultar facturados",
+  "icalFeed": "Suscribirse al calendario (iCal)"
 }
