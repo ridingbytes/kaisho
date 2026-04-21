@@ -158,7 +158,7 @@ jobs:
               "$TARBALL"
           fi
 
-      - name: Create updater bundle (Windows)
+      - name: Sign NSIS installer (Windows)
         if: matrix.platform == 'windows-latest'
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -171,20 +171,12 @@ jobs:
           if [ -z "$EXE" ]; then
             echo "No NSIS exe found"; exit 0
           fi
-          ZIPFILE="${EXE%.exe}.nsis.zip"
-          echo "Creating $ZIPFILE"
-          # Convert Git Bash path to Windows path for
-          # PowerShell's Compress-Archive
-          WIN_EXE=$(cygpath -w "$EXE")
-          WIN_ZIP=$(cygpath -w "$ZIPFILE")
-          powershell -Command \
-            "Compress-Archive -Path '$WIN_EXE' \
-            -DestinationPath '$WIN_ZIP'"
+          echo "Signing $EXE"
           npx --prefix desktop tauri signer sign \
             -k "$TAURI_SIGNING_PRIVATE_KEY" \
             -p "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" \
-            "$ZIPFILE"
-          ls -la "$ZIPFILE" "${ZIPFILE}.sig"
+            "$EXE"
+          ls -la "$EXE" "${EXE}.sig"
 
       - name: Collect build artifacts
         id: collect
@@ -205,8 +197,7 @@ jobs:
             -o -name "*.msi.zip" \
             -o -name "*.msi.zip.sig" \
             -o -name "*-setup.exe" \
-            -o -name "*-setup.nsis.zip" \
-            -o -name "*-setup.nsis.zip.sig" \
+            -o -name "*-setup.exe.sig" \
             \) \
             -not -path "*/deps/*" \
             -exec cp -v {} ${RUNNER_TEMP}/release/ \;
@@ -283,15 +274,15 @@ jobs:
           export LINUX_SIG=$(read_sig \
             "*AppImage.tar.gz.sig")
           export WIN_SIG=$(read_sig \
-            "*nsis.zip.sig")
+            "*setup.exe.sig")
 
           # Find asset names from uploaded files
           export MAC_TAR=$(ls artifacts/ \
             | grep "app.tar.gz$" | head -1)
           export LINUX_AI=$(ls artifacts/ \
             | grep "AppImage$" | head -1)
-          export WIN_ZIP=$(ls artifacts/ \
-            | grep "nsis.zip$" | head -1)
+          export WIN_EXE=$(ls artifacts/ \
+            | grep "setup.exe$" | head -1)
 
           python3 << 'PYEOF'
           import json, os
@@ -301,7 +292,7 @@ jobs:
           for key, sig_var, file_var in [
               ("darwin-aarch64", "MAC_SIG", "MAC_TAR"),
               ("linux-x86_64", "LINUX_SIG", "LINUX_AI"),
-              ("windows-x86_64", "WIN_SIG", "WIN_ZIP"),
+              ("windows-x86_64", "WIN_SIG", "WIN_EXE"),
           ]:
               sig = os.environ.get(sig_var, "")
               fname = os.environ.get(file_var, "")
