@@ -121,6 +121,7 @@ export function KnowledgeSidebar({
 }: KnowledgeSidebarProps) {
   const { t } = useTranslation("knowledge");
   const { t: tc } = useTranslation("common");
+  const [resizing, setResizing] = useState(false);
   const isDragging = useRef(false);
   const dragStartX = useRef(0);
   const dragStartWidth = useRef(0);
@@ -128,6 +129,7 @@ export function KnowledgeSidebar({
   function startResize(e: React.MouseEvent) {
     e.preventDefault();
     isDragging.current = true;
+    setResizing(true);
     dragStartX.current = e.clientX;
     dragStartWidth.current = sidebarWidth;
 
@@ -145,6 +147,7 @@ export function KnowledgeSidebar({
 
     function onMouseUp() {
       isDragging.current = false;
+      setResizing(false);
       window.removeEventListener(
         "mousemove", onMouseMove
       );
@@ -159,6 +162,11 @@ export function KnowledgeSidebar({
 
   return (
     <>
+      {/* Transparent overlay during resize to prevent
+          iframes from capturing mouse events */}
+      {resizing && (
+        <div className="fixed inset-0 z-50 cursor-col-resize" />
+      )}
       {/* Sidebar panel */}
       <div
         className={

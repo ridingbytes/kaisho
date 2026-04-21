@@ -658,6 +658,7 @@ const LANGUAGES = [
 ];
 
 function LanguageSection() {
+  const { t } = useTranslation("settings");
   const [, forceUpdate] = useState(0);
   // Dynamic import so this compiles even before
   // the i18n module exists.
@@ -682,17 +683,12 @@ function LanguageSection() {
           "tracking-wider text-stone-500 mb-3"
         }
       >
-        Language
+        {t("language") || "Language"}
       </h3>
       <select
         value={lang}
         onChange={(e) => switchLang(e.target.value)}
-        className={
-          "px-3 py-1.5 rounded text-sm border border-border " +
-          "bg-surface text-stone-700 cursor-pointer " +
-          "hover:border-stone-400 focus:outline-none " +
-          "focus:border-cta transition-colors"
-        }
+        className={inputCls + " w-48"}
       >
         {LANGUAGES.map((l) => (
           <option key={l.code} value={l.code}>

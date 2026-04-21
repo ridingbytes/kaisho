@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HelpButton } from "../common/HelpButton";
+import { PanelToolbar } from "../common/PanelToolbar";
 import { DOCS } from "../../docs/panelDocs";
 import { GeneralTab } from "./GeneralTab";
 import { TagsAndTypesTab } from "./TagsTab";
@@ -67,7 +68,6 @@ function TabBar({ active, onChange }: TabBarProps) {
 }
 
 export function SettingsView(): JSX.Element {
-  const { t } = useTranslation("settings");
   const [activeTab, setActiveTab] = useState<TabId>(
     () =>
       (localStorage.getItem("settings_tab") as TabId) ||
@@ -96,18 +96,17 @@ export function SettingsView(): JSX.Element {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
-          {t("settings")}
-        </h1>
-        <HelpButton
-          title="Settings"
-          doc={DOCS.settings}
-          view="settings"
-        />
-      </div>
+      <PanelToolbar
+        right={
+          <HelpButton
+            title="Settings"
+            doc={DOCS.settings}
+            view="settings"
+          />
+        }
+      />
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-5">
         <div className="max-w-3xl">
           <TabBar
             active={activeTab}
