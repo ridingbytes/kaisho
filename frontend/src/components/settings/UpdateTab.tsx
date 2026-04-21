@@ -21,6 +21,7 @@ export function UpdateSection(): JSX.Element {
   const [checkResult, setCheckResult] = useState<
     string | null
   >(null);
+  const [updateReady, setUpdateReady] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [updateProgress, setUpdateProgress] = useState<
     string | null
@@ -41,12 +42,14 @@ export function UpdateSection(): JSX.Element {
       );
       const update = await check();
       if (update) {
+        setUpdateReady(true);
         setCheckResult(
           t("versionAvailable", {
             version: update.version,
           }),
         );
       } else {
+        setUpdateReady(false);
         setCheckResult(t("latestVersion"));
       }
     } catch (err) {
@@ -210,7 +213,7 @@ export function UpdateSection(): JSX.Element {
                 ? t("checking")
                 : t("checkForUpdates")}
             </button>
-            {checkResult?.includes("available") && (
+            {updateReady && (
               <button
                 onClick={handleInstallUpdate}
                 disabled={updating}
