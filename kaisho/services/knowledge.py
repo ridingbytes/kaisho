@@ -115,23 +115,37 @@ def create_folder(
     raise ValueError(f"Unknown KB source: {label!r}")
 
 
+_pdf_cache: dict[str, str | None] = {}
+
+
 def _extract_pdf_text(path: Path) -> str | None:
-    """Extract text from a PDF file using pypdf."""
+    """Extract text from a PDF file using pypdf.
+
+    Results are cached in memory to avoid re-parsing
+    on repeated advisor tool calls.
+    """
+    key = str(path)
+    if key in _pdf_cache:
+        return _pdf_cache[key]
     try:
         import logging
         logging.getLogger("pypdf").setLevel(
             logging.ERROR,
         )
         from pypdf import PdfReader
-        reader = PdfReader(str(path))
+        reader = PdfReader(key)
         pages = []
         for page in reader.pages:
             text = page.extract_text()
             if text:
                 pages.append(text)
-        return "\n\n".join(pages) if pages else None
+        result = (
+            "\n\n".join(pages) if pages else None
+        )
     except Exception:
-        return None
+        result = None
+    _pdf_cache[key] = result
+    return result
 
 
 def read_file(

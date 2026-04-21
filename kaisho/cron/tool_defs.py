@@ -197,8 +197,11 @@ TOOL_DEFS: list[dict] = [
     {
         "name": "read_knowledge_file",
         "description": (
-            "Read the full content of a knowledge base file "
-            "by its relative path."
+            "Read a knowledge base file by its path. "
+            "For large files (PDFs, books), use "
+            "search_knowledge first to find relevant "
+            "sections, then read only if needed. "
+            "Content is truncated at 8K chars for PDFs."
         ),
         "input_schema": {
             "type": "object",

@@ -687,8 +687,14 @@ def _read_knowledge_file(path: str) -> dict:
     content = kb_svc.read_file(_kb_sources(), path)
     if content is None:
         return {"error": f"File not found: {path}"}
-    if len(content) > 30_000:
-        content = content[:30_000] + "\n...(truncated)"
+    is_pdf = path.lower().endswith(".pdf")
+    limit = 8_000 if is_pdf else 30_000
+    if len(content) > limit:
+        content = (
+            content[:limit]
+            + "\n...(truncated — use search_knowledge"
+            + " to find specific sections)"
+        )
     return {"content": content}
 
 
