@@ -54,9 +54,11 @@ def get_file_raw(path: str):
             status_code=404,
             detail="File not found",
         )
+    import mimetypes
+    mime, _ = mimetypes.guess_type(resolved)
     return FileResponse(
         resolved,
-        media_type="application/octet-stream",
+        media_type=mime or "application/octet-stream",
     )
 
 
