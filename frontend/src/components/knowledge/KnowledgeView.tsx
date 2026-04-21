@@ -84,8 +84,9 @@ export function KnowledgeView() {
 
   const { data: tree = [], isLoading: treeLoading } =
     useKnowledgeTree();
+  const isPdf = selectedPath?.endsWith(".pdf");
   const { data: fileData, isLoading: fileLoading } =
-    useKnowledgeFile(selectedPath);
+    useKnowledgeFile(isPdf ? null : selectedPath);
   const {
     data: searchResults = [],
     isLoading: searchLoading,
@@ -380,6 +381,17 @@ export function KnowledgeView() {
           />
 
           {/* Right panel: file content */}
+          {isPdf && selectedPath ? (
+            <iframe
+              src={
+                `/api/knowledge/file/raw?path=${
+                  encodeURIComponent(selectedPath)
+                }`
+              }
+              className="flex-1 w-full border-0"
+              title={selectedPath}
+            />
+          ) : (
           <div className="flex-1 overflow-y-auto p-4">
             {fileLoading && (
               <p className="text-sm text-stone-500">
@@ -399,6 +411,7 @@ export function KnowledgeView() {
               </Markdown>
             )}
           </div>
+          )}
         </div>
       )}
     </div>

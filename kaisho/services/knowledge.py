@@ -118,14 +118,23 @@ def create_folder(
 def read_file(
     sources: list[dict], rel_path: str
 ) -> str | None:
-    """Return content of a KB file by relative path."""
+    """Return content of a KB file by relative path.
+
+    Returns ``None`` for binary files (e.g. PDFs) that
+    cannot be decoded as UTF-8.
+    """
     for _label, base in _expand_sources(sources):
         try:
             candidate = _safe_path(base, rel_path)
         except ValueError:
             continue
         if candidate.exists() and candidate.is_file():
-            return candidate.read_text(encoding="utf-8")
+            try:
+                return candidate.read_text(
+                    encoding="utf-8",
+                )
+            except UnicodeDecodeError:
+                return None
     return None
 
 
