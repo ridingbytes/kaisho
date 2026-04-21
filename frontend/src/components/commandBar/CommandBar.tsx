@@ -37,7 +37,7 @@ const HELP_TEXT = [
   "",
   "Common commands:",
   "  clock start <customer> [description]",
-  "  clock stop",
+  "  clock stop [--desc X] [--notes X] [--customer X]",
   "  clock desc <description>",
   "  clock note <text>",
   "  clock book <duration> <customer> [desc]",
@@ -108,7 +108,10 @@ function parseCommand(
         },
       };
     }
-    if (sub === "stop") {
+    if (sub === "stop" && tokens.length <= 2) {
+      // Plain "clock stop" — use client-side API.
+      // "clock stop --notes ..." falls through to
+      // the backend CLI which handles flags.
       return {
         execute: async () => {
           const entry = await stopTimer();
