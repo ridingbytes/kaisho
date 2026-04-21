@@ -380,7 +380,7 @@ export function KnowledgeView() {
           />
 
           {/* Right panel: file content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-4">
             {fileLoading && (
               <p className="text-sm text-stone-500">
                 {tc("loading")}

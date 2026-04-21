@@ -582,7 +582,7 @@ export function DashboardView() {
       />
       <div
         className={
-          "flex-1 overflow-y-auto p-6 space-y-6"
+          "flex-1 overflow-y-auto p-4 space-y-6"
         }
       >
         {/* Active timer banner */}

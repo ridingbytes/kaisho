@@ -349,7 +349,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
       />
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4">
         {messages.length === 0 && !loading && !cloudAi && !model && models.length === 0 && (
           <div className="max-w-md mx-auto mt-12 text-center space-y-3">
             <p className="text-sm font-medium text-stone-700">
@@ -454,7 +454,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
       {/* Input */}
       <form
         onSubmit={handleSubmit}
-        className="shrink-0 px-6 pb-4 border-t border-border-subtle pt-3"
+        className="shrink-0 px-4 pb-4 border-t border-border-subtle pt-3"
       >
         {/* Slash command popup */}
         {input.startsWith("/") && !input.includes(" ") && (

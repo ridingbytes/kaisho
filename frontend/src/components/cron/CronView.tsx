@@ -567,7 +567,7 @@ function AddJobForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="border-b border-border-subtle bg-surface-card px-6 py-4 flex flex-col gap-3"
+      className="border-b border-border-subtle bg-surface-card px-4 py-4 flex flex-col gap-3"
     >
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-stone-700 uppercase tracking-wide">
@@ -981,7 +981,7 @@ export function CronView() {
         />
       )}
 
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-8">
         {!cloudAi && models.length === 0 && (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
             <p className="text-xs font-medium text-stone-700 mb-1">
