@@ -118,32 +118,60 @@ def create_folder(
 _pdf_cache: dict[str, str | None] = {}
 
 
-def _extract_pdf_text(path: Path) -> str | None:
-    """Extract text from a PDF file using pypdf.
+def _pdftotext(path: str) -> str | None:
+    """Try extracting text via the pdftotext CLI tool.
 
-    Results are cached in memory to avoid re-parsing
-    on repeated advisor tool calls.
+    Returns ``None`` if pdftotext is not installed or
+    fails.
     """
-    key = str(path)
-    if key in _pdf_cache:
-        return _pdf_cache[key]
+    import shutil
+    import subprocess
+    if not shutil.which("pdftotext"):
+        return None
+    try:
+        result = subprocess.run(
+            ["pdftotext", path, "-"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode == 0 and result.stdout:
+            return result.stdout
+    except (subprocess.TimeoutExpired, OSError):
+        pass
+    return None
+
+
+def _pypdf_extract(path: str) -> str | None:
+    """Fallback: extract text using pypdf."""
     try:
         import logging
         logging.getLogger("pypdf").setLevel(
             logging.ERROR,
         )
         from pypdf import PdfReader
-        reader = PdfReader(key)
+        reader = PdfReader(path)
         pages = []
         for page in reader.pages:
             text = page.extract_text()
             if text:
                 pages.append(text)
-        result = (
-            "\n\n".join(pages) if pages else None
-        )
+        return "\n\n".join(pages) if pages else None
     except Exception:
-        result = None
+        return None
+
+
+def _extract_pdf_text(path: Path) -> str | None:
+    """Extract text from a PDF file.
+
+    Tries ``pdftotext`` (poppler) first for best
+    results, falls back to ``pypdf``. Results are
+    cached in memory.
+    """
+    key = str(path)
+    if key in _pdf_cache:
+        return _pdf_cache[key]
+    result = _pdftotext(key) or _pypdf_extract(key)
     _pdf_cache[key] = result
     return result
 
