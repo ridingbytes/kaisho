@@ -50,6 +50,38 @@ def list_notes(notes_file: Path) -> list[dict]:
     ]
 
 
+def reorder_notes(
+    notes_file: Path, note_ids: list[str],
+) -> list[dict]:
+    """Reorder notes to match the given ID sequence.
+
+    IDs are 1-based indices into the current heading
+    list. Headings not in ``note_ids`` are appended at
+    the end in their original order.
+    """
+    if not notes_file.exists():
+        return []
+    org_file = parse_org_file(
+        notes_file, NOTES_KEYWORDS,
+    )
+    old = list(org_file.headings)
+    by_id = {str(i): h for i, h in enumerate(old, 1)}
+    ordered = [
+        by_id[nid] for nid in note_ids
+        if nid in by_id
+    ]
+    seen = set(note_ids)
+    for i, h in enumerate(old, 1):
+        if str(i) not in seen:
+            ordered.append(h)
+    org_file.headings = ordered
+    write_org_file(notes_file, org_file)
+    return [
+        _heading_to_note(h, str(i))
+        for i, h in enumerate(ordered, start=1)
+    ]
+
+
 def add_note(
     notes_file: Path,
     title: str,

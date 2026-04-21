@@ -321,6 +321,12 @@ class NotesBackend(ABC):
     ) -> dict:
         """Add a new note, return its dict."""
 
+    def reorder_notes(
+        self, note_ids: list[str],
+    ) -> list[dict]:
+        """Reorder notes. Default: no-op, return current."""
+        return self.list_notes()
+
     @abstractmethod
     def delete_note(self, note_id: str) -> bool:
         """Delete a note. Return False if not found."""

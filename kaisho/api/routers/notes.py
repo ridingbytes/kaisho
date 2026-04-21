@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 
 from ...backends import get_backend
@@ -24,6 +24,13 @@ class PromoteRequest(BaseModel):
 def list_notes():
     """List all notes."""
     return get_backend().notes.list_notes()
+
+
+@router.put("/order")
+def reorder_notes(note_ids: list[str] = Body(...)):
+    """Persist note order."""
+    backend = get_backend()
+    return backend.notes.reorder_notes(note_ids)
 
 
 @router.post("/", status_code=201)

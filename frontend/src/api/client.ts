@@ -931,6 +931,13 @@ export function fetchNotes(): Promise<NoteItem[]> {
   return get<NoteItem[]>("/notes/");
 }
 
+/** Persist the display order of notes. */
+export function reorderNotes(
+  noteIds: string[],
+): Promise<unknown> {
+  return put("/notes/order", noteIds);
+}
+
 /** Create a new note with a title and optional body,
  *  customer link, task link, and tags. */
 export function addNote(data: {

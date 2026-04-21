@@ -34,6 +34,13 @@ class OrgNotesBackend(NotesBackend):
             task_id=task_id,
         )
 
+    def reorder_notes(
+        self, note_ids: list[str],
+    ) -> list[dict]:
+        return notes_service.reorder_notes(
+            self._notes_file, note_ids,
+        )
+
     def delete_note(self, note_id: str) -> bool:
         return notes_service.delete_note(self._notes_file, note_id)
 

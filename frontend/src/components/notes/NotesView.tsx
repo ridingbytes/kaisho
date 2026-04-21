@@ -1,11 +1,27 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { tagBadgeStyle } from "../../utils/tagColors";
 import { RelDate } from "../common/RelDate";
 import {
   ArrowRightLeft,
   Check,
+  GripVertical,
   Pencil,
   Trash2,
   X,
@@ -29,6 +45,7 @@ import {
 import { useSettings } from "../../hooks/useSettings";
 import { useTasks } from "../../hooks/useTasks";
 import { usePendingSearch, useSetView } from "../../context/ViewContext";
+import { reorderNotes } from "../../api/client";
 import { SearchInput } from "../common/SearchInput";
 import { matchesAny } from "../../utils/filterMatch";
 import { registerPanelAction } from "../../utils/panelActions";
@@ -195,13 +212,40 @@ function NoteRow({
     );
   }
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: note.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   return (
-    <div className="group border-b border-border-subtle">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group border-b border-border-subtle"
+    >
       <div
         className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-surface-raised transition-colors"
         onClick={() => !editing && setExpanded((v) => !v)}
         onContextMenu={handleContextMenu}
       >
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab text-stone-300 hover:text-stone-500 shrink-0 touch-none"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical size={12} />
+        </button>
         <RelDate
           date={note.created}
           className="text-xs text-stone-600 w-20 shrink-0"
@@ -676,9 +720,33 @@ export function NotesView() {
   const { data: settings } = useSettings();
   const allTags = settings?.tags ?? [];
   const deleteNote = useDeleteNote();
+  const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState("");
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const ids = filtered.map((n) => n.id);
+    const oldIdx = ids.indexOf(String(active.id));
+    const newIdx = ids.indexOf(String(over.id));
+    if (oldIdx < 0 || newIdx < 0) return;
+    const reordered = [...ids];
+    reordered.splice(oldIdx, 1);
+    reordered.splice(newIdx, 0, String(active.id));
+    reorderNotes(reordered).then(() => {
+      void qc.invalidateQueries({
+        queryKey: ["notes"],
+      });
+    });
+  }
   const { pendingSearch, clearPendingSearch } = usePendingSearch();
 
   useEffect(
@@ -774,15 +842,28 @@ export function NotesView() {
               : t("noMatchingNotes")}
           </p>
         )}
-        {filtered.map((note) => (
-          <NoteRow
-            key={note.id}
-            note={note}
-            allTags={allTags}
-            onDelete={() => deleteNote.mutate(note.id)}
-            onTagClick={setTagFilter}
-          />
-        ))}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={filtered.map((n) => n.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {filtered.map((note) => (
+              <NoteRow
+                key={note.id}
+                note={note}
+                allTags={allTags}
+                onDelete={() =>
+                  deleteNote.mutate(note.id)
+                }
+                onTagClick={setTagFilter}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
 
         {/* Archive drawer */}
         {archivedNotes.length > 0 && (
