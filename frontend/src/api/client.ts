@@ -1167,6 +1167,7 @@ export interface CloudSyncStatus {
   cloud_last_change_at?: string | null;
   cloud_active_timer_id?: string | null;
   use_cloud_ai?: boolean;
+  email?: string | null;
 }
 
 /** Result of a bidirectional sync cycle. */

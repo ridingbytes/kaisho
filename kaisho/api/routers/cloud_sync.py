@@ -77,6 +77,8 @@ def status():
         result["cloud_active_timer_id"] = stats.get(
             "active_timer_id",
         )
+        if stats.get("email"):
+            result["email"] = stats["email"]
     return result
 
 

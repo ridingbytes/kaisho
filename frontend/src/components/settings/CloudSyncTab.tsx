@@ -213,6 +213,11 @@ export function CloudSyncSection(): JSX.Element {
             <p className="text-xs text-stone-500">
               {status?.url}
             </p>
+            {status?.email && (
+              <p className="text-xs text-stone-500 mt-0.5">
+                {status.email}
+              </p>
+            )}
             {(status?.pending_deletes ?? 0) > 0 && (
               <p className="text-xs text-amber-600 mt-1">
                 {t("tombstonesWaiting", {
