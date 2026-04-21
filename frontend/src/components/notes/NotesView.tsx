@@ -14,6 +14,7 @@ import { CollapsibleSection } from "../common/CollapsibleSection";
 import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
+import { PanelToolbar } from "../common/PanelToolbar";
 import { TagDropdown } from "../common/TagDropdown";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { DOCS } from "../../docs/panelDocs";
@@ -670,7 +671,6 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
 
 export function NotesView() {
   const { t } = useTranslation("notes");
-  const { t: tn } = useTranslation("nav");
   const { t: tc } = useTranslation("common");
   const { data: notes = [], isLoading } = useNotes();
   const { data: settings } = useSettings();
@@ -713,37 +713,56 @@ export function NotesView() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-6 py-3 border-b border-border-subtle shrink-0 flex-wrap">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
-          {tn("notes")}
-        </h1>
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          validate
-          inputClassName="px-2 py-1 rounded-lg text-xs bg-surface-raised border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta w-40 pr-6"
-          className="w-40"
-        />
-        {tagFilter && (
+      <PanelToolbar
+        left={<>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            validate
+            inputClassName={[
+              "px-2 py-1 rounded-lg text-xs",
+              "bg-surface-raised border border-border",
+              "text-stone-900 placeholder-stone-500",
+              "focus:outline-none focus:border-cta",
+              "w-40 pr-6",
+            ].join(" ")}
+            className="w-40"
+          />
+          {tagFilter && (
+            <button
+              onClick={() => setTagFilter("")}
+              className={[
+                "flex items-center gap-1 px-2 py-0.5",
+                "rounded text-[10px] font-semibold",
+                "hover:opacity-80",
+              ].join(" ")}
+              style={tagBadgeStyle(
+                allTags.find((t) => t.name === tagFilter)
+                  ?.color,
+              )}
+            >
+              {tagFilter}
+              <X size={10} />
+            </button>
+          )}
+        </>}
+        right={<>
           <button
-            onClick={() => setTagFilter("")}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold hover:opacity-80"
-            style={tagBadgeStyle(
-              allTags.find((t) => t.name === tagFilter)?.color,
-            )}
+            onClick={() => setShowForm((v) => !v)}
+            className={[
+              "px-3 py-1 rounded-lg text-xs bg-cta",
+              "text-white hover:bg-cta-hover transition-colors",
+            ].join(" ")}
           >
-            {tagFilter}
-            <X size={10} />
+            {t("addNote")}
           </button>
-        )}
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="ml-auto px-3 py-1 rounded-lg text-xs bg-cta text-white hover:bg-cta-hover transition-colors"
-        >
-          {t("addNote")}
-        </button>
-        <HelpButton title={t("notes")} doc={DOCS.notes} view="notes" />
-      </div>
+          <HelpButton
+            title={t("notes")}
+            doc={DOCS.notes}
+            view="notes"
+          />
+        </>}
+      />
 
       {showForm && (
         <AddNoteForm onClose={() => setShowForm(false)} />

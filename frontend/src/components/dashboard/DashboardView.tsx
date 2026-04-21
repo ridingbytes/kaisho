@@ -34,6 +34,7 @@ import { useSetView } from "../../context/ViewContext";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import type { BudgetSummary, ClockEntry } from "../../types";
 import { HelpButton } from "../common/HelpButton";
+import { PanelToolbar } from "../common/PanelToolbar";
 import { DOCS } from "../../docs/panelDocs";
 import { TimeInsights } from "./TimeInsights";
 import {
@@ -570,26 +571,15 @@ export function DashboardView() {
 
   return (
     <div className="flex flex-col h-full">
-      <div
-        className={
-          "flex items-center px-6 py-3 " +
-          "border-b border-border-subtle shrink-0"
-        }
-      >
-        <h1
-          className={
-            "text-xs font-semibold tracking-wider " +
-            "uppercase text-stone-700 flex-1"
-          }
-        >
-          {t("dashboard")}
-        </h1>
-        <HelpButton
-          title="Dashboard"
-          doc={DOCS.dashboard}
-          view="dashboard"
-        />
-      </div>
+      <PanelToolbar
+        right={<>
+          <HelpButton
+            title="Dashboard"
+            doc={DOCS.dashboard}
+            view="dashboard"
+          />
+        </>}
+      />
       <div
         className={
           "flex-1 overflow-y-auto p-6 space-y-6"

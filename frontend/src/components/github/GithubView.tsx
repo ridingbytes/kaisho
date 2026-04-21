@@ -9,6 +9,7 @@ import type {
   GithubProjectItem,
 } from "../../types";
 import { HelpButton } from "../common/HelpButton";
+import { PanelToolbar } from "../common/PanelToolbar";
 import { DOCS } from "../../docs/panelDocs";
 import { useGithubSettings } from "../../hooks/useSettings";
 
@@ -327,7 +328,6 @@ type Tab = "issues" | "projects";
 
 export function GithubView() {
   const { t } = useTranslation("settings");
-  const { t: tNav } = useTranslation("nav");
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("issues");
   const [customerFilter, setCustomerFilter] = useState("");
@@ -360,55 +360,81 @@ export function GithubView() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-6 py-3 border-b border-border-subtle shrink-0">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
-          {tNav("github")}
-        </h1>
-        <div className="flex items-center gap-1">
-          <button className={tabCls("issues")} onClick={() => switchTab("issues")}>
-            {t("issues")}
-          </button>
+      <PanelToolbar
+        left={<>
+          <div className="flex items-center gap-1">
+            <button
+              className={tabCls("issues")}
+              onClick={() => switchTab("issues")}
+            >
+              {t("issues")}
+            </button>
+            <button
+              className={tabCls("projects")}
+              onClick={() => switchTab("projects")}
+            >
+              {t("projects")}
+            </button>
+          </div>
+          {customers.length > 0 && (
+            <select
+              value={customerFilter}
+              onChange={(e) =>
+                setCustomerFilter(e.target.value)
+              }
+              className={[
+                "text-xs bg-surface-raised border",
+                "border-border rounded px-2 py-1",
+                "text-stone-800 focus:outline-none",
+                "focus:border-cta",
+              ].join(" ")}
+            >
+              <option value="">{t("allCustomers")}</option>
+              {customers.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          )}
+          {tab === "projects" && (
+            <label className={[
+              "flex items-center gap-2 text-xs",
+              "text-stone-600 cursor-pointer select-none",
+            ].join(" ")}>
+              <input
+                type="checkbox"
+                checked={showClosed}
+                onChange={(e) =>
+                  setShowClosed(e.target.checked)
+                }
+                className="accent-cta"
+              />
+              {t("showClosed")}
+            </label>
+          )}
+        </>}
+        right={<>
           <button
-            className={tabCls("projects")}
-            onClick={() => switchTab("projects")}
+            onClick={() =>
+              void qc.invalidateQueries({
+                queryKey: ["github"],
+              })
+            }
+            title="Refresh"
+            className={[
+              "p-1 rounded text-stone-500",
+              "hover:text-stone-900",
+              "hover:bg-surface-overlay transition-colors",
+            ].join(" ")}
           >
-            {t("projects")}
+            <RefreshCcw size={13} />
           </button>
-        </div>
-        {customers.length > 0 && (
-          <select
-            value={customerFilter}
-            onChange={(e) => setCustomerFilter(e.target.value)}
-            className="text-xs bg-surface-raised border border-border rounded px-2 py-1 text-stone-800 focus:outline-none focus:border-cta"
-          >
-            <option value="">{t("allCustomers")}</option>
-            {customers.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        )}
-        {tab === "projects" && (
-          <label className="flex items-center gap-2 text-xs text-stone-600 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={showClosed}
-              onChange={(e) => setShowClosed(e.target.checked)}
-              className="accent-cta"
-            />
-            {t("showClosed")}
-          </label>
-        )}
-        <button
-          onClick={() =>
-            void qc.invalidateQueries({ queryKey: ["github"] })
-          }
-          title="Refresh"
-          className="ml-auto p-1 rounded text-stone-500 hover:text-stone-900 hover:bg-surface-overlay transition-colors"
-        >
-          <RefreshCcw size={13} />
-        </button>
-        <HelpButton title="GitHub" doc={DOCS.github} view="github" />
-      </div>
+          <HelpButton
+            title="GitHub"
+            doc={DOCS.github}
+            view="github"
+          />
+        </>}
+      />
 
       <div className="flex-1 overflow-y-auto p-6">
         {!hasToken && (

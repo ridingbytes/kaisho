@@ -21,6 +21,7 @@ import {
   useRenameKnowledgeFile,
 } from "../../hooks/useKnowledge";
 import { HelpButton } from "../common/HelpButton";
+import { PanelToolbar } from "../common/PanelToolbar";
 import { Markdown } from "../common/Markdown";
 import { DOCS } from "../../docs/panelDocs";
 import { EditorPanel } from "./EditorPanel";
@@ -273,21 +274,8 @@ export function KnowledgeView() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div
-        className={
-          "flex items-center gap-4 px-6 py-3 " +
-          "border-b border-border-subtle shrink-0"
-        }
-      >
-        <h1
-          className={
-            "text-xs font-semibold tracking-wider " +
-            "uppercase text-stone-700"
-          }
-        >
-          {t("knowledge")}
-        </h1>
-        {!editing && (
+      <PanelToolbar
+        left={!editing ? (
           <input
             type="text"
             placeholder={t("searchPlaceholder")}
@@ -296,7 +284,7 @@ export function KnowledgeView() {
               setSearchInput(e.target.value)
             }
             className={[
-              "ml-auto w-56 px-3 py-1 rounded-lg",
+              "w-56 px-3 py-1 rounded-lg",
               "text-sm bg-surface-raised border",
               "border-border text-stone-900",
               "placeholder-stone-500",
@@ -304,45 +292,47 @@ export function KnowledgeView() {
               "focus:border-border-strong",
             ].join(" ")}
           />
-        )}
-        {!editing && (
-          <button
-            onClick={() => setCreating((v) => !v)}
-            className={
-              "flex items-center gap-1 px-2.5 py-1 " +
-              "rounded bg-cta-muted text-cta text-xs " +
-              "font-semibold hover:bg-cta " +
-              "hover:text-white transition-colors"
-            }
-          >
-            <FilePlus size={12} />
-            {t("newFile")}
-          </button>
-        )}
-        {!editing &&
-          selectedPath &&
-          !fileLoading &&
-          fileData && (
+        ) : undefined}
+        right={<>
+          {!editing && (
             <button
-              onClick={() => setEditing(true)}
-              className={
-                "flex items-center gap-1 px-2.5 " +
-                "py-1 rounded text-stone-700 " +
-                "text-xs hover:text-stone-900 " +
-                "hover:bg-surface-raised " +
-                "transition-colors"
-              }
+              onClick={() => setCreating((v) => !v)}
+              className={[
+                "flex items-center gap-1 px-2.5 py-1",
+                "rounded bg-cta-muted text-cta text-xs",
+                "font-semibold hover:bg-cta",
+                "hover:text-white transition-colors",
+              ].join(" ")}
             >
-              <Pencil size={12} />
-              {t("editFile")}
+              <FilePlus size={12} />
+              {t("newFile")}
             </button>
           )}
-        <HelpButton
-          title={t("knowledge")}
-          doc={DOCS.knowledge}
-          view="knowledge"
-        />
-      </div>
+          {!editing &&
+            selectedPath &&
+            !fileLoading &&
+            fileData && (
+              <button
+                onClick={() => setEditing(true)}
+                className={[
+                  "flex items-center gap-1 px-2.5",
+                  "py-1 rounded text-stone-700",
+                  "text-xs hover:text-stone-900",
+                  "hover:bg-surface-raised",
+                  "transition-colors",
+                ].join(" ")}
+              >
+                <Pencil size={12} />
+                {t("editFile")}
+              </button>
+            )}
+          <HelpButton
+            title={t("knowledge")}
+            doc={DOCS.knowledge}
+            view="knowledge"
+          />
+        </>}
+      />
 
       {/* New-file form */}
       {creating && (

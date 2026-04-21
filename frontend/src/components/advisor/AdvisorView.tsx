@@ -13,6 +13,7 @@ import {
 } from "../../hooks/useSettings";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
+import { PanelToolbar } from "../common/PanelToolbar";
 import { DOCS } from "../../docs/panelDocs";
 import { openExternal } from "../../utils/tauri";
 
@@ -133,7 +134,6 @@ const ADVISOR_INVALIDATIONS = [
 
 export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
   const { t } = useTranslation("advisor");
-  const { t: tn } = useTranslation("nav");
   const { t: tc } = useTranslation("common");
   const { t: ts } = useTranslation("settings");
   const qc = useQueryClient();
@@ -298,46 +298,55 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
-          {tn("advisor")}
-        </h1>
-        {messages.length > 0 && (
-          <button
-            onClick={clearMessages}
-            title={t("clearChat")}
-            className="p-1 rounded text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-          >
-            <Trash2 size={13} />
-          </button>
-        )}
-        {model && (
-          <button
-            onClick={() => {
-              window.location.hash = "settings";
-              setTimeout(() => {
-                window.dispatchEvent(
-                  new CustomEvent(
-                    "navigate-settings-tab",
-                    { detail: "ai" },
-                  ),
-                );
-              }, 50);
-            }}
-            className={[
-              "ml-auto px-3 py-1 rounded-lg",
-              "text-xs font-medium font-mono",
-              "bg-cta/10 text-cta",
-              "border border-cta/30",
-              "hover:bg-cta/20 transition-colors",
-            ].join(" ")}
-            title={ts("ai")}
-          >
-            {cloudAi ? t("kaishoAi") : model}
-          </button>
-        )}
-        <HelpButton title={t("advisor")} doc={DOCS.advisor} view="advisor" />
-      </div>
+      <PanelToolbar
+        left={<>
+          {messages.length > 0 && (
+            <button
+              onClick={clearMessages}
+              title={t("clearChat")}
+              className={[
+                "p-1 rounded text-stone-500",
+                "hover:text-red-400 hover:bg-red-500/10",
+                "transition-colors",
+              ].join(" ")}
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
+        </>}
+        right={<>
+          {model && (
+            <button
+              onClick={() => {
+                window.location.hash = "settings";
+                setTimeout(() => {
+                  window.dispatchEvent(
+                    new CustomEvent(
+                      "navigate-settings-tab",
+                      { detail: "ai" },
+                    ),
+                  );
+                }, 50);
+              }}
+              className={[
+                "px-3 py-1 rounded-lg",
+                "text-xs font-medium font-mono",
+                "bg-cta/10 text-cta",
+                "border border-cta/30",
+                "hover:bg-cta/20 transition-colors",
+              ].join(" ")}
+              title={ts("ai")}
+            >
+              {cloudAi ? t("kaishoAi") : model}
+            </button>
+          )}
+          <HelpButton
+            title={t("advisor")}
+            doc={DOCS.advisor}
+            view="advisor"
+          />
+        </>}
+      />
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-4">

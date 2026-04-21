@@ -14,6 +14,7 @@ import {
 } from "./ClockTableHeader";
 import { EntryRow } from "./EntryRow";
 import { HelpButton } from "../common/HelpButton";
+import { PanelToolbar } from "../common/PanelToolbar";
 import { SearchInput } from "../common/SearchInput";
 import { Toggle } from "../common/Toggle";
 import { DOCS } from "../../docs/panelDocs";
@@ -281,139 +282,133 @@ export function ClockView() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className={
-        "flex items-center gap-3 px-6 py-3 " +
-        "border-b border-border-subtle shrink-0 " +
-        "flex-wrap"
-      }>
-        <h1 className={
-          "text-xs font-semibold tracking-wider " +
-          "uppercase text-stone-700"
-        }>
-          {t("clockEntries")}
-        </h1>
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder={
-            t("searchCustomerDescription")
-          }
-          inputClassName={
-            `${smallInputCls} !w-52 !pr-6 !rounded-lg`
-          }
-          className="w-52"
-        />
-        <select
-          className={`${smallInputCls} !w-28`}
-          value={period}
-          onChange={(e) => {
-            const next = e.target.value as Period;
-            setPeriod(next);
-            setSpecificDate("");
-            localStorage.setItem(
-              PERIOD_STORAGE_KEY,
-              next,
-            );
-          }}
-        >
-          <option value="today">{t("periodToday")}</option>
-          <option value="week">{t("periodWeek")}</option>
-          <option value="month">{t("periodMonth")}</option>
-          <option value="year">{t("periodYear")}</option>
-        </select>
-        <input
-          type="date"
-          className={`${smallInputCls} !w-36`}
-          value={specificDate}
-          title={t("filterByDate")}
-          onChange={(e) =>
-            setSpecificDate(e.target.value)
-          }
-        />
-        {!isLoading && invoiceFiltered.length > 0 && (
-          <span className="text-xs text-stone-600">
-            {t("entriesCount", {
-              count: invoiceFiltered.length,
-            })} ·{" "}
-            {totalHours(invoiceFiltered)}h
-          </span>
-        )}
-        <label className="flex items-center gap-2 ml-auto cursor-pointer">
-          <span className="text-xs text-stone-600">
-            {t("hideInvoiced")}
-          </span>
-          <Toggle
-            checked={hideInvoiced}
-            onChange={(v) => {
-              setHideInvoiced(v);
+      <PanelToolbar
+        left={<>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={
+              t("searchCustomerDescription")
+            }
+            inputClassName={
+              `${smallInputCls} !w-52 !pr-6 !rounded-lg`
+            }
+            className="w-52"
+          />
+          <select
+            className={`${smallInputCls} !w-28`}
+            value={period}
+            onChange={(e) => {
+              const next = e.target.value as Period;
+              setPeriod(next);
+              setSpecificDate("");
               localStorage.setItem(
-                "clocks_hide_invoiced",
-                String(v),
+                PERIOD_STORAGE_KEY,
+                next,
               );
             }}
+          >
+            <option value="today">{t("periodToday")}</option>
+            <option value="week">{t("periodWeek")}</option>
+            <option value="month">{t("periodMonth")}</option>
+            <option value="year">{t("periodYear")}</option>
+          </select>
+          <input
+            type="date"
+            className={`${smallInputCls} !w-36`}
+            value={specificDate}
+            title={t("filterByDate")}
+            onChange={(e) =>
+              setSpecificDate(e.target.value)
+            }
           />
-        </label>
-        {!isLoading && sorted.length > 0 && (
-          <>
-            <button
-              onClick={() =>
-                exportClocksCsv(
-                  sorted,
-                  `clock-entries-${period}.csv`,
-                  exportColumns,
-                )
-              }
-              className={
-                "flex items-center gap-1 px-2 py-1 " +
-                "rounded text-[11px] text-stone-700 " +
-                "hover:text-cta hover:bg-cta-muted " +
-                "transition-colors"
-              }
-              title={t("downloadCsv")}
-            >
-              <Download size={11} />
-              CSV
-            </button>
-            <button
-              onClick={() =>
-                exportClocksExcel(
-                  sorted,
-                  `clock-entries-${period}.xlsx`,
-                  exportColumns,
-                )
-              }
-              className={
-                "flex items-center gap-1 px-2 py-1 " +
-                "rounded text-[11px] text-stone-700 " +
-                "hover:text-cta hover:bg-cta-muted " +
-                "transition-colors"
-              }
-              title={t("downloadExcel")}
-            >
-              <Download size={11} />
-              XLS
-            </button>
-          </>
-        )}
-        <button
-          onClick={() => setBooking((v) => !v)}
-          className={
-            "ml-auto flex items-center gap-1 " +
-            "px-2.5 py-1 rounded bg-cta-muted " +
-            "text-cta text-xs font-semibold " +
-            "hover:bg-cta hover:text-white " +
-            "transition-colors"
-          }
-        >
-          <Plus size={11} />
-          {t("book")}
-        </button>
-        <HelpButton
-          title="Clock Entries"
-          doc={DOCS.clocks}
-          view="clocks"
-        />
-      </div>
+          {!isLoading && invoiceFiltered.length > 0 && (
+            <span className="text-xs text-stone-600">
+              {t("entriesCount", {
+                count: invoiceFiltered.length,
+              })} ·{" "}
+              {totalHours(invoiceFiltered)}h
+            </span>
+          )}
+        </>}
+        right={<>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <span className="text-xs text-stone-600">
+              {t("hideInvoiced")}
+            </span>
+            <Toggle
+              checked={hideInvoiced}
+              onChange={(v) => {
+                setHideInvoiced(v);
+                localStorage.setItem(
+                  "clocks_hide_invoiced",
+                  String(v),
+                );
+              }}
+            />
+          </label>
+          {!isLoading && sorted.length > 0 && (
+            <>
+              <button
+                onClick={() =>
+                  exportClocksCsv(
+                    sorted,
+                    `clock-entries-${period}.csv`,
+                    exportColumns,
+                  )
+                }
+                className={
+                  "flex items-center gap-1 px-2 py-1 " +
+                  "rounded text-[11px] text-stone-700 " +
+                  "hover:text-cta hover:bg-cta-muted " +
+                  "transition-colors"
+                }
+                title={t("downloadCsv")}
+              >
+                <Download size={11} />
+                CSV
+              </button>
+              <button
+                onClick={() =>
+                  exportClocksExcel(
+                    sorted,
+                    `clock-entries-${period}.xlsx`,
+                    exportColumns,
+                  )
+                }
+                className={
+                  "flex items-center gap-1 px-2 py-1 " +
+                  "rounded text-[11px] text-stone-700 " +
+                  "hover:text-cta hover:bg-cta-muted " +
+                  "transition-colors"
+                }
+                title={t("downloadExcel")}
+              >
+                <Download size={11} />
+                XLS
+              </button>
+            </>
+          )}
+          <button
+            onClick={() => setBooking((v) => !v)}
+            className={
+              "flex items-center gap-1 " +
+              "px-2.5 py-1 rounded bg-cta-muted " +
+              "text-cta text-xs font-semibold " +
+              "hover:bg-cta hover:text-white " +
+              "transition-colors"
+            }
+          >
+            <Plus size={11} />
+            {t("book")}
+          </button>
+          <HelpButton
+            title="Clock Entries"
+            doc={DOCS.clocks}
+            view="clocks"
+          />
+        </>}
+      />
 
       {/* Quick-book form */}
       {booking && (

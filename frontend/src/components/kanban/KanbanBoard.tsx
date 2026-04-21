@@ -38,6 +38,7 @@ import type { ArchivedTask, Task } from "../../types";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { Toggle } from "../common/Toggle";
 import { HelpButton } from "../common/HelpButton";
+import { PanelToolbar } from "../common/PanelToolbar";
 import { ResizeHandle } from "../common/ResizeHandle";
 import { useResizableColumns } from "../../hooks/useResizableColumns";
 import { DOCS } from "../../docs/panelDocs";
@@ -551,134 +552,150 @@ export function KanbanBoard() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3 border-b border-border-subtle shrink-0">
-        <h1 className="text-sm font-semibold text-stone-800 tracking-wide uppercase">
-          {t("board")}
-        </h1>
-        <button
-          onClick={() => setOpenAddInFirst(true)}
-          className="flex items-center gap-1 px-2 py-1 rounded text-xs text-stone-600 hover:text-cta hover:bg-cta-muted transition-colors"
-          title={t("newTask")}
-        >
-          <Plus size={12} />
-          {tc("new")}
-        </button>
-        <div className="flex items-center gap-1.5 ml-2">
-          <div className="relative flex items-center">
-            <Search
-              size={11}
-              className={[
-                "absolute left-2 pointer-events-none",
-                "text-stone-500",
-              ].join(" ")}
-            />
-            <input
-              ref={searchRef}
-              value={freeText(search)}
-              onChange={(e) => {
-                const text = e.target.value;
-                setSearch((prev) => {
-                  const tokens = parseSearchTokens(prev);
-                  const parts = tokens.map(
-                    (t) => `${t.prefix}:${t.value}`,
-                  );
-                  return [...parts, text]
-                    .filter(Boolean)
-                    .join(" ");
-                });
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  setSearch("");
-                  searchRef.current?.blur();
+      <PanelToolbar
+        left={<>
+          <div className="flex items-center gap-1.5">
+            <div className="relative flex items-center">
+              <Search
+                size={11}
+                className={[
+                  "absolute left-2 pointer-events-none",
+                  "text-stone-500",
+                ].join(" ")}
+              />
+              <input
+                ref={searchRef}
+                value={freeText(search)}
+                onChange={(e) => {
+                  const text = e.target.value;
+                  setSearch((prev) => {
+                    const tokens = parseSearchTokens(prev);
+                    const parts = tokens.map(
+                      (t) => `${t.prefix}:${t.value}`,
+                    );
+                    return [...parts, text]
+                      .filter(Boolean)
+                      .join(" ");
+                  });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setSearch("");
+                    searchRef.current?.blur();
+                  }
+                }}
+                placeholder={
+                  parseSearchTokens(search).length
+                    ? tNav("addText")
+                    : tNav("searchTasks")
                 }
-              }}
-              placeholder={
-                parseSearchTokens(search).length
-                  ? tNav("addText")
-                  : tNav("searchTasks")
-              }
-              className={[
-                "pl-6 pr-6 py-1 text-xs rounded",
-                "bg-surface-raised border border-border",
-                "text-stone-800 placeholder-stone-500",
-                "focus:outline-none focus:border-cta",
-                "w-44",
-              ].join(" ")}
-            />
-            {freeText(search) && (
+                className={[
+                  "pl-6 pr-6 py-1 text-xs rounded",
+                  "bg-surface-raised border border-border",
+                  "text-stone-800 placeholder-stone-500",
+                  "focus:outline-none focus:border-cta",
+                  "w-44",
+                ].join(" ")}
+              />
+              {freeText(search) && (
+                <button
+                  onClick={() =>
+                    setSearch((prev) =>
+                      parseSearchTokens(prev)
+                        .map(
+                          (t) => `${t.prefix}:${t.value}`,
+                        )
+                        .join(" "),
+                    )
+                  }
+                  className={[
+                    "absolute right-1.5",
+                    "text-stone-500 hover:text-stone-700",
+                  ].join(" ")}
+                >
+                  <X size={10} />
+                </button>
+              )}
+            </div>
+            {parseSearchTokens(search).map((tok) => (
               <button
+                key={tok.prefix}
                 onClick={() =>
-                  setSearch((prev) =>
-                    parseSearchTokens(prev)
-                      .map((t) => `${t.prefix}:${t.value}`)
-                      .join(" "),
+                  setSearch((s) =>
+                    removeSearchToken(s, tok.prefix),
                   )
                 }
                 className={[
-                  "absolute right-1.5",
-                  "text-stone-500 hover:text-stone-700",
+                  "inline-flex items-center gap-1",
+                  "px-1.5 py-0.5 rounded text-[10px]",
+                  "font-semibold transition-colors",
+                  "bg-cta-muted text-cta-hover",
+                  "hover:bg-red-100 hover:text-red-600",
+                  "group/badge",
                 ].join(" ")}
+                title={tNav("removeFilter", {
+                  prefix: tok.prefix,
+                })}
               >
-                <X size={10} />
+                <span className="uppercase tracking-wider">
+                  {tok.prefix}
+                </span>
+                <span className="font-normal">{tok.value}</span>
+                <X
+                  size={9}
+                  className={[
+                    "opacity-0 group-hover/badge:opacity-100",
+                    "transition-opacity",
+                  ].join(" ")}
+                />
+              </button>
+            ))}
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className={[
+                  "p-1 rounded text-stone-400",
+                  "hover:text-stone-700 hover:bg-stone-100",
+                  "transition-colors",
+                ].join(" ")}
+                title={tc("clearAllFilters")}
+              >
+                <X size={11} />
               </button>
             )}
           </div>
-          {parseSearchTokens(search).map((tok) => (
-            <button
-              key={tok.prefix}
-              onClick={() =>
-                setSearch((s) => removeSearchToken(s, tok.prefix))
-              }
-              className={[
-                "inline-flex items-center gap-1",
-                "px-1.5 py-0.5 rounded text-[10px]",
-                "font-semibold transition-colors",
-                "bg-cta-muted text-cta-hover",
-                "hover:bg-red-100 hover:text-red-600",
-                "group/badge",
-              ].join(" ")}
-              title={tNav("removeFilter", { prefix: tok.prefix })}
-            >
-              <span className="uppercase tracking-wider">
-                {tok.prefix}
-              </span>
-              <span className="font-normal">{tok.value}</span>
-              <X
-                size={9}
-                className={[
-                  "opacity-0 group-hover/badge:opacity-100",
-                  "transition-opacity",
-                ].join(" ")}
-              />
-            </button>
-          ))}
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className={[
-                "p-1 rounded text-stone-400",
-                "hover:text-stone-700 hover:bg-stone-100",
-                "transition-colors",
-              ].join(" ")}
-              title={tc("clearAllFilters")}
-            >
-              <X size={11} />
-            </button>
-          )}
-        </div>
-        <label className="flex items-center gap-2 ml-auto cursor-pointer">
-          <span className="text-xs text-stone-600">{t("showDone")}</span>
-          <Toggle
-            checked={showDone}
-            onChange={(v) => {
-              localStorage.setItem("board_show_done", String(v));
-              setShowDone(v);
-            }}
-          />
-        </label>
-        <HelpButton title="Board" doc={DOCS.board} view="board" />
-      </div>
+        </>}
+        right={<>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <span className="text-xs text-stone-600">
+              {t("showDone")}
+            </span>
+            <Toggle
+              checked={showDone}
+              onChange={(v) => {
+                localStorage.setItem(
+                  "board_show_done", String(v),
+                );
+                setShowDone(v);
+              }}
+            />
+          </label>
+          <button
+            onClick={() => setOpenAddInFirst(true)}
+            className={[
+              "flex items-center gap-1 px-2 py-1",
+              "rounded text-xs text-stone-600",
+              "hover:text-cta hover:bg-cta-muted",
+              "transition-colors",
+            ].join(" ")}
+            title={t("newTask")}
+          >
+            <Plus size={12} />
+            {tc("new")}
+          </button>
+          <HelpButton title="Board" doc={DOCS.board} view="board" />
+        </>}
+      />
 
       {/* Board */}
       <div

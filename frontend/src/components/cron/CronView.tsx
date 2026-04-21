@@ -15,6 +15,7 @@ import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
+import { PanelToolbar } from "../common/PanelToolbar";
 import { ResizeHandle } from "../common/ResizeHandle";
 import { useResizableColumns } from "../../hooks/useResizableColumns";
 import { DOCS } from "../../docs/panelDocs";
@@ -936,7 +937,6 @@ function HistoryTable({
 export function CronView() {
   const { t } = useTranslation("cron");
   const { t: ts } = useTranslation("settings");
-  const { t: tn } = useTranslation("nav");
   const { t: tc } = useTranslation("common");
   const [showForm, setShowForm] = useState(false);
   const { data: jobs = [], isLoading: jobsLoading } = useCronJobs();
@@ -957,21 +957,22 @@ export function CronView() {
       </datalist>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
-          {tn("cron")}
-        </h1>
-        <div className="ml-auto flex items-center gap-3">
+      <PanelToolbar
+        right={<>
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs bg-cta text-white hover:bg-cta-hover transition-colors"
+            className={[
+              "flex items-center gap-1.5 px-3 py-1",
+              "rounded-lg text-xs bg-cta text-white",
+              "hover:bg-cta-hover transition-colors",
+            ].join(" ")}
           >
             <Plus size={12} />
             {t("addJob")}
           </button>
           <HelpButton title="Cron" doc={DOCS.cron} view="cron" />
-        </div>
-      </div>
+        </>}
+      />
 
       {showForm && (
         <AddJobForm

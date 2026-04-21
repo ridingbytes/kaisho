@@ -6,8 +6,10 @@ import { matchesAny } from "../../utils/filterMatch";
 import { registerPanelAction } from "../../utils/panelActions";
 import { Toggle } from "../common/Toggle";
 import { HelpButton } from "../common/HelpButton";
+import { PanelToolbar } from "../common/PanelToolbar";
 import { SearchInput } from "../common/SearchInput";
 import { DOCS } from "../../docs/panelDocs";
+import { smallInputCls } from "../../styles/formStyles";
 import { CustomerCard } from "./CustomerCard";
 import { usePendingSearch } from "../../context/ViewContext";
 import type { Customer } from "../../types";
@@ -170,37 +172,53 @@ export function CustomersView() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-6 py-3 border-b border-border-subtle shrink-0 flex-wrap">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
-          {t("customers")}
-        </h1>
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          validate
-          inputClassName={`${inputCls} w-44 pr-6`}
-          className="w-44"
-        />
-        <select
-          className={`${inputCls} w-32`}
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as SortKey)}
-        >
-          <option value="budget">{t("sortBudget")}</option>
-          <option value="name">{t("sortName")}</option>
-        </select>
-        <label className="flex items-center gap-2 ml-auto cursor-pointer">
-          <span className="text-xs text-stone-600">{t("showInactive")}</span>
-          <Toggle checked={showInactive} onChange={setShowInactive} />
-        </label>
-        <button
-          onClick={() => setAdding((v) => !v)}
-          className="px-2.5 py-1 rounded bg-cta-muted text-cta text-xs font-semibold hover:bg-cta hover:text-white transition-colors"
-        >
-          {t("addCustomer")}
-        </button>
-        <HelpButton title="Customers" doc={DOCS.customers} view="customers" />
-      </div>
+      <PanelToolbar
+        left={<>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            validate
+            inputClassName={`${smallInputCls} !w-44 !pr-6`}
+            className="w-44"
+          />
+          <select
+            className={`${smallInputCls} !w-32`}
+            value={sortBy}
+            onChange={(e) =>
+              setSortBy(e.target.value as SortKey)
+            }
+          >
+            <option value="budget">{t("sortBudget")}</option>
+            <option value="name">{t("sortName")}</option>
+          </select>
+        </>}
+        right={<>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <span className="text-xs text-stone-600">
+              {t("showInactive")}
+            </span>
+            <Toggle
+              checked={showInactive}
+              onChange={setShowInactive}
+            />
+          </label>
+          <button
+            onClick={() => setAdding((v) => !v)}
+            className={[
+              "px-2.5 py-1 rounded bg-cta-muted",
+              "text-cta text-xs font-semibold",
+              "hover:bg-cta hover:text-white transition-colors",
+            ].join(" ")}
+          >
+            {t("addCustomer")}
+          </button>
+          <HelpButton
+            title="Customers"
+            doc={DOCS.customers}
+            view="customers"
+          />
+        </>}
+      />
 
       {/* Add form */}
       {adding && <AddCustomerForm onClose={() => setAdding(false)} />}
