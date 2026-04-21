@@ -237,12 +237,25 @@ export function ClockView() {
   const filtered = searchFiltered.filter((e) => {
     const taskTitle =
       taskTitleById(tasks, e.task_id) ?? "";
-    return (
-      matchesFilter(e.customer, colFilters.customer) &&
-      matchesFilter(e.contract ?? "", colFilters.contract) &&
-      matchesFilter(taskTitle, colFilters.task) &&
-      matchesFilter(e.description, colFilters.description)
-    );
+    try {
+      return (
+        matchesFilter(
+          e.customer ?? "", colFilters.customer,
+        ) &&
+        matchesFilter(
+          e.contract ?? "", colFilters.contract,
+        ) &&
+        matchesFilter(
+          taskTitle, colFilters.task,
+        ) &&
+        matchesFilter(
+          e.description ?? "",
+          colFilters.description,
+        )
+      );
+    } catch {
+      return true;
+    }
   });
 
   const sorted = [...filtered].sort((a, b) => {

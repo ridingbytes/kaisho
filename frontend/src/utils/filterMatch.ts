@@ -55,9 +55,10 @@ export function matchesFilter(
 ): boolean {
   const terms = splitTerms(query);
   if (terms.length === 0) return true;
+  const str = value ?? "";
   return terms.some((term) => {
     try {
-      return new RegExp(term, "i").test(value);
+      return new RegExp(term, "i").test(str);
     } catch {
       return true;
     }
