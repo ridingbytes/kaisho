@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.1
+
+- Tray mode toggle in Settings > General (defaults off
+  on Windows/Linux, on for macOS)
+- Show connected user email in Cloud Sync settings
+- Single-click badge navigation to Cloud Sync / AI tab
+- Auto-create customer when adding a task for a
+  non-existing customer
+- Sync error messages show detail instead of generic 500
+- clock desc/note commands for running timer
+- clock stop --desc/--notes/--customer options
+- Configurable command bar shortcut
+- Default cron: replaced weekly-scout with weekly-summary
+
 ## 0.8.0
 
 - Command bar thinking spinner while executing
