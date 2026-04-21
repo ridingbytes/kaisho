@@ -7,6 +7,7 @@ endpoints are no-ops when cloud sync is disabled.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from ...backends import get_backend
 from ...config import get_config
 from ...services import cloud_sync as sync_svc
 from ...services import settings as settings_svc
@@ -232,7 +233,6 @@ def disconnect():
     if url and key:
         # Step 1: final pull to save mobile-only entries.
         try:
-            from ...backends import get_backend
             backend = get_backend()
             sync_svc.run_sync_cycle(
                 cloud_url=url,
@@ -240,7 +240,11 @@ def disconnect():
                 profile_dir=cfg.PROFILE_DIR,
                 clocks_file=backend.clocks.data_file,
             )
-        except Exception as exc:
+        except (
+            sync_svc.CloudUnavailable,
+            OSError,
+            ValueError,
+        ) as exc:
             pull_error = str(exc)
 
         # Step 2: wipe cloud entries.
@@ -334,7 +338,6 @@ def sync_now():
     if not url or not key:
         return {"enabled": False}
 
-    from ...backends import get_backend
     backend = get_backend()
     try:
         return sync_svc.run_sync_cycle(
@@ -349,7 +352,11 @@ def sync_now():
                 include_done=False,
             ),
         )
-    except Exception as exc:
+    except (
+        sync_svc.CloudUnavailable,
+        OSError,
+        ValueError,
+    ) as exc:
         raise HTTPException(
             status_code=502,
             detail=f"Sync failed: {exc}",
@@ -361,7 +368,6 @@ def sync_now():
 @router.get("/pending")
 def pending():
     """Return local clock entries with empty customer."""
-    from ...backends import get_backend
     backend = get_backend()
     all_entries = backend.clocks.list_entries(
         period="year",
@@ -388,7 +394,6 @@ class TriageBody(BaseModel):
 @router.post("/triage")
 def triage(body: TriageBody):
     """Assign customers and tasks to unassigned entries."""
-    from ...backends import get_backend
     backend = get_backend()
     updated = 0
     for entry in body.entries:

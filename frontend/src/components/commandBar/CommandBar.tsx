@@ -233,6 +233,11 @@ function parseCommand(
           command: input.trim(),
         }),
       });
+      if (!res.ok) {
+        throw new Error(
+          `Command failed: ${res.status}`,
+        );
+      }
       const data = await res.json() as {
         output: string;
         exit_code: number;
@@ -370,7 +375,9 @@ export function CommandBar({ open, onClose }: Props) {
       setCustomerNames(
         custs.map((c) => c.name),
       );
-    }).catch(() => {});
+    }).catch((e) => {
+      console.warn("customer fetch:", e);
+    });
   }, [open]);
 
   useEffect(() => {

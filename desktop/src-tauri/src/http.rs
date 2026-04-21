@@ -14,7 +14,7 @@ use crate::BACKEND_ADDR;
 /// connections.
 pub fn is_port_open() -> bool {
     TcpStream::connect_timeout(
-        &BACKEND_ADDR.parse().unwrap(),
+        &BACKEND_ADDR.parse().expect("invalid BACKEND_ADDR"),
         Duration::from_millis(200),
     )
     .is_ok()
