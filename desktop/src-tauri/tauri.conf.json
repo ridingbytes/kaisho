@@ -51,6 +51,12 @@
     ],
     "macOS": {
       "minimumSystemVersion": "10.15"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "both",
+        "installerHooks": "nsis-hooks.nsh"
+      }
     }
   },
   "plugins": {
@@ -60,7 +66,7 @@
         "https://github.com/ridingbytes/kaisho/releases/latest/download/latest.json"
       ],
       "windows": {
-        "installMode": "passive"
+        "installMode": "basicUi"
       }
     }
   }
