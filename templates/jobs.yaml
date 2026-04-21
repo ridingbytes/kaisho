@@ -19,11 +19,12 @@ jobs:
   enabled: false
   use_kaisho_ai: true
 
-- id: weekly-scout
-  name: Business Scout
-  schedule: "0 9 * * 1"
+- id: weekly-summary
+  name: Week in Review
+  schedule: "0 17 * * 5"
   model: ""
-  prompt_file: prompts/weekly-scout.md
+  prompt_file: prompts/weekly-summary.md
   output: inbox
-  timeout: 900
+  timeout: 120
   enabled: false
+  use_kaisho_ai: true
