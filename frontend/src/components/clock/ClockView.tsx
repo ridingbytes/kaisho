@@ -290,9 +290,6 @@ export function ClockView() {
             placeholder={
               t("searchCustomerDescription")
             }
-            inputClassName={
-              `${smallInputCls} !w-52 !pr-6 !rounded-lg`
-            }
             className="w-52"
           />
           <select

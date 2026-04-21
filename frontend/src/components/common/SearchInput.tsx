@@ -1,6 +1,7 @@
-import { X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useRef } from "react";
 import { isValidQuery } from "../../utils/filterMatch";
+import { smallInputCls } from "../../styles/formStyles";
 
 interface SearchInputProps {
   value: string;
@@ -9,16 +10,20 @@ interface SearchInputProps {
   className?: string;
   inputClassName?: string;
   autoFocus?: boolean;
-  /** When true, validate `value` as a filterMatch query
-   *  and apply a red outline + tooltip on invalid regex.
-   *  Callers that use the shared matcher should set this. */
+  /** When true, validate `value` as a filterMatch
+   *  query and apply a red outline on invalid regex. */
   validate?: boolean;
 }
+
+const defaultInputCls = [
+  smallInputCls,
+  "!pl-7 !pr-6 !rounded-lg",
+].join(" ");
 
 export function SearchInput({
   value,
   onChange,
-  placeholder = "Search…",
+  placeholder = "Search\u2026",
   className,
   inputClassName,
   autoFocus,
@@ -27,7 +32,9 @@ export function SearchInput({
   const ref = useRef<HTMLInputElement>(null);
   const invalid = validate && !isValidQuery(value);
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  function handleKeyDown(
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) {
     if (e.key === "Escape") {
       onChange("");
       ref.current?.blur();
@@ -35,7 +42,19 @@ export function SearchInput({
   }
 
   return (
-    <div className={`relative flex items-center ${className ?? ""}`}>
+    <div
+      className={[
+        "relative flex items-center",
+        className ?? "",
+      ].join(" ")}
+    >
+      <Search
+        size={11}
+        className={[
+          "absolute left-2 pointer-events-none",
+          "text-stone-400",
+        ].join(" ")}
+      />
       <input
         ref={ref}
         type="text"
@@ -47,14 +66,12 @@ export function SearchInput({
         title={
           validate
             ? invalid
-              ? "Invalid regex \u2014 filter is ignored " +
-                "until you fix it"
-              : "Filter (case-insensitive regex; " +
-                "comma separates OR terms)"
+              ? "Invalid regex"
+              : "Regex filter (comma = OR)"
             : undefined
         }
         className={[
-          inputClassName ?? "",
+          inputClassName ?? defaultInputCls,
           invalid ? "!border-red-400" : "",
         ].join(" ")}
       />
@@ -66,7 +83,11 @@ export function SearchInput({
             ref.current?.focus();
           }}
           tabIndex={-1}
-          className="absolute right-1.5 text-stone-400 hover:text-stone-700 transition-colors"
+          className={[
+            "absolute right-1.5",
+            "text-stone-400 hover:text-stone-700",
+            "transition-colors",
+          ].join(" ")}
           aria-label="Clear search"
         >
           <X size={11} />

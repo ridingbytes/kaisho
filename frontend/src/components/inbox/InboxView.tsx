@@ -43,13 +43,6 @@ export function InboxView() {
             value={search}
             onChange={setSearch}
             validate
-            inputClassName={[
-              "px-2 py-1 rounded-lg text-xs",
-              "bg-surface-raised border border-border",
-              "text-stone-900 placeholder-stone-500",
-              "focus:outline-none focus:border-cta",
-              "w-40 pr-6",
-            ].join(" ")}
             className="w-40"
           />
         </>}

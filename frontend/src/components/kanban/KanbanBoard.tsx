@@ -19,7 +19,6 @@ import {
   ChevronRight,
   ArchiveRestore,
   Plus,
-  Search,
   Trash2,
   X,
 } from "lucide-react";
@@ -38,6 +37,7 @@ import type { ArchivedTask, Task } from "../../types";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { Toggle } from "../common/Toggle";
 import { HelpButton } from "../common/HelpButton";
+import { SearchInput } from "../common/SearchInput";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { ResizeHandle } from "../common/ResizeHandle";
 import { useResizableColumns } from "../../hooks/useResizableColumns";
@@ -555,68 +555,28 @@ export function KanbanBoard() {
       <PanelToolbar
         left={<>
           <div className="flex items-center gap-1.5">
-            <div className="relative flex items-center">
-              <Search
-                size={11}
-                className={[
-                  "absolute left-2 pointer-events-none",
-                  "text-stone-500",
-                ].join(" ")}
-              />
-              <input
-                ref={searchRef}
-                value={freeText(search)}
-                onChange={(e) => {
-                  const text = e.target.value;
-                  setSearch((prev) => {
-                    const tokens = parseSearchTokens(prev);
-                    const parts = tokens.map(
-                      (t) => `${t.prefix}:${t.value}`,
-                    );
-                    return [...parts, text]
-                      .filter(Boolean)
-                      .join(" ");
-                  });
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setSearch("");
-                    searchRef.current?.blur();
-                  }
-                }}
-                placeholder={
-                  parseSearchTokens(search).length
-                    ? tNav("addText")
-                    : tNav("searchTasks")
-                }
-                className={[
-                  "pl-6 pr-6 py-1 text-xs rounded",
-                  "bg-surface-raised border border-border",
-                  "text-stone-800 placeholder-stone-500",
-                  "focus:outline-none focus:border-cta",
-                  "w-44",
-                ].join(" ")}
-              />
-              {freeText(search) && (
-                <button
-                  onClick={() =>
-                    setSearch((prev) =>
-                      parseSearchTokens(prev)
-                        .map(
-                          (t) => `${t.prefix}:${t.value}`,
-                        )
-                        .join(" "),
-                    )
-                  }
-                  className={[
-                    "absolute right-1.5",
-                    "text-stone-500 hover:text-stone-700",
-                  ].join(" ")}
-                >
-                  <X size={10} />
-                </button>
-              )}
-            </div>
+            <SearchInput
+              value={freeText(search)}
+              onChange={(text) => {
+                setSearch((prev) => {
+                  const tokens =
+                    parseSearchTokens(prev);
+                  const parts = tokens.map(
+                    (t) =>
+                      `${t.prefix}:${t.value}`,
+                  );
+                  return [...parts, text]
+                    .filter(Boolean)
+                    .join(" ");
+                });
+              }}
+              placeholder={
+                parseSearchTokens(search).length
+                  ? tNav("addText")
+                  : tNav("searchTasks")
+              }
+              className="w-44"
+            />
             {parseSearchTokens(search).map((tok) => (
               <button
                 key={tok.prefix}

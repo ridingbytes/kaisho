@@ -178,7 +178,6 @@ export function CustomersView() {
             value={search}
             onChange={setSearch}
             validate
-            inputClassName={`${smallInputCls} !w-44 !pr-6`}
             className="w-44"
           />
           <select
