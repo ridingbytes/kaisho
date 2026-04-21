@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.8.3
+
+- PanelToolbar component: consistent toolbar layout
+  across all panels, no more panel titles
+- SearchInput component: built-in search icon, uniform
+  styling across all panels
+- Drag-and-drop reordering for notes and inbox items
+- Star/bookmark KB files with filter toggle
+- Inline PDF viewer in knowledge base
+- Hide invoiced toggle (switch) in clocks toolbar
+- iCal feed link in calendar sidebar
+- GitHub select box styled consistently
+- Board columns aligned with toolbar (px-5)
+- Update button shows in all languages
+- Fix regex filter crash on null values
+- Fix PDF content-type for inline viewing
+
 ## 0.8.2
 
 - Fix Windows updater crash (sign .exe directly, no zip)
