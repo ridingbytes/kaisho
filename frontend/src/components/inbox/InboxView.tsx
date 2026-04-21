@@ -52,21 +52,23 @@ function SortableInboxRow({
         transition,
         opacity: isDragging ? 0.5 : 1,
       }}
-      className="flex items-start"
+      className="border-b border-border-subtle"
     >
-      <button
-        {...attributes}
-        {...listeners}
-        className={[
-          "mt-3 ml-2 cursor-grab shrink-0",
-          "text-stone-300 hover:text-stone-500",
-          "touch-none",
-        ].join(" ")}
-      >
-        <GripVertical size={12} />
-      </button>
-      <div className="flex-1 min-w-0">
-        <InboxItemRow item={item} />
+      <div className="flex items-center px-4 py-1">
+        <button
+          {...attributes}
+          {...listeners}
+          className={[
+            "cursor-grab shrink-0 mr-2",
+            "text-stone-300 hover:text-stone-500",
+            "touch-none",
+          ].join(" ")}
+        >
+          <GripVertical size={12} />
+        </button>
+        <div className="flex-1 min-w-0">
+          <InboxItemRow item={item} />
+        </div>
       </div>
     </div>
   );
@@ -112,14 +114,28 @@ export function InboxView() {
   function handleDragEnd(event: DragEndEvent) {
     const { active: a, over } = event;
     if (!over || a.id === over.id) return;
-    const ids = active.map((i) => i.id);
-    const oldIdx = ids.indexOf(String(a.id));
-    const newIdx = ids.indexOf(String(over.id));
+    const oldIdx = active.findIndex(
+      (i) => i.id === String(a.id),
+    );
+    const newIdx = active.findIndex(
+      (i) => i.id === String(over.id),
+    );
     if (oldIdx < 0 || newIdx < 0) return;
-    const reordered = [...ids];
-    reordered.splice(oldIdx, 1);
-    reordered.splice(newIdx, 0, String(a.id));
-    reorderInboxItems(reordered).then(() => {
+
+    // Optimistic: reorder in cache immediately
+    const moved = [...items];
+    const [item] = moved.splice(oldIdx, 1);
+    moved.splice(newIdx, 0, item);
+    qc.setQueryData(["inbox"], moved);
+
+    // Persist to backend
+    const ids = moved
+      .filter(
+        (i) =>
+          i.properties?.ARCHIVED !== "true",
+      )
+      .map((i) => i.id);
+    reorderInboxItems(ids).then(() => {
       void qc.invalidateQueries({
         queryKey: ["inbox"],
       });

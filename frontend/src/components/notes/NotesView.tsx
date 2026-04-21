@@ -732,16 +732,25 @@ export function NotesView() {
   );
 
   function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const ids = filtered.map((n) => n.id);
-    const oldIdx = ids.indexOf(String(active.id));
-    const newIdx = ids.indexOf(String(over.id));
+    const { active: a, over } = event;
+    if (!over || a.id === over.id) return;
+    const oldIdx = filtered.findIndex(
+      (n) => n.id === String(a.id),
+    );
+    const newIdx = filtered.findIndex(
+      (n) => n.id === String(over.id),
+    );
     if (oldIdx < 0 || newIdx < 0) return;
-    const reordered = [...ids];
-    reordered.splice(oldIdx, 1);
-    reordered.splice(newIdx, 0, String(active.id));
-    reorderNotes(reordered).then(() => {
+
+    // Optimistic: reorder in cache
+    const moved = [...notes];
+    const [item] = moved.splice(oldIdx, 1);
+    moved.splice(newIdx, 0, item);
+    qc.setQueryData(["notes"], moved);
+
+    // Persist
+    const ids = moved.map((n) => n.id);
+    reorderNotes(ids).then(() => {
       void qc.invalidateQueries({
         queryKey: ["notes"],
       });
