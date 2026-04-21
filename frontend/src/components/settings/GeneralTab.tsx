@@ -573,6 +573,81 @@ function ResetLocalStorageSection() {
 }
 
 // -----------------------------------------------------------------
+// Tray
+// -----------------------------------------------------------------
+
+function TraySection() {
+  const { t } = useTranslation("settings");
+  const [enabled, setEnabled] = useState(true);
+  const [isTauriApp, setIsTauriApp] = useState(false);
+
+  useEffect(() => {
+    if (!("__TAURI_INTERNALS__" in window)) return;
+    setIsTauriApp(true);
+    import("@tauri-apps/api/core").then(({ invoke }) => {
+      invoke("get_tray_enabled").then((v) => {
+        setEnabled(v as boolean);
+      });
+    }).catch(() => {});
+  }, []);
+
+  if (!isTauriApp) return null;
+
+  function toggle() {
+    const next = !enabled;
+    setEnabled(next);
+    import("@tauri-apps/api/core").then(({ invoke }) => {
+      invoke("set_tray_enabled", { enabled: next });
+    }).catch(() => {});
+    localStorage.setItem(
+      "kaisho_tray_enabled",
+      String(next),
+    );
+  }
+
+  return (
+    <section>
+      <h3
+        className={
+          "text-[10px] font-semibold uppercase "
+          + "tracking-wider text-stone-500 mb-3"
+        }
+      >
+        {t("tray") || "System Tray"}
+      </h3>
+      <label className="flex items-center justify-between cursor-pointer">
+        <div>
+          <p className="text-xs font-medium text-stone-700">
+            {t("keepRunningInTray")
+              || "Keep running in tray"}
+          </p>
+          <p className="text-[10px] text-stone-500 mt-0.5">
+            {t("keepRunningInTrayHint")
+              || "When disabled, closing the window quits the app."}
+          </p>
+        </div>
+        <button
+          onClick={toggle}
+          className={[
+            "relative w-9 h-5 rounded-full",
+            "transition-colors shrink-0 ml-4",
+            enabled ? "bg-cta" : "bg-stone-300",
+          ].join(" ")}
+        >
+          <span
+            className={[
+              "absolute top-0.5 left-0.5",
+              "w-4 h-4 rounded-full bg-white",
+              "shadow transition-transform",
+              enabled ? "translate-x-4" : "",
+            ].join(" ")}
+          />
+        </button>
+      </label>
+    </section>
+  );
+}
+
 // Language
 // -----------------------------------------------------------------
 
@@ -634,6 +709,7 @@ export function GeneralTab(): JSX.Element {
     <div className="flex flex-col gap-8">
       <AppTitleSection />
       <LanguageSection />
+      <TraySection />
       <UserProfileSection />
       <ProfilesTab />
       <ResetLocalStorageSection />

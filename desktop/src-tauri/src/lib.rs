@@ -9,6 +9,7 @@ mod sidecar;
 mod tray;
 mod http;
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use tauri::{Manager, RunEvent, State, WindowEvent};
@@ -18,6 +19,14 @@ use sidecar::KaiProcess;
 
 const BACKEND_URL: &str = "http://127.0.0.1:8765";
 const BACKEND_ADDR: &str = "127.0.0.1:8765";
+
+/// Whether the app should keep running in the tray
+/// when the main window is closed. Toggled from the
+/// frontend via the `set_tray_enabled` IPC command.
+/// Defaults to true on macOS, false on Windows/Linux.
+static TRAY_ENABLED: AtomicBool = AtomicBool::new(
+    cfg!(target_os = "macos"),
+);
 
 // -----------------------------------------------------------
 // Startup: wait for backend, then navigate windows
@@ -109,6 +118,18 @@ fn show_main_window(app: tauri::AppHandle) {
     }
 }
 
+/// IPC command: check if tray mode is enabled.
+#[tauri::command]
+fn get_tray_enabled() -> bool {
+    TRAY_ENABLED.load(Ordering::Relaxed)
+}
+
+/// IPC command: enable or disable tray mode.
+#[tauri::command]
+fn set_tray_enabled(enabled: bool) {
+    TRAY_ENABLED.store(enabled, Ordering::Relaxed);
+}
+
 /// Toggle the running timer via the backend API.
 /// If a timer is running, stop it. Otherwise open the
 /// tray panel so the user can pick a customer.
@@ -165,6 +186,8 @@ pub fn run() {
             hide_tray_window,
             show_main_window,
             toggle_timer,
+            get_tray_enabled,
+            set_tray_enabled,
         ])
         .setup(|app| {
             sidecar::spawn(app)?;
@@ -238,13 +261,30 @@ fn handle_run_event(
             },
             ..
         } => {
-            // Hide windows instead of closing so the
-            // tray stays active.
-            api.prevent_close();
-            if let Some(win) =
-                app_handle.get_webview_window(&label)
+            if label == "tray" {
+                // Always hide tray panel, never quit
+                api.prevent_close();
+                if let Some(win) =
+                    app_handle.get_webview_window("tray")
+                {
+                    let _ = win.hide();
+                }
+            } else if TRAY_ENABLED.load(Ordering::Relaxed)
             {
-                let _ = win.hide();
+                // Tray mode: hide main window instead
+                // of quitting
+                api.prevent_close();
+                if let Some(win) =
+                    app_handle.get_webview_window(&label)
+                {
+                    let _ = win.hide();
+                }
+            } else {
+                // No tray mode: quit the app
+                let state: State<KaiProcess> =
+                    app_handle.state();
+                sidecar::kill(&state);
+                std::process::exit(0);
             }
         }
         RunEvent::WindowEvent {
