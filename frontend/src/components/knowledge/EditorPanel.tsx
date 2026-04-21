@@ -163,7 +163,17 @@ export function EditorPanel({
       </div>
 
       {/* Content area */}
-      {preview ? (
+      {fileType === "pdf" ? (
+        <iframe
+          src={
+            `/api/knowledge/file/raw?path=${
+              encodeURIComponent(file.path)
+            }`
+          }
+          className="flex-1 w-full border-0"
+          title={file.path}
+        />
+      ) : preview ? (
         <div className="flex-1 overflow-y-auto p-6">
           <Markdown className="p-1">
             {content}

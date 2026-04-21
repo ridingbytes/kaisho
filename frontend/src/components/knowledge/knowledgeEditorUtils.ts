@@ -19,10 +19,12 @@ export const inputCls =
 // File type helpers
 // -----------------------------------------------------------------
 
-export type FileType = "md" | "org" | "rst" | "txt";
+export type FileType =
+  | "md" | "org" | "rst" | "txt" | "pdf";
 
 /** Detect the markup type from a file path extension. */
 export function detectFileType(path: string): FileType {
+  if (path.endsWith(".pdf")) return "pdf";
   if (path.endsWith(".org")) return "org";
   if (path.endsWith(".rst")) return "rst";
   if (path.endsWith(".md")) return "md";
@@ -34,6 +36,7 @@ export const FILE_TYPE_COLORS: Record<FileType, string> = {
   org: "bg-emerald-900/40 text-emerald-300",
   rst: "bg-amber-900/40 text-amber-300",
   txt: "bg-stone-700/40 text-stone-700",
+  pdf: "bg-red-900/40 text-red-300",
 };
 
 // -----------------------------------------------------------------

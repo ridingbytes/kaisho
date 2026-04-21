@@ -37,6 +37,29 @@ def get_file(path: str):
     return {"path": path, "content": content}
 
 
+@router.get("/file/raw")
+def get_file_raw(path: str):
+    """Serve a knowledge base file as raw binary.
+
+    Used for PDF viewing and other binary formats.
+    """
+    from pathlib import Path as P
+    from starlette.responses import FileResponse
+
+    resolved = kb_service.resolve_path(
+        _sources(), path,
+    )
+    if resolved is None or not P(resolved).is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="File not found",
+        )
+    return FileResponse(
+        resolved,
+        media_type="application/octet-stream",
+    )
+
+
 @router.get("/search")
 def search_kb(q: str, max_results: int = 20):
     """Search knowledge base files by query string."""

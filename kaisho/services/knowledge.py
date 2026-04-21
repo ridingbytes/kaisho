@@ -7,7 +7,9 @@ import re
 from pathlib import Path
 
 # File extensions to index
-KB_EXTENSIONS = {"*.md", "*.org", "*.rst", "*.txt"}
+KB_EXTENSIONS = {
+    "*.md", "*.org", "*.rst", "*.txt", "*.pdf",
+}
 
 
 def _safe_path(base: Path, rel_path: str) -> Path:
@@ -124,6 +126,24 @@ def read_file(
             continue
         if candidate.exists() and candidate.is_file():
             return candidate.read_text(encoding="utf-8")
+    return None
+
+
+def resolve_path(
+    sources: list[dict], rel_path: str,
+) -> str | None:
+    """Resolve a relative KB path to an absolute path.
+
+    Returns ``None`` if the file doesn't exist or the
+    path escapes the source directory.
+    """
+    for _label, base in _expand_sources(sources):
+        try:
+            candidate = _safe_path(base, rel_path)
+        except ValueError:
+            continue
+        if candidate.exists() and candidate.is_file():
+            return str(candidate)
     return None
 
 
