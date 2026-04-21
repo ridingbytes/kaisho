@@ -55,5 +55,6 @@
   "captureText": "Type something...",
   "inbox": "Inbox",
   "note": "Note",
-  "task": "Task"
+  "task": "Task",
+  "hideInvoiced": "Hide invoiced"
 }

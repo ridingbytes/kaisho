@@ -165,6 +165,11 @@ export function ClockView() {
   const [colFilters, setColFilters] =
     useState<ColFilters>(loadFilters);
   const [booking, setBooking] = useState(false);
+  const [hideInvoiced, setHideInvoiced] = useState(
+    () => localStorage.getItem(
+      "clocks_hide_invoiced",
+    ) === "true",
+  );
   const [sort, setSort] = useState<SortState>({
     col: "date",
     dir: "desc",
@@ -258,7 +263,11 @@ export function ClockView() {
     }
   });
 
-  const sorted = [...filtered].sort((a, b) => {
+  const invoiceFiltered = hideInvoiced
+    ? filtered.filter((e) => !e.invoiced)
+    : filtered;
+
+  const sorted = [...invoiceFiltered].sort((a, b) => {
     const av = sortValue(a, sort.col, tasks);
     const bv = sortValue(b, sort.col, tasks);
     const cmp =
@@ -324,10 +333,27 @@ export function ClockView() {
             setSpecificDate(e.target.value)
           }
         />
-        {!isLoading && filtered.length > 0 && (
+        <label className="flex items-center gap-1.5 text-xs text-stone-600 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={hideInvoiced}
+            onChange={(e) => {
+              setHideInvoiced(e.target.checked);
+              localStorage.setItem(
+                "clocks_hide_invoiced",
+                String(e.target.checked),
+              );
+            }}
+            className="rounded border-border accent-cta"
+          />
+          {t("hideInvoiced")}
+        </label>
+        {!isLoading && invoiceFiltered.length > 0 && (
           <span className="text-xs text-stone-600">
-            {t("entriesCount", { count: filtered.length })} ·{" "}
-            {totalHours(filtered)}h
+            {t("entriesCount", {
+              count: invoiceFiltered.length,
+            })} ·{" "}
+            {totalHours(invoiceFiltered)}h
           </span>
         )}
         {!isLoading && sorted.length > 0 && (

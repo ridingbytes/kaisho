@@ -55,5 +55,6 @@
   "captureText": "Etwas eingeben...",
   "inbox": "Eingang",
   "note": "Notiz",
-  "task": "Aufgabe"
+  "task": "Aufgabe",
+  "hideInvoiced": "Abgerechnete ausblenden"
 }
