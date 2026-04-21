@@ -673,7 +673,7 @@ export function KanbanBoard() {
             items={states.map((s) => s.name)}
             strategy={horizontalListSortingStrategy}
           >
-            <div className="flex gap-4 p-6 h-full items-stretch">
+            <div className="flex gap-4 px-3 py-4 h-full items-stretch">
               {states.map((state, idx) => (
                 <KanbanColumn
                   key={state.name}
