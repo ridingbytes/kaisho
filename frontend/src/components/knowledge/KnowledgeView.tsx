@@ -8,7 +8,7 @@
  * rendering to focused sub-components.
  */
 
-import { FilePlus, Pencil } from "lucide-react";
+import { FilePlus, Pencil, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -22,6 +22,7 @@ import {
 } from "../../hooks/useKnowledge";
 import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
+import { SearchInput } from "../common/SearchInput";
 import { Markdown } from "../common/Markdown";
 import { DOCS } from "../../docs/panelDocs";
 import { EditorPanel } from "./EditorPanel";
@@ -59,6 +60,32 @@ export function KnowledgeView() {
   const [debouncedQ, setDebouncedQ] = useState("");
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [showStarredOnly, setShowStarredOnly] =
+    useState(false);
+
+  // Starred files (localStorage)
+  const STARS_KEY = "kaisho_kb_stars";
+  const [starred, setStarred] = useState<Set<string>>(
+    () => {
+      const raw = localStorage.getItem(STARS_KEY);
+      return raw
+        ? new Set(JSON.parse(raw) as string[])
+        : new Set();
+    },
+  );
+
+  function toggleStar(path: string) {
+    setStarred((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      localStorage.setItem(
+        STARS_KEY,
+        JSON.stringify([...next]),
+      );
+      return next;
+    });
+  }
 
   // Sidebar state
   const [sidebarOpen, setSidebarOpen] =
@@ -276,24 +303,35 @@ export function KnowledgeView() {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <PanelToolbar
-        left={!editing ? (
-          <input
-            type="text"
-            placeholder={t("searchPlaceholder")}
+        left={!editing ? (<>
+          <SearchInput
             value={searchInput}
-            onChange={(e) =>
-              setSearchInput(e.target.value)
+            onChange={setSearchInput}
+            placeholder={t("searchPlaceholder")}
+            className="w-48"
+          />
+          <button
+            onClick={() =>
+              setShowStarredOnly((v) => !v)
             }
             className={[
-              "w-56 px-3 py-1 rounded-lg",
-              "text-sm bg-surface-raised border",
-              "border-border text-stone-900",
-              "placeholder-stone-500",
-              "focus:outline-none",
-              "focus:border-border-strong",
+              "p-1.5 rounded transition-colors",
+              showStarredOnly
+                ? "text-amber-400 bg-amber-400/10"
+                : "text-stone-400 hover:text-amber-400",
             ].join(" ")}
-          />
-        ) : undefined}
+            title={t("starredFilter")}
+          >
+            <Star
+              size={13}
+              fill={
+                showStarredOnly
+                  ? "currentColor"
+                  : "none"
+              }
+            />
+          </button>
+        </>) : undefined}
         right={<>
           {!editing && (
             <button
@@ -378,6 +416,9 @@ export function KnowledgeView() {
             onMove={handleMove}
             onDelete={handleDeleteFile}
             onCreateFolder={handleCreateFolder}
+            starred={starred}
+            onToggleStar={toggleStar}
+            showStarredOnly={showStarredOnly}
           />
 
           {/* Right panel: file content */}

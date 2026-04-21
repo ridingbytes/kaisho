@@ -13,6 +13,7 @@ import {
   ChevronRight,
   FolderPlus,
   Pencil,
+  Star,
   Trash2,
   X,
 } from "lucide-react";
@@ -136,6 +137,10 @@ export interface TreeNodeRowProps {
   onCreateFolder: (
     label: string, parentPath: string, name: string,
   ) => void;
+  /** Set of starred file paths. */
+  starred: Set<string>;
+  /** Toggle star on a file path. */
+  onToggleStar: (path: string) => void;
 }
 
 /**
@@ -155,6 +160,8 @@ export function TreeNodeRow({
   onMove,
   onDelete,
   onCreateFolder,
+  starred,
+  onToggleStar,
 }: TreeNodeRowProps) {
   const { t } = useTranslation("knowledge");
   const indent = depth * 16;
@@ -165,6 +172,7 @@ export function TreeNodeRow({
 
   if (node.kind === "leaf") {
     const isSelected = selectedPath === node.path;
+    const isStarred = starred.has(node.path);
 
     if (renaming) {
       return (
@@ -240,6 +248,26 @@ export function TreeNodeRow({
         ].join(" ")}
         style={{ paddingLeft: indent + 6 }}
       >
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleStar(node.path);
+          }}
+          className={[
+            "shrink-0 p-0.5 rounded",
+            "transition-colors",
+            isStarred
+              ? "text-amber-400"
+              : "text-transparent " +
+                "group-hover/leaf:text-stone-300 " +
+                "hover:!text-amber-400",
+          ].join(" ")}
+        >
+          <Star
+            size={10}
+            fill={isStarred ? "currentColor" : "none"}
+          />
+        </button>
         <button
           onClick={() =>
             onSelect(node.path, node.label)
@@ -428,6 +456,8 @@ export function TreeNodeRow({
             onDelete={onDelete}
             onCreateFolder={onCreateFolder}
             folders={folders}
+            starred={starred}
+            onToggleStar={onToggleStar}
           />
         ))}
     </>

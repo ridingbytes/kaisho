@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FolderPlus,
+  Star,
   X,
 } from "lucide-react";
 import React, { useRef, useState } from "react";
@@ -80,6 +81,12 @@ export interface KnowledgeSidebarProps {
   onCreateFolder: (
     label: string, path: string, name: string,
   ) => void;
+  /** Set of starred file paths. */
+  starred: Set<string>;
+  /** Toggle star on a file. */
+  onToggleStar: (path: string) => void;
+  /** Show only starred files. */
+  showStarredOnly?: boolean;
 }
 
 /**
@@ -108,6 +115,9 @@ export function KnowledgeSidebar({
   onMove,
   onDelete,
   onCreateFolder,
+  starred,
+  onToggleStar,
+  showStarredOnly,
 }: KnowledgeSidebarProps) {
   const { t } = useTranslation("knowledge");
   const { t: tc } = useTranslation("common");
@@ -207,6 +217,46 @@ export function KnowledgeSidebar({
             >
               {tc("loading")}
             </p>
+          ) : showStarredOnly ? (
+            /* Flat list of starred files */
+            [...starred].length === 0 ? (
+              <p className="text-xs text-stone-400 px-4 py-3">
+                No starred files
+              </p>
+            ) : (
+              [...starred].map((path) => {
+                const name = path.split("/").pop()
+                  || path;
+                const isSel =
+                  selectedPath === path;
+                return (
+                  <button
+                    key={path}
+                    onClick={() =>
+                      onSelectFile(path, "")
+                    }
+                    className={[
+                      "flex items-center gap-2",
+                      "w-full text-left px-4 py-1.5",
+                      "text-xs hover:bg-surface-raised",
+                      "transition-colors",
+                      isSel
+                        ? "text-cta bg-cta-muted"
+                        : "text-stone-800",
+                    ].join(" ")}
+                  >
+                    <Star
+                      size={10}
+                      className="text-amber-400 shrink-0"
+                      fill="currentColor"
+                    />
+                    <span className="truncate">
+                      {name}
+                    </span>
+                  </button>
+                );
+              })
+            )
           ) : (
             labels.map((label) => (
               <LabelSection
@@ -223,6 +273,8 @@ export function KnowledgeSidebar({
                 onMove={onMove}
                 onDelete={onDelete}
                 onCreateFolder={onCreateFolder}
+                starred={starred}
+                onToggleStar={onToggleStar}
               />
             ))
           )}
@@ -279,6 +331,8 @@ interface LabelSectionProps {
   onCreateFolder: (
     label: string, path: string, name: string,
   ) => void;
+  starred: Set<string>;
+  onToggleStar: (path: string) => void;
 }
 
 function LabelSection({
@@ -294,6 +348,8 @@ function LabelSection({
   onMove,
   onDelete,
   onCreateFolder,
+  starred,
+  onToggleStar,
 }: LabelSectionProps) {
   const { t } = useTranslation("knowledge");
   const [adding, setAdding] = useState(false);
@@ -427,6 +483,8 @@ function LabelSection({
             onDelete={onDelete}
             onCreateFolder={onCreateFolder}
             folders={folderPaths}
+            starred={starred}
+            onToggleStar={onToggleStar}
           />
         ))}
     </div>

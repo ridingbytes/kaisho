@@ -26,5 +26,6 @@
   "rename": "Rename",
   "deleteIrreversible": "Delete (irreversible)",
   "collapseSidebar": "Collapse sidebar",
-  "expandSidebar": "Expand sidebar"
+  "expandSidebar": "Expand sidebar",
+  "starredFilter": "Show starred only"
 }
