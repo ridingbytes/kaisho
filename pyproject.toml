@@ -21,6 +21,7 @@ dependencies = [
     "youtube-transcript-api>=1.0",
     "websocket-client>=1.7",
     "sqlalchemy>=2.0",
+    "pypdf>=4.0",
 ]
 
 [project.optional-dependencies]

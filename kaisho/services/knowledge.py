@@ -115,13 +115,28 @@ def create_folder(
     raise ValueError(f"Unknown KB source: {label!r}")
 
 
+def _extract_pdf_text(path: Path) -> str | None:
+    """Extract text from a PDF file using pypdf."""
+    try:
+        from pypdf import PdfReader
+        reader = PdfReader(str(path))
+        pages = []
+        for page in reader.pages:
+            text = page.extract_text()
+            if text:
+                pages.append(text)
+        return "\n\n".join(pages) if pages else None
+    except Exception:
+        return None
+
+
 def read_file(
     sources: list[dict], rel_path: str
 ) -> str | None:
     """Return content of a KB file by relative path.
 
-    Returns ``None`` for binary files (e.g. PDFs) that
-    cannot be decoded as UTF-8.
+    For PDFs, extracts text using pypdf. Returns
+    ``None`` if the file doesn't exist or can't be read.
     """
     for _label, base in _expand_sources(sources):
         try:
@@ -129,6 +144,8 @@ def read_file(
         except ValueError:
             continue
         if candidate.exists() and candidate.is_file():
+            if candidate.suffix.lower() == ".pdf":
+                return _extract_pdf_text(candidate)
             try:
                 return candidate.read_text(
                     encoding="utf-8",
@@ -286,9 +303,16 @@ def search(
         for f in _iter_files(base):
             rel = str(f.relative_to(base))
             try:
-                lines = f.read_text(
-                    encoding="utf-8", errors="replace"
-                ).splitlines()
+                if f.suffix.lower() == ".pdf":
+                    text = _extract_pdf_text(f)
+                    if not text:
+                        continue
+                    lines = text.splitlines()
+                else:
+                    lines = f.read_text(
+                        encoding="utf-8",
+                        errors="replace",
+                    ).splitlines()
             except OSError:
                 continue
             for i, line in enumerate(lines, start=1):
