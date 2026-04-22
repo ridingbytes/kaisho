@@ -222,6 +222,12 @@ export function TrayPanel() {
     refresh();
   }
 
+  async function handleUpdateNotes(notes: string) {
+    if (!timer?.start) return;
+    await updateClockEntry(timer.start, { notes });
+    refresh();
+  }
+
   async function handleResume(entry: ClockEntry) {
     await startTimer({
       customer: entry.customer,
@@ -248,6 +254,7 @@ export function TrayPanel() {
         onStart={handleStart}
         onStop={handleStop}
         onUpdateDescription={handleUpdateDescription}
+        onUpdateNotes={handleUpdateNotes}
       />
 
       <div className="border-t border-border-subtle" />

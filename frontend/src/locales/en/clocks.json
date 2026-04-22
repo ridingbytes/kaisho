@@ -57,5 +57,6 @@
   "note": "Note",
   "task": "Task",
   "hideInvoiced": "Hide invoiced",
-  "icalFeed": "Subscribe to calendar (iCal)"
+  "icalFeed": "Subscribe to calendar (iCal)",
+  "notesPlaceholder": "Add notes..."
 }

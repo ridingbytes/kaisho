@@ -101,5 +101,6 @@
   "knowledge": "Knowledge",
   "todo": "Todo",
   "filterHint": "Filter (case-insensitive regex; comma separates OR terms)",
-  "filterInvalid": "Invalid regex -- filter is ignored until you fix it"
+  "filterInvalid": "Invalid regex -- filter is ignored until you fix it",
+  "cmdEnterToSave": "⌘↵ to save"
 }

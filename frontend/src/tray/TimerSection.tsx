@@ -15,6 +15,7 @@ interface Props {
   ) => void;
   onStop: () => void;
   onUpdateDescription: (desc: string) => void;
+  onUpdateNotes: (notes: string) => void;
 }
 
 export function TimerSection({
@@ -25,14 +26,22 @@ export function TimerSection({
   onStart,
   onStop,
   onUpdateDescription,
+  onUpdateNotes,
 }: Props) {
   const { t } = useTranslation("clocks");
   const { t: tc } = useTranslation("common");
   const [customer, setCustomer] = useState("");
   const [description, setDescription] = useState("");
+
+  // Inline description edit
   const [editingDesc, setEditingDesc] = useState(false);
   const [descDraft, setDescDraft] = useState("");
   const descInputRef = useRef<HTMLInputElement>(null);
+
+  // Inline notes edit
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesDraft, setNotesDraft] = useState("");
+  const notesRef = useRef<HTMLTextAreaElement>(null);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -71,15 +80,48 @@ export function TimerSection({
     }
   }
 
+  function startEditingNotes() {
+    setNotesDraft(timer?.notes ?? "");
+    setEditingNotes(true);
+    setTimeout(() => {
+      const el = notesRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(
+        el.value.length,
+        el.value.length,
+      );
+    }, 0);
+  }
+
+  function commitNotes() {
+    setEditingNotes(false);
+    const next = notesDraft.trim();
+    if (next !== (timer?.notes ?? "").trim()) {
+      onUpdateNotes(next);
+    }
+  }
+
+  function onNotesKeyDown(
+    e: React.KeyboardEvent<HTMLTextAreaElement>,
+  ) {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      commitNotes();
+    } else if (e.key === "Escape") {
+      setEditingNotes(false);
+    }
+  }
+
   if (isRunning && timer?.start) {
     return (
-      <div className="px-4 py-4">
+      <div className="px-4 py-3">
         {/* Elapsed time */}
         <div className="text-center">
           <div className="text-3xl font-light font-mono text-stone-900 tabular-nums tracking-wide">
             {elapsed}
           </div>
-          <div className="flex items-center justify-center gap-1.5 mt-1.5">
+          <div className="flex items-center justify-center gap-1.5 mt-1">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-green-600">
               {tc("active")}
@@ -88,7 +130,7 @@ export function TimerSection({
         </div>
 
         {/* Customer */}
-        <p className="text-xs text-stone-500 text-center mt-2">
+        <p className="text-xs text-stone-500 text-center mt-1.5">
           {timer.customer}
         </p>
 
@@ -119,11 +161,11 @@ export function TimerSection({
             className="group mt-1.5 w-full flex items-center justify-center gap-1 text-xs text-stone-500 hover:text-stone-800 transition-colors"
           >
             <span className="truncate max-w-[200px]">
-              {timer.description ||
+              {timer.description || (
                 <span className="italic text-stone-400">
                   {tc("descriptionOptional")}
                 </span>
-              }
+              )}
             </span>
             <Pencil
               size={10}
@@ -132,10 +174,53 @@ export function TimerSection({
           </button>
         )}
 
+        {/* Inline-editable notes */}
+        {editingNotes ? (
+          <div className="mt-2">
+            <textarea
+              ref={notesRef}
+              value={notesDraft}
+              onChange={(e) =>
+                setNotesDraft(e.target.value)
+              }
+              onBlur={commitNotes}
+              onKeyDown={onNotesKeyDown}
+              placeholder={t("notesPlaceholder")}
+              rows={3}
+              className={[
+                "w-full px-2 py-1.5 rounded text-xs resize-none",
+                "bg-surface-raised border border-cta",
+                "text-stone-900 placeholder-stone-400",
+                "focus:outline-none",
+              ].join(" ")}
+            />
+            <p className="text-[10px] text-stone-400 mt-0.5 text-right">
+              {tc("cmdEnterToSave")}
+            </p>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={startEditingNotes}
+            className="group mt-2 w-full text-left px-2 py-1.5 rounded text-xs bg-surface-raised border border-border hover:border-stone-300 transition-colors"
+          >
+            {timer.notes ? (
+              <span className="text-stone-600 line-clamp-2 group-hover:text-stone-800 transition-colors">
+                {timer.notes}
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-stone-400 italic">
+                <Pencil size={9} className="shrink-0" />
+                {t("notesPlaceholder")}
+              </span>
+            )}
+          </button>
+        )}
+
         {/* Stop button */}
         <button
           onClick={onStop}
-          className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
+          className="mt-2.5 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
         >
           <Square size={12} fill="currentColor" />
           {t("stopTimer")}
@@ -154,7 +239,6 @@ export function TimerSection({
         {t("quickStart")}
       </p>
       <div className="flex flex-col gap-2">
-        {/* Customer: simple input with datalist */}
         <input
           list="tray-customers"
           value={customer}
