@@ -71,7 +71,7 @@ def _list_tasks(args: dict) -> dict:
 
 def _add_task(args: dict) -> dict:
     task = _backend().tasks.add_task(
-        customer=args["customer"],
+        customer=args.get("customer", ""),
         title=args["title"],
         status=args.get("status", "TODO"),
         tags=args.get("tags"),
@@ -120,8 +120,8 @@ def _list_clock_entries(args: dict) -> dict:
 def _book_time(args: dict) -> dict:
     entry = _backend().clocks.quick_book(
         duration_str=args["duration"],
-        customer=args["customer"],
-        description=args["description"],
+        customer=args.get("customer", ""),
+        description=args.get("description", ""),
         contract=args.get("contract"),
     )
     return {"entry": entry}
@@ -194,8 +194,8 @@ def _update_note(args: dict) -> dict:
 
 def _start_clock(args: dict) -> dict:
     entry = _backend().clocks.start(
-        customer=args["customer"],
-        description=args["description"],
+        customer=args.get("customer", ""),
+        description=args.get("description", ""),
         task_id=args.get("task_id"),
         contract=args.get("contract"),
     )

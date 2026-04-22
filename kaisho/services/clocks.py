@@ -44,7 +44,7 @@ from ..org.writer import write_org_file
 # Also supports legacy format: [CUSTOMER]: description
 ENTRY_RE = re.compile(
     r"^(?:\[\d{4}-\d{2}-\d{2}\s+\w+\]\s+)?"
-    r"\[([^\]]+)\]:\s*(.*)"
+    r"\[([^\]]*)\]:\s*(.*)"
 )
 
 DURATION_SIMPLE_RE = re.compile(
@@ -1054,10 +1054,11 @@ def start_timer(
     """
     active = get_active_timer(clocks_file)
     if active is not None:
+        cust = active["customer"]
+        desc = active["description"]
+        label = f"{cust}: {desc}" if cust else desc
         raise ValueError(
-            f"Timer already running for "
-            f"{active['customer']}: "
-            f"{active['description']}"
+            f"Timer already running for {label}"
         )
 
     start = (

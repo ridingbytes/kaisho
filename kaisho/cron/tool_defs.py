@@ -78,7 +78,7 @@ TOOL_DEFS: list[dict] = [
                     ),
                 },
             },
-            "required": ["customer", "title"],
+            "required": ["title"],
         },
     },
     {
@@ -166,7 +166,7 @@ TOOL_DEFS: list[dict] = [
                 "customer": {"type": "string"},
                 "description": {"type": "string"},
             },
-            "required": ["duration", "customer", "description"],
+            "required": ["duration"],
         },
     },
     {
@@ -397,7 +397,7 @@ TOOL_DEFS: list[dict] = [
                     ),
                 },
             },
-            "required": ["customer", "description"],
+            "required": [],
         },
     },
     {

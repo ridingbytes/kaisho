@@ -53,7 +53,7 @@ def _entry_to_vevent(entry: dict) -> str:
             ":", "",
         )
 
-    summary = f"[{customer}] {desc}"
+    summary = f"[{customer}] {desc}" if customer else desc
     if contract:
         summary += f" ({contract})"
 

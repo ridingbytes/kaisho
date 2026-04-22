@@ -593,7 +593,7 @@ def entry_to_wire(entry: dict) -> dict:
     """
     return {
         "id": entry["sync_id"],
-        "customer": entry.get("customer") or None,
+        "customer": entry.get("customer", ""),
         "description": entry.get("description") or "",
         "start": _local_to_utc(entry["start"]),
         "end": (
