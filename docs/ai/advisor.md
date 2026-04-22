@@ -106,3 +106,48 @@ Edit these in **Settings > Advisor Files** or directly:
 The UI persists conversation history in the browser. An unread badge
 appears in the sidebar when there are new responses (e.g., from
 background queries).
+
+## Using Kaisho from Claude Code
+
+:octicons-tag-24: Added in v0.9.0
+{ .version-badge }
+
+The same 40 tools available to the built-in advisor are also
+accessible from Claude Code, Claude Desktop, and Cursor via the
+[MCP Server](../integrations/mcp.md).
+
+Add this to `~/.claude/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "kaisho": {
+      "command": "kai",
+      "args": [
+        "mcp-server",
+        "--profile", "org-mode",
+        "--allow", "read,write"
+      ]
+    }
+  }
+}
+```
+
+Restart Claude Code, then ask naturally:
+
+- "What tasks do I have open for Acme?"
+- "Start a clock for Beta Inc, working on the API"
+- "How many hours did I bill this month?"
+- "Add an inbox item: check SSL cert renewal"
+- "Search my knowledge base for deployment notes"
+
+Claude Code calls Kaisho's tools behind the scenes. You work in
+your editor and Kaisho is just there -- no tab switching, no
+copy-paste.
+
+Change `--profile` to match your active profile name. Use
+`--allow read` for read-only access or `--allow destructive` for
+full access including deletes.
+
+See [MCP Server](../integrations/mcp.md) for detailed setup,
+all available tools, and security configuration.
