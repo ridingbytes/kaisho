@@ -1,13 +1,23 @@
 """Tool definitions for the agentic executor (Anthropic format).
 
-Each tool is a dict with ``name``, ``description``, and
-``input_schema``.  ``openai_tools()`` in ``tools.py`` converts
-these to the OpenAI / Ollama chat format on the fly.
+Each tool is a dict with ``name``, ``description``,
+``input_schema``, and ``tier``.
+
+``tier`` classifies each tool for MCP access control:
+
+- ``read`` -- read-only queries, no side effects
+- ``write`` -- creates or modifies data
+- ``destructive`` -- deletes data or runs arbitrary commands
+
+``openai_tools()`` in ``tools.py`` converts these to the
+OpenAI / Ollama chat format on the fly.  The ``tier`` field
+is ignored by the advisor and cron executor.
 """
 
 TOOL_DEFS: list[dict] = [
     {
         "name": "list_tasks",
+        "tier": "read",
         "description": (
             "List tasks from the kanban board. "
             "Returns id, customer, title, status, tags for each task."
@@ -35,6 +45,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "add_task",
+        "tier": "write",
         "description": "Create a new task on the kanban board.",
         "input_schema": {
             "type": "object",
@@ -72,6 +83,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "move_task",
+        "tier": "write",
         "description": "Change the status of an existing task.",
         "input_schema": {
             "type": "object",
@@ -84,6 +96,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "list_inbox",
+        "tier": "read",
         "description": "List items currently in the inbox.",
         "input_schema": {
             "type": "object",
@@ -97,6 +110,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "add_inbox_item",
+        "tier": "write",
         "description": "Capture a new item to the inbox.",
         "input_schema": {
             "type": "object",
@@ -123,6 +137,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "list_clock_entries",
+        "tier": "read",
         "description": "List time-tracking clock entries.",
         "input_schema": {
             "type": "object",
@@ -136,6 +151,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "book_time",
+        "tier": "write",
         "description": "Book time for a customer retroactively.",
         "input_schema": {
             "type": "object",
@@ -152,11 +168,13 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "list_customers",
+        "tier": "read",
         "description": "List all customers with budget and consumption info.",
         "input_schema": {"type": "object", "properties": {}},
     },
     {
         "name": "list_contracts",
+        "tier": "read",
         "description": (
             "List contracts for a customer with budget and "
             "consumption info."
@@ -174,6 +192,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "search_knowledge",
+        "tier": "read",
         "description": (
             "Search the knowledge base (documentation, notes, "
             "research files) for relevant information. Returns "
@@ -196,6 +215,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "read_knowledge_file",
+        "tier": "read",
         "description": (
             "Read a knowledge base file by its path. "
             "For large files (PDFs, books), use "
@@ -219,11 +239,13 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "list_notes",
+        "tier": "read",
         "description": "List all notes.",
         "input_schema": {"type": "object", "properties": {}},
     },
     {
         "name": "add_note",
+        "tier": "write",
         "description": "Create a new note.",
         "input_schema": {
             "type": "object",
@@ -243,6 +265,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "set_task_tags",
+        "tier": "write",
         "description": "Set tags on a task (replaces all).",
         "input_schema": {
             "type": "object",
@@ -258,6 +281,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "archive_task",
+        "tier": "destructive",
         "description": "Archive a task by ID.",
         "input_schema": {
             "type": "object",
@@ -269,6 +293,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "update_task",
+        "tier": "write",
         "description": (
             "Update a task's title, customer, body, "
             "or GitHub URL."
@@ -308,6 +333,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "delete_note",
+        "tier": "destructive",
         "description": "Delete a note by ID.",
         "input_schema": {
             "type": "object",
@@ -319,6 +345,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "update_note",
+        "tier": "write",
         "description": "Update a note's title, body, or tags.",
         "input_schema": {
             "type": "object",
@@ -345,6 +372,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "start_clock",
+        "tier": "write",
         "description": (
             "Start a running clock timer for a customer."
         ),
@@ -371,6 +399,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "stop_clock",
+        "tier": "write",
         "description": (
             "Stop the currently running clock timer."
         ),
@@ -380,6 +409,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "update_clock_entry",
+        "tier": "write",
         "description": (
             "Update a clock entry. Can change customer, "
             "description, contract, notes, or invoiced "
@@ -432,6 +462,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "batch_invoice",
+        "tier": "write",
         "description": (
             "Mark all uninvoiced clock entries for a "
             "customer or contract as invoiced. Returns "
@@ -457,6 +488,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "list_kb_files",
+        "tier": "read",
         "description": (
             "List all files in the knowledge base. "
             "Returns path, label, name, and size "
@@ -466,6 +498,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "transcribe_youtube",
+        "tier": "read",
         "description": (
             "Fetch the transcript / captions of a YouTube video. "
             "Accepts a full YouTube URL or a bare 11-character video ID. "
@@ -491,6 +524,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "create_skill",
+        "tier": "write",
         "description": (
             "Create a reusable advisor skill template. "
             "The skill will be automatically applied when "
@@ -518,6 +552,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "list_profiles",
+        "tier": "read",
         "description": (
             "List all profiles for the active user. "
             "Returns the active profile name and all available profiles."
@@ -526,6 +561,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "rename_profile",
+        "tier": "destructive",
         "description": (
             "Rename a profile. The active profile cannot be renamed."
         ),
@@ -549,6 +585,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "delete_profile",
+        "tier": "destructive",
         "description": (
             "Delete a profile and all its data. "
             "The active profile cannot be deleted. "
@@ -567,6 +604,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "write_kb_file",
+        "tier": "write",
         "description": (
             "Create or overwrite a file in the knowledge base. "
             "Use this when the user asks to create a knowledge "
@@ -605,6 +643,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "web_search",
+        "tier": "read",
         "description": (
             "Search the web using DuckDuckGo and return the "
             "top results with titles, URLs, and snippets. "
@@ -632,6 +671,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "fetch_url",
+        "tier": "read",
         "description": (
             "Fetch the content of an HTTP/HTTPS URL and return it as text. "
             "Useful for reading web pages, JSON APIs, RSS feeds, etc. "
@@ -656,6 +696,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "approve_url_domain",
+        "tier": "write",
         "description": (
             "Add a domain to the URL allowlist so fetch_url can "
             "access it. Call this when the user approves a domain."
@@ -670,6 +711,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "list_github_projects",
+        "tier": "read",
         "description": (
             "List GitHub Projects v2 for all customers. "
             "Returns each project with its items grouped by "
@@ -707,6 +749,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "list_github_issues",
+        "tier": "read",
         "description": (
             "List open GitHub issues for all customers "
             "(or a specific customer). "
@@ -727,6 +770,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "execute_cli",
+        "tier": "destructive",
         "description": (
             "Execute a kai CLI command and return "
             "the output. Use this for any operation "
@@ -756,6 +800,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "get_time_insights",
+        "tier": "read",
         "description": (
             "Get time tracking insights: daily activity, "
             "billable vs non-billable split, and hours "
@@ -782,6 +827,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "list_cron_jobs",
+        "tier": "read",
         "description": (
             "List all defined cron jobs with their id, "
             "name, schedule, model, and enabled status. "
@@ -792,6 +838,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "trigger_cron_job",
+        "tier": "write",
         "description": (
             "Trigger a cron job to run immediately in the "
             "background. The job runs asynchronously — you "
@@ -813,6 +860,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "create_backup",
+        "tier": "write",
         "description": (
             "Create a ZIP backup of the Kaisho data "
             "directory and (by default) prune old backups "
@@ -836,6 +884,7 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "list_backups",
+        "tier": "read",
         "description": (
             "List existing backup archives, newest first. "
             "Returns each backup's filename, size in bytes "

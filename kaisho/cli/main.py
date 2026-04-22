@@ -142,3 +142,24 @@ cli.add_command(youtube_cmd, name="youtube")
 cli.add_command(convert_cmd, name="convert")
 cli.add_command(notes, name="notes")
 cli.add_command(backup_cmd, name="backup")
+
+
+@cli.command("mcp-server")
+@click.option(
+    "--profile", "-p",
+    default=None,
+    help="Profile to operate on (default: active).",
+)
+@click.option(
+    "--allow", "-a",
+    default="read",
+    help=(
+        "Allowed tiers: read, write, destructive. "
+        "Comma-separated. write implies read. "
+        "Default: read."
+    ),
+)
+def mcp_server_cmd(profile, allow):
+    """Start the MCP server (stdio transport)."""
+    from ..mcp.server import run_server
+    run_server(profile=profile, allow=allow)

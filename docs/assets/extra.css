@@ -67,6 +67,14 @@
   border-color: #3f3f46;
 }
 
+/* Version badges */
+.version-badge {
+  margin-top: -0.8em;
+  margin-bottom: 1.2em;
+  font-size: 0.75rem;
+  color: var(--md-default-fg-color--light);
+}
+
 /* Footer */
 .md-footer {
   background-color: #18181b;

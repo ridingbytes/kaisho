@@ -114,6 +114,7 @@ nav:
       - Desktop App: integrations/desktop.md
       - Mobile PWA: integrations/mobile.md
       - Emacs: integrations/emacs.md
+      - MCP Server: integrations/mcp.md
   - CLI Reference:
       - Overview: cli/index.md
       - clock: cli/clock.md
@@ -133,6 +134,7 @@ nav:
       - serve: cli/serve.md
       - convert: cli/convert.md
       - youtube: cli/youtube.md
+      - mcp-server: cli/mcp-server.md
   - API Reference:
       - Overview: api/index.md
       - Clocks: api/clocks.md
