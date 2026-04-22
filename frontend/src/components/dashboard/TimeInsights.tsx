@@ -208,6 +208,8 @@ function EntryRow({ entry }: { entry: TimeInsightsEntry }) {
 // Customer Bar (clickable → drilldown)
 // -------------------------------------------------------
 
+const DRILLDOWN_PAGE = 5;
+
 function CustomerBar({
   cust,
   maxMins,
@@ -215,7 +217,9 @@ function CustomerBar({
   cust: TimeInsightsCustomer;
   maxMins: number;
 }) {
+  const { t: tc } = useTranslation("common");
   const [open, setOpen] = useState(false);
+  const [limit, setLimit] = useState(DRILLDOWN_PAGE);
   const colors = useCustomerColors();
   const pct =
     maxMins > 0
@@ -277,9 +281,24 @@ function CustomerBar({
       </button>
       {open && (
         <div className="ml-5 pl-3 border-l border-border-subtle">
-          {cust.entries.map((e, i) => (
+          {cust.entries.slice(0, limit).map((e, i) => (
             <EntryRow key={`${e.start}-${i}`} entry={e} />
           ))}
+          {cust.entries.length > limit && (
+            <button
+              onClick={() =>
+                setLimit((l) => l + DRILLDOWN_PAGE)
+              }
+              className="text-[10px] text-cta hover:underline py-1"
+            >
+              {tc("showMore", {
+                count: Math.min(
+                  DRILLDOWN_PAGE,
+                  cust.entries.length - limit,
+                ),
+              })}
+            </button>
+          )}
         </div>
       )}
     </div>
