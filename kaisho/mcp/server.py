@@ -7,6 +7,7 @@ executor and advisor, so tool behavior is identical.
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 from fastmcp import FastMCP
 
@@ -31,21 +32,82 @@ _TIER_ANNOTATIONS = {
     },
 }
 
+# Map JSON schema types to Python type annotations
+_TYPE_MAP = {
+    "string": "str",
+    "integer": "int",
+    "number": "float",
+    "boolean": "bool",
+}
 
-def _make_handler(tool_name: str, audit_file: Path):
-    """Create a tool handler closure for a tool name."""
 
-    def handler(**kwargs) -> str:
-        """Execute tool and return JSON result."""
-        result = execute_tool(tool_name, kwargs)
-        log_call(audit_file, tool_name, kwargs, result)
-        if "error" in result:
-            raise RuntimeError(result["error"])
-        return json.dumps(result, default=str)
+def _build_handler(
+    tool_name: str,
+    schema: dict,
+    audit_file: Path,
+):
+    """Build a tool handler function with a typed signature.
 
-    handler.__name__ = tool_name
-    handler.__doc__ = tool_name
-    return handler
+    FastMCP requires explicit parameter signatures (no
+    ``**kwargs``).  This generates a function whose
+    parameters match the tool's ``input_schema``.
+    """
+    props = schema.get("properties", {})
+    required = set(schema.get("required", []))
+
+    # Build parameter strings
+    param_parts = []
+    param_names = []
+    for pname, pdef in props.items():
+        py_type = _TYPE_MAP.get(
+            pdef.get("type", "string"), "str",
+        )
+        if pname in required:
+            param_parts.append(f"{pname}: {py_type}")
+        else:
+            param_parts.append(
+                f"{pname}: {py_type} | None = None",
+            )
+        param_names.append(pname)
+
+    params_str = ", ".join(param_parts)
+    names_str = ", ".join(
+        f'"{n}": {n}' for n in param_names
+    )
+
+    # The handler collects non-None args and dispatches.
+    # exec() is used here to generate functions with
+    # proper typed signatures required by FastMCP.
+    # All inputs are from trusted tool_defs.py constants,
+    # not from user input.
+    func_code = (
+        f"def {tool_name}({params_str}) -> str:\n"
+        f"    args = {{{names_str}}}\n"
+        f"    args = {{k: v for k, v in args.items()"
+        f" if v is not None}}\n"
+        f"    return _dispatch("
+        f'"{tool_name}", args, _audit)\n'
+    )
+
+    ns: dict[str, Any] = {
+        "_dispatch": _dispatch_call,
+        "_audit": audit_file,
+    }
+    exec(func_code, ns)  # noqa: S102
+    fn = ns[tool_name]
+    fn.__doc__ = f"MCP handler for {tool_name}."
+    return fn
+
+
+def _dispatch_call(
+    name: str, args: dict, audit_file: Path,
+) -> str:
+    """Execute a tool and return JSON result."""
+    result = execute_tool(name, args)
+    log_call(audit_file, name, args, result)
+    if "error" in result:
+        raise RuntimeError(result["error"])
+    return json.dumps(result, default=str)
 
 
 def create_server(
@@ -82,7 +144,9 @@ def create_server(
         name = tool_def["name"]
         tier = tool_def.get("tier", "read")
         annotations = _TIER_ANNOTATIONS.get(tier, {})
-        handler = _make_handler(name, audit_file)
+        schema = tool_def["input_schema"]
+
+        handler = _build_handler(name, schema, audit_file)
 
         mcp.tool(
             name=name,
