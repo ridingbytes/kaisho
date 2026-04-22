@@ -33,7 +33,7 @@ export function QuickBookForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!duration.trim() || !customer.trim()) return;
+    if (!duration.trim()) return;
     book.mutate(
       {
         duration: duration.trim(),
@@ -129,8 +129,7 @@ export function QuickBookForm({
         type="submit"
         disabled={
           book.isPending ||
-          !duration.trim() ||
-          !customer.trim()
+          !duration.trim()
         }
         className={[
           "w-full py-2 rounded-lg text-xs font-semibold",

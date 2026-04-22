@@ -32,7 +32,6 @@ export function StartForm({ onStarted }: Props) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!customer.trim()) return;
     start.mutate(
       {
         customer: customer.trim(),
@@ -99,10 +98,7 @@ export function StartForm({ onStarted }: Props) {
       />
       <button
         type="submit"
-        disabled={
-          start.isPending ||
-          !customer.trim()
-        }
+        disabled={start.isPending}
         className={[
           "w-full py-2 rounded-lg text-xs font-semibold",
           "bg-cta text-white",

@@ -121,7 +121,7 @@ def calendar_feed(
 
 class QuickBookRequest(BaseModel):
     duration: str   # "2h", "30min"
-    customer: str
+    customer: str = ""
     description: str = ""
     task_id: str | None = None
     contract: str | None = None
@@ -130,7 +130,7 @@ class QuickBookRequest(BaseModel):
 
 
 class TimerStart(BaseModel):
-    customer: str
+    customer: str = ""
     description: str = ""
     task_id: str | None = None
     contract: str | None = None

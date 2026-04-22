@@ -45,9 +45,7 @@ export function TimerSection({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const c = customer.trim();
-    if (!c) return;
-    onStart(c, description.trim());
+    onStart(customer.trim(), description.trim());
     setCustomer("");
     setDescription("");
   }
@@ -267,8 +265,7 @@ export function TimerSection({
 
         <button
           type="submit"
-          disabled={!customer.trim()}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-cta text-white hover:bg-cta-hover transition-colors"
         >
           <Play size={12} fill="currentColor" />
           {t("startTimer")}
