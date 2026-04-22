@@ -5,6 +5,8 @@ thoughts, emails to follow up on, leads, feature ideas. Process
 items later by promoting them to tasks, notes, or knowledge base
 entries.
 
+![Inbox](../assets/images/inbox.png){.screenshot}
+
 ## Capturing Items
 
 === "Web UI"

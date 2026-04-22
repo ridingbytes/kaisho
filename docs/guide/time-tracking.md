@@ -4,6 +4,8 @@ Time tracking in Kaisho works three ways: start/stop timers,
 retroactive booking, and quick booking. All methods produce the same
 clock entries.
 
+![Time Tracking](../assets/images/clocks.png){.screenshot}
+
 ## Starting a Timer
 
 === "Web UI"

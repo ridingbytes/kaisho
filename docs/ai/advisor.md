@@ -5,6 +5,8 @@ knows your tasks, time entries, customers, notes, and inbox. Ask it
 questions in natural language, and it uses tool calling to read and
 write your data.
 
+![AI Advisor](../assets/images/advisor.png){.screenshot}
+
 ## Asking Questions
 
 === "Web UI"

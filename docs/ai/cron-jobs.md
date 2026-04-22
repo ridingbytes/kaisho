@@ -4,6 +4,8 @@ Cron jobs run AI prompts on a schedule. They generate briefings,
 summaries, research reports, and more -- delivered to your inbox or
 written to files.
 
+![Cron Jobs](../assets/images/cron.png){.screenshot}
+
 ## How Cron Jobs Work
 
 1. You define a job with a schedule (cron expression), a prompt

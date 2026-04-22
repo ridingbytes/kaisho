@@ -4,6 +4,8 @@ The dashboard is your home screen. It shows at a glance what needs
 attention: running timers, hours tracked, open tasks, inbox items,
 and budget status.
 
+![Dashboard](../assets/images/dashboard.png){.screenshot}
+
 ## Stat Cards
 
 Four cards at the top summarize your current state:

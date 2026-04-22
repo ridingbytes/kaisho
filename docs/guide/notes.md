@@ -4,6 +4,8 @@ Notes are longer-form entries for meeting minutes, technical
 decisions, research findings, or anything worth keeping. They can
 link to customers and tasks.
 
+![Notes](../assets/images/notes.png){.screenshot}
+
 ## Creating Notes
 
 === "Web UI"

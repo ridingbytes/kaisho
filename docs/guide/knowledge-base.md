@@ -5,6 +5,8 @@ material: documentation, runbooks, meeting notes, research. It
 supports Markdown, org-mode, plain text, reStructuredText, and PDF
 files.
 
+![Knowledge Base](../assets/images/knowledge.png){.screenshot}
+
 ## KB Sources
 
 The KB reads from one or more directories configured in

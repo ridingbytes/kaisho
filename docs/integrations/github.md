@@ -3,6 +3,8 @@
 Kaisho connects to GitHub to show issues and pull requests alongside
 your tasks and time tracking.
 
+![GitHub Integration](../assets/images/github.png){.screenshot}
+
 ## Setup
 
 1. Create a [personal access token](https://github.com/settings/tokens)
