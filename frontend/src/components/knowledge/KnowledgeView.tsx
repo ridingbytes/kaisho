@@ -10,6 +10,10 @@
 
 import { FilePlus, Pencil, Star } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+  profileGet,
+  profileSet,
+} from "../../utils/profileStorage";
 import { useTranslation } from "react-i18next";
 import {
   useCreateKnowledgeFolder,
@@ -67,7 +71,7 @@ export function KnowledgeView() {
   const STARS_KEY = "kaisho_kb_stars";
   const [starred, setStarred] = useState<Set<string>>(
     () => {
-      const raw = localStorage.getItem(STARS_KEY);
+      const raw = profileGet(STARS_KEY);
       return raw
         ? new Set(JSON.parse(raw) as string[])
         : new Set();
@@ -79,7 +83,7 @@ export function KnowledgeView() {
       const next = new Set(prev);
       if (next.has(path)) next.delete(path);
       else next.add(path);
-      localStorage.setItem(
+      profileSet(
         STARS_KEY,
         JSON.stringify([...next]),
       );

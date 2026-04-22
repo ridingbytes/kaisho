@@ -6,6 +6,10 @@
 import { useTranslation } from "react-i18next";
 import { Download, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+  profileGet,
+  profileSet,
+} from "../../utils/profileStorage";
 import { BookForm } from "./BookForm";
 import { CloudTriagePanel } from "./CloudTriagePanel";
 import {
@@ -51,7 +55,7 @@ const PERIOD_VALUES: Period[] = [
 ];
 
 function loadPeriod(): Period {
-  const raw = localStorage.getItem(PERIOD_STORAGE_KEY);
+  const raw = profileGet(PERIOD_STORAGE_KEY);
   return PERIOD_VALUES.includes(raw as Period)
     ? (raw as Period)
     : "week";
@@ -77,7 +81,7 @@ const EMPTY_FILTERS: ColFilters = {
 };
 
 function loadFilters(): ColFilters {
-  const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
+  const raw = profileGet(FILTERS_STORAGE_KEY);
   if (!raw) return EMPTY_FILTERS;
   try {
     const parsed = JSON.parse(raw);
@@ -168,7 +172,7 @@ export function ClockView() {
     useState<ColFilters>(loadFilters);
   const [booking, setBooking] = useState(false);
   const [hideInvoiced, setHideInvoiced] = useState(
-    () => localStorage.getItem(
+    () => profileGet(
       "clocks_hide_invoiced",
     ) === "true",
   );
@@ -219,7 +223,7 @@ export function ClockView() {
   }, [pendingSearch, clearPendingSearch]);
 
   useEffect(() => {
-    localStorage.setItem(
+    profileSet(
       FILTERS_STORAGE_KEY,
       JSON.stringify(colFilters),
     );
@@ -299,7 +303,7 @@ export function ClockView() {
               const next = e.target.value as Period;
               setPeriod(next);
               setSpecificDate("");
-              localStorage.setItem(
+              profileSet(
                 PERIOD_STORAGE_KEY,
                 next,
               );
@@ -337,7 +341,7 @@ export function ClockView() {
               checked={hideInvoiced}
               onChange={(v) => {
                 setHideInvoiced(v);
-                localStorage.setItem(
+                profileSet(
                   "clocks_hide_invoiced",
                   String(v),
                 );

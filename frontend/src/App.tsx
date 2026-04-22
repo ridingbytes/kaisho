@@ -2,6 +2,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { setLanguage } from "./i18n";
 import {
+  profileGet,
+  profileSet,
+} from "./utils/profileStorage";
+import {
   Clock,
   CloudCog,
   Download,
@@ -458,7 +462,7 @@ function AppShell() {
   const [advisorMessages, setAdvisorMessages] = useState<AdvisorMessage[]>(
     () => {
       try {
-        const raw = localStorage.getItem("advisor_messages");
+        const raw = profileGet("advisor_messages");
         return raw ? (JSON.parse(raw) as AdvisorMessage[]) : [];
       } catch {
         return [];
@@ -486,7 +490,7 @@ function AppShell() {
   }, [clockOpen]);
 
   useEffect(() => {
-    localStorage.setItem(
+    profileSet(
       "advisor_messages",
       JSON.stringify(advisorMessages),
     );

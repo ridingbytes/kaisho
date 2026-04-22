@@ -6,6 +6,11 @@
  * constants, and localStorage persistence helpers.
  */
 
+import {
+  profileGet,
+  profileSet,
+} from "../../utils/profileStorage";
+
 // -----------------------------------------------------------------
 // Shared CSS class for form inputs
 // -----------------------------------------------------------------
@@ -134,7 +139,7 @@ export function readStoredOpen(): boolean {
 
 /** Read persisted collapsed labels from localStorage. */
 export function readCollapsedLabels(): Set<string> {
-  const raw = localStorage.getItem(LS_COLLAPSED);
+  const raw = profileGet(LS_COLLAPSED);
   if (!raw) return new Set();
   try {
     return new Set(JSON.parse(raw) as string[]);
@@ -157,7 +162,7 @@ export function storeWidth(width: number) {
 export function storeCollapsedLabels(
   labels: Set<string>
 ) {
-  localStorage.setItem(
+  profileSet(
     LS_COLLAPSED,
     JSON.stringify([...labels])
   );

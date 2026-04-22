@@ -37,6 +37,10 @@ import type { ArchivedTask, Task } from "../../types";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { Toggle } from "../common/Toggle";
 import { HelpButton } from "../common/HelpButton";
+import {
+  profileGet,
+  profileSet,
+} from "../../utils/profileStorage";
 import { SearchInput } from "../common/SearchInput";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { ResizeHandle } from "../common/ResizeHandle";
@@ -342,7 +346,7 @@ export function KanbanBoard() {
   const { t: tc } = useTranslation("common");
   const { t: tNav } = useTranslation("nav");
   const [showDone, setShowDone] = useState(
-    () => localStorage.getItem("board_show_done") === "true"
+    () => profileGet("board_show_done") === "true"
   );
   const [openAddInFirst, setOpenAddInFirst] = useState(false);
   const [search, setSearch] = useState("");
@@ -633,7 +637,7 @@ export function KanbanBoard() {
             <Toggle
               checked={showDone}
               onChange={(v) => {
-                localStorage.setItem(
+                profileSet(
                   "board_show_done", String(v),
                 );
                 setShowDone(v);

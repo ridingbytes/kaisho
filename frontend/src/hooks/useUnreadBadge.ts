@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+  profileGet,
+  profileSet,
+} from "../utils/profileStorage";
 
 function storageKey(panel: string) {
   return `unread_${panel}`;
@@ -19,14 +23,14 @@ export function useUnreadBadge(
   const key = storageKey(panel);
 
   const [lastSeen, setLastSeen] = useState<number | null>(() => {
-    const s = localStorage.getItem(key);
+    const s = profileGet(key);
     return s !== null ? Number(s) : null;
   });
 
   // First data load: set baseline so no phantom unreads appear.
   useEffect(() => {
     if (lastSeen === null) {
-      localStorage.setItem(key, String(currentCount));
+      profileSet(key, String(currentCount));
       setLastSeen(currentCount);
     }
   }, [key, lastSeen, currentCount]);
@@ -35,7 +39,7 @@ export function useUnreadBadge(
     lastSeen !== null ? Math.max(0, currentCount - lastSeen) : 0;
 
   const markSeen = useCallback(() => {
-    localStorage.setItem(key, String(currentCount));
+    profileSet(key, String(currentCount));
     setLastSeen(currentCount);
   }, [key, currentCount]);
 
