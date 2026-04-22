@@ -59,7 +59,7 @@ export function KanbanColumn({
   const addTask = useAddTask();
 
   function handleAdd() {
-    if (!customer.trim() || !title.trim()) return;
+    if (!title.trim()) return;
     addTask.mutate(
       {
         customer: customer.trim(),
@@ -210,7 +210,6 @@ export function KanbanColumn({
                 onClick={handleAdd}
                 disabled={
                   addTask.isPending ||
-                  !customer.trim() ||
                   !title.trim()
                 }
                 className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"

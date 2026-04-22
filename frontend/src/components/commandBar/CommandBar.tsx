@@ -94,17 +94,16 @@ function parseCommand(
 
   if (cmd === "clock") {
     if (sub === "start") {
-      const customer = tokens[2];
-      if (!customer) {
-        return "Usage: clock start <customer> [desc]";
-      }
+      const customer = tokens[2] || "";
       const desc = tokens.slice(3).join(" ");
       return {
         execute: async () => {
           await startTimer({
             customer, description: desc,
           });
-          return `Timer started: ${customer}`;
+          return customer
+            ? `Timer started: ${customer}`
+            : "Timer started";
         },
       };
     }
@@ -127,22 +126,22 @@ function parseCommand(
     }
     if (sub === "book") {
       const duration = tokens[2];
-      const customer = tokens[3];
-      if (!duration || !customer) {
+      if (!duration) {
         return (
           "Usage: clock book <duration> "
-          + "<customer> [desc]"
+          + "[customer] [desc]"
         );
       }
+      const customer = tokens[3] || "";
       const desc = tokens.slice(4).join(" ");
       return {
         execute: async () => {
           await quickBook({
             duration, customer, description: desc,
           });
-          return (
-            `Booked ${duration} for ${customer}`
-          );
+          return customer
+            ? `Booked ${duration} for ${customer}`
+            : `Booked ${duration}`;
         },
       };
     }

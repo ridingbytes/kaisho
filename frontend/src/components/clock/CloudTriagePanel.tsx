@@ -41,7 +41,7 @@ function TriageRow({ entry }: { entry: ClockEntry }) {
   const qc = useQueryClient();
 
   function handleAssign() {
-    if (!customer.trim()) return;
+    // customer is optional
     setSaving(true);
     triageCloudEntries([
       {
@@ -121,7 +121,7 @@ function TriageRow({ entry }: { entry: ClockEntry }) {
         )}
         <button
           onClick={handleAssign}
-          disabled={saving || !customer.trim()}
+          disabled={saving}
           className="p-1 rounded text-cta hover:bg-cta-muted disabled:opacity-40"
           title={t("assign")}
         >

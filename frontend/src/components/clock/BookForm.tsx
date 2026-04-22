@@ -41,7 +41,7 @@ export function BookForm({ onClose }: BookFormProps) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!duration.trim() || !customer.trim()) return;
+    if (!duration.trim()) return;
     book.mutate(
       {
         duration: duration.trim(),
@@ -165,8 +165,7 @@ export function BookForm({ onClose }: BookFormProps) {
           type="submit"
           disabled={
             book.isPending ||
-            !duration.trim() ||
-            !customer.trim()
+            !duration.trim()
           }
           className={
             "px-3 py-1.5 rounded bg-cta text-white " +

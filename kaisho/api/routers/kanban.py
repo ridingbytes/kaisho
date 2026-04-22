@@ -8,7 +8,7 @@ router = APIRouter(prefix="/api/kanban", tags=["kanban"])
 
 
 class TaskCreate(BaseModel):
-    customer: str
+    customer: str = ""
     title: str
     status: str = "TODO"
     tags: list[str] = []

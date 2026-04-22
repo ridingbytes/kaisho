@@ -27,7 +27,7 @@ def clock():
 
 @clock.command("book")
 @click.argument("duration")
-@click.argument("customer_name")
+@click.argument("customer_name", default="")
 @click.argument("description", nargs=-1, required=False)
 @click.option("--json", "as_json", is_flag=True)
 def clock_book(duration, customer_name, description, as_json):
@@ -44,7 +44,7 @@ def clock_book(duration, customer_name, description, as_json):
 
 
 @clock.command("start")
-@click.argument("customer_name")
+@click.argument("customer_name", default="")
 @click.argument("description", nargs=-1, required=False)
 @click.option("--json", "as_json", is_flag=True)
 def clock_start(customer_name, description, as_json):
