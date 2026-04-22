@@ -64,3 +64,35 @@ Clock entries use the org CLOCK logbook format:
   :END:
   Working on landing page design
 ```
+
+## Using Kaisho Tools from gptel
+
+:octicons-tag-24: Added in v0.9.0
+{ .version-badge }
+
+If you use [gptel](https://github.com/karthink/gptel) with its
+MCP integration, you can access Kaisho's 40 tools from any gptel
+chat buffer.
+
+Add the `mcp` package and configure the Kaisho server:
+
+```elisp
+(use-package mcp
+  :config
+  (setq mcp-hub-servers
+        '(("kaisho"
+           :command "kai"
+           :args ("mcp-server"
+                  "--profile" "org-mode"
+                  "--allow" "read,write")))))
+```
+
+Then run `M-x gptel-mcp-connect` to load the tools. Ask
+questions in a gptel chat buffer:
+
+- "What tasks do I have open for Acme?"
+- "Start a clock for Beta Inc, working on the API"
+- "How many hours did I bill this month?"
+
+The LLM calls Kaisho tools behind the scenes. Disconnect with
+`M-x gptel-mcp-disconnect`.

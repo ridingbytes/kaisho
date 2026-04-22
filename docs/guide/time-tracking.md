@@ -11,8 +11,8 @@ clock entries.
 === "Web UI"
 
     The clock widget is always visible on the right side of the
-    screen. Select a customer, optionally type a description, and
-    press **Start**.
+    screen. Optionally select a customer and type a description,
+    then press **Start**. Both fields are optional.
 
     The elapsed time counts up in real time. The header bar and the
     menu bar tray (desktop app) also show the active timer.
@@ -87,7 +87,7 @@ Filter entries by period:
 
 | Filter | CLI | UI |
 |--------|-----|----|
-| Today | `kai clock list --today` | Period toggle: Today |
+| Today | `kai clock list` | Period toggle: Today |
 | This week | `kai clock list --week` | Period toggle: Week |
 | This month | `kai clock list --month` | Period toggle: Month |
 | Custom range | `kai clock list --from 2026-04-01 --to 2026-04-15` | Date picker |

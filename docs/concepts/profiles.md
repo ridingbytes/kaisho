@@ -84,3 +84,14 @@ PROFILE=work kai clock start "Acme Corp" "Bug fix"
 
 This is useful for scripts and automation that should always target a
 specific profile regardless of what's active in the UI.
+
+## Browser State Isolation
+
+:octicons-tag-24: Added in v0.9.0
+{ .version-badge }
+
+The web UI scopes all browser state per profile. Advisor chat
+history, unread badges, clock filters, board view toggles, and
+knowledge base bookmarks are stored under a profile-specific key
+in localStorage. Switching profiles gives a clean UI state without
+leaking data from a previous session.

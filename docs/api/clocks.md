@@ -12,7 +12,7 @@ GET /api/clocks/entries
 
 | Query Parameter | Type | Default | Description |
 |-----------------|------|---------|-------------|
-| `period` | string | `"month"` | `today`, `week`, `month`, `year` |
+| `period` | string | `"today"` | `today`, `week`, `month`, `year` |
 | `customer` | string | | Filter by customer name |
 | `from_date` | string | | Start date (YYYY-MM-DD) |
 | `to_date` | string | | End date (YYYY-MM-DD) |
@@ -72,7 +72,8 @@ POST /api/clocks/start
 }
 ```
 
-Only `customer` is required.
+All fields are optional. An empty body starts a timer without
+a customer or description.
 
 ## Stop Timer
 

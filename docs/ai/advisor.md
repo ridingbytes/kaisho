@@ -53,7 +53,7 @@ include the previous exchange as context.
 
 ## Available Tools
 
-The advisor has access to 43 tools covering every domain:
+The advisor has access to 40 tools covering every domain:
 
 | Category | Tools |
 |----------|-------|

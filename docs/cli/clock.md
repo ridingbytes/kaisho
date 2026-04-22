@@ -10,17 +10,18 @@ and edit time records.
 Start a running timer.
 
 ```bash
-kai clock start CUSTOMER [DESCRIPTION...]
+kai clock start [CUSTOMER] [DESCRIPTION...]
 ```
 
 | Argument | Description |
 |----------|-------------|
-| `CUSTOMER` | Customer name |
+| `CUSTOMER` | Customer name (optional) |
 | `DESCRIPTION` | Optional description (multiple words) |
 
 ```bash
 kai clock start "Acme Corp" "Working on landing page"
 kai clock start "Beta Inc"
+kai clock start
 ```
 
 ### `clock stop`
@@ -56,13 +57,13 @@ kai clock status [--json]
 Book time retroactively.
 
 ```bash
-kai clock book DURATION CUSTOMER [DESCRIPTION...]
+kai clock book DURATION [CUSTOMER] [DESCRIPTION...]
 ```
 
 | Argument | Description |
 |----------|-------------|
 | `DURATION` | Duration string (e.g., `2h`, `30min`, `1h30min`) |
-| `CUSTOMER` | Customer name |
+| `CUSTOMER` | Customer name (optional) |
 | `DESCRIPTION` | Optional description |
 
 ```bash

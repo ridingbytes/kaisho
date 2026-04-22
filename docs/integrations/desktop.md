@@ -30,8 +30,9 @@ The tray icon sits in the menu bar (macOS) or system tray
 **Left-click** opens a popover panel with:
 
 - Active timer with elapsed time and stop button
-- Quick-start buttons for recent customers
-- Quick capture (inbox item, note, task)
+- Inline-editable description and notes on the running timer
+- Quick-start form (customer is optional)
+- Quick capture (inbox item, note, task) with auto-refocus
 - Recent clock entries with resume buttons
 
 **Right-click** shows a context menu.
