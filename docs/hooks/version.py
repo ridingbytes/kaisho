@@ -5,7 +5,7 @@ from pathlib import Path
 
 def on_config(config):
     """Read version from pyproject.toml and set extra.version."""
-    root = Path(__file__).parent.parent
+    root = Path(__file__).parent.parent.parent
     toml = (root / "pyproject.toml").read_text(encoding="utf-8")
     match = re.search(r'^version\s*=\s*"([^"]+)"', toml, re.M)
     if match:
