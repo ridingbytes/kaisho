@@ -46,6 +46,9 @@ theme:
   icon:
     repo: fontawesome/brands/github
 
+hooks:
+  - docs/hooks/version.py
+
 plugins:
   - search
   - minify:
