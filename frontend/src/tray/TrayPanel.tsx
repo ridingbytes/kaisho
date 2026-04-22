@@ -7,6 +7,7 @@ import {
   fetchTodayEntries,
   startTimer,
   stopTimer,
+  updateClockEntry,
 } from "../api/client";
 import type {
   ActiveTimer,
@@ -213,6 +214,14 @@ export function TrayPanel() {
     refresh();
   }
 
+  async function handleUpdateDescription(desc: string) {
+    if (!timer?.start) return;
+    await updateClockEntry(timer.start, {
+      description: desc,
+    });
+    refresh();
+  }
+
   async function handleResume(entry: ClockEntry) {
     await startTimer({
       customer: entry.customer,
@@ -238,6 +247,7 @@ export function TrayPanel() {
         customers={customers}
         onStart={handleStart}
         onStop={handleStop}
+        onUpdateDescription={handleUpdateDescription}
       />
 
       <div className="border-t border-border-subtle" />

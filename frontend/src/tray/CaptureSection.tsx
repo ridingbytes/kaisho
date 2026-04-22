@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import {
@@ -15,6 +15,7 @@ export function CaptureSection() {
     useState<CaptureMode>("inbox");
   const [text, setText] = useState("");
   const [msg, setMsg] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,7 +36,10 @@ export function CaptureSection() {
       }
       setText("");
       setMsg(t("captured"));
-      setTimeout(() => setMsg(""), 2000);
+      setTimeout(() => {
+        setMsg("");
+        inputRef.current?.focus();
+      }, 2000);
     } catch {
       setMsg(t("captureFailed"));
       setTimeout(() => setMsg(""), 3000);
@@ -80,6 +84,7 @@ export function CaptureSection() {
 
       <div className="flex gap-1.5">
         <input
+          ref={inputRef}
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Play, Square } from "lucide-react";
+import { Pencil, Play, Square } from "lucide-react";
 import type { ActiveTimer, Customer } from "../types";
 
 interface Props {
@@ -14,6 +14,7 @@ interface Props {
     contract?: string,
   ) => void;
   onStop: () => void;
+  onUpdateDescription: (desc: string) => void;
 }
 
 export function TimerSection({
@@ -23,11 +24,15 @@ export function TimerSection({
   customers,
   onStart,
   onStop,
+  onUpdateDescription,
 }: Props) {
   const { t } = useTranslation("clocks");
   const { t: tc } = useTranslation("common");
   const [customer, setCustomer] = useState("");
   const [description, setDescription] = useState("");
+  const [editingDesc, setEditingDesc] = useState(false);
+  const [descDraft, setDescDraft] = useState("");
+  const descInputRef = useRef<HTMLInputElement>(null);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,6 +41,34 @@ export function TimerSection({
     onStart(c, description.trim());
     setCustomer("");
     setDescription("");
+  }
+
+  function startEditingDesc() {
+    setDescDraft(timer?.description ?? "");
+    setEditingDesc(true);
+    setTimeout(
+      () => descInputRef.current?.select(),
+      0,
+    );
+  }
+
+  function commitDesc() {
+    setEditingDesc(false);
+    const next = descDraft.trim();
+    if (next !== (timer?.description ?? "")) {
+      onUpdateDescription(next);
+    }
+  }
+
+  function onDescKeyDown(
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commitDesc();
+    } else if (e.key === "Escape") {
+      setEditingDesc(false);
+    }
   }
 
   if (isRunning && timer?.start) {
@@ -54,18 +87,50 @@ export function TimerSection({
           </div>
         </div>
 
-        {/* Customer + description */}
-        <p className="text-xs text-stone-600 text-center mt-2 truncate">
+        {/* Customer */}
+        <p className="text-xs text-stone-500 text-center mt-2">
           {timer.customer}
-          {timer.description && (
-            <>
-              <span className="mx-1 text-stone-400">
-                &middot;
-              </span>
-              {timer.description}
-            </>
-          )}
         </p>
+
+        {/* Inline-editable description */}
+        {editingDesc ? (
+          <input
+            ref={descInputRef}
+            type="text"
+            value={descDraft}
+            onChange={(e) =>
+              setDescDraft(e.target.value)
+            }
+            onBlur={commitDesc}
+            onKeyDown={onDescKeyDown}
+            placeholder={tc("descriptionOptional")}
+            className={[
+              "mt-1.5 w-full px-2 py-1 rounded text-xs text-center",
+              "bg-surface-raised border border-cta",
+              "text-stone-900 placeholder-stone-400",
+              "focus:outline-none",
+            ].join(" ")}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={startEditingDesc}
+            title={t("editDescriptionNotes")}
+            className="group mt-1.5 w-full flex items-center justify-center gap-1 text-xs text-stone-500 hover:text-stone-800 transition-colors"
+          >
+            <span className="truncate max-w-[200px]">
+              {timer.description ||
+                <span className="italic text-stone-400">
+                  {tc("descriptionOptional")}
+                </span>
+              }
+            </span>
+            <Pencil
+              size={10}
+              className="shrink-0 opacity-0 group-hover:opacity-60 transition-opacity"
+            />
+          </button>
+        )}
 
         {/* Stop button */}
         <button
