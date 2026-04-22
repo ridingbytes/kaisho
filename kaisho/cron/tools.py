@@ -797,16 +797,29 @@ def _list_github_issues(customer: str | None = None) -> dict:
     }
 
 
+# Commands blocked from execute_cli (destructive or
+# irrelevant in an agentic context).
+_CLI_BLOCKED = {
+    "serve", "mcp-server", "profiles", "config",
+    "convert",
+}
+
+
 def _execute_cli(command: str) -> dict:
     import shlex
     import shutil
     import subprocess
     if not command.strip():
         return {"error": "empty command"}
+    args = shlex.split(command)
+    if args and args[0] in _CLI_BLOCKED:
+        return {
+            "error": f"command not allowed: {args[0]}",
+        }
     kai_bin = shutil.which("kai")
     if not kai_bin:
         return {"error": "kai CLI not found in PATH"}
-    cmd_args = [kai_bin] + shlex.split(command)
+    cmd_args = [kai_bin] + args
     try:
         result = subprocess.run(
             cmd_args, capture_output=True,
@@ -823,22 +836,22 @@ def _execute_cli(command: str) -> dict:
 
 def _get_time_insights(period: str) -> dict:
     """Return time insights for the advisor."""
-    from ..api.routers.dashboard import (
-        _billable_contracts, _is_billable, _period_range,
+    from ..services.time_insights import (
+        billable_contracts, is_billable, period_range,
     )
     backend = _backend()
-    start, end = _period_range(period)
+    start, end = period_range(period)
     entries = backend.clocks.list_entries(
         period="all", from_date=start, to_date=end,
     )
-    billable_set = _billable_contracts(backend)
+    billable_set = billable_contracts(backend)
     billable_min = 0
     non_billable_min = 0
     by_cust: dict[str, dict] = {}
     for e in entries:
         mins = e.get("duration_minutes") or 0
         cust = e.get("customer", "Unknown")
-        is_bill = _is_billable(e, billable_set)
+        is_bill = is_billable(e, billable_set)
         if is_bill:
             billable_min += mins
         else:

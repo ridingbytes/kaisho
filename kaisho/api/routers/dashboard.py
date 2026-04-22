@@ -1,9 +1,14 @@
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date
 
 from fastapi import APIRouter
 
 from ...backends import get_backend
+from ...services.time_insights import (
+    billable_contracts,
+    is_billable,
+    period_range,
+)
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -75,47 +80,8 @@ def get_dashboard():
     }
 
 
-def _period_range(period: str) -> tuple[date, date]:
-    """Return (start, end) dates for the given period."""
-    today = date.today()
-    if period == "week":
-        start = today - timedelta(days=today.weekday())
-        return start, today
-    if period == "month":
-        return today.replace(day=1), today
-    if period == "quarter":
-        q_month = ((today.month - 1) // 3) * 3 + 1
-        return today.replace(month=q_month, day=1), today
-    if period == "year":
-        return today.replace(month=1, day=1), today
-    return today.replace(month=1, day=1), today
-
-
-def _billable_contracts(backend) -> set[tuple[str, str]]:
-    """Return set of (customer, contract_name) that are
-    billable. A contract is billable unless explicitly
-    marked otherwise."""
-    result = set()
-    customers = backend.customers.list_customers(
-        include_inactive=True,
-    )
-    for c in customers:
-        for con in c.get("contracts", []):
-            if con.get("billable", True):
-                result.add((c["name"], con["name"]))
-    return result
-
-
-def _is_billable(
-    entry: dict,
-    billable_set: set[tuple[str, str]],
-) -> bool:
-    """An entry is billable if it has a contract and that
-    contract is in the billable set."""
-    contract = entry.get("contract")
-    if not contract:
-        return False
-    return (entry.get("customer", ""), contract) in billable_set
+# period_range, billable_contracts, is_billable imported
+# from services.time_insights above.
 
 
 def _aggregate_daily(
@@ -136,7 +102,7 @@ def _aggregate_daily(
             }
         mins = e.get("duration_minutes") or 0
         daily_map[d]["total_min"] += mins
-        if _is_billable(e, billable_set):
+        if is_billable(e, billable_set):
             daily_map[d]["billable_min"] += mins
     return sorted(
         daily_map.values(), key=lambda x: x["date"],
@@ -180,7 +146,7 @@ def _aggregate_by_customer(
     for e in entries:
         cust = e.get("customer", "Unknown")
         mins = e.get("duration_minutes") or 0
-        is_bill = _is_billable(e, billable_set)
+        is_bill = is_billable(e, billable_set)
         cust_map[cust]["total_min"] += mins
         if is_bill:
             cust_map[cust]["billable_min"] += mins
@@ -202,7 +168,7 @@ def _aggregate_by_customer(
 def get_time_insights(period: str = "month"):
     """Return time tracking insights for the dashboard."""
     backend = get_backend()
-    start, end = _period_range(period)
+    start, end = period_range(period)
 
     entries = backend.clocks.list_entries(
         period="all",
@@ -210,7 +176,7 @@ def get_time_insights(period: str = "month"):
         to_date=end,
     )
 
-    billable_set = _billable_contracts(backend)
+    billable_set = billable_contracts(backend)
     daily = _aggregate_daily(entries, billable_set)
     by_customer, bill, non_bill = (
         _aggregate_by_customer(entries, billable_set)

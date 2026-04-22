@@ -19,6 +19,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from ..ai_utils import (
+    extract_claude_text as _extract_claude_text,
+    http_post as _http_post,
+    parse_model as _parse_model,
+)
 from ..cron.tools import TOOL_DEFS, execute_tool, openai_tools
 
 # Optional callback: (event_type, data_dict) -> None
@@ -293,18 +298,6 @@ def _claims_action(text: str) -> bool:
     return any(phrase in lower for phrase in _ACTION_PHRASES)
 
 
-def _parse_model(model_str: str) -> tuple[str, str]:
-    if ":" in model_str:
-        provider, name = model_str.split(":", 1)
-        if provider in (
-            "ollama", "ollama_cloud", "claude",
-            "claude_cli", "lm_studio", "openrouter",
-            "openai", "kaisho",
-        ):
-            return provider, name
-    return "ollama", model_str
-
-
 def _execute_tool_calls(
     tool_calls: list[dict],
     include_id: bool = True,
@@ -353,16 +346,6 @@ def _check_hallucination(
         )
         return True
     return False
-
-
-def _http_post(url: str, payload: bytes, headers: dict) -> dict:
-    """POST JSON and return parsed response."""
-    import urllib.request
-    req = urllib.request.Request(
-        url, data=payload, headers=headers,
-    )
-    with urllib.request.urlopen(req, timeout=300) as resp:
-        return json.loads(resp.read())
 
 
 def ask_ollama(
@@ -550,14 +533,6 @@ def ask_claude(
             "content": tool_results,
         })
 
-    return ""
-
-
-def _extract_claude_text(content) -> str:
-    """Extract text from Claude response content blocks."""
-    for block in content:
-        if hasattr(block, "text"):
-            return block.text
     return ""
 
 

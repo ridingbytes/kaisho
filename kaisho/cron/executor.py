@@ -17,6 +17,11 @@ import json
 from datetime import date
 from pathlib import Path
 
+from ..ai_utils import (
+    extract_claude_text as _extract_claude_text,
+    http_post as _http_post,
+    parse_model as _parse_model,
+)
 from .tool_defs import TOOL_DEFS
 from .tools import execute_tool, openai_tools
 
@@ -186,42 +191,22 @@ def write_output(
 # Model dispatch
 # ---------------------------------------------------------------------------
 
-def _parse_model(model_str: str) -> tuple[str, str]:
-    """Return (provider, model_name) from model string."""
-    if ":" in model_str:
-        provider, name = model_str.split(":", 1)
-        if provider in (
-            "ollama", "ollama_cloud",
-            "claude", "claude_cli",
-            "lm_studio", "openrouter", "openai",
-            "kaisho",
-        ):
-            return provider, name
-    return "ollama", model_str
-
-
 # ---------------------------------------------------------------------------
 # Agentic loop helpers
 # ---------------------------------------------------------------------------
-
-def _http_post(url: str, payload: bytes, headers: dict) -> dict:
-    """POST JSON and return parsed response."""
-    import urllib.request
-    req = urllib.request.Request(
-        url, data=payload, headers=headers,
-    )
-    with urllib.request.urlopen(req, timeout=600) as resp:
-        return json.loads(resp.read())
 
 
 MAX_TOOL_ITERATIONS = 30
 
 # Tools that modify data — limited to prevent runaway writes
 _WRITE_TOOLS = {
-    "capture_inbox", "add_task", "move_task",
+    "add_inbox_item", "add_task", "move_task",
     "update_task", "set_task_tags",
-    "start_clock", "stop_clock", "quick_book",
-    "write_kb_file",
+    "start_clock", "stop_clock", "book_time",
+    "write_kb_file", "add_note", "update_note",
+    "update_clock_entry", "batch_invoice",
+    "create_skill", "approve_url_domain",
+    "create_backup", "trigger_cron_job",
 }
 MAX_WRITES_PER_RUN = 3
 
@@ -267,17 +252,10 @@ def _execute_tool_calls(
     return results
 
 
-def _extract_claude_text(content) -> str:
-    """Extract text from Claude response content blocks."""
-    for block in content:
-        if hasattr(block, "text"):
-            return block.text
-    return ""
-
-
 # ---------------------------------------------------------------------------
 # Claude agentic loop
 # ---------------------------------------------------------------------------
+
 
 def _execute_tool_block(name: str, input_data: dict) -> dict:
     """Execute a single tool call, enforcing write limits."""

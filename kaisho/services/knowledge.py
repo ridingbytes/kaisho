@@ -157,7 +157,7 @@ def _pypdf_extract(path: str) -> str | None:
             if text:
                 pages.append(text)
         return "\n\n".join(pages) if pages else None
-    except Exception:
+    except (ImportError, OSError, ValueError):
         return None
 
 
