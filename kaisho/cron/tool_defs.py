@@ -103,7 +103,10 @@ TOOL_DEFS: list[dict] = [
             "properties": {
                 "item_type": {
                     "type": "string",
-                    "description": "Filter by type, e.g. TASK, NOTE (optional)",
+                    "description": (
+                        "Filter by type, e.g. TASK, NOTE"
+                        " (optional)"
+                    ),
                 },
             },
         },
