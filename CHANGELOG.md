@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.9.1
+
+- Customer is now optional everywhere: start timers, book
+  time, and create tasks without selecting a customer
+- Tray panel: inline-editable description and notes on the
+  running timer, auto-refocus after capture
+- Dashboard drilldown: paginated entries (5 at a time) when
+  expanding a customer in time insights
+- Styled contract selects with custom chevron arrow
+- Fix org-mode regex that corrupted empty-customer entries
+- Fix cloud triage: only flag entries from the cloud, not
+  locally created customerless entries
+- Fix iCal export showing empty brackets for no customer
+- Fix AI tools requiring customer in their schemas
+- Fix tray tooltip showing blank when no customer
+- Fix stale sidecar after auto-update (kill on startup)
+- Docs: customer-optional in CLI/API, gptel MCP section,
+  profile isolation, tray editing, corrected tool count
+
+## 0.9.0
+
+- MCP server: expose 40 tools via Model Context Protocol
+  with tier-based access control (read/write/destructive)
+- Profile-scoped localStorage to isolate browser state
+  across profiles
+- MkDocs Material documentation site (58 pages) at
+  docs.kaisho.dev, auto-deployed on version tags
+- Code review fixes: CORS wildcard removed, layer
+  violations fixed, shared ai_utils module
+- Version shown in docs header via pyproject.toml hook
+
 ## 0.8.4
 
 - PDF text extraction: pdftotext (poppler) with pypdf
