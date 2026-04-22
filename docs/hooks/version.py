@@ -9,5 +9,5 @@ def on_config(config):
     toml = (root / "pyproject.toml").read_text(encoding="utf-8")
     match = re.search(r'^version\s*=\s*"([^"]+)"', toml, re.M)
     if match:
-        config.extra["version"] = match.group(1)
+        config.extra["app_version"] = match.group(1)
     return config
