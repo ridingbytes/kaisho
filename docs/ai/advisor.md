@@ -116,7 +116,8 @@ The same 40 tools available to the built-in advisor are also
 accessible from Claude Code, Claude Desktop, and Cursor via the
 [MCP Server](../integrations/mcp.md).
 
-Add this to `~/.claude/mcp.json`:
+Add `mcpServers` to `~/.claude.json` (global) or `.mcp.json`
+(project root):
 
 ```json
 {

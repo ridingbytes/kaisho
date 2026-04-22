@@ -43,7 +43,8 @@ write tools for the `work` profile.
 
 ### Claude Code
 
-Add to `~/.claude/mcp.json`:
+Add the `mcpServers` key to `~/.claude.json` (global, all
+sessions) or to `.mcp.json` in a project root (project-specific):
 
 ```json
 {
@@ -59,6 +60,14 @@ Add to `~/.claude/mcp.json`:
   }
 }
 ```
+
+!!! note
+    If `kai` isn't on PATH when Claude Code spawns the subprocess
+    (common with pyenv), use the full path or a wrapper script:
+
+    ```json
+    "command": "/path/to/scripts/mcp-server.sh"
+    ```
 
 ### Claude Desktop
 
