@@ -377,14 +377,22 @@ def heading_to_entry(
             "INVOICED", "",
         ).lower() == "true"
     )
+    from_cloud = (
+        heading.properties.get(
+            "FROM_CLOUD", "",
+        ).lower() == "true"
+    )
     notes = extract_notes(heading)
     contract = heading.properties.get("CONTRACT") or None
     sync_id, updated_at = ensure_sync_identity(heading)
-    return clock_to_entry(
+    entry = clock_to_entry(
         clock, customer, desc,
         task_id, invoiced, notes, contract,
         sync_id=sync_id, updated_at=updated_at,
     )
+    if from_cloud:
+        entry["from_cloud"] = True
+    return entry
 
 
 # -- Org file operations --------------------------------------
@@ -470,6 +478,7 @@ def append_entry(
     sync_id: str | None = None,
     updated_at: str | None = None,
     invoiced: bool = False,
+    from_cloud: bool = False,
 ) -> None:
     """Append a new clock entry to the org file.
 
@@ -488,6 +497,7 @@ def append_entry(
     :param sync_id: Sync UUID (generated if omitted).
     :param updated_at: Timestamp (generated if omitted).
     :param invoiced: Whether the entry is invoiced.
+    :param from_cloud: Mark as needing triage.
     """
     if not clocks_file.exists():
         clocks_file.parent.mkdir(
@@ -520,6 +530,8 @@ def append_entry(
         heading.properties["CONTRACT"] = contract
     if invoiced:
         heading.properties["INVOICED"] = "true"
+    if from_cloud:
+        heading.properties["FROM_CLOUD"] = "true"
     heading.properties["SYNC_ID"] = (
         sync_id or generate_sync_id()
     )
@@ -1211,6 +1223,7 @@ def update_clock_entry(
     apply_property_updates(
         heading, task_id, invoiced, notes, contract,
     )
+    heading.properties.pop("FROM_CLOUD", None)
     heading.properties["UPDATED_AT"] = current_timestamp()
     ensure_sync_identity(heading)
     heading.dirty = True
@@ -1284,9 +1297,10 @@ def insert_clock_entry_from_sync(
         else None
     )
     clock = Clock(start=start, end=end)
+    customer = fields.get("customer") or ""
     append_entry(
         clocks_file,
-        customer=fields.get("customer") or "",
+        customer=customer,
         description=fields.get("description") or "",
         clock=clock,
         task_id=fields.get("task_id"),
@@ -1295,6 +1309,7 @@ def insert_clock_entry_from_sync(
         sync_id=fields["sync_id"],
         updated_at=fields["updated_at"],
         invoiced=bool(fields.get("invoiced")),
+        from_cloud=not customer,
     )
     return clock_to_entry(
         clock,

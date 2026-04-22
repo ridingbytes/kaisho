@@ -367,14 +367,18 @@ def sync_now():
 
 @router.get("/pending")
 def pending():
-    """Return local clock entries with empty customer."""
+    """Return cloud-synced entries that need triage.
+
+    Only returns entries marked with FROM_CLOUD during
+    cloud pull, not locally created customerless entries.
+    """
     backend = get_backend()
     all_entries = backend.clocks.list_entries(
         period="year",
     )
     return [
         e for e in all_entries
-        if not e.get("customer")
+        if e.get("from_cloud")
     ]
 
 
