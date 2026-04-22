@@ -1,0 +1,145 @@
+site_name: Kaisho Documentation
+site_description: >-
+  Documentation for Kaisho, the personal productivity platform
+  with time tracking, task management, and AI-powered workflows.
+site_url: https://docs.kaisho.dev/
+repo_url: https://github.com/ridingbytes/kaisho
+repo_name: ridingbytes/kaisho
+edit_uri: edit/master/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - minify:
+      minify_html: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets
+  - pymdownx.keys
+  - attr_list
+  - md_in_html
+  - def_list
+  - tables
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ridingbytes/kaisho
+  generator: false
+
+copyright: "&copy; 2024 - 2026 RidingBytes"
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+      - Your First Day: getting-started/first-day.md
+  - Concepts:
+      - Architecture: concepts/architecture.md
+      - Profiles: concepts/profiles.md
+      - Storage Backends: concepts/backends.md
+  - User Guide:
+      - Dashboard: guide/dashboard.md
+      - Time Tracking: guide/time-tracking.md
+      - Task Board: guide/task-board.md
+      - Customers & Contracts: guide/customers.md
+      - Inbox: guide/inbox.md
+      - Notes: guide/notes.md
+      - Knowledge Base: guide/knowledge-base.md
+  - AI & Automation:
+      - AI Advisor: ai/advisor.md
+      - AI Providers: ai/providers.md
+      - Cron Jobs: ai/cron-jobs.md
+      - Skills: ai/skills.md
+  - Integrations:
+      - GitHub: integrations/github.md
+      - Cloud Sync: integrations/cloud-sync.md
+      - Desktop App: integrations/desktop.md
+      - Mobile PWA: integrations/mobile.md
+      - Emacs: integrations/emacs.md
+  - CLI Reference:
+      - Overview: cli/index.md
+      - clock: cli/clock.md
+      - task: cli/task.md
+      - customer: cli/customer.md
+      - contract: cli/contract.md
+      - inbox: cli/inbox.md
+      - notes: cli/notes.md
+      - knowledge: cli/knowledge.md
+      - cron: cli/cron.md
+      - ask: cli/ask.md
+      - github: cli/github.md
+      - backup: cli/backup.md
+      - profiles: cli/profiles.md
+      - config: cli/config.md
+      - briefing: cli/briefing.md
+      - serve: cli/serve.md
+      - convert: cli/convert.md
+      - youtube: cli/youtube.md
+  - API Reference:
+      - Overview: api/index.md
+      - Clocks: api/clocks.md
+      - Tasks: api/tasks.md
+      - Customers: api/customers.md
+      - Inbox: api/inbox.md
+      - Notes: api/notes.md
+      - Knowledge Base: api/knowledge.md
+      - Dashboard: api/dashboard.md
+      - Advisor: api/advisor.md
+      - Cron: api/cron.md
+      - GitHub: api/github.md
+      - Cloud Sync: api/cloud-sync.md
+      - Settings: api/settings.md
+      - WebSocket: api/websocket.md
+  - Configuration:
+      - Settings File: configuration/settings.md
+      - Environment Variables: configuration/environment.md
+      - Keyboard Shortcuts: configuration/shortcuts.md
