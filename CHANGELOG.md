@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.2
+
+- Fix "What's New" dialog showing old version notes
+  (CHANGELOG.md was not updated for v0.9.0/v0.9.1)
+- Fix version mismatch after auto-update: kill stale
+  sidecar process on startup before spawning new one
+
 ## 0.9.1
 
 - Customer is now optional everywhere: start timers, book
