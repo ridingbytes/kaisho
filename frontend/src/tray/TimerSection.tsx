@@ -128,9 +128,11 @@ export function TimerSection({
         </div>
 
         {/* Customer */}
-        <p className="text-xs text-stone-500 text-center mt-1.5">
-          {timer.customer}
-        </p>
+        {timer.customer && (
+          <p className="text-xs text-stone-500 text-center mt-1.5">
+            {timer.customer}
+          </p>
+        )}
 
         {/* Inline-editable description */}
         {editingDesc ? (

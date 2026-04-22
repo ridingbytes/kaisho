@@ -102,5 +102,6 @@
   "todo": "Aufgabe",
   "filterHint": "Filter (Regex, Gross-/Kleinschreibung egal; Komma trennt ODER-Begriffe)",
   "filterInvalid": "Ungültiger Regex — Filter wird ignoriert",
-  "cmdEnterToSave": "⌘↵ zum Speichern"
+  "cmdEnterToSave": "⌘↵ zum Speichern",
+  "noCustomer": "Kein Kunde"
 }

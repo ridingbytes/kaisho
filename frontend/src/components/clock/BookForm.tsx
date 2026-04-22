@@ -92,7 +92,7 @@ export function BookForm({ onClose }: BookFormProps) {
       </div>
       <div className="flex flex-col gap-1">
         <label className="text-[10px] text-stone-600 uppercase tracking-wider">
-          {tc("customer")} *
+          {tc("customer")}
         </label>
         <CustomerAutocomplete
           value={customer}

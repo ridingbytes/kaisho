@@ -604,7 +604,7 @@ export function DashboardView() {
                   "text-sm font-semibold text-stone-900"
                 }
               >
-                {timer.customer}
+                {timer.customer || timer.description || tc("active")}
               </p>
               {timer.description && (
                 <p

@@ -528,7 +528,7 @@ export function CommandBar({ open, onClose }: Props) {
         setLoading(false);
       }
     },
-    [qc],
+    [qc, history],
   );
 
   function applyCompletion(value: string) {

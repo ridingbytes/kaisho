@@ -281,7 +281,7 @@ export function TaskCard({
                 await stopClock.mutateAsync();
               }
               startClock.mutate({
-                customer: task.customer!,
+                customer: task.customer ?? "",
                 description: stripCustomerPrefix(
                   task.title,
                 ),

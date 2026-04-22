@@ -128,15 +128,16 @@ export function TrayPanel() {
     }
     const hours = hoursElapsed(timer.start);
     const elapsed = formatElapsed(timer.start);
+    const label = timer.customer || "Kaisho";
     if (hours > 8) {
       invokeTauri("update_tray_icon", {
         state: "long",
-        tooltip: `${timer.customer} — ${elapsed} (long)`,
+        tooltip: `${label} — ${elapsed} (long)`,
       });
     } else {
       invokeTauri("update_tray_icon", {
         state: "active",
-        tooltip: `${timer.customer} — ${elapsed}`,
+        tooltip: `${label} — ${elapsed}`,
       });
     }
   }, [timer]);

@@ -131,6 +131,7 @@ function ActivityHeatmap({
 // -------------------------------------------------------
 
 function EntryRow({ entry }: { entry: TimeInsightsEntry }) {
+  const { t: tc } = useTranslation("common");
   const setView = useSetView();
   const invoicedSet = useInvoicedContracts();
   const isInv = isInvoiced(
@@ -151,19 +152,25 @@ function EntryRow({ entry }: { entry: TimeInsightsEntry }) {
       >
         {formatTime(entry.start)}
       </button>
-      <button
-        onClick={() =>
-          setView("customers", entry.customer)
-        }
-        className={[
-          "px-1.5 py-0.5 rounded text-[10px]",
-          "font-semibold uppercase tracking-wider",
-          "bg-cta-muted text-cta-hover",
-          "hover:bg-cta/20 transition-colors shrink-0",
-        ].join(" ")}
-      >
-        {entry.customer}
-      </button>
+      {entry.customer ? (
+        <button
+          onClick={() =>
+            setView("customers", entry.customer)
+          }
+          className={[
+            "px-1.5 py-0.5 rounded text-[10px]",
+            "font-semibold uppercase tracking-wider",
+            "bg-cta-muted text-cta-hover",
+            "hover:bg-cta/20 transition-colors shrink-0",
+          ].join(" ")}
+        >
+          {entry.customer}
+        </button>
+      ) : (
+        <span className="px-1.5 py-0.5 text-[10px] text-stone-400 italic shrink-0">
+          {tc("noCustomer")}
+        </span>
+      )}
       <span
         className="flex-1 text-stone-700 truncate"
         title={entry.description}

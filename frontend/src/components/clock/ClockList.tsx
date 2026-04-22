@@ -407,20 +407,26 @@ function TaskGroupRow({
       {/* Header */}
       <div className="group flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <button
-            onClick={() => setView("customers", group.customer)}
-            className="text-xs font-medium text-stone-800 truncate max-w-full hover:text-cta transition-colors text-left inline-flex items-center gap-1.5"
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full shrink-0"
-              style={{
-                background:
-                  customerColors[group.customer]
-                  || "#a1a1aa",
-              }}
-            />
-            {group.customer}
-          </button>
+          {group.customer ? (
+            <button
+              onClick={() => setView("customers", group.customer)}
+              className="text-xs font-medium text-stone-800 truncate max-w-full hover:text-cta transition-colors text-left inline-flex items-center gap-1.5"
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{
+                  background:
+                    customerColors[group.customer]
+                    || "#a1a1aa",
+                }}
+              />
+              {group.customer}
+            </button>
+          ) : (
+            <span className="text-xs text-stone-400 italic">
+              {tc("noCustomer")}
+            </span>
+          )}
           <div className="flex items-center gap-1.5 mt-0.5">
             {isActive && (
               <span className="inline-flex items-center gap-1 px-1.5 py-px rounded-full bg-green-500/10">

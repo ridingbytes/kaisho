@@ -102,5 +102,6 @@
   "todo": "Tarea",
   "filterHint": "Filtro (regex sin distinguir mayúsculas; coma separa términos OR)",
   "filterInvalid": "Regex inválido — el filtro se ignora hasta que lo corrijas",
-  "cmdEnterToSave": "⌘↵ para guardar"
+  "cmdEnterToSave": "⌘↵ para guardar",
+  "noCustomer": "Sin cliente"
 }
