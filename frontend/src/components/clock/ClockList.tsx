@@ -22,7 +22,10 @@ import { useTasks } from "../../hooks/useTasks";
 import { useSetView } from "../../context/ViewContext";
 import { taskTitleById } from "../../utils/customerPrefix";
 import { minutesToDecimal } from "../../utils/formatting";
-import { smallInputCls } from "../../styles/formStyles";
+import {
+  smallInputCls,
+  smallSelectCls,
+} from "../../styles/formStyles";
 import type { ClockEntry, Task } from "../../types";
 
 function formatDuration(minutes: number): string {
@@ -86,7 +89,7 @@ function ContractSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={smallInputCls}
+      className={smallSelectCls}
     >
       <option value="">{tc("noContract")}</option>
       {contracts.map((c) => (

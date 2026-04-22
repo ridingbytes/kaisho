@@ -63,7 +63,7 @@ export function StartForm({ onStarted }: Props) {
         <select
           value={contract}
           onChange={(e) => setContract(e.target.value)}
-          className={inputCls}
+          className={inputCls + " appearance-none cursor-pointer pr-8"}
         >
           <option value="">{tc("noContract")}</option>
           {contracts.map((c) => (

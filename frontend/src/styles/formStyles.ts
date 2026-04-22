@@ -16,6 +16,12 @@ export const inputCls = [
   "transition-colors",
 ].join(" ");
 
+/** Standard select with custom arrow. */
+export const selectCls = [
+  inputCls,
+  "appearance-none cursor-pointer pr-8",
+].join(" ");
+
 /** Compact form input (text-xs, smaller padding).
  *  Use for toolbar inputs, selects, and date pickers
  *  that must share the same row height. */
@@ -24,6 +30,12 @@ export const smallInputCls = [
   "bg-surface-raised border border-border",
   "text-stone-900 placeholder-stone-500",
   "focus:outline-none focus:border-cta",
+].join(" ");
+
+/** Compact select with custom arrow. */
+export const smallSelectCls = [
+  smallInputCls,
+  "appearance-none cursor-pointer pr-7",
 ].join(" ");
 
 /** Bordered action button (e.g. "Add contract"). */
