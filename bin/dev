@@ -15,17 +15,27 @@
 #   --port PORT          Backend port (default: 8765)
 #   --profile NAME       Active profile name
 #   --no-install         Skip dependency checks
-#   --skip-sidecar       --desktop only: skip sidecar rebuild
+#   --skip-sidecar       --desktop only: skip PyInstaller
+#                        rebuild (use when only UI changed)
 #
 # When to use which mode:
 #   browser (default)  Fast iteration on backend or frontend
 #                      logic. No build step. Hot reload.
 #   --desktop          Test Tauri-specific behaviour: tray
 #                      icon, native file dialogs, CSV export,
-#                      auto-updater.  Slower to start.
+#                      auto-updater. Rebuilds the sidecar
+#                      (Python → binary) unless --skip-sidecar.
+#                      Use --skip-sidecar when you only changed
+#                      frontend or Rust code, not Python.
 #   --prod             Verify the production bundle before
 #                      cutting a release.
 #   --docker           Test the containerised deployment.
+#
+# Version management:
+#   bump-version.sh          Sync version across all files
+#                            (runs automatically on --desktop).
+#   bump-version.sh 1.2.3    Set a new release version, then
+#                            commit and tag.
 # ============================================================
 set -euo pipefail
 
@@ -161,12 +171,14 @@ case "$MODE" in
         kill_leftovers
         ensure_venv
         ensure_deps
+        echo "Syncing version..."
+        "$ROOT/scripts/bump-version.sh"
         if ! $SKIP_SIDECAR; then
             echo "Building frontend..."
             (cd "$ROOT/frontend" && pnpm build)
             echo "Clearing sidecar cache..."
             rm -rf ~/.kaisho/runtime/*
-            echo "Building sidecar..."
+            echo "Building sidecar (use --skip-sidecar to skip)..."
             "$ROOT/scripts/build-sidecar.sh"
         fi
         echo "Starting Tauri dev (hot reload for Rust changes)..."
