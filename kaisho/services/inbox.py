@@ -6,6 +6,11 @@ from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 from .kanban import add_task
 from . import notes as notes_service
+from .clocks import (
+    current_timestamp,
+    ensure_sync_identity,
+    generate_sync_id,
+)
 from ..time_utils import local_now
 
 INBOX_KEYWORDS: set[str] = set()
@@ -89,12 +94,18 @@ def _extract_customer_from_text(text: str) -> str | None:
 
 
 def _heading_to_item(heading: Heading, item_id: str) -> dict:
-    """Convert inbox heading to item dict."""
+    """Convert inbox heading to item dict.
+
+    Ensures a SYNC_ID and UPDATED_AT property exist on the
+    heading (backfills on first read).
+    """
+    sync_id, updated_at = ensure_sync_identity(heading)
     props = heading.properties
     item_type = _extract_type(heading)
     customer = _extract_customer(heading)
     return {
         "id": item_id,
+        "sync_id": sync_id,
         "type": item_type,
         "customer": customer,
         "title": heading.title.strip(),
@@ -102,18 +113,26 @@ def _heading_to_item(heading: Heading, item_id: str) -> dict:
         "created": props.get("CREATED", ""),
         "channel": props.get("CHANNEL", ""),
         "direction": props.get("DIRECTION", ""),
+        "updated_at": updated_at,
         "properties": dict(props),
     }
 
 
 def list_items(inbox_file: Path) -> list[dict]:
-    """List all inbox items."""
+    """List all inbox items.
+
+    Backfills SYNC_ID and UPDATED_AT on headings that
+    lack them and persists the changes.
+    """
     if not inbox_file.exists():
         return []
     org_file = parse_org_file(inbox_file, INBOX_KEYWORDS)
     items = []
     for idx, heading in enumerate(org_file.headings, start=1):
         items.append(_heading_to_item(heading, str(idx)))
+    # Persist any backfilled sync identities
+    if any(h.dirty for h in org_file.headings):
+        write_org_file(inbox_file, org_file)
     return items
 
 
@@ -169,7 +188,11 @@ def add_item(
         level=1,
         keyword=detected_type,
         title=title,
-        properties={"CREATED": f"[{created_str}]"},
+        properties={
+            "CREATED": f"[{created_str}]",
+            "SYNC_ID": generate_sync_id(),
+            "UPDATED_AT": current_timestamp(),
+        },
         dirty=True,
     )
 
@@ -235,6 +258,8 @@ def update_item(
             heading.properties["DIRECTION"] = updates["direction"]
         else:
             heading.properties.pop("DIRECTION", None)
+    heading.properties["UPDATED_AT"] = current_timestamp()
+    ensure_sync_identity(heading)
     write_org_file(inbox_file, org_file)
     return _heading_to_item(heading, item_id)
 

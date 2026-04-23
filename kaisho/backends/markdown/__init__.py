@@ -1384,8 +1384,19 @@ def _section_to_inbox(sec: dict) -> dict:
         iid = _generate_id(parsed["title"])
         meta["id"] = iid
         sec["meta"] = _inbox_meta_to_props(meta)
+    sync_id = meta.get("sync_id", "")
+    if not sync_id:
+        sync_id = str(uuid.uuid4())
+        meta["sync_id"] = sync_id
+        sec["meta"] = _inbox_meta_to_props(meta)
+    updated_at = meta.get("updated_at", "")
+    if not updated_at:
+        updated_at = _local_now().isoformat()
+        meta["updated_at"] = updated_at
+        sec["meta"] = _inbox_meta_to_props(meta)
     return {
         "id": iid,
+        "sync_id": sync_id,
         "type": parsed["type"],
         "customer": parsed["customer"],
         "title": parsed["title"],
@@ -1393,6 +1404,7 @@ def _section_to_inbox(sec: dict) -> dict:
         "channel": meta.get("channel", ""),
         "direction": meta.get("direction", ""),
         "created": meta.get("created", ""),
+        "updated_at": updated_at,
         "properties": meta.get("properties", {}),
     }
 
@@ -1401,7 +1413,9 @@ def _inbox_to_section(item: dict) -> dict:
     """Convert an inbox dict to a section dict."""
     meta = {
         "id": item.get("id", ""),
+        "sync_id": item.get("sync_id", ""),
         "created": item.get("created", ""),
+        "updated_at": item.get("updated_at", ""),
         "channel": item.get("channel", ""),
         "direction": item.get("direction", ""),
     }
@@ -1436,6 +1450,7 @@ class MarkdownInboxBackend(InboxBackend):
         sections = _parse_md_sections(text)
         had_missing = any(
             not s.get("meta", {}).get("id")
+            or not s.get("meta", {}).get("sync_id")
             for s in sections
         )
         items = [
@@ -1469,8 +1484,10 @@ class MarkdownInboxBackend(InboxBackend):
     ) -> dict:
         """Capture a new inbox item and return its dict."""
         items = self._load_items()
+        now = datetime.now()
         item = {
             "id": _generate_id(text),
+            "sync_id": str(uuid.uuid4()),
             "type": (
                 item_type or _guess_inbox_type(text)
             ),
@@ -1479,7 +1496,8 @@ class MarkdownInboxBackend(InboxBackend):
             "body": body or "",
             "channel": channel or "",
             "direction": direction or "",
-            "created": datetime.now().isoformat(),
+            "created": now.isoformat(),
+            "updated_at": now.isoformat(),
             "properties": {},
         }
         items.append(item)
@@ -1504,6 +1522,9 @@ class MarkdownInboxBackend(InboxBackend):
         for item in items:
             if item.get("id") == item_id:
                 item.update(updates)
+                item["updated_at"] = (
+                    _local_now().isoformat()
+                )
                 self._save_items(items)
                 return item
         raise ValueError(
