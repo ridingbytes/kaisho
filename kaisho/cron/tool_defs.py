@@ -194,6 +194,23 @@ TOOL_DEFS: list[dict] = [
         },
     },
     {
+        "name": "delete_customer",
+        "tier": "destructive",
+        "description": (
+            "Delete a customer and all associated data."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "customer": {
+                    "type": "string",
+                    "description": "Customer name",
+                },
+            },
+            "required": ["customer"],
+        },
+    },
+    {
         "name": "search_knowledge",
         "tier": "read",
         "description": (

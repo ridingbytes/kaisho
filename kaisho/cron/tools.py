@@ -140,6 +140,15 @@ def _list_contracts(args: dict) -> dict:
     return {"contracts": contracts}
 
 
+def _delete_customer(args: dict) -> dict:
+    ok = _backend().customers.delete_customer(
+        args["customer"],
+    )
+    if not ok:
+        return {"error": "Customer not found"}
+    return {"deleted": args["customer"]}
+
+
 def _list_notes(args: dict) -> dict:
     return {"notes": _backend().notes.list_notes()}
 
@@ -285,6 +294,7 @@ _HANDLERS: dict[str, Any] = {
     "book_time": _book_time,
     "list_customers": _list_customers,
     "list_contracts": _list_contracts,
+    "delete_customer": _delete_customer,
     "search_knowledge": lambda a: _search_knowledge(
         a["query"], a.get("max_results", 10),
     ),
@@ -817,9 +827,26 @@ def _execute_cli(command: str) -> dict:
             "error": f"command not allowed: {args[0]}",
         }
     kai_bin = shutil.which("kai")
-    if not kai_bin:
-        return {"error": "kai CLI not found in PATH"}
-    cmd_args = [kai_bin] + args
+    if kai_bin:
+        cmd_args = [kai_bin] + args
+    else:
+        # Frozen sidecar: kai is not on PATH, call
+        # the CLI entry point directly in-process.
+        from kaisho.cli.main import cli
+        import io
+        from contextlib import redirect_stdout, redirect_stderr
+        out, err = io.StringIO(), io.StringIO()
+        try:
+            with redirect_stdout(out), redirect_stderr(err):
+                cli(args, standalone_mode=False)
+        except SystemExit:
+            pass
+        except Exception as exc:
+            return {"error": str(exc)}
+        output = out.getvalue().strip()
+        return {"output": output} if output else {
+            "error": err.getvalue().strip() or "no output",
+        }
     try:
         result = subprocess.run(
             cmd_args, capture_output=True,
