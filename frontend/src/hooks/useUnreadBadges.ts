@@ -13,12 +13,19 @@ import { useUnreadBadge } from "./useUnreadBadge";
  * Returns a record of panel → unread count.
  */
 export function useUnreadBadges(active: string): Record<string, number> {
-  const { data: tasks = [] } = useTasks();
-  const { data: inboxItems = [] } = useInboxItems();
-  const { data: notes = [] } = useNotes();
-  const { data: customers = [] } = useCustomers();
-  const { data: kbFiles = [] } = useKnowledgeTree();
-  const { data: history = [] } = useCronHistory();
+  const taskQ = useTasks();
+  const inboxQ = useInboxItems();
+  const notesQ = useNotes();
+  const customersQ = useCustomers();
+  const kbQ = useKnowledgeTree();
+  const cronQ = useCronHistory();
+
+  const tasks = taskQ.data ?? [];
+  const inboxItems = inboxQ.data ?? [];
+  const notes = notesQ.data ?? [];
+  const customers = customersQ.data ?? [];
+  const kbFiles = kbQ.data ?? [];
+  const history = cronQ.data ?? [];
 
   const cronDone = useMemo(
     () => history.filter(
@@ -27,12 +34,24 @@ export function useUnreadBadges(active: string): Record<string, number> {
     [history],
   );
 
-  const board = useUnreadBadge("board", tasks.length);
-  const inbox = useUnreadBadge("inbox", inboxItems.length);
-  const notesBadge = useUnreadBadge("notes", notes.length);
-  const customersBadge = useUnreadBadge("customers", customers.length);
-  const knowledge = useUnreadBadge("knowledge", kbFiles.length);
-  const cron = useUnreadBadge("cron", cronDone);
+  const board = useUnreadBadge(
+    "board", tasks.length, taskQ.isLoading,
+  );
+  const inbox = useUnreadBadge(
+    "inbox", inboxItems.length, inboxQ.isLoading,
+  );
+  const notesBadge = useUnreadBadge(
+    "notes", notes.length, notesQ.isLoading,
+  );
+  const customersBadge = useUnreadBadge(
+    "customers", customers.length, customersQ.isLoading,
+  );
+  const knowledge = useUnreadBadge(
+    "knowledge", kbFiles.length, kbQ.isLoading,
+  );
+  const cron = useUnreadBadge(
+    "cron", cronDone, cronQ.isLoading,
+  );
 
   useEffect(() => {
     if (active === "board") board.markSeen();
