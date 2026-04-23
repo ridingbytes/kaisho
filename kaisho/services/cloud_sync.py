@@ -642,6 +642,60 @@ def wire_to_local(entry: dict) -> dict:
     }
 
 
+# -- Inbox wire format -------------------------------------------
+
+def inbox_item_to_wire(item: dict) -> dict:
+    """Convert a local inbox item to the wire format
+    used by ``POST /sync/inbox/apply``.
+
+    :param item: Local inbox item dict.
+    :returns: Wire-format dict for the cloud API.
+    """
+    return {
+        "id": item["sync_id"],
+        "type": item.get("type") or "NOTE",
+        "customer": item.get("customer") or "",
+        "title": item.get("title") or "",
+        "body": item.get("body") or "",
+        "channel": item.get("channel") or "",
+        "direction": item.get("direction") or "in",
+        "created_at": _local_to_utc(
+            item.get("created") or local_now().isoformat()
+        ),
+        "updated_at": _local_to_utc(
+            item.get("updated_at")
+            or local_now().isoformat()
+        ),
+    }
+
+
+def wire_to_inbox_item(entry: dict) -> dict:
+    """Convert a wire-format inbox item from the cloud
+    into the local dict shape.
+
+    :param entry: Wire-format inbox item.
+    :returns: Local inbox item dict.
+    """
+    return {
+        "sync_id": entry["id"],
+        "type": entry.get("type") or "NOTE",
+        "customer": entry.get("customer") or "",
+        "title": entry.get("title") or "",
+        "body": entry.get("body") or "",
+        "channel": entry.get("channel") or "",
+        "direction": entry.get("direction") or "in",
+        "created": _utc_to_local(
+            entry.get("created_at") or ""
+        ),
+        "updated_at": _utc_to_local(
+            entry["updated_at"],
+        ),
+        "deleted_at": entry.get("deleted_at"),
+    }
+
+
+# -- Clock wire format -------------------------------------------
+
 def tombstone_to_wire(tombstone: dict) -> dict:
     """Convert a local tombstone into wire format for
     ``POST /sync/apply``.
@@ -979,6 +1033,158 @@ def pull_and_apply(
     return cursor, total_up, total_del
 
 
+# -- Inbox sync --------------------------------------------------
+
+def pull_inbox_changes(
+    cloud_url: str,
+    api_key: str,
+    since: str,
+) -> tuple[str, list[dict], bool]:
+    """Pull inbox items from the cloud.
+
+    :returns: (cursor, entries, has_more)
+    """
+    qs = urllib.parse.urlencode({
+        "since": since, "limit": 200,
+    })
+    url = f"{cloud_url}/sync/inbox/changes?{qs}"
+    data = safe_request(url, api_key)
+    return (
+        data.get("cursor", since),
+        data.get("entries", []),
+        data.get("has_more", False),
+    )
+
+
+def push_inbox_items(
+    cloud_url: str,
+    api_key: str,
+    items: list[dict],
+) -> int:
+    """Push inbox items to the cloud.
+
+    :param items: Wire-format inbox items.
+    :returns: Number of applied items.
+    """
+    if not items:
+        return 0
+    url = f"{cloud_url}/sync/inbox/apply"
+    data = safe_request(
+        url, api_key, "POST", {"entries": items},
+    )
+    return (
+        data.get("inserted", 0) + data.get("updated", 0)
+    )
+
+
+def ack_inbox_items(
+    cloud_url: str,
+    api_key: str,
+    ids: list[str],
+) -> None:
+    """Mark inbox items as synced on the cloud."""
+    if not ids:
+        return
+    for i in range(0, len(ids), 500):
+        batch = ids[i:i + 500]
+        url = f"{cloud_url}/sync/inbox/ack"
+        safe_request(
+            url, api_key, "POST", {"ids": batch},
+        )
+
+
+def pull_and_apply_inbox(
+    backend,
+    cloud_url: str,
+    api_key: str,
+    since: str,
+) -> tuple[str, int, int]:
+    """Pull inbox items from cloud and apply locally.
+
+    :returns: (new_cursor, upserted, deleted)
+    """
+    cursor = since
+    total_up = 0
+    total_del = 0
+
+    while True:
+        new_cursor, entries, has_more = (
+            pull_inbox_changes(cloud_url, api_key, cursor)
+        )
+        pulled_ids = []
+        for wire_item in entries:
+            local = wire_to_inbox_item(wire_item)
+            pulled_ids.append(wire_item["id"])
+            if local.get("deleted_at"):
+                # Delete locally by sync_id
+                items = backend.inbox.list_items()
+                for item in items:
+                    if item.get("sync_id") == local["sync_id"]:
+                        backend.inbox.remove_item(item["id"])
+                        total_del += 1
+                        break
+            else:
+                # Upsert: find by sync_id or create
+                items = backend.inbox.list_items()
+                existing = next(
+                    (i for i in items
+                     if i.get("sync_id") == local["sync_id"]),
+                    None,
+                )
+                if existing:
+                    local_ts = existing.get("updated_at", "")
+                    remote_ts = local.get("updated_at", "")
+                    if remote_ts > local_ts:
+                        backend.inbox.update_item(
+                            existing["id"],
+                            {
+                                "title": local["title"],
+                                "type": local["type"],
+                                "customer": local["customer"],
+                                "body": local["body"],
+                                "channel": local["channel"],
+                                "direction": local["direction"],
+                            },
+                        )
+                        total_up += 1
+                else:
+                    backend.inbox.add_item(
+                        text=local["title"],
+                        item_type=local["type"],
+                        customer=local["customer"],
+                        body=local["body"],
+                        channel=local["channel"],
+                        direction=local["direction"],
+                    )
+                    total_up += 1
+
+        if pulled_ids:
+            ack_inbox_items(cloud_url, api_key, pulled_ids)
+
+        cursor = new_cursor
+        if not has_more:
+            break
+
+    return cursor, total_up, total_del
+
+
+def collect_inbox_changes(
+    backend,
+    since: str,
+) -> list[dict]:
+    """Gather inbox items changed after ``since``.
+
+    :returns: List of wire-format inbox items.
+    """
+    items = backend.inbox.list_items()
+    wire = []
+    for item in items:
+        updated = item.get("updated_at", "")
+        if updated > since:
+            wire.append(inbox_item_to_wire(item))
+    return wire
+
+
 def push_reference_snapshot(
     cloud_url: str,
     api_key: str,
@@ -1138,7 +1344,44 @@ def run_sync_cycle(
         result["error"] = cursor["last_error"]
         return result
 
-    # Step 4: Reference snapshot
+    # Step 4: Inbox sync
+    inbox_pull_since = (
+        cursor.get("inbox_pull_cursor")
+        or sync_state.EPOCH
+    )
+    inbox_push_since = (
+        sync_state.EPOCH
+        if is_initial
+        else cursor.get("inbox_push_cursor")
+        or sync_state.EPOCH
+    )
+    try:
+        inbox_cursor, inbox_up, inbox_del = (
+            pull_and_apply_inbox(
+                backend, cloud_url, api_key,
+                inbox_pull_since,
+            )
+        )
+        cursor["inbox_pull_cursor"] = inbox_cursor
+        cursor["inbox_push_cursor"] = max(
+            cursor.get("inbox_push_cursor") or "",
+            inbox_cursor,
+        )
+        result["pulled_up"] += inbox_up
+        result["pulled_del"] += inbox_del
+
+        inbox_wire = collect_inbox_changes(
+            backend, inbox_push_since,
+        )
+        pushed = push_inbox_items(
+            cloud_url, api_key, inbox_wire,
+        )
+        result["pushed_live"] += pushed
+        cursor["inbox_push_cursor"] = started
+    except CloudUnavailable as exc:
+        log.warning("Inbox sync failed: %s", exc)
+
+    # Step 5: Reference snapshot
     if push_reference_snapshot(
         cloud_url, api_key, customers_fn, tasks_fn,
     ):
