@@ -5,6 +5,11 @@ from ..org.models import Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 from ..time_utils import local_now
+from .clocks import (
+    current_timestamp,
+    ensure_sync_identity,
+    generate_sync_id,
+)
 
 CUSTOMER_RE = re.compile(r"^\[([^\]]+)\]:\s*")
 CREATED_FMT = "%Y-%m-%d %a %H:%M"
@@ -63,17 +68,24 @@ def _update_body(heading: Heading, new_body: str) -> None:
 
 
 def _heading_to_task(heading: Heading, task_id: str) -> dict:
-    """Convert a Heading to a task dict."""
+    """Convert a Heading to a task dict.
+
+    Ensures SYNC_ID and UPDATED_AT properties exist
+    (backfills on first read).
+    """
+    sync_id, updated_at = ensure_sync_identity(heading)
     customer = _extract_customer(heading.title)
     created = heading.properties.get("CREATED", "")
     return {
         "id": task_id,
+        "sync_id": sync_id,
         "customer": customer,
         "title": heading.title,
         "status": heading.keyword,
         "tags": list(heading.tags),
         "properties": dict(heading.properties),
         "created": created,
+        "updated_at": updated_at,
         "body": _user_body(heading),
         "github_url": heading.properties.get(
             "GITHUB_URL", ""
@@ -211,16 +223,18 @@ def list_tasks(
         return []
     org_file = parse_org_file(todos_file, keywords)
     task_pairs, migrated = _collect_tasks(org_file, keywords)
-    if migrated:
-        write_org_file(todos_file, org_file)
     done_states = _get_done_states(keywords)
     result = []
     for heading, task_id in task_pairs:
         task = _heading_to_task(heading, task_id)
         if _matches_filter(
-            task, status, customer, tag, include_done, done_states
+            task, status, customer, tag,
+            include_done, done_states,
         ):
             result.append(task)
+    # Persist backfilled TASK_ID and SYNC_ID properties
+    if migrated or any(h.dirty for h in org_file.headings):
+        write_org_file(todos_file, org_file)
     return result
 
 
@@ -274,7 +288,11 @@ def add_task(
         keyword=status,
         title=full_title,
         tags=tags or [],
-        properties={"CREATED": f"[{created_str}]"},
+        properties={
+            "CREATED": f"[{created_str}]",
+            "SYNC_ID": generate_sync_id(),
+            "UPDATED_AT": current_timestamp(),
+        },
         body=body.splitlines() if body and body.strip() else [],
         dirty=True,
     )
@@ -312,6 +330,8 @@ def move_task(
     )
     heading.body.insert(0, log_entry)
     heading.keyword = new_status
+    heading.properties["UPDATED_AT"] = current_timestamp()
+    ensure_sync_identity(heading)
     heading.dirty = True
 
     write_org_file(todos_file, org_file)
@@ -331,6 +351,8 @@ def set_task_tags(
         raise ValueError(f"Task not found: {task_id}")
 
     heading.tags = tags
+    heading.properties["UPDATED_AT"] = current_timestamp()
+    ensure_sync_identity(heading)
     heading.dirty = True
 
     write_org_file(todos_file, org_file)
@@ -365,6 +387,8 @@ def update_task(
             heading.properties["GITHUB_URL"] = github_url
         else:
             heading.properties.pop("GITHUB_URL", None)
+    heading.properties["UPDATED_AT"] = current_timestamp()
+    ensure_sync_identity(heading)
     heading.dirty = True
     write_org_file(todos_file, org_file)
     return _heading_to_task(heading, task_id)

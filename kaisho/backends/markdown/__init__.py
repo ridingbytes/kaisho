@@ -423,8 +423,19 @@ def _section_to_task(sec: dict) -> dict:
         tid = _generate_id(parsed["title"])
         meta["id"] = tid
         sec["meta"] = _task_meta_to_props(meta)
+    sync_id = meta.get("sync_id", "")
+    if not sync_id:
+        sync_id = str(uuid.uuid4())
+        meta["sync_id"] = sync_id
+        sec["meta"] = _task_meta_to_props(meta)
+    updated_at = meta.get("updated_at", "")
+    if not updated_at:
+        updated_at = _local_now().isoformat()
+        meta["updated_at"] = updated_at
+        sec["meta"] = _task_meta_to_props(meta)
     return {
         "id": tid,
+        "sync_id": sync_id,
         "customer": parsed["customer"],
         "title": parsed["title"],
         "status": parsed["status"],
@@ -433,6 +444,7 @@ def _section_to_task(sec: dict) -> dict:
         "github_url": meta.get("github_url", ""),
         "properties": meta.get("properties", {}),
         "created": meta.get("created", ""),
+        "updated_at": updated_at,
         "archived_at": meta.get("archived_at", ""),
         "archive_status": meta.get(
             "archive_status", ""
@@ -444,7 +456,9 @@ def _task_to_section(task: dict) -> dict:
     """Convert a task dict to a section dict."""
     meta = {
         "id": task.get("id", ""),
+        "sync_id": task.get("sync_id", ""),
         "created": task.get("created", ""),
+        "updated_at": task.get("updated_at", ""),
         "github_url": task.get("github_url", ""),
     }
     if task.get("archived_at"):
@@ -486,6 +500,7 @@ class MarkdownTaskBackend(TaskBackend):
         sections = _parse_md_sections(text)
         had_missing = any(
             not s.get("meta", {}).get("id")
+            or not s.get("meta", {}).get("sync_id")
             for s in sections
         )
         tasks = [_section_to_task(s) for s in sections]
@@ -579,8 +594,10 @@ class MarkdownTaskBackend(TaskBackend):
     ) -> dict:
         """Create a new task and return its dict."""
         tasks = self._load_tasks()
+        now = datetime.now()
         task = {
             "id": _generate_id(title),
+            "sync_id": str(uuid.uuid4()),
             "customer": customer,
             "title": title,
             "status": status,
@@ -588,7 +605,8 @@ class MarkdownTaskBackend(TaskBackend):
             "body": body or "",
             "github_url": github_url or "",
             "properties": {},
-            "created": datetime.now().isoformat(),
+            "created": now.isoformat(),
+            "updated_at": now.isoformat(),
         }
         tasks.insert(0, task)
         self._save_tasks(tasks)
@@ -600,6 +618,9 @@ class MarkdownTaskBackend(TaskBackend):
         for t in tasks:
             if t["id"] == task_id:
                 t["status"] = new_status
+                t["updated_at"] = (
+                    _local_now().isoformat()
+                )
                 self._save_tasks(tasks)
                 return t
         raise ValueError(f"Task not found: {task_id}")
@@ -610,6 +631,9 @@ class MarkdownTaskBackend(TaskBackend):
         for t in tasks:
             if t["id"] == task_id:
                 t["tags"] = list(tags)
+                t["updated_at"] = (
+                    _local_now().isoformat()
+                )
                 self._save_tasks(tasks)
                 return t
         raise ValueError(f"Task not found: {task_id}")
@@ -651,6 +675,9 @@ class MarkdownTaskBackend(TaskBackend):
                     t["body"] = body
                 if github_url is not None:
                     t["github_url"] = github_url
+                t["updated_at"] = (
+                    _local_now().isoformat()
+                )
                 self._save_tasks(tasks)
                 return t
         raise ValueError(f"Task not found: {task_id}")
