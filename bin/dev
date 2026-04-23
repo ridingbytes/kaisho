@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # ============================================================
-# Kaisho development server
+# Kaisho development launcher
 #
 # Usage:
-#   bin/dev              Start backend + frontend (default)
-#   bin/dev --backend    Backend only (API on :8765)
+#   bin/dev              Browser dev (backend + Vite, default)
+#   bin/dev --desktop    Desktop app (Tauri with hot reload)
+#   bin/dev --backend    Backend only  (API on :8765)
 #   bin/dev --frontend   Frontend only (Vite on :5173)
 #   bin/dev --prod       Production mode (backend serves
 #                        built frontend on :8765)
@@ -14,6 +15,17 @@
 #   --port PORT          Backend port (default: 8765)
 #   --profile NAME       Active profile name
 #   --no-install         Skip dependency checks
+#   --skip-sidecar       --desktop only: skip sidecar rebuild
+#
+# When to use which mode:
+#   browser (default)  Fast iteration on backend or frontend
+#                      logic. No build step. Hot reload.
+#   --desktop          Test Tauri-specific behaviour: tray
+#                      icon, native file dialogs, CSV export,
+#                      auto-updater.  Slower to start.
+#   --prod             Verify the production bundle before
+#                      cutting a release.
+#   --docker           Test the containerised deployment.
 # ============================================================
 set -euo pipefail
 
@@ -24,6 +36,7 @@ MODE="dev"
 PORT="8765"
 PROFILE=""
 SKIP_INSTALL=false
+SKIP_SIDECAR=false
 
 BACKEND_PID=""
 FRONTEND_PID=""
@@ -32,13 +45,15 @@ FRONTEND_PID=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --backend)   MODE="backend";  shift ;;
-        --frontend)  MODE="frontend"; shift ;;
-        --prod)      MODE="prod";     shift ;;
-        --docker)    MODE="docker";   shift ;;
-        --port)      PORT="$2";       shift 2 ;;
-        --profile)   PROFILE="$2";    shift 2 ;;
+        --desktop)    MODE="desktop";  shift ;;
+        --backend)    MODE="backend";  shift ;;
+        --frontend)   MODE="frontend"; shift ;;
+        --prod)       MODE="prod";     shift ;;
+        --docker)     MODE="docker";   shift ;;
+        --port)       PORT="$2";       shift 2 ;;
+        --profile)    PROFILE="$2";    shift 2 ;;
         --no-install) SKIP_INSTALL=true; shift ;;
+        --skip-sidecar) SKIP_SIDECAR=true; shift ;;
         -h|--help)
             sed -n '2,/^# =====/p' "$0" | grep '^#' \
                 | sed 's/^# \?//'
@@ -84,8 +99,8 @@ ensure_deps() {
         fi
     fi
 
-    # Frontend build (only if prod mode)
-    if [[ "$MODE" == "prod" ]]; then
+    # Frontend build (prod and desktop modes need a built bundle)
+    if [[ "$MODE" == "prod" || "$MODE" == "desktop" ]]; then
         if [ ! -f "$ROOT/frontend/dist/index.html" ]; then
             echo "Building frontend..."
             (cd "$ROOT/frontend" && pnpm install && pnpm build)
@@ -93,14 +108,27 @@ ensure_deps() {
     fi
 }
 
+kill_leftovers() {
+    local pids
+    pids=$(lsof -ti :"$PORT" 2>/dev/null || true)
+    pids="$pids $(pgrep -f 'kai-server' 2>/dev/null || true)"
+    pids="$pids $(pgrep -f 'kaisho-desktop' 2>/dev/null || true)"
+    pids=$(echo "$pids" | xargs -n1 | sort -u | xargs)
+    if [[ -n "$pids" ]]; then
+        echo "Killing leftover processes: $pids"
+        # shellcheck disable=SC2086
+        kill $pids 2>/dev/null || true
+        sleep 1
+    fi
+}
+
 start_backend() {
     local extra_env=""
     [ -n "$PROFILE" ] && extra_env="PROFILE=$PROFILE"
-    if [[ "$MODE" == "prod" ]]; then
-        extra_env="$extra_env SERVE_FRONTEND=true"
-    fi
+    [[ "$MODE" == "prod" ]] && extra_env="$extra_env SERVE_FRONTEND=true"
 
     echo "Starting backend on http://localhost:$PORT ..."
+    # shellcheck disable=SC2086
     env $extra_env kai serve --port "$PORT" &
     BACKEND_PID=$!
 }
@@ -122,11 +150,28 @@ case "$MODE" in
         start_backend
         start_frontend
         echo ""
-        echo "Kaisho is running."
+        echo "Kaisho is running (browser mode)."
         echo "  App:  http://localhost:5173"
         echo "  API:  http://localhost:$PORT"
         echo "  Press Ctrl+C to stop."
         wait
+        ;;
+
+    desktop)
+        kill_leftovers
+        ensure_venv
+        ensure_deps
+        if ! $SKIP_SIDECAR; then
+            echo "Building frontend..."
+            (cd "$ROOT/frontend" && pnpm build)
+            echo "Clearing sidecar cache..."
+            rm -rf ~/.kaisho/runtime/*
+            echo "Building sidecar..."
+            "$ROOT/scripts/build-sidecar.sh"
+        fi
+        echo "Starting Tauri dev (hot reload for Rust changes)..."
+        echo "  Press Ctrl+C to stop."
+        (cd "$ROOT/desktop" && pnpm dev)
         ;;
 
     backend)
@@ -151,8 +196,7 @@ case "$MODE" in
     prod)
         ensure_venv
         ensure_deps
-        echo "Starting production server..."
-        echo "  App:  http://localhost:$PORT"
+        echo "Starting production server on http://localhost:$PORT ..."
         echo "  Press Ctrl+C to stop."
         SERVE_FRONTEND=true \
             ${PROFILE:+PROFILE=$PROFILE} \
