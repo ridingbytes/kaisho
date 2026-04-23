@@ -694,6 +694,48 @@ def wire_to_inbox_item(entry: dict) -> dict:
     }
 
 
+# -- Task wire format --------------------------------------------
+
+def task_to_wire(task: dict) -> dict:
+    """Convert a local task dict to wire format."""
+    return {
+        "id": task["sync_id"],
+        "customer": task.get("customer") or "",
+        "title": task.get("title") or "",
+        "status": task.get("status") or "TODO",
+        "tags": task.get("tags") or [],
+        "body": task.get("body") or "",
+        "github_url": task.get("github_url") or "",
+        "created_at": _local_to_utc(
+            task.get("created") or local_now().isoformat()
+        ),
+        "updated_at": _local_to_utc(
+            task.get("updated_at")
+            or local_now().isoformat()
+        ),
+    }
+
+
+def wire_to_task(entry: dict) -> dict:
+    """Convert a wire-format task to local dict."""
+    return {
+        "sync_id": entry["id"],
+        "customer": entry.get("customer") or "",
+        "title": entry.get("title") or "",
+        "status": entry.get("status") or "TODO",
+        "tags": entry.get("tags") or [],
+        "body": entry.get("body") or "",
+        "github_url": entry.get("github_url") or "",
+        "created": _utc_to_local(
+            entry.get("created_at") or ""
+        ),
+        "updated_at": _utc_to_local(
+            entry["updated_at"],
+        ),
+        "deleted_at": entry.get("deleted_at"),
+    }
+
+
 # -- Clock wire format -------------------------------------------
 
 def tombstone_to_wire(tombstone: dict) -> dict:
@@ -1185,6 +1227,150 @@ def collect_inbox_changes(
     return wire
 
 
+# -- Task sync ---------------------------------------------------
+
+def pull_task_changes(
+    cloud_url: str, api_key: str, since: str,
+) -> tuple[str, list[dict], bool]:
+    """Pull tasks from the cloud."""
+    qs = urllib.parse.urlencode({
+        "since": since, "limit": 200,
+    })
+    url = f"{cloud_url}/sync/tasks/changes?{qs}"
+    data = safe_request(url, api_key)
+    return (
+        data.get("cursor", since),
+        data.get("entries", []),
+        data.get("has_more", False),
+    )
+
+
+def push_task_items(
+    cloud_url: str, api_key: str, items: list[dict],
+) -> int:
+    """Push tasks to the cloud."""
+    if not items:
+        return 0
+    url = f"{cloud_url}/sync/tasks/apply"
+    data = safe_request(
+        url, api_key, "POST", {"entries": items},
+    )
+    return (
+        data.get("inserted", 0) + data.get("updated", 0)
+    )
+
+
+def ack_task_items(
+    cloud_url: str, api_key: str, ids: list[str],
+) -> None:
+    """Mark tasks as synced on the cloud."""
+    if not ids:
+        return
+    for i in range(0, len(ids), 500):
+        batch = ids[i:i + 500]
+        url = f"{cloud_url}/sync/tasks/ack"
+        safe_request(
+            url, api_key, "POST", {"ids": batch},
+        )
+
+
+def pull_and_apply_tasks(
+    backend, cloud_url: str, api_key: str, since: str,
+) -> tuple[str, int, int]:
+    """Pull tasks from cloud and apply locally."""
+    cursor = since
+    total_up = 0
+    total_del = 0
+
+    while True:
+        new_cursor, entries, has_more = (
+            pull_task_changes(cloud_url, api_key, cursor)
+        )
+        pulled_ids = []
+        for wire_item in entries:
+            local = wire_to_task(wire_item)
+            pulled_ids.append(wire_item["id"])
+            if local.get("deleted_at"):
+                tasks = backend.tasks.list_tasks(
+                    include_done=True,
+                )
+                for task in tasks:
+                    if task.get("sync_id") == local["sync_id"]:
+                        backend.tasks.archive_task(
+                            task["id"],
+                        )
+                        total_del += 1
+                        break
+            else:
+                tasks = backend.tasks.list_tasks(
+                    include_done=True,
+                )
+                existing = next(
+                    (t for t in tasks
+                     if t.get("sync_id") == local["sync_id"]),
+                    None,
+                )
+                if existing:
+                    local_ts = existing.get(
+                        "updated_at", "",
+                    )
+                    remote_ts = local.get(
+                        "updated_at", "",
+                    )
+                    if remote_ts > local_ts:
+                        backend.tasks.update_task(
+                            existing["id"],
+                            title=local["title"],
+                            customer=local["customer"],
+                            body=local["body"],
+                            github_url=local[
+                                "github_url"
+                            ],
+                        )
+                        if (
+                            local["status"]
+                            != existing.get("status")
+                        ):
+                            backend.tasks.move_task(
+                                existing["id"],
+                                local["status"],
+                            )
+                        total_up += 1
+                else:
+                    backend.tasks.add_task(
+                        customer=local["customer"],
+                        title=local["title"],
+                        status=local["status"],
+                        body=local["body"],
+                        github_url=local["github_url"],
+                        tags=local.get("tags"),
+                    )
+                    total_up += 1
+
+        if pulled_ids:
+            ack_task_items(
+                cloud_url, api_key, pulled_ids,
+            )
+        cursor = new_cursor
+        if not has_more:
+            break
+
+    return cursor, total_up, total_del
+
+
+def collect_task_changes(
+    backend, since: str,
+) -> list[dict]:
+    """Gather tasks changed after ``since``."""
+    tasks = backend.tasks.list_tasks(include_done=True)
+    wire = []
+    for task in tasks:
+        updated = task.get("updated_at", "")
+        if updated > since:
+            wire.append(task_to_wire(task))
+    return wire
+
+
 def push_reference_snapshot(
     cloud_url: str,
     api_key: str,
@@ -1381,7 +1567,44 @@ def run_sync_cycle(
     except CloudUnavailable as exc:
         log.warning("Inbox sync failed: %s", exc)
 
-    # Step 5: Reference snapshot
+    # Step 5: Task sync
+    task_pull_since = (
+        cursor.get("task_pull_cursor")
+        or sync_state.EPOCH
+    )
+    task_push_since = (
+        sync_state.EPOCH
+        if is_initial
+        else cursor.get("task_push_cursor")
+        or sync_state.EPOCH
+    )
+    try:
+        task_cursor, task_up, task_del = (
+            pull_and_apply_tasks(
+                backend, cloud_url, api_key,
+                task_pull_since,
+            )
+        )
+        cursor["task_pull_cursor"] = task_cursor
+        cursor["task_push_cursor"] = max(
+            cursor.get("task_push_cursor") or "",
+            task_cursor,
+        )
+        result["pulled_up"] += task_up
+        result["pulled_del"] += task_del
+
+        task_wire = collect_task_changes(
+            backend, task_push_since,
+        )
+        pushed = push_task_items(
+            cloud_url, api_key, task_wire,
+        )
+        result["pushed_live"] += pushed
+        cursor["task_push_cursor"] = started
+    except CloudUnavailable as exc:
+        log.warning("Task sync failed: %s", exc)
+
+    # Step 6: Reference snapshot
     if push_reference_snapshot(
         cloud_url, api_key, customers_fn, tasks_fn,
     ):
