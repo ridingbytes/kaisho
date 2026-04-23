@@ -311,3 +311,41 @@ The technical foundation (LWW sync, tombstones, cursors) is
 already proven and extensible. The main prerequisite — stable
 IDs for notes and inbox — is a small change that pays for
 itself regardless of sync.
+
+
+## Implementation Progress
+
+### Phase 1: Inbox Sync (completed 2026-04-23)
+
+| Step | Commit | Repo |
+|------|--------|------|
+| SYNC_ID + UPDATED_AT on inbox (org + markdown) | `3c6742d` | kaisho |
+| Cloud schema: inbox_entries table | `af7ebb7` | kaisho-cloud |
+| Cloud API: /sync/inbox/changes, apply, ack | `b185525` | kaisho-cloud |
+| Desktop sync: inbox push/pull with LWW | `d75d59d` | kaisho |
+| Mobile PWA: InboxView (capture, list, delete) | `f537e2f` | kaisho-cloud |
+| Tests: 9 tests for sync identity + wire format | `6c477d7` | kaisho |
+
+**Status:** Inbox syncs bidirectionally. Mobile PWA has an
+Inbox tab with a capture bar and swipe-to-delete. Desktop
+app pushes/pulls inbox items in the sync cycle.
+
+### Phase 2: Task Sync (not started)
+
+Planned steps:
+1. Add SYNC_ID + UPDATED_AT to tasks (org + markdown)
+2. Cloud schema: tasks table (full, replacing ref_tasks)
+3. Cloud API: /sync/tasks/changes, apply, ack
+4. Desktop sync: task push/pull with LWW (no order sync)
+5. Mobile PWA: TasksView (grouped by status, toggle)
+6. Tests
+
+### Phase 3: Notes Sync (not started)
+
+Planned steps:
+1. Add SYNC_ID + UPDATED_AT to notes (org + markdown)
+2. Cloud schema: notes table
+3. Cloud API: /sync/notes/changes, apply, ack
+4. Desktop sync: notes push/pull with LWW
+5. Mobile PWA: NotesView (list, create/edit)
+6. Tests
