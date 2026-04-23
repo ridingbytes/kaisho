@@ -5,14 +5,14 @@
 # Usage:
 #   bin/dev              Browser dev (backend + Vite, default)
 #   bin/dev --desktop    Desktop app (Tauri with hot reload)
-#   bin/dev --backend    Backend only  (API on :8765)
+#   bin/dev --backend    Backend only  (API on :8766)
 #   bin/dev --frontend   Frontend only (Vite on :5173)
 #   bin/dev --prod       Production mode (backend serves
-#                        built frontend on :8765)
+#                        built frontend on :8766)
 #   bin/dev --docker     Build and run Docker container
 #
 # Options:
-#   --port PORT          Backend port (default: 8765)
+#   --port PORT          Backend port (default: 8766)
 #   --profile NAME       Active profile name
 #   --no-install         Skip dependency checks
 #   --skip-sidecar       --desktop only: skip PyInstaller
@@ -43,7 +43,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 MODE="dev"
-PORT="8765"
+PORT="8766"
 PROFILE=""
 SKIP_INSTALL=false
 SKIP_SIDECAR=false
@@ -153,6 +153,8 @@ start_frontend() {
 
 trap cleanup EXIT INT TERM
 
+kill_leftovers
+
 case "$MODE" in
     dev)
         ensure_venv
@@ -168,7 +170,6 @@ case "$MODE" in
         ;;
 
     desktop)
-        kill_leftovers
         ensure_venv
         ensure_deps
         echo "Syncing version..."
