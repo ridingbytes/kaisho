@@ -736,6 +736,46 @@ def wire_to_task(entry: dict) -> dict:
     }
 
 
+# -- Note wire format --------------------------------------------
+
+def note_to_wire(note: dict) -> dict:
+    """Convert a local note dict to wire format."""
+    return {
+        "id": note["sync_id"],
+        "customer": note.get("customer") or "",
+        "title": note.get("title") or "",
+        "body": note.get("body") or "",
+        "tags": note.get("tags") or [],
+        "task_id": note.get("task_id") or None,
+        "created_at": _local_to_utc(
+            note.get("created") or local_now().isoformat()
+        ),
+        "updated_at": _local_to_utc(
+            note.get("updated_at")
+            or local_now().isoformat()
+        ),
+    }
+
+
+def wire_to_note(entry: dict) -> dict:
+    """Convert a wire-format note to local dict."""
+    return {
+        "sync_id": entry["id"],
+        "customer": entry.get("customer") or "",
+        "title": entry.get("title") or "",
+        "body": entry.get("body") or "",
+        "tags": entry.get("tags") or [],
+        "task_id": entry.get("task_id") or None,
+        "created": _utc_to_local(
+            entry.get("created_at") or ""
+        ),
+        "updated_at": _utc_to_local(
+            entry["updated_at"],
+        ),
+        "deleted_at": entry.get("deleted_at"),
+    }
+
+
 # -- Clock wire format -------------------------------------------
 
 def tombstone_to_wire(tombstone: dict) -> dict:
@@ -1371,6 +1411,137 @@ def collect_task_changes(
     return wire
 
 
+# -- Note sync ---------------------------------------------------
+
+def pull_note_changes(
+    cloud_url: str, api_key: str, since: str,
+) -> tuple[str, list[dict], bool]:
+    """Pull notes from the cloud."""
+    qs = urllib.parse.urlencode({
+        "since": since, "limit": 200,
+    })
+    url = f"{cloud_url}/sync/notes/changes?{qs}"
+    data = safe_request(url, api_key)
+    return (
+        data.get("cursor", since),
+        data.get("entries", []),
+        data.get("has_more", False),
+    )
+
+
+def push_note_items(
+    cloud_url: str, api_key: str, items: list[dict],
+) -> int:
+    """Push notes to the cloud."""
+    if not items:
+        return 0
+    url = f"{cloud_url}/sync/notes/apply"
+    data = safe_request(
+        url, api_key, "POST", {"entries": items},
+    )
+    return (
+        data.get("inserted", 0) + data.get("updated", 0)
+    )
+
+
+def ack_note_items(
+    cloud_url: str, api_key: str, ids: list[str],
+) -> None:
+    """Mark notes as synced on the cloud."""
+    if not ids:
+        return
+    for i in range(0, len(ids), 500):
+        batch = ids[i:i + 500]
+        url = f"{cloud_url}/sync/notes/ack"
+        safe_request(
+            url, api_key, "POST", {"ids": batch},
+        )
+
+
+def pull_and_apply_notes(
+    backend, cloud_url: str, api_key: str, since: str,
+) -> tuple[str, int, int]:
+    """Pull notes from cloud and apply locally."""
+    cursor = since
+    total_up = 0
+    total_del = 0
+
+    while True:
+        new_cursor, entries, has_more = (
+            pull_note_changes(cloud_url, api_key, cursor)
+        )
+        pulled_ids = []
+        for wire_item in entries:
+            local = wire_to_note(wire_item)
+            pulled_ids.append(wire_item["id"])
+            if local.get("deleted_at"):
+                notes = backend.notes.list_notes()
+                for note in notes:
+                    if note.get("sync_id") == local["sync_id"]:
+                        backend.notes.delete_note(
+                            note["id"],
+                        )
+                        total_del += 1
+                        break
+            else:
+                notes = backend.notes.list_notes()
+                existing = next(
+                    (n for n in notes
+                     if n.get("sync_id") == local["sync_id"]),
+                    None,
+                )
+                if existing:
+                    local_ts = existing.get(
+                        "updated_at", "",
+                    )
+                    remote_ts = local.get(
+                        "updated_at", "",
+                    )
+                    if remote_ts > local_ts:
+                        backend.notes.update_note(
+                            existing["id"],
+                            {
+                                "title": local["title"],
+                                "customer": local["customer"],
+                                "body": local["body"],
+                                "tags": local.get("tags", []),
+                            },
+                        )
+                        total_up += 1
+                else:
+                    backend.notes.add_note(
+                        title=local["title"],
+                        body=local["body"],
+                        customer=local["customer"],
+                        tags=local.get("tags"),
+                        task_id=local.get("task_id"),
+                    )
+                    total_up += 1
+
+        if pulled_ids:
+            ack_note_items(
+                cloud_url, api_key, pulled_ids,
+            )
+        cursor = new_cursor
+        if not has_more:
+            break
+
+    return cursor, total_up, total_del
+
+
+def collect_note_changes(
+    backend, since: str,
+) -> list[dict]:
+    """Gather notes changed after ``since``."""
+    notes = backend.notes.list_notes()
+    wire = []
+    for note in notes:
+        updated = note.get("updated_at", "")
+        if updated > since:
+            wire.append(note_to_wire(note))
+    return wire
+
+
 def push_reference_snapshot(
     cloud_url: str,
     api_key: str,
@@ -1604,7 +1775,44 @@ def run_sync_cycle(
     except CloudUnavailable as exc:
         log.warning("Task sync failed: %s", exc)
 
-    # Step 6: Reference snapshot
+    # Step 6: Note sync
+    note_pull_since = (
+        cursor.get("note_pull_cursor")
+        or sync_state.EPOCH
+    )
+    note_push_since = (
+        sync_state.EPOCH
+        if is_initial
+        else cursor.get("note_push_cursor")
+        or sync_state.EPOCH
+    )
+    try:
+        note_cursor, note_up, note_del = (
+            pull_and_apply_notes(
+                backend, cloud_url, api_key,
+                note_pull_since,
+            )
+        )
+        cursor["note_pull_cursor"] = note_cursor
+        cursor["note_push_cursor"] = max(
+            cursor.get("note_push_cursor") or "",
+            note_cursor,
+        )
+        result["pulled_up"] += note_up
+        result["pulled_del"] += note_del
+
+        note_wire = collect_note_changes(
+            backend, note_push_since,
+        )
+        pushed = push_note_items(
+            cloud_url, api_key, note_wire,
+        )
+        result["pushed_live"] += pushed
+        cursor["note_push_cursor"] = started
+    except CloudUnavailable as exc:
+        log.warning("Note sync failed: %s", exc)
+
+    # Step 7: Reference snapshot
     if push_reference_snapshot(
         cloud_url, api_key, customers_fn, tasks_fn,
     ):
