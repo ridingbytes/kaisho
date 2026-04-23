@@ -32,7 +32,11 @@ export function CloudSyncSection(): JSX.Element {
     return map[plan] || plan;
   }
 
-  const CLOUD_URL = "https://cloud.kaisho.dev";
+  const DEFAULT_CLOUD_URL = "https://cloud.kaisho.dev";
+  const isDev = window.location.hostname === "localhost";
+  const [cloudUrl, setCloudUrl] = useState(
+    DEFAULT_CLOUD_URL,
+  );
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -46,7 +50,7 @@ export function CloudSyncSection(): JSX.Element {
     if (!apiKey.trim()) return;
     setConnecting(true);
     setErr("");
-    connectCloudSync(CLOUD_URL, apiKey.trim())
+    connectCloudSync(cloudUrl.trim(), apiKey.trim())
       .then((res) => {
         setMsg(
           `Connected (plan: ${res.plan || "free"})`,
@@ -60,7 +64,7 @@ export function CloudSyncSection(): JSX.Element {
       .catch((e) => {
         const msg = e?.message || "Connection failed"
         setErr(
-          `${msg} (URL: ${CLOUD_URL})`,
+          `${msg} (URL: ${cloudUrl})`,
         );
       })
       .finally(() => setConnecting(false));
@@ -399,6 +403,22 @@ export function CloudSyncSection(): JSX.Element {
               {t("apiKeyHint")}
             </p>
             <div className="flex flex-col gap-2">
+              {isDev && (
+                <label className="flex items-center gap-3">
+                  <span className="text-xs text-stone-700 w-24 shrink-0">
+                    URL
+                  </span>
+                  <input
+                    type="text"
+                    value={cloudUrl}
+                    onChange={(e) =>
+                      setCloudUrl(e.target.value)
+                    }
+                    placeholder={DEFAULT_CLOUD_URL}
+                    className={inputCls}
+                  />
+                </label>
+              )}
               <label className="flex items-center gap-3">
                 <span className="text-xs text-stone-700 w-24 shrink-0">
                   {t("apiKey")}
