@@ -330,22 +330,42 @@ itself regardless of sync.
 Inbox tab with a capture bar and swipe-to-delete. Desktop
 app pushes/pulls inbox items in the sync cycle.
 
-### Phase 2: Task Sync (not started)
+### Phase 2: Task Sync (completed 2026-04-23)
 
-Planned steps:
-1. Add SYNC_ID + UPDATED_AT to tasks (org + markdown)
-2. Cloud schema: tasks table (full, replacing ref_tasks)
-3. Cloud API: /sync/tasks/changes, apply, ack
-4. Desktop sync: task push/pull with LWW (no order sync)
-5. Mobile PWA: TasksView (grouped by status, toggle)
-6. Tests
+| Step | Commit | Repo |
+|------|--------|------|
+| SYNC_ID + UPDATED_AT on tasks (org + markdown) | `ee5d7e7` | kaisho |
+| Cloud schema: tasks table | `0788355` | kaisho-cloud |
+| Cloud API: /sync/tasks/changes, apply, ack | `0788355` | kaisho-cloud |
+| Desktop sync: task push/pull with LWW | `105da60` | kaisho |
+| Mobile PWA: TasksView (grouped, status toggle) | `3f57052` | kaisho-cloud |
+| Tests: 8 tests for sync identity + wire format | `d896923` | kaisho |
 
-### Phase 3: Notes Sync (not started)
+**Status:** Tasks sync bidirectionally. Mobile PWA has a
+Tasks tab grouped by status with tap-to-toggle. Desktop
+app pushes/pulls tasks in the sync cycle. Column order
+is NOT synced (each device maintains its own layout).
 
-Planned steps:
-1. Add SYNC_ID + UPDATED_AT to notes (org + markdown)
-2. Cloud schema: notes table
-3. Cloud API: /sync/notes/changes, apply, ack
-4. Desktop sync: notes push/pull with LWW
-5. Mobile PWA: NotesView (list, create/edit)
-6. Tests
+### Phase 3: Notes Sync (completed 2026-04-23)
+
+| Step | Commit | Repo |
+|------|--------|------|
+| SYNC_ID + UPDATED_AT on notes (org + markdown) | `5324ed3` | kaisho |
+| Cloud schema: notes table | `40bfde6` | kaisho-cloud |
+| Cloud API: /sync/notes/changes, apply, ack | `40bfde6` | kaisho-cloud |
+| Desktop sync: notes push/pull with LWW | `86ca573` | kaisho |
+| Mobile PWA: NotesView (list, create, expand) | `739df8d` | kaisho-cloud |
+| Tests: 7 tests for sync identity + wire format | `86ca573` | kaisho |
+
+**Status:** Notes sync bidirectionally. Mobile PWA has a
+Notes tab with create and tap-to-expand. Desktop app
+pushes/pulls notes in the sync cycle.
+
+### Mobile PWA Tab Layout (after all phases)
+
+Timer | Tasks | Inbox | AI | Notes | Profile
+
+Dashboard, Book, and Entries views remain accessible
+via the profile/settings area but are no longer in the
+primary tab bar. The new layout prioritizes capture and
+task awareness over analytics.
