@@ -186,3 +186,99 @@ def clear_tombstones(
         if t.get("sync_id") not in set(sync_ids)
     ]
     save_tombstones(profile_dir, keep)
+
+
+# ── Entity tombstones (inbox / task / note) ───────────
+#
+# Mirrors the clock tombstone API above but uses a
+# per-entity file so each entity type is independent.
+
+def entity_tombstones_path(
+    profile_dir: Path, entity: str,
+) -> Path:
+    """Return the tombstone file path for ``entity``.
+
+    :param profile_dir: Root directory of the profile.
+    :param entity: Entity type (``"inbox"``, ``"task"``,
+        or ``"note"``).
+    :returns: Path to ``sync/<entity>_tombstones.json``.
+    """
+    return sync_dir(profile_dir) / f"{entity}_tombstones.json"
+
+
+def load_entity_tombstones(
+    profile_dir: Path, entity: str,
+) -> list[dict]:
+    """Return pending tombstones for ``entity``.
+
+    :param profile_dir: Root directory of the profile.
+    :param entity: Entity type.
+    :returns: List of tombstone dicts (may be empty).
+    """
+    raw = read_json(
+        entity_tombstones_path(profile_dir, entity),
+        {"tombstones": []},
+    )
+    return raw.get("tombstones", [])
+
+
+def save_entity_tombstones(
+    profile_dir: Path, entity: str,
+    tombstones: list[dict],
+) -> None:
+    """Persist entity tombstones atomically.
+
+    :param profile_dir: Root directory of the profile.
+    :param entity: Entity type.
+    :param tombstones: List of tombstone dicts to write.
+    """
+    atomic_write_json(
+        entity_tombstones_path(profile_dir, entity),
+        {"tombstones": tombstones},
+    )
+
+
+def record_entity_tombstone(
+    profile_dir: Path, entity: str, entry: dict,
+) -> None:
+    """Append a tombstone for a deleted entity item.
+
+    The entry must carry at least ``sync_id`` and
+    ``deleted_at``. Duplicate ids are collapsed (later
+    write wins).
+
+    :param profile_dir: Root directory of the profile.
+    :param entity: Entity type.
+    :param entry: Deleted item dict (must contain
+        ``sync_id``).
+    """
+    sid = entry.get("sync_id")
+    if not sid:
+        return
+    tombstones = load_entity_tombstones(profile_dir, entity)
+    tombstones = [
+        t for t in tombstones if t.get("sync_id") != sid
+    ]
+    tombstones.append(entry)
+    save_entity_tombstones(profile_dir, entity, tombstones)
+
+
+def clear_entity_tombstones(
+    profile_dir: Path, entity: str,
+    sync_ids: list[str],
+) -> None:
+    """Remove entity tombstones by ``sync_id``.
+
+    :param profile_dir: Root directory of the profile.
+    :param entity: Entity type.
+    :param sync_ids: IDs of tombstones to discard.
+    """
+    if not sync_ids:
+        return
+    keep = [
+        t for t in load_entity_tombstones(
+            profile_dir, entity,
+        )
+        if t.get("sync_id") not in set(sync_ids)
+    ]
+    save_entity_tombstones(profile_dir, entity, keep)

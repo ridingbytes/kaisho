@@ -47,10 +47,22 @@ def add_note(body: NoteCreate):
 
 @router.delete("/{note_id}", status_code=204)
 def delete_note(note_id: str):
-    """Delete a note."""
-    ok = get_backend().notes.delete_note(note_id)
+    """Delete a note.
+
+    Records a sync tombstone so the deletion propagates
+    to the cloud on the next push cycle.
+    """
+    from ...services import cloud_sync as sync_svc
+    backend = get_backend()
+    notes = backend.notes.list_notes()
+    note = next(
+        (n for n in notes if n["id"] == note_id), None,
+    )
+    ok = backend.notes.delete_note(note_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Note not found")
+    if note:
+        sync_svc.on_local_delete_note(note)
 
 
 class NoteUpdate(BaseModel):

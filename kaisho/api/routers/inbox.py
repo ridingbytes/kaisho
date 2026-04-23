@@ -50,10 +50,22 @@ def capture(body: CaptureRequest):
 
 @router.delete("/{item_id}", status_code=204)
 def delete_item(item_id: str):
-    """Delete an inbox item."""
-    ok = get_backend().inbox.remove_item(item_id)
+    """Delete an inbox item.
+
+    Records a sync tombstone so the deletion propagates
+    to the cloud on the next push cycle.
+    """
+    from ...services import cloud_sync as sync_svc
+    backend = get_backend()
+    items = backend.inbox.list_items()
+    item = next(
+        (i for i in items if i["id"] == item_id), None,
+    )
+    ok = backend.inbox.remove_item(item_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Item not found")
+    if item:
+        sync_svc.on_local_delete_inbox(item)
 
 
 class ItemUpdate(BaseModel):

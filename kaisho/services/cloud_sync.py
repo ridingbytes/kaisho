@@ -776,6 +776,63 @@ def wire_to_note(entry: dict) -> dict:
     }
 
 
+# -- Entity tombstone wire format --------------------------------
+
+def inbox_tombstone_to_wire(item: dict) -> dict:
+    """Convert a local inbox tombstone to wire format.
+
+    Inherits all fields from ``inbox_item_to_wire`` and
+    sets ``deleted_at`` and ``updated_at`` to the deletion
+    timestamp.
+
+    :param item: Tombstone dict (must contain
+        ``sync_id`` and ``deleted_at``).
+    :returns: Wire-format dict with ``deleted_at`` set.
+    """
+    now = _local_to_utc(
+        item.get("deleted_at") or local_now().isoformat()
+    )
+    return {
+        **inbox_item_to_wire(item),
+        "updated_at": now,
+        "deleted_at": now,
+    }
+
+
+def task_tombstone_to_wire(task: dict) -> dict:
+    """Convert a local task tombstone to wire format.
+
+    :param task: Tombstone dict (must contain
+        ``sync_id`` and ``deleted_at``).
+    :returns: Wire-format dict with ``deleted_at`` set.
+    """
+    now = _local_to_utc(
+        task.get("deleted_at") or local_now().isoformat()
+    )
+    return {
+        **task_to_wire(task),
+        "updated_at": now,
+        "deleted_at": now,
+    }
+
+
+def note_tombstone_to_wire(note: dict) -> dict:
+    """Convert a local note tombstone to wire format.
+
+    :param note: Tombstone dict (must contain
+        ``sync_id`` and ``deleted_at``).
+    :returns: Wire-format dict with ``deleted_at`` set.
+    """
+    now = _local_to_utc(
+        note.get("deleted_at") or local_now().isoformat()
+    )
+    return {
+        **note_to_wire(note),
+        "updated_at": now,
+        "deleted_at": now,
+    }
+
+
 # -- Clock wire format -------------------------------------------
 
 def tombstone_to_wire(tombstone: dict) -> dict:
@@ -840,6 +897,150 @@ def on_local_delete(entry: dict) -> None:
         cfg.PROFILE_DIR, tombstone,
     )
     schedule_push()
+
+
+def on_local_delete_inbox(item: dict) -> None:
+    """Record a tombstone for a deleted inbox item and
+    schedule a background push.
+
+    :param item: The item that was just deleted (must
+        contain ``sync_id``).
+    """
+    from ..config import get_config
+    if not item or not item.get("sync_id"):
+        return
+    cfg = get_config()
+    now = local_now().isoformat()
+    tombstone = {
+        **item,
+        "deleted_at": now,
+        "updated_at": now,
+    }
+    sync_state.record_entity_tombstone(
+        cfg.PROFILE_DIR, "inbox", tombstone,
+    )
+    schedule_push()
+
+
+def on_local_delete_task(task: dict) -> None:
+    """Record a tombstone for a deleted task and schedule
+    a background push.
+
+    :param task: The task that was just deleted/archived
+        (must contain ``sync_id``).
+    """
+    from ..config import get_config
+    if not task or not task.get("sync_id"):
+        return
+    cfg = get_config()
+    now = local_now().isoformat()
+    tombstone = {
+        **task,
+        "deleted_at": now,
+        "updated_at": now,
+    }
+    sync_state.record_entity_tombstone(
+        cfg.PROFILE_DIR, "task", tombstone,
+    )
+    schedule_push()
+
+
+def on_local_delete_note(note: dict) -> None:
+    """Record a tombstone for a deleted note and schedule
+    a background push.
+
+    :param note: The note that was just deleted (must
+        contain ``sync_id``).
+    """
+    from ..config import get_config
+    if not note or not note.get("sync_id"):
+        return
+    cfg = get_config()
+    now = local_now().isoformat()
+    tombstone = {
+        **note,
+        "deleted_at": now,
+        "updated_at": now,
+    }
+    sync_state.record_entity_tombstone(
+        cfg.PROFILE_DIR, "note", tombstone,
+    )
+    schedule_push()
+
+
+def push_inbox_tombstones(
+    cloud_url: str, api_key: str, profile_dir: Path,
+) -> int:
+    """Push pending inbox tombstones to the cloud.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param profile_dir: Profile directory.
+    :returns: Number of tombstones pushed.
+    :raises CloudUnavailable: On network failure.
+    """
+    tombstones = sync_state.load_entity_tombstones(
+        profile_dir, "inbox",
+    )
+    if not tombstones:
+        return 0
+    wire = list(map(inbox_tombstone_to_wire, tombstones))
+    push_inbox_items(cloud_url, api_key, wire)
+    sync_state.clear_entity_tombstones(
+        profile_dir, "inbox",
+        [t["sync_id"] for t in tombstones],
+    )
+    return len(tombstones)
+
+
+def push_task_tombstones(
+    cloud_url: str, api_key: str, profile_dir: Path,
+) -> int:
+    """Push pending task tombstones to the cloud.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param profile_dir: Profile directory.
+    :returns: Number of tombstones pushed.
+    :raises CloudUnavailable: On network failure.
+    """
+    tombstones = sync_state.load_entity_tombstones(
+        profile_dir, "task",
+    )
+    if not tombstones:
+        return 0
+    wire = list(map(task_tombstone_to_wire, tombstones))
+    push_task_items(cloud_url, api_key, wire)
+    sync_state.clear_entity_tombstones(
+        profile_dir, "task",
+        [t["sync_id"] for t in tombstones],
+    )
+    return len(tombstones)
+
+
+def push_note_tombstones(
+    cloud_url: str, api_key: str, profile_dir: Path,
+) -> int:
+    """Push pending note tombstones to the cloud.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param profile_dir: Profile directory.
+    :returns: Number of tombstones pushed.
+    :raises CloudUnavailable: On network failure.
+    """
+    tombstones = sync_state.load_entity_tombstones(
+        profile_dir, "note",
+    )
+    if not tombstones:
+        return 0
+    wire = list(map(note_tombstone_to_wire, tombstones))
+    push_note_items(cloud_url, api_key, wire)
+    sync_state.clear_entity_tombstones(
+        profile_dir, "note",
+        [t["sync_id"] for t in tombstones],
+    )
+    return len(tombstones)
 
 
 def schedule_push() -> None:
@@ -1730,6 +1931,10 @@ def run_sync_cycle(
         result["pulled_up"] += inbox_up
         result["pulled_del"] += inbox_del
 
+        pushed_del = push_inbox_tombstones(
+            cloud_url, api_key, profile_dir,
+        )
+        result["pushed_deletes"] += pushed_del
         inbox_wire = collect_inbox_changes(
             backend, inbox_push_since,
         )
@@ -1767,6 +1972,10 @@ def run_sync_cycle(
         result["pulled_up"] += task_up
         result["pulled_del"] += task_del
 
+        pushed_del = push_task_tombstones(
+            cloud_url, api_key, profile_dir,
+        )
+        result["pushed_deletes"] += pushed_del
         task_wire = collect_task_changes(
             backend, task_push_since,
         )
@@ -1804,6 +2013,10 @@ def run_sync_cycle(
         result["pulled_up"] += note_up
         result["pulled_del"] += note_del
 
+        pushed_del = push_note_tombstones(
+            cloud_url, api_key, profile_dir,
+        )
+        result["pushed_deletes"] += pushed_del
         note_wire = collect_note_changes(
             backend, note_push_since,
         )

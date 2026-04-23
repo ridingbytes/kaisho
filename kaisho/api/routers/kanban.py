@@ -118,10 +118,22 @@ def update_tags(task_id: str, body: TagsUpdate):
 
 @router.delete("/tasks/{task_id}", status_code=204)
 def archive_task(task_id: str):
-    """Archive a task."""
-    ok = get_backend().tasks.archive_task(task_id)
+    """Archive a task.
+
+    Records a sync tombstone so the deletion propagates
+    to the cloud on the next push cycle.
+    """
+    from ...services import cloud_sync as sync_svc
+    backend = get_backend()
+    tasks = backend.tasks.list_tasks(include_done=True)
+    task = next(
+        (t for t in tasks if t["id"] == task_id), None,
+    )
+    ok = backend.tasks.archive_task(task_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Task not found")
+    if task:
+        sync_svc.on_local_delete_task(task)
 
 
 @router.get("/archive")
