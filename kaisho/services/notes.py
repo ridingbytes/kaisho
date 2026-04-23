@@ -5,6 +5,11 @@ from ..org.models import Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 from ..time_utils import local_now
+from .clocks import (
+    current_timestamp,
+    ensure_sync_identity,
+    generate_sync_id,
+)
 
 NOTES_KEYWORDS: set[str] = set()
 CREATED_FMT = "%Y-%m-%d %a %H:%M"
@@ -23,19 +28,25 @@ def _strip_customer(title: str) -> str:
 
 
 def _heading_to_note(heading: Heading, note_id: str) -> dict:
-    """Convert org heading to note dict."""
+    """Convert org heading to note dict.
+
+    Ensures SYNC_ID and UPDATED_AT properties exist.
+    """
+    sync_id, updated_at = ensure_sync_identity(heading)
     raw_title = heading.title.strip()
     customer = _extract_customer(raw_title)
     title = _strip_customer(raw_title)
     body = "\n".join(heading.body).strip()
     return {
         "id": note_id,
+        "sync_id": sync_id,
         "title": title,
         "customer": customer,
         "task_id": heading.properties.get("TASK_ID") or None,
         "body": body,
         "tags": list(heading.tags),
         "created": heading.properties.get("CREATED", ""),
+        "updated_at": updated_at,
     }
 
 
@@ -44,10 +55,13 @@ def list_notes(notes_file: Path) -> list[dict]:
     if not notes_file.exists():
         return []
     org_file = parse_org_file(notes_file, NOTES_KEYWORDS)
-    return [
+    notes = [
         _heading_to_note(h, str(i))
         for i, h in enumerate(org_file.headings, start=1)
     ]
+    if any(h.dirty for h in org_file.headings):
+        write_org_file(notes_file, org_file)
+    return notes
 
 
 def reorder_notes(
@@ -97,7 +111,11 @@ def add_note(
     heading_title = f"[{customer}] {title}" if customer else title
     body_lines: list[str] = ([""] + body.splitlines()) if body else []
 
-    props: dict[str, str] = {"CREATED": f"[{created_str}]"}
+    props: dict[str, str] = {
+        "CREATED": f"[{created_str}]",
+        "SYNC_ID": generate_sync_id(),
+        "UPDATED_AT": current_timestamp(),
+    }
     if task_id:
         props["TASK_ID"] = task_id
 
@@ -173,6 +191,8 @@ def update_note(
             heading.properties["TASK_ID"] = tid
         else:
             heading.properties.pop("TASK_ID", None)
+    heading.properties["UPDATED_AT"] = current_timestamp()
+    ensure_sync_identity(heading)
     write_org_file(notes_file, org_file)
     return _heading_to_note(heading, note_id)
 

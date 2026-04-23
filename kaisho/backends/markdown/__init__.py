@@ -1606,14 +1606,26 @@ def _section_to_note(sec: dict) -> dict:
         nid = _generate_id(text)
         meta["id"] = nid
         sec["meta"] = meta
+    sync_id = meta.get("sync_id", "")
+    if not sync_id:
+        sync_id = str(uuid.uuid4())
+        meta["sync_id"] = sync_id
+        sec["meta"] = meta
+    updated_at = meta.get("updated_at", "")
+    if not updated_at:
+        updated_at = _local_now().isoformat()
+        meta["updated_at"] = updated_at
+        sec["meta"] = meta
     return {
         "id": nid,
+        "sync_id": sync_id,
         "title": text,
         "body": sec.get("body", ""),
         "customer": meta.get("customer", ""),
         "task_id": meta.get("task_id") or None,
         "tags": tags,
         "created": meta.get("created", ""),
+        "updated_at": updated_at,
     }
 
 
@@ -1621,8 +1633,10 @@ def _note_to_section(note: dict) -> dict:
     """Convert a note dict to a section dict."""
     meta = {
         "id": note.get("id", ""),
+        "sync_id": note.get("sync_id", ""),
         "customer": note.get("customer", ""),
         "created": note.get("created", ""),
+        "updated_at": note.get("updated_at", ""),
     }
     if note.get("task_id"):
         meta["task_id"] = note["task_id"]
@@ -1654,6 +1668,7 @@ class MarkdownNotesBackend(NotesBackend):
         sections = _parse_md_sections(text)
         had_missing = any(
             not s.get("meta", {}).get("id")
+            or not s.get("meta", {}).get("sync_id")
             for s in sections
         )
         notes = [_section_to_note(s) for s in sections]
@@ -1680,14 +1695,17 @@ class MarkdownNotesBackend(NotesBackend):
     ) -> dict:
         """Create a new note and return its dict."""
         notes = self._load_notes()
+        now = datetime.now()
         note = {
             "id": _generate_id(title),
+            "sync_id": str(uuid.uuid4()),
             "title": title,
             "body": body,
             "customer": customer or "",
             "task_id": task_id or None,
             "tags": tags or [],
-            "created": datetime.now().isoformat(),
+            "created": now.isoformat(),
+            "updated_at": now.isoformat(),
         }
         notes.append(note)
         self._save_notes(notes)
@@ -1711,6 +1729,9 @@ class MarkdownNotesBackend(NotesBackend):
         for note in notes:
             if note.get("id") == note_id:
                 note.update(updates)
+                note["updated_at"] = (
+                    _local_now().isoformat()
+                )
                 self._save_notes(notes)
                 return note
         raise ValueError(
