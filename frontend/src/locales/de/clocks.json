@@ -21,6 +21,7 @@
   "entryUpdated": "Zeiteintrag aktualisiert",
   "entryDeleted": "Zeiteintrag gelöscht",
   "noEntriesFound": "Keine Einträge gefunden.",
+  "noEntriesMatchFilter": "Kein Eintrag entspricht dem aktiven Filter.",
   "expandTimeTracking": "Zeiterfassung aufklappen",
   "editDescriptionNotes": "Beschreibung und Notizen bearbeiten",
   "sessionNotes": "Sitzungsnotizen...",

@@ -21,6 +21,7 @@
   "entryUpdated": "Clock entry updated",
   "entryDeleted": "Clock entry deleted",
   "noEntriesFound": "No entries found.",
+  "noEntriesMatchFilter": "No entries match the active filter.",
   "expandTimeTracking": "Expand time tracking",
   "editDescriptionNotes": "Edit description and notes",
   "sessionNotes": "Session notes...",

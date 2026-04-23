@@ -233,6 +233,14 @@ export function ClockView() {
     setColFilters((prev) => ({ ...prev, [key]: value }));
   }
 
+  function clearAllFilters() {
+    setColFilters(EMPTY_FILTERS);
+  }
+
+  const hasActiveFilters = FILTER_KEYS.some(
+    (k) => colFilters[k] !== "",
+  );
+
   const searchFiltered = search
     ? entries.filter(
         (e) =>
@@ -431,7 +439,7 @@ export function ClockView() {
             {tc("loading")}
           </p>
         )}
-        {!isLoading && sorted.length === 0 && (
+        {!isLoading && entries.length === 0 && (
           <p className={
             "text-sm text-stone-500 " +
             "text-center py-8"
@@ -439,7 +447,7 @@ export function ClockView() {
             {t("noEntriesFound")}
           </p>
         )}
-        {sorted.length > 0 && (
+        {!isLoading && entries.length > 0 && (
           <table
             ref={tableRef}
             className="w-full table-fixed"
@@ -549,14 +557,41 @@ export function ClockView() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((entry, idx) => (
-                <EntryRow
-                  key={`${entry.start}-${idx}`}
-                  entry={entry}
-                  tasks={tasks}
-                  invoicedSet={invoicedSet}
-                />
-              ))}
+              {sorted.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className={
+                      "text-center py-8 " +
+                      "text-sm text-stone-500"
+                    }
+                  >
+                    {t("noEntriesMatchFilter")}
+                    {hasActiveFilters && (
+                      <>
+                        {" "}
+                        <button
+                          onClick={clearAllFilters}
+                          className={
+                            "underline hover:text-cta"
+                          }
+                        >
+                          {tc("clearFilter")}
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ) : (
+                sorted.map((entry, idx) => (
+                  <EntryRow
+                    key={`${entry.start}-${idx}`}
+                    entry={entry}
+                    tasks={tasks}
+                    invoicedSet={invoicedSet}
+                  />
+                ))
+              )}
             </tbody>
           </table>
         )}
