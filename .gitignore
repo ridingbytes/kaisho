@@ -15,3 +15,4 @@ frontend/dist/
 /CLAUDE.md
 product/
 site/
+.coverage

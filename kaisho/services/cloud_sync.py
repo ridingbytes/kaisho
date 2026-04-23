@@ -1194,54 +1194,55 @@ def pull_and_apply_inbox(
             pull_inbox_changes(cloud_url, api_key, cursor)
         )
         pulled_ids = []
+        items = backend.inbox.list_items()
+        by_sync = {
+            i.get("sync_id"): i for i in items
+            if i.get("sync_id")
+        }
         for wire_item in entries:
             local = wire_to_inbox_item(wire_item)
             pulled_ids.append(wire_item["id"])
+            existing = by_sync.get(local["sync_id"])
             if local.get("deleted_at"):
-                # Delete locally by sync_id
-                items = backend.inbox.list_items()
-                for item in items:
-                    if item.get("sync_id") == local["sync_id"]:
-                        backend.inbox.remove_item(item["id"])
-                        total_del += 1
-                        break
-            else:
-                # Upsert: find by sync_id or create
-                items = backend.inbox.list_items()
-                existing = next(
-                    (i for i in items
-                     if i.get("sync_id") == local["sync_id"]),
-                    None,
-                )
                 if existing:
-                    local_ts = existing.get("updated_at", "")
-                    remote_ts = local.get("updated_at", "")
-                    if remote_ts > local_ts:
-                        backend.inbox.update_item(
-                            existing["id"],
-                            {
-                                "title": local["title"],
-                                "type": local["type"],
-                                "customer": local["customer"],
-                                "body": local["body"],
-                                "channel": local["channel"],
-                                "direction": local["direction"],
-                            },
-                        )
-                        total_up += 1
-                else:
-                    backend.inbox.add_item(
-                        text=local["title"],
-                        item_type=local["type"],
-                        customer=local["customer"],
-                        body=local["body"],
-                        channel=local["channel"],
-                        direction=local["direction"],
+                    backend.inbox.remove_item(
+                        existing["id"],
+                    )
+                    total_del += 1
+            elif existing:
+                local_ts = existing.get("updated_at", "")
+                remote_ts = local.get("updated_at", "")
+                if remote_ts > local_ts:
+                    backend.inbox.update_item(
+                        existing["id"],
+                        {
+                            "title": local["title"],
+                            "type": local["type"],
+                            "customer": local["customer"],
+                            "body": local["body"],
+                            "channel": local["channel"],
+                            "direction": local["direction"],
+                        },
                     )
                     total_up += 1
+            else:
+                backend.inbox.add_item(
+                    text=local["title"],
+                    item_type=local["type"],
+                    customer=local["customer"],
+                    body=local["body"],
+                    channel=local["channel"],
+                    direction=local["direction"],
+                    sync_id=local["sync_id"],
+                )
+                total_up += 1
 
-        if pulled_ids:
-            ack_inbox_items(cloud_url, api_key, pulled_ids)
+        try:
+            ack_inbox_items(
+                cloud_url, api_key, pulled_ids,
+            )
+        except CloudUnavailable:
+            pass
 
         cursor = new_cursor
         if not has_more:
@@ -1327,70 +1328,72 @@ def pull_and_apply_tasks(
             pull_task_changes(cloud_url, api_key, cursor)
         )
         pulled_ids = []
+        tasks = backend.tasks.list_tasks(
+            include_done=True,
+        )
+        by_sync = {
+            t.get("sync_id"): t for t in tasks
+            if t.get("sync_id")
+        }
         for wire_item in entries:
             local = wire_to_task(wire_item)
             pulled_ids.append(wire_item["id"])
+            existing = by_sync.get(local["sync_id"])
             if local.get("deleted_at"):
-                tasks = backend.tasks.list_tasks(
-                    include_done=True,
-                )
-                for task in tasks:
-                    if task.get("sync_id") == local["sync_id"]:
-                        backend.tasks.archive_task(
-                            task["id"],
-                        )
-                        total_del += 1
-                        break
-            else:
-                tasks = backend.tasks.list_tasks(
-                    include_done=True,
-                )
-                existing = next(
-                    (t for t in tasks
-                     if t.get("sync_id") == local["sync_id"]),
-                    None,
-                )
                 if existing:
-                    local_ts = existing.get(
-                        "updated_at", "",
+                    backend.tasks.archive_task(
+                        existing["id"],
                     )
-                    remote_ts = local.get(
-                        "updated_at", "",
-                    )
-                    if remote_ts > local_ts:
-                        backend.tasks.update_task(
-                            existing["id"],
-                            title=local["title"],
-                            customer=local["customer"],
-                            body=local["body"],
-                            github_url=local[
-                                "github_url"
-                            ],
-                        )
-                        if (
-                            local["status"]
-                            != existing.get("status")
-                        ):
-                            backend.tasks.move_task(
-                                existing["id"],
-                                local["status"],
-                            )
-                        total_up += 1
-                else:
-                    backend.tasks.add_task(
-                        customer=local["customer"],
+                    total_del += 1
+            elif existing:
+                local_ts = existing.get(
+                    "updated_at", "",
+                )
+                remote_ts = local.get(
+                    "updated_at", "",
+                )
+                if remote_ts > local_ts:
+                    backend.tasks.update_task(
+                        existing["id"],
                         title=local["title"],
-                        status=local["status"],
+                        customer=local["customer"],
                         body=local["body"],
                         github_url=local["github_url"],
-                        tags=local.get("tags"),
                     )
+                    if local.get("tags") != existing.get(
+                        "tags",
+                    ):
+                        backend.tasks.set_tags(
+                            existing["id"],
+                            local.get("tags") or [],
+                        )
+                    if (
+                        local["status"]
+                        != existing.get("status")
+                    ):
+                        backend.tasks.move_task(
+                            existing["id"],
+                            local["status"],
+                        )
                     total_up += 1
+            else:
+                backend.tasks.add_task(
+                    customer=local["customer"],
+                    title=local["title"],
+                    status=local["status"],
+                    body=local["body"],
+                    github_url=local["github_url"],
+                    tags=local.get("tags"),
+                    sync_id=local["sync_id"],
+                )
+                total_up += 1
 
-        if pulled_ids:
+        try:
             ack_task_items(
                 cloud_url, api_key, pulled_ids,
             )
+        except CloudUnavailable:
+            pass
         cursor = new_cursor
         if not has_more:
             break
@@ -1471,57 +1474,57 @@ def pull_and_apply_notes(
             pull_note_changes(cloud_url, api_key, cursor)
         )
         pulled_ids = []
+        notes = backend.notes.list_notes()
+        by_sync = {
+            n.get("sync_id"): n for n in notes
+            if n.get("sync_id")
+        }
         for wire_item in entries:
             local = wire_to_note(wire_item)
             pulled_ids.append(wire_item["id"])
+            existing = by_sync.get(local["sync_id"])
             if local.get("deleted_at"):
-                notes = backend.notes.list_notes()
-                for note in notes:
-                    if note.get("sync_id") == local["sync_id"]:
-                        backend.notes.delete_note(
-                            note["id"],
-                        )
-                        total_del += 1
-                        break
-            else:
-                notes = backend.notes.list_notes()
-                existing = next(
-                    (n for n in notes
-                     if n.get("sync_id") == local["sync_id"]),
-                    None,
-                )
                 if existing:
-                    local_ts = existing.get(
-                        "updated_at", "",
+                    backend.notes.delete_note(
+                        existing["id"],
                     )
-                    remote_ts = local.get(
-                        "updated_at", "",
-                    )
-                    if remote_ts > local_ts:
-                        backend.notes.update_note(
-                            existing["id"],
-                            {
-                                "title": local["title"],
-                                "customer": local["customer"],
-                                "body": local["body"],
-                                "tags": local.get("tags", []),
-                            },
-                        )
-                        total_up += 1
-                else:
-                    backend.notes.add_note(
-                        title=local["title"],
-                        body=local["body"],
-                        customer=local["customer"],
-                        tags=local.get("tags"),
-                        task_id=local.get("task_id"),
+                    total_del += 1
+            elif existing:
+                local_ts = existing.get(
+                    "updated_at", "",
+                )
+                remote_ts = local.get(
+                    "updated_at", "",
+                )
+                if remote_ts > local_ts:
+                    backend.notes.update_note(
+                        existing["id"],
+                        {
+                            "title": local["title"],
+                            "customer": local["customer"],
+                            "body": local["body"],
+                            "tags": local.get("tags", []),
+                            "task_id": local.get("task_id"),
+                        },
                     )
                     total_up += 1
+            else:
+                backend.notes.add_note(
+                    title=local["title"],
+                    body=local["body"],
+                    customer=local["customer"],
+                    tags=local.get("tags"),
+                    task_id=local.get("task_id"),
+                    sync_id=local["sync_id"],
+                )
+                total_up += 1
 
-        if pulled_ids:
+        try:
             ack_note_items(
                 cloud_url, api_key, pulled_ids,
             )
+        except CloudUnavailable:
+            pass
         cursor = new_cursor
         if not has_more:
             break

@@ -103,6 +103,7 @@ def add_note(
     customer: str | None = None,
     tags: list[str] | None = None,
     task_id: str | None = None,
+    sync_id: str | None = None,
 ) -> dict:
     """Append a new note to notes.org and return its dict."""
     now = local_now()
@@ -113,7 +114,7 @@ def add_note(
 
     props: dict[str, str] = {
         "CREATED": f"[{created_str}]",
-        "SYNC_ID": generate_sync_id(),
+        "SYNC_ID": sync_id or generate_sync_id(),
         "UPDATED_AT": current_timestamp(),
     }
     if task_id:

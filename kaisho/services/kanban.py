@@ -271,6 +271,7 @@ def add_task(
     tags: list[str] | None = None,
     body: str | None = None,
     github_url: str | None = None,
+    sync_id: str | None = None,
 ) -> dict:
     """Add a new task to todos.org as a flat heading."""
     if not todos_file.exists():
@@ -290,7 +291,7 @@ def add_task(
         tags=tags or [],
         properties={
             "CREATED": f"[{created_str}]",
-            "SYNC_ID": generate_sync_id(),
+            "SYNC_ID": sync_id or generate_sync_id(),
             "UPDATED_AT": current_timestamp(),
         },
         body=body.splitlines() if body and body.strip() else [],

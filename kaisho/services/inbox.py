@@ -171,6 +171,7 @@ def add_item(
     body: str | None = None,
     channel: str | None = None,
     direction: str | None = None,
+    sync_id: str | None = None,
 ) -> dict:
     """Add an item to inbox.org with auto-categorization."""
     detected_type = item_type or _detect_type(text)
@@ -190,7 +191,7 @@ def add_item(
         title=title,
         properties={
             "CREATED": f"[{created_str}]",
-            "SYNC_ID": generate_sync_id(),
+            "SYNC_ID": sync_id or generate_sync_id(),
             "UPDATED_AT": current_timestamp(),
         },
         dirty=True,
