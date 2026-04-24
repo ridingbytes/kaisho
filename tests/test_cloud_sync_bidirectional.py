@@ -244,7 +244,6 @@ class TestSyncCycle:
             cloud_url="http://fake",
             api_key="key",
             profile_dir=profile_dir,
-            clocks_file=backend.data_file,
         )
         assert len(fake_cloud.entries) == 1
 
@@ -270,7 +269,6 @@ class TestSyncCycle:
             cloud_url="http://fake",
             api_key="key",
             profile_dir=profile_dir,
-            clocks_file=backend.data_file,
         )
         entries = backend.list_entries(period="all")
         assert len(entries) == 1
@@ -301,7 +299,6 @@ class TestSyncCycle:
             cloud_url="http://fake",
             api_key="key",
             profile_dir=profile_dir,
-            clocks_file=backend.data_file,
         )
         # On a second cycle the echo must not happen.
         fake_cloud.applied_calls.clear()
@@ -309,7 +306,6 @@ class TestSyncCycle:
             cloud_url="http://fake",
             api_key="key",
             profile_dir=profile_dir,
-            clocks_file=backend.data_file,
         )
         all_pushes = sum(
             len(p["entries"])
@@ -333,7 +329,6 @@ class TestActiveTimerRouting:
             cloud_url="http://fake",
             api_key="key",
             profile_dir=profile_dir,
-            clocks_file=backend.data_file,
         )
         # A single running entry should appear on the cloud
         # and `push_changes` should not have been used for
@@ -361,8 +356,7 @@ class TestActiveTimerRouting:
                 cloud_url="http://fake",
                 api_key="key",
                 profile_dir=profile_dir,
-                clocks_file=backend.data_file,
-            )
+                )
         # Only one active entry on the cloud.
         running = [
             e for e in fake_cloud.entries.values()
@@ -378,13 +372,11 @@ class TestActiveTimerRouting:
         sync_svc.run_sync_cycle(
             cloud_url="http://fake", api_key="key",
             profile_dir=profile_dir,
-            clocks_file=backend.data_file,
         )
         backend.stop()
         sync_svc.run_sync_cycle(
             cloud_url="http://fake", api_key="key",
             profile_dir=profile_dir,
-            clocks_file=backend.data_file,
         )
         running = [
             e for e in fake_cloud.entries.values()
@@ -410,7 +402,6 @@ class TestSyncIdAdoption:
         sync_svc.run_sync_cycle(
             cloud_url="http://fake", api_key="key",
             profile_dir=profile_dir,
-            clocks_file=backend.data_file,
         )
         original_sid = entry["sync_id"]
         assert original_sid in fake_cloud.entries
@@ -435,7 +426,6 @@ class TestSyncIdAdoption:
         sync_svc.run_sync_cycle(
             cloud_url="http://fake", api_key="key",
             profile_dir=profile_dir,
-            clocks_file=backend.data_file,
         )
 
         # The entry should have re-adopted the cloud's
@@ -509,7 +499,6 @@ class TestLastWriterWins:
             cloud_url="http://fake",
             api_key="key",
             profile_dir=profile_dir,
-            clocks_file=backend.data_file,
         )
         assert (
             fake_cloud.entries["sid1"]["description"]
@@ -572,7 +561,6 @@ class TestTombstones:
             cloud_url="http://fake",
             api_key="key",
             profile_dir=profile_dir,
-            clocks_file=backend.data_file,
         )
         # Tombstone should be pushed and cleared locally.
         assert (
@@ -608,7 +596,6 @@ class TestCursorState:
             cloud_url="http://fake",
             api_key="key",
             profile_dir=profile_dir,
-            clocks_file=backend.data_file,
         )
         cursor = sync_state.load_cursor(profile_dir)
         assert cursor["last_pull_cursor"] == (
@@ -634,7 +621,6 @@ class TestCursorState:
             cloud_url="http://fake",
             api_key="key",
             profile_dir=profile_dir,
-            clocks_file=backend.data_file,
         )
         cursor = sync_state.load_cursor(profile_dir)
         assert (

@@ -136,14 +136,10 @@ def ai_usage():
 def connect(body: ConnectBody):
     """Connect to the Kaisho Cloud service.
 
-    Only one profile can be synced at a time. If another
-    profile is already connected, returns 409 with the
-    profile name so the user knows to disconnect it
-    first.
-
-    Resets the sync cursor and tombstones so a fresh
-    sync starts clean — no stale state from a previous
-    account carries over.
+    Each profile can sync to its own cloud account
+    independently. Resets the sync cursor and tombstones
+    so a fresh sync starts clean — no stale state from
+    a previous account carries over.
     """
     url = body.url.rstrip("/")
     stats = sync_svc.cloud_stats(url, body.api_key)
@@ -166,27 +162,6 @@ def connect(body: ConnectBody):
 
     cfg = get_config()
 
-    # Single-profile guard: only one profile can sync
-    # at a time to avoid entry collisions on the cloud.
-    from ...config import list_profiles
-    for name in list_profiles(cfg):
-        if name == cfg.PROFILE:
-            continue
-        other_settings = cfg.DATA_DIR / "profiles" / (
-            name
-        ) / "settings.yaml"
-        if not other_settings.exists():
-            continue
-        other = settings_svc.load_settings(other_settings)
-        other_sync = other.get("cloud_sync", {})
-        if other_sync.get("enabled"):
-            raise HTTPException(
-                status_code=409,
-                detail=(
-                    f"Profile \"{name}\" is already "
-                    f"synced. Disconnect it first."
-                ),
-            )
     # Reset sync state so all local entries push to the
     # new account and the pull cursor starts from epoch.
     sync_state.save_cursor(
@@ -238,7 +213,6 @@ def disconnect():
                 cloud_url=url,
                 api_key=key,
                 profile_dir=cfg.PROFILE_DIR,
-                clocks_file=backend.clocks.data_file,
             )
         except (
             sync_svc.CloudUnavailable,
@@ -344,7 +318,6 @@ def sync_now():
             cloud_url=url,
             api_key=key,
             profile_dir=cfg.PROFILE_DIR,
-            clocks_file=backend.clocks.data_file,
             customers_fn=(
                 backend.customers.list_customers
             ),

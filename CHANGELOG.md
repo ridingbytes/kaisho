@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.0.0
+
+- Multi-profile cloud sync: each profile can independently
+  connect to its own cloud account and sync in the background
+- Per-profile user identity: user.yaml moved from global to
+  per-profile, with automatic migration for existing installs
+- Background sync for all profiles: the 5-minute cron job now
+  iterates all enabled profiles, not just the active one
+- WebSocket reconnect on profile switch: switching profiles
+  now properly reconnects the cloud WebSocket
+- Fix MCP server crash: parameter ordering bug caused
+  SyntaxError when optional params preceded required ones
+- Security: API key no longer leaked in WebSocket query string
+  (switched to first-message auth)
+- Security: default server binding changed from 0.0.0.0 to
+  127.0.0.1 (Docker and desktop pass explicit values)
+- Security: settings API masks secret keys instead of
+  returning them in plaintext
+- Security: profile name validation on switch prevents
+  path traversal attacks
+- Security: MCP server validates tool and parameter names
+  against identifier regex before code generation
+- Remove vestigial clocks_file parameter from run_sync_cycle
+- Push lock coordination between cron sync and eager push
+  prevents concurrent sync cycles for the active profile
+
 ## 0.9.4
 
 - Fix sync 500 error: wrap config pull in try/except

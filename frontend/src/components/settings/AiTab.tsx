@@ -494,7 +494,21 @@ export function AiSection(): JSX.Element {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (aiSettings) setForm(aiSettings);
+    if (aiSettings) {
+      // The backend masks secret keys, returning
+      // *_key_set booleans instead of raw values.
+      // Keep key fields empty (user enters new value
+      // to change, empty = keep existing).
+      setForm({
+        ...aiSettings,
+        ollama_api_key: "",
+        claude_api_key: "",
+        openrouter_api_key: "",
+        openai_api_key: "",
+        brave_api_key: "",
+        tavily_api_key: "",
+      });
+    }
   }, [aiSettings]);
 
   function set(
@@ -502,6 +516,15 @@ export function AiSection(): JSX.Element {
     value: string,
   ) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function keyPlaceholder(
+    field: keyof AiSettings,
+    fallback: string,
+  ): string {
+    const setKey = `${field}_set` as keyof AiSettings;
+    if (aiSettings?.[setKey]) return "••••••••";
+    return fallback;
   }
 
   function handleSave() {
@@ -698,8 +721,9 @@ export function AiSection(): JSX.Element {
                     e.target.value,
                   )
                 }
-                placeholder={t(
-                  "ollamaCloudKeyPlaceholder",
+                placeholder={keyPlaceholder(
+                  "ollama_api_key",
+                  t("ollamaCloudKeyPlaceholder"),
                 )}
                 className={inputCls}
               />
@@ -717,7 +741,9 @@ export function AiSection(): JSX.Element {
                     e.target.value,
                   )
                 }
-                placeholder="sk-ant-..."
+                placeholder={keyPlaceholder(
+                  "claude_api_key", "sk-ant-...",
+                )}
                 className={inputCls}
               />
             </label>
@@ -751,7 +777,9 @@ export function AiSection(): JSX.Element {
                     e.target.value,
                   )
                 }
-                placeholder="sk-or-..."
+                placeholder={keyPlaceholder(
+                  "openrouter_api_key", "sk-or-...",
+                )}
                 className={inputCls}
               />
             </label>
@@ -782,7 +810,9 @@ export function AiSection(): JSX.Element {
                     e.target.value,
                   )
                 }
-                placeholder="sk-..."
+                placeholder={keyPlaceholder(
+                  "openai_api_key", "sk-...",
+                )}
                 className={inputCls}
               />
             </label>
@@ -811,7 +841,9 @@ export function AiSection(): JSX.Element {
                     e.target.value,
                   )
                 }
-                placeholder="BSA..."
+                placeholder={keyPlaceholder(
+                  "brave_api_key", "BSA...",
+                )}
                 className={inputCls}
               />
             </label>
@@ -828,7 +860,9 @@ export function AiSection(): JSX.Element {
                     e.target.value,
                   )
                 }
-                placeholder="tvly-..."
+                placeholder={keyPlaceholder(
+                  "tavily_api_key", "tvly-...",
+                )}
                 className={inputCls}
               />
             </label>

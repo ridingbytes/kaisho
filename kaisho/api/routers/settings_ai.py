@@ -175,10 +175,10 @@ class AiSettingsUpdate(BaseModel):
 
 @router.get("/ai")
 def get_ai():
-    """Return AI provider settings."""
+    """Return AI provider settings (secrets masked)."""
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
-    return settings_svc.get_ai_settings(data)
+    return settings_svc.get_ai_settings_safe(data)
 
 
 @router.patch("/ai")

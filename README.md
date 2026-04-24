@@ -153,9 +153,9 @@ project) or `$KAISHO_HOME/profiles/<name>/`.
 
 ```
 data/
-  user.yaml                  User metadata
   .active_profile            Current profile name
   profiles/<name>/
+    user.yaml                User metadata (per-profile)
     settings.yaml            Tags, states, AI config
     jobs.yaml                Cron job definitions
     org/                     Org-mode data files

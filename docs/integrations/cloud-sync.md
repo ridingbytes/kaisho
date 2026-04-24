@@ -41,6 +41,16 @@ The header bar shows a sync status badge:
 
 Click the badge to navigate to Cloud Sync settings.
 
+## Multiple Profiles
+
+Each profile can connect to its own cloud account independently.
+Cloud sync credentials (API key, URL) are stored per-profile in
+`settings.yaml`. Background sync runs for all connected profiles
+every 5 minutes, regardless of which profile is currently active.
+
+Real-time WebSocket events are only active for the current profile.
+Inactive profiles rely on the 5-minute polling interval.
+
 ## Mobile Access
 
 Once connected, sign into the mobile PWA at your cloud URL.

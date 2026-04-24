@@ -87,7 +87,12 @@ class CloudWsClient:
             delay = min(delay * 2, _MAX_DELAY)
 
     def _connect(self) -> None:
-        """Single WebSocket connection session."""
+        """Single WebSocket connection session.
+
+        Authenticates via a first-message auth handshake
+        instead of passing the API key in the query
+        string (which leaks into proxy/server logs).
+        """
         try:
             import websocket
         except ImportError:
@@ -103,12 +108,18 @@ class CloudWsClient:
         ).replace(
             "http://", "ws://",
         )
-        ws_url += f"/ws?api_key={self._api_key}"
+        ws_url += "/ws"
 
         ws = websocket.WebSocket()
         ws.settimeout(90)
         try:
             ws.connect(ws_url)
+            # Authenticate via first message instead of
+            # query string to keep the key out of logs.
+            ws.send(json.dumps({
+                "type": "auth",
+                "api_key": self._api_key,
+            }))
             log.info("Cloud WS connected")
             self._receive_loop(ws)
         finally:

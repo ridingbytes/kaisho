@@ -1,3 +1,5 @@
+import re
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -6,6 +8,27 @@ from ...config import get_config
 router = APIRouter(
     prefix="/api/settings", tags=["settings"],
 )
+
+_PROFILE_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+
+def _validate_profile_name(name: str) -> str:
+    """Sanitize and validate a profile name.
+
+    :param name: Raw profile name.
+    :returns: Cleaned name.
+    :raises HTTPException: If name is empty or contains
+        invalid characters.
+    """
+    cleaned = re.sub(
+        r"[^a-zA-Z0-9_-]", "", name.strip(),
+    )
+    if not cleaned:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid profile name",
+        )
+    return cleaned
 
 
 @router.get("/user")
@@ -74,11 +97,16 @@ def switch_profile(body: ProfileSwitch):
         reset_config,
         save_active_profile,
     )
-    os.environ["PROFILE"] = body.profile
+    name = _validate_profile_name(body.profile)
+    os.environ["PROFILE"] = name
     cfg = reset_config()
     init_data_dir(cfg)
     reset_backend()
     save_active_profile(cfg.DATA_DIR, cfg.PROFILE)
+
+    from ...cron.scheduler import restart_cloud_ws
+    restart_cloud_ws()
+
     return {
         "profile": cfg.PROFILE,
     }
@@ -92,16 +120,8 @@ class ProfileCreate(BaseModel):
 def create_profile(body: ProfileCreate):
     """Create a new profile."""
     import os
-    import re
     from ...config import init_data_dir, reset_config
-    name = re.sub(
-        r"[^a-zA-Z0-9_-]", "", body.name.strip(),
-    )
-    if not name:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid profile name",
-        )
+    name = _validate_profile_name(body.name)
     cfg = get_config()
     profile_dir = (
         cfg.DATA_DIR / "profiles" / name

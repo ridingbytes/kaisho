@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     RESEARCH_DIR: Path = Path("data/research")
     CUSTOMERS_DIR: Path = Path("data/customers")
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    HOST: str = "0.0.0.0"
+    HOST: str = "127.0.0.1"
     PORT: int = 8765
     MARKDOWN_DIR: Path = Path("data/markdown")
     JSON_DIR: Path = Path("data/json")
@@ -119,7 +119,7 @@ def reset_config() -> Settings:
 
 
 # -------------------------------------------------------------------
-# User metadata (single user)
+# User metadata (per-profile)
 # -------------------------------------------------------------------
 
 def _user_template() -> dict:
@@ -135,10 +135,15 @@ def _user_template() -> dict:
 def load_user_yaml(
     cfg: Settings | None = None,
 ) -> dict:
-    """Load user.yaml from the data directory."""
+    """Load user.yaml from the profile directory.
+
+    Each profile has its own user identity so that
+    different profiles can sync to different cloud
+    accounts without overwriting each other's name.
+    """
     if cfg is None:
         cfg = get_config()
-    path = cfg.DATA_DIR / "user.yaml"
+    path = cfg.PROFILE_DIR / "user.yaml"
     if not path.exists():
         return _user_template()
     with open(path, "r", encoding="utf-8") as f:
@@ -149,8 +154,8 @@ def load_user_yaml(
 def save_user_yaml(
     cfg: Settings, data: dict,
 ) -> None:
-    """Write user.yaml to the data directory."""
-    path = cfg.DATA_DIR / "user.yaml"
+    """Write user.yaml to the profile directory."""
+    path = cfg.PROFILE_DIR / "user.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         yaml.dump(
@@ -324,6 +329,15 @@ def init_data_dir(
         cfg = get_config()
 
     cfg.PROFILE_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Migrate global user.yaml into this profile if the
+    # profile doesn't have one yet. This handles the
+    # transition from global to per-profile user identity.
+    profile_user = cfg.PROFILE_DIR / "user.yaml"
+    global_user = cfg.DATA_DIR / "user.yaml"
+    if not profile_user.exists() and global_user.exists():
+        shutil.copy2(global_user, profile_user)
+
     tmpl = _PROJECT_ROOT / "templates"
     if not tmpl.is_dir():
         return

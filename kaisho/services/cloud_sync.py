@@ -101,6 +101,19 @@ def _utc_to_local(iso: str) -> str:
 _push_lock = threading.Lock()
 
 
+def try_acquire_push_lock() -> bool:
+    """Try to acquire the push lock (non-blocking).
+
+    :returns: True if acquired, False if already held.
+    """
+    return _push_lock.acquire(blocking=False)
+
+
+def release_push_lock() -> None:
+    """Release the push lock."""
+    _push_lock.release()
+
+
 # -- HTTP transport -------------------------------------------
 
 class CloudUnavailable(Exception):
@@ -1120,7 +1133,6 @@ def run_background_sync() -> None:
             cloud_url=url,
             api_key=key,
             profile_dir=cfg.PROFILE_DIR,
-            clocks_file=backend.clocks.data_file,
             customers_fn=(
                 backend.customers.list_customers
             ),
@@ -1839,14 +1851,31 @@ def collect_note_changes(
     return wire
 
 
+class _CfgForDir:
+    """Minimal config stub pointing at a profile dir.
+
+    Used by ``_pull_config_updates`` and
+    ``_build_snapshot_config`` so they can call
+    ``load_user_yaml`` / ``save_user_yaml`` for any
+    profile, not just the active one.
+    """
+
+    def __init__(self, profile_dir: Path):
+        self.PROFILE_DIR = profile_dir
+
+
 def _pull_config_updates(
-    cloud_url: str, api_key: str,
+    cloud_url: str,
+    api_key: str,
+    profile_dir: Path | None = None,
 ) -> None:
     """Pull config from cloud and apply user_name
-    changes to local user.yaml.
+    changes to the profile's user.yaml.
 
-    If the PWA updated user_name, this syncs it back
-    to the desktop app's user.yaml.
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param profile_dir: Profile directory. Falls back
+        to the active profile.
     """
     from ..config import (
         get_config, load_user_yaml, save_user_yaml,
@@ -1865,7 +1894,11 @@ def _pull_config_updates(
     if not cloud_name:
         return
 
-    cfg = get_config()
+    cfg = (
+        _CfgForDir(profile_dir)
+        if profile_dir
+        else get_config()
+    )
     user = load_user_yaml(cfg)
     if user.get("name") != cloud_name:
         user["name"] = cloud_name
@@ -1876,20 +1909,36 @@ def _pull_config_updates(
         )
 
 
-def _build_snapshot_config() -> dict:
+def _build_snapshot_config(
+    settings_file: Path | None = None,
+    profile_dir: Path | None = None,
+) -> dict:
     """Build config dict for the reference snapshot.
 
     Includes tags and feature flags so the PWA can
     mirror the desktop app's settings.
+
+    :param settings_file: Explicit settings path.
+        Falls back to the active profile's settings.
+    :param profile_dir: Profile directory for user.yaml.
+        Falls back to the active profile.
+    :returns: Config dict with tags, github flag,
+        avatar_seed, and user_name.
     """
     from .settings import load_settings
     from ..config import get_config, load_user_yaml
 
     cfg = get_config()
-    data = load_settings(cfg.SETTINGS_FILE)
+    path = settings_file or cfg.SETTINGS_FILE
+    data = load_settings(path)
     tags = data.get("tags", [])
     github = data.get("github", {})
-    user = load_user_yaml(cfg)
+    user_cfg = (
+        _CfgForDir(profile_dir)
+        if profile_dir
+        else cfg
+    )
+    user = load_user_yaml(user_cfg)
     return {
         "tags": [
             {
@@ -1913,6 +1962,8 @@ def push_reference_snapshot(
     api_key: str,
     customers_fn: Callable[[], list[dict]] | None,
     tasks_fn: Callable[[], list[dict]] | None,
+    settings_file: Path | None = None,
+    profile_dir: Path | None = None,
 ) -> bool:
     """Push customer/task reference data (best-effort).
 
@@ -1920,6 +1971,10 @@ def push_reference_snapshot(
     :param api_key: API key.
     :param customers_fn: Callable returning customer list.
     :param tasks_fn: Callable returning task list.
+    :param settings_file: Settings file for snapshot
+        config. Falls back to the active profile.
+    :param profile_dir: Profile directory for user.yaml.
+        Falls back to the active profile.
     :returns: ``True`` on success, ``False`` on failure.
     """
     if customers_fn is None or tasks_fn is None:
@@ -1952,7 +2007,9 @@ def push_reference_snapshot(
                 }
                 for t in tasks_fn()
             ],
-            config=_build_snapshot_config(),
+            config=_build_snapshot_config(
+                settings_file, profile_dir,
+            ),
         )
         return True
     except CloudUnavailable as exc:
@@ -1966,9 +2023,10 @@ def run_sync_cycle(
     cloud_url: str,
     api_key: str,
     profile_dir: Path,
-    clocks_file: Path | None = None,  # noqa: ARG001
     customers_fn: Callable[[], list[dict]] | None = None,
     tasks_fn: Callable[[], list[dict]] | None = None,
+    backend=None,
+    settings_file: Path | None = None,
 ) -> dict:
     """Run one complete bidirectional sync cycle.
 
@@ -1993,14 +2051,17 @@ def run_sync_cycle(
     :param cloud_url: Base URL.
     :param api_key: API key.
     :param profile_dir: Profile directory.
-    :param clocks_file: Unused, kept for call-site
-        compatibility.
     :param customers_fn: Callable returning customer list.
     :param tasks_fn: Callable returning task list.
+    :param backend: Backend instance. Falls back to
+        ``get_backend()`` when None (active profile).
+    :param settings_file: Settings file path for
+        snapshot config. Falls back to active profile.
     :returns: Result dict with counts and error message.
     """
-    from ..backends import get_backend
-    backend = get_backend()
+    if backend is None:
+        from ..backends import get_backend
+        backend = get_backend()
 
     cursor = sync_state.load_cursor(profile_dir)
     started = local_now().isoformat()
@@ -2196,9 +2257,12 @@ def run_sync_cycle(
         log.warning("Note sync failed: %s", exc)
 
     # Step 7: Pull config updates (e.g. name changed
-    # in PWA) before pushing the snapshot.
+    # in PWA). Each profile has its own user.yaml, so
+    # this is safe for all profiles.
     try:
-        _pull_config_updates(cloud_url, api_key)
+        _pull_config_updates(
+            cloud_url, api_key, profile_dir,
+        )
     except Exception:  # noqa: BLE001
         log.warning(
             "Config pull failed", exc_info=True,
@@ -2207,6 +2271,8 @@ def run_sync_cycle(
     # Step 8: Reference snapshot
     if push_reference_snapshot(
         cloud_url, api_key, customers_fn, tasks_fn,
+        settings_file=settings_file,
+        profile_dir=profile_dir,
     ):
         cursor["last_snapshot_push"] = started
         result["snapshot_pushed"] = True

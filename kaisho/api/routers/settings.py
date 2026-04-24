@@ -26,10 +26,10 @@ router = APIRouter(
 
 @router.get("")
 def get_settings():
-    """Return all application settings."""
+    """Return application settings (secrets masked)."""
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
-    merged = dict(data)
+    merged = settings_svc._mask_secrets(dict(data))
     if not isinstance(merged.get("task_states"), list):
         merged["task_states"] = []
     if not isinstance(merged.get("tags"), list):

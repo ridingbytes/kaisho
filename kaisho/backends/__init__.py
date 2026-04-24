@@ -42,16 +42,85 @@ def get_backend() -> Backend:
     Falls back to the global config (.env) when not set.
     """
     from ..config import get_config
+    return _build_backend(get_config())
+
+
+def make_backend_for_profile(
+    data_dir: Path, profile_name: str,
+) -> Backend:
+    """Build an uncached Backend for a specific profile.
+
+    Used by the multi-profile sync loop to read/write
+    data for inactive profiles without touching the
+    global ``get_backend()`` cache.
+
+    :param data_dir: Kaisho data directory
+        (e.g. ``~/.kaisho``).
+    :param profile_name: Profile name.
+    :returns: Fresh Backend instance.
+    """
+    from ..config import get_config
+
+    cfg = get_config()
+    profile_dir = data_dir / "profiles" / profile_name
+
+    overlay = _ProfileOverlayCfg(
+        cfg, profile_name, profile_dir,
+    )
+    return _build_backend(overlay)
+
+
+class _ProfileOverlayCfg:
+    """Read-only config proxy targeting a specific profile.
+
+    Overrides PROFILE, PROFILE_DIR, and SETTINGS_FILE.
+    All other attributes delegate to the real config.
+    Do not set attributes on this proxy.
+    """
+
+    def __init__(
+        self, cfg: "Settings", profile_name: str,
+        profile_dir: Path,
+    ):
+        object.__setattr__(self, "_cfg", cfg)
+        object.__setattr__(self, "_name", profile_name)
+        object.__setattr__(self, "_dir", profile_dir)
+
+    def __getattr__(self, name):
+        if name == "PROFILE":
+            return object.__getattribute__(
+                self, "_name",
+            )
+        if name == "PROFILE_DIR":
+            return object.__getattribute__(
+                self, "_dir",
+            )
+        if name == "SETTINGS_FILE":
+            return (
+                object.__getattribute__(self, "_dir")
+                / "settings.yaml"
+            )
+        return getattr(
+            object.__getattribute__(self, "_cfg"),
+            name,
+        )
+
+
+def _build_backend(cfg) -> Backend:
+    """Build a Backend from a config object.
+
+    :param cfg: Config with SETTINGS_FILE and
+        PROFILE_DIR attributes.
+    :returns: Backend instance.
+    """
     from ..services.settings import (
         get_path_settings, load_settings,
     )
 
-    cfg = get_config()
     data = load_settings(cfg.SETTINGS_FILE)
     paths = get_path_settings(data, cfg)
     backend_type = paths["backend"].lower()
 
-    # Inject profile-local paths into cfg for backend factories
     cfg_overlay = _OverlayCfg(cfg, paths)
 
     if backend_type == "org":

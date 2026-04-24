@@ -91,19 +91,65 @@ def get_inbox_channels(settings: dict) -> list[str]:
     )
 
 
+# Keys that contain secrets and must never be
+# returned in API responses.
+_SECRET_KEYS = {
+    "api_key", "claude_api_key", "openrouter_api_key",
+    "openai_api_key", "ollama_api_key",
+    "brave_api_key", "tavily_api_key", "token",
+}
+
+
+def _mask_secrets(data: dict) -> dict:
+    """Replace secret values with ``*_set`` booleans.
+
+    Recursively walks dicts. Any key in ``_SECRET_KEYS``
+    is replaced with ``<key>_set: bool``.
+    """
+    out = {}
+    for k, v in data.items():
+        if k in _SECRET_KEYS:
+            out[f"{k}_set"] = bool(v)
+        elif isinstance(v, dict):
+            out[k] = _mask_secrets(v)
+        else:
+            out[k] = v
+    return out
+
+
 def get_ai_settings(settings: dict) -> dict:
-    """Return AI settings with defaults filled in."""
+    """Return AI settings with defaults filled in.
+
+    Raw keys are included for internal use. API
+    endpoints should call ``get_ai_settings_safe``
+    instead.
+    """
     return {**DEFAULT_AI, **settings.get("ai", {})}
 
 
+def get_ai_settings_safe(settings: dict) -> dict:
+    """Return AI settings with secrets masked."""
+    return _mask_secrets(get_ai_settings(settings))
+
+
 def set_ai_settings(path: Path, updates: dict) -> dict:
-    """Persist AI settings updates; return the new full ai block."""
+    """Persist AI settings updates.
+
+    Empty-string secret fields are skipped so that the
+    frontend can submit forms without clearing keys it
+    didn't change (the GET response masks them).
+
+    :returns: The full ai block (with secrets masked).
+    """
     data = load_settings(path)
     ai = data.get("ai", {})
-    ai.update(updates)
+    for k, v in updates.items():
+        if k in _SECRET_KEYS and v == "":
+            continue
+        ai[k] = v
     data["ai"] = ai
     save_settings(path, data)
-    return get_ai_settings(data)
+    return get_ai_settings_safe(data)
 
 
 DEFAULT_CLOUD_SYNC: dict = {

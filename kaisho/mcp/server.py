@@ -6,6 +6,7 @@ executor and advisor, so tool behavior is identical.
 """
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,9 @@ from ..config import get_config, reset_config
 from ..cron.tools import execute_tool
 from .audit import log_call
 from .tiers import filter_tools, parse_tiers
+
+# Valid Python identifier pattern for exec() safety
+_IDENT_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 
 # Tier annotations for MCP client hints
 _TIER_ANNOTATIONS = {
@@ -52,13 +56,28 @@ def _build_handler(
     ``**kwargs``).  This generates a function whose
     parameters match the tool's ``input_schema``.
     """
+    if not _IDENT_RE.match(tool_name):
+        raise ValueError(
+            f"Invalid tool name: {tool_name!r}"
+        )
     props = schema.get("properties", {})
     required = set(schema.get("required", []))
 
-    # Build parameter strings
+    # Build parameter strings — required params first
+    # to avoid SyntaxError from optional before required.
+    sorted_props = sorted(
+        props.items(),
+        key=lambda item: item[0] not in required,
+    )
     param_parts = []
     param_names = []
-    for pname, pdef in props.items():
+    for pname, pdef in sorted_props:
+        # Guard against code injection via crafted
+        # parameter names — only valid Python identifiers.
+        if not _IDENT_RE.match(pname):
+            raise ValueError(
+                f"Invalid parameter name: {pname!r}"
+            )
         py_type = _TYPE_MAP.get(
             pdef.get("type", "string"), "str",
         )

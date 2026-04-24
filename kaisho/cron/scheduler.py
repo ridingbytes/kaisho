@@ -208,6 +208,7 @@ def sync_backup_job() -> None:
 
 
 _ws_log = logging.getLogger(__name__ + ".ws")
+_sync_log = logging.getLogger(__name__ + ".sync")
 
 _ws_sync_pending = False
 _ws_sync_lock = threading.Lock()
@@ -308,6 +309,17 @@ def _start_cloud_ws_if_enabled() -> None:
     start_cloud_ws(url, key, _on_cloud_ws_event)
 
 
+def restart_cloud_ws() -> None:
+    """Restart the cloud WebSocket for the active profile.
+
+    Called on profile switch so the WS connection uses
+    the new profile's cloud credentials.
+    """
+    from ..services.cloud_ws import stop_cloud_ws
+    stop_cloud_ws()
+    _start_cloud_ws_if_enabled()
+
+
 def _broadcast_sync_changes(result: dict) -> None:
     """Notify the desktop frontend after a sync cycle.
 
@@ -338,34 +350,87 @@ def _broadcast_sync_changes(result: dict) -> None:
 
 
 def _run_cloud_sync() -> None:
-    """Periodic cloud sync job. No-op when disabled."""
+    """Periodic cloud sync for all enabled profiles.
+
+    Iterates every profile that has cloud sync enabled
+    and runs a full sync cycle. Errors in one profile
+    do not block the others.
+
+    Only the active profile broadcasts UI refresh
+    events (inactive profiles have no visible frontend).
+    """
+    from ..config import list_profiles
     from ..services import settings as settings_svc
     from ..services import cloud_sync as sync_svc
-    from ..backends import get_backend
+    from ..backends import (
+        get_backend, make_backend_for_profile,
+    )
 
     cfg = get_config()
-    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
-    sync = data.get("cloud_sync", {})
-    if not sync.get("enabled"):
-        return
+    active = cfg.PROFILE
 
-    url = sync.get("url", "")
-    key = sync.get("api_key", "")
-    if not url or not key:
-        return
+    for name in list_profiles(cfg):
+        profile_dir = (
+            cfg.DATA_DIR / "profiles" / name
+        )
+        settings_file = profile_dir / "settings.yaml"
+        if not settings_file.exists():
+            continue
+        data = settings_svc.load_settings(
+            settings_file,
+        )
+        sync = data.get("cloud_sync", {})
+        if not sync.get("enabled"):
+            continue
 
-    backend = get_backend()
-    result = sync_svc.run_sync_cycle(
-        cloud_url=url,
-        api_key=key,
-        profile_dir=cfg.PROFILE_DIR,
-        clocks_file=backend.clocks.data_file,
-        customers_fn=backend.customers.list_customers,
-        tasks_fn=lambda: backend.tasks.list_tasks(
-            include_done=False,
-        ),
-    )
-    _broadcast_sync_changes(result)
+        url = sync.get("url", "")
+        key = sync.get("api_key", "")
+        if not url or not key:
+            continue
+
+        is_active = (name == active)
+        if is_active:
+            backend = get_backend()
+        else:
+            backend = make_backend_for_profile(
+                cfg.DATA_DIR, name,
+            )
+
+        # For the active profile, acquire the push lock
+        # to avoid overlapping with the eager push
+        # triggered by local mutations.
+        lock_held = False
+        if is_active:
+            if not sync_svc.try_acquire_push_lock():
+                continue
+            lock_held = True
+
+        try:
+            result = sync_svc.run_sync_cycle(
+                cloud_url=url,
+                api_key=key,
+                profile_dir=profile_dir,
+                customers_fn=(
+                    backend.customers.list_customers
+                ),
+                tasks_fn=lambda b=backend: (
+                    b.tasks.list_tasks(
+                        include_done=False,
+                    )
+                ),
+                backend=backend,
+                settings_file=settings_file,
+            )
+            if is_active:
+                _broadcast_sync_changes(result)
+        except Exception:  # noqa: BLE001
+            _sync_log.warning(
+                "Cloud sync failed for profile %s",
+                name, exc_info=True,
+            )
+        finally:
+            if lock_held:
+                sync_svc.release_push_lock()
 
 
 def build_scheduler(jobs_file: Path) -> BackgroundScheduler:

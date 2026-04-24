@@ -48,14 +48,20 @@ export interface AiSettings {
   ollama_url: string;
   ollama_cloud_url: string;
   ollama_api_key: string;
+  ollama_api_key_set?: boolean;
   lm_studio_url: string;
   claude_api_key: string;
+  claude_api_key_set?: boolean;
   openrouter_url: string;
   openrouter_api_key: string;
+  openrouter_api_key_set?: boolean;
   openai_url: string;
   openai_api_key: string;
+  openai_api_key_set?: boolean;
   brave_api_key: string;
+  brave_api_key_set?: boolean;
   tavily_api_key: string;
+  tavily_api_key_set?: boolean;
   advisor_model: string;
   cron_model: string;
 }
