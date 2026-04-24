@@ -512,6 +512,7 @@ class SqlTaskBackend(TaskBackend):
         tags=None,
         body=None,
         github_url=None,
+        sync_id=None,
     ) -> dict:
         """Create a new task and return its dict."""
         task_id = _generate_id(title)
@@ -1055,6 +1056,7 @@ class SqlInboxBackend(InboxBackend):
         body=None,
         channel=None,
         direction=None,
+        sync_id=None,
     ) -> dict:
         """Capture a new inbox item and return its dict."""
         item_id = _generate_id(text)
@@ -1182,6 +1184,7 @@ class SqlNotesBackend(NotesBackend):
         customer=None,
         tags=None,
         task_id=None,
+        sync_id=None,
     ) -> dict:
         """Create a new note and return its dict."""
         note_id = _generate_id(title)

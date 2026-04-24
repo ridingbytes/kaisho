@@ -591,13 +591,14 @@ class MarkdownTaskBackend(TaskBackend):
         tags=None,
         body=None,
         github_url=None,
+        sync_id=None,
     ) -> dict:
         """Create a new task and return its dict."""
         tasks = self._load_tasks()
         now = datetime.now()
         task = {
             "id": _generate_id(title),
-            "sync_id": str(uuid.uuid4()),
+            "sync_id": sync_id or str(uuid.uuid4()),
             "customer": customer,
             "title": title,
             "status": status,
@@ -1508,13 +1509,14 @@ class MarkdownInboxBackend(InboxBackend):
         body=None,
         channel=None,
         direction=None,
+        sync_id=None,
     ) -> dict:
         """Capture a new inbox item and return its dict."""
         items = self._load_items()
         now = datetime.now()
         item = {
             "id": _generate_id(text),
-            "sync_id": str(uuid.uuid4()),
+            "sync_id": sync_id or str(uuid.uuid4()),
             "type": (
                 item_type or _guess_inbox_type(text)
             ),
@@ -1691,14 +1693,14 @@ class MarkdownNotesBackend(NotesBackend):
 
     def add_note(
         self, title, body="", customer=None,
-        tags=None, task_id=None,
+        tags=None, task_id=None, sync_id=None,
     ) -> dict:
         """Create a new note and return its dict."""
         notes = self._load_notes()
         now = datetime.now()
         note = {
             "id": _generate_id(title),
-            "sync_id": str(uuid.uuid4()),
+            "sync_id": sync_id or str(uuid.uuid4()),
             "title": title,
             "body": body,
             "customer": customer or "",

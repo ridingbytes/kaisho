@@ -43,8 +43,13 @@ class TaskBackend(ABC):
         tags: list[str] | None = None,
         body: str | None = None,
         github_url: str | None = None,
+        sync_id: str | None = None,
     ) -> dict:
-        """Create and persist a new task, return its dict."""
+        """Create and persist a new task, return its dict.
+
+        :param sync_id: Optional UUID for cloud sync
+            identity. Generated if not provided.
+        """
 
     @abstractmethod
     def move_task(self, task_id: str, new_status: str) -> dict:
@@ -276,8 +281,13 @@ class InboxBackend(ABC):
         body: str | None = None,
         channel: str | None = None,
         direction: str | None = None,
+        sync_id: str | None = None,
     ) -> dict:
-        """Capture a new inbox item, return its dict."""
+        """Capture a new inbox item, return its dict.
+
+        :param sync_id: Optional UUID for cloud sync
+            identity. Generated if not provided.
+        """
 
     @abstractmethod
     def remove_item(self, item_id: str) -> bool:
@@ -324,8 +334,13 @@ class NotesBackend(ABC):
         customer: str | None = None,
         tags: list[str] | None = None,
         task_id: str | None = None,
+        sync_id: str | None = None,
     ) -> dict:
-        """Add a new note, return its dict."""
+        """Add a new note, return its dict.
+
+        :param sync_id: Optional UUID for cloud sync
+            identity. Generated if not provided.
+        """
 
     def reorder_notes(
         self, note_ids: list[str],

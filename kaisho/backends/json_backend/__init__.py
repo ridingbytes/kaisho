@@ -209,6 +209,7 @@ class JsonTaskBackend(TaskBackend):
         tags=None,
         body=None,
         github_url=None,
+        sync_id=None,
     ) -> dict:
         """Create a new task and return its dict."""
         tasks = _read_json(self._tasks_file)
@@ -765,6 +766,7 @@ class JsonInboxBackend(InboxBackend):
         body=None,
         channel=None,
         direction=None,
+        sync_id=None,
     ) -> dict:
         """Capture a new inbox item and return its dict."""
         items = _read_json(self._inbox_file)
@@ -1190,7 +1192,7 @@ class JsonNotesBackend(NotesBackend):
 
     def add_note(
         self, title, body="", customer=None,
-        tags=None, task_id=None,
+        tags=None, task_id=None, sync_id=None,
     ) -> dict:
         """Create a new note and return its dict."""
         notes = _read_json(self._notes_file)
