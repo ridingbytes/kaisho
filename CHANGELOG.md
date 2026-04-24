@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.4
+
+- Fix sync 500 error: wrap config pull in try/except
+- Add sync_id parameter to all backends (markdown, sql, json)
+
 ## 0.9.3
 
 - Cloud sync: bidirectional sync for inbox, tasks, notes

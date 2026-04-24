@@ -2197,7 +2197,12 @@ def run_sync_cycle(
 
     # Step 7: Pull config updates (e.g. name changed
     # in PWA) before pushing the snapshot.
-    _pull_config_updates(cloud_url, api_key)
+    try:
+        _pull_config_updates(cloud_url, api_key)
+    except Exception:  # noqa: BLE001
+        log.warning(
+            "Config pull failed", exc_info=True,
+        )
 
     # Step 8: Reference snapshot
     if push_reference_snapshot(
