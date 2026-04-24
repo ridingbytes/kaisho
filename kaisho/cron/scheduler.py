@@ -281,6 +281,9 @@ def _on_cloud_ws_event(
     if event in (
         "entries:changed",
         "entries:deleted",
+        "inbox:changed",
+        "tasks:changed",
+        "notes:changed",
         "timer:stopped",
     ):
         _schedule_ws_sync()
@@ -305,6 +308,35 @@ def _start_cloud_ws_if_enabled() -> None:
     start_cloud_ws(url, key, _on_cloud_ws_event)
 
 
+def _broadcast_sync_changes(result: dict) -> None:
+    """Notify the desktop frontend after a sync cycle.
+
+    Broadcasts a refresh event for each resource so
+    the UI updates without a manual reload. Over-
+    broadcasts all resources because the result dict
+    aggregates counts — this is safe (just extra
+    React Query refetches).
+    """
+    pulled = result.get("pulled_up", 0)
+    deleted = result.get("pulled_del", 0)
+    if pulled + deleted == 0:
+        return
+    from ..api.ws.manager import broadcast_sync
+    try:
+        for resource in (
+            "clocks", "inbox", "tasks", "notes",
+        ):
+            broadcast_sync({
+                "resource": resource,
+                "type": "sync:updated",
+            })
+    except Exception:  # noqa: BLE001
+        _ws_log.warning(
+            "Failed to broadcast sync changes",
+            exc_info=True,
+        )
+
+
 def _run_cloud_sync() -> None:
     """Periodic cloud sync job. No-op when disabled."""
     from ..services import settings as settings_svc
@@ -323,7 +355,7 @@ def _run_cloud_sync() -> None:
         return
 
     backend = get_backend()
-    sync_svc.run_sync_cycle(
+    result = sync_svc.run_sync_cycle(
         cloud_url=url,
         api_key=key,
         profile_dir=cfg.PROFILE_DIR,
@@ -333,6 +365,7 @@ def _run_cloud_sync() -> None:
             include_done=False,
         ),
     )
+    _broadcast_sync_changes(result)
 
 
 def build_scheduler(jobs_file: Path) -> BackgroundScheduler:

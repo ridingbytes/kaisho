@@ -342,14 +342,20 @@ Settings are stored in \`settings.yaml\` (path: \`SETTINGS_FILE\` env
 var, default \`./settings.yaml\`).
 
 **Cloud Sync** — connect the desktop app to Kaisho Cloud
-for bidirectional sync of clock entries with the mobile
-PWA. Enter your API key (from your confirmation email or
-the mobile app Profile tab) and click Connect.
+for bidirectional sync with the mobile PWA. Synced data
+includes clock entries, inbox items, tasks, notes, tags,
+and your user profile (name, avatar).
 
-- **Sync + AI plan** enables cloud-routed AI for the
-  advisor and cron jobs without a local GPU.
 - **Sync Now** triggers an immediate pull/push cycle.
 - **Disconnect** wipes all cloud entries and resets sync.
+- **Sync + AI plan** enables cloud-routed AI for the
+  advisor and cron jobs without a local GPU.
+
+Tags, task states, and your display name are synced as
+part of the reference snapshot. Changes to your name in
+the PWA profile are pulled back on the next sync cycle.
+GitHub URL fields are only shown in the PWA when GitHub
+is configured in Settings.
 
 Cloud Sync requires a paid plan. Visit kaisho.dev for
 pricing.

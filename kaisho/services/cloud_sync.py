@@ -28,6 +28,7 @@ Design decisions:
 """
 import json
 import logging
+import re
 import threading
 import urllib.error
 import urllib.parse
@@ -42,6 +43,12 @@ from ..time_utils import local_now
 log = logging.getLogger(__name__)
 
 HTTP_TIMEOUT = 60
+
+_PREFIX_RE = re.compile(
+    r"^\[[^\]]+\]:?\s*"
+    r"|^(?:EMAIL|LEAD|IDEA|IDEE|NOTE|NOTIZ)\s+",
+    re.IGNORECASE,
+)
 
 
 # -- Timezone helpers ------------------------------------------
@@ -317,6 +324,7 @@ def push_snapshot(
     api_key: str,
     customers: list[dict],
     tasks: list[dict],
+    config: dict | None = None,
 ) -> dict:
     """Push customer/task reference data to the cloud.
 
@@ -329,17 +337,21 @@ def push_snapshot(
         ``name`` and ``contracts``.
     :param tasks: List of task dicts with ``id``,
         ``title``, ``customer``, ``status``.
+    :param config: Optional settings dict (tags,
+        github_configured, task_states).
     :returns: ``{ok: true}``.
     :raises CloudUnavailable: On network failure.
     """
     url = f"{cloud_url}/sync/push-snapshot"
+    payload: dict = {
+        "customers": customers,
+        "tasks": tasks,
+        "snapshot_at": local_now().isoformat(),
+    }
+    if config:
+        payload["config"] = config
     return safe_request(
-        url, api_key, "POST",
-        {
-            "customers": customers,
-            "tasks": tasks,
-            "snapshot_at": local_now().isoformat(),
-        },
+        url, api_key, "POST", payload,
     )
 
 
@@ -655,7 +667,9 @@ def inbox_item_to_wire(item: dict) -> dict:
         "id": item["sync_id"],
         "type": item.get("type") or "NOTE",
         "customer": item.get("customer") or "",
-        "title": item.get("title") or "",
+        "title": _strip_customer_prefix(
+            item.get("title") or "",
+        ),
         "body": item.get("body") or "",
         "channel": item.get("channel") or "",
         "direction": item.get("direction") or "in",
@@ -688,7 +702,7 @@ def wire_to_inbox_item(entry: dict) -> dict:
             entry.get("created_at") or ""
         ),
         "updated_at": _utc_to_local(
-            entry["updated_at"],
+            entry.get("updated_at", ""),
         ),
         "deleted_at": entry.get("deleted_at"),
     }
@@ -696,12 +710,28 @@ def wire_to_inbox_item(entry: dict) -> dict:
 
 # -- Task wire format --------------------------------------------
 
+def _strip_customer_prefix(title: str) -> str:
+    """Remove all leading [CUSTOMER] prefixes from a title.
+
+    Handles both ``[X]: text`` (tasks) and ``[X] text``
+    (inbox/notes) formats. Also strips any leading TYPE
+    keywords like ``IDEA``, ``NOTE``, ``EMAIL``, ``LEAD``.
+    """
+    prev = None
+    while title != prev:
+        prev = title
+        title = _PREFIX_RE.sub("", title)
+    return title.strip()
+
+
 def task_to_wire(task: dict) -> dict:
     """Convert a local task dict to wire format."""
     return {
         "id": task["sync_id"],
         "customer": task.get("customer") or "",
-        "title": task.get("title") or "",
+        "title": _strip_customer_prefix(
+            task.get("title") or "",
+        ),
         "status": task.get("status") or "TODO",
         "tags": task.get("tags") or [],
         "body": task.get("body") or "",
@@ -730,7 +760,7 @@ def wire_to_task(entry: dict) -> dict:
             entry.get("created_at") or ""
         ),
         "updated_at": _utc_to_local(
-            entry["updated_at"],
+            entry.get("updated_at", ""),
         ),
         "deleted_at": entry.get("deleted_at"),
     }
@@ -743,7 +773,9 @@ def note_to_wire(note: dict) -> dict:
     return {
         "id": note["sync_id"],
         "customer": note.get("customer") or "",
-        "title": note.get("title") or "",
+        "title": _strip_customer_prefix(
+            note.get("title") or "",
+        ),
         "body": note.get("body") or "",
         "tags": note.get("tags") or [],
         "task_id": note.get("task_id") or None,
@@ -770,7 +802,7 @@ def wire_to_note(entry: dict) -> dict:
             entry.get("created_at") or ""
         ),
         "updated_at": _utc_to_local(
-            entry["updated_at"],
+            entry.get("updated_at", ""),
         ),
         "deleted_at": entry.get("deleted_at"),
     }
@@ -1381,60 +1413,74 @@ def pull_and_apply_inbox(
     cloud_url: str,
     api_key: str,
     since: str,
-) -> tuple[str, int, int]:
+) -> tuple[str, int, int, set[str]]:
     """Pull inbox items from cloud and apply locally.
 
-    :returns: (new_cursor, upserted, deleted)
+    :returns: (cursor, upserted, deleted, pulled_sync_ids)
     """
     cursor = since
     total_up = 0
     total_del = 0
+    all_sync_ids: set[str] = set()
+    by_sync: dict | None = None
 
     while True:
         new_cursor, entries, has_more = (
             pull_inbox_changes(cloud_url, api_key, cursor)
         )
+        if by_sync is None:
+            items = backend.inbox.list_items()
+            by_sync = {
+                i.get("sync_id"): i for i in items
+                if i.get("sync_id")
+            }
         pulled_ids = []
-        items = backend.inbox.list_items()
-        by_sync = {
-            i.get("sync_id"): i for i in items
-            if i.get("sync_id")
-        }
         for wire_item in entries:
-            local = wire_to_inbox_item(wire_item)
+            incoming = wire_to_inbox_item(wire_item)
             pulled_ids.append(wire_item["id"])
-            existing = by_sync.get(local["sync_id"])
-            if local.get("deleted_at"):
+            all_sync_ids.add(incoming["sync_id"])
+            existing = by_sync.get(incoming["sync_id"])
+            if incoming.get("deleted_at"):
                 if existing:
                     backend.inbox.remove_item(
                         existing["id"],
                     )
                     total_del += 1
             elif existing:
-                local_ts = existing.get("updated_at", "")
-                remote_ts = local.get("updated_at", "")
+                local_ts = existing.get(
+                    "updated_at", "",
+                )
+                remote_ts = incoming.get(
+                    "updated_at", "",
+                )
                 if remote_ts > local_ts:
                     backend.inbox.update_item(
                         existing["id"],
                         {
-                            "title": local["title"],
-                            "type": local["type"],
-                            "customer": local["customer"],
-                            "body": local["body"],
-                            "channel": local["channel"],
-                            "direction": local["direction"],
+                            "title": incoming["title"],
+                            "type": incoming["type"],
+                            "customer": (
+                                incoming["customer"]
+                            ),
+                            "body": incoming["body"],
+                            "channel": (
+                                incoming["channel"]
+                            ),
+                            "direction": (
+                                incoming["direction"]
+                            ),
                         },
                     )
                     total_up += 1
             else:
                 backend.inbox.add_item(
-                    text=local["title"],
-                    item_type=local["type"],
-                    customer=local["customer"],
-                    body=local["body"],
-                    channel=local["channel"],
-                    direction=local["direction"],
-                    sync_id=local["sync_id"],
+                    text=incoming["title"],
+                    item_type=incoming["type"],
+                    customer=incoming["customer"],
+                    body=incoming["body"],
+                    channel=incoming["channel"],
+                    direction=incoming["direction"],
+                    sync_id=incoming["sync_id"],
                 )
                 total_up += 1
 
@@ -1449,20 +1495,25 @@ def pull_and_apply_inbox(
         if not has_more:
             break
 
-    return cursor, total_up, total_del
+    return cursor, total_up, total_del, all_sync_ids
 
 
 def collect_inbox_changes(
     backend,
     since: str,
+    exclude: set[str] | None = None,
 ) -> list[dict]:
     """Gather inbox items changed after ``since``.
 
+    :param exclude: Sync IDs to skip (just-pulled items).
     :returns: List of wire-format inbox items.
     """
+    skip = exclude or set()
     items = backend.inbox.list_items()
     wire = []
     for item in items:
+        if item.get("sync_id") in skip:
+            continue
         updated = item.get("updated_at", "")
         if updated > since:
             wire.append(inbox_item_to_wire(item))
@@ -1518,29 +1569,38 @@ def ack_task_items(
 
 def pull_and_apply_tasks(
     backend, cloud_url: str, api_key: str, since: str,
-) -> tuple[str, int, int]:
-    """Pull tasks from cloud and apply locally."""
+) -> tuple[str, int, int, set[str]]:
+    """Pull tasks from cloud and apply locally.
+
+    :returns: (cursor, upserted, deleted, pulled_sync_ids)
+    """
     cursor = since
     total_up = 0
     total_del = 0
+    all_sync_ids: set[str] = set()
+    by_sync: dict | None = None
 
     while True:
         new_cursor, entries, has_more = (
             pull_task_changes(cloud_url, api_key, cursor)
         )
+        if by_sync is None:
+            tasks = backend.tasks.list_tasks(
+                include_done=True,
+            )
+            by_sync = {
+                t.get("sync_id"): t for t in tasks
+                if t.get("sync_id")
+            }
         pulled_ids = []
-        tasks = backend.tasks.list_tasks(
-            include_done=True,
-        )
-        by_sync = {
-            t.get("sync_id"): t for t in tasks
-            if t.get("sync_id")
-        }
         for wire_item in entries:
-            local = wire_to_task(wire_item)
+            incoming = wire_to_task(wire_item)
             pulled_ids.append(wire_item["id"])
-            existing = by_sync.get(local["sync_id"])
-            if local.get("deleted_at"):
+            all_sync_ids.add(incoming["sync_id"])
+            existing = by_sync.get(
+                incoming["sync_id"],
+            )
+            if incoming.get("deleted_at"):
                 if existing:
                     backend.tasks.archive_task(
                         existing["id"],
@@ -1550,42 +1610,44 @@ def pull_and_apply_tasks(
                 local_ts = existing.get(
                     "updated_at", "",
                 )
-                remote_ts = local.get(
+                remote_ts = incoming.get(
                     "updated_at", "",
                 )
                 if remote_ts > local_ts:
                     backend.tasks.update_task(
                         existing["id"],
-                        title=local["title"],
-                        customer=local["customer"],
-                        body=local["body"],
-                        github_url=local["github_url"],
+                        title=incoming["title"],
+                        customer=incoming["customer"],
+                        body=incoming["body"],
+                        github_url=(
+                            incoming["github_url"]
+                        ),
                     )
-                    if local.get("tags") != existing.get(
+                    if incoming.get(
                         "tags",
-                    ):
+                    ) != existing.get("tags"):
                         backend.tasks.set_tags(
                             existing["id"],
-                            local.get("tags") or [],
+                            incoming.get("tags") or [],
                         )
                     if (
-                        local["status"]
+                        incoming["status"]
                         != existing.get("status")
                     ):
                         backend.tasks.move_task(
                             existing["id"],
-                            local["status"],
+                            incoming["status"],
                         )
                     total_up += 1
             else:
                 backend.tasks.add_task(
-                    customer=local["customer"],
-                    title=local["title"],
-                    status=local["status"],
-                    body=local["body"],
-                    github_url=local["github_url"],
-                    tags=local.get("tags"),
-                    sync_id=local["sync_id"],
+                    customer=incoming["customer"],
+                    title=incoming["title"],
+                    status=incoming["status"],
+                    body=incoming["body"],
+                    github_url=incoming["github_url"],
+                    tags=incoming.get("tags"),
+                    sync_id=incoming["sync_id"],
                 )
                 total_up += 1
 
@@ -1599,16 +1661,24 @@ def pull_and_apply_tasks(
         if not has_more:
             break
 
-    return cursor, total_up, total_del
+    return cursor, total_up, total_del, all_sync_ids
 
 
 def collect_task_changes(
-    backend, since: str,
+    backend,
+    since: str,
+    exclude: set[str] | None = None,
 ) -> list[dict]:
-    """Gather tasks changed after ``since``."""
+    """Gather tasks changed after ``since``.
+
+    :param exclude: Sync IDs to skip (just-pulled items).
+    """
+    skip = exclude or set()
     tasks = backend.tasks.list_tasks(include_done=True)
     wire = []
     for task in tasks:
+        if task.get("sync_id") in skip:
+            continue
         updated = task.get("updated_at", "")
         if updated > since:
             wire.append(task_to_wire(task))
@@ -1664,27 +1734,36 @@ def ack_note_items(
 
 def pull_and_apply_notes(
     backend, cloud_url: str, api_key: str, since: str,
-) -> tuple[str, int, int]:
-    """Pull notes from cloud and apply locally."""
+) -> tuple[str, int, int, set[str]]:
+    """Pull notes from cloud and apply locally.
+
+    :returns: (cursor, upserted, deleted, pulled_sync_ids)
+    """
     cursor = since
     total_up = 0
     total_del = 0
+    all_sync_ids: set[str] = set()
+    by_sync: dict | None = None
 
     while True:
         new_cursor, entries, has_more = (
             pull_note_changes(cloud_url, api_key, cursor)
         )
+        if by_sync is None:
+            notes = backend.notes.list_notes()
+            by_sync = {
+                n.get("sync_id"): n for n in notes
+                if n.get("sync_id")
+            }
         pulled_ids = []
-        notes = backend.notes.list_notes()
-        by_sync = {
-            n.get("sync_id"): n for n in notes
-            if n.get("sync_id")
-        }
         for wire_item in entries:
-            local = wire_to_note(wire_item)
+            incoming = wire_to_note(wire_item)
             pulled_ids.append(wire_item["id"])
-            existing = by_sync.get(local["sync_id"])
-            if local.get("deleted_at"):
+            all_sync_ids.add(incoming["sync_id"])
+            existing = by_sync.get(
+                incoming["sync_id"],
+            )
+            if incoming.get("deleted_at"):
                 if existing:
                     backend.notes.delete_note(
                         existing["id"],
@@ -1694,29 +1773,35 @@ def pull_and_apply_notes(
                 local_ts = existing.get(
                     "updated_at", "",
                 )
-                remote_ts = local.get(
+                remote_ts = incoming.get(
                     "updated_at", "",
                 )
                 if remote_ts > local_ts:
                     backend.notes.update_note(
                         existing["id"],
                         {
-                            "title": local["title"],
-                            "customer": local["customer"],
-                            "body": local["body"],
-                            "tags": local.get("tags", []),
-                            "task_id": local.get("task_id"),
+                            "title": incoming["title"],
+                            "customer": (
+                                incoming["customer"]
+                            ),
+                            "body": incoming["body"],
+                            "tags": incoming.get(
+                                "tags", [],
+                            ),
+                            "task_id": incoming.get(
+                                "task_id",
+                            ),
                         },
                     )
                     total_up += 1
             else:
                 backend.notes.add_note(
-                    title=local["title"],
-                    body=local["body"],
-                    customer=local["customer"],
-                    tags=local.get("tags"),
-                    task_id=local.get("task_id"),
-                    sync_id=local["sync_id"],
+                    title=incoming["title"],
+                    body=incoming["body"],
+                    customer=incoming["customer"],
+                    tags=incoming.get("tags"),
+                    task_id=incoming.get("task_id"),
+                    sync_id=incoming["sync_id"],
                 )
                 total_up += 1
 
@@ -1730,20 +1815,97 @@ def pull_and_apply_notes(
         if not has_more:
             break
 
-    return cursor, total_up, total_del
+    return cursor, total_up, total_del, all_sync_ids
 
 
 def collect_note_changes(
-    backend, since: str,
+    backend,
+    since: str,
+    exclude: set[str] | None = None,
 ) -> list[dict]:
-    """Gather notes changed after ``since``."""
+    """Gather notes changed after ``since``.
+
+    :param exclude: Sync IDs to skip (just-pulled items).
+    """
+    skip = exclude or set()
     notes = backend.notes.list_notes()
     wire = []
     for note in notes:
+        if note.get("sync_id") in skip:
+            continue
         updated = note.get("updated_at", "")
         if updated > since:
             wire.append(note_to_wire(note))
     return wire
+
+
+def _pull_config_updates(
+    cloud_url: str, api_key: str,
+) -> None:
+    """Pull config from cloud and apply user_name
+    changes to local user.yaml.
+
+    If the PWA updated user_name, this syncs it back
+    to the desktop app's user.yaml.
+    """
+    from ..config import (
+        get_config, load_user_yaml, save_user_yaml,
+    )
+
+    try:
+        data = safe_request(
+            f"{cloud_url}/ref/config", api_key,
+        )
+    except CloudUnavailable:
+        return
+    if not data or not isinstance(data, dict):
+        return
+
+    cloud_name = data.get("user_name", "")
+    if not cloud_name:
+        return
+
+    cfg = get_config()
+    user = load_user_yaml(cfg)
+    if user.get("name") != cloud_name:
+        user["name"] = cloud_name
+        save_user_yaml(cfg, user)
+        log.info(
+            "Updated user name from cloud: %s",
+            cloud_name,
+        )
+
+
+def _build_snapshot_config() -> dict:
+    """Build config dict for the reference snapshot.
+
+    Includes tags and feature flags so the PWA can
+    mirror the desktop app's settings.
+    """
+    from .settings import load_settings
+    from ..config import get_config, load_user_yaml
+
+    cfg = get_config()
+    data = load_settings(cfg.SETTINGS_FILE)
+    tags = data.get("tags", [])
+    github = data.get("github", {})
+    user = load_user_yaml(cfg)
+    return {
+        "tags": [
+            {
+                "name": t.get("name", ""),
+                "color": t.get("color", ""),
+            }
+            for t in tags
+        ],
+        "github_configured": bool(
+            github.get("token"),
+        ),
+        "avatar_seed": user.get(
+            "avatar_seed", "kaisho",
+        ),
+        "user_name": user.get("name", ""),
+    }
 
 
 def push_reference_snapshot(
@@ -1790,6 +1952,7 @@ def push_reference_snapshot(
                 }
                 for t in tasks_fn()
             ],
+            config=_build_snapshot_config(),
         )
         return True
     except CloudUnavailable as exc:
@@ -1803,7 +1966,7 @@ def run_sync_cycle(
     cloud_url: str,
     api_key: str,
     profile_dir: Path,
-    clocks_file: Path,
+    clocks_file: Path | None = None,  # noqa: ARG001
     customers_fn: Callable[[], list[dict]] | None = None,
     tasks_fn: Callable[[], list[dict]] | None = None,
 ) -> dict:
@@ -1830,9 +1993,8 @@ def run_sync_cycle(
     :param cloud_url: Base URL.
     :param api_key: API key.
     :param profile_dir: Profile directory.
-    :param clocks_file: Path to clocks.org (kept for
-        call-site compatibility; the function uses
-        ``get_backend()`` internally).
+    :param clocks_file: Unused, kept for call-site
+        compatibility.
     :param customers_fn: Callable returning customer list.
     :param tasks_fn: Callable returning task list.
     :returns: Result dict with counts and error message.
@@ -1905,6 +2067,8 @@ def run_sync_cycle(
         result["error"] = cursor["last_error"]
         return result
 
+    entity_errors: list[str] = []
+
     # Step 4: Inbox sync
     inbox_pull_since = (
         cursor.get("inbox_pull_cursor")
@@ -1917,7 +2081,7 @@ def run_sync_cycle(
         or sync_state.EPOCH
     )
     try:
-        inbox_cursor, inbox_up, inbox_del = (
+        inbox_cursor, inbox_up, inbox_del, inbox_pulled = (
             pull_and_apply_inbox(
                 backend, cloud_url, api_key,
                 inbox_pull_since,
@@ -1936,7 +2100,7 @@ def run_sync_cycle(
         )
         result["pushed_deletes"] += pushed_del
         inbox_wire = collect_inbox_changes(
-            backend, inbox_push_since,
+            backend, inbox_push_since, inbox_pulled,
         )
         pushed = push_inbox_items(
             cloud_url, api_key, inbox_wire,
@@ -1944,6 +2108,7 @@ def run_sync_cycle(
         result["pushed_live"] += pushed
         cursor["inbox_push_cursor"] = started
     except CloudUnavailable as exc:
+        entity_errors.append(f"inbox: {exc}")
         log.warning("Inbox sync failed: %s", exc)
 
     # Step 5: Task sync
@@ -1958,7 +2123,7 @@ def run_sync_cycle(
         or sync_state.EPOCH
     )
     try:
-        task_cursor, task_up, task_del = (
+        task_cursor, task_up, task_del, task_pulled = (
             pull_and_apply_tasks(
                 backend, cloud_url, api_key,
                 task_pull_since,
@@ -1977,7 +2142,7 @@ def run_sync_cycle(
         )
         result["pushed_deletes"] += pushed_del
         task_wire = collect_task_changes(
-            backend, task_push_since,
+            backend, task_push_since, task_pulled,
         )
         pushed = push_task_items(
             cloud_url, api_key, task_wire,
@@ -1985,6 +2150,7 @@ def run_sync_cycle(
         result["pushed_live"] += pushed
         cursor["task_push_cursor"] = started
     except CloudUnavailable as exc:
+        entity_errors.append(f"task: {exc}")
         log.warning("Task sync failed: %s", exc)
 
     # Step 6: Note sync
@@ -1999,7 +2165,7 @@ def run_sync_cycle(
         or sync_state.EPOCH
     )
     try:
-        note_cursor, note_up, note_del = (
+        note_cursor, note_up, note_del, note_pulled = (
             pull_and_apply_notes(
                 backend, cloud_url, api_key,
                 note_pull_since,
@@ -2018,7 +2184,7 @@ def run_sync_cycle(
         )
         result["pushed_deletes"] += pushed_del
         note_wire = collect_note_changes(
-            backend, note_push_since,
+            backend, note_push_since, note_pulled,
         )
         pushed = push_note_items(
             cloud_url, api_key, note_wire,
@@ -2026,15 +2192,24 @@ def run_sync_cycle(
         result["pushed_live"] += pushed
         cursor["note_push_cursor"] = started
     except CloudUnavailable as exc:
+        entity_errors.append(f"note: {exc}")
         log.warning("Note sync failed: %s", exc)
 
-    # Step 7: Reference snapshot
+    # Step 7: Pull config updates (e.g. name changed
+    # in PWA) before pushing the snapshot.
+    _pull_config_updates(cloud_url, api_key)
+
+    # Step 8: Reference snapshot
     if push_reference_snapshot(
         cloud_url, api_key, customers_fn, tasks_fn,
     ):
         cursor["last_snapshot_push"] = started
         result["snapshot_pushed"] = True
 
-    cursor["last_error"] = None
+    if entity_errors:
+        cursor["last_error"] = "; ".join(entity_errors)
+        result["error"] = cursor["last_error"]
+    else:
+        cursor["last_error"] = None
     sync_state.save_cursor(profile_dir, cursor)
     return result

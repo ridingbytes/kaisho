@@ -39,6 +39,7 @@ class OrgInboxBackend(InboxBackend):
         body: str | None = None,
         channel: str | None = None,
         direction: str | None = None,
+        sync_id: str | None = None,
     ) -> dict:
         return inbox.add_item(
             inbox_file=self._inbox_file,
@@ -48,6 +49,7 @@ class OrgInboxBackend(InboxBackend):
             body=body,
             channel=channel,
             direction=direction,
+            sync_id=sync_id,
         )
 
     def update_item(self, item_id: str, updates: dict) -> dict:

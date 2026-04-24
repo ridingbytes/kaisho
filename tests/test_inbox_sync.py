@@ -138,7 +138,9 @@ class TestInboxWireFormat:
         back = wire_to_inbox_item(wire)
         assert back["sync_id"] == item["sync_id"]
         assert back["type"] == item["type"]
-        assert back["title"] == item["title"]
+        # Push strips [Customer] prefix from the title;
+        # pull preserves the clean title from the cloud.
+        assert back["title"] == "Round trip test"
 
     def test_wire_defaults(self):
         wire = inbox_item_to_wire({

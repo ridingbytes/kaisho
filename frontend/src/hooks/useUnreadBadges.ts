@@ -54,28 +54,27 @@ export function useUnreadBadges(active: string): Record<string, number> {
   );
 
   useEffect(() => {
-    if (active === "board") board.markSeen();
-  }, [active, tasks.length, board.markSeen]);
-
-  useEffect(() => {
-    if (active === "inbox") inbox.markSeen();
-  }, [active, inboxItems.length, inbox.markSeen]);
-
-  useEffect(() => {
-    if (active === "notes") notesBadge.markSeen();
-  }, [active, notes.length, notesBadge.markSeen]);
-
-  useEffect(() => {
-    if (active === "customers") customersBadge.markSeen();
-  }, [active, customers.length, customersBadge.markSeen]);
-
-  useEffect(() => {
-    if (active === "knowledge") knowledge.markSeen();
-  }, [active, kbFiles.length, knowledge.markSeen]);
-
-  useEffect(() => {
-    if (active === "cron") cron.markSeen();
-  }, [active, cronDone, cron.markSeen]);
+    const badgeMap: Record<
+      string,
+      { markSeen: () => void }
+    > = {
+      board,
+      inbox,
+      notes: notesBadge,
+      customers: customersBadge,
+      knowledge,
+      cron,
+    };
+    badgeMap[active]?.markSeen();
+  }, [
+    active,
+    board.markSeen,
+    inbox.markSeen,
+    notesBadge.markSeen,
+    customersBadge.markSeen,
+    knowledge.markSeen,
+    cron.markSeen,
+  ]);
 
   return {
     board: board.unread,

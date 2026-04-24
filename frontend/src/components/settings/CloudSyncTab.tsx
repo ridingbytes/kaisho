@@ -62,9 +62,10 @@ export function CloudSyncSection(): JSX.Element {
         setTimeout(() => setMsg(""), 3000);
       })
       .catch((e) => {
-        const msg = e?.message || "Connection failed"
+        const errorMsg =
+          e?.message || "Connection failed";
         setErr(
-          `${msg} (URL: ${cloudUrl})`,
+          `${errorMsg} (URL: ${cloudUrl})`,
         );
       })
       .finally(() => setConnecting(false));
@@ -126,9 +127,13 @@ export function CloudSyncSection(): JSX.Element {
         void qc.invalidateQueries({
           queryKey: ["settings", "cloud_sync"],
         });
-        void qc.invalidateQueries({
-          queryKey: ["clocks"],
-        });
+        for (const key of [
+          "clocks", "inbox", "tasks", "notes",
+        ]) {
+          void qc.invalidateQueries({
+            queryKey: [key],
+          });
+        }
         setTimeout(() => setMsg(""), 4000);
       })
       .catch((e) => {

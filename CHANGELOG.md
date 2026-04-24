@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.9.3
+
+- Cloud sync: bidirectional sync for inbox, tasks, notes
+  (not just clock entries)
+- Cloud sync: tag and user profile sync between desktop
+  and PWA via ref_config
+- Cloud sync: real-time WS events for inbox, tasks, notes
+  (instant sync instead of 5-minute poll)
+- Cloud sync: echo-back prevention (pulled items excluded
+  from push to avoid LWW conflicts)
+- Cloud sync: "Sync Now" invalidates all data queries
+- Fix phantom unread badges (React Query loading state)
+- Fix deleted_at validation on all sync apply schemas
+- Fix customer prefix duplication on sync push/pull
+- Screenshot script: dismiss "What's New" dialog
+
 ## 0.9.2
 
 - Fix "What's New" dialog showing old version notes
