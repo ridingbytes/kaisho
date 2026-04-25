@@ -79,7 +79,7 @@ class _ProfileOverlayCfg:
     """
 
     def __init__(
-        self, cfg: "Settings", profile_name: str,
+        self, cfg, profile_name: str,
         profile_dir: Path,
     ):
         object.__setattr__(self, "_cfg", cfg)

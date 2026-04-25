@@ -208,7 +208,6 @@ def disconnect():
     if url and key:
         # Step 1: final pull to save mobile-only entries.
         try:
-            backend = get_backend()
             sync_svc.run_sync_cycle(
                 cloud_url=url,
                 api_key=key,
