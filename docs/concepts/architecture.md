@@ -6,38 +6,25 @@ or debugging.
 
 ## System Overview
 
-```
-                  +-----------+
-                  |  Web UI   |  React SPA (localhost:8765)
-                  +-----------+
-                       |
-              +--------+--------+
-              |                 |
-        +-----------+    +-----------+
-        |    CLI    |    | Desktop / |
-        |  (kai)    |    |  Mobile   |
-        +-----------+    +-----------+
-              |                 |
-              v                 v
-        +---------------------------+
-        |      FastAPI Server       |  HTTP + WebSocket
-        |      (port 8765)          |
-        +---------------------------+
-              |           |
-        +-----------+  +-----------+
-        |  Services |  |   Cron    |  APScheduler
-        +-----------+  | Executor  |
-              |        +-----------+
-              v              |
-        +---------------------------+
-        |   Pluggable Backends      |  org-mode, Markdown,
-        |                           |  JSON, SQL
-        +---------------------------+
-              |
-              v
-        +---------------------------+
-        |   ~/.kaisho/profiles/     |  Plain text files
-        +---------------------------+
+```mermaid
+graph TD
+    A["Web UI<br/>React SPA"]
+    B["CLI<br/>(kai)"]
+    C["Desktop /<br/>Mobile"]
+
+    A --> D
+    B --> D
+    C --> D
+
+    D["FastAPI Server<br/>HTTP + WebSocket<br/>port 8765"]
+    D --> E["Services"]
+    D --> F["Cron Executor<br/>APScheduler"]
+
+    E --> G
+    F --> G
+
+    G["Pluggable Backends<br/>org-mode, Markdown, JSON, SQL"]
+    G --> H["~/.kaisho/profiles/<br/>Plain text files"]
 ```
 
 ## Layers

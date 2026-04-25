@@ -57,7 +57,11 @@ plugins:
 markdown_extensions:
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -98,6 +102,7 @@ nav:
       - Architecture: concepts/architecture.md
       - Profiles: concepts/profiles.md
       - Storage Backends: concepts/backends.md
+      - Voice Transcription: concepts/whisper-concept.md
   - User Guide:
       - Dashboard: guide/dashboard.md
       - Time Tracking: guide/time-tracking.md

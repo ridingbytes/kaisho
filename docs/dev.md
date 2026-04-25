@@ -60,18 +60,13 @@ frontend/              # Vite + React 18 + TypeScript
 
 ## Data flow
 
-```
-data files on disk
-       ↓
-   org/ parser
-       ↓
- backends/org/*     ← implements backends/base.py ABCs
-       ↓
- get_backend()      ← cached singleton, reads BACKEND env var
-       ↓
-  CLI / API routers
-       ↓
-  browser / terminal
+```mermaid
+graph TD
+    A["Data files on disk"] --> B["org/ parser"]
+    B --> C["backends/org/*<br/>implements base.py ABCs"]
+    C --> D["get_backend()<br/>cached singleton"]
+    D --> E["CLI / API routers"]
+    E --> F["Browser / Terminal"]
 ```
 
 The CLI and API never import from `org/` or `services/kanban` directly.

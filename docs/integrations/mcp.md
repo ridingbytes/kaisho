@@ -16,16 +16,18 @@ No tab switching, no copy-paste. Ask Claude to start a timer, check
 a budget, or create a task, and it calls Kaisho's tools behind the
 scenes.
 
-```
-You in Claude Code
-  |
-  "Start a clock for Acme Biotech, working on the API"
-  |
-  v
-Claude Code --> MCP --> kai mcp-server --> execute_tool("start_clock", ...)
-  |
-  v
-  "Started: 09:14 -- Acme Biotech -- Working on the API"
+```mermaid
+sequenceDiagram
+    participant You
+    participant Claude Code
+    participant MCP
+    participant kai mcp-server
+
+    You->>Claude Code: Start a clock for Acme Biotech,<br/>working on the API
+    Claude Code->>MCP: start_clock
+    MCP->>kai mcp-server: execute_tool("start_clock", ...)
+    kai mcp-server-->>Claude Code: OK
+    Claude Code-->>You: Started: 09:14 — Acme Biotech —<br/>Working on the API
 ```
 
 ## Quick Start
@@ -278,17 +280,16 @@ The MCP server reuses the same `execute_tool()` dispatcher as the
 cron executor and AI advisor. All three interfaces call the same
 backend functions, so tool behavior is identical everywhere.
 
-```
-Claude Code / Desktop / Cursor
-  |
-  v (stdio JSON-RPC)
-kai mcp-server
-  |
-  v
-execute_tool(name, args)  <-- same as cron + advisor
-  |
-  v
-Backend services --> org/md/json/sql files
+```mermaid
+graph TD
+    A["Claude Code / Desktop / Cursor"]
+    A -->|"stdio JSON-RPC"| B["kai mcp-server"]
+    B --> C["execute_tool(name, args)"]
+    C --> D["Backend services"]
+    D --> E["org / md / json / sql files"]
+
+    F["Cron executor"] --> C
+    G["AI advisor"] --> C
 ```
 
 The server runs as a standalone process (started by the MCP client
