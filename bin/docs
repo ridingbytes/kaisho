@@ -23,7 +23,7 @@ log() { echo -e "${CYAN}[docs]${RESET} $*"; }
 ok()  { echo -e "${GREEN}[docs]${RESET} $*"; }
 err() { echo -e "${RED}[docs]${RESET} $*" >&2; }
 
-PORT=8000
+PORT=8002
 MODE="serve"
 
 for arg in "$@"; do
