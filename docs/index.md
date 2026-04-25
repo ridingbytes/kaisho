@@ -40,22 +40,22 @@ Kaisho is a Python backend (FastAPI) with a React frontend. Data
 lives in org-mode or Markdown files inside `~/.kaisho/`. The CLI,
 the web UI, and the API all operate on the same data.
 
-```
-You
- |
- +-- Web UI (localhost:8765)
- +-- CLI (kai)
- +-- Desktop App (Tauri)
- +-- Mobile PWA
- |
- v
-FastAPI Server
- |
- +-- Services (business logic)
- +-- Pluggable Backends (org-mode, Markdown, JSON, SQL)
- |
- v
-~/.kaisho/profiles/your-profile/
+```mermaid
+graph TD
+    You --> A["Web UI<br/>localhost:8765"]
+    You --> B["CLI (kai)"]
+    You --> C["Desktop App<br/>Tauri"]
+    You --> D["Mobile PWA"]
+
+    A --> S["FastAPI Server"]
+    B --> S
+    C --> S
+    D --> S
+
+    S --> E["Services<br/>business logic"]
+    S --> F["Pluggable Backends<br/>org-mode, Markdown, JSON, SQL"]
+
+    F --> P["~/.kaisho/profiles/your-profile/"]
 ```
 
 ## Quick Links

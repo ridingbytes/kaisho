@@ -106,12 +106,20 @@ so they don't need their own Groq key.
 
 ### Provider abstraction
 
-```
-TranscriptionProvider (ABC)
-  transcribe(audio_path: Path) -> TranscriptionResult
-    |
-    +-- MLXWhisperProvider    (local, default)
-    +-- GroqWhisperProvider   (cloud, via AI gateway)
+```mermaid
+classDiagram
+    class TranscriptionProvider {
+        <<ABC>>
+        +transcribe(audio_path) TranscriptionResult
+    }
+    class MLXWhisperProvider {
+        local, default
+    }
+    class GroqWhisperProvider {
+        cloud, via AI gateway
+    }
+    TranscriptionProvider <|-- MLXWhisperProvider
+    TranscriptionProvider <|-- GroqWhisperProvider
 ```
 
 `TranscriptionResult` is a dict with `text` (full transcript)
