@@ -81,6 +81,12 @@ cleanup() {
     [ -n "$FRONTEND_PID" ] && kill "$FRONTEND_PID" 2>/dev/null
     [ -n "$BACKEND_PID" ]  && kill "$BACKEND_PID"  2>/dev/null
     wait 2>/dev/null
+    # Restore the sidecar binary to the committed version
+    # so dev builds don't leave the tree dirty.
+    if [[ "$MODE" == "desktop" ]]; then
+        git checkout -- "$ROOT/desktop/src-tauri/binaries/" \
+            2>/dev/null || true
+    fi
     echo "Done."
 }
 
