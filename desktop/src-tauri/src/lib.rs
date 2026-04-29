@@ -87,14 +87,26 @@ fn navigate_window(
 // -----------------------------------------------------------
 
 /// Update the tray icon to reflect the timer state.
-/// Called by the tray panel JS every 5 seconds.
+/// Called by the tray panel JS every 5 seconds (state)
+/// and every minute (title).
+///
+/// ``title`` shows next to the icon in the macOS menu
+/// bar (typically the elapsed ``HH:MM``); pass an empty
+/// string to clear it. Windows / Linux ignore titles —
+/// the Rust helper short-circuits on those platforms.
 #[tauri::command]
 fn update_tray_icon(
     app: tauri::AppHandle,
     state: String,
     tooltip: String,
+    title: Option<String>,
 ) {
-    tray::update_icon(&app, &state, &tooltip);
+    tray::update_icon(
+        &app,
+        &state,
+        &tooltip,
+        title.as_deref().unwrap_or(""),
+    );
 }
 
 /// Hide the tray popover panel.

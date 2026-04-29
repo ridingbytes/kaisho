@@ -127,11 +127,14 @@ pub fn setup(
     Ok(())
 }
 
-/// Switch the tray icon and tooltip text.
+/// Switch the tray icon, tooltip, and (macOS only) the
+/// inline title text shown next to the icon in the menu
+/// bar. Pass an empty title to clear it.
 pub fn update_icon(
     app: &tauri::AppHandle,
     state: &str,
     tooltip: &str,
+    title: &str,
 ) {
     let bytes = match state {
         "active" => icons::ACTIVE,
@@ -144,6 +147,22 @@ pub fn update_icon(
             let _ = tray.set_icon(Some(img));
         }
         let _ = tray.set_tooltip(Some(tooltip));
+        // set_title is a no-op outside macOS in tauri,
+        // but we still gate it so the empty string
+        // takes effect to clear stale text on macOS.
+        #[cfg(target_os = "macos")]
+        {
+            let value = if title.is_empty() {
+                None
+            } else {
+                Some(title)
+            };
+            let _ = tray.set_title(value);
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = title;
+        }
     }
 }
 
