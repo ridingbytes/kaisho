@@ -217,7 +217,7 @@ GET /api/version
 
 ```json
 {
-  "version": "0.9.2",
+  "version": "1.1.0",
   "changelog": "..."
 }
 ```

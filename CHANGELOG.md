@@ -1,5 +1,55 @@
 # Changelog
 
+## 1.1.0
+
+- Identify clock entries by sync_id end-to-end so two
+  entries that share a start time can be edited or
+  deleted independently — fixes a bug where toggling
+  invoiced on one entry could flip a different one
+- Show the actual model in cron history: when a job has
+  use_kaisho_ai but the cloud gateway isn't fully
+  configured, history now records the local model that
+  actually ran instead of mislabeling the run as
+  "kaisho:ai"
+- Active profile name shown under the user name in the
+  top-right user menu so it's obvious which profile is
+  active without opening the menu
+- Sync frontend/package.json in bump-version.sh — the
+  desktop build no longer reports a stale frontend
+  version number
+- MCP: tag strings are no longer split into individual
+  characters when add_task / set_task_tags / update_note
+  receive a single string instead of an array
+- MCP: new delete_clock_entry, delete_task, and
+  delete-by-sync_id paths plus richer update_clock_entry
+  (new_start, new_end, task_id) and book_time (start,
+  contract, task_id, notes) for full editing workflows
+- "What's New" popup and Settings → Update tab no longer
+  truncate multi-line bullets in CHANGELOG.md
+- Tray timer notes render as proper markdown (added a
+  compact variant of the shared Markdown component for
+  small surfaces)
+- GitHub issue URL field hidden in task forms when no
+  PAT is configured (still shown if a value already
+  exists, so legacy tasks remain editable)
+- Add and delete kanban task states from settings — the
+  task states section gains a + button, each row a
+  delete button gated by the same ConfirmPopover used
+  elsewhere; backend refuses to delete a state that
+  still has tasks (409) so nothing gets orphaned
+- Live elapsed timer next to the tray icon (macOS) —
+  HH:MM updates each minute, IPC pushed only on actual
+  change so the menu bar doesn't thrash
+- Tray icons render in their brand colours
+  (green/amber/red) instead of being repainted by the
+  menu bar's foreground tint, so they stay readable on
+  Sequoia's wallpaper-tinted menu bars
+- bin/dev gains a --clean flag that wipes WKWebView
+  caches, the extracted sidecar runtime, and the cargo
+  target dir before starting — use it after pulling a
+  branch when fresh code isn't reflected in the running
+  app
+
 ## 1.0.0
 
 - Multi-profile cloud sync: each profile can independently
