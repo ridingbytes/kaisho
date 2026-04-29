@@ -51,6 +51,17 @@ fn kill_stale() {
             }
         }
     }
+
+    #[cfg(windows)]
+    {
+        use std::process::Command;
+        let _ = Command::new("taskkill")
+            .args(["/F", "/IM", "kai-server.exe"])
+            .output();
+        std::thread::sleep(
+            std::time::Duration::from_millis(500),
+        );
+    }
 }
 
 /// Spawn the `kai-server` sidecar and start piping
