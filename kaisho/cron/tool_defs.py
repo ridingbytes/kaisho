@@ -155,7 +155,12 @@ TOOL_DEFS: list[dict] = [
     {
         "name": "book_time",
         "tier": "write",
-        "description": "Book time for a customer retroactively.",
+        "description": (
+            "Book time for a customer retroactively. "
+            "Optional ``start`` lets you pin the entry "
+            "to a specific past timestamp; otherwise the "
+            "entry ends now."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
@@ -165,6 +170,30 @@ TOOL_DEFS: list[dict] = [
                 },
                 "customer": {"type": "string"},
                 "description": {"type": "string"},
+                "start": {
+                    "type": "string",
+                    "description": (
+                        "ISO start timestamp "
+                        "(e.g. 2026-04-28T14:00:00). "
+                        "End is computed from duration."
+                    ),
+                },
+                "contract": {
+                    "type": "string",
+                    "description": (
+                        "Contract name (optional)"
+                    ),
+                },
+                "task_id": {
+                    "type": "string",
+                    "description": (
+                        "Link the entry to a task ID"
+                    ),
+                },
+                "notes": {
+                    "type": "string",
+                    "description": "Free-form notes",
+                },
             },
             "required": ["duration"],
         },
@@ -431,19 +460,56 @@ TOOL_DEFS: list[dict] = [
         "name": "update_clock_entry",
         "tier": "write",
         "description": (
-            "Update a clock entry. Can change customer, "
-            "description, contract, notes, or invoiced "
-            "status. Identify the entry by its start "
-            "ISO timestamp."
+            "Update a clock entry. Identify it by its "
+            "``sync_id`` (preferred — collision-free) "
+            "or, as a fallback, by its current start "
+            "ISO timestamp. Two entries can legitimately "
+            "share a start time, so prefer ``sync_id`` "
+            "when available. Can shift the entry to a "
+            "new start/end window, change customer, "
+            "description, contract, notes, task link, "
+            "or invoiced status."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
+                "sync_id": {
+                    "type": "string",
+                    "description": (
+                        "Sync UUID of the entry to "
+                        "update (preferred lookup key)"
+                    ),
+                },
                 "start": {
                     "type": "string",
                     "description": (
-                        "ISO start timestamp of the "
-                        "entry to update"
+                        "Current ISO start timestamp "
+                        "(fallback lookup key when "
+                        "``sync_id`` is unknown)"
+                    ),
+                },
+                "new_start": {
+                    "type": "string",
+                    "description": (
+                        "New ISO start timestamp "
+                        "(e.g. 2026-04-28T15:00:00). "
+                        "Combine with ``new_end`` to "
+                        "reshape the window."
+                    ),
+                },
+                "new_end": {
+                    "type": "string",
+                    "description": (
+                        "New ISO end timestamp. "
+                        "Requires ``new_start``."
+                    ),
+                },
+                "task_id": {
+                    "type": "string",
+                    "description": (
+                        "Re-link the entry to a "
+                        "different task ID, or '' to "
+                        "detach"
                     ),
                 },
                 "customer": {
@@ -477,7 +543,58 @@ TOOL_DEFS: list[dict] = [
                     ),
                 },
             },
-            "required": ["start"],
+        },
+    },
+    {
+        "name": "delete_clock_entry",
+        "tier": "destructive",
+        "description": (
+            "Delete a clock entry. Identify it by its "
+            "``sync_id`` (preferred — collision-free) "
+            "or, as a fallback, by its start ISO "
+            "timestamp. Records a sync tombstone so the "
+            "deletion propagates to the cloud on the "
+            "next push cycle."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "sync_id": {
+                    "type": "string",
+                    "description": (
+                        "Sync UUID of the entry to "
+                        "delete (preferred lookup key)"
+                    ),
+                },
+                "start": {
+                    "type": "string",
+                    "description": (
+                        "ISO start timestamp (fallback "
+                        "lookup key when ``sync_id`` is "
+                        "unknown)"
+                    ),
+                },
+            },
+        },
+    },
+    {
+        "name": "delete_task",
+        "tier": "destructive",
+        "description": (
+            "Remove a task from the active board. "
+            "Equivalent to archiving — the task is no "
+            "longer listed and cannot be moved or "
+            "edited."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task_id": {
+                    "type": "string",
+                    "description": "Task ID to remove",
+                },
+            },
+            "required": ["task_id"],
         },
     },
     {
