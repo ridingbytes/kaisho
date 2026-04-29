@@ -8,6 +8,12 @@ interface MarkdownProps {
   className?: string;
   /** Called on link click. If provided, handles the click. */
   onLinkClick?: (url: string) => void;
+  /**
+   * Compact rendering mode for small surfaces (tray
+   * panel, tooltips, hover cards). Drops a level off
+   * heading sizes and shrinks vertical rhythm.
+   */
+  compact?: boolean;
 }
 
 const components = {
@@ -139,14 +145,66 @@ function makeLink(
   );
 }
 
+// Compact renderers for cramped contexts. Shrink each
+// element by roughly one tier and tighten vertical
+// spacing. Inline code, links, and emphasis are kept as
+// in the default map since their sizes are inherited.
+const compactComponents = {
+  ...components,
+  h1: ({ children }: { children?: React.ReactNode }) => (
+    <h2 className="text-sm font-bold text-stone-900 mt-2 mb-1 first:mt-0">
+      {children}
+    </h2>
+  ),
+  h2: ({ children }: { children?: React.ReactNode }) => (
+    <h3 className="text-xs font-semibold text-stone-900 mt-2 mb-1 first:mt-0">
+      {children}
+    </h3>
+  ),
+  h3: ({ children }: { children?: React.ReactNode }) => (
+    <h4 className="text-xs font-semibold text-stone-800 mt-1.5 mb-0.5 first:mt-0">
+      {children}
+    </h4>
+  ),
+  p: ({ children }: { children?: React.ReactNode }) => (
+    <p className="text-xs text-stone-700 leading-relaxed mb-1.5 last:mb-0">
+      {children}
+    </p>
+  ),
+  ul: ({ children }: { children?: React.ReactNode }) => (
+    <ul className="list-disc list-outside pl-4 mb-1.5 space-y-0.5 text-xs text-stone-700">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }: { children?: React.ReactNode }) => (
+    <ol className="list-decimal list-outside pl-4 mb-1.5 space-y-0.5 text-xs text-stone-700">
+      {children}
+    </ol>
+  ),
+  pre: ({ children }: { children?: React.ReactNode }) => (
+    <pre className="bg-surface-overlay rounded p-2 mb-1.5 overflow-x-auto text-[11px] font-mono text-stone-800 leading-relaxed">
+      {children}
+    </pre>
+  ),
+  blockquote: ({ children }: { children?: React.ReactNode }) => (
+    <blockquote className="border-l-2 border-cta pl-2 mb-1.5 text-stone-700 italic text-xs">
+      {children}
+    </blockquote>
+  ),
+  hr: () => <hr className="border-border my-2" />,
+};
+
+
 export function Markdown({
   children,
   className,
   onLinkClick,
+  compact,
 }: MarkdownProps) {
+  const base = compact ? compactComponents : components;
   const merged = onLinkClick
-    ? { ...components, a: makeLink(onLinkClick) }
-    : components;
+    ? { ...base, a: makeLink(onLinkClick) }
+    : base;
   return (
     <div className={className}>
       <ReactMarkdown

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pencil, Play, Square } from "lucide-react";
+import { Markdown } from "../components/common/Markdown";
 import type { ActiveTimer, Customer } from "../types";
 
 interface Props {
@@ -205,9 +206,15 @@ export function TimerSection({
             className="group mt-2 w-full text-left px-2 py-1.5 rounded text-xs bg-surface-raised border border-border hover:border-stone-300 transition-colors"
           >
             {timer.notes ? (
-              <span className="text-stone-600 line-clamp-2 group-hover:text-stone-800 transition-colors">
+              <Markdown
+                compact
+                className={
+                  "tray-notes group-hover:opacity-100 " +
+                  "transition-colors"
+                }
+              >
                 {timer.notes}
-              </span>
+              </Markdown>
             ) : (
               <span className="flex items-center gap-1 text-stone-400 italic">
                 <Pencil size={9} className="shrink-0" />
