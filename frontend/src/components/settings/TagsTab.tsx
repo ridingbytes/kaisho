@@ -13,7 +13,11 @@ import {
   useAddInboxChannel,
   useDeleteInboxChannel,
   useUpdateState,
+  useAddState,
+  useDeleteState,
 } from "../../hooks/useSettings";
+import { ConfirmPopover } from "../common/ConfirmPopover";
+import { useToast } from "../../context/ToastContext";
 import type { ConfigTag } from "../../types";
 import { fieldCls, inputCls } from "./styles";
 
@@ -197,6 +201,8 @@ function TaskStateRow({
   isLast: boolean;
 }) {
   const update = useUpdateState();
+  const toast = useToast();
+  const remove = useDeleteState();
   const [label, setLabel] = useState(state.label);
   const [color, setColor] = useState(state.color);
 
@@ -208,6 +214,17 @@ function TaskStateRow({
     if (Object.keys(updates).length > 0) {
       update.mutate({ name: state.name, updates });
     }
+  }
+
+  function handleDelete() {
+    remove.mutate(state.name, {
+      onError: (err: unknown) => {
+        const msg =
+          err instanceof Error ? err.message
+            : "Failed to delete state";
+        toast(msg);
+      },
+    });
   }
 
   return (
@@ -243,9 +260,112 @@ function TaskStateRow({
           done
         </span>
       )}
+      <ConfirmPopover
+        onConfirm={handleDelete}
+        disabled={remove.isPending}
+        label={`Delete "${state.name}"?`}
+      >
+        <button
+          type="button"
+          disabled={remove.isPending}
+          className="p-1 text-stone-400 hover:text-red-500 transition-colors disabled:opacity-40"
+          title="Delete state"
+        >
+          <X size={12} />
+        </button>
+      </ConfirmPopover>
     </div>
   );
 }
+
+
+function AddTaskStateForm({
+  existingNames,
+  onDone,
+}: {
+  existingNames: string[];
+  onDone: () => void;
+}) {
+  const add = useAddState();
+  const [name, setName] = useState("");
+  const [label, setLabel] = useState("");
+  const [color, setColor] = useState("#64748b");
+  const [done, setDone] = useState(false);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = name.trim().toUpperCase();
+    if (!trimmed) return;
+    if (existingNames.includes(trimmed)) return;
+    add.mutate(
+      {
+        name: trimmed,
+        label: label.trim() || trimmed,
+        color,
+        done,
+      },
+      {
+        onSuccess: onDone,
+      },
+    );
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="flex items-center gap-2 px-4 py-2 border-t border-border-subtle bg-surface-raised/40"
+    >
+      <input
+        type="color"
+        value={color}
+        onChange={(e) => setColor(e.target.value)}
+        className="w-5 h-5 rounded-full border-0 p-0 cursor-pointer bg-transparent shrink-0"
+      />
+      <input
+        autoFocus
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="NAME"
+        className={inputCls + " w-28 font-mono text-xs"}
+      />
+      <input
+        type="text"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        placeholder="Label"
+        className={inputCls + " flex-1 text-sm"}
+      />
+      <label className="flex items-center gap-1 text-[11px] text-stone-600 shrink-0">
+        <input
+          type="checkbox"
+          checked={done}
+          onChange={(e) => setDone(e.target.checked)}
+        />
+        done
+      </label>
+      <button
+        type="button"
+        onClick={onDone}
+        className="p-1 text-stone-500 hover:text-stone-900 rounded"
+      >
+        <X size={13} />
+      </button>
+      <button
+        type="submit"
+        disabled={
+          add.isPending ||
+          !name.trim() ||
+          existingNames.includes(name.trim().toUpperCase())
+        }
+        className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
+      >
+        <Check size={13} />
+      </button>
+    </form>
+  );
+}
+
 
 function TaskStatesSection({
   states,
@@ -258,19 +378,38 @@ function TaskStatesSection({
   }[];
 }) {
   const { t } = useTranslation("settings");
+  const [adding, setAdding] = useState(false);
+  const existingNames = states.map((s) => s.name);
   return (
     <section>
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
-        {t("taskStates")}
-      </h2>
+      <div className="flex items-center gap-3 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
+          {t("taskStates")}
+        </h2>
+        <button
+          onClick={() => setAdding((v) => !v)}
+          className="ml-auto p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
+          title="Add task state"
+        >
+          <Plus size={12} />
+        </button>
+      </div>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         {states.map((state, i) => (
           <TaskStateRow
             key={state.name}
             state={state}
-            isLast={i === states.length - 1}
+            isLast={
+              !adding && i === states.length - 1
+            }
           />
         ))}
+        {adding && (
+          <AddTaskStateForm
+            existingNames={existingNames}
+            onDone={() => setAdding(false)}
+          />
+        )}
       </div>
     </section>
   );

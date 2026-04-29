@@ -430,6 +430,36 @@ export function updateState(
   return patch(`/settings/states/${encodeURIComponent(name)}`, updates);
 }
 
+/** Create a new kanban task state column. */
+export function addState(params: {
+  name: string;
+  label: string;
+  color: string;
+  done?: boolean;
+  after?: string;
+}): Promise<{
+  name: string;
+  label: string;
+  color: string;
+  done: boolean;
+}> {
+  return post("/settings/states", {
+    name: params.name,
+    label: params.label,
+    color: params.color,
+    done: params.done ?? false,
+    after: params.after,
+  });
+}
+
+/** Delete a kanban task state by name. Tasks in that
+ *  state must be moved or archived first. */
+export function deleteState(name: string): Promise<void> {
+  return del(
+    `/settings/states/${encodeURIComponent(name)}`,
+  );
+}
+
 /** Persist the display order of tasks on the board. */
 export function reorderTasks(
   taskIds: string[],
