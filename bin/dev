@@ -17,6 +17,13 @@
 #   --no-install         Skip dependency checks
 #   --skip-sidecar       --desktop only: skip PyInstaller
 #                        rebuild (use when only UI changed)
+#   --clean              Wipe Tauri webview caches, the
+#                        extracted sidecar runtime, and
+#                        the cargo target dir before
+#                        starting. Use when stale Rust or
+#                        webview state is hiding fresh
+#                        code (typical after pulling a
+#                        new branch).
 #
 # When to use which mode:
 #   browser (default)  Fast iteration on backend or frontend
@@ -47,6 +54,7 @@ PORT="8766"
 PROFILE=""
 SKIP_INSTALL=false
 SKIP_SIDECAR=false
+CLEAN=false
 
 BACKEND_PID=""
 FRONTEND_PID=""
@@ -64,6 +72,7 @@ while [[ $# -gt 0 ]]; do
         --profile)    PROFILE="$2";    shift 2 ;;
         --no-install) SKIP_INSTALL=true; shift ;;
         --skip-sidecar) SKIP_SIDECAR=true; shift ;;
+        --clean)      CLEAN=true; shift ;;
         -h|--help)
             awk '/^# =/{next} /^set -/{exit} /^#!/{next} \
                  /^#/{sub(/^# ?/,""); print}' "$0"
@@ -124,6 +133,30 @@ ensure_deps() {
     fi
 }
 
+clean_caches() {
+    # Wipe state that masks fresh code during dev:
+    #   - Tauri / WKWebView caches keep an old JS bundle
+    #     even when the sidecar serves a new one
+    #   - The extracted sidecar runtime is reused as long
+    #     as its version-hash matches; an in-place rebuild
+    #     bumps the hash, but a force-clean is safer
+    #   - cargo's incremental cache occasionally skips
+    #     small Rust edits in the Tauri shell
+    echo "Cleaning Tauri / sidecar / cargo caches..."
+    rm -rf "$HOME/Library/Caches/com.ridingbytes.kaisho" \
+        2>/dev/null || true
+    rm -rf "$HOME/Library/WebKit/com.ridingbytes.kaisho" \
+        2>/dev/null || true
+    rm -rf "$HOME/.kaisho/runtime"/* 2>/dev/null || true
+    rm -rf "$ROOT/frontend/dist" 2>/dev/null || true
+    if [[ "$MODE" == "desktop" ]]; then
+        cargo clean \
+            --manifest-path \
+            "$ROOT/desktop/src-tauri/Cargo.toml" \
+            2>/dev/null || true
+    fi
+}
+
 kill_leftovers() {
     local pids
     pids=$(lsof -ti :"$PORT" 2>/dev/null || true)
@@ -160,6 +193,7 @@ start_frontend() {
 trap cleanup EXIT INT TERM
 
 kill_leftovers
+$CLEAN && clean_caches
 
 case "$MODE" in
     dev)
