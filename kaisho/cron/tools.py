@@ -10,6 +10,39 @@ from typing import Any
 from .tool_defs import TOOL_DEFS
 
 
+def _coerce_tags(value: Any) -> list[str] | None:
+    """Normalize a ``tags`` argument coming from a tool
+    call into ``list[str] | None``.
+
+    LLMs and MCP clients sometimes pass a single string
+    where the schema declares an array (e.g.
+    ``tags="@github"`` or ``tags="@github, @code"``).
+    Without this, the downstream backend treats the
+    string as an iterable and stores each character as
+    a separate tag. Empty/whitespace input becomes
+    ``None`` so the backend's "no change" path runs.
+
+    :param value: The raw ``tags`` argument.
+    :returns: A list of tag names, or ``None`` if no tags
+        were supplied.
+    """
+    if value is None:
+        return None
+    if isinstance(value, list):
+        cleaned = [
+            str(t).strip() for t in value
+            if str(t).strip()
+        ]
+        return cleaned or None
+    if isinstance(value, str):
+        parts = [
+            p.strip() for p in value.split(",")
+            if p.strip()
+        ]
+        return parts or None
+    return None
+
+
 def openai_tools() -> list[dict]:
     """Return tool definitions in OpenAI / Ollama chat format."""
     result = []
@@ -74,7 +107,7 @@ def _add_task(args: dict) -> dict:
         customer=args.get("customer", ""),
         title=args["title"],
         status=args.get("status", "TODO"),
-        tags=args.get("tags"),
+        tags=_coerce_tags(args.get("tags")),
         body=args.get("body"),
         github_url=args.get("github_url"),
     )
@@ -164,7 +197,8 @@ def _add_note(args: dict) -> dict:
 
 def _set_task_tags(args: dict) -> dict:
     task = _backend().tasks.set_tags(
-        args["task_id"], args["tags"],
+        args["task_id"],
+        _coerce_tags(args.get("tags")) or [],
     )
     return {"task": task}
 
@@ -192,9 +226,11 @@ def _delete_note(args: dict) -> dict:
 
 def _update_note(args: dict) -> dict:
     updates = {
-        k: args[k] for k in ("title", "body", "tags")
+        k: args[k] for k in ("title", "body")
         if k in args
     }
+    if "tags" in args:
+        updates["tags"] = _coerce_tags(args["tags"]) or []
     note = _backend().notes.update_note(
         args["note_id"], updates,
     )
