@@ -7,6 +7,7 @@ import ReactDOM from "react-dom";
 import { useRef, useState } from "react";
 import { GitBranch } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useGithubSettings } from "../../hooks/useSettings";
 
 interface GithubIssue {
   number: number;
@@ -38,6 +39,16 @@ export function GithubIssueInput({
 }: GithubIssueInputProps) {
   const { t } = useTranslation("kanban");
   const { t: tc } = useTranslation("common");
+  const { data: gh } = useGithubSettings();
+  // Hide the field entirely until a PAT is configured —
+  // otherwise users see a "GitHub issue URL" prompt that
+  // can't actually fetch anything from the API.
+  // Keep the field if a value is already populated, so
+  // existing tasks remain editable when the token is
+  // later removed.
+  if (!gh?.token_set && !value) {
+    return null;
+  }
   const [issues, setIssues] = useState<GithubIssue[]>(
     [],
   );

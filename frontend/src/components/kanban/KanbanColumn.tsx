@@ -5,6 +5,7 @@ import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { useAddTask } from "../../hooks/useTasks";
+import { useGithubSettings } from "../../hooks/useSettings";
 import type { Task, TaskState } from "../../types";
 import { TaskCard } from "./TaskCard";
 
@@ -57,6 +58,8 @@ export function KanbanColumn({
   const [title, setTitle] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const addTask = useAddTask();
+  const { data: gh } = useGithubSettings();
+  const githubConfigured = !!gh?.token_set;
 
   function handleAdd() {
     if (!title.trim()) return;
@@ -191,14 +194,16 @@ export function KanbanColumn({
               onKeyDown={handleKeyDown}
               className={inputCls}
             />
-            <input
-              type="text"
-              placeholder={t("githubUrlOptional")}
-              value={githubUrl}
-              onChange={(e) => setGithubUrl(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className={inputCls}
-            />
+            {githubConfigured && (
+              <input
+                type="text"
+                placeholder={t("githubUrlOptional")}
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className={inputCls}
+              />
+            )}
             <div className="flex gap-1 justify-end">
               <button
                 onClick={() => setAdding(false)}
