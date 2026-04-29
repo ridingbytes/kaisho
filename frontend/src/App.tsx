@@ -730,8 +730,15 @@ function AppShell() {
                 onClick={() => setUserMenuOpen((v) => !v)}
                 className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-surface-raised transition-colors"
               >
-                <span className="text-sm font-semibold text-stone-900 hidden sm:inline">
-                  {currentUser.name || "User"}
+                <span className="hidden sm:flex flex-col items-end leading-tight">
+                  <span className="text-sm font-semibold text-stone-900">
+                    {currentUser.name || "User"}
+                  </span>
+                  {currentUser.profile && (
+                    <span className="text-[10px] text-stone-500 font-mono">
+                      {currentUser.profile}
+                    </span>
+                  )}
                 </span>
                 <PixelAvatar
                   seed={currentUser.avatar_seed || "kaisho"}
