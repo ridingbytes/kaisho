@@ -104,3 +104,99 @@ def test_all_tools_have_tier():
             f"Tool {tool['name']!r} missing tier"
         )
         assert tool["tier"] in {"read", "write", "destructive"}
+
+
+# -- Tag coercion --------------------------------------
+
+
+def test_coerce_tags_none():
+    from kaisho.cron.tools import _coerce_tags
+    assert _coerce_tags(None) is None
+
+
+def test_coerce_tags_single_string():
+    """Issue #1: a bare string must not be split into
+    individual characters by the downstream backend.
+    """
+    from kaisho.cron.tools import _coerce_tags
+    assert _coerce_tags("@github") == ["@github"]
+
+
+def test_coerce_tags_comma_string():
+    from kaisho.cron.tools import _coerce_tags
+    assert _coerce_tags("@github, @code") == [
+        "@github", "@code",
+    ]
+
+
+def test_coerce_tags_list_passthrough():
+    from kaisho.cron.tools import _coerce_tags
+    assert _coerce_tags(["@github", "@code"]) == [
+        "@github", "@code",
+    ]
+
+
+def test_coerce_tags_list_strips_blanks():
+    from kaisho.cron.tools import _coerce_tags
+    assert _coerce_tags(["@github", "  ", ""]) == [
+        "@github",
+    ]
+
+
+def test_coerce_tags_empty_string_to_none():
+    from kaisho.cron.tools import _coerce_tags
+    assert _coerce_tags("") is None
+    assert _coerce_tags("   ") is None
+
+
+def test_add_task_tag_string_does_not_split(
+    tmp_path, monkeypatch,
+):
+    """End-to-end: ``add_task(tags='@github')`` must
+    produce a single-element ``["@github"]`` list."""
+    from kaisho.config import reset_config
+    from kaisho.backends import reset_backend
+    from kaisho.cron.tools import execute_tool
+
+    profile = tmp_path / "profiles" / "test"
+    profile.mkdir(parents=True)
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("PROFILE", "test")
+    reset_config()
+    reset_backend()
+
+    result = execute_tool(
+        "add_task",
+        {
+            "customer": "Acme",
+            "title": "Sample Clone",
+            "tags": "@github",
+        },
+    )
+    assert result["task"]["tags"] == ["@github"]
+
+
+def test_set_task_tags_string_does_not_split(
+    tmp_path, monkeypatch,
+):
+    from kaisho.config import reset_config
+    from kaisho.backends import reset_backend
+    from kaisho.cron.tools import execute_tool
+
+    profile = tmp_path / "profiles" / "test"
+    profile.mkdir(parents=True)
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("PROFILE", "test")
+    reset_config()
+    reset_backend()
+
+    created = execute_tool(
+        "add_task",
+        {"customer": "Acme", "title": "Sample"},
+    )
+    task_id = created["task"]["id"]
+    result = execute_tool(
+        "set_task_tags",
+        {"task_id": task_id, "tags": "@github"},
+    )
+    assert result["task"]["tags"] == ["@github"]
