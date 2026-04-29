@@ -130,6 +130,14 @@ pub fn setup(
 /// Switch the tray icon, tooltip, and (macOS only) the
 /// inline title text shown next to the icon in the menu
 /// bar. Pass an empty title to clear it.
+///
+/// On macOS, the active/long/offline icons render in
+/// their own brand colours (green/amber/red) so they
+/// stay readable across light, dark, and Sequoia's
+/// wallpaper-tinted menu bars. Only ``idle`` keeps the
+/// template flag — it then adapts to the menu bar's
+/// foreground colour and recedes unobtrusively when no
+/// timer is running.
 pub fn update_icon(
     app: &tauri::AppHandle,
     state: &str,
@@ -142,16 +150,17 @@ pub fn update_icon(
         "offline" => icons::OFFLINE,
         _ => icons::IDLE,
     };
+    let is_template = state == "idle";
     if let Some(tray) = app.tray_by_id(TRAY_ID) {
         if let Ok(img) = Image::from_bytes(bytes) {
             let _ = tray.set_icon(Some(img));
         }
         let _ = tray.set_tooltip(Some(tooltip));
-        // set_title is a no-op outside macOS in tauri,
-        // but we still gate it so the empty string
-        // takes effect to clear stale text on macOS.
         #[cfg(target_os = "macos")]
         {
+            let _ = tray.set_icon_as_template(
+                is_template,
+            );
             let value = if title.is_empty() {
                 None
             } else {
@@ -162,6 +171,7 @@ pub fn update_icon(
         #[cfg(not(target_os = "macos"))]
         {
             let _ = title;
+            let _ = is_template;
         }
     }
 }
