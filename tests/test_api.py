@@ -121,6 +121,62 @@ class TestStatesAndTags:
         )
         assert r.status_code == 201
 
+    def test_delete_empty_state(self, client):
+        """Deleting a state with no tasks succeeds."""
+        client.post(
+            "/api/settings/states",
+            json={
+                "name": "DRAFT",
+                "label": "Draft",
+                "color": "#888888",
+                "done": False,
+            },
+        )
+        r = client.delete("/api/settings/states/DRAFT")
+        assert r.status_code == 204
+
+    def test_delete_state_with_tasks_blocked(
+        self, client,
+    ):
+        """Tasks in a state must be moved or archived
+        before that state can be deleted."""
+        client.post(
+            "/api/settings/states",
+            json={
+                "name": "BLOCKED",
+                "label": "Blocked",
+                "color": "#ef4444",
+                "done": False,
+            },
+        )
+        client.post(
+            "/api/kanban/tasks",
+            json={
+                "customer": "Acme",
+                "title": "Stuck task",
+                "status": "BLOCKED",
+            },
+        )
+        r = client.delete(
+            "/api/settings/states/BLOCKED",
+        )
+        assert r.status_code == 409
+        body = r.json()
+        assert "BLOCKED" in body["detail"]
+        assert "1" in body["detail"]
+        # State must still exist
+        s = client.get("/api/settings")
+        names = [
+            x["name"] for x in s.json()["task_states"]
+        ]
+        assert "BLOCKED" in names
+
+    def test_delete_unknown_state_404(self, client):
+        r = client.delete(
+            "/api/settings/states/DOES_NOT_EXIST",
+        )
+        assert r.status_code == 404
+
     def test_add_and_list_tags(self, client):
         """POST then GET settings includes the tag."""
         client.post(

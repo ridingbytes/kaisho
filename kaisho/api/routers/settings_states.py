@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 
+from ...backends import get_backend
 from ...config import get_config
 from ...services import settings as settings_svc
 
@@ -138,10 +139,34 @@ def update_state(name: str, body: StateUpdate):
 
 @router.delete("/states/{name}", status_code=204)
 def remove_state(name: str):
-    """Delete a kanban column state."""
+    """Delete a kanban column state.
+
+    Refuses with 409 if any tasks are still in the
+    state, since the kanban only renders columns whose
+    name is in ``task_states`` — a deletion would make
+    those tasks invisible without touching their data.
+    Move or archive them first, then retry.
+    """
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     states = data.get("task_states", [])
+    if not any(s["name"] == name for s in states):
+        raise HTTPException(
+            status_code=404,
+            detail=f"State '{name}' does not exist",
+        )
+    in_state = get_backend().tasks.list_tasks(
+        status=[name], include_done=True,
+    )
+    if in_state:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Cannot delete state '{name}': "
+                f"{len(in_state)} task(s) still in this "
+                f"column. Move or archive them first."
+            ),
+        )
     data["task_states"] = [
         s for s in states if s["name"] != name
     ]

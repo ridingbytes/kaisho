@@ -42,6 +42,8 @@ import {
   fetchProfiles,
   fetchSettings,
   fetchUrlAllowlist,
+  addState,
+  deleteState,
   reorderStates,
   updateState,
   switchBackend,
@@ -257,6 +259,32 @@ export function useUpdateState() {
       name: string;
       updates: { label?: string; color?: string; done?: boolean };
     }) => updateState(name, updates),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useAddState() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: {
+      name: string;
+      label: string;
+      color: string;
+      done?: boolean;
+      after?: string;
+    }) => addState(params),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useDeleteState() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => deleteState(name),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["settings"] });
     },
