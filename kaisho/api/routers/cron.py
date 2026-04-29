@@ -5,7 +5,12 @@ from pydantic import BaseModel
 
 from ...backends import get_backend
 from ...config import get_config
-from ...cron.executor import ExecutorError, execute_job, load_prompt
+from ...cron.executor import (
+    ExecutorError,
+    execute_job,
+    load_prompt,
+    resolve_model_label,
+)
 from ...cron.scheduler import sync_jobs
 from ...services import settings as settings_svc
 from ...services.cron import (
@@ -237,10 +242,14 @@ def api_trigger_job(job_id: str, background_tasks: BackgroundTasks):
     job = get_job(_jobs_file(), job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
-    model_label = (
-        "kaisho:ai"
-        if job.get("use_kaisho_ai")
-        else job.get("model", "")
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    sync = data.get("cloud_sync", {})
+    model_label = resolve_model_label(
+        job,
+        bool(sync.get("use_cloud_ai")),
+        sync.get("url", ""),
+        settings_svc.get_cloud_sync_key(data),
     )
     run_id = start_run(
         _profile(), job_id, model_label,

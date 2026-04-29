@@ -22,7 +22,9 @@ from ..services.cron import (
     mark_stale_runs_crashed,
     start_run,
 )
-from .executor import ExecutorError, execute_job
+from .executor import (
+    ExecutorError, execute_job, resolve_model_label,
+)
 
 # Module-level scheduler instance — set by build_scheduler(),
 # used by sync_jobs() so the API can update it without a restart.
@@ -36,22 +38,23 @@ def _project_root() -> Path:
 def _run_job(job: dict) -> None:
     cfg = get_config()
     profile = cfg.PROFILE_DIR
-    model_label = (
-        "kaisho:ai"
-        if job.get("use_kaisho_ai")
-        else job.get("model", "")
+    from ..services.settings import (
+        get_ai_settings,
+        get_cloud_sync_key,
+        load_settings,
+    )
+    data = load_settings(cfg.SETTINGS_FILE)
+    ai = get_ai_settings(data)
+    sync = data.get("cloud_sync", {})
+    cloud_url = sync.get("url", "")
+    cloud_api_key = get_cloud_sync_key(data)
+    use_cloud_ai = bool(sync.get("use_cloud_ai"))
+    model_label = resolve_model_label(
+        job, use_cloud_ai, cloud_url, cloud_api_key,
     )
     run_id = start_run(profile, job["id"], model_label)
     completed = False
     try:
-        from ..services.settings import (
-            get_ai_settings,
-            get_cloud_sync_key,
-            load_settings,
-        )
-        data = load_settings(cfg.SETTINGS_FILE)
-        ai = get_ai_settings(data)
-        sync = data.get("cloud_sync", {})
         output = execute_job(
             job,
             project_root=_project_root(),
@@ -77,11 +80,9 @@ def _run_job(job: dict) -> None:
             ),
             openai_base_url=ai.get("openai_url", ""),
             openai_api_key=ai.get("openai_api_key", ""),
-            cloud_url=sync.get("url", ""),
-            cloud_api_key=get_cloud_sync_key(data),
-            use_cloud_ai=bool(
-                sync.get("use_cloud_ai"),
-            ),
+            cloud_url=cloud_url,
+            cloud_api_key=cloud_api_key,
+            use_cloud_ai=use_cloud_ai,
         )
         finish_run(
             profile, run_id, "ok", output=output[:4000]

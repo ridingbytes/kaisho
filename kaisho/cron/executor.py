@@ -30,6 +30,39 @@ class ExecutorError(Exception):
     pass
 
 
+def resolve_model_label(
+    job: dict,
+    use_cloud_ai: bool,
+    cloud_url: str,
+    cloud_api_key: str,
+) -> str:
+    """Return the model identifier that ``execute_job``
+    will actually use for this run.
+
+    Mirrors the routing decision in :func:`execute_job` so
+    that history records and UI surfaces show what really
+    ran. ``"kaisho:ai"`` is only returned when the cloud
+    gateway is fully configured AND the job opts in;
+    otherwise the job's local model wins, even if
+    ``use_kaisho_ai`` is set on the job.
+
+    :param job: Cron job dict.
+    :param use_cloud_ai: Global toggle for cloud AI.
+    :param cloud_url: Cloud gateway URL.
+    :param cloud_api_key: Cloud gateway API key.
+    :returns: ``"kaisho:ai"`` or the job's model string.
+    """
+    routes_to_kaisho = (
+        job.get("use_kaisho_ai", False)
+        and use_cloud_ai
+        and cloud_url
+        and cloud_api_key
+    )
+    if routes_to_kaisho:
+        return "kaisho:ai"
+    return job.get("model", "")
+
+
 # ---------------------------------------------------------------------------
 # Prompt loading
 # ---------------------------------------------------------------------------
