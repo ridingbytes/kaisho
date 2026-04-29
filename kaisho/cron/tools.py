@@ -156,6 +156,9 @@ def _book_time(args: dict) -> dict:
         customer=args.get("customer", ""),
         description=args.get("description", ""),
         contract=args.get("contract"),
+        task_id=args.get("task_id"),
+        notes=args.get("notes"),
+        start_time=args.get("start"),
     )
     return {"entry": entry}
 
@@ -252,17 +255,81 @@ def _stop_clock(args: dict) -> dict:
 
 
 def _update_clock_entry(args: dict) -> dict:
+    sync_id = args.get("sync_id")
+    start_iso = args.get("start")
+    if not sync_id and not start_iso:
+        return {
+            "error": "sync_id or start is required",
+        }
+
+    new_date = None
+    start_time = None
+    hours = None
+    new_start = args.get("new_start")
+    new_end = args.get("new_end")
+    if new_start:
+        from datetime import datetime
+        ns = datetime.fromisoformat(new_start)
+        new_date = ns.date()
+        start_time = ns.strftime("%H:%M")
+        if new_end:
+            ne = datetime.fromisoformat(new_end)
+            hours = (ne - ns).total_seconds() / 3600
+    elif new_end:
+        return {
+            "error": "new_end requires new_start",
+        }
+
     result = _backend().clocks.update_entry(
-        start_iso=args["start"],
+        sync_id=sync_id,
+        start_iso=start_iso,
         customer=args.get("customer"),
         description=args.get("description"),
         invoiced=args.get("invoiced"),
         contract=args.get("contract"),
         notes=args.get("notes"),
+        task_id=args.get("task_id"),
+        new_date=new_date,
+        start_time=start_time,
+        hours=hours,
     )
     if result is None:
         return {"error": "Entry not found"}
     return {"entry": result}
+
+
+def _delete_clock_entry(args: dict) -> dict:
+    from ..services import cloud_sync as sync_svc
+    sync_id = args.get("sync_id")
+    start_iso = args.get("start")
+    if not sync_id and not start_iso:
+        return {
+            "error": "sync_id or start is required",
+        }
+    entry = _backend().clocks.delete_entry(
+        sync_id=sync_id,
+        start_iso=start_iso,
+    )
+    if entry is None:
+        return {"error": "Entry not found"}
+    sync_svc.on_local_delete(entry)
+    return {
+        "deleted": True,
+        "sync_id": entry.get("sync_id"),
+        "start": entry.get("start"),
+    }
+
+
+def _delete_task(args: dict) -> dict:
+    """Remove a task from the active board.
+
+    The backend already routes archived tasks out of
+    list_tasks, so this is the user-facing delete.
+    """
+    ok = _backend().tasks.archive_task(args["task_id"])
+    if not ok:
+        return {"error": "Task not found"}
+    return {"deleted": True, "task_id": args["task_id"]}
 
 
 def _batch_invoice(args: dict) -> dict:
@@ -350,6 +417,8 @@ _HANDLERS: dict[str, Any] = {
     "start_clock": _start_clock,
     "stop_clock": _stop_clock,
     "update_clock_entry": _update_clock_entry,
+    "delete_clock_entry": _delete_clock_entry,
+    "delete_task": _delete_task,
     "batch_invoice": _batch_invoice,
     "list_kb_files": lambda a: _list_kb_files(),
     "list_profiles": _list_profiles,
