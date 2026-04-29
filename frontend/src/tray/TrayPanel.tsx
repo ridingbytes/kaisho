@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { isTauri } from "../utils/tauri";
 import {
@@ -28,6 +33,21 @@ function formatElapsed(startIso: string): string {
   return [h, m, sec]
     .map((n) => String(n).padStart(2, "0"))
     .join(":");
+}
+
+/** Elapsed time as HH:MM (minute precision). Used for
+ *  the macOS tray icon title — second-precision would
+ *  thrash the menu bar. */
+function formatElapsedShort(startIso: string): string {
+  const ms = Date.now() - new Date(startIso).getTime();
+  const minutesTotal = Math.max(
+    0, Math.floor(ms / 60_000),
+  );
+  const h = Math.floor(minutesTotal / 60);
+  const m = minutesTotal % 60;
+  return `${String(h).padStart(2, "0")}:${
+    String(m).padStart(2, "0")
+  }`;
 }
 
 /** Hours elapsed since start. */
@@ -78,7 +98,7 @@ export function TrayPanel() {
   const [customers, setCustomers] = useState<Customer[]>(
     [],
   );
-  const [, setTick] = useState(0);
+  const [tick, setTick] = useState(0);
 
   // Poll active timer + today entries every 5s
   const refresh = useCallback(async () => {
@@ -97,6 +117,7 @@ export function TrayPanel() {
       invokeTauri("update_tray_icon", {
         state: "offline",
         tooltip: "Kaisho — backend offline",
+        title: "",
       });
     }
   }, []);
@@ -116,31 +137,43 @@ export function TrayPanel() {
     return () => clearInterval(id);
   }, []);
 
-  // Update tray icon based on timer state
+  // Update tray icon based on timer state. Re-run on
+  // every second tick so the inline HH:MM title stays
+  // current — but only push to Rust when the minute
+  // value actually changes, so the menu bar doesn't
+  // thrash and we don't flood IPC.
+  const lastTitleRef = useRef<string>("");
   useEffect(() => {
     if (!timer) return;
     if (!timer.active || !timer.start) {
-      invokeTauri("update_tray_icon", {
-        state: "idle",
-        tooltip: "Kaisho — no active timer",
-      });
+      if (lastTitleRef.current !== "idle") {
+        invokeTauri("update_tray_icon", {
+          state: "idle",
+          tooltip: "Kaisho — no active timer",
+          title: "",
+        });
+        lastTitleRef.current = "idle";
+      }
       return;
     }
     const hours = hoursElapsed(timer.start);
     const elapsed = formatElapsed(timer.start);
+    const elapsedShort = formatElapsedShort(timer.start);
     const label = timer.customer || "Kaisho";
-    if (hours > 8) {
+    const state = hours > 8 ? "long" : "active";
+    const tooltip = hours > 8
+      ? `${label} — ${elapsed} (long)`
+      : `${label} — ${elapsed}`;
+    const key = `${state}|${elapsedShort}`;
+    if (lastTitleRef.current !== key) {
       invokeTauri("update_tray_icon", {
-        state: "long",
-        tooltip: `${label} — ${elapsed} (long)`,
+        state,
+        tooltip,
+        title: elapsedShort,
       });
-    } else {
-      invokeTauri("update_tray_icon", {
-        state: "active",
-        tooltip: `${label} — ${elapsed}`,
-      });
+      lastTitleRef.current = key;
     }
-  }, [timer]);
+  }, [timer, tick]);
 
   // Listen for timer-changed event from Rust
   // (tray menu or global shortcut triggered a
