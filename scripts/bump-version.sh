@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Sync version from pyproject.toml to tauri.conf.json and Cargo.toml.
+# Sync version from pyproject.toml to the desktop and
+# frontend manifests.
 #
 # Usage:
 #   ./scripts/bump-version.sh           # sync current version
@@ -33,4 +34,13 @@ p.write_text(json.dumps(data, indent=2) + '\n')
 sed -i '' "s/^version = \".*\"/version = \"$VERSION\"/" \
     "$ROOT/desktop/src-tauri/Cargo.toml"
 
-echo "Done: pyproject.toml, tauri.conf.json, Cargo.toml all at v$VERSION"
+# frontend/package.json
+python3 -c "
+import json, pathlib
+p = pathlib.Path('$ROOT/frontend/package.json')
+data = json.loads(p.read_text())
+data['version'] = '$VERSION'
+p.write_text(json.dumps(data, indent=2) + '\n')
+"
+
+echo "Done: pyproject.toml, tauri.conf.json, Cargo.toml, frontend/package.json all at v$VERSION"
