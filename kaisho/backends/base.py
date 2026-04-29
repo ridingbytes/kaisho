@@ -181,7 +181,7 @@ class ClockBackend(ABC):
     @abstractmethod
     def update_entry(
         self,
-        start_iso: str,
+        start_iso: str | None = None,
         customer: str | None = None,
         description: str | None = None,
         hours: float | None = None,
@@ -191,15 +191,28 @@ class ClockBackend(ABC):
         invoiced: bool | None = None,
         notes: str | None = None,
         contract: str | None = None,
+        sync_id: str | None = None,
     ) -> dict | None:
-        """Update fields of a clock entry."""
+        """Update fields of a clock entry.
+
+        Identifies the entry by ``sync_id`` when given,
+        else by ``start_iso``. Prefer ``sync_id``: two
+        entries can legitimately share a start time, so
+        ``start_iso`` is not a unique identifier.
+        """
 
     @abstractmethod
-    def delete_entry(self, start_iso: str) -> dict | None:
-        """Delete a clock entry by start time.
+    def delete_entry(
+        self,
+        start_iso: str | None = None,
+        sync_id: str | None = None,
+    ) -> dict | None:
+        """Delete a clock entry.
 
-        Returns the deleted entry (so callers can record a
-        sync tombstone) or ``None`` if nothing matched.
+        Identifies the entry by ``sync_id`` when given,
+        else by ``start_iso``. Returns the deleted entry
+        (so callers can record a sync tombstone) or
+        ``None`` if nothing matched.
         """
 
     # -- Sync methods -----------------------------------------

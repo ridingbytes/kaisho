@@ -70,7 +70,7 @@ export function TimeEntryRow({
     if (!desc.trim() || isNaN(h)) return;
     updateEntry.mutate(
       {
-        startIso: entry.start,
+        entry,
         updates: {
           description: desc.trim(),
           hours: h,
@@ -249,9 +249,7 @@ export function TimeEntryRow({
           <Pencil size={10} />
         </button>
         <ConfirmPopover
-          onConfirm={() =>
-            deleteEntry.mutate(entry.start)
-          }
+          onConfirm={() => deleteEntry.mutate(entry)}
           disabled={deleteEntry.isPending}
         >
           <button

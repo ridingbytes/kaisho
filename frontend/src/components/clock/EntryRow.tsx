@@ -242,7 +242,7 @@ export function EntryRow({
           <button
             onClick={() =>
               updateEntry.mutate({
-                startIso: entry.start,
+                entry,
                 updates: {
                   invoiced: !entry.invoiced,
                 },
@@ -287,9 +287,7 @@ export function EntryRow({
             <Copy size={11} />
           </button>
           <ConfirmPopover
-            onConfirm={() =>
-              remove.mutate(entry.start)
-            }
+            onConfirm={() => remove.mutate(entry)}
             disabled={remove.isPending}
           >
             <button

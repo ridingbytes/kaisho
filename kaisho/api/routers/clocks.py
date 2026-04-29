@@ -237,11 +237,26 @@ def get_summary(period: str = "month"):
 
 
 @router.patch("/entries")
-def update_entry(start: str, body: EntryUpdate):
-    """Update fields of an existing clock entry."""
+def update_entry(
+    body: EntryUpdate,
+    start: str | None = None,
+    sync_id: str | None = None,
+):
+    """Update fields of an existing clock entry.
+
+    Identify the entry by ``sync_id`` (preferred) or
+    ``start``. ``sync_id`` is collision-free; ``start``
+    is kept for backward compatibility.
+    """
     from ...services import cloud_sync as sync_svc
+    if not sync_id and not start:
+        raise HTTPException(
+            status_code=400,
+            detail="sync_id or start required",
+        )
     result = get_backend().clocks.update_entry(
         start_iso=start,
+        sync_id=sync_id,
         customer=body.customer,
         description=body.description,
         hours=body.hours,
@@ -259,14 +274,25 @@ def update_entry(start: str, body: EntryUpdate):
 
 
 @router.delete("/entries", status_code=204)
-def delete_entry(start: str):
-    """Delete a clock entry by its start timestamp.
+def delete_entry(
+    start: str | None = None,
+    sync_id: str | None = None,
+):
+    """Delete a clock entry.
 
-    Records a sync tombstone so the deletion propagates to
-    the cloud on the next push cycle.
+    Identify the entry by ``sync_id`` (preferred) or
+    ``start``. Records a sync tombstone so the deletion
+    propagates to the cloud on the next push cycle.
     """
     from ...services import cloud_sync as sync_svc
-    entry = get_backend().clocks.delete_entry(start_iso=start)
+    if not sync_id and not start:
+        raise HTTPException(
+            status_code=400,
+            detail="sync_id or start required",
+        )
+    entry = get_backend().clocks.delete_entry(
+        start_iso=start, sync_id=sync_id,
+    )
     if entry is None:
         raise HTTPException(
             status_code=404, detail="Entry not found",

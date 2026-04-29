@@ -9,6 +9,7 @@ Set BACKEND=sql and SQL_DSN=... in .env to activate.
 import hashlib
 import json
 import re
+import uuid
 from collections import Counter
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -890,6 +891,7 @@ class SqlClockBackend(ClockBackend):
                 12, 0, 0,
             )
         end = start + timedelta(minutes=minutes)
+        sid = str(uuid.uuid4())
         row = ClockRow(
             customer=customer,
             description=description,
@@ -899,6 +901,7 @@ class SqlClockBackend(ClockBackend):
             contract=contract or "",
             invoiced=False,
             notes="",
+            sync_id=sid,
         )
         session = self._eng.session()
         try:
@@ -915,12 +918,13 @@ class SqlClockBackend(ClockBackend):
             "contract": contract or "",
             "invoiced": False,
             "notes": "",
+            "sync_id": sid,
         }
         return _enrich_clock(entry)
 
     def update_entry(
         self,
-        start_iso,
+        start_iso=None,
         customer=None,
         description=None,
         hours=None,
@@ -930,15 +934,27 @@ class SqlClockBackend(ClockBackend):
         invoiced=None,
         notes=None,
         contract=None,
+        sync_id=None,
     ) -> dict | None:
-        """Update fields of a clock entry by start time."""
+        """Update fields of a clock entry.
+
+        Identifies by ``sync_id`` when given (collision-
+        free), else by ``start_iso``.
+        """
+        if not sync_id and not start_iso:
+            return None
         session = self._eng.session()
         try:
-            row = (
-                session.query(ClockRow)
-                .filter(ClockRow.start == start_iso)
-                .first()
-            )
+            query = session.query(ClockRow)
+            if sync_id:
+                query = query.filter(
+                    ClockRow.sync_id == sync_id
+                )
+            else:
+                query = query.filter(
+                    ClockRow.start == start_iso
+                )
+            row = query.first()
             if row is None:
                 return None
 
@@ -1009,15 +1025,28 @@ class SqlClockBackend(ClockBackend):
             session.close()
         return _enrich_clock(result)
 
-    def delete_entry(self, start_iso) -> dict | None:
-        """Delete a clock entry. Return deleted dict or None."""
+    def delete_entry(
+        self,
+        start_iso=None,
+        sync_id=None,
+    ) -> dict | None:
+        """Delete a clock entry. Identifies by ``sync_id``
+        when given (collision-free), else ``start_iso``.
+        """
+        if not sync_id and not start_iso:
+            return None
         session = self._eng.session()
         try:
-            row = (
-                session.query(ClockRow)
-                .filter(ClockRow.start == start_iso)
-                .first()
-            )
+            query = session.query(ClockRow)
+            if sync_id:
+                query = query.filter(
+                    ClockRow.sync_id == sync_id
+                )
+            else:
+                query = query.filter(
+                    ClockRow.start == start_iso
+                )
+            row = query.first()
             if row is None:
                 return None
             snapshot = _clock_row_to_dict(row)

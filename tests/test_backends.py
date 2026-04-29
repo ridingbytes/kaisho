@@ -328,6 +328,67 @@ class TestClockBackend:
             "2099-01-01T00:00:00"
         )
 
+    def test_update_by_sync_id_with_start_collision(
+        self, clocks_backend,
+    ):
+        """When two entries share a start timestamp,
+        ``sync_id`` must identify them unambiguously.
+        ``start_iso`` alone always picks the first match.
+        """
+        target_date = date(2026, 5, 1)
+        a = clocks_backend.quick_book(
+            duration_str="1h",
+            customer="A",
+            description="alpha",
+            target_date=target_date,
+        )
+        b = clocks_backend.quick_book(
+            duration_str="1h",
+            customer="B",
+            description="beta",
+            target_date=target_date,
+        )
+        assert a["start"] == b["start"]
+        assert a["sync_id"] != b["sync_id"]
+
+        updated = clocks_backend.update_entry(
+            sync_id=b["sync_id"], invoiced=True,
+        )
+        assert updated is not None
+        assert updated["sync_id"] == b["sync_id"]
+        assert updated["invoiced"] is True
+
+        entries = clocks_backend.list_entries(period="all")
+        by_sync = {e["sync_id"]: e for e in entries}
+        assert by_sync[b["sync_id"]]["invoiced"] is True
+        assert by_sync[a["sync_id"]]["invoiced"] is False
+
+    def test_delete_by_sync_id_with_start_collision(
+        self, clocks_backend,
+    ):
+        target_date = date(2026, 5, 1)
+        a = clocks_backend.quick_book(
+            duration_str="1h",
+            customer="A",
+            description="alpha",
+            target_date=target_date,
+        )
+        b = clocks_backend.quick_book(
+            duration_str="1h",
+            customer="B",
+            description="beta",
+            target_date=target_date,
+        )
+        deleted = clocks_backend.delete_entry(
+            sync_id=b["sync_id"],
+        )
+        assert deleted is not None
+        assert deleted["sync_id"] == b["sync_id"]
+
+        remaining = clocks_backend.list_entries(period="all")
+        assert len(remaining) == 1
+        assert remaining[0]["sync_id"] == a["sync_id"]
+
     def test_list_entries_period(self, clocks_backend):
         clocks_backend.quick_book(
             duration_str="1h",

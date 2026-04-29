@@ -544,10 +544,24 @@ export function quickBook(
   });
 }
 
-/** Update fields on an existing clock entry,
- *  identified by its start timestamp. */
-export function updateClockEntry(
+/** Build a ?sync_id=... or ?start=... query for the
+ *  clock entry endpoints. Prefer sync_id (collision-
+ *  free); fall back to start for legacy entries that
+ *  haven't been assigned a sync_id yet. */
+function clockEntryQuery(
+  syncId: string | null | undefined,
   startIso: string,
+): string {
+  if (syncId) {
+    return `sync_id=${encodeURIComponent(syncId)}`;
+  }
+  return `start=${encodeURIComponent(startIso)}`;
+}
+
+/** Update fields on an existing clock entry. Identifies
+ *  by sync_id (preferred) or start timestamp. */
+export function updateClockEntry(
+  entry: { sync_id: string | null; start: string },
   updates: {
     customer?: string;
     description?: string;
@@ -560,14 +574,18 @@ export function updateClockEntry(
     contract?: string;
   }
 ): Promise<ClockEntry> {
-  const qs = encodeURIComponent(startIso);
-  return patch<ClockEntry>(`/clocks/entries?start=${qs}`, updates);
+  const qs = clockEntryQuery(entry.sync_id, entry.start);
+  return patch<ClockEntry>(`/clocks/entries?${qs}`, updates);
 }
 
-/** Delete a clock entry by its start timestamp. */
-export function deleteClockEntry(startIso: string): Promise<void> {
-  const qs = encodeURIComponent(startIso);
-  return del(`/clocks/entries?start=${qs}`);
+/** Delete a clock entry. Identifies by sync_id
+ *  (preferred) or start timestamp. */
+export function deleteClockEntry(entry: {
+  sync_id: string | null;
+  start: string;
+}): Promise<void> {
+  const qs = clockEntryQuery(entry.sync_id, entry.start);
+  return del(`/clocks/entries?${qs}`);
 }
 
 // ─── Invoice ────────────────────────────────────────

@@ -81,6 +81,7 @@ export interface Contract {
 }
 
 export interface ClockEntry {
+  sync_id: string | null;
   customer: string;
   description: string;
   start: string;
@@ -98,6 +99,7 @@ export interface ActiveTimer {
   description?: string;
   start?: string;
   notes?: string;
+  sync_id?: string | null;
 }
 
 export interface InboxItem {

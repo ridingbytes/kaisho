@@ -124,7 +124,7 @@ export function EditForm({
       return;
     }
     update.mutate(
-      { startIso: entry.start, updates },
+      { entry, updates },
       { onSuccess: onClose },
     );
   }

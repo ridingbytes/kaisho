@@ -173,16 +173,18 @@ export function useQuickBook() {
 }
 
 /** Returns a mutation to update an existing clock
- *  entry (customer, description, hours, etc.). */
+ *  entry (customer, description, hours, etc.). The
+ *  entry is identified by ``sync_id`` when available
+ *  (collision-free), else by start timestamp. */
 export function useUpdateClockEntry() {
   const qc = useQueryClient();
   const toast = useToast();
   return useMutation({
     mutationFn: ({
-      startIso,
+      entry,
       updates,
     }: {
-      startIso: string;
+      entry: { sync_id: string | null; start: string };
       updates: {
         customer?: string;
         description?: string;
@@ -194,7 +196,7 @@ export function useUpdateClockEntry() {
         notes?: string;
         contract?: string;
       };
-    }) => updateClockEntry(startIso, updates),
+    }) => updateClockEntry(entry, updates),
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: ["clocks"],
@@ -210,14 +212,16 @@ export function useUpdateClockEntry() {
   });
 }
 
-/** Returns a mutation to delete a clock entry by
- *  its start timestamp. */
+/** Returns a mutation to delete a clock entry. The
+ *  entry is identified by ``sync_id`` when available
+ *  (collision-free), else by start timestamp. */
 export function useDeleteClockEntry() {
   const qc = useQueryClient();
   const toast = useToast();
   return useMutation({
-    mutationFn: (startIso: string) =>
-      deleteClockEntry(startIso),
+    mutationFn: (
+      entry: { sync_id: string | null; start: string },
+    ) => deleteClockEntry(entry),
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: ["clocks"],

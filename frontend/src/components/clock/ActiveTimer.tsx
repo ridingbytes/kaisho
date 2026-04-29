@@ -35,7 +35,10 @@ export function ActiveTimer({ timer }: Props) {
     if (!timer.start) return;
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
     updateEntry.mutate({
-      startIso: timer.start!,
+      entry: {
+        sync_id: timer.sync_id ?? null,
+        start: timer.start!,
+      },
       updates: { notes: value },
     });
   }

@@ -180,7 +180,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
       return;
     }
     updateEntry.mutate(
-      { startIso: entry.start, updates },
+      { entry, updates },
       { onSuccess: () => setMode("view") }
     );
   }
@@ -358,7 +358,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
         <Pencil size={10} />
       </button>
       <ConfirmPopover
-        onConfirm={() => deleteEntry.mutate(entry.start)}
+        onConfirm={() => deleteEntry.mutate(entry)}
         disabled={deleteEntry.isPending}
       >
         <button

@@ -217,15 +217,19 @@ export function TrayPanel() {
 
   async function handleUpdateDescription(desc: string) {
     if (!timer?.start) return;
-    await updateClockEntry(timer.start, {
-      description: desc,
-    });
+    await updateClockEntry(
+      { sync_id: timer.sync_id ?? null, start: timer.start },
+      { description: desc },
+    );
     refresh();
   }
 
   async function handleUpdateNotes(notes: string) {
     if (!timer?.start) return;
-    await updateClockEntry(timer.start, { notes });
+    await updateClockEntry(
+      { sync_id: timer.sync_id ?? null, start: timer.start },
+      { notes },
+    );
     refresh();
   }
 

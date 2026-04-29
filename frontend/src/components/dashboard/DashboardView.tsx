@@ -146,7 +146,7 @@ function ClockEntryRow({
   function handleSave() {
     updateEntry.mutate(
       {
-        startIso: entry.start,
+        entry,
         updates: {
           description: desc,
           hours: parseFloat(hours) || minutes / 60,
@@ -158,7 +158,7 @@ function ClockEntryRow({
   }
 
   function handleDelete() {
-    deleteEntry.mutate(entry.start);
+    deleteEntry.mutate(entry);
   }
 
   if (editing) {

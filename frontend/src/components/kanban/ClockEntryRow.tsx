@@ -59,7 +59,7 @@ export function ClockEntryRow({
     if (isNaN(h)) return;
     updateEntry.mutate(
       {
-        startIso: entry.start,
+        entry,
         updates: { description: desc, hours: h },
       },
       { onSuccess: () => setEditing(false) }
@@ -140,7 +140,7 @@ export function ClockEntryRow({
       <button
         onClick={() =>
           updateEntry.mutate({
-            startIso: entry.start,
+            entry,
             updates: { task_id: "" },
           })
         }
@@ -151,9 +151,7 @@ export function ClockEntryRow({
         <X size={9} />
       </button>
       <ConfirmPopover
-        onConfirm={() =>
-          deleteEntry.mutate(entry.start)
-        }
+        onConfirm={() => deleteEntry.mutate(entry)}
         disabled={deleteEntry.isPending}
       >
         <button

@@ -1170,7 +1170,7 @@ def get_summary(
 
 def update_clock_entry(
     clocks_file: Path,
-    start_iso: str,
+    start_iso: str | None = None,
     customer: str | None = None,
     description: str | None = None,
     hours: float | None = None,
@@ -1180,9 +1180,15 @@ def update_clock_entry(
     invoiced: bool | None = None,
     notes: str | None = None,
     contract: str | None = None,
+    sync_id: str | None = None,
 ) -> dict | None:
-    """Update fields of a clock entry identified by its
-    start timestamp.
+    """Update fields of a clock entry.
+
+    Identifies the entry by ``sync_id`` when given, else
+    by ``start_iso``. Prefer ``sync_id`` for callers that
+    have it: ``start_iso`` is not unique when two entries
+    happen to start at the same minute, so identifying by
+    sync ID is the only collision-free option.
 
     Only the fields that are not ``None`` are changed.
     Automatically bumps ``UPDATED_AT`` and ensures a
@@ -1199,13 +1205,20 @@ def update_clock_entry(
     :param invoiced: New invoiced flag.
     :param notes: New free-form notes.
     :param contract: New contract name.
+    :param sync_id: Sync UUID; preferred over
+        ``start_iso`` when provided.
     :returns: Updated entry dict, or ``None`` if not
         found.
     """
     if not clocks_file.exists():
         return None
     org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
-    result = find_by_start(org_file, start_iso)
+    if sync_id:
+        result = find_by_sync_id(org_file, sync_id)
+    elif start_iso:
+        result = find_by_start(org_file, start_iso)
+    else:
+        return None
     if result is None:
         return None
     clock, heading = result

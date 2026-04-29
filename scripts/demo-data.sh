@@ -71,23 +71,41 @@ $POST "$BASE/kanban/tasks" -d '{
 
 echo ""
 echo "=== Creating clock entries ==="
+# Stagger start times per customer so two entries on the
+# same day never collide on start timestamp. Identifying
+# entries by start_iso alone is brittle, so the API
+# prefers sync_id, but unique starts also keep the seed
+# data legible in the UI.
 for i in $(seq 1 8); do
   DAY=$(python3 -c "from datetime import date,timedelta; print((date.today()-timedelta(days=$i)).isoformat())")
   HOURS=$((2 + RANDOM % 5))
   CUST="Acme Biotech"
   CONTRACT="LIMS Phase 2"
   DESC="Sample tracking development"
-  [ $((i % 3)) -eq 0 ] && CUST="NovaChem Labs" && CONTRACT="Support Q2/2026" && DESC="Database migration work"
-  [ $((i % 5)) -eq 0 ] && CUST="Internal" && CONTRACT="" && DESC="Infrastructure maintenance"
+  START_TIME="${DAY}T09:00:00"
+  if [ $((i % 3)) -eq 0 ]; then
+    CUST="NovaChem Labs"
+    CONTRACT="Support Q2/2026"
+    DESC="Database migration work"
+    START_TIME="${DAY}T13:00:00"
+  fi
+  if [ $((i % 5)) -eq 0 ]; then
+    CUST="Internal"
+    CONTRACT=""
+    DESC="Infrastructure maintenance"
+    START_TIME="${DAY}T16:00:00"
+  fi
   if [ -n "$CONTRACT" ]; then
     $POST "$BASE/clocks/quick-book" -d "{
       \"duration\":\"${HOURS}h\",\"customer\":\"$CUST\",
       \"description\":\"$DESC\",
-      \"contract\":\"$CONTRACT\",\"date\":\"$DAY\"}"
+      \"contract\":\"$CONTRACT\",\"date\":\"$DAY\",
+      \"start_time\":\"$START_TIME\"}"
   else
     $POST "$BASE/clocks/quick-book" -d "{
       \"duration\":\"${HOURS}h\",\"customer\":\"$CUST\",
-      \"description\":\"$DESC\",\"date\":\"$DAY\"}"
+      \"description\":\"$DESC\",\"date\":\"$DAY\",
+      \"start_time\":\"$START_TIME\"}"
   fi
 done
 

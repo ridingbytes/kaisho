@@ -838,6 +838,8 @@ def _load_clock_entries(text: str) -> list[dict]:
                     "invoiced", "",
                 ) == "true",
                 "notes": body,
+                "sync_id": meta.get("sync_id", ""),
+                "updated_at": meta.get("updated_at", ""),
             })
             continue
 
@@ -897,6 +899,10 @@ def _clock_entry_props(entry: dict) -> dict:
         props["contract"] = entry["contract"]
     if entry.get("invoiced"):
         props["invoiced"] = "true"
+    if entry.get("sync_id"):
+        props["sync_id"] = entry["sync_id"]
+    if entry.get("updated_at"):
+        props["updated_at"] = entry["updated_at"]
     return props
 
 
@@ -1129,7 +1135,7 @@ class MarkdownClockBackend(ClockBackend):
 
     def update_entry(
         self,
-        start_iso: str,
+        start_iso: str | None = None,
         customer: str | None = None,
         description: str | None = None,
         hours: float | None = None,
@@ -1139,12 +1145,23 @@ class MarkdownClockBackend(ClockBackend):
         invoiced: bool | None = None,
         notes: str | None = None,
         contract: str | None = None,
+        sync_id: str | None = None,
     ) -> dict | None:
-        """Update fields of a clock entry by start time."""
+        """Update fields of a clock entry.
+
+        Identifies by ``sync_id`` when given (collision-
+        free), else by ``start_iso``.
+        """
         entries = self._load_entries()
         for entry in entries:
-            if entry.get("start") != start_iso:
-                continue
+            if sync_id:
+                if entry.get("sync_id") != sync_id:
+                    continue
+            elif start_iso:
+                if entry.get("start") != start_iso:
+                    continue
+            else:
+                return None
             if customer is not None:
                 entry["customer"] = customer
             if description is not None:
@@ -1211,21 +1228,33 @@ class MarkdownClockBackend(ClockBackend):
             return self._enrich(entry)
         return None
 
-    def delete_entry(self, start_iso) -> dict | None:
-        """Delete a clock entry. Return the deleted entry or
-        None if not found."""
+    def delete_entry(
+        self,
+        start_iso: str | None = None,
+        sync_id: str | None = None,
+    ) -> dict | None:
+        """Delete a clock entry. Identifies by ``sync_id``
+        when given, else by ``start_iso``. Returns the
+        deleted entry or ``None`` if not found.
+        """
+        if not sync_id and not start_iso:
+            return None
         entries = self._load_entries()
+        if sync_id:
+            def matches(e):
+                return e.get("sync_id") == sync_id
+        else:
+            def matches(e):
+                return e.get("start") == start_iso
         deleted = next(
-            (e for e in entries
-             if e.get("start") == start_iso),
+            (e for e in entries if matches(e)),
             None,
         )
         if deleted is None:
             return None
-        self._save_entries([
-            e for e in entries
-            if e.get("start") != start_iso
-        ])
+        self._save_entries(
+            [e for e in entries if not matches(e)]
+        )
         return self._enrich(deleted)
 
     # -- Sync methods -------------------------------------------

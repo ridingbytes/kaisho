@@ -86,7 +86,7 @@ class OrgClockBackend(ClockBackend):
 
     def update_entry(
         self,
-        start_iso: str,
+        start_iso: str | None = None,
         customer: str | None = None,
         description: str | None = None,
         hours: float | None = None,
@@ -96,6 +96,7 @@ class OrgClockBackend(ClockBackend):
         invoiced: bool | None = None,
         notes: str | None = None,
         contract: str | None = None,
+        sync_id: str | None = None,
     ) -> dict | None:
         return clocks.update_clock_entry(
             clocks_file=self._clocks_file,
@@ -109,13 +110,25 @@ class OrgClockBackend(ClockBackend):
             invoiced=invoiced,
             notes=notes,
             contract=contract,
+            sync_id=sync_id,
         )
 
-    def delete_entry(self, start_iso: str) -> dict | None:
-        return clocks.delete_clock_entry(
-            clocks_file=self._clocks_file,
-            start_iso=start_iso,
-        )
+    def delete_entry(
+        self,
+        start_iso: str | None = None,
+        sync_id: str | None = None,
+    ) -> dict | None:
+        if sync_id:
+            return clocks.delete_clock_entry_by_sync_id(
+                clocks_file=self._clocks_file,
+                sync_id=sync_id,
+            )
+        if start_iso:
+            return clocks.delete_clock_entry(
+                clocks_file=self._clocks_file,
+                start_iso=start_iso,
+            )
+        return None
 
     def delete_entry_by_sync_id(
         self, sync_id: str,

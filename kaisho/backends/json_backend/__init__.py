@@ -539,7 +539,7 @@ class JsonClockBackend(ClockBackend):
 
     def update_entry(
         self,
-        start_iso: str,
+        start_iso: str | None = None,
         customer: str | None = None,
         description: str | None = None,
         hours: float | None = None,
@@ -549,11 +549,21 @@ class JsonClockBackend(ClockBackend):
         invoiced: bool | None = None,
         notes: str | None = None,
         contract: str | None = None,
+        sync_id: str | None = None,
     ) -> dict | None:
-        """Update fields of a clock entry by start time."""
+        """Update fields of a clock entry.
+
+        Identifies by ``sync_id`` when given (collision-
+        free), else by ``start_iso``.
+        """
+        if not sync_id and not start_iso:
+            return None
         entries = _read_json(self._clocks_file)
         for entry in entries:
-            if entry.get("start") != start_iso:
+            if sync_id:
+                if entry.get("sync_id") != sync_id:
+                    continue
+            elif entry.get("start") != start_iso:
                 continue
             if customer is not None:
                 entry["customer"] = customer
@@ -614,20 +624,33 @@ class JsonClockBackend(ClockBackend):
             return self._enrich(entry)
         return None
 
-    def delete_entry(self, start_iso) -> dict | None:
-        """Delete a clock entry. Return deleted entry or None."""
+    def delete_entry(
+        self,
+        start_iso: str | None = None,
+        sync_id: str | None = None,
+    ) -> dict | None:
+        """Delete a clock entry. Identifies by ``sync_id``
+        when given (collision-free), else ``start_iso``.
+        """
+        if not sync_id and not start_iso:
+            return None
         entries = _read_json(self._clocks_file)
+        if sync_id:
+            def matches(e):
+                return e.get("sync_id") == sync_id
+        else:
+            def matches(e):
+                return e.get("start") == start_iso
         deleted = next(
-            (e for e in entries
-             if e.get("start") == start_iso),
+            (e for e in entries if matches(e)),
             None,
         )
         if deleted is None:
             return None
-        _write_json(self._clocks_file, [
-            e for e in entries
-            if e.get("start") != start_iso
-        ])
+        _write_json(
+            self._clocks_file,
+            [e for e in entries if not matches(e)],
+        )
         return self._enrich(deleted)
 
     # -- Sync methods -------------------------------------------
