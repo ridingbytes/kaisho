@@ -1,0 +1,86 @@
+/* Kaisho Documentation — Graphite Lavender palette
+   Matches the kaisho.dev website design system. */
+
+:root {
+  --md-primary-fg-color: #18181b;
+  --md-primary-bg-color: #fafafa;
+  --md-accent-fg-color: #18181b;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #fafafa;
+  --md-primary-bg-color: #18181b;
+  --md-accent-fg-color: #e4e4e7;
+}
+
+/* Header bar */
+.md-header {
+  background-color: #18181b;
+  color: #fafafa;
+}
+
+[data-md-color-scheme="slate"] .md-header {
+  background-color: #18181b;
+  border-bottom: 1px solid #27272a;
+}
+
+/* Logo sizing */
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  height: 1.6rem;
+}
+
+/* Navigation active state */
+.md-nav__link--active {
+  font-weight: 600;
+}
+
+/* Code blocks — match website terminal style */
+.highlight pre {
+  border-radius: 8px;
+}
+
+.md-typeset code {
+  border-radius: 4px;
+}
+
+/* Admonition radius */
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: 8px;
+}
+
+/* Content tabs */
+.md-typeset .tabbed-labels > label {
+  font-weight: 500;
+}
+
+/* Screenshot images — framed with shadow */
+.md-typeset img.screenshot {
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e4e4e7;
+}
+
+[data-md-color-scheme="slate"] .md-typeset img.screenshot {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  border-color: #3f3f46;
+}
+
+/* Version badges */
+.version-badge {
+  margin-top: -0.8em;
+  margin-bottom: 1.2em;
+  font-size: 0.75rem;
+  color: var(--md-default-fg-color--light);
+}
+
+/* Footer */
+.md-footer {
+  background-color: #18181b;
+}
+
+/* Cards on home page */
+.md-typeset .grid.cards > ul > li {
+  border-radius: 8px;
+}
