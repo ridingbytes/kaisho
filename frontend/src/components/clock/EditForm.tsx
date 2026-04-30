@@ -145,7 +145,6 @@ export function EditForm({
         {/* Date */}
         <td className="px-3 py-2">
           <input
-            autoFocus
             type="date"
             value={entryDate}
             onChange={(e) =>
@@ -277,6 +276,7 @@ export function EditForm({
       }>
         <td colSpan={7} className="px-3 pb-2">
           <textarea
+            autoFocus
             value={notes}
             onChange={(e) =>
               setNotes(e.target.value)
