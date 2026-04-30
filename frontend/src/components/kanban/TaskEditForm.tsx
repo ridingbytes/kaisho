@@ -76,7 +76,6 @@ export function TaskEditForm({
   return (
     <div className="flex flex-col gap-1.5">
       <CustomerAutocomplete
-        autoFocus
         value={editCustomer}
         onChange={onCustomerChange}
         onKeyDown={handleKeyDown}
@@ -90,6 +89,7 @@ export function TaskEditForm({
         className={editInputCls}
       />
       <textarea
+        autoFocus
         value={editBody}
         onChange={(e) => onBodyChange(e.target.value)}
         onKeyDown={handleKeyDown}

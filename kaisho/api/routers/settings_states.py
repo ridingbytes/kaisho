@@ -228,6 +228,22 @@ def remove_tag(name: str):
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
 
 
+@router.put("/tags/order", status_code=200)
+def reorder_tags(body: list[str] = Body(...)):
+    """Reorder tags by name. Unknown names are ignored;
+    tags missing from the body keep their relative order
+    after the reordered ones."""
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    tags = data.get("tags", [])
+    by_name = {t["name"]: t for t in tags}
+    ordered = [by_name[n] for n in body if n in by_name]
+    rest = [t for t in tags if t["name"] not in set(body)]
+    data["tags"] = ordered + rest
+    settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+    return data["tags"]
+
+
 # ---------------------------------------------------------------
 # Customer types
 # ---------------------------------------------------------------
@@ -265,6 +281,47 @@ def remove_customer_type(name: str):
         t for t in types if t != name.upper()
     ]
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+
+
+@router.put("/customer_types/order", status_code=200)
+def reorder_customer_types(body: list[str] = Body(...)):
+    """Reorder customer types."""
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    types = settings_svc.get_customer_types(data)
+    data["customer_types"] = _reorder_string_list(
+        types, [t.upper() for t in body],
+    )
+    settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+    return {"customer_types": data["customer_types"]}
+
+
+@router.patch("/customer_types/{name}", status_code=200)
+def rename_customer_type(name: str, body: dict = Body(...)):
+    """Rename a customer type."""
+    new_name = body.get("name", "").strip().upper()
+    if not new_name:
+        raise HTTPException(
+            status_code=400, detail="name required",
+        )
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    types = settings_svc.get_customer_types(data)
+    old = name.upper()
+    if old not in types:
+        raise HTTPException(
+            status_code=404, detail="Type not found",
+        )
+    if new_name != old and new_name in types:
+        raise HTTPException(
+            status_code=409,
+            detail="Type already exists",
+        )
+    data["customer_types"] = [
+        new_name if t == old else t for t in types
+    ]
+    settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+    return {"customer_types": data["customer_types"]}
 
 
 # ---------------------------------------------------------------
@@ -316,6 +373,44 @@ def remove_inbox_type(name: str):
     )
 
 
+@router.put("/inbox_types/order", status_code=200)
+def reorder_inbox_types(body: list[str] = Body(...)):
+    """Reorder inbox types."""
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    types = settings_svc.get_inbox_types(data)
+    data["inbox_types"] = _reorder_string_list(types, body)
+    settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+    return {"inbox_types": data["inbox_types"]}
+
+
+@router.patch("/inbox_types/{name}", status_code=200)
+def rename_inbox_type(name: str, body: dict = Body(...)):
+    """Rename an inbox type."""
+    new_name = body.get("name", "").strip()
+    if not new_name:
+        raise HTTPException(
+            status_code=400, detail="name required",
+        )
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    types = settings_svc.get_inbox_types(data)
+    if name not in types:
+        raise HTTPException(
+            status_code=404, detail="Type not found",
+        )
+    if new_name != name and new_name in types:
+        raise HTTPException(
+            status_code=409,
+            detail="Type already exists",
+        )
+    data["inbox_types"] = [
+        new_name if t == name else t for t in types
+    ]
+    settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+    return {"inbox_types": data["inbox_types"]}
+
+
 @router.post("/inbox_channels", status_code=201)
 def add_inbox_channel(body: dict = Body(...)):
     """Add a new inbox channel."""
@@ -358,3 +453,59 @@ def remove_inbox_channel(name: str):
     settings_svc.save_settings(
         cfg.SETTINGS_FILE, data,
     )
+
+
+@router.put("/inbox_channels/order", status_code=200)
+def reorder_inbox_channels(body: list[str] = Body(...)):
+    """Reorder inbox channels."""
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    channels = settings_svc.get_inbox_channels(data)
+    data["inbox_channels"] = _reorder_string_list(
+        channels, [c.lower() for c in body],
+    )
+    settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+    return {"inbox_channels": data["inbox_channels"]}
+
+
+@router.patch("/inbox_channels/{name}", status_code=200)
+def rename_inbox_channel(
+    name: str, body: dict = Body(...),
+):
+    """Rename an inbox channel."""
+    new_name = body.get("name", "").strip().lower()
+    if not new_name:
+        raise HTTPException(
+            status_code=400, detail="name required",
+        )
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    channels = settings_svc.get_inbox_channels(data)
+    old = name.lower()
+    if old not in channels:
+        raise HTTPException(
+            status_code=404, detail="Channel not found",
+        )
+    if new_name != old and new_name in channels:
+        raise HTTPException(
+            status_code=409,
+            detail="Channel already exists",
+        )
+    data["inbox_channels"] = [
+        new_name if c == old else c for c in channels
+    ]
+    settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+    return {"inbox_channels": data["inbox_channels"]}
+
+
+def _reorder_string_list(
+    current: list[str], body: list[str],
+) -> list[str]:
+    """Move items named in body to the front in the
+    given order. Items not in body retain their relative
+    order after the reordered ones. Unknown names in
+    body are skipped."""
+    body_set = set(body)
+    ordered = [n for n in body if n in current]
+    rest = [n for n in current if n not in body_set]
+    return ordered + rest
