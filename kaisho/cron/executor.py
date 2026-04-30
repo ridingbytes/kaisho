@@ -18,8 +18,6 @@ import logging
 from datetime import date
 from pathlib import Path
 
-log = logging.getLogger(__name__)
-
 from ..ai_utils import (
     extract_claude_text as _extract_claude_text,
     http_post as _http_post,
@@ -27,6 +25,8 @@ from ..ai_utils import (
 )
 from .tool_defs import TOOL_DEFS
 from .tools import execute_tool, openai_tools
+
+log = logging.getLogger(__name__)
 
 
 class ExecutorError(Exception):
