@@ -495,7 +495,7 @@ function AddJobForm({
     defaultModel || "ollama:qwen3:14b",
   );
   const [output, setOutput] = useState("inbox");
-  const [jobTimeout, setJobTimeout] = useState("120");
+  const [jobTimeout, setJobTimeout] = useState("600");
   const [promptContent, setPromptContent] = useState("");
 
   function handleSubmit(e: React.FormEvent) {

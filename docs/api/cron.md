@@ -35,9 +35,8 @@ POST /api/cron/jobs
   "prompt_file": "prompts/weekly-report.md",
   "prompt_content": null,
   "output": "inbox",
-  "timeout": 120,
-  "enabled": true,
-  "use_kaisho_ai": false
+  "timeout": 600,
+  "enabled": true
 }
 ```
 
