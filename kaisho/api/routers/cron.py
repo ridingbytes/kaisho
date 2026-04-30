@@ -50,7 +50,7 @@ class JobCreate(BaseModel):
     prompt_file: str = ""
     prompt_content: str = ""
     output: str = "inbox"
-    timeout: int = 120
+    timeout: int = 600
     enabled: bool = True
 
 

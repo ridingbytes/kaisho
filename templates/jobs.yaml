@@ -5,7 +5,7 @@ jobs:
   model: kaisho:cron
   prompt_file: prompts/daily-briefing.md
   output: inbox
-  timeout: 120
+  timeout: 600
   enabled: false
 
 - id: weekly-project-update
@@ -14,7 +14,7 @@ jobs:
   model: kaisho:cron
   prompt_file: prompts/project-update.md
   output: inbox
-  timeout: 120
+  timeout: 600
   enabled: false
 
 - id: weekly-summary
@@ -23,5 +23,5 @@ jobs:
   model: kaisho:cron
   prompt_file: prompts/weekly-summary.md
   output: inbox
-  timeout: 120
+  timeout: 600
   enabled: false

@@ -350,10 +350,13 @@ def run_prompt_claude(
 def run_prompt_ollama(
     model: str, prompt: str, base_url: str,
     api_key: str = "",
+    timeout: int = 600,
 ) -> str:
     """Run an agentic Ollama session with tools.
 
-    Supports Ollama Cloud via the api_key parameter.
+    Supports Ollama Cloud via the api_key parameter. The
+    ``timeout`` is per HTTP turn; an agentic run may make
+    several calls and total wall time can exceed it.
     """
     _reset_write_counter()
     tools = openai_tools()
@@ -375,7 +378,9 @@ def run_prompt_ollama(
             "stream": False,
         }).encode()
         try:
-            data = _http_post(url, payload, headers)
+            data = _http_post(
+                url, payload, headers, timeout=timeout,
+            )
         except (OSError, ValueError) as exc:
             raise ExecutorError(
                 f"Ollama request failed: {exc}"
@@ -662,11 +667,13 @@ def _dispatch_prompt(
         return run_prompt_ollama(
             model_name, prompt,
             ollama_cloud_url, ollama_cloud_api_key,
+            timeout=timeout,
         )
     # Default: local Ollama
     return run_prompt_ollama(
         model_name, prompt,
         ollama_base_url, ollama_api_key,
+        timeout=timeout,
     )
 
 
