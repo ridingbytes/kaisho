@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.2.0
+
+- Replace the Cloud AI global override with explicit
+  kaisho:advisor / kaisho:cron model identifiers. The
+  advisor and cron system no longer silently overrides
+  the configured model — picking Kaisho AI is now an
+  explicit choice in the model field. The mode after
+  the colon is forwarded to the cloud gateway so it can
+  pick the right upstream model per use case (Haiku 4.5
+  for advisor, Gemma 4 31B for cron) and per-mode budget
+- On Sync+AI plan connection, advisor_model / cron_model
+  are auto-populated with kaisho:advisor / kaisho:cron
+  when empty so the cloud gateway is wired up by default;
+  existing non-empty values are kept
+- Drop the cloud_sync.use_cloud_ai global toggle and the
+  per-cron-job use_kaisho_ai flag; both are replaced by
+  the explicit model field
+- Settings: drag-and-drop reordering for task states,
+  tags, customer types, inbox types, inbox channels via
+  @dnd-kit/sortable
+- Settings: inline rename for customer types, inbox types,
+  inbox channels (mirroring the existing tag rename UI)
+- Settings: replace the flaky opacity-0 group-hover row
+  pattern with always-visible subtle action icons that
+  brighten on hover — fixes pencil/X icons getting stuck
+  visible after a color picker or confirm popover stole
+  focus
+- Tag delete now uses ConfirmPopover, matching state delete
+- Task and Clock edit forms now focus the description /
+  notes textarea on open instead of the customer field,
+  so the customer dropdown no longer auto-opens
+
 ## 1.1.0
 
 - Identify clock entries by sync_id end-to-end so two
