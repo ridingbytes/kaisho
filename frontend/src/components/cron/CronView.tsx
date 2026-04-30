@@ -2,6 +2,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  FileText,
   Inbox,
   Pencil,
   Play,
@@ -28,6 +29,7 @@ import {
   useAddCronJob,
   useCronHistory,
   useCronJobs,
+  useCronTemplates,
   useDeleteCronJob,
   useDeleteCronRun,
   useDisableCronJob,
@@ -41,6 +43,7 @@ import {
 import { useAvailableModels } from "../../hooks/useSettings";
 import { Toggle } from "../common/Toggle";
 import type { CronJob, CronRun } from "../../types";
+import type { CronTemplate } from "../../api/client";
 
 const MODEL_DATALIST = "cron-model-list";
 
@@ -479,24 +482,120 @@ function JobCard({
   );
 }
 
+// -----------------------------------------------------------------
+// Template picker
+// -----------------------------------------------------------------
+//
+// Inline panel that lists the curated cron templates and
+// lets the user pick one. Picking opens AddJobForm with
+// the template's prompt + schedule + model pre-filled, so
+// the user only has to choose a unique job id.
+
+function TemplatePicker({
+  onPick,
+  onClose,
+}: {
+  onPick: (template: CronTemplate) => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation("cron");
+  const { t: tc } = useTranslation("common");
+  const { data: templates = [], isLoading } =
+    useCronTemplates();
+
+  return (
+    <div className="border-b border-border-subtle bg-surface-card px-4 py-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-stone-700 uppercase tracking-wide">
+          {t("pickTemplate")}
+        </span>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-stone-500 hover:text-stone-900 transition-colors"
+          aria-label={tc("close")}
+        >
+          <X size={14} />
+        </button>
+      </div>
+      {isLoading && (
+        <p className="text-xs text-stone-500">
+          {tc("loading")}
+        </p>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {templates.map((tpl) => (
+          <button
+            key={tpl.id}
+            type="button"
+            onClick={() => onPick(tpl)}
+            className="text-left p-3 rounded-lg border border-border bg-surface-raised hover:border-cta hover:bg-cta/5 transition-colors flex flex-col gap-1.5"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-stone-900">
+                {tpl.name}
+              </span>
+              <span className="text-[9px] uppercase tracking-wider text-stone-500 px-1.5 py-0.5 rounded bg-surface-overlay">
+                {tpl.category}
+              </span>
+              {tpl.requires_tools && (
+                <span className="text-[9px] uppercase tracking-wider text-amber-600 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                  {t("toolsRequired")}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-stone-600 leading-snug">
+              {tpl.description}
+            </p>
+            <div className="flex items-center gap-3 text-[10px] text-stone-500 font-mono">
+              <span>{tpl.default_schedule}</span>
+              <span>·</span>
+              <span>{tpl.default_model}</span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 function AddJobForm({
   onClose,
   defaultModel,
+  template,
 }: {
   onClose: () => void;
   defaultModel: string;
+  template?: CronTemplate | null;
 }) {
   const { t } = useTranslation("cron");
   const addJob = useAddCronJob();
+  // Pre-fill from template when present, else fall back
+  // to sensible defaults. We deliberately leave id blank
+  // even when a template is picked — the user must
+  // choose a unique slug for THIS instance of the job.
   const [id, setId] = useState("");
-  const [name, setName] = useState("");
-  const [schedule, setSchedule] = useState("0 9 * * 1-5");
-  const [model, setModel] = useState(
-    defaultModel || "ollama:qwen3:14b",
+  const [name, setName] = useState(
+    template?.name ?? "",
   );
-  const [output, setOutput] = useState("inbox");
-  const [jobTimeout, setJobTimeout] = useState("600");
-  const [promptContent, setPromptContent] = useState("");
+  const [schedule, setSchedule] = useState(
+    template?.default_schedule ?? "0 9 * * 1-5",
+  );
+  const [model, setModel] = useState(
+    template?.default_model
+    ?? defaultModel
+    ?? "ollama:qwen3:14b",
+  );
+  const [output, setOutput] = useState(
+    template?.default_output ?? "inbox",
+  );
+  const [jobTimeout, setJobTimeout] = useState(
+    String(template?.default_timeout ?? 600),
+  );
+  const [promptContent, setPromptContent] = useState(
+    template?.prompt ?? "",
+  );
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -880,6 +979,9 @@ export function CronView() {
   const { t: ts } = useTranslation("settings");
   const { t: tc } = useTranslation("common");
   const [showForm, setShowForm] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickedTemplate, setPickedTemplate] =
+    useState<CronTemplate | null>(null);
   const { data: jobs = [], isLoading: jobsLoading } = useCronJobs();
   const { data: history = [], isLoading: historyLoading } =
     useCronHistory();
@@ -910,7 +1012,26 @@ export function CronView() {
       <PanelToolbar
         right={<>
           <button
-            onClick={() => setShowForm((v) => !v)}
+            onClick={() => {
+              setShowPicker((v) => !v);
+              setShowForm(false);
+            }}
+            className={[
+              "flex items-center gap-1.5 px-3 py-1",
+              "rounded-lg text-xs",
+              "border border-border text-stone-700",
+              "hover:bg-surface-raised transition-colors",
+            ].join(" ")}
+          >
+            <FileText size={12} />
+            {t("fromTemplate")}
+          </button>
+          <button
+            onClick={() => {
+              setShowForm((v) => !v);
+              setShowPicker(false);
+              setPickedTemplate(null);
+            }}
             className={[
               "flex items-center gap-1.5 px-3 py-1",
               "rounded-lg text-xs bg-cta text-white",
@@ -924,10 +1045,25 @@ export function CronView() {
         </>}
       />
 
+      {showPicker && (
+        <TemplatePicker
+          onClose={() => setShowPicker(false)}
+          onPick={(tpl) => {
+            setPickedTemplate(tpl);
+            setShowPicker(false);
+            setShowForm(true);
+          }}
+        />
+      )}
+
       {showForm && (
         <AddJobForm
-          onClose={() => setShowForm(false)}
+          onClose={() => {
+            setShowForm(false);
+            setPickedTemplate(null);
+          }}
           defaultModel={defaultCronModel}
+          template={pickedTemplate}
         />
       )}
 

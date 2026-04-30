@@ -13,6 +13,10 @@ from ...cron.executor import (
 )
 from ...cron.scheduler import sync_jobs
 from ...services import settings as settings_svc
+from ...services.cron_templates import (
+    get_cron_template,
+    list_cron_templates,
+)
 from ...services.cron import (
     add_job,
     delete_history_entry,
@@ -66,6 +70,25 @@ class JobUpdate(BaseModel):
 
 class PromptUpdate(BaseModel):
     content: str
+
+
+@router.get("/templates")
+def api_list_templates():
+    """List available cron job templates with prompt
+    bodies. Used by the desktop picker and the advisor's
+    ``create_cron_from_template`` tool."""
+    return list_cron_templates()
+
+
+@router.get("/templates/{template_id}")
+def api_get_template(template_id: str):
+    """Return a single cron template by id."""
+    tpl = get_cron_template(template_id)
+    if tpl is None:
+        raise HTTPException(
+            status_code=404, detail="Template not found",
+        )
+    return tpl
 
 
 @router.get("/jobs")
