@@ -7,6 +7,7 @@ jobs:
   output: inbox
   timeout: 600
   enabled: false
+  inject_context: true
   description: >-
     A morning briefing summarising open tasks, this week's
     hours, billable rate, customer budget alerts, and quick
@@ -22,6 +23,7 @@ jobs:
   output: inbox
   timeout: 600
   enabled: false
+  inject_context: true
   description: >-
     Weekly per-customer status report. Budget consumption,
     task progress by status, billable utilisation, and a
@@ -37,6 +39,7 @@ jobs:
   output: inbox
   timeout: 600
   enabled: false
+  inject_context: true
   description: >-
     Compact weekly recap: hours by customer, daily breakdown,
     busiest day, billable split, and any budget alerts. Goes
@@ -52,10 +55,12 @@ jobs:
   output: inbox
   timeout: 600
   enabled: false
+  inject_context: false
   description: >-
     Daily AI-focused digest of Hacker News stories. Pulls
     the latest 100 stories via the HN Algolia API, filters
     for AI/ML/LLM topics, and produces a 5-8 item summary.
+    Does not need Kaisho task/customer context.
   category: news
   requires_tools: false
 
@@ -67,6 +72,7 @@ jobs:
   output: inbox
   timeout: 900
   enabled: false
+  inject_context: false
   description: >-
     Weekly competitive intelligence scan across YouTube,
     Hacker News, GitHub, and PyPI for opportunities and

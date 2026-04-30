@@ -127,8 +127,50 @@ In the UI, the history pane shows sortable columns with execution
 results. Click a row to see the full output. Move outputs to inbox,
 tasks, notes, or the knowledge base.
 
-## Kaisho AI Toggle
+## Kaisho AI for cron jobs
 
-Each job can individually use Kaisho Cloud AI instead of the
-configured model. Enable this per job when you want cloud-powered
-responses without changing the global model setting.
+To route a cron job through the Kaisho Cloud AI gateway, set
+its `model` field to `kaisho:cron`. The gateway picks the
+upstream model and meters tokens against your Sync+AI plan
+quota. There is no separate "use Kaisho AI" toggle — the
+`model` field is the single source of truth.
+
+The cloud cron path runs an agentic loop with a restricted
+tool set (read + research only: `fetch_url`,
+`transcribe_youtube`, `web_search`, `search_knowledge`,
+`read_knowledge_file`). Destructive tools (`delete_*`,
+`execute_cli`, profile management) are not exposed to cron.
+
+## Pre-injected Kaisho context
+
+Cron jobs with `inject_context: true` (the default) get a
+markdown block prepended to their prompt with the user's open
+tasks, recent clock entries, inbox items, customer budgets, and
+time insights. This lets briefing/summary/report templates work
+on any model — including those that cannot tool-call.
+
+For news/research crons (e.g. HN digest, business scout) the
+local data isn't relevant; set `inject_context: false` in the
+job definition to skip it. This avoids shipping customer/budget
+data to the upstream LLM provider unnecessarily and saves
+tokens.
+
+## Templates
+
+Default templates ship with `templates/jobs.yaml`:
+
+| Template | Category | Inject context | Tools |
+|----------|----------|----------------|-------|
+| daily-briefing | briefing | yes | none |
+| weekly-summary | report | yes | none |
+| weekly-project-update | report | yes | none |
+| hn-ai-daily | news | no | none |
+| weekly-scout | research | no | required |
+
+`weekly-scout` requires a tool-capable model (Haiku 4.5 via
+`kaisho:cron`, or `qwen3:32b` / `llama3.3:70b` locally). Gemma
+family models do not tool-call and will fail this template.
+
+Create new jobs from a template via the Cron view's "From
+Template" picker, or by asking the advisor:
+"Create a daily HN digest cron called my-hn".

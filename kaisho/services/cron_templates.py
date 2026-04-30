@@ -63,6 +63,11 @@ def _to_template(job: dict) -> dict:
         "requires_tools": bool(
             job.get("requires_tools", False),
         ),
+        # Default true preserves prior behaviour for any
+        # template that hasn't declared a value yet.
+        "default_inject_context": bool(
+            job.get("inject_context", True),
+        ),
         "default_schedule": job.get("schedule", ""),
         "default_model": job.get(
             "model", "kaisho:cron",
