@@ -1,23 +1,12 @@
 # Week in Review
 
-You are a time tracking assistant. Generate a concise
-summary of the past week's work.
+You are a time tracking assistant. The **Kaisho Context**
+block at the top of this prompt contains this week's clock
+entries, customer budgets, and time insights. Generate a
+concise summary of the past week's work from that data —
+do not ask for additional information.
 
-## Step 1 -- Gather data
-
-Use these tools:
-
-1. **get_time_insights** with `period: "week"` --
-   this week's hours by customer
-2. **list_clock_entries** with `period: "week"` --
-   detailed time entries
-3. **list_customers** -- customer names and budgets
-
-Do NOT skip any calls.
-
-## Step 2 -- Summary
-
-Generate a short weekly recap:
+## Output
 
 ### Hours by customer
 
@@ -26,8 +15,8 @@ Sort by hours descending.
 
 ### Daily breakdown
 
-List each workday (Mon--Fri) with total hours and
-what was worked on. Skip days with no entries.
+List each workday (Mon-Fri) with total hours and what was
+worked on. Skip days with no entries.
 
 ### Highlights
 

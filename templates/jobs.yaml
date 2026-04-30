@@ -25,3 +25,26 @@ jobs:
   output: inbox
   timeout: 600
   enabled: false
+
+- id: hn-ai-daily
+  name: HN AI Digest
+  schedule: "30 21 * * *"
+  model: kaisho:cron
+  prompt_file: prompts/hn-ai-daily.md
+  output: inbox
+  timeout: 600
+  enabled: false
+
+# Tool-using research cron — needs a tool-capable model.
+# kaisho:cron works once gateway_config.model_cron is set
+# to a tool-capable model (e.g. anthropic/claude-haiku-4.5).
+# Locally, ollama:qwen3:32b or ollama:llama3.3:70b also work.
+# Gemma family does NOT support tool calling.
+- id: weekly-scout
+  name: Business Scout
+  schedule: "0 9 * * 1"
+  model: kaisho:cron
+  prompt_file: prompts/weekly-scout.md
+  output: inbox
+  timeout: 900
+  enabled: false

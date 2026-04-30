@@ -14,6 +14,7 @@ to models that support tool calling so that jobs can read and write
 app data autonomously.
 """
 import json
+import logging
 from datetime import date
 from pathlib import Path
 
@@ -24,6 +25,8 @@ from ..ai_utils import (
 )
 from .tool_defs import TOOL_DEFS
 from .tools import execute_tool, openai_tools
+
+log = logging.getLogger(__name__)
 
 
 class ExecutorError(Exception):
@@ -617,23 +620,30 @@ def _dispatch_prompt(
     """
     if provider == "kaisho":
         from ..services.cloud_sync import (
-            cloud_ai_complete,
+            cloud_ai_agentic,
         )
-        resp = cloud_ai_complete(
-            cloud_url, cloud_api_key,
+        # Run an agentic loop so cron prompts that need
+        # tools (transcribe_youtube, fetch_url, etc.) work
+        # via the cloud gateway. Prompts that don't call
+        # tools terminate after one turn — same wire cost
+        # as cloud_ai_complete used to be.
+        return cloud_ai_agentic(
+            cloud_url=cloud_url,
+            api_key=cloud_api_key,
             system=(
-                "You are the Kaisho AI advisor. "
-                "Answer based on the context in the "
-                "prompt. Be concise and actionable."
+                "You are the Kaisho AI cron advisor. "
+                "Generate a concise, actionable report "
+                "based on the Kaisho Context block at "
+                "the top of the prompt. Use the provided "
+                "tools only if the prompt explicitly "
+                "instructs you to fetch additional data."
             ),
-            messages=[{
-                "role": "user",
-                "content": prompt,
-            }],
+            prompt=prompt,
+            tools=openai_tools(),
+            tool_executor=execute_tool,
             max_tokens=4096,
             mode=model_name or "cron",
         )
-        return resp.get("text", "")
     if provider == "claude_cli":
         return _run_claude_cli(
             model_name,
@@ -702,6 +712,25 @@ def execute_job(
     prompt = load_prompt(
         job["prompt_file"], project_root,
     )
+
+    # Pre-fetch local Kaisho data (tasks, inbox, time
+    # insights, customer budgets) and prepend as a markdown
+    # block. Mirrors the advisor pattern so cron prompts
+    # work on any model — including those that cannot call
+    # tools (Gemma, small Ollama models). Prompts that
+    # instruct dynamic tool use (weekly-scout transcribing
+    # YouTube videos) still get to use tools on top.
+    from .context import build_cron_context
+    try:
+        context_block = build_cron_context()
+        prompt = context_block + "\n\n---\n\n" + prompt
+    except Exception as exc:  # noqa: BLE001
+        # Don't kill the cron run if context-building hits
+        # a transient backend error. Log and continue with
+        # the raw prompt.
+        log.warning(
+            "build_cron_context failed: %s", exc,
+        )
 
     model_str = job.get("model", "")
     provider, model_name = _parse_model(model_str)
