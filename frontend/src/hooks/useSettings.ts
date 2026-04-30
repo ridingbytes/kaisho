@@ -45,6 +45,13 @@ import {
   addState,
   deleteState,
   reorderStates,
+  reorderTags,
+  reorderCustomerTypes,
+  reorderInboxTypes,
+  reorderInboxChannels,
+  renameCustomerType,
+  renameInboxType,
+  renameInboxChannel,
   updateState,
   switchBackend,
   switchProfile,
@@ -295,6 +302,88 @@ export function useReorderStates() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (names: string[]) => reorderStates(names),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useReorderTags() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (names: string[]) => reorderTags(names),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useReorderCustomerTypes() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (names: string[]) =>
+      reorderCustomerTypes(names),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useReorderInboxTypes() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (names: string[]) =>
+      reorderInboxTypes(names),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useReorderInboxChannels() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (names: string[]) =>
+      reorderInboxChannels(names),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useRenameCustomerType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      oldName, newName,
+    }: { oldName: string; newName: string }) =>
+      renameCustomerType(oldName, newName),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useRenameInboxType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      oldName, newName,
+    }: { oldName: string; newName: string }) =>
+      renameInboxType(oldName, newName),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useRenameInboxChannel() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      oldName, newName,
+    }: { oldName: string; newName: string }) =>
+      renameInboxChannel(oldName, newName),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["settings"] });
     },

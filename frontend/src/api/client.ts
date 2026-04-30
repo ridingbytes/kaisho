@@ -401,6 +401,24 @@ export function deleteCustomerType(name: string): Promise<void> {
   return del(`/settings/customer_types/${encodeURIComponent(name)}`);
 }
 
+/** Rename a customer type category. */
+export function renameCustomerType(
+  oldName: string,
+  newName: string,
+): Promise<unknown> {
+  return patch(
+    `/settings/customer_types/${encodeURIComponent(oldName)}`,
+    { name: newName },
+  );
+}
+
+/** Persist the order of customer types. */
+export function reorderCustomerTypes(
+  names: string[],
+): Promise<unknown> {
+  return put("/settings/customer_types/order", names);
+}
+
 /** Add a new inbox item type category. */
 export function addInboxType(name: string): Promise<void> {
   return post("/settings/inbox_types", { name });
@@ -411,6 +429,24 @@ export function deleteInboxType(name: string): Promise<void> {
   return del(`/settings/inbox_types/${encodeURIComponent(name)}`);
 }
 
+/** Rename an inbox item type. */
+export function renameInboxType(
+  oldName: string,
+  newName: string,
+): Promise<unknown> {
+  return patch(
+    `/settings/inbox_types/${encodeURIComponent(oldName)}`,
+    { name: newName },
+  );
+}
+
+/** Persist the order of inbox types. */
+export function reorderInboxTypes(
+  names: string[],
+): Promise<unknown> {
+  return put("/settings/inbox_types/order", names);
+}
+
 /** Add a new inbox channel (e.g. "email", "phone"). */
 export function addInboxChannel(name: string): Promise<void> {
   return post("/settings/inbox_channels", { name });
@@ -419,6 +455,31 @@ export function addInboxChannel(name: string): Promise<void> {
 /** Delete an inbox channel. */
 export function deleteInboxChannel(name: string): Promise<void> {
   return del(`/settings/inbox_channels/${encodeURIComponent(name)}`);
+}
+
+/** Rename an inbox channel. */
+export function renameInboxChannel(
+  oldName: string,
+  newName: string,
+): Promise<unknown> {
+  return patch(
+    `/settings/inbox_channels/${encodeURIComponent(oldName)}`,
+    { name: newName },
+  );
+}
+
+/** Persist the order of inbox channels. */
+export function reorderInboxChannels(
+  names: string[],
+): Promise<unknown> {
+  return put("/settings/inbox_channels/order", names);
+}
+
+/** Persist the order of tags. */
+export function reorderTags(
+  names: string[],
+): Promise<unknown> {
+  return put("/settings/tags/order", names);
 }
 
 /** Update a kanban task state's label, color,
