@@ -474,7 +474,7 @@ export function AiSection(): JSX.Element {
   const { data: cloudStatus } = useCloudSyncStatus();
   const { data: probe } = useAiProbe();
   const update = useUpdateAiSettings();
-  const cloudAi = cloudStatus?.use_cloud_ai;
+  const onSyncAi = cloudStatus?.plan === "sync_ai";
 
   const [form, setForm] = useState<AiSettings>({
     ollama_url: "",
@@ -547,17 +547,23 @@ export function AiSection(): JSX.Element {
   return (
     <section>
       <datalist id={DATALIST_ID}>
+        {onSyncAi && (
+          <>
+            <option value="kaisho:advisor" />
+            <option value="kaisho:cron" />
+          </>
+        )}
         {models.map((m) => (
           <option key={m} value={m} />
         ))}
       </datalist>
 
-      {cloudAi && (
+      {onSyncAi && (
         <div className="mb-4 px-4 py-3 rounded-xl bg-cta/10 border border-cta/30">
           <p className="text-xs text-cta font-medium">
             {t("kaishoAiActive")}
           </p>
-          <p className="text-[10px] text-stone-500 mt-1">
+          <p className="text-[10px] text-stone-600 mt-1">
             {t("kaishoAiActiveHint")}
           </p>
         </div>

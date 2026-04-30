@@ -399,6 +399,7 @@ def cloud_ai_complete(
     messages: list[dict],
     max_tokens: int = 4096,
     tools: list[dict] | None = None,
+    mode: str = "default",
 ) -> dict:
     """Send a chat completion request to the cloud AI
     gateway and return the full response.
@@ -421,6 +422,7 @@ def cloud_ai_complete(
         "system": system,
         "messages": messages,
         "max_tokens": max_tokens,
+        "mode": mode,
     }
     if tools:
         payload["tools"] = tools
@@ -446,6 +448,7 @@ def cloud_ai_agentic(
     tool_executor: Any = None,
     max_tokens: int = 4096,
     on_event: Any = None,
+    mode: str = "default",
 ) -> str:
     """Run a multi-turn agentic loop through the cloud
     AI gateway.
@@ -475,6 +478,7 @@ def cloud_ai_agentic(
         resp = cloud_ai_complete(
             cloud_url, api_key, system,
             messages, max_tokens, tools,
+            mode=mode,
         )
         text = resp.get("text", "")
         tool_calls = resp.get("tool_calls")

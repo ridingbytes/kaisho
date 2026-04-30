@@ -123,19 +123,16 @@ def _stream_ask(body: AskRequest) -> Generator[
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     ai = settings_svc.get_ai_settings(data)
     sync = data.get("cloud_sync", {})
-    use_cloud = sync.get("use_cloud_ai", False)
     cloud_url = sync.get("url", "")
     cloud_key = sync.get("api_key", "")
 
     from ...config import load_user_yaml
     user_meta = load_user_yaml(cfg)
 
-    # When Cloud AI is enabled, override the model
-    model_str = (
-        "kaisho:default"
-        if use_cloud and cloud_url and cloud_key
-        else body.model
-    )
+    # Use the model the request asked for. When the
+    # caller wants Kaisho AI they pass ``kaisho:advisor``
+    # explicitly — no implicit override.
+    model_str = body.model
 
     question = _format_question_with_history(
         body.question, body.history,

@@ -670,6 +670,10 @@ def ask(
         )
     if provider == "kaisho":
         from .cloud_sync import cloud_ai_agentic
+        # ``model_name`` is the part after ``kaisho:`` —
+        # e.g. ``advisor`` for ``kaisho:advisor``. The
+        # gateway uses this to pick model + budget.
+        kaisho_mode = model_name or "default"
         # Only expose the kai CLI tool — the advisor
         # can create tasks, book time, etc. via CLI
         # commands but cannot fetch URLs or access
@@ -710,6 +714,7 @@ def ask(
             tool_executor=execute_tool,
             max_tokens=4096,
             on_event=on_event,
+            mode=kaisho_mode,
         )
     if provider == "ollama_cloud":
         answer = ask_ollama(

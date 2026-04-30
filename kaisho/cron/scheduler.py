@@ -48,10 +48,7 @@ def _run_job(job: dict) -> None:
     sync = data.get("cloud_sync", {})
     cloud_url = sync.get("url", "")
     cloud_api_key = get_cloud_sync_key(data)
-    use_cloud_ai = bool(sync.get("use_cloud_ai"))
-    model_label = resolve_model_label(
-        job, use_cloud_ai, cloud_url, cloud_api_key,
-    )
+    model_label = resolve_model_label(job)
     run_id = start_run(profile, job["id"], model_label)
     completed = False
     try:
@@ -82,7 +79,6 @@ def _run_job(job: dict) -> None:
             openai_api_key=ai.get("openai_api_key", ""),
             cloud_url=cloud_url,
             cloud_api_key=cloud_api_key,
-            use_cloud_ai=use_cloud_ai,
         )
         finish_run(
             profile, run_id, "ok", output=output[:4000]

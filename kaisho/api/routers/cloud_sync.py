@@ -57,9 +57,6 @@ def status():
         "last_push_at": cursor["last_push_at"],
         "last_error": cursor["last_error"],
         "pending_deletes": len(tombstones),
-        "use_cloud_ai": sync.get(
-            "use_cloud_ai", False,
-        ),
     }
     if not sync["enabled"] or not sync["api_key_set"]:
         return result
@@ -81,24 +78,6 @@ def status():
         if stats.get("email"):
             result["email"] = stats["email"]
     return result
-
-
-# ── PATCH /api/cloud-sync/cloud-ai ───────────────────
-
-
-class CloudAiToggle(BaseModel):
-    enabled: bool
-
-
-@router.patch("/cloud-ai")
-def toggle_cloud_ai(body: CloudAiToggle):
-    """Enable or disable Kaisho AI for the advisor."""
-    _, cfg = _sync_settings()
-    settings_svc.set_cloud_sync_settings(
-        cfg.SETTINGS_FILE,
-        {"use_cloud_ai": body.enabled},
-    )
-    return {"use_cloud_ai": body.enabled}
 
 
 # ── GET /api/cloud-sync/ai-usage ─────────────────────
@@ -177,7 +156,35 @@ def connect(body: ConnectBody):
             "api_key": body.api_key,
         },
     )
-    return {"ok": True, "plan": stats.get("plan")}
+
+    auto_set = _autoset_kaisho_models(cfg, plan)
+
+    return {
+        "ok": True,
+        "plan": plan,
+        "auto_set_models": auto_set,
+    }
+
+
+def _autoset_kaisho_models(cfg, plan: str) -> dict:
+    """On Sync+AI plan activation, populate empty
+    advisor_model / cron_model with kaisho:advisor /
+    kaisho:cron so the cloud gateway is wired up by
+    default. Existing non-empty values are kept."""
+    if plan != "sync_ai":
+        return {}
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    ai = settings_svc.get_ai_settings(data)
+    updates: dict[str, str] = {}
+    if not ai.get("advisor_model", "").strip():
+        updates["advisor_model"] = "kaisho:advisor"
+    if not ai.get("cron_model", "").strip():
+        updates["cron_model"] = "kaisho:cron"
+    if updates:
+        settings_svc.set_ai_settings(
+            cfg.SETTINGS_FILE, updates,
+        )
+    return updates
 
 
 # ── POST /api/cloud-sync/disconnect ──────────────────

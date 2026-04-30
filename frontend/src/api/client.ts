@@ -1065,7 +1065,6 @@ export function createCronJob(data: {
   output: string;
   timeout: number;
   enabled: boolean;
-  use_kaisho_ai?: boolean;
 }): Promise<CronJob> {
   return post<CronJob>("/cron/jobs", data);
 }
@@ -1073,7 +1072,7 @@ export function createCronJob(data: {
 /** Update fields on an existing cron job. */
 export function updateCronJob(
   jobId: string,
-  updates: Partial<Pick<CronJob, "name" | "schedule" | "model" | "output" | "timeout" | "use_kaisho_ai">>
+  updates: Partial<Pick<CronJob, "name" | "schedule" | "model" | "output" | "timeout">>
 ): Promise<CronJob> {
   return patch<CronJob>(`/cron/jobs/${encodeURIComponent(jobId)}`, updates);
 }
@@ -1228,7 +1227,6 @@ export interface CloudSyncStatus {
   cloud_entry_count?: number;
   cloud_last_change_at?: string | null;
   cloud_active_timer_id?: string | null;
-  use_cloud_ai?: boolean;
   email?: string | null;
 }
 
@@ -1277,10 +1275,15 @@ export function stopCloudTimer(id?: string): Promise<{
 }
 
 /** Connect to a cloud sync server with URL and
- *  API key. Returns the subscription plan. */
+ *  API key. Returns the subscription plan and any
+ *  AI model fields the server auto-populated. */
 export function connectCloudSync(
   url: string, apiKey: string,
-): Promise<{ ok: boolean; plan: string }> {
+): Promise<{
+  ok: boolean;
+  plan: string;
+  auto_set_models: Record<string, string>;
+}> {
   return post("/cloud-sync/connect", {
     url, api_key: apiKey,
   });
@@ -1311,16 +1314,6 @@ export interface AiUsage {
 
 export function fetchAiUsage(): Promise<AiUsage> {
   return get<AiUsage>("/cloud-sync/ai-usage");
-}
-
-/** Toggle cloud AI for the advisor/cron system. */
-export function toggleCloudAi(
-  enabled: boolean,
-): Promise<{ use_cloud_ai: boolean }> {
-  return patch<{ use_cloud_ai: boolean }>(
-    "/cloud-sync/cloud-ai",
-    { enabled },
-  );
 }
 
 /** Trigger an immediate cloud sync (push + pull). */
