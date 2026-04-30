@@ -1,5 +1,70 @@
 # Changelog
 
+## 1.3.0
+
+- Cron jobs now pre-inject Kaisho data (open tasks,
+  recent clock entries, inbox, customer budgets, time
+  insights) so prompts work on any model — including
+  ones that cannot tool-call (Gemma, small Ollama
+  models). Opt-in per job via the new ``inject_context``
+  field; default true to preserve existing behavior.
+  News/research templates set it to false to avoid
+  shipping unrelated data to the upstream LLM
+- Cloud cron path (``model: kaisho:cron``) now runs an
+  agentic loop with tools, mirroring the local Ollama
+  path. Prompts that need dynamic research
+  (``transcribe_youtube``, ``fetch_url``) work via
+  ``kaisho:cron`` for the first time
+- Cron tool surface restricted to a read-only subset
+  (inspection + research). Destructive tools
+  (``delete_*``, ``execute_cli``, profile management)
+  are no longer reachable from any cron path
+  (Anthropic, OpenAI-compatible, Ollama, kaisho cloud)
+- Path-traversal guard on cron job ids: the
+  ``create_cron_from_template`` MCP tool and the
+  ``POST /api/cron/jobs`` endpoint enforce a strict
+  slug regex (``^[a-z0-9][a-z0-9-]\{0,63\}$``)
+- User-created cron prompts now write to
+  ``cfg.PROFILE_DIR / "prompts/"`` so they survive
+  Kaisho version updates. Bundled template references
+  (e.g. ``prompts/daily-briefing.md``) keep working
+- New ``GET /api/cron/templates`` endpoint listing
+  curated cron job templates with metadata + prompt
+  body. Used by the new "From Template" picker in the
+  Cron view and by the advisor's
+  ``create_cron_from_template`` MCP tool
+- Cron history rows can now be expanded for failed
+  runs to read the full error message; the truncated
+  cell also shows full text on hover
+- Cron Ollama path now respects the job's ``timeout``
+  field (was silently ignored, falling back to a
+  hardcoded 300s). Default bumped 120s → 600s for new
+  jobs; 31B local models routinely exceed 5min in an
+  agentic loop
+- Per-run write-counter is now thread-safe
+  (``threading.local``). Concurrent runs from the
+  scheduler and the advisor's ``trigger_cron_job`` no
+  longer race
+- Default cron prompts (``hn-ai-daily``,
+  ``weekly-scout``) made generic for use as templates
+  in fresh profiles. Personal copies in
+  ``~/.kaisho/profiles/<profile>/prompts/`` are
+  unaffected
+- Tag/state/type sorting via drag-and-drop in Settings;
+  inline rename for customer types, inbox types, and
+  inbox channels; persistent action icons replace the
+  flaky ``opacity-0 group-hover`` pattern
+- Task and Clock edit forms now focus the description /
+  notes textarea instead of opening the customer
+  dropdown
+- Bug fix: ``trigger_cron_job`` MCP tool now passes
+  cloud credentials and the correct
+  ``ollama_cloud_api_key`` so kaisho:cron and
+  ollama_cloud:* jobs can be manually triggered
+- Bug fix: scheduler also passes the correct
+  ``ollama_cloud_api_key`` (same copy-paste error as
+  the trigger path)
+
 ## 1.2.0
 
 - Replace the Cloud AI global override with explicit

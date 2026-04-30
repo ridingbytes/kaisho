@@ -88,8 +88,9 @@ def openai_tools() -> list[dict]:
     return _to_openai_tools(TOOL_DEFS)
 
 
-def cron_safe_tools() -> list[dict]:
-    """Return the subset of tools cron jobs may invoke.
+def cron_safe_tool_defs() -> list[dict]:
+    """Return raw tool defs (Anthropic schema shape) cron
+    jobs may invoke.
 
     Cron runs unattended. Even with the Kaisho Context
     block pre-injected, an agentic prompt can decide to
@@ -101,12 +102,19 @@ def cron_safe_tools() -> list[dict]:
     deletes, no CLI, no profile management, no scheduled
     work. Cron's own output gets written to inbox via
     write_output, not via tools.
+
+    Used directly by run_prompt_claude (Anthropic API).
+    Wrap with cron_safe_tools() for OpenAI/Ollama shape.
     """
-    safe = [
+    return [
         t for t in TOOL_DEFS
         if t.get("tier", "read") == "read"
     ]
-    return _to_openai_tools(safe)
+
+
+def cron_safe_tools() -> list[dict]:
+    """Cron-safe tools in OpenAI / Ollama chat shape."""
+    return _to_openai_tools(cron_safe_tool_defs())
 
 
 def _to_openai_tools(defs: list[dict]) -> list[dict]:
@@ -1182,6 +1190,9 @@ def _create_cron_from_template(
         "output": tpl["default_output"],
         "timeout": tpl["default_timeout"],
         "enabled": enabled,
+        "inject_context": tpl.get(
+            "default_inject_context", True,
+        ),
     }
     try:
         add_job(cfg.JOBS_FILE, job)

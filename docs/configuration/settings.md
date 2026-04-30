@@ -95,7 +95,6 @@ backup:
 cloud_sync:
   url: ""
   api_key: ""
-  use_cloud_ai: false
 
 # Invoice export columns
 invoice_export:

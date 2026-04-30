@@ -15,6 +15,7 @@ app data autonomously.
 """
 import json
 import logging
+import threading
 from datetime import date
 from pathlib import Path
 
@@ -23,8 +24,12 @@ from ..ai_utils import (
     http_post as _http_post,
     parse_model as _parse_model,
 )
-from .tool_defs import TOOL_DEFS
-from .tools import cron_safe_tools, execute_tool
+from .tool_defs import TOOL_DEFS  # noqa: F401 — used by external imports
+from .tools import (
+    cron_safe_tool_defs,
+    cron_safe_tools,
+    execute_tool,
+)
 
 log = logging.getLogger(__name__)
 
@@ -224,11 +229,36 @@ _WRITE_TOOLS = {
 }
 MAX_WRITES_PER_RUN = 3
 
-_state = {"writes": 0}
+# Per-thread write counter. Each cron run lives in its
+# own thread (scheduler firing OR the advisor's
+# trigger_cron_job spawning a daemon thread), so a
+# threading.local() gives each run an isolated counter
+# without explicit plumbing through every helper. Avoids
+# the previous module-global race where a concurrent run
+# could reset or inflate another's count.
+_thread_state = threading.local()
+
+
+def _writes_count() -> int:
+    return getattr(_thread_state, "writes", 0)
 
 
 def _reset_write_counter():
-    _state["writes"] = 0
+    _thread_state.writes = 0
+
+
+def _bump_write(name: str) -> dict | None:
+    """Increment the per-run write counter and return an
+    error dict when the cap is exceeded, else None."""
+    _thread_state.writes = _writes_count() + 1
+    if _thread_state.writes > MAX_WRITES_PER_RUN:
+        return {
+            "error": (
+                f"Write limit reached "
+                f"({MAX_WRITES_PER_RUN} per run)"
+            ),
+        }
+    return None
 
 
 def _execute_tool_calls(
@@ -240,18 +270,10 @@ def _execute_tool_calls(
         fn = call.get("function", {})
         name = fn.get("name", "")
         if name in _WRITE_TOOLS:
-            _state["writes"] += 1
-            if _state["writes"] > MAX_WRITES_PER_RUN:
-                result = {
-                    "error": (
-                        f"Write limit reached "
-                        f"({MAX_WRITES_PER_RUN} per run)"
-                    ),
-                }
-            else:
-                result = execute_tool(
-                    name, fn.get("arguments", {}),
-                )
+            limit_err = _bump_write(name)
+            result = limit_err or execute_tool(
+                name, fn.get("arguments", {}),
+            )
         else:
             result = execute_tool(
                 name, fn.get("arguments", {}),
@@ -274,9 +296,9 @@ def _execute_tool_calls(
 def _execute_tool_block(name: str, input_data: dict) -> dict:
     """Execute a single tool call, enforcing write limits."""
     if name in _WRITE_TOOLS:
-        _state["writes"] += 1
-        if _state["writes"] > MAX_WRITES_PER_RUN:
-            return {"error": "Write limit reached"}
+        limit_err = _bump_write(name)
+        if limit_err:
+            return limit_err
     return execute_tool(name, input_data)
 
 
@@ -324,7 +346,7 @@ def run_prompt_claude(
         resp = client.messages.create(
             model=model,
             max_tokens=4096,
-            tools=TOOL_DEFS,
+            tools=cron_safe_tool_defs(),
             messages=messages,
         )
 
@@ -456,41 +478,6 @@ def run_prompt_openai_compatible(
 # ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
-
-def _inject_context(prompt: str) -> str:
-    """Prepend business data context to a prompt.
-
-    Claude CLI runs in a sandbox and cannot read org
-    files directly. This injects the current state of
-    tasks, clocks, customers, and inbox so the prompt
-    has all the data it needs.
-    """
-    from ..backends import get_backend
-    from ..services.advisor import (
-        _format_budgets,
-        _format_clocks,
-        _format_tasks,
-    )
-    from datetime import datetime, timezone
-
-    backend = get_backend()
-    now = datetime.now(timezone.utc).strftime(
-        "%Y-%m-%d %H:%M UTC"
-    )
-    tasks = backend.tasks.list_tasks(include_done=True)
-    clocks = backend.clocks.list_entries(period="week")
-    customers = backend.customers.get_budget_summary()
-
-    context = (
-        f"# Current Data ({now})\n\n"
-        f"## Tasks\n{_format_tasks(tasks)}\n\n"
-        f"## Clock Entries (This Week)\n"
-        f"{_format_clocks(clocks)}\n\n"
-        f"## Customer Budgets\n"
-        f"{_format_budgets(customers)}\n\n"
-        f"---\n\n"
-    )
-    return context + prompt
 
 
 def _run_claude_cli(
@@ -645,10 +632,11 @@ def _dispatch_prompt(
             mode=model_name or "cron",
         )
     if provider == "claude_cli":
+        # Context (when enabled by inject_context) is
+        # already prepended by execute_job — no need to
+        # double-wrap here.
         return _run_claude_cli(
-            model_name,
-            _inject_context(prompt),
-            timeout=timeout,
+            model_name, prompt, timeout=timeout,
         )
     if provider == "claude":
         return run_prompt_claude(
@@ -715,22 +703,28 @@ def execute_job(
 
     # Pre-fetch local Kaisho data (tasks, inbox, time
     # insights, customer budgets) and prepend as a markdown
-    # block. Mirrors the advisor pattern so cron prompts
-    # work on any model — including those that cannot call
-    # tools (Gemma, small Ollama models). Prompts that
-    # instruct dynamic tool use (weekly-scout transcribing
-    # YouTube videos) still get to use tools on top.
-    from .context import build_cron_context
-    try:
-        context_block = build_cron_context()
-        prompt = context_block + "\n\n---\n\n" + prompt
-    except Exception as exc:  # noqa: BLE001
-        # Don't kill the cron run if context-building hits
-        # a transient backend error. Log and continue with
-        # the raw prompt.
-        log.warning(
-            "build_cron_context failed: %s", exc,
-        )
+    # block. Opt-in per job — only the briefing/summary
+    # templates need it. News/research templates (HN
+    # digest, weekly-scout) wouldn't use it anyway, and
+    # injecting it ships customer/budget data to the
+    # upstream LLM provider unnecessarily.
+    #
+    # Default true preserves existing user behavior; new
+    # templates set inject_context: false explicitly.
+    if job.get("inject_context", True):
+        from .context import build_cron_context
+        try:
+            context_block = build_cron_context()
+            prompt = (
+                context_block + "\n\n---\n\n" + prompt
+            )
+        except Exception as exc:  # noqa: BLE001
+            # Don't kill the run if context-building hits
+            # a transient backend error. Log and continue
+            # with the raw prompt body.
+            log.warning(
+                "build_cron_context failed: %s", exc,
+            )
 
     model_str = job.get("model", "")
     provider, model_name = _parse_model(model_str)

@@ -4,6 +4,28 @@ Scheduled AI job management.
 
 **Prefix:** `/api/cron`
 
+## Templates
+
+### List Templates
+
+```
+GET /api/cron/templates
+```
+
+Returns the curated cron job templates. Each entry has
+metadata (description, category, requires_tools,
+default_inject_context) plus the prompt body. Used by the
+desktop "From Template" picker and the advisor's
+`create_cron_from_template` MCP tool.
+
+### Get Template
+
+```
+GET /api/cron/templates/{template_id}
+```
+
+Returns 404 if the template id is unknown.
+
 ## Jobs
 
 ### List Jobs
