@@ -7,6 +7,7 @@ import {
   enableCronJob,
   fetchCronHistory,
   fetchCronJobs,
+  fetchCronTemplates,
   fetchJobPrompt,
   moveCronOutput,
   saveJobPrompt,
@@ -21,6 +22,14 @@ export function useCronJobs() {
     queryKey: ["cron", "jobs"],
     queryFn: fetchCronJobs,
     staleTime: 30_000,
+  });
+}
+
+export function useCronTemplates() {
+  return useQuery({
+    queryKey: ["cron", "templates"],
+    queryFn: fetchCronTemplates,
+    staleTime: 5 * 60_000,
   });
 }
 

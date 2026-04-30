@@ -454,6 +454,18 @@ _HANDLERS: dict[str, Any] = {
         a.get("period", "month"),
     ),
     "list_cron_jobs": lambda a: _list_cron_jobs(),
+    "list_cron_templates": (
+        lambda a: _list_cron_templates()
+    ),
+    "create_cron_from_template": lambda a: (
+        _create_cron_from_template(
+            template_id=a["template_id"],
+            job_id=a["job_id"],
+            name=a.get("name"),
+            schedule=a.get("schedule"),
+            enabled=a.get("enabled", False),
+        )
+    ),
     "trigger_cron_job": lambda a: _trigger_cron_job(
         a["job_id"],
     ),
@@ -1032,6 +1044,99 @@ def _list_cron_jobs() -> dict:
     from ..services.cron import list_jobs
     cfg = get_config()
     return {"jobs": list_jobs(cfg.JOBS_FILE)}
+
+
+def _list_cron_templates() -> dict:
+    """Return available cron templates (metadata + prompt
+    bodies). Strips the prompt body from the result to
+    keep tool output compact — the model sees the
+    description and can ask the user which template to
+    pick. The prompt is loaded server-side when
+    create_cron_from_template runs."""
+    from ..services.cron_templates import (
+        list_cron_templates as _read_templates,
+    )
+    templates = _read_templates()
+    compact = [
+        {k: v for k, v in t.items() if k != "prompt"}
+        for t in templates
+    ]
+    return {"templates": compact}
+
+
+def _create_cron_from_template(
+    template_id: str,
+    job_id: str,
+    name: str | None = None,
+    schedule: str | None = None,
+    enabled: bool = False,
+) -> dict:
+    """Stamp a new cron job from a template.
+
+    Copies the template's prompt body into a fresh
+    ``prompts/<job_id>.md`` file so per-job customisation
+    doesn't mutate the shared template. Then registers the
+    job in the user's jobs file.
+    """
+    from pathlib import Path
+
+    from ..config import get_config
+    from ..services.cron import add_job, get_job
+    from ..services.cron_templates import (
+        get_cron_template,
+    )
+
+    tpl = get_cron_template(template_id)
+    if tpl is None:
+        return {
+            "error": f"Template not found: {template_id}",
+        }
+
+    cfg = get_config()
+    if get_job(cfg.JOBS_FILE, job_id) is not None:
+        return {
+            "error": f"Job already exists: {job_id}",
+        }
+
+    # Project-root prompts/ — same convention the API
+    # uses for inline prompt creation. This lets the user
+    # then edit the prompt via the existing prompt endpoint
+    # without affecting the original template.
+    project_root = (
+        Path(__file__).resolve()
+        .parent.parent.parent
+    )
+    prompts_dir = project_root / "prompts"
+    prompts_dir.mkdir(exist_ok=True)
+    prompt_path = prompts_dir / f"{job_id}.md"
+    prompt_path.write_text(tpl["prompt"], encoding="utf-8")
+
+    job = {
+        "id": job_id,
+        "name": name or tpl["name"],
+        "schedule": schedule or tpl["default_schedule"],
+        "model": tpl["default_model"],
+        "prompt_file": f"prompts/{job_id}.md",
+        "output": tpl["default_output"],
+        "timeout": tpl["default_timeout"],
+        "enabled": enabled,
+    }
+    try:
+        add_job(cfg.JOBS_FILE, job)
+    except ValueError as exc:
+        return {"error": str(exc)}
+
+    # Resync scheduler so the new job actually runs.
+    from .scheduler import sync_jobs
+    sync_jobs(cfg.JOBS_FILE)
+
+    return {
+        "ok": True,
+        "job_id": job_id,
+        "model": job["model"],
+        "schedule": job["schedule"],
+        "enabled": enabled,
+    }
 
 
 def _trigger_cron_job(job_id: str) -> dict:

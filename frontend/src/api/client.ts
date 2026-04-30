@@ -1110,6 +1110,27 @@ export function moveNote(
 
 // ─── Cron ───────────────────────────────────────────
 
+/** A cron job template the user can stamp out via the
+ *  picker or the advisor. */
+export interface CronTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  requires_tools: boolean;
+  default_schedule: string;
+  default_model: string;
+  default_output: string;
+  default_timeout: number;
+  prompt_file: string;
+  prompt: string;
+}
+
+/** Fetch all available cron job templates. */
+export function fetchCronTemplates(): Promise<CronTemplate[]> {
+  return get<CronTemplate[]>("/cron/templates");
+}
+
 /** Fetch all scheduled AI cron jobs. */
 export function fetchCronJobs(): Promise<CronJob[]> {
   return get<CronJob[]>("/cron/jobs");

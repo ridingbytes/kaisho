@@ -974,6 +974,77 @@ TOOL_DEFS: list[dict] = [
         "input_schema": {"type": "object", "properties": {}},
     },
     {
+        "name": "list_cron_templates",
+        "tier": "read",
+        "description": (
+            "List the cron job templates the user can "
+            "stamp out (daily briefing, weekly summary, "
+            "HN digest, etc.). Each template has an id, "
+            "name, description, default schedule, and a "
+            "prompt body. Use this before "
+            "create_cron_from_template to discover "
+            "available templates."
+        ),
+        "input_schema": {
+            "type": "object", "properties": {},
+        },
+    },
+    {
+        "name": "create_cron_from_template",
+        "tier": "write",
+        "description": (
+            "Create a new cron job from a template. The "
+            "template's prompt, model, and timeout are "
+            "used as defaults. The user MUST supply a "
+            "unique job_id; an optional schedule can "
+            "override the template's default schedule. "
+            "Confirm with the user before calling — "
+            "scheduling work has side effects."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "template_id": {
+                    "type": "string",
+                    "description": (
+                        "ID from list_cron_templates"
+                    ),
+                },
+                "job_id": {
+                    "type": "string",
+                    "description": (
+                        "Unique id for the new cron job "
+                        "(slug, kebab-case)"
+                    ),
+                },
+                "name": {
+                    "type": "string",
+                    "description": (
+                        "Optional human-readable name; "
+                        "defaults to template's name"
+                    ),
+                },
+                "schedule": {
+                    "type": "string",
+                    "description": (
+                        "Optional cron schedule override "
+                        "(5-field crontab syntax). "
+                        "Defaults to template's schedule."
+                    ),
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "description": (
+                        "Whether the job runs on its "
+                        "schedule. Default false — let "
+                        "the user enable it after review."
+                    ),
+                },
+            },
+            "required": ["template_id", "job_id"],
+        },
+    },
+    {
         "name": "trigger_cron_job",
         "tier": "write",
         "description": (

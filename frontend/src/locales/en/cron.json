@@ -1,5 +1,8 @@
 {
   "addJob": "Add Job",
+  "fromTemplate": "From Template",
+  "pickTemplate": "Pick a template",
+  "toolsRequired": "Tools",
   "jobs": "Jobs",
   "history": "History",
   "noJobsConfigured": "No jobs configured.",
