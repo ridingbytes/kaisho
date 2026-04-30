@@ -9,7 +9,6 @@ import {
   connectCloudSync,
   disconnectCloudSync,
   syncNow,
-  toggleCloudAi,
 } from "../../api/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmPopover } from "../common/ConfirmPopover";
@@ -52,14 +51,29 @@ export function CloudSyncSection(): JSX.Element {
     setErr("");
     connectCloudSync(cloudUrl.trim(), apiKey.trim())
       .then((res) => {
-        setMsg(
-          `Connected (plan: ${res.plan || "free"})`,
-        );
+        const auto = res.auto_set_models ?? {};
+        const autoSet = Object.keys(auto);
+        const baseMsg =
+          `Connected (plan: ${res.plan || "free"})`;
+        if (autoSet.length > 0) {
+          setMsg(
+            `${baseMsg} — auto-configured ` +
+            `${autoSet.join(", ")} → Kaisho AI`,
+          );
+        } else {
+          setMsg(baseMsg);
+        }
         setApiKey("");
         void qc.invalidateQueries({
           queryKey: ["settings", "cloud_sync"],
         });
-        setTimeout(() => setMsg(""), 3000);
+        void qc.invalidateQueries({
+          queryKey: ["settings", "ai"],
+        });
+        setTimeout(
+          () => setMsg(""),
+          autoSet.length > 0 ? 8000 : 3000,
+        );
       })
       .catch((e) => {
         const errorMsg =
@@ -268,70 +282,20 @@ export function CloudSyncSection(): JSX.Element {
             </dl>
           </div>
 
-          {/* Kaisho AI toggle — only available on
-              sync_ai plan */}
-          <div className="px-4 py-3 border-b border-border-subtle">
-            <label className={[
-              "flex items-center justify-between",
-              status?.plan === "sync_ai"
-                ? "cursor-pointer"
-                : "cursor-not-allowed opacity-50",
-            ].join(" ")}>
-              <div>
-                <p className="text-xs font-medium text-stone-700">
-                  {t("useKaishoAi")}
-                </p>
-                <p className="text-[10px] text-stone-500 mt-0.5">
-                  {status?.plan === "sync_ai"
-                    ? t("useKaishoAiHint")
-                    : t("planSyncAi") +
-                      " plan required."}
-                </p>
-              </div>
-              <button
-                disabled={status?.plan !== "sync_ai"}
-                onClick={() => {
-                  if (status?.plan !== "sync_ai") return;
-                  const next = !status?.use_cloud_ai;
-                  toggleCloudAi(next)
-                    .then(() => {
-                      void qc.invalidateQueries({
-                        queryKey: [
-                          "settings",
-                          "cloud_sync",
-                        ],
-                      });
-                    })
-                    .catch((e: { message?: string }) => {
-                      setErr(
-                        e?.message || "Toggle failed",
-                      );
-                    });
-                }}
-                className={[
-                  "relative w-9 h-5 rounded-full",
-                  "transition-colors shrink-0 ml-4",
-                  status?.use_cloud_ai
-                    ? "bg-cta"
-                    : "bg-stone-300",
-                ].join(" ")}
-              >
-                <span
-                  className={[
-                    "absolute top-0.5 left-0.5",
-                    "w-4 h-4 rounded-full bg-white",
-                    "shadow transition-transform",
-                    status?.use_cloud_ai
-                      ? "translate-x-4"
-                      : "",
-                  ].join(" ")}
-                />
-              </button>
-            </label>
-          </div>
+          {/* Kaisho AI info — sync_ai plan only */}
+          {status?.plan === "sync_ai" && (
+            <div className="px-4 py-3 border-b border-border-subtle">
+              <p className="text-xs font-medium text-stone-700">
+                {t("useKaishoAi")}
+              </p>
+              <p className="text-[10px] text-stone-600 mt-1 leading-relaxed">
+                {t("useKaishoAiHint")}
+              </p>
+            </div>
+          )}
 
           {/* AI token usage meter */}
-          {status?.use_cloud_ai && aiUsage && (
+          {status?.plan === "sync_ai" && aiUsage && (
             <div className="px-4 py-3 border-b border-border-subtle">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
                 {t("aiUsage")} ({aiUsage.month || "---"})

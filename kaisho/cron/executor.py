@@ -30,36 +30,14 @@ class ExecutorError(Exception):
     pass
 
 
-def resolve_model_label(
-    job: dict,
-    use_cloud_ai: bool,
-    cloud_url: str,
-    cloud_api_key: str,
-) -> str:
-    """Return the model identifier that ``execute_job``
-    will actually use for this run.
+def resolve_model_label(job: dict) -> str:
+    """Return the model identifier this job will run with.
 
-    Mirrors the routing decision in :func:`execute_job` so
-    that history records and UI surfaces show what really
-    ran. ``"kaisho:ai"`` is only returned when the cloud
-    gateway is fully configured AND the job opts in;
-    otherwise the job's local model wins, even if
-    ``use_kaisho_ai`` is set on the job.
-
-    :param job: Cron job dict.
-    :param use_cloud_ai: Global toggle for cloud AI.
-    :param cloud_url: Cloud gateway URL.
-    :param cloud_api_key: Cloud gateway API key.
-    :returns: ``"kaisho:ai"`` or the job's model string.
+    Now a thin pass-through: the job's ``model`` field is
+    the single source of truth. To use Kaisho AI for a
+    cron job, set ``model: kaisho:cron`` in the job
+    definition.
     """
-    routes_to_kaisho = (
-        job.get("use_kaisho_ai", False)
-        and use_cloud_ai
-        and cloud_url
-        and cloud_api_key
-    )
-    if routes_to_kaisho:
-        return "kaisho:ai"
     return job.get("model", "")
 
 
@@ -648,6 +626,7 @@ def _dispatch_prompt(
                 "content": prompt,
             }],
             max_tokens=4096,
+            mode=model_name or "cron",
         )
         return resp.get("text", "")
     if provider == "claude_cli":
@@ -706,33 +685,22 @@ def execute_job(
     openai_api_key: str = "",
     cloud_url: str = "",
     cloud_api_key: str = "",
-    use_cloud_ai: bool = False,
 ) -> str:
     """Run a cron job end-to-end and return the output.
 
-    When ``use_cloud_ai`` is True globally *and* the job
-    has ``use_kaisho_ai`` enabled, AI requests route
-    through the kaisho-cloud gateway. Jobs without this
-    flag always use their configured local model.
+    The job's ``model`` field is the single source of
+    truth — including ``kaisho:cron`` to route through
+    the Kaisho AI cloud gateway.
     """
     prompt = load_prompt(
         job["prompt_file"], project_root,
     )
 
-    # Per-job Kaisho AI: only route through the cloud
-    # when both the global toggle and the job flag are on.
-    job_wants_kaisho = job.get("use_kaisho_ai", False)
-    if (
-        job_wants_kaisho
-        and use_cloud_ai
-        and cloud_url
-        and cloud_api_key
-    ):
-        provider = "kaisho"
-        model_name = ""
-    else:
+    model_str = job.get("model", "")
+    provider, model_name = _parse_model(model_str)
+    if provider != "kaisho":
         err = verify_model(
-            job.get("model", ""),
+            model_str,
             ollama_base_url=ollama_base_url,
             ollama_cloud_url=ollama_cloud_url,
             ollama_cloud_api_key=ollama_cloud_api_key,
@@ -745,8 +713,9 @@ def execute_job(
             raise ExecutorError(
                 f"Model not accessible: {err}",
             )
-        provider, model_name = _parse_model(
-            job.get("model", ""),
+    elif not (cloud_url and cloud_api_key):
+        raise ExecutorError(
+            "Kaisho AI requires a connected Sync+AI plan",
         )
 
     output_text = _dispatch_prompt(

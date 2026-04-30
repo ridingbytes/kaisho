@@ -157,11 +157,6 @@ DEFAULT_CLOUD_SYNC: dict = {
     "url": "https://cloud.kaisho.dev",
     "api_key": "",
     "interval": 300,
-    # When True, the advisor/cron system routes AI
-    # requests through the cloud gateway instead of
-    # the locally configured model (ollama, etc.).
-    # Requires the sync_ai plan.
-    "use_cloud_ai": False,
 }
 
 
@@ -176,7 +171,6 @@ def get_cloud_sync_settings(settings: dict) -> dict:
         "url": raw["url"],
         "api_key_set": bool(raw.get("api_key")),
         "interval": raw["interval"],
-        "use_cloud_ai": raw.get("use_cloud_ai", False),
     }
 
 

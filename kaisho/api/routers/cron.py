@@ -52,7 +52,6 @@ class JobCreate(BaseModel):
     output: str = "inbox"
     timeout: int = 120
     enabled: bool = True
-    use_kaisho_ai: bool = False
 
 
 class JobUpdate(BaseModel):
@@ -63,7 +62,6 @@ class JobUpdate(BaseModel):
     output: str | None = None
     timeout: int | None = None
     enabled: bool | None = None
-    use_kaisho_ai: bool | None = None
 
 
 class PromptUpdate(BaseModel):
@@ -224,9 +222,6 @@ def _run_job_bg(job: dict, run_id: int) -> None:
             cloud_api_key=settings_svc.get_cloud_sync_key(
                 data,
             ),
-            use_cloud_ai=bool(
-                sync.get("use_cloud_ai"),
-            ),
         )
         finish_run(_profile(), run_id, "ok", output=output[:4000])
     except ExecutorError as exc:
@@ -242,15 +237,7 @@ def api_trigger_job(job_id: str, background_tasks: BackgroundTasks):
     job = get_job(_jobs_file(), job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
-    cfg = get_config()
-    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
-    sync = data.get("cloud_sync", {})
-    model_label = resolve_model_label(
-        job,
-        bool(sync.get("use_cloud_ai")),
-        sync.get("url", ""),
-        settings_svc.get_cloud_sync_key(data),
-    )
+    model_label = resolve_model_label(job)
     run_id = start_run(
         _profile(), job_id, model_label,
     )

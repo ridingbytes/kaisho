@@ -9,7 +9,6 @@ import { useToast } from "../../context/ToastContext";
 import {
   useAiSettings,
   useAvailableModels,
-  useCloudSyncStatus,
 } from "../../hooks/useSettings";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
@@ -139,12 +138,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
   const qc = useQueryClient();
   const { data: aiSettings } = useAiSettings();
   const { data: models = [] } = useAvailableModels();
-  const { data: cloudStatus } = useCloudSyncStatus();
-  const cloudAi = cloudStatus?.use_cloud_ai;
-
-  const model = cloudAi
-    ? "kaisho"
-    : (aiSettings?.advisor_model || "");
+  const model = aiSettings?.advisor_model || "";
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -340,7 +334,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
               ].join(" ")}
               title={ts("ai")}
             >
-              {cloudAi ? t("kaishoAi") : model}
+              {model}
             </button>
           )}
           <HelpButton
@@ -353,7 +347,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-5 py-4">
-        {messages.length === 0 && !loading && !cloudAi && !model && models.length === 0 && (
+        {messages.length === 0 && !loading && !model && models.length === 0 && (
           <div className="max-w-md mx-auto mt-12 text-center space-y-3">
             <p className="text-sm font-medium text-stone-700">
               {t("noAiProvider")}
@@ -373,7 +367,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             </button>
           </div>
         )}
-        {messages.length === 0 && !loading && (cloudAi || model || models.length > 0) && (
+        {messages.length === 0 && !loading && (model || models.length > 0) && (
           <div className="mt-8 space-y-3">
             <p className="text-sm text-stone-500 text-center">
               {t("askOrPick")}

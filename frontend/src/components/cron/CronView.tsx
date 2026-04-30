@@ -20,6 +20,7 @@ import { ResizeHandle } from "../common/ResizeHandle";
 import { useResizableColumns } from "../../hooks/useResizableColumns";
 import { DOCS } from "../../docs/panelDocs";
 import {
+  useAiSettings,
   useCloudSyncStatus,
   useKbSources,
 } from "../../hooks/useSettings";
@@ -163,19 +164,14 @@ function EnableToggle({
 
 function JobCard({
   job,
-  cloudAi,
 }: {
   job: CronJob;
-  cloudAi: boolean;
 }) {
   const { t } = useTranslation("cron");
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editSchedule, setEditSchedule] = useState(job.schedule);
   const [editModel, setEditModel] = useState(job.model);
-  const [editKaishoAi, setEditKaishoAi] = useState(
-    !!job.use_kaisho_ai,
-  );
   const [editOutput, setEditOutput] = useState(job.output);
   const [editTimeout, setEditTimeout] = useState(String(job.timeout));
   // undefined = not yet edited; string = user has typed something
@@ -187,8 +183,7 @@ function JobCard({
 
   const trigger = useTriggerCronJob();
   const [triggered, setTriggered] = useState(false);
-  const hasModel =
-    (job.use_kaisho_ai && cloudAi) || !!job.model;
+  const hasModel = !!job.model;
   const updateJob = useUpdateCronJob();
   const deleteJob = useDeleteCronJob();
   const savePrompt = useSaveJobPrompt();
@@ -212,7 +207,6 @@ function JobCard({
     e.stopPropagation();
     setEditSchedule(job.schedule);
     setEditModel(job.model);
-    setEditKaishoAi(!!job.use_kaisho_ai);
     setEditOutput(job.output);
     setEditTimeout(String(job.timeout));
     setEditing(true);
@@ -228,7 +222,6 @@ function JobCard({
           model: editModel,
           output: editOutput,
           timeout: Number(editTimeout),
-          use_kaisho_ai: editKaishoAi,
         },
       },
       { onSuccess: () => setEditing(false) }
@@ -340,11 +333,7 @@ function JobCard({
         <span title={t("schedule")}>{job.schedule}</span>
         <span className="text-stone-400">|</span>
         <span title={t("model")}>
-          {job.use_kaisho_ai && cloudAi ? (
-            <span className="text-cta">
-              {t("kaishoAi")}
-            </span>
-          ) : job.model ? (
+          {job.model ? (
             job.model
           ) : (
             <span className="text-amber-500">
@@ -381,53 +370,15 @@ function JobCard({
                   <span className="text-[10px] text-stone-500 uppercase tracking-wide">
                     {t("model")}
                   </span>
-                  {cloudAi && (
-                    <label className="flex items-center gap-2 mb-1">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setEditKaishoAi((v) => !v)
-                        }
-                        className={[
-                          "relative w-7 h-4 rounded-full",
-                          "transition-colors shrink-0",
-                          editKaishoAi
-                            ? "bg-cta"
-                            : "bg-stone-300",
-                        ].join(" ")}
-                      >
-                        <span
-                          className={[
-                            "absolute top-0.5 left-0.5",
-                            "w-3 h-3 rounded-full",
-                            "bg-white shadow",
-                            "transition-transform",
-                            editKaishoAi
-                              ? "translate-x-3"
-                              : "",
-                          ].join(" ")}
-                        />
-                      </button>
-                      <span className="text-[10px] text-stone-600">
-                        {t("kaishoAi")}
-                      </span>
-                    </label>
-                  )}
-                  {editKaishoAi && cloudAi ? (
-                    <span className="px-2 py-1 rounded text-xs font-medium bg-cta/10 text-cta border border-cta/30">
-                      {t("kaishoAi")}
-                    </span>
-                  ) : (
-                    <input
-                      className={fieldCls}
-                      value={editModel}
-                      onChange={(e) =>
-                        setEditModel(e.target.value)
-                      }
-                      placeholder="ollama:qwen3:14b"
-                      list={MODEL_DATALIST}
-                    />
-                  )}
+                  <input
+                    className={fieldCls}
+                    value={editModel}
+                    onChange={(e) =>
+                      setEditModel(e.target.value)
+                    }
+                    placeholder="ollama:qwen3:14b"
+                    list={MODEL_DATALIST}
+                  />
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="text-[10px] text-stone-500 uppercase tracking-wide">
@@ -530,18 +481,19 @@ function JobCard({
 
 function AddJobForm({
   onClose,
-  cloudAi,
+  defaultModel,
 }: {
   onClose: () => void;
-  cloudAi: boolean;
+  defaultModel: string;
 }) {
   const { t } = useTranslation("cron");
   const addJob = useAddCronJob();
   const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [schedule, setSchedule] = useState("0 9 * * 1-5");
-  const [model, setModel] = useState("ollama:qwen3:14b");
-  const [useKaishoAi, setUseKaishoAi] = useState(cloudAi);
+  const [model, setModel] = useState(
+    defaultModel || "ollama:qwen3:14b",
+  );
   const [output, setOutput] = useState("inbox");
   const [jobTimeout, setJobTimeout] = useState("120");
   const [promptContent, setPromptContent] = useState("");
@@ -558,7 +510,6 @@ function AddJobForm({
         output,
         timeout: Number(jobTimeout),
         enabled: true,
-        use_kaisho_ai: useKaishoAi,
       },
       { onSuccess: onClose }
     );
@@ -623,52 +574,14 @@ function AddJobForm({
           <span className="text-[10px] text-stone-500 uppercase tracking-wide">
             {t("model")}
           </span>
-          {cloudAi && (
-            <label className="flex items-center gap-2 mb-1">
-              <button
-                type="button"
-                onClick={() =>
-                  setUseKaishoAi((v) => !v)
-                }
-                className={[
-                  "relative w-7 h-4 rounded-full",
-                  "transition-colors shrink-0",
-                  useKaishoAi
-                    ? "bg-cta"
-                    : "bg-stone-300",
-                ].join(" ")}
-              >
-                <span
-                  className={[
-                    "absolute top-0.5 left-0.5",
-                    "w-3 h-3 rounded-full",
-                    "bg-white shadow",
-                    "transition-transform",
-                    useKaishoAi
-                      ? "translate-x-3"
-                      : "",
-                  ].join(" ")}
-                />
-              </button>
-              <span className="text-[10px] text-stone-600">
-                {t("kaishoAi")}
-              </span>
-            </label>
-          )}
-          {useKaishoAi && cloudAi ? (
-            <span className="px-2 py-1 rounded text-xs font-medium bg-cta/10 text-cta border border-cta/30">
-              {t("kaishoAi")}
-            </span>
-          ) : (
-            <input
-              className={fieldCls}
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              placeholder="ollama:qwen3:14b"
-              list={MODEL_DATALIST}
-              required
-            />
-          )}
+          <input
+            className={fieldCls}
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            placeholder="ollama:qwen3:14b"
+            list={MODEL_DATALIST}
+            required
+          />
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-[10px] text-stone-500 uppercase tracking-wide">
@@ -944,13 +857,22 @@ export function CronView() {
     useCronHistory();
   const { data: models = [] } = useAvailableModels();
   const { data: cloudStatus } = useCloudSyncStatus();
-  const cloudAi = !!cloudStatus?.use_cloud_ai;
+  const { data: aiSettings } = useAiSettings();
+  const onSyncAi = cloudStatus?.plan === "sync_ai";
+  const defaultCronModel =
+    aiSettings?.cron_model || "";
   const deleteRun = useDeleteCronRun();
 
   return (
     <div className="flex flex-col h-full">
       {/* Always-present datalist for model autocomplete */}
       <datalist id={MODEL_DATALIST}>
+        {onSyncAi && (
+          <>
+            <option value="kaisho:cron" />
+            <option value="kaisho:advisor" />
+          </>
+        )}
         {models.map((m) => (
           <option key={m} value={m} />
         ))}
@@ -977,12 +899,12 @@ export function CronView() {
       {showForm && (
         <AddJobForm
           onClose={() => setShowForm(false)}
-          cloudAi={cloudAi}
+          defaultModel={defaultCronModel}
         />
       )}
 
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-8">
-        {!cloudAi && models.length === 0 && (
+        {!onSyncAi && models.length === 0 && (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
             <p className="text-xs font-medium text-stone-700 mb-1">
               {ts("noAiProviderCron")}
@@ -1012,7 +934,6 @@ export function CronView() {
               <JobCard
                 key={job.id}
                 job={job}
-                cloudAi={cloudAi}
               />
             ))}
           </div>
