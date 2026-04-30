@@ -24,7 +24,7 @@ from ..ai_utils import (
     parse_model as _parse_model,
 )
 from .tool_defs import TOOL_DEFS
-from .tools import execute_tool, openai_tools
+from .tools import cron_safe_tools, execute_tool
 
 log = logging.getLogger(__name__)
 
@@ -362,7 +362,7 @@ def run_prompt_ollama(
     several calls and total wall time can exceed it.
     """
     _reset_write_counter()
-    tools = openai_tools()
+    tools = cron_safe_tools()
     messages: list[dict] = [
         {"role": "user", "content": prompt},
     ]
@@ -415,7 +415,7 @@ def run_prompt_openai_compatible(
 ) -> str:
     """Run an agentic OpenAI-compatible session with tools."""
     _reset_write_counter()
-    tools = openai_tools()
+    tools = cron_safe_tools()
     messages: list[dict] = [
         {"role": "user", "content": prompt},
     ]
@@ -639,7 +639,7 @@ def _dispatch_prompt(
                 "instructs you to fetch additional data."
             ),
             prompt=prompt,
-            tools=openai_tools(),
+            tools=cron_safe_tools(),
             tool_executor=execute_tool,
             max_tokens=4096,
             mode=model_name or "cron",

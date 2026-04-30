@@ -106,28 +106,31 @@ def api_get_job(job_id: str):
     return job
 
 
-def _write_prompt_file(job_id: str, content: str) -> str:
-    """Write inline prompt content to prompts/<job_id>.md.
-
-    Returns the relative path string stored in the job definition.
-    """
-    prompts_dir = _project_root() / "prompts"
-    prompts_dir.mkdir(exist_ok=True)
-    (prompts_dir / f"{job_id}.md").write_text(content, encoding="utf-8")
-    return f"prompts/{job_id}.md"
-
-
 @router.post("/jobs", status_code=201)
 def api_add_job(body: JobCreate):
     """Create a new cron job."""
+    from ...cron.tools import (
+        _validate_job_id, _write_user_prompt,
+    )
+
+    err = _validate_job_id(body.id)
+    if err:
+        raise HTTPException(status_code=400, detail=err)
+
+    cfg = get_config()
     data = body.model_dump()
     prompt_content = data.pop("prompt_content", "")
 
-    if not data["prompt_file"] and prompt_content:
-        data["prompt_file"] = _write_prompt_file(body.id, prompt_content)
-    elif not data["prompt_file"]:
-        # Create an empty placeholder so the job is runnable after editing
-        data["prompt_file"] = _write_prompt_file(body.id, "")
+    # Always write user-created prompts to the profile
+    # dir (not the runtime install dir, which gets
+    # refreshed across versions). Existing template
+    # references like ``prompts/daily-briefing.md``
+    # remain untouched.
+    if not data["prompt_file"]:
+        prompt_path = _write_user_prompt(
+            cfg, body.id, prompt_content,
+        )
+        data["prompt_file"] = str(prompt_path)
 
     try:
         job = add_job(_jobs_file(), data)

@@ -5,9 +5,49 @@ Tool definitions live in ``tool_defs.py``.
 ``execute_tool(name, args)`` dispatches a tool call to the backend.
 """
 import json
+import re
+from pathlib import Path
 from typing import Any
 
 from .tool_defs import TOOL_DEFS
+
+# Slug pattern for cron job ids and any user-supplied
+# string that ends up in a filesystem path. Lowercase
+# alphanumerics + dashes, must start with alphanumeric,
+# 1-64 chars. Strict to avoid path traversal and to keep
+# YAML / URL / disk paths sane.
+_JOB_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+
+
+def _validate_job_id(job_id: str) -> str | None:
+    """Return an error message if job_id is unsafe, else
+    None. Tightens to a slug shape so the value is safe
+    to use as a filename, in URLs, and in YAML."""
+    if not isinstance(job_id, str) or not job_id:
+        return "job_id is required"
+    if not _JOB_ID_RE.match(job_id):
+        return (
+            "Invalid job_id: must be lowercase "
+            "alphanumeric with dashes, 1-64 chars, "
+            "start with a letter or digit"
+        )
+    return None
+
+
+def _write_user_prompt(
+    cfg, job_id: str, content: str,
+) -> Path:
+    """Write a user-created prompt to the profile dir.
+
+    Returns the absolute path written. Uses the profile
+    dir (not the runtime install dir) so the prompt
+    survives Kaisho version updates.
+    """
+    prompts_dir = cfg.PROFILE_DIR / "prompts"
+    prompts_dir.mkdir(parents=True, exist_ok=True)
+    prompt_path = prompts_dir / f"{job_id}.md"
+    prompt_path.write_text(content, encoding="utf-8")
+    return prompt_path
 
 
 def _coerce_tags(value: Any) -> list[str] | None:
@@ -45,17 +85,44 @@ def _coerce_tags(value: Any) -> list[str] | None:
 
 def openai_tools() -> list[dict]:
     """Return tool definitions in OpenAI / Ollama chat format."""
-    result = []
-    for tool in TOOL_DEFS:
-        result.append({
+    return _to_openai_tools(TOOL_DEFS)
+
+
+def cron_safe_tools() -> list[dict]:
+    """Return the subset of tools cron jobs may invoke.
+
+    Cron runs unattended. Even with the Kaisho Context
+    block pre-injected, an agentic prompt can decide to
+    call tools — and the prompt body may include text
+    fetched from third-party URLs (HN, GitHub, etc.) that
+    can carry prompt-injection payloads. To bound the
+    blast radius we hand cron only ``tier=read`` tools:
+    inspection, research, and external fetches. No
+    deletes, no CLI, no profile management, no scheduled
+    work. Cron's own output gets written to inbox via
+    write_output, not via tools.
+    """
+    safe = [
+        t for t in TOOL_DEFS
+        if t.get("tier", "read") == "read"
+    ]
+    return _to_openai_tools(safe)
+
+
+def _to_openai_tools(defs: list[dict]) -> list[dict]:
+    """Project an internal tool list to OpenAI/Ollama
+    chat-completions ``tools`` shape."""
+    return [
+        {
             "type": "function",
             "function": {
-                "name": tool["name"],
-                "description": tool["description"],
-                "parameters": tool["input_schema"],
+                "name": t["name"],
+                "description": t["description"],
+                "parameters": t["input_schema"],
             },
-        })
-    return result
+        }
+        for t in defs
+    ]
 
 
 # -------------------------------------------------------------------
@@ -1073,18 +1140,22 @@ def _create_cron_from_template(
 ) -> dict:
     """Stamp a new cron job from a template.
 
-    Copies the template's prompt body into a fresh
-    ``prompts/<job_id>.md`` file so per-job customisation
-    doesn't mutate the shared template. Then registers the
-    job in the user's jobs file.
+    Copies the template's prompt body into a fresh prompt
+    file under the user's profile directory so per-job
+    customisation doesn't mutate the shared template, and
+    so the file survives Kaisho version updates (the
+    runtime install dir gets refreshed on update; the
+    profile dir does not).
     """
-    from pathlib import Path
-
     from ..config import get_config
     from ..services.cron import add_job, get_job
     from ..services.cron_templates import (
         get_cron_template,
     )
+
+    err = _validate_job_id(job_id)
+    if err:
+        return {"error": err}
 
     tpl = get_cron_template(template_id)
     if tpl is None:
@@ -1098,25 +1169,16 @@ def _create_cron_from_template(
             "error": f"Job already exists: {job_id}",
         }
 
-    # Project-root prompts/ — same convention the API
-    # uses for inline prompt creation. This lets the user
-    # then edit the prompt via the existing prompt endpoint
-    # without affecting the original template.
-    project_root = (
-        Path(__file__).resolve()
-        .parent.parent.parent
+    prompt_path = _write_user_prompt(
+        cfg, job_id, tpl["prompt"],
     )
-    prompts_dir = project_root / "prompts"
-    prompts_dir.mkdir(exist_ok=True)
-    prompt_path = prompts_dir / f"{job_id}.md"
-    prompt_path.write_text(tpl["prompt"], encoding="utf-8")
 
     job = {
         "id": job_id,
         "name": name or tpl["name"],
         "schedule": schedule or tpl["default_schedule"],
         "model": tpl["default_model"],
-        "prompt_file": f"prompts/{job_id}.md",
+        "prompt_file": str(prompt_path),
         "output": tpl["default_output"],
         "timeout": tpl["default_timeout"],
         "enabled": enabled,
@@ -1124,9 +1186,11 @@ def _create_cron_from_template(
     try:
         add_job(cfg.JOBS_FILE, job)
     except ValueError as exc:
+        # Roll back: remove the orphan prompt file we
+        # just wrote so the next attempt starts clean.
+        prompt_path.unlink(missing_ok=True)
         return {"error": str(exc)}
 
-    # Resync scheduler so the new job actually runs.
     from .scheduler import sync_jobs
     sync_jobs(cfg.JOBS_FILE)
 
@@ -1160,11 +1224,13 @@ def _trigger_cron_job(job_id: str) -> dict:
         from pathlib import Path
         from .executor import execute_job
         from ..services.settings import (
-            get_ai_settings, load_settings,
+            get_ai_settings,
+            get_cloud_sync_key,
+            load_settings,
         )
-        ai = get_ai_settings(
-            load_settings(cfg.SETTINGS_FILE),
-        )
+        data = load_settings(cfg.SETTINGS_FILE)
+        ai = get_ai_settings(data)
+        sync = data.get("cloud_sync", {})
         try:
             # execute_job already calls write_output
             # internally — do not call it again here.
@@ -1181,7 +1247,7 @@ def _trigger_cron_job(job_id: str) -> dict:
                     "ollama_cloud_url", "",
                 ),
                 ollama_cloud_api_key=ai.get(
-                    "ollama_api_key", "",
+                    "ollama_cloud_api_key", "",
                 ),
                 lm_studio_base_url=ai.get(
                     "lm_studio_url", "",
@@ -1201,6 +1267,8 @@ def _trigger_cron_job(job_id: str) -> dict:
                 openai_api_key=ai.get(
                     "openai_api_key", "",
                 ),
+                cloud_url=sync.get("url", ""),
+                cloud_api_key=get_cloud_sync_key(data),
             )
             finish_run(
                 cfg.PROFILE_DIR, run_id,
