@@ -89,8 +89,8 @@ def openai_tools() -> list[dict]:
 
 
 def cron_safe_tool_defs() -> list[dict]:
-    """Return raw tool defs (Anthropic schema shape) cron
-    jobs may invoke.
+    """Return cron-safe tool defs in Anthropic schema
+    shape: ``{name, description, input_schema}``.
 
     Cron runs unattended. Even with the Kaisho Context
     block pre-injected, an agentic prompt can decide to
@@ -103,11 +103,21 @@ def cron_safe_tool_defs() -> list[dict]:
     work. Cron's own output gets written to inbox via
     write_output, not via tools.
 
-    Used directly by run_prompt_claude (Anthropic API).
-    Wrap with cron_safe_tools() for OpenAI/Ollama shape.
+    The internal ``tier`` field is stripped so the result
+    is a strict-conforming Anthropic ``tools`` payload —
+    Anthropic ignores unknown keys today but the contract
+    is brittle and worth keeping clean.
+
+    Used directly by run_prompt_claude. Wrap with
+    cron_safe_tools() for OpenAI/Ollama shape.
     """
     return [
-        t for t in TOOL_DEFS
+        {
+            "name": t["name"],
+            "description": t["description"],
+            "input_schema": t["input_schema"],
+        }
+        for t in TOOL_DEFS
         if t.get("tier", "read") == "read"
     ]
 

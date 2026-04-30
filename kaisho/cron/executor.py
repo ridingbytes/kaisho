@@ -302,6 +302,24 @@ def _execute_tool_block(name: str, input_data: dict) -> dict:
     return execute_tool(name, input_data)
 
 
+def _bounded_execute(name: str, args) -> dict:
+    """Tool executor that honors the per-run write cap.
+
+    Used by the kaisho-cloud agentic path
+    (cloud_ai_agentic) which invokes tool_executor
+    directly without going through _execute_tool_calls /
+    _execute_tool_block. Without this wrapper, cloud cron
+    would be silently uncapped — fine today (cron tools
+    are read-only) but a latent footgun if the allowlist
+    grows.
+    """
+    if name in _WRITE_TOOLS:
+        limit_err = _bump_write(name)
+        if limit_err:
+            return limit_err
+    return execute_tool(name, args)
+
+
 def _collect_tool_results(content) -> list[dict]:
     """Process tool_use blocks from a Claude response.
 
@@ -614,6 +632,14 @@ def _dispatch_prompt(
         # via the cloud gateway. Prompts that don't call
         # tools terminate after one turn — same wire cost
         # as cloud_ai_complete used to be.
+        #
+        # The tool executor goes through _bounded_execute
+        # so the per-run write cap (MAX_WRITES_PER_RUN)
+        # applies on the cloud path too. Today this is
+        # belt-and-braces — cron_safe_tools is read-only
+        # — but if the allowlist ever expands the cap
+        # already covers it.
+        _reset_write_counter()
         return cloud_ai_agentic(
             cloud_url=cloud_url,
             api_key=cloud_api_key,
@@ -621,13 +647,14 @@ def _dispatch_prompt(
                 "You are the Kaisho AI cron advisor. "
                 "Generate a concise, actionable report "
                 "based on the Kaisho Context block at "
-                "the top of the prompt. Use the provided "
-                "tools only if the prompt explicitly "
-                "instructs you to fetch additional data."
+                "the top of the prompt (when present). "
+                "Use the provided tools only if the "
+                "prompt explicitly instructs you to "
+                "fetch additional data."
             ),
             prompt=prompt,
             tools=cron_safe_tools(),
-            tool_executor=execute_tool,
+            tool_executor=_bounded_execute,
             max_tokens=4096,
             mode=model_name or "cron",
         )

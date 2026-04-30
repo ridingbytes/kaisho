@@ -96,6 +96,52 @@ def test_scheduler_forwards_all_cloud_creds(tmp_path):
     assert captured["cloud_api_key"] == "CLOUD_KEY"
 
 
+def test_inject_context_false_skips_context_block(
+    tmp_path,
+):
+    """When a job sets inject_context=false, execute_job
+    must NOT prepend the Kaisho Context block. Used by
+    news/research templates so customer/budget data
+    isn't shipped to the upstream LLM unnecessarily."""
+    from kaisho.cron import executor
+
+    prompt_file = tmp_path / "test.md"
+    prompt_file.write_text(
+        "RAW PROMPT BODY", encoding="utf-8",
+    )
+
+    job = {
+        "id": "test-no-context",
+        "model": "ollama:qwen3:4b",
+        "prompt_file": str(prompt_file),
+        "schedule": "0 0 * * *",
+        "timeout": 60,
+        "inject_context": False,
+    }
+
+    captured = {}
+
+    def fake_dispatch(provider, model_name, prompt,
+                      **kwargs):
+        captured["prompt"] = prompt
+        return "ok"
+
+    with patch.object(
+        executor, "_dispatch_prompt", fake_dispatch,
+    ), patch.object(
+        executor, "verify_model", return_value=None,
+    ), patch.object(
+        executor, "write_output", return_value=None,
+    ):
+        executor.execute_job(
+            job, project_root=tmp_path,
+            ollama_base_url="http://localhost:11434",
+        )
+
+    assert "# Kaisho Context" not in captured["prompt"]
+    assert "RAW PROMPT BODY" in captured["prompt"]
+
+
 def test_trigger_cron_job_forwards_all_cloud_creds(
     tmp_path,
 ):
