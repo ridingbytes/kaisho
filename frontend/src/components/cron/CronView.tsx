@@ -745,13 +745,16 @@ function HistoryTable({
           {runs.map((run) => {
             const isOpen = expandedId === run.id;
             const hasOutput = !!run.output;
+            const hasError =
+              run.status === "error" && !!run.error;
+            const isExpandable = hasOutput || hasError;
             const model =
               run.model || jobMap.get(run.job_id)?.model || "";
             return (
               <Fragment key={run.id}>
                 <tr
                   onClick={() =>
-                    hasOutput
+                    isExpandable
                       ? setExpandedId(
                           isOpen ? null : run.id
                         )
@@ -759,14 +762,14 @@ function HistoryTable({
                   }
                   className={[
                     "border-b border-border-subtle transition-colors",
-                    hasOutput
+                    isExpandable
                       ? "cursor-pointer hover:bg-surface-raised"
                       : "",
                     isOpen ? "bg-surface-raised" : "",
                   ].join(" ")}
                 >
                   <td className="py-2 pr-2 text-stone-500 overflow-hidden">
-                    {hasOutput ? (
+                    {isExpandable ? (
                       isOpen ? (
                         <ChevronDown size={10} />
                       ) : (
@@ -802,7 +805,14 @@ function HistoryTable({
                   <td className="py-2 pr-4 overflow-hidden">
                     <StatusPill status={run.status} />
                   </td>
-                  <td className="py-2 pr-4 text-red-400 truncate">
+                  <td
+                    className="py-2 pr-4 text-red-400 truncate"
+                    title={
+                      run.status === "error"
+                        ? run.error ?? ""
+                        : undefined
+                    }
+                  >
                     {run.status === "error"
                       ? run.error
                       : ""}
@@ -820,7 +830,7 @@ function HistoryTable({
                     </button>
                   </td>
                 </tr>
-                {isOpen && (
+                {isOpen && hasOutput && (
                   <tr
                     key={`${run.id}-output`}
                     className="border-b border-border-subtle bg-surface-card"
@@ -835,6 +845,24 @@ function HistoryTable({
                         />
                       </div>
                       <Markdown>{run.output}</Markdown>
+                    </td>
+                  </tr>
+                )}
+                {isOpen && !hasOutput && hasError && (
+                  <tr
+                    key={`${run.id}-error`}
+                    className="border-b border-border-subtle bg-surface-card"
+                  >
+                    <td
+                      colSpan={9}
+                      className="px-4 py-4"
+                    >
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-red-500 mb-1">
+                        {tc("error")}
+                      </p>
+                      <pre className="text-xs text-red-500 whitespace-pre-wrap break-all font-mono">
+                        {run.error}
+                      </pre>
                     </td>
                   </tr>
                 )}
