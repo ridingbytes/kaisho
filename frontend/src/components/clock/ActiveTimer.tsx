@@ -82,14 +82,20 @@ export function ActiveTimer({ timer }: Props) {
           onClick={() => stop.mutate()}
           disabled={stop.isPending}
           title={t("stopTimer")}
+          aria-label={t("stopTimer")}
           className={[
-            "p-1.5 rounded-lg transition-colors",
-            "text-red-400 hover:text-red-500",
-            "hover:bg-red-500/10",
-            "disabled:opacity-40",
+            // Circular filled-red button — same shape and
+            // weight as the PWA running-timer Stop so
+            // both surfaces feel like the same product.
+            "inline-flex items-center justify-center",
+            "w-8 h-8 rounded-full",
+            "bg-red-500 text-white",
+            "border border-red-500",
+            "hover:brightness-110 transition-all",
+            "disabled:opacity-40 disabled:cursor-wait",
           ].join(" ")}
         >
-          <Square size={14} fill="currentColor" />
+          <Square size={12} fill="currentColor" />
         </button>
       </div>
 
