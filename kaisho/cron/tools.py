@@ -437,11 +437,16 @@ def _batch_invoice(args: dict) -> dict:
     return {"invoiced": count}
 
 
-# Plain string fields (research_targets is a list — see
-# ``_normalize_research_targets``).
-_USER_PROFILE_FIELDS = (
-    "name", "email", "bio", "company", "industry",
-)
+def _string_user_fields() -> tuple[str, ...]:
+    """All ``user.<field>`` names that map to plain
+    strings, derived from the canonical USER_FIELDS list
+    in placeholders. ``research_targets`` is the only
+    list-valued field and is handled separately.
+    """
+    from ..services.placeholders import USER_FIELDS
+    return tuple(
+        f for f in USER_FIELDS if f != "research_targets"
+    )
 
 
 def _get_user_profile(args: dict) -> dict:
@@ -456,7 +461,7 @@ def _get_user_profile(args: dict) -> dict:
     cfg = get_config()
     data = load_user_yaml(cfg)
     out: dict = {"profile": cfg.PROFILE}
-    for field in _USER_PROFILE_FIELDS:
+    for field in _string_user_fields():
         out[field] = data.get(field, "")
     out["research_targets"] = list(
         data.get("research_targets") or []
@@ -492,7 +497,7 @@ def _update_user_profile(args: dict) -> dict:
     cfg = get_config()
     data = load_user_yaml(cfg)
     written: list[str] = []
-    for field in _USER_PROFILE_FIELDS:
+    for field in _string_user_fields():
         if field not in args or args[field] is None:
             continue
         value = args[field]

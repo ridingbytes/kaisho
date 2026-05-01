@@ -203,6 +203,24 @@ def api_ask(body: AskRequest):
 _BUILTIN_PROMPTS = {"onboard": "onboard.md"}
 
 
+@router.get("/placeholder-vocab")
+def get_placeholder_vocab():
+    """Return the canonical placeholder vocabulary.
+
+    The frontend's prompt editor uses this to know which
+    ``${...}`` tokens to highlight as known. Serving from
+    the backend means the editor stays in sync with the
+    Python substitution layer without manual edits.
+    """
+    from ...services.placeholders import (
+        SYSTEM_FIELDS, USER_FIELDS,
+    )
+    return {
+        "user_fields": list(USER_FIELDS),
+        "system_fields": list(SYSTEM_FIELDS),
+    }
+
+
 @router.get("/builtin-prompt/{name}")
 def get_builtin_prompt(name: str):
     """Return a packaged advisor prompt body by name."""
