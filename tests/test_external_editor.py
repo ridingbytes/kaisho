@@ -51,6 +51,27 @@ def test_files_path_known_kinds(client):
         assert body["path"].endswith(".org")
 
 
+def test_files_path_honors_configured_org_dir(
+    client, tmp_path,
+):
+    """When the user sets a custom org_dir in
+    Settings → Paths, /api/files/path must resolve
+    against that, not the .env default."""
+    custom = tmp_path / "custom-org"
+    custom.mkdir()
+
+    r = client.patch(
+        "/api/settings/paths",
+        json={"org_dir": str(custom), "backend": "org"},
+    )
+    assert r.status_code == 200, r.text
+
+    r = client.get("/api/files/path?kind=tasks")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["path"] == str(custom / "todos.org")
+
+
 def test_files_path_unknown_kind_400(client):
     r = client.get("/api/files/path?kind=nope")
     assert r.status_code == 400
