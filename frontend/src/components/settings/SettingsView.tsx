@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { DOCS } from "../../docs/panelDocs";
-import { GeneralTab, NavigationSection } from "./GeneralTab";
+import { GeneralTab } from "./GeneralTab";
 import { ProfileTab } from "./ProfileTab";
 import { TagsAndTypesTab } from "./TagsTab";
 import { AiSection } from "./AiTab";
@@ -119,12 +119,7 @@ export function SettingsView(): JSX.Element {
           {activeTab === "general" && <GeneralTab />}
           {activeTab === "tags" && <TagsAndTypesTab />}
           {activeTab === "ai" && <AiSection />}
-          {activeTab === "github" && (
-            <div className="flex flex-col gap-8">
-              <GithubSection />
-              <NavigationSection />
-            </div>
-          )}
+          {activeTab === "github" && <GithubSection />}
           {activeTab === "cloud" && <CloudSyncSection />}
           {activeTab === "backup" && <BackupSection />}
           {activeTab === "export" && (
