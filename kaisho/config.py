@@ -1,4 +1,6 @@
+import os
 import sys
+import threading
 from functools import lru_cache
 from pathlib import Path
 
@@ -7,14 +9,22 @@ from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-def _get_project_root() -> Path:
-    """Return the project root, handling PyInstaller."""
+def get_project_root() -> Path:
+    """Return the project root, handling PyInstaller.
+
+    In a frozen build the bundled resources live under
+    ``sys._MEIPASS``; in source checkouts the project root
+    is two levels up from this file.
+    """
     if getattr(sys, "frozen", False):
         return Path(sys._MEIPASS)
     return Path(__file__).parent.parent
 
 
-_PROJECT_ROOT = _get_project_root()
+# Backwards-compatible alias retained for callers that
+# imported the original private name during early
+# development. Prefer ``get_project_root()`` in new code.
+_PROJECT_ROOT = get_project_root()
 
 
 class Settings(BaseSettings):
@@ -158,18 +168,36 @@ def load_user_yaml(
     return {**_user_template(), **data}
 
 
+# Serializes writes to user.yaml across threads. Without
+# this two callers (advisor tool + Settings UI in another
+# tab) racing on read-modify-write would lose the loser's
+# changes. Module-level lock is fine -- there is one
+# user.yaml per profile and one process per profile.
+_USER_YAML_LOCK = threading.Lock()
+
+
 def save_user_yaml(
     cfg: Settings, data: dict,
 ) -> None:
-    """Write user.yaml to the profile directory."""
+    """Write user.yaml to the profile directory.
+
+    Atomic: writes to a sibling ``.tmp`` file, then
+    ``os.replace``s it into place so a crash mid-write
+    cannot leave a truncated user.yaml. Serialised through
+    a process-wide lock to prevent concurrent writers from
+    interleaving.
+    """
     path = cfg.PROFILE_DIR / "user.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        yaml.dump(
-            data, f,
-            default_flow_style=False,
-            allow_unicode=True,
-        )
+    tmp = path.with_suffix(".yaml.tmp")
+    with _USER_YAML_LOCK:
+        with open(tmp, "w", encoding="utf-8") as f:
+            yaml.dump(
+                data, f,
+                default_flow_style=False,
+                allow_unicode=True,
+            )
+        os.replace(tmp, path)
 
 
 # -------------------------------------------------------------------

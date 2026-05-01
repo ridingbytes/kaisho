@@ -84,6 +84,56 @@ def test_update_rejects_bad_research_targets_type(isolated_profile):
     assert "error" in result
 
 
+def test_update_rejects_non_string_scalar(isolated_profile):
+    """A model that emits ``{"name": {"first": "X"}}`` must
+    be rejected, not silently coerced via ``str()``."""
+    from kaisho.cron.tools import (
+        _get_user_profile, _update_user_profile,
+    )
+    result = _update_user_profile({"name": {"first": "X"}})
+    assert "error" in result
+    assert _get_user_profile({})["name"] == ""
+
+
+def test_save_user_yaml_is_atomic(isolated_profile, monkeypatch):
+    """A crash mid-write must not leave a truncated file."""
+    import yaml as _yaml
+    from kaisho.config import (
+        load_user_yaml, save_user_yaml,
+    )
+
+    # Seed the profile with a known good user.yaml so a
+    # later crash is testable against it.
+    save_user_yaml(isolated_profile, {"name": "Original"})
+    assert (
+        load_user_yaml(isolated_profile)["name"]
+        == "Original"
+    )
+
+    real_dump = _yaml.dump
+
+    def boom(*a, **kw):
+        # Simulate a crash AFTER yaml has written into the
+        # tmp file but BEFORE the atomic replace.
+        real_dump(*a, **kw)
+        raise RuntimeError("simulated crash")
+
+    monkeypatch.setattr(_yaml, "dump", boom)
+    try:
+        save_user_yaml(
+            isolated_profile, {"name": "Half-written"},
+        )
+    except RuntimeError:
+        pass
+
+    # Original user.yaml must still be intact: tmp file was
+    # never replaced into place.
+    assert (
+        load_user_yaml(isolated_profile)["name"]
+        == "Original"
+    )
+
+
 def test_idempotent_get_after_update(isolated_profile):
     """Running get -> update with same values -> get
     returns the same profile (no surprise mutations)."""

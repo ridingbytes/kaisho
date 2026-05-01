@@ -34,9 +34,20 @@ def migrate_profile_prompts(profile_dir: Path) -> int:
 
     changed = 0
     for path in sorted(prompts_dir.glob("*.md")):
+        # ``newline=""`` keeps the file's existing line
+        # endings (CRLF on Windows hand-edits) — without
+        # it, write_text would translate \n → os.linesep
+        # and silently rewrite every line on Windows.
+        # ``UnicodeDecodeError`` on a hand-edited prompt
+        # in a non-UTF-8 encoding must not break server
+        # startup; skip and warn instead.
         try:
-            original = path.read_text(encoding="utf-8")
-        except OSError as exc:
+            with open(
+                path, "r",
+                encoding="utf-8", newline="",
+            ) as f:
+                original = f.read()
+        except (OSError, UnicodeDecodeError) as exc:
             log.warning(
                 "Skipping migration for %s: %s",
                 path, exc,
@@ -50,7 +61,11 @@ def migrate_profile_prompts(profile_dir: Path) -> int:
             "${date}", rewritten,
         )
         if rewritten != original:
-            path.write_text(rewritten, encoding="utf-8")
+            with open(
+                path, "w",
+                encoding="utf-8", newline="",
+            ) as f:
+                f.write(rewritten)
             changed += 1
 
     if changed:

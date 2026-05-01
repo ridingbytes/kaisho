@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import date as _date
 
 log = logging.getLogger(__name__)
 
@@ -34,7 +35,12 @@ log = logging.getLogger(__name__)
 # negative-lookbehind keeps escape semantics: a literal
 # ``\${user.foo}`` in prose passes through untouched
 # (the backslash is stripped at the end).
-_PLACEHOLDER_RE = re.compile(r"(?<!\\)\$\{([^}]+)\}")
+#
+# The token body excludes ``}`` and ``\n`` so a malformed
+# ``${user.name`` (missing close brace) cannot greedily
+# swallow content up to a matching brace many lines down.
+# Multi-line tokens are not a feature we want to support.
+_PLACEHOLDER_RE = re.compile(r"(?<!\\)\$\{([^}\n]+)\}")
 _ESCAPED_RE = re.compile(r"\\\$\{")
 
 # Valid user.* fields. Updates here flow into validation
@@ -72,8 +78,7 @@ def render_placeholders(
     """
     user = user or {}
     if date_iso is None:
-        from datetime import date
-        date_iso = date.today().isoformat()
+        date_iso = _date.today().isoformat()
 
     unresolved: list[str] = []
 
@@ -101,8 +106,17 @@ def _resolve_one(
     date_iso: str,
     fetch_results: str | None,
 ) -> str | None:
-    """Look up a single placeholder name. Returns None
-    when unknown so the caller can flag it."""
+    """Look up a single placeholder name.
+
+    Return values:
+    - ``str`` for any *known* placeholder. Missing data
+      (e.g. ``user.bio`` when bio is empty) renders as
+      ``""`` so the surrounding prose still flows.
+    - ``None`` for an *unknown* placeholder (typo, removed
+      field). The caller leaves the literal token in
+      place and reports it via the unresolved list so the
+      editor can flag the mistake.
+    """
     if name == "date":
         return date_iso
     if name == "fetch_results":
@@ -141,7 +155,13 @@ def find_placeholders(body: str) -> set[str]:
 
 def is_known_placeholder(name: str) -> bool:
     """Return True if ``name`` is a recognised
-    placeholder. Used by the editor highlighter."""
+    placeholder. Used by the editor highlighter.
+
+    Trims surrounding whitespace to match the contract
+    of ``find_placeholders`` and the editor's highlighter,
+    which both strip whitespace before lookup.
+    """
+    name = name.strip()
     if name in SYSTEM_FIELDS:
         return True
     if name.startswith("user."):
