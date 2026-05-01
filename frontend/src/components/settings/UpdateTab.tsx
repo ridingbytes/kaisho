@@ -10,6 +10,7 @@ import { useVersionInfo } from "../../hooks/useSettings";
 import { openWhatsNew } from "../common/WhatsNewDialog";
 import { isTauri } from "../../utils/tauri";
 import { parseChangelog } from "../../utils/changelog";
+import { Markdown } from "../common/Markdown";
 import { saveBtnCls } from "./styles";
 
 export function UpdateSection(): JSX.Element {
@@ -178,7 +179,7 @@ export function UpdateSection(): JSX.Element {
                     className="flex items-start gap-2 text-xs text-stone-600 leading-relaxed"
                   >
                     <span className="mt-1.5 w-1 h-1 rounded-full bg-stone-400 shrink-0" />
-                    {item}
+                    <Markdown compact>{item}</Markdown>
                   </li>
                 ))}
               {entries[0].items.length > 5 && (

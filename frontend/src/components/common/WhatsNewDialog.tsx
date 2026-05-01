@@ -7,6 +7,7 @@ import {
   parseChangelog,
   type ChangelogEntry,
 } from "../../utils/changelog";
+import { Markdown } from "./Markdown";
 
 const SEEN_KEY = "kaisho_seen_version";
 
@@ -88,7 +89,7 @@ export function WhatsNewDialog() {
                 className="flex items-start gap-2 text-xs text-stone-700 leading-relaxed"
               >
                 <span className="mt-1.5 w-1 h-1 rounded-full bg-cta shrink-0" />
-                {item}
+                <Markdown compact>{item}</Markdown>
               </li>
             ))}
           </ul>
