@@ -1,5 +1,7 @@
 import { Check, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect, useLayoutEffect, useRef, useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 
@@ -35,15 +37,6 @@ export function ConfirmPopover({
 
   useEffect(() => {
     if (!open) return;
-    // Position below the trigger element
-    if (triggerRef.current) {
-      const rect =
-        triggerRef.current.getBoundingClientRect();
-      setPos({
-        top: rect.bottom + 4,
-        left: Math.max(8, rect.right - 180),
-      });
-    }
     function onMouseDown(e: MouseEvent) {
       if (
         popRef.current &&
@@ -60,6 +53,25 @@ export function ConfirmPopover({
         "mousedown",
         onMouseDown,
       );
+  }, [open]);
+
+  // Position the popover below the trigger with its
+  // right edge aligned to the trigger's right edge. We
+  // measure the popover after it mounts (useLayoutEffect
+  // runs before paint, so the user never sees a flash at
+  // 0,0). Falls back to a safe left-aligned position if
+  // the right-aligned placement would overflow the
+  // viewport on the left.
+  useLayoutEffect(() => {
+    if (!open) return;
+    if (!triggerRef.current || !popRef.current) return;
+    const trig = triggerRef.current.getBoundingClientRect();
+    const popW = popRef.current.offsetWidth;
+    const next = {
+      top: trig.bottom + 4,
+      left: Math.max(8, trig.right - popW),
+    };
+    setPos(next);
   }, [open]);
 
   const popover = open
