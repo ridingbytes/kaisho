@@ -14,6 +14,7 @@ import { syncNow } from "../../api/client";
 import { ActiveTimer } from "./ActiveTimer";
 import { StoppedTimer } from "./StoppedTimer";
 import type { ActiveTimer as ActiveTimerType } from "../../types";
+import { elapsed } from "../../utils/formatting";
 import { CloudTimer } from "./CloudTimer";
 import { CalendarWidget } from "./CalendarWidget";
 import { ClockList } from "./ClockList";
@@ -57,6 +58,30 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
   useEffect(() => {
     if (timer?.active) setStopped(null);
   }, [timer?.active]);
+
+  // Pin a stopped snapshot whenever the running timer
+  // disappears. Covers both the user's own Stop click
+  // (ActiveTimer's onStopSnapshot already set it, so the
+  // !stopped guard makes this branch a no-op) AND a stop
+  // initiated by another device, where invalidation flips
+  // timer.active to false without setting the snapshot.
+  const prevTimerRef = useRef<ActiveTimerType | null>(
+    null,
+  );
+  useEffect(() => {
+    const prev = prevTimerRef.current;
+    prevTimerRef.current = timer ?? null;
+    const wasRunning = !!(
+      prev && prev.active && prev.start
+    );
+    const stillRunning = !!(timer && timer.active);
+    if (wasRunning && !stillRunning && !stopped) {
+      setStopped({
+        timer: prev as ActiveTimerType,
+        finalElapsed: elapsed(prev!.start!),
+      });
+    }
+  }, [timer, stopped]);
   const qc = useQueryClient();
 
   // When the cloud timer disappears (stopped on mobile),
