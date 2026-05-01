@@ -174,22 +174,34 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  useEffect(() => {
-    function onRun(e: Event) {
-      const cmd = (e as CustomEvent<string>).detail;
-      const handler = SLASH_COMMANDS[cmd];
-      if (handler) handler.action("");
-    }
-    window.addEventListener("advisor-run-slash", onRun);
-    return () =>
-      window.removeEventListener("advisor-run-slash", onRun);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   function clearMessages() {
     onMessagesChange([]);
     setError(null);
   }
+
+  // SLASH_COMMANDS is rebuilt every render so its handler
+  // closures see the latest state (model, t, sendMessage,
+  // ...). The window event listener for "advisor-run-slash"
+  // (mounted once) reads through this ref so it always
+  // dispatches against the current handlers — without the
+  // ref it would capture the first-render closure and
+  // silently use stale state.
+  const slashRef = useRef<
+    Record<string, {
+      desc: string;
+      action: (arg: string) => void;
+    }>
+  >({});
+
+  useEffect(() => {
+    function onRun(e: Event) {
+      const cmd = (e as CustomEvent<string>).detail;
+      slashRef.current[cmd]?.action("");
+    }
+    window.addEventListener("advisor-run-slash", onRun);
+    return () =>
+      window.removeEventListener("advisor-run-slash", onRun);
+  }, []);
 
   const SLASH_COMMANDS: Record<string, {
     desc: string;
@@ -230,6 +242,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
       },
     },
   };
+  slashRef.current = SLASH_COMMANDS;
 
   function handleSlashCommand(text: string): boolean {
     const [cmd, ...rest] = text.split(" ");
