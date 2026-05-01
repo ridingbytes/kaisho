@@ -190,6 +190,9 @@ function UserProfileSection() {
           <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
             {t("bio")}
           </span>
+          <span className="text-[10px] text-stone-400">
+            {t("bioHelp")}
+          </span>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
@@ -250,10 +253,7 @@ function UserProfileSection() {
             placeholder={t(
               "researchTargetsPlaceholder",
             )}
-            className={[
-              inputCls,
-              "resize-y font-mono text-xs",
-            ].join(" ")}
+            className={[inputCls, "resize-y"].join(" ")}
           />
         </label>
 
