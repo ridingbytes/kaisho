@@ -695,6 +695,9 @@ export function useUpdateUserProfile() {
       email?: string;
       bio?: string;
       avatar_seed?: string;
+      company?: string;
+      industry?: string;
+      research_targets?: string[];
     }) => updateUserProfile(updates),
     onMutate: async (updates) => {
       await qc.cancelQueries({ queryKey: ["settings", "user"] });

@@ -43,6 +43,11 @@ def get_current_user():
         "email": meta.get("email", ""),
         "bio": meta.get("bio", ""),
         "avatar_seed": meta.get("avatar_seed", ""),
+        "company": meta.get("company", ""),
+        "industry": meta.get("industry", ""),
+        "research_targets": (
+            meta.get("research_targets") or []
+        ),
         "profiles": list_profiles(cfg),
     }
 
@@ -52,22 +57,32 @@ class UserProfileUpdate(BaseModel):
     email: str | None = None
     bio: str | None = None
     avatar_seed: str | None = None
+    company: str | None = None
+    industry: str | None = None
+    research_targets: list[str] | None = None
 
 
 @router.patch("/user/profile")
 def update_user_profile(body: UserProfileUpdate):
-    """Update name, email, bio in user.yaml."""
+    """Update user.yaml fields, including the placeholder
+    fields surfaced via ``${user.<field>}`` in cron and
+    advisor prompts (company, industry, research_targets).
+    """
     from ...config import load_user_yaml, save_user_yaml
     cfg = get_config()
     data = load_user_yaml(cfg)
-    if body.name is not None:
-        data["name"] = body.name
-    if body.email is not None:
-        data["email"] = body.email
-    if body.bio is not None:
-        data["bio"] = body.bio
-    if body.avatar_seed is not None:
-        data["avatar_seed"] = body.avatar_seed
+    for field in (
+        "name", "email", "bio", "avatar_seed",
+        "company", "industry",
+    ):
+        value = getattr(body, field)
+        if value is not None:
+            data[field] = value
+    if body.research_targets is not None:
+        data["research_targets"] = [
+            t.strip() for t in body.research_targets
+            if t and t.strip()
+        ]
     save_user_yaml(cfg, data)
     return data
 

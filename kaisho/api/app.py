@@ -71,6 +71,15 @@ async def lifespan(app: FastAPI):
     cfg.PROFILE_DIR.mkdir(parents=True, exist_ok=True)
     init_data_dir(cfg)
 
+    # One-shot migration of legacy ``{date}`` /
+    # ``{fetch_results}`` placeholders in the profile's
+    # prompt files to the new ``${...}`` syntax.
+    # Idempotent — running twice does nothing.
+    from ..services.placeholders_migration import (
+        migrate_profile_prompts,
+    )
+    migrate_profile_prompts(cfg.PROFILE_DIR)
+
     # Capture the event loop so background threads
     # (scheduler, cloud WS) can schedule async broadcasts.
     from .ws.manager import set_event_loop
