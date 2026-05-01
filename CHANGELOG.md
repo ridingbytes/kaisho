@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.4.1
+
+### Features
+
+- Settings > General > Navigation: new "Hide GitHub
+  menu entry" toggle removes the GitHub item from the
+  sidebar for users who don't track issues or PRs in
+  Kaisho. Per-device preference (localStorage)
+- Settings > Updates: new "Version history" card lists
+  every previous release parsed from the changelog;
+  expand the card to browse, expand each version to see
+  its full bullet list
+
+### Fixes
+
+- Windows update: fix "Error opening the file for
+  writing; kai-server.exe" when installing an update
+  via the in-app updater. The frontend now kills the
+  sidecar via a new ``kill_sidecar`` IPC before the
+  download starts so the file handle is released before
+  the installer claims it. The NSIS pre-install hook
+  also polls ``tasklist`` for up to 6s as a backstop
+- The What's-New dialog and Update tab now render
+  RST-style double-backtick code spans as Markdown
+  inline code. Past entries no longer show literal
+  backticks
+- After running ``/onboard``, the General tab and
+  empty-profile banner refresh immediately. The advisor
+  now invalidates the ``settings`` query key after
+  tool calls
+
 ## 1.4.0
 
 ### Features
