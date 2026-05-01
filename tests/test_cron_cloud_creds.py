@@ -96,6 +96,70 @@ def test_scheduler_forwards_all_cloud_creds(tmp_path):
     assert captured["cloud_api_key"] == "CLOUD_KEY"
 
 
+def test_api_trigger_forwards_all_cloud_creds(tmp_path):
+    """The UI's manual "Run" button POSTs to
+    /api/cron/jobs/{id}/trigger which calls _run_job_bg.
+    This path forgot to forward ``ollama_cloud_url`` and
+    ``ollama_cloud_api_key``, so users with a cron job set
+    to ``ollama_cloud:<model>`` got
+    "Ollama Cloud URL not configured" even after
+    configuring the URL in Settings."""
+    from kaisho.api.routers import cron as cron_router
+
+    job = {
+        "id": "test-job",
+        "model": "ollama_cloud:gemma3:27b",
+        "prompt_file": "prompts/daily-briefing.md",
+        "schedule": "0 0 * * *",
+        "timeout": 60,
+    }
+
+    captured = {}
+
+    def fake_execute_job(job_arg, **kwargs):
+        captured.update(kwargs)
+        return "ok"
+
+    cfg_stub = type(
+        "Cfg", (),
+        {
+            "PROFILE_DIR": tmp_path,
+            "SETTINGS_FILE": tmp_path / "settings.yaml",
+            "JOBS_FILE": tmp_path / "jobs.yaml",
+        },
+    )()
+
+    with patch.object(
+        cron_router, "execute_job", fake_execute_job,
+    ), patch.object(
+        cron_router, "get_config", return_value=cfg_stub,
+    ), patch.object(
+        cron_router, "finish_run", return_value=None,
+    ), patch(
+        "kaisho.services.settings.load_settings",
+        return_value=_settings_fixture(),
+    ), patch(
+        "kaisho.services.settings.get_ai_settings",
+        return_value=_ai_settings_fixture(),
+    ), patch(
+        "kaisho.services.settings.get_cloud_sync_key",
+        return_value="CLOUD_KEY",
+    ):
+        cron_router._run_job_bg(job, run_id=1)
+
+    assert captured["ollama_api_key"] == "OLLAMA_LOCAL_KEY"
+    assert captured["ollama_cloud_url"] == (
+        "https://cloud.ollama"
+    )
+    assert captured["ollama_cloud_api_key"] == (
+        "OLLAMA_CLOUD_KEY"
+    )
+    assert (
+        captured["cloud_url"] == "https://cloud.kaisho.dev"
+    )
+    assert captured["cloud_api_key"] == "CLOUD_KEY"
+
+
 def test_inject_context_false_skips_context_block(
     tmp_path,
 ):
