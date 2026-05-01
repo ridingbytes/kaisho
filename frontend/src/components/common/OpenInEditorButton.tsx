@@ -83,12 +83,12 @@ export function OpenInEditorButton(
       onClick={open}
       title={t("openInEditor")}
       className={
-        "p-1.5 rounded text-stone-500 " +
+        "p-1 rounded text-stone-500 " +
         "hover:text-cta hover:bg-stone-100 " +
         "transition-colors"
       }
     >
-      <SquareArrowOutUpRight size={16} />
+      <SquareArrowOutUpRight size={14} />
     </button>
   );
 }

@@ -6,7 +6,7 @@
   "externalEditorHelp": "Open the file backing each panel (tasks, clocks, notes, inbox) in an external editor like vim, nvim, or VS Code. Available only in the desktop app and only for the org backend.",
   "externalEditorEnable": "Enable external editor",
   "externalEditorCommand": "Command template",
-  "externalEditorCommandHint": "Use {file} as a placeholder for the absolute file path. Examples: alacritty -e nvim \"{file}\" — code -g \"{file}\"",
+  "externalEditorCommandHint": "Use {file} as a placeholder for the absolute file path. Examples: alacritty -e vim \"{file}\" — alacritty -e emacs -nw \"{file}\" — alacritty -e emacsclient -t \"{file}\" — code -g \"{file}\"",
   "externalEditorNotConfigured": "External editor command not configured. Set one in Settings → General.",
   "openInEditor": "Open in external editor",
   "tagsAndTypes": "Tags & Types",

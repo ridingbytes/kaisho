@@ -838,7 +838,7 @@ function ExternalEditorSection() {
             type="text"
             value={command}
             onChange={(e) => setCommand(e.target.value)}
-            placeholder='alacritty -e nvim "{file}"'
+            placeholder='alacritty -e vim "{file}"'
             className={inputCls}
           />
           <p className="text-[10px] text-stone-400">
