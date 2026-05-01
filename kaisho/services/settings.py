@@ -39,7 +39,53 @@ def load_settings(path: Path) -> dict:
     if not path.exists():
         return {"task_states": [], "tags": []}
     with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+        data = yaml.safe_load(f) or {}
+    if _migrate_ollama_cloud_key(data):
+        save_settings(path, data)
+    return data
+
+
+def _migrate_ollama_cloud_key(data: dict) -> bool:
+    """One-shot migration for an old form-binding bug.
+
+    Before the fix, the "Ollama Cloud Key" input wrote into
+    ``ai.ollama_api_key`` (the local key field). Anyone who
+    set up Ollama Cloud during that window has the cloud
+    value sitting in the local-key slot, and after upgrade
+    Ollama Cloud requests authenticate with no key (HTTP
+    403 Forbidden).
+
+    Move ``ollama_api_key`` → ``ollama_cloud_api_key`` when
+    we are confident it was meant for the cloud:
+    - a cloud URL is configured
+    - no local URL (otherwise the local key may be a real
+      authenticated local Ollama with no cloud key entered
+      yet)
+    - the cloud key slot is empty
+    - the local key slot has a value
+
+    Returns True if anything was migrated, so the caller
+    can persist the updated dict.
+    """
+    ai = data.get("ai") or {}
+    if not isinstance(ai, dict):
+        return False
+    cloud_url = ai.get("ollama_cloud_url", "") or ""
+    local_url = ai.get("ollama_url", "") or ""
+    cloud_key = ai.get("ollama_cloud_api_key", "") or ""
+    local_key = ai.get("ollama_api_key", "") or ""
+    if not cloud_url:
+        return False
+    if local_url:
+        return False
+    if cloud_key:
+        return False
+    if not local_key:
+        return False
+    ai["ollama_cloud_api_key"] = local_key
+    ai["ollama_api_key"] = ""
+    data["ai"] = ai
+    return True
 
 
 def save_settings(path: Path, settings: dict) -> None:
