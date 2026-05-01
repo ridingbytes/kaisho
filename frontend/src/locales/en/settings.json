@@ -214,5 +214,7 @@
   "noProjects": "No projects found.",
   "githubApiError": "GitHub API error or no token configured.",
   "runOnboard": "Tell the advisor about yourself → run /onboard",
-  "bioHelp": "A short description of who you are. The advisor uses it to tailor responses."
+  "bioHelp": "A short description of who you are. The advisor uses it to tailor responses.",
+  "versionHistory": "Version history",
+  "versionHistoryCount": "{{count}} previous releases"
 }
