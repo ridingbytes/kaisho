@@ -1,5 +1,83 @@
 # Changelog
 
+## 1.4.0
+
+### Features
+
+- Cron and advisor prompts now support ``${user.<field>}``
+  placeholder substitution. The active profile's
+  ``user.yaml`` exposes ``name``, ``email``, ``bio``,
+  ``company``, ``industry``, and ``research_targets``;
+  these get substituted at prompt-load time. ``${date}``
+  and ``${fetch_results}`` cover the system side. The
+  cron prompt editor highlights known placeholders green
+  and unknown ones (typos, removed fields) red so
+  authoring mistakes are visible before saving. Legacy
+  ``{date}`` / ``{fetch_results}`` placeholders are
+  auto-migrated on startup
+- New ``/onboard`` slash command in the advisor walks the
+  user through filling in their profile. Idempotent:
+  reads current state first, only asks about empty
+  fields, lets you skip filled ones. Surfaced via a
+  dismissible banner in the advisor empty state when
+  bio/company/industry are all empty, and via a "Tell
+  the advisor about yourself" link in the Cloud Sync tab
+  on the Sync + AI plan
+- Cron prompt editor now shows a placeholder reference
+  strip below the textarea listing every supported
+  ``${...}`` token so authors don't have to remember the
+  vocabulary
+
+### Fixes
+
+- ``save_user_yaml`` is now atomic (write-tmp +
+  ``os.replace``) and serialized through a process-wide
+  lock. Concurrent writes (advisor tool + Settings UI)
+  no longer lose data; a crash mid-write cannot
+  truncate the file
+- Placeholder migration catches ``UnicodeDecodeError`` so
+  a hand-edited non-UTF-8 prompt no longer breaks server
+  startup, and reads/writes with ``newline=""`` to
+  preserve Windows line endings
+- Placeholder regex tightened to single-line tokens
+  (``[^}\n]+``): a malformed ``${user.name`` (missing
+  close brace) can no longer greedily swallow content
+  across lines
+- Desktop dev shell binds the sidecar to port 8767 in
+  debug builds (release stays on 8765). Stops a running
+  installed Kaisho.app from silently taking the port
+  during ``bin/dev --desktop``. The Windows
+  ``kill_stale`` path now filters by port instead of
+  killing every ``kai-server.exe`` on the system
+- Desktop auto-update banner is suppressed in dev builds
+  via a new ``is_dev_build`` IPC. Prevents the banner
+  from offering a stale published version after every
+  hot reload
+- Profile help text replaced with plain English. Cron
+  prompt editor is the single place that surfaces the
+  ``${...}`` syntax. Bio gets a one-line description for
+  visual parity. Research Targets textarea no longer
+  uses a smaller font than the other profile fields
+- ``update_user_profile`` rejects non-string scalar
+  values instead of silently coercing via ``str()``
+- ``GET /api/cron/jobs/{id}/prompt`` returns the raw
+  file content rather than the runtime-assembled prompt
+  (which can include megabytes of fetched URL bodies)
+
+### Internal
+
+- The placeholder field set is now a single source of
+  truth in ``services.placeholders.USER_FIELDS``. The
+  config template, profile tools, and frontend prompt
+  editor all derive from it. New
+  ``GET /api/advisor/placeholder-vocab`` exposes the
+  vocabulary so the editor highlight can no longer
+  drift from the substitution layer
+- Public ``get_project_root()`` replaces direct access
+  to a private config attribute
+- ``advisor-run-slash`` event listener uses a ref
+  pattern to avoid stale closure on slash handlers
+
 ## 1.3.3
 
 - Cron view: history table now polls every 3s while a
