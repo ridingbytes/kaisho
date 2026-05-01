@@ -1449,6 +1449,21 @@ export function syncNow(): Promise<CloudSyncResult> {
   return post<CloudSyncResult>("/cloud-sync/sync-now", {});
 }
 
+/** Switch every cron job and the advisor to the
+ *  Kaisho-hosted models. Returns how many jobs changed. */
+export interface UseKaishoModelsResult {
+  advisor_model: string;
+  cron_model: string;
+  jobs_changed: number;
+}
+
+export function applyKaishoModels(
+): Promise<UseKaishoModelsResult> {
+  return post<UseKaishoModelsResult>(
+    "/cloud-sync/use-kaisho-models", {},
+  );
+}
+
 /** Fetch clock entries synced from the cloud that
  *  need triage (customer/task assignment). */
 export function fetchPendingCloudEntries(): Promise<
