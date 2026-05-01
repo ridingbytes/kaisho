@@ -1102,4 +1102,68 @@ TOOL_DEFS: list[dict] = [
             "type": "object", "properties": {},
         },
     },
+    {
+        "name": "get_user_profile",
+        "tier": "read",
+        "description": (
+            "Return the active profile's user.yaml fields: "
+            "name, email, bio, company, industry, "
+            "research_targets. Use this BEFORE asking the "
+            "user onboarding questions so you only ask "
+            "about empty fields and can show the user what "
+            "is already on file."
+        ),
+        "input_schema": {
+            "type": "object", "properties": {},
+        },
+    },
+    {
+        "name": "update_user_profile",
+        "tier": "write",
+        "description": (
+            "Update fields in the active profile's "
+            "user.yaml. Only the keys you provide are "
+            "written; omitted keys are left untouched. "
+            "research_targets must be an array of strings; "
+            "empty strings are filtered out. Returns the "
+            "updated profile."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "email": {"type": "string"},
+                "bio": {
+                    "type": "string",
+                    "description": (
+                        "Short personal description used "
+                        "by the advisor and cron prompts."
+                    ),
+                },
+                "company": {
+                    "type": "string",
+                    "description": (
+                        "Company name used in research "
+                        "and briefing crons."
+                    ),
+                },
+                "industry": {
+                    "type": "string",
+                    "description": (
+                        "Industry or niche; drives "
+                        "opportunity scoring and "
+                        "competitive context."
+                    ),
+                },
+                "research_targets": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Topics used as search terms in "
+                        "research crons (e.g. weekly scout)."
+                    ),
+                },
+            },
+        },
+    },
 ]

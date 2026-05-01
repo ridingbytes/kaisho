@@ -1514,6 +1514,15 @@ export async function askAdvisor(
   return { answer };
 }
 
+/** Fetch a packaged advisor prompt body (e.g. onboard) by
+ *  name. The frontend uses this for slash commands that
+ *  inject canned instructions into the chat. */
+export function fetchBuiltinPrompt(
+  name: string,
+): Promise<{ name: string; content: string }> {
+  return get(`/advisor/builtin-prompt/${name}`);
+}
+
 /** Fetch all custom advisor skill definitions. */
 export function fetchAdvisorSkills(): Promise<
   { name: string; content: string }[]

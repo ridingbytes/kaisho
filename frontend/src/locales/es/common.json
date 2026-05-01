@@ -103,5 +103,6 @@
   "filterHint": "Filtro (regex sin distinguir mayúsculas; coma separa términos OR)",
   "filterInvalid": "Regex inválido — el filtro se ignora hasta que lo corrijas",
   "cmdEnterToSave": "⌘↵ para guardar",
-  "noCustomer": "Sin cliente"
+  "noCustomer": "Sin cliente",
+  "dismiss": "Cerrar"
 }

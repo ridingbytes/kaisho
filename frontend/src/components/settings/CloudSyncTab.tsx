@@ -291,6 +291,25 @@ export function CloudSyncSection(): JSX.Element {
               <p className="text-[10px] text-stone-600 mt-1 leading-relaxed">
                 {t("useKaishoAiHint")}
               </p>
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.hash = "advisor";
+                  setTimeout(() => {
+                    window.dispatchEvent(
+                      new CustomEvent(
+                        "advisor-run-slash",
+                        { detail: "/onboard" },
+                      ),
+                    );
+                  }, 100);
+                }}
+                className={[
+                  "mt-2 text-[10px] text-cta hover:underline",
+                ].join(" ")}
+              >
+                {t("runOnboard")}
+              </button>
             </div>
           )}
 

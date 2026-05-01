@@ -197,6 +197,34 @@ def api_ask(body: AskRequest):
     )
 
 
+# Built-in advisor prompt templates exposed to the
+# frontend so slash commands can drop their content into
+# the chat. Map keys to file names under ``prompts/``.
+_BUILTIN_PROMPTS = {"onboard": "onboard.md"}
+
+
+@router.get("/builtin-prompt/{name}")
+def get_builtin_prompt(name: str):
+    """Return a packaged advisor prompt body by name."""
+    filename = _BUILTIN_PROMPTS.get(name)
+    if filename is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"unknown prompt: {name!r}",
+        )
+    from ...config import _PROJECT_ROOT as project_root
+    path = project_root / "prompts" / filename
+    if not path.exists():
+        raise HTTPException(
+            status_code=500,
+            detail=f"prompt file missing: {filename}",
+        )
+    return {
+        "name": name,
+        "content": path.read_text(encoding="utf-8"),
+    }
+
+
 @router.get("/skills")
 def get_skills():
     """List available advisor skills."""

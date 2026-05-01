@@ -4,11 +4,16 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Check, Inbox, Send, Square, Trash2 } from "lucide-react";
-import { askAdvisor, captureInboxItem } from "../../api/client";
+import {
+  askAdvisor,
+  captureInboxItem,
+  fetchBuiltinPrompt,
+} from "../../api/client";
 import { useToast } from "../../context/ToastContext";
 import {
   useAiSettings,
   useAvailableModels,
+  useCurrentUser,
 } from "../../hooks/useSettings";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
@@ -138,11 +143,24 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
   const qc = useQueryClient();
   const { data: aiSettings } = useAiSettings();
   const { data: models = [] } = useAvailableModels();
+  const { data: currentUser } = useCurrentUser();
+  const profileEmpty = !!currentUser
+    && !currentUser.bio.trim()
+    && !currentUser.company.trim()
+    && !currentUser.industry.trim();
   const model = aiSettings?.advisor_model || "";
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [steps, setSteps] = useState<string[]>([]);
+  const [onboardDismissed, setOnboardDismissed] = useState(
+    () => localStorage.getItem("kaisho.onboardHintDismissed") === "1",
+  );
+
+  function dismissOnboardHint() {
+    localStorage.setItem("kaisho.onboardHintDismissed", "1");
+    setOnboardDismissed(true);
+  }
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -156,6 +174,18 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  useEffect(() => {
+    function onRun(e: Event) {
+      const cmd = (e as CustomEvent<string>).detail;
+      const handler = SLASH_COMMANDS[cmd];
+      if (handler) handler.action("");
+    }
+    window.addEventListener("advisor-run-slash", onRun);
+    return () =>
+      window.removeEventListener("advisor-run-slash", onRun);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function clearMessages() {
     onMessagesChange([]);
     setError(null);
@@ -168,6 +198,24 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
     "/reset": {
       desc: t("slashReset"),
       action: () => clearMessages(),
+    },
+    "/onboard": {
+      desc: t("slashOnboard"),
+      action: () => {
+        fetchBuiltinPrompt("onboard")
+          .then(({ content }) => {
+            sendMessage(
+              `Run the profile onboarding flow ` +
+              `with these instructions:\n\n` +
+              content,
+            );
+          })
+          .catch((err: unknown) => {
+            const msg = err instanceof Error
+              ? err.message : t("requestFailed");
+            setError(msg);
+          });
+      },
     },
     "/help": {
       desc: t("slashHelp"),
@@ -192,15 +240,15 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
     return true;
   }
 
-  function sendMessage() {
-    const question = input.trim();
+  function sendMessage(override?: string) {
+    const question = (override ?? input).trim();
     if (!question || loading) return;
 
-    if (question.startsWith("/")) {
+    if (override === undefined && question.startsWith("/")) {
       if (handleSlashCommand(question)) return;
     }
 
-    setInput("");
+    if (override === undefined) setInput("");
     setError(null);
     setSteps([]);
     onMessagesChange((prev) => [
@@ -369,6 +417,34 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
         )}
         {messages.length === 0 && !loading && (model || models.length > 0) && (
           <div className="mt-8 space-y-3">
+            {profileEmpty && !onboardDismissed && (
+              <div className={[
+                "max-w-md mx-auto px-3 py-2.5 rounded-lg",
+                "bg-cta/5 border border-cta/30",
+                "flex items-start gap-3",
+              ].join(" ")}>
+                <div className="flex-1 text-xs text-stone-700 leading-relaxed">
+                  {t("onboardHint")}{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      SLASH_COMMANDS["/onboard"].action("");
+                    }}
+                    className="font-mono text-cta hover:underline"
+                  >
+                    /onboard
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={dismissOnboardHint}
+                  className="text-stone-400 hover:text-stone-600 text-xs"
+                  title={tc("dismiss")}
+                >
+                  ×
+                </button>
+              </div>
+            )}
             <p className="text-sm text-stone-500 text-center">
               {t("askOrPick")}
             </p>
