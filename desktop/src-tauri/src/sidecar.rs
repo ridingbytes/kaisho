@@ -61,13 +61,47 @@ fn kill_stale() {
 
     #[cfg(windows)]
     {
+        // Find PIDs bound to SIDECAR_PORT and taskkill
+        // each one. ``taskkill /IM kai-server.exe`` would
+        // also kill the user's installed Kaisho.app on
+        // 8765, defeating the dev/release port split.
         use std::process::Command;
-        let _ = Command::new("taskkill")
-            .args(["/F", "/IM", "kai-server.exe"])
-            .output();
-        std::thread::sleep(
-            std::time::Duration::from_millis(500),
+        let netstat = match Command::new("netstat")
+            .args(["-ano", "-p", "TCP"])
+            .output()
+        {
+            Ok(o) => o,
+            Err(_) => return,
+        };
+        let stdout = String::from_utf8_lossy(
+            &netstat.stdout,
         );
+        let needle = format!(":{}", SIDECAR_PORT);
+        let mut killed_any = false;
+        for line in stdout.lines() {
+            if !line.contains(&needle) {
+                continue;
+            }
+            // netstat columns: Proto Local Foreign State PID
+            let pid = match line.split_whitespace().last()
+            {
+                Some(p) => p,
+                None => continue,
+            };
+            eprintln!(
+                "[kai] killing stale PID {} on port {}",
+                pid, SIDECAR_PORT,
+            );
+            let _ = Command::new("taskkill")
+                .args(["/F", "/PID", pid])
+                .output();
+            killed_any = true;
+        }
+        if killed_any {
+            std::thread::sleep(
+                std::time::Duration::from_millis(500),
+            );
+        }
     }
 }
 
