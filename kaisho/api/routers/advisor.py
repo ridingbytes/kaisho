@@ -212,8 +212,8 @@ def get_builtin_prompt(name: str):
             status_code=404,
             detail=f"unknown prompt: {name!r}",
         )
-    from ...config import _PROJECT_ROOT as project_root
-    path = project_root / "prompts" / filename
+    from ...config import get_project_root
+    path = get_project_root() / "prompts" / filename
     if not path.exists():
         raise HTTPException(
             status_code=500,

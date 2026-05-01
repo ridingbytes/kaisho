@@ -437,31 +437,55 @@ def _batch_invoice(args: dict) -> dict:
     return {"invoiced": count}
 
 
+# Plain string fields (research_targets is a list — see
+# ``_normalize_research_targets``).
 _USER_PROFILE_FIELDS = (
     "name", "email", "bio", "company", "industry",
 )
 
 
 def _get_user_profile(args: dict) -> dict:
-    """Return user.yaml fields for the active profile."""
+    """Return user.yaml fields for the active profile.
+
+    Values are surfaced for the advisor / onboarding flow.
+    They are substituted into prompt text only — no path
+    or shell context — so arbitrary user input is safe to
+    persist verbatim.
+    """
     from ..config import get_config, load_user_yaml
     cfg = get_config()
     data = load_user_yaml(cfg)
-    return {
-        "profile": cfg.PROFILE,
-        "name": data.get("name", ""),
-        "email": data.get("email", ""),
-        "bio": data.get("bio", ""),
-        "company": data.get("company", ""),
-        "industry": data.get("industry", ""),
-        "research_targets": list(
-            data.get("research_targets") or []
-        ),
-    }
+    out: dict = {"profile": cfg.PROFILE}
+    for field in _USER_PROFILE_FIELDS:
+        out[field] = data.get(field, "")
+    out["research_targets"] = list(
+        data.get("research_targets") or []
+    )
+    return out
+
+
+def _normalize_research_targets(value) -> list[str] | str:
+    """Return a cleaned list of targets, or an error
+    message string. Accepts a list of strings or a
+    newline-separated single string (LLMs sometimes
+    collapse arrays into strings)."""
+    if isinstance(value, str):
+        value = value.splitlines()
+    if not isinstance(value, list):
+        return "research_targets must be a list of strings"
+    return [
+        str(t).strip() for t in value if str(t).strip()
+    ]
 
 
 def _update_user_profile(args: dict) -> dict:
-    """Patch user.yaml fields for the active profile."""
+    """Patch user.yaml fields for the active profile.
+
+    Only keys present in ``args`` are written; unspecified
+    keys are preserved. Non-string scalar values are
+    rejected to prevent accidental ``str(dict)`` coercion
+    when a model emits the wrong shape.
+    """
     from ..config import (
         get_config, load_user_yaml, save_user_yaml,
     )
@@ -469,25 +493,25 @@ def _update_user_profile(args: dict) -> dict:
     data = load_user_yaml(cfg)
     written: list[str] = []
     for field in _USER_PROFILE_FIELDS:
-        if field in args and args[field] is not None:
-            data[field] = str(args[field])
-            written.append(field)
-    if "research_targets" in args:
-        raw = args["research_targets"]
-        if isinstance(raw, str):
-            raw = [
-                p.strip() for p in raw.splitlines()
-            ]
-        if not isinstance(raw, list):
+        if field not in args or args[field] is None:
+            continue
+        value = args[field]
+        if not isinstance(value, str):
             return {
                 "error": (
-                    "research_targets must be a list "
-                    "of strings"
+                    f"{field} must be a string, got "
+                    f"{type(value).__name__}"
                 ),
             }
-        data["research_targets"] = [
-            str(t).strip() for t in raw if str(t).strip()
-        ]
+        data[field] = value
+        written.append(field)
+    if "research_targets" in args:
+        normalized = _normalize_research_targets(
+            args["research_targets"],
+        )
+        if isinstance(normalized, str):
+            return {"error": normalized}
+        data["research_targets"] = normalized
         written.append("research_targets")
     save_user_yaml(cfg, data)
     return {
