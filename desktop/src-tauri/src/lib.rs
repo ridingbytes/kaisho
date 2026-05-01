@@ -162,6 +162,19 @@ fn is_dev_build() -> bool {
     cfg!(debug_assertions)
 }
 
+/// IPC command: kill the running kai-server sidecar so
+/// the auto-updater can overwrite kai-server.exe on
+/// Windows. Without this, NSIS pre-install hits an
+/// "Error opening the file for writing" because the
+/// sidecar still has the binary mapped. Safe to call on
+/// macOS / Linux too — they don't lock running
+/// executables for write but we still want a clean
+/// shutdown before relaunch.
+#[tauri::command]
+fn kill_sidecar(state: State<KaiProcess>) {
+    sidecar::kill(&state);
+}
+
 /// Toggle the running timer via the backend API.
 /// If a timer is running, stop it. Otherwise open the
 /// tray panel so the user can pick a customer.
@@ -221,6 +234,7 @@ pub fn run() {
             get_tray_enabled,
             set_tray_enabled,
             is_dev_build,
+            kill_sidecar,
         ])
         .setup(|app| {
             sidecar::spawn(app)?;
