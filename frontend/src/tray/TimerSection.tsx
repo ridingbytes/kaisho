@@ -1,20 +1,35 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pencil, Play, Square } from "lucide-react";
+import { Pencil, Play, Square, X } from "lucide-react";
 import { Markdown } from "../components/common/Markdown";
 import type { ActiveTimer, Customer } from "../types";
+
+/** A pinned snapshot of the timer that just stopped.
+ * The elapsed text is frozen at the moment of stop so
+ * the displayed duration matches what was recorded in
+ * the entry. */
+export interface StoppedSnapshot {
+  timer: ActiveTimer;
+  finalElapsed: string;
+}
 
 interface Props {
   timer: ActiveTimer | null;
   isRunning: boolean;
   elapsed: string;
   customers: Customer[];
+  /** Snapshot of the just-stopped timer, present only
+   * when the user has Stop'd but not yet Resumed or
+   * Cleared. */
+  stopped: StoppedSnapshot | null;
   onStart: (
     customer: string,
     description: string,
     contract?: string,
   ) => void;
   onStop: () => void;
+  onResume: () => void;
+  onClear: () => void;
   onUpdateDescription: (desc: string) => void;
   onUpdateNotes: (notes: string) => void;
 }
@@ -24,8 +39,11 @@ export function TimerSection({
   isRunning,
   elapsed,
   customers,
+  stopped,
   onStart,
   onStop,
+  onResume,
+  onClear,
   onUpdateDescription,
   onUpdateNotes,
 }: Props) {
@@ -115,14 +133,27 @@ export function TimerSection({
   if (isRunning && timer?.start) {
     return (
       <div className="px-4 py-3">
-        {/* Elapsed time */}
+        {/* Elapsed time + inline Stop. The round Stop
+            icon mirrors the PWA so both surfaces share
+            the same affordance. */}
         <div className="text-center">
-          <div className="text-3xl font-light font-mono text-stone-900 tabular-nums tracking-wide">
-            {elapsed}
+          <div className="flex items-center justify-center gap-2.5">
+            <div className="text-3xl font-light font-mono text-stone-900 tabular-nums tracking-wide">
+              {elapsed}
+            </div>
+            <button
+              type="button"
+              onClick={onStop}
+              title={t("stopTimer")}
+              aria-label={t("stopTimer")}
+              className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition-colors"
+            >
+              <Square size={12} fill="currentColor" />
+            </button>
           </div>
-          <div className="flex items-center justify-center gap-1.5 mt-1">
+          <div className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/40">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-green-600">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-green-700">
               {tc("active")}
             </span>
           </div>
@@ -224,14 +255,53 @@ export function TimerSection({
           </button>
         )}
 
-        {/* Stop button */}
-        <button
-          onClick={onStop}
-          className="mt-2.5 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
-        >
-          <Square size={12} fill="currentColor" />
-          {t("stopTimer")}
-        </button>
+      </div>
+    );
+  }
+
+  if (stopped) {
+    return (
+      <div className="px-4 py-3">
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-2">
+            <div className="text-3xl font-light font-mono text-stone-900 tabular-nums tracking-wide">
+              {stopped.finalElapsed}
+            </div>
+            <button
+              type="button"
+              onClick={onResume}
+              title={tc("resume")}
+              aria-label={tc("resume")}
+              className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-green-500 text-green-600 hover:bg-green-500 hover:text-white transition-colors"
+            >
+              <Play size={12} fill="currentColor" />
+            </button>
+            <button
+              type="button"
+              onClick={onClear}
+              title={tc("clear")}
+              aria-label={tc("clear")}
+              className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-border text-stone-500 hover:border-stone-400 hover:text-stone-800 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <div className="inline-flex items-center mt-1.5 px-2.5 py-0.5 rounded-full bg-stone-500/15 border border-stone-500/40">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-600">
+              {tc("stopped")}
+            </span>
+          </div>
+        </div>
+        {stopped.timer.customer && (
+          <p className="text-xs text-stone-500 text-center mt-1.5">
+            {stopped.timer.customer}
+          </p>
+        )}
+        {stopped.timer.description && (
+          <p className="text-xs text-stone-500 text-center mt-1 italic">
+            {stopped.timer.description}
+          </p>
+        )}
       </div>
     );
   }
