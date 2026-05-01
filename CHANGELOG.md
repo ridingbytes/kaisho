@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.2
+
+### Fixes
+
+- Cron jobs configured with ``ollama_cloud:<model>``
+  failed with ``Ollama Cloud URL not configured`` when
+  triggered via the UI's "Run" button, even after
+  setting the URL in Settings > AI. The API trigger
+  path was missing the ``ollama_cloud_url`` and
+  ``ollama_cloud_api_key`` kwargs to the executor; the
+  scheduler and the agentic-trigger paths already
+  forwarded them. Locked down with a regression test
+  covering the API path
+
 ## 1.4.1
 
 ### Features
