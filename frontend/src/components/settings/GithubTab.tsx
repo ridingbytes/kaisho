@@ -4,6 +4,11 @@ import {
   useGithubSettings,
   useUpdateGithubSettings,
 } from "../../hooks/useSettings";
+import { Toggle } from "../common/Toggle";
+import {
+  isGithubNavHidden,
+  setGithubNavHidden,
+} from "../../utils/navPrefs";
 import { inputCls, saveBtnCls } from "./styles";
 
 export function GithubSection(): JSX.Element {
@@ -56,6 +61,7 @@ export function GithubSection(): JSX.Element {
 
   return (
     <section>
+      <HideGithubNavToggle />
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
@@ -148,5 +154,31 @@ export function GithubSection(): JSX.Element {
         {t("tokenStorageHint")}
       </p>
     </section>
+  );
+}
+
+function HideGithubNavToggle() {
+  const { t } = useTranslation("settings");
+  const [hidden, setHidden] = useState(() =>
+    isGithubNavHidden(),
+  );
+
+  function handleChange(next: boolean) {
+    setHidden(next);
+    setGithubNavHidden(next);
+  }
+
+  return (
+    <label className="flex items-center gap-3 cursor-pointer mb-4">
+      <Toggle checked={hidden} onChange={handleChange} />
+      <span className="flex flex-col gap-0.5">
+        <span className="text-sm text-stone-800">
+          {t("hideGithubNav")}
+        </span>
+        <span className="text-[10px] text-stone-400">
+          {t("hideGithubNavHint")}
+        </span>
+      </span>
+    </label>
   );
 }
