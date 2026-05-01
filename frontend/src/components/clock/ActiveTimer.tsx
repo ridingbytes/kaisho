@@ -87,15 +87,18 @@ export function ActiveTimer({ timer }: Props) {
             // Circular filled-red button — same shape and
             // weight as the PWA running-timer Stop so
             // both surfaces feel like the same product.
+            // Sized slightly smaller than the elapsed
+            // text so it doesn't compete with the
+            // counter visually (matches the PWA ratio).
             "inline-flex items-center justify-center",
-            "w-8 h-8 rounded-full",
+            "w-6 h-6 rounded-full",
             "bg-red-500 text-white",
             "border border-red-500",
             "hover:brightness-110 transition-all",
             "disabled:opacity-40 disabled:cursor-wait",
           ].join(" ")}
         >
-          <Square size={12} fill="currentColor" />
+          <Square size={10} fill="currentColor" />
         </button>
       </div>
 

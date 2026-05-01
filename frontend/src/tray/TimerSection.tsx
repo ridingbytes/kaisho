@@ -146,9 +146,9 @@ export function TimerSection({
               onClick={onStop}
               title={t("stopTimer")}
               aria-label={t("stopTimer")}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition-colors"
+              className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-500 border border-red-500 text-white hover:brightness-110 transition-all"
             >
-              <Square size={12} fill="currentColor" />
+              <Square size={10} fill="currentColor" />
             </button>
           </div>
           <div className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/40">
@@ -272,18 +272,18 @@ export function TimerSection({
               onClick={onResume}
               title={tc("resume")}
               aria-label={tc("resume")}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-green-500 text-green-600 hover:bg-green-500 hover:text-white transition-colors"
+              className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-500 border border-green-500 text-white hover:brightness-110 transition-all"
             >
-              <Play size={12} fill="currentColor" />
+              <Play size={10} fill="currentColor" />
             </button>
             <button
               type="button"
               onClick={onClear}
               title={tc("clear")}
               aria-label={tc("clear")}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-border text-stone-500 hover:border-stone-400 hover:text-stone-800 transition-colors"
+              className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-border text-stone-500 hover:border-stone-400 hover:text-stone-800 transition-colors"
             >
-              <X size={14} />
+              <X size={12} />
             </button>
           </div>
           <div className="inline-flex items-center mt-1.5 px-2.5 py-0.5 rounded-full bg-stone-500/15 border border-stone-500/40">
