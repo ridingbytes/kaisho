@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
+import { PromptEditor } from "../common/PromptEditor";
 import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { ResizeHandle } from "../common/ResizeHandle";
@@ -445,17 +446,11 @@ function JobCard({
             {promptData?.error && (
               <p className="text-xs text-red-400">{promptData.error}</p>
             )}
-            <textarea
-              className={[
-                "w-full px-3 py-2 rounded-lg text-xs font-mono",
-                "bg-surface-raised border border-border",
-                "text-stone-900 placeholder-stone-500",
-                "focus:outline-none focus:border-border-strong",
-                "resize-y min-h-[120px]",
-              ].join(" ")}
+            <PromptEditor
               value={promptContent}
-              onChange={(e) => setPromptDraft(e.target.value)}
+              onChange={(next) => setPromptDraft(next)}
               placeholder={t("enterPrompt")}
+              minHeight={120}
             />
             <div className="flex items-center gap-2">
               <button
@@ -714,17 +709,11 @@ function AddJobForm({
         <span className="text-[10px] text-stone-500 uppercase tracking-wide">
           {t("prompt")}
         </span>
-        <textarea
-          className={[
-            "w-full px-3 py-2 rounded-lg text-xs font-mono",
-            "bg-surface-raised border border-border",
-            "text-stone-900 placeholder-stone-500",
-            "focus:outline-none focus:border-border-strong",
-            "resize-y min-h-[100px]",
-          ].join(" ")}
+        <PromptEditor
           value={promptContent}
-          onChange={(e) => setPromptContent(e.target.value)}
+          onChange={(next) => setPromptContent(next)}
           placeholder={t("enterPromptNew")}
+          minHeight={100}
         />
       </label>
 

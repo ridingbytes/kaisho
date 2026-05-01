@@ -129,6 +129,13 @@ def _user_template() -> dict:
         "bio": "",
         "avatar_seed": "",
         "created": "",
+        # Per-profile context surfaced in advisor and
+        # cron prompts via ``${user.<field>}`` placeholders.
+        # See docs/ai/cron-jobs.md for the substitution
+        # vocabulary.
+        "company": "",
+        "industry": "",
+        "research_targets": [],
     }
 
 

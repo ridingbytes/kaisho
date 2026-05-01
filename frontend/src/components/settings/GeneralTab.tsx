@@ -80,6 +80,11 @@ function UserProfileSection() {
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
   const [avatarSeed, setAvatarSeed] = useState("");
+  const [company, setCompany] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [researchTargets, setResearchTargets] = useState(
+    "",
+  );
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -89,6 +94,11 @@ function UserProfileSection() {
       setBio(userData.bio ?? "");
       setAvatarSeed(
         userData.avatar_seed || userData.name || "kaisho"
+      );
+      setCompany(userData.company ?? "");
+      setIndustry(userData.industry ?? "");
+      setResearchTargets(
+        (userData.research_targets ?? []).join("\n"),
       );
     }
   }, [userData]);
@@ -102,8 +112,16 @@ function UserProfileSection() {
   }
 
   function handleSave() {
+    const targets = researchTargets
+      .split(/\r?\n/)
+      .map((t) => t.trim())
+      .filter(Boolean);
     update.mutate(
-      { name, email, bio, avatar_seed: avatarSeed },
+      {
+        name, email, bio, avatar_seed: avatarSeed,
+        company, industry,
+        research_targets: targets,
+      },
       {
         onSuccess: () => {
           setSaved(true);
@@ -172,12 +190,73 @@ function UserProfileSection() {
           <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
             {t("bio")}
           </span>
+          <span className="text-[10px] text-stone-400">
+            {t("bioHelp")}
+          </span>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={2}
             placeholder={t("shortBio")}
             className={[inputCls, "resize-y"].join(" ")}
+          />
+        </label>
+
+        {/* Company */}
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+            {t("company")}
+          </span>
+          <span className="text-[10px] text-stone-400">
+            {t("companyHelp")}
+          </span>
+          <input
+            type="text"
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+            placeholder="ACME GmbH"
+            className={inputCls}
+          />
+        </label>
+
+        {/* Industry */}
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+            {t("industry")}
+          </span>
+          <span className="text-[10px] text-stone-400">
+            {t("industryHelp")}
+          </span>
+          <textarea
+            value={industry}
+            onChange={(e) => setIndustry(e.target.value)}
+            rows={2}
+            placeholder={t("industryPlaceholder")}
+            className={[inputCls, "resize-y"].join(" ")}
+          />
+        </label>
+
+        {/* Research targets */}
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+            {t("researchTargets")}
+          </span>
+          <span className="text-[10px] text-stone-400">
+            {t("researchTargetsHelp")}
+          </span>
+          <textarea
+            value={researchTargets}
+            onChange={(e) =>
+              setResearchTargets(e.target.value)
+            }
+            rows={3}
+            placeholder={t(
+              "researchTargetsPlaceholder",
+            )}
+            className={[
+              inputCls,
+              "resize-y font-mono text-xs",
+            ].join(" ")}
           />
         </label>
 

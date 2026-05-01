@@ -10,7 +10,7 @@ below — work from that, do not call any tools.
 
 ## Data
 
-{fetch_results}
+${fetch_results}
 
 ## Task
 

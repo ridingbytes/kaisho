@@ -100,14 +100,29 @@ def load_prompt(prompt_file: str, project_root: Path) -> str:
             except _yaml.YAMLError:
                 pass
 
-    # Pre-fetch URLs
-    if urls:
-        fetch_results = _prefetch_urls(urls)
-        body = body.replace("{fetch_results}", fetch_results)
+    fetch_results = _prefetch_urls(urls) if urls else None
 
-    # Replace {date} placeholder
-    today = date.today().isoformat()
-    body = body.replace("{date}", today)
+    # Substitute ``${...}`` placeholders. User-context
+    # fields come from the active profile's user.yaml;
+    # ``${date}`` and ``${fetch_results}`` are
+    # system-injected. Any unresolved placeholder is
+    # logged so a typo doesn't silently render as the
+    # literal token in the prompt.
+    from ..config import load_user_yaml
+    from ..services.placeholders import (
+        render_placeholders,
+    )
+    user = load_user_yaml()
+    body, unresolved = render_placeholders(
+        body,
+        user=user,
+        fetch_results=fetch_results,
+    )
+    if unresolved:
+        log.warning(
+            "Unresolved placeholders in %s: %s",
+            prompt_file, ", ".join(sorted(unresolved)),
+        )
     return body
 
 

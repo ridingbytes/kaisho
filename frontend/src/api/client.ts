@@ -244,6 +244,9 @@ export function fetchCurrentUser(): Promise<{
   email: string;
   bio: string;
   avatar_seed: string;
+  company: string;
+  industry: string;
+  research_targets: string[];
   profiles: string[];
 }> {
   return get("/settings/user");
@@ -322,7 +325,10 @@ export function updateUserProfile(updates: {
   email?: string;
   bio?: string;
   avatar_seed?: string;
-}): Promise<Record<string, string>> {
+  company?: string;
+  industry?: string;
+  research_targets?: string[];
+}): Promise<Record<string, string | string[]>> {
   return patch("/settings/user/profile", updates);
 }
 
