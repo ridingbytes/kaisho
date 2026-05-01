@@ -6,6 +6,7 @@ import { matchesAny } from "../../utils/filterMatch";
 import { registerPanelAction } from "../../utils/panelActions";
 import { Toggle } from "../common/Toggle";
 import { HelpButton } from "../common/HelpButton";
+import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { SearchInput } from "../common/SearchInput";
 import { DOCS } from "../../docs/panelDocs";
@@ -211,6 +212,7 @@ export function CustomersView() {
           >
             {t("addCustomer")}
           </button>
+          <OpenInEditorButton kind="customers" />
           <HelpButton
             title="Customers"
             doc={DOCS.customers}
