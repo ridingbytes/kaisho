@@ -4,6 +4,17 @@ export interface ChangelogEntry {
   items: string[];
 }
 
+/** Convert RST-style double backticks to Markdown single
+ * backticks. The CHANGELOG was authored in RST style
+ * (``foo``) but the renderer is Markdown — without this
+ * normalization every code span shows up as literal
+ * backtick-wrapped text. Applied at parse time so all
+ * past and future entries render consistently.
+ */
+function rstToMarkdownInlineCode(s: string): string {
+  return s.replace(/``([^`]+)``/g, "`$1`");
+}
+
 /** Parse CHANGELOG.md into structured entries.
  *
  * Bullets that wrap onto indented continuation lines
@@ -32,7 +43,9 @@ export function parseChangelog(
 
     const itemMatch = line.match(/^- (.+)/);
     if (itemMatch) {
-      current.items.push(itemMatch[1].trim());
+      current.items.push(
+        rstToMarkdownInlineCode(itemMatch[1].trim()),
+      );
       continue;
     }
 
@@ -42,8 +55,8 @@ export function parseChangelog(
     const continuation = line.match(/^\s+(\S.*)$/);
     if (continuation && current.items.length > 0) {
       const last = current.items.length - 1;
-      current.items[last] = (
-        current.items[last] + " " + continuation[1].trim()
+      current.items[last] = rstToMarkdownInlineCode(
+        current.items[last] + " " + continuation[1].trim(),
       );
     }
   }
