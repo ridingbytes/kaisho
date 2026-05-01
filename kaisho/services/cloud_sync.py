@@ -1971,6 +1971,12 @@ def push_reference_snapshot(
 ) -> bool:
     """Push customer/task reference data (best-effort).
 
+    Skips the network round-trip when the snapshot payload
+    is byte-identical to the last successful push for this
+    profile (digest stored at ``profile_dir/.snapshot_digest``).
+    Avoids the "snapshot pushed" flicker on every sync click
+    when nothing actually changed.
+
     :param cloud_url: Base URL.
     :param api_key: API key.
     :param customers_fn: Callable returning customer list.
@@ -1979,46 +1985,108 @@ def push_reference_snapshot(
         config. Falls back to the active profile.
     :param profile_dir: Profile directory for user.yaml.
         Falls back to the active profile.
-    :returns: ``True`` on success, ``False`` on failure.
+    :returns: ``True`` if a push was actually performed,
+        ``False`` if skipped (no change) or on failure.
     """
     if customers_fn is None or tasks_fn is None:
         return False
+
+    customers_payload = [
+        {
+            "name": c.get("name", ""),
+            "contracts": [
+                {
+                    "name": ct.get("name", ""),
+                    "budget": ct.get("budget", 0),
+                    "start_date": ct.get(
+                        "start_date", "",
+                    ),
+                }
+                for ct in c.get("contracts", [])
+            ],
+        }
+        for c in customers_fn()
+    ]
+    tasks_payload = [
+        {
+            "id": t.get("id", ""),
+            "customer": t.get("customer") or "",
+            "title": t.get("title", ""),
+            "status": t.get("status", ""),
+        }
+        for t in tasks_fn()
+    ]
+    config_payload = _build_snapshot_config(
+        settings_file, profile_dir,
+    )
+
+    digest = _snapshot_digest(
+        customers_payload, tasks_payload, config_payload,
+    )
+    if profile_dir is not None and _digest_unchanged(
+        profile_dir, digest,
+    ):
+        # Nothing changed — skip the push entirely.
+        return False
+
     try:
         push_snapshot(
             cloud_url, api_key,
-            [
-                {
-                    "name": c.get("name", ""),
-                    "contracts": [
-                        {
-                            "name": ct.get("name", ""),
-                            "budget": ct.get("budget", 0),
-                            "start_date": ct.get(
-                                "start_date", "",
-                            ),
-                        }
-                        for ct in c.get("contracts", [])
-                    ],
-                }
-                for c in customers_fn()
-            ],
-            [
-                {
-                    "id": t.get("id", ""),
-                    "customer": t.get("customer") or "",
-                    "title": t.get("title", ""),
-                    "status": t.get("status", ""),
-                }
-                for t in tasks_fn()
-            ],
-            config=_build_snapshot_config(
-                settings_file, profile_dir,
-            ),
+            customers_payload,
+            tasks_payload,
+            config=config_payload,
         )
-        return True
     except CloudUnavailable as exc:
         log.warning("Snapshot push failed: %s", exc)
         return False
+    if profile_dir is not None:
+        _store_digest(profile_dir, digest)
+    return True
+
+
+def _snapshot_digest(
+    customers: list[dict],
+    tasks: list[dict],
+    config: dict,
+) -> str:
+    """SHA-256 of the canonical-JSON snapshot payload."""
+    import hashlib
+    blob = json.dumps(
+        {
+            "customers": customers,
+            "tasks": tasks,
+            "config": config,
+        },
+        sort_keys=True, separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(blob).hexdigest()
+
+
+def _digest_path(profile_dir: Path) -> Path:
+    return profile_dir / ".snapshot_digest"
+
+
+def _digest_unchanged(
+    profile_dir: Path, current: str,
+) -> bool:
+    p = _digest_path(profile_dir)
+    if not p.exists():
+        return False
+    try:
+        return p.read_text("utf-8").strip() == current
+    except OSError:
+        return False
+
+
+def _store_digest(profile_dir: Path, digest: str) -> None:
+    try:
+        _digest_path(profile_dir).write_text(
+            digest, encoding="utf-8",
+        )
+    except OSError as exc:
+        log.warning(
+            "Could not write snapshot digest: %s", exc,
+        )
 
 
 # -- Main sync cycle ------------------------------------------
