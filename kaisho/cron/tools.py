@@ -437,6 +437,65 @@ def _batch_invoice(args: dict) -> dict:
     return {"invoiced": count}
 
 
+_USER_PROFILE_FIELDS = (
+    "name", "email", "bio", "company", "industry",
+)
+
+
+def _get_user_profile(args: dict) -> dict:
+    """Return user.yaml fields for the active profile."""
+    from ..config import get_config, load_user_yaml
+    cfg = get_config()
+    data = load_user_yaml(cfg)
+    return {
+        "profile": cfg.PROFILE,
+        "name": data.get("name", ""),
+        "email": data.get("email", ""),
+        "bio": data.get("bio", ""),
+        "company": data.get("company", ""),
+        "industry": data.get("industry", ""),
+        "research_targets": list(
+            data.get("research_targets") or []
+        ),
+    }
+
+
+def _update_user_profile(args: dict) -> dict:
+    """Patch user.yaml fields for the active profile."""
+    from ..config import (
+        get_config, load_user_yaml, save_user_yaml,
+    )
+    cfg = get_config()
+    data = load_user_yaml(cfg)
+    written: list[str] = []
+    for field in _USER_PROFILE_FIELDS:
+        if field in args and args[field] is not None:
+            data[field] = str(args[field])
+            written.append(field)
+    if "research_targets" in args:
+        raw = args["research_targets"]
+        if isinstance(raw, str):
+            raw = [
+                p.strip() for p in raw.splitlines()
+            ]
+        if not isinstance(raw, list):
+            return {
+                "error": (
+                    "research_targets must be a list "
+                    "of strings"
+                ),
+            }
+        data["research_targets"] = [
+            str(t).strip() for t in raw if str(t).strip()
+        ]
+        written.append("research_targets")
+    save_user_yaml(cfg, data)
+    return {
+        "updated": written,
+        "profile": _get_user_profile({}),
+    }
+
+
 def _list_profiles(args: dict) -> dict:
     from ..config import get_config, list_profiles
     cfg = get_config()
@@ -507,6 +566,8 @@ _HANDLERS: dict[str, Any] = {
     "batch_invoice": _batch_invoice,
     "list_kb_files": lambda a: _list_kb_files(),
     "list_profiles": _list_profiles,
+    "get_user_profile": _get_user_profile,
+    "update_user_profile": _update_user_profile,
     "rename_profile": _rename_profile,
     "delete_profile": _delete_profile,
     "create_skill": lambda a: _create_skill(

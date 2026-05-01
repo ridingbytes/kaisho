@@ -213,5 +213,6 @@
   "showClosed": "Geschlossene anzeigen",
   "noOpenIssues": "Keine offenen Issues.",
   "noProjects": "Keine Projekte gefunden.",
-  "githubApiError": "GitHub API-Fehler oder kein Token konfiguriert."
+  "githubApiError": "GitHub API-Fehler oder kein Token konfiguriert.",
+  "runOnboard": "Erzähl dem Advisor von dir → /onboard ausführen"
 }

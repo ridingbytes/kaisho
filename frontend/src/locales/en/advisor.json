@@ -17,6 +17,7 @@
   "openIssues": "Show open issues across all customers",
   "slashReset": "Clear the chat",
   "slashModel": "Switch model (e.g. /model ollama:qwen3:14b)",
+  "slashOnboard": "Walk me through filling in my profile",
   "slashHelp": "Show available commands",
   "providerModel": "provider:model",
   "stopped": "*Stopped.*",
@@ -25,5 +26,6 @@
   "done": "{{name}} done",
   "failed": "{{name}} failed",
   "copyToInbox": "Copy to inbox",
-  "copiedToInbox": "Copied to inbox"
+  "copiedToInbox": "Copied to inbox",
+  "onboardHint": "Set up your profile so the advisor and crons know who you are. Run"
 }
