@@ -3,7 +3,7 @@
   "profile": "Profile",
   "general": "General",
   "externalEditor": "External Editor",
-  "externalEditorHelp": "Open the file backing each panel (tasks, clocks, notes, inbox) in an external editor like vim, nvim, or VS Code. Available only in the desktop app and only for the org backend.",
+  "externalEditorHelp": "Open the file backing each panel (tasks, clocks, notes, inbox) in an external editor like vim, emacs, or VS Code. Available in the desktop app for the org, markdown, and json backends.",
   "externalEditorEnable": "Enable external editor",
   "externalEditorCommand": "Command template",
   "externalEditorCommandHint": "Use {file} as a placeholder for the absolute file path. Examples: alacritty -e vim \"{file}\" — alacritty -e emacs -nw \"{file}\" — alacritty -e emacsclient -t \"{file}\" — code -g \"{file}\"",

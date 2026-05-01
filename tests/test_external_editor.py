@@ -77,6 +77,63 @@ def test_files_path_unknown_kind_400(client):
     assert r.status_code == 400
 
 
+def test_files_path_markdown_backend(client, tmp_path):
+    """Markdown backend serves todos.md / clocks.md /
+    etc. The endpoint must return ``.md`` paths against
+    the configured ``markdown_dir``."""
+    md_dir = tmp_path / "md"
+    md_dir.mkdir()
+
+    r = client.patch(
+        "/api/settings/paths",
+        json={
+            "markdown_dir": str(md_dir),
+            "backend": "markdown",
+        },
+    )
+    assert r.status_code == 200, r.text
+
+    r = client.get("/api/files/path?kind=tasks")
+    assert r.status_code == 200
+    assert r.json()["path"] == str(md_dir / "todos.md")
+
+    r = client.get("/api/files/path?kind=notes")
+    assert r.status_code == 200
+    assert r.json()["path"] == str(md_dir / "notes.md")
+
+
+def test_files_path_json_backend(client, tmp_path):
+    """JSON backend uses ``tasks.json`` (not todos)."""
+    json_dir = tmp_path / "json"
+    json_dir.mkdir()
+
+    r = client.patch(
+        "/api/settings/paths",
+        json={
+            "json_dir": str(json_dir),
+            "backend": "json",
+        },
+    )
+    assert r.status_code == 200, r.text
+
+    r = client.get("/api/files/path?kind=tasks")
+    assert r.status_code == 200
+    assert r.json()["path"] == str(
+        json_dir / "tasks.json"
+    )
+
+
+def test_files_path_sql_backend_404(client):
+    """SQL backend has no addressable file."""
+    r = client.patch(
+        "/api/settings/paths",
+        json={"backend": "sql"},
+    )
+    assert r.status_code == 200, r.text
+    r = client.get("/api/files/path?kind=tasks")
+    assert r.status_code == 404
+
+
 def test_external_editor_default(client):
     r = client.get("/api/settings/external_editor")
     assert r.status_code == 200
