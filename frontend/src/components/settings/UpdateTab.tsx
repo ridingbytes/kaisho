@@ -5,6 +5,8 @@ import {
   Download,
   Sparkles,
   ExternalLink,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { useVersionInfo } from "../../hooks/useSettings";
 import { openWhatsNew } from "../common/WhatsNewDialog";
@@ -12,6 +14,103 @@ import { isTauri } from "../../utils/tauri";
 import { parseChangelog } from "../../utils/changelog";
 import { Markdown } from "../common/Markdown";
 import { saveBtnCls } from "./styles";
+
+interface VersionHistoryProps {
+  entries: { version: string; items: string[] }[];
+}
+
+function VersionHistory(
+  { entries }: VersionHistoryProps,
+): JSX.Element {
+  const { t } = useTranslation("settings");
+  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  function toggleEntry(version: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(version)) next.delete(version);
+      else next.add(version);
+      return next;
+    });
+  }
+
+  return (
+    <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-surface-raised transition-colors"
+      >
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+          {t("versionHistory")}
+          <span className="ml-2 text-stone-400 normal-case font-normal">
+            {t("versionHistoryCount", {
+              count: entries.length,
+            })}
+          </span>
+        </span>
+        {open ? (
+          <ChevronDown size={14} className="text-stone-400" />
+        ) : (
+          <ChevronRight size={14} className="text-stone-400" />
+        )}
+      </button>
+      {open && (
+        <ul className="border-t border-border-subtle">
+          {entries.map((entry) => {
+            const isOpen = expanded.has(entry.version);
+            return (
+              <li
+                key={entry.version}
+                className="border-b border-border-subtle last:border-b-0"
+              >
+                <button
+                  onClick={() => toggleEntry(entry.version)}
+                  className="w-full px-4 py-2 flex items-center gap-2 hover:bg-surface-raised transition-colors text-left"
+                >
+                  {isOpen ? (
+                    <ChevronDown
+                      size={12}
+                      className="text-stone-400 shrink-0"
+                    />
+                  ) : (
+                    <ChevronRight
+                      size={12}
+                      className="text-stone-400 shrink-0"
+                    />
+                  )}
+                  <span className="text-xs font-mono font-semibold text-stone-700">
+                    v{entry.version}
+                  </span>
+                  <span className="text-[11px] text-stone-400">
+                    {t("more", {
+                      count: entry.items.length,
+                    })}
+                  </span>
+                </button>
+                {isOpen && (
+                  <ul className="px-6 pb-3 space-y-1">
+                    {entry.items.map((item, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-xs text-stone-600 leading-relaxed"
+                      >
+                        <span className="mt-1.5 w-1 h-1 rounded-full bg-stone-400 shrink-0" />
+                        <Markdown compact>{item}</Markdown>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export function UpdateSection(): JSX.Element {
   const { t } = useTranslation("settings");
@@ -264,6 +363,15 @@ export function UpdateSection(): JSX.Element {
             </div>
           )}
         </div>
+      )}
+
+      {/* Version history — every previous release with
+          its full changelog. The current version is shown
+          as the preview above; this card lists older
+          entries so users can see what changed across
+          versions without leaving the app. */}
+      {entries.length > 1 && (
+        <VersionHistory entries={entries.slice(1)} />
       )}
 
       {/* Non-Tauri: link to GitHub */}
