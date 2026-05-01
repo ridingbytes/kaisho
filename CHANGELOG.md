@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.4.5
+
+### Features
+
+- Desktop **pause/resume** flow on running timers, mirroring
+  the PWA. Tapping Stop on the tray or the main Time
+  Tracking widget freezes the elapsed counter and shows a
+  pinned "Stopped" card with a green Resume icon (re-fires
+  the same customer/description) and a neutral Clear icon
+  (returns to the empty start form). Cross-device: a stop
+  initiated on the PWA pins the snapshot on desktop, and
+  vice versa
+- Round filled-red **Stop** button (and matching green
+  Resume) in the tray and the main Time Tracking widget,
+  matching the PWA's affordance. Sized to roughly 80% of
+  the elapsed counter so it doesn't compete with the
+  timer visually
+
+### Fixes
+
+- Stopping the timer on desktop no longer leaves the
+  Time Tracking panel blank — the API returns
+  ``{active: false}`` after stop, so the render gates
+  must check ``isRunning`` rather than ``timer``
+  truthiness
+- ConfirmPopover (delete confirmations on clock entries,
+  tasks, etc.) now sits directly below-and-right-aligned
+  with the trigger icon. Previously a hardcoded 180px
+  offset placed it far to the left of any narrow trigger
+
 ## 1.4.4
 
 ### Features
