@@ -102,7 +102,6 @@ nav:
       - Architecture: concepts/architecture.md
       - Profiles: concepts/profiles.md
       - Storage Backends: concepts/backends.md
-      - Voice Transcription: concepts/whisper-concept.md
   - User Guide:
       - Dashboard: guide/dashboard.md
       - Time Tracking: guide/time-tracking.md
