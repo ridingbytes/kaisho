@@ -812,9 +812,43 @@ def execute_job(
         cloud_api_key=cloud_api_key,
     )
 
+    output_text = _normalize_model_output(output_text)
+
     write_output(
         job.get("output", "inbox"),
         output_text,
         job_name=job.get("name", "AI Report"),
     )
     return output_text
+
+
+def _normalize_model_output(text: str) -> str:
+    """Defensively decode JSON-escaped model output.
+
+    Some models (or wrapping pipelines) hand back content
+    where the body is already JSON-encoded — newlines become
+    the two-character sequence ``\\n``, tabs become ``\\t``,
+    quotes become ``\\"``. The cron and inbox renderers
+    treat the body as plain text / Markdown, so those
+    literals show up verbatim instead of becoming line
+    breaks.
+
+    We only apply the fix when the heuristic strongly
+    suggests escaping happened: there is at least one
+    ``\\n`` literal AND not a single real newline. Anything
+    that already contains real line breaks is left alone so
+    legitimate backslash content (e.g. code samples, regex)
+    survives untouched. We do targeted string replaces
+    rather than ``codecs.decode(..., 'unicode_escape')`` so
+    multi-byte UTF-8 (emoji, umlauts) is not corrupted.
+    """
+    if "\n" in text:
+        return text
+    if "\\n" not in text:
+        return text
+    return (
+        text
+        .replace("\\n", "\n")
+        .replace("\\t", "\t")
+        .replace('\\"', '"')
+    )
