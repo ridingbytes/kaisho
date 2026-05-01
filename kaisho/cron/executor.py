@@ -74,10 +74,15 @@ def load_prompt(prompt_file: str, project_root: Path) -> str:
         {fetch_results}
     """
     import yaml as _yaml
-    p = Path(prompt_file)
+    # Expand ``~`` BEFORE the absolute-path check.
+    # ``Path("~/foo").is_absolute()`` is False, so a
+    # ``~``-prefixed path would otherwise get joined onto
+    # project_root and produce
+    # ``<runtime>/_internal/~/.kaisho/...`` — a real path
+    # that doesn't exist.
+    p = Path(prompt_file).expanduser()
     if not p.is_absolute():
         p = project_root / p
-    p = p.expanduser()
     if not p.exists():
         raise ExecutorError(f"prompt file not found: {p}")
     raw = p.read_text(encoding="utf-8")
