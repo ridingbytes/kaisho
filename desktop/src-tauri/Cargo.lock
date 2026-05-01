@@ -1783,10 +1783,11 @@ dependencies = [
 
 [[package]]
 name = "kaisho-desktop"
-version = "1.3.3"
+version = "1.4.2"
 dependencies = [
  "serde",
  "serde_json",
+ "shlex",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",

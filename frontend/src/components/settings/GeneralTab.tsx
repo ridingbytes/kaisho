@@ -14,7 +14,10 @@ import {
   useCopyProfile,
   useRenameProfile,
   useDeleteProfile,
+  useExternalEditorSettings,
+  useUpdateExternalEditorSettings,
 } from "../../hooks/useSettings";
+import { Toggle } from "../common/Toggle";
 import { inputCls, saveBtnCls } from "./styles";
 
 // -----------------------------------------------------------------
@@ -776,12 +779,98 @@ function LanguageSection() {
   );
 }
 
+function ExternalEditorSection() {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
+  const { data: editor } = useExternalEditorSettings();
+  const update = useUpdateExternalEditorSettings();
+  const [enabled, setEnabled] = useState(false);
+  const [command, setCommand] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (editor) {
+      setEnabled(editor.enabled);
+      setCommand(editor.command);
+    }
+  }, [editor]);
+
+  function handleToggle(next: boolean) {
+    setEnabled(next);
+    update.mutate({ enabled: next });
+  }
+
+  function handleSave() {
+    update.mutate(
+      { command },
+      {
+        onSuccess: () => {
+          setSaved(true);
+          setTimeout(() => setSaved(false), 2000);
+        },
+      },
+    );
+  }
+
+  return (
+    <section>
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        {t("externalEditor")}
+      </h2>
+      <p className="text-[10px] text-stone-400 mb-3">
+        {t("externalEditorHelp")}
+      </p>
+      <label className="flex items-center gap-3 cursor-pointer mb-4">
+        <Toggle
+          checked={enabled}
+          onChange={handleToggle}
+        />
+        <span className="text-sm text-stone-800">
+          {t("externalEditorEnable")}
+        </span>
+      </label>
+      {enabled && (
+        <div className="flex flex-col gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+            {t("externalEditorCommand")}
+          </span>
+          <input
+            type="text"
+            value={command}
+            onChange={(e) => setCommand(e.target.value)}
+            placeholder='alacritty -e vim "{file}"'
+            className={inputCls}
+          />
+          <p className="text-[10px] text-stone-400">
+            {t("externalEditorCommandHint")}
+          </p>
+          <div className="flex items-center gap-3 mt-1">
+            <button
+              onClick={handleSave}
+              disabled={update.isPending}
+              className={saveBtnCls}
+            >
+              {update.isPending ? tc("saving") : tc("save")}
+            </button>
+            {saved && (
+              <span className="text-xs text-green-400">
+                {tc("saved")}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function GeneralTab(): JSX.Element {
   return (
     <div className="flex flex-col gap-8">
       <AppTitleSection />
       <LanguageSection />
       <TraySection />
+      <ExternalEditorSection />
       <ResetLocalStorageSection />
     </div>
   );

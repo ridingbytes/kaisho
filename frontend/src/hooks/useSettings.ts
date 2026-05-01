@@ -36,6 +36,7 @@ import {
   pruneBackupsRemote,
   runBackup,
   updateBackupSettings,
+  fetchExternalEditorSettings,
   fetchGithubSettings,
   fetchKbSources,
   fetchPaths,
@@ -57,6 +58,7 @@ import {
   switchProfile,
   updateAdvisorFiles,
   updateAiSettings,
+  updateExternalEditorSettings,
   updateGithubSettings,
   updateKbSources,
   updatePaths,
@@ -64,6 +66,7 @@ import {
   updateTag,
   updateUrlAllowlist,
 } from "../api/client";
+import type { ExternalEditorSettings } from "../api/client";
 import type { AiSettings, TaskState } from "../types";
 
 const DEFAULT_STATES: TaskState[] = [
@@ -493,6 +496,28 @@ export function useUpdateGithubSettings() {
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: ["settings", "github"],
+      });
+    },
+  });
+}
+
+export function useExternalEditorSettings() {
+  return useQuery({
+    queryKey: ["settings", "external_editor"],
+    queryFn: fetchExternalEditorSettings,
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateExternalEditorSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (
+      updates: Partial<ExternalEditorSettings>,
+    ) => updateExternalEditorSettings(updates),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings", "external_editor"],
       });
     },
   });

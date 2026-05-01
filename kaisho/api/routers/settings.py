@@ -221,6 +221,32 @@ def update_github(body: GithubSettingsUpdate):
     )
 
 
+# ── External editor ──────────────────────────────────
+
+
+class ExternalEditorUpdate(BaseModel):
+    enabled: bool | None = None
+    command: str | None = None
+
+
+@router.get("/external_editor")
+def get_external_editor():
+    """Return external-editor settings."""
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    return settings_svc.get_external_editor_settings(data)
+
+
+@router.patch("/external_editor")
+def update_external_editor(body: ExternalEditorUpdate):
+    """Update external-editor settings."""
+    cfg = get_config()
+    updates = body.model_dump(exclude_none=True)
+    return settings_svc.set_external_editor_settings(
+        cfg.SETTINGS_FILE, updates,
+    )
+
+
 # ── Knowledge base sources ───────────────────────────
 
 

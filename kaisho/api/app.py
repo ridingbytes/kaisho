@@ -17,6 +17,7 @@ from .routers import (
     cron,
     customers,
     dashboard,
+    files as files_router,
     github,
     inbox,
     kanban,
@@ -148,6 +149,7 @@ app.include_router(dashboard.router)
 app.include_router(ws_router.router)
 app.include_router(version_router.router)
 app.include_router(cli_router.router)
+app.include_router(files_router.router)
 
 
 @app.get("/health")

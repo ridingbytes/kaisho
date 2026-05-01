@@ -294,6 +294,37 @@ def set_github_settings(path: Path, updates: dict) -> dict:
     return get_github_settings(data)
 
 
+# ── External editor ─────────────────────────────────────
+
+DEFAULT_EXTERNAL_EDITOR = {
+    "enabled": False,
+    "command": "",
+}
+
+
+def get_external_editor_settings(settings: dict) -> dict:
+    """Return external-editor settings with defaults
+    filled in. The ``command`` is a shell-style template
+    with a ``{file}`` placeholder, e.g.
+    ``alacritty -e nvim "{file}"``."""
+    return {
+        **DEFAULT_EXTERNAL_EDITOR,
+        **settings.get("external_editor", {}),
+    }
+
+
+def set_external_editor_settings(
+    path: Path, updates: dict,
+) -> dict:
+    """Persist external-editor settings updates."""
+    data = load_settings(path)
+    block = data.get("external_editor", {})
+    block.update(updates)
+    data["external_editor"] = block
+    save_settings(path, data)
+    return get_external_editor_settings(data)
+
+
 def get_kb_sources(settings: dict, cfg=None) -> list[dict]:
     """Return KB source list with defaults.
 

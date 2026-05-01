@@ -1,5 +1,5 @@
 import {
-  X, ExternalLink, MessageSquare,
+  X, Maximize2, MessageSquare,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Markdown } from "./Markdown";
@@ -20,7 +20,7 @@ export function ContentPopup({
   icon = "expand",
 }: ContentPopupProps) {
   const IconComponent =
-    icon === "notes" ? MessageSquare : ExternalLink;
+    icon === "notes" ? MessageSquare : Maximize2;
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
