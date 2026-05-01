@@ -130,10 +130,16 @@ interface AdvisorViewProps {
   onMessagesChange: React.Dispatch<React.SetStateAction<AdvisorMessage[]>>;
 }
 
-/** Query keys the advisor's tools may have modified. */
+/** Query keys the advisor's tools may have modified.
+ *
+ * ``settings`` covers the user-profile cache so that a
+ * ``/onboard`` flow's ``update_user_profile`` call
+ * refreshes the General tab and the empty-profile banner
+ * without forcing a reload.
+ */
 const ADVISOR_INVALIDATIONS = [
   "knowledge", "tasks", "inbox", "notes",
-  "clocks", "customers",
+  "clocks", "customers", "settings",
 ];
 
 export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
