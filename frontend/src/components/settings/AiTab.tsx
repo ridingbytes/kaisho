@@ -480,6 +480,7 @@ export function AiSection(): JSX.Element {
     ollama_url: "",
     ollama_cloud_url: "",
     ollama_api_key: "",
+    ollama_cloud_api_key: "",
     lm_studio_url: "",
     claude_api_key: "",
     openrouter_url: "",
@@ -502,6 +503,7 @@ export function AiSection(): JSX.Element {
       setForm({
         ...aiSettings,
         ollama_api_key: "",
+        ollama_cloud_api_key: "",
         claude_api_key: "",
         openrouter_api_key: "",
         openai_api_key: "",
@@ -720,15 +722,15 @@ export function AiSection(): JSX.Element {
               </span>
               <input
                 type="password"
-                value={form.ollama_api_key}
+                value={form.ollama_cloud_api_key}
                 onChange={(e) =>
                   set(
-                    "ollama_api_key",
+                    "ollama_cloud_api_key",
                     e.target.value,
                   )
                 }
                 placeholder={keyPlaceholder(
-                  "ollama_api_key",
+                  "ollama_cloud_api_key",
                   t("ollamaCloudKeyPlaceholder"),
                 )}
                 className={inputCls}

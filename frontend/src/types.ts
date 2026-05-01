@@ -49,6 +49,8 @@ export interface AiSettings {
   ollama_cloud_url: string;
   ollama_api_key: string;
   ollama_api_key_set?: boolean;
+  ollama_cloud_api_key: string;
+  ollama_cloud_api_key_set?: boolean;
   lm_studio_url: string;
   claude_api_key: string;
   claude_api_key_set?: boolean;

@@ -20,6 +20,7 @@ DEFAULT_AI: dict = {
     "ollama_url": "",
     "ollama_cloud_url": "",
     "ollama_api_key": "",
+    "ollama_cloud_api_key": "",
     "lm_studio_url": "",
     "claude_api_key": "",
     "openrouter_url": "",
@@ -96,6 +97,7 @@ def get_inbox_channels(settings: dict) -> list[str]:
 _SECRET_KEYS = {
     "api_key", "claude_api_key", "openrouter_api_key",
     "openai_api_key", "ollama_api_key",
+    "ollama_cloud_api_key",
     "brave_api_key", "tavily_api_key", "token",
 }
 
