@@ -299,19 +299,34 @@ function UpdateBanner() {
 
   useEffect(() => {
     if (!isTauri()) return;
+    let cancelled = false;
     const timer = setTimeout(async () => {
       try {
+        const { invoke } = await import(
+          "@tauri-apps/api/core"
+        );
+        // Skip in dev builds: ``tauri dev`` builds the
+        // shell with debug_assertions, and a published
+        // release version older than the dev tree would
+        // otherwise show as an "available update".
+        if (await invoke<boolean>("is_dev_build")) return;
+        if (cancelled) return;
         const { check } = await import(
           "@tauri-apps/plugin-updater"
         );
         const update = await check();
-        if (update) setVersion(update.version);
+        if (!cancelled && update) {
+          setVersion(update.version);
+        }
       } catch {
         // silently ignore — user can still check
         // manually in Settings > Updates
       }
     }, 5000);
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   if (!version || dismissed) return null;
