@@ -6,6 +6,7 @@ import {
   useCloudSyncStatus,
 } from "../../hooks/useSettings";
 import {
+  applyKaishoModels,
   connectCloudSync,
   disconnectCloudSync,
   syncNow,
@@ -42,6 +43,8 @@ export function CloudSyncSection(): JSX.Element {
   const [disconnecting, setDisconnecting] =
     useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [applyingModels, setApplyingModels] =
+    useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
 
@@ -107,6 +110,30 @@ export function CloudSyncSection(): JSX.Element {
         setErr(e?.message || "Disconnect failed");
       })
       .finally(() => setDisconnecting(false));
+  }
+
+  function handleApplyKaishoModels() {
+    setApplyingModels(true);
+    setErr("");
+    applyKaishoModels()
+      .then((res) => {
+        setMsg(
+          t("applyKaishoModelsDone", {
+            count: res.jobs_changed,
+          }),
+        );
+        void qc.invalidateQueries({
+          queryKey: ["settings", "ai"],
+        });
+        void qc.invalidateQueries({
+          queryKey: ["cron", "jobs"],
+        });
+        setTimeout(() => setMsg(""), 5000);
+      })
+      .catch((e: { message?: string }) => {
+        setErr(e?.message || "Failed");
+      })
+      .finally(() => setApplyingModels(false));
   }
 
   function handleSyncNow() {
@@ -356,6 +383,29 @@ export function CloudSyncSection(): JSX.Element {
               </p>
             </div>
           )}
+
+          <div className="px-4 py-3 border-b border-border-subtle">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
+              {t("applyKaishoModelsTitle")}
+            </p>
+            <p className="text-[10px] text-stone-400 mb-2">
+              {t("applyKaishoModelsHint")}
+            </p>
+            <ConfirmPopover
+              label={t("applyKaishoModelsConfirm")}
+              onConfirm={handleApplyKaishoModels}
+              disabled={applyingModels}
+            >
+              <button
+                disabled={applyingModels}
+                className="px-3 py-1.5 rounded text-xs font-medium border border-border hover:border-cta hover:text-cta transition-colors disabled:opacity-50 disabled:cursor-wait"
+              >
+                {applyingModels
+                  ? t("applyingKaishoModels")
+                  : t("applyKaishoModels")}
+              </button>
+            </ConfirmPopover>
+          </div>
 
           <div className="px-4 py-3 flex items-center gap-3">
             <button

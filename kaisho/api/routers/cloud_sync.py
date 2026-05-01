@@ -342,6 +342,48 @@ def sync_now():
         ) from exc
 
 
+# ── POST /api/cloud-sync/use-kaisho-models ──────────
+
+
+@router.post("/use-kaisho-models")
+def use_kaisho_models():
+    """Switch every cron job and the advisor to the
+    Kaisho-hosted models (kaisho:cron, kaisho:advisor).
+
+    Useful right after connecting a fresh profile to a
+    Sync+AI plan so users do not have to walk through
+    every job + AI Settings to opt into the hosted models.
+    """
+    from ...services import cron as cron_svc
+
+    cfg = get_config()
+
+    settings_svc.set_ai_settings(
+        cfg.SETTINGS_FILE,
+        {
+            "advisor_model": "kaisho:advisor",
+            "cron_model": "kaisho:cron",
+        },
+    )
+
+    jobs_changed = 0
+    for job in cron_svc.list_jobs(cfg.JOBS_FILE):
+        if job.get("model") == "kaisho:cron":
+            continue
+        cron_svc.update_job(
+            cfg.JOBS_FILE,
+            job["id"],
+            {"model": "kaisho:cron"},
+        )
+        jobs_changed += 1
+
+    return {
+        "advisor_model": "kaisho:advisor",
+        "cron_model": "kaisho:cron",
+        "jobs_changed": jobs_changed,
+    }
+
+
 # ── GET /api/cloud-sync/pending ──────────────────────
 
 @router.get("/pending")
