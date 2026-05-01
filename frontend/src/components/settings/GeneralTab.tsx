@@ -249,7 +249,7 @@ function UserProfileSection() {
             onChange={(e) =>
               setResearchTargets(e.target.value)
             }
-            rows={3}
+            rows={5}
             placeholder={t(
               "researchTargetsPlaceholder",
             )}
