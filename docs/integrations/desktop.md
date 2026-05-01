@@ -63,6 +63,36 @@ and install in the background.
 The updater uses signed releases from GitHub. Update prompts only
 appear for versions newer than the installed one.
 
+## External Editor
+
+A small icon next to each panel's Help button (Board, Clocks,
+Notes, Inbox, Customers) opens the file backing that panel in
+your preferred external editor — useful when you want to bulk-edit
+in Vim, Emacs, or VS Code.
+
+Configure in **Settings > General > External Editor**:
+
+- Toggle **Enable external editor**.
+- Set a command template using `{file}` as a placeholder for the
+  absolute file path.
+
+Examples:
+
+```text
+alacritty -e vim "{file}"
+alacritty -e emacs -nw "{file}"
+alacritty -e emacsclient -t "{file}"
+code -g "{file}"
+```
+
+Available for the org, markdown, and json backends. The icon is
+hidden for the SQL backend (no addressable file) and outside the
+desktop app (browser sessions cannot launch local processes).
+
+The path resolves through the same overlay as the active backend,
+so a custom `org_dir` / `markdown_dir` / `json_dir` set in
+**Settings > Paths** is honoured.
+
 ## Sidecar
 
 The Python backend runs as a sidecar process managed by Tauri. It
