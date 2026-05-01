@@ -42,5 +42,6 @@
   "noHistoryYet": "Aún no hay historial.",
   "saving": "Guardando…",
   "creating": "Creando…",
-  "jobNamePlaceholder": "p.ej. Resumen diario"
+  "jobNamePlaceholder": "p.ej. Resumen diario",
+  "placeholderHint": "Marcadores disponibles:"
 }

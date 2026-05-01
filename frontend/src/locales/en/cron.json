@@ -17,8 +17,8 @@
   "output": "Output",
   "timeoutS": "Timeout (s)",
   "prompt": "Prompt",
-  "enterPrompt": "Enter the prompt text that will be sent to the model\u2026",
-  "enterPromptNew": "Enter the prompt that will be sent to the model on each run\u2026",
+  "enterPrompt": "Enter the prompt text that will be sent to the model…",
+  "enterPromptNew": "Enter the prompt that will be sent to the model on each run…",
   "savePrompt": "Save prompt",
   "promptSaved": "Saved",
   "promptSaveFailed": "Save failed",
@@ -37,10 +37,11 @@
   "started": "Started",
   "finished": "Finished",
   "kaishoAi": "Kaisho AI",
-  "running": "Running\u2026",
+  "running": "Running…",
   "run": "Run",
   "noHistoryYet": "No history yet.",
-  "saving": "Saving\u2026",
-  "creating": "Creating\u2026",
-  "jobNamePlaceholder": "e.g. Daily Briefing"
+  "saving": "Saving…",
+  "creating": "Creating…",
+  "jobNamePlaceholder": "e.g. Daily Briefing",
+  "placeholderHint": "Available placeholders:"
 }

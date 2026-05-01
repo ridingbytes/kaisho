@@ -62,6 +62,43 @@ interface PromptEditorProps {
   placeholder?: string;
   className?: string;
   minHeight?: number;
+  showPlaceholderHint?: boolean;
+}
+
+function PlaceholderHint() {
+  const { t } = useTranslation("cron");
+  const userChips = [
+    "${user.name}",
+    "${user.email}",
+    "${user.bio}",
+    "${user.company}",
+    "${user.industry}",
+    "${user.research_targets}",
+  ];
+  const systemChips = ["${date}", "${fetch_results}"];
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-stone-500">
+      <span className="text-stone-400">
+        {t("placeholderHint")}
+      </span>
+      {userChips.map((c) => (
+        <code
+          key={c}
+          className="kp-known px-1.5 py-0.5 rounded bg-cta/5"
+        >
+          {c}
+        </code>
+      ))}
+      {systemChips.map((c) => (
+        <code
+          key={c}
+          className="kp-known px-1.5 py-0.5 rounded bg-stone-200/50"
+        >
+          {c}
+        </code>
+      ))}
+    </div>
+  );
 }
 
 export function PromptEditor({
@@ -70,34 +107,39 @@ export function PromptEditor({
   placeholder,
   className,
   minHeight = 120,
+  showPlaceholderHint = true,
 }: PromptEditorProps) {
   const { t } = useTranslation("cron");
   return (
-    <div
-      className={[
-        "rounded-lg border border-border",
-        "bg-surface-raised",
-        "focus-within:border-border-strong",
-        className ?? "",
-      ].join(" ")}
-    >
-      <Editor
-        value={value}
-        onValueChange={onChange}
-        highlight={highlight}
-        padding={12}
-        textareaClassName="kp-textarea"
-        preClassName="kp-pre"
-        placeholder={placeholder ?? t("enterPrompt")}
-        style={{
-          fontFamily:
-            "ui-monospace, SFMono-Regular, monospace",
-          fontSize: 12,
-          minHeight,
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
-        }}
-      />
+    <div className={className}>
+      <div
+        className={[
+          "rounded-lg border border-border",
+          "bg-surface-raised",
+          "focus-within:border-border-strong",
+        ].join(" ")}
+      >
+        <Editor
+          value={value}
+          onValueChange={onChange}
+          highlight={highlight}
+          padding={12}
+          textareaClassName="kp-textarea"
+          preClassName="kp-pre"
+          placeholder={
+            placeholder ?? t("enterPrompt")
+          }
+          style={{
+            fontFamily:
+              "ui-monospace, SFMono-Regular, monospace",
+            fontSize: 12,
+            minHeight,
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+          }}
+        />
+      </div>
+      {showPlaceholderHint && <PlaceholderHint />}
     </div>
   );
 }
