@@ -79,6 +79,9 @@ def _ai_provider_kwargs(ai: dict) -> dict:
         "ollama_cloud_url": ai.get(
             "ollama_cloud_url", "",
         ),
+        "ollama_cloud_api_key": ai.get(
+            "ollama_cloud_api_key", "",
+        ),
         "lm_studio_base_url": ai.get(
             "lm_studio_url", "",
         ),

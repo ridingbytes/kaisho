@@ -619,6 +619,7 @@ def ask(
     ollama_base_url: str,
     ollama_api_key: str = "",
     ollama_cloud_url: str = "",
+    ollama_cloud_api_key: str = "",
     lm_studio_base_url: str = "",
     claude_api_key: str = "",
     openrouter_base_url: str = "",
@@ -719,7 +720,7 @@ def ask(
     if provider == "ollama_cloud":
         answer = ask_ollama(
             model_name, prompt, ollama_cloud_url,
-            api_key=ollama_api_key,
+            api_key=ollama_cloud_api_key,
             system_prompt=sp, on_event=on_event,
         )
         return _strip_model_prefix(answer, model_name)

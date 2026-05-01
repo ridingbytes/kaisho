@@ -204,7 +204,7 @@ def list_models():
     )
     models += _fetch_ollama_cloud_models(
         ai.get("ollama_cloud_url", ""),
-        ai.get("ollama_api_key", ""),
+        ai.get("ollama_cloud_api_key", ""),
     )
     models += _fetch_lm_studio_models(
         ai.get("lm_studio_url", ""),
