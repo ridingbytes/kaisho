@@ -1,6 +1,6 @@
 [package]
 name = "kaisho-desktop"
-version = "1.3.2"
+version = "1.3.3"
 description = "Kaisho Desktop App"
 authors = ["Riding Bytes"]
 license = "MIT"

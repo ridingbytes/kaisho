@@ -38,6 +38,18 @@ export function useCronHistory(jobId?: string) {
     queryKey: ["cron", "history", jobId],
     queryFn: () => fetchCronHistory(jobId),
     staleTime: 10_000,
+    // Poll while at least one run is still "running"
+    // so the user sees the output as soon as the job
+    // finishes, without needing to manually reload.
+    // Idle when nothing's running — no wasted requests.
+    refetchInterval: (query) => {
+      const runs = query.state.data;
+      const hasRunning = Array.isArray(runs)
+        && runs.some((r: { status: string }) =>
+          r.status === "running",
+        );
+      return hasRunning ? 3_000 : false;
+    },
   });
 }
 
