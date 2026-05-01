@@ -317,8 +317,13 @@ function JobCard({
             label={`Delete "${job.name}"?`}
             onConfirm={handleDelete}
           >
+            {/* No onClick stopPropagation here: the
+                ConfirmPopover wrapper already stops the
+                pointerdown so the row's expand/collapse
+                handler doesn't fire, and we DO want the
+                click to bubble to ConfirmPopover so it
+                opens the confirmation. */}
             <button
-              onClick={(e) => e.stopPropagation()}
               className="text-stone-500 hover:text-red-400 transition-colors"
               title="Delete job"
             >
