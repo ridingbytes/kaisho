@@ -80,10 +80,11 @@ export function SecretKeyField(props: Props): JSX.Element {
       {isSaved && !isReplacing && (
         <span
           className={[
-            "inline-flex items-center gap-1",
+            "inline-flex items-center justify-center gap-1",
+            "self-stretch px-2",
             "text-[10px] font-mono text-green-700",
             "bg-green-100 border border-green-200",
-            "rounded px-1.5 py-0.5 shrink-0",
+            "rounded shrink-0",
           ].join(" ")}
           title={t("keyConfiguredHint")}
         >
