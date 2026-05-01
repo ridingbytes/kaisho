@@ -175,6 +175,32 @@ fn kill_sidecar(state: State<KaiProcess>) {
     sidecar::kill(&state);
 }
 
+/// IPC command: open a file in the user's configured
+/// external editor. ``command`` is a shell-style template
+/// like ``alacritty -e nvim "{file}"``. The frontend has
+/// already substituted ``{file}`` with the absolute path.
+/// We split it into argv via ``shlex`` so quoted paths
+/// survive spaces, and spawn the first token as a process.
+#[tauri::command]
+fn open_in_editor(command: String) -> Result<(), String> {
+    let argv = shlex::split(&command).ok_or_else(|| {
+        "could not parse editor command".to_string()
+    })?;
+    let mut iter = argv.into_iter();
+    let bin = iter.next().ok_or_else(|| {
+        "editor command is empty".to_string()
+    })?;
+    let args: Vec<String> = iter.collect();
+
+    std::process::Command::new(&bin)
+        .args(&args)
+        .spawn()
+        .map_err(|e| {
+            format!("failed to launch {}: {}", bin, e)
+        })?;
+    Ok(())
+}
+
 /// Toggle the running timer via the backend API.
 /// If a timer is running, stop it. Otherwise open the
 /// tray panel so the user can pick a customer.
@@ -235,6 +261,7 @@ pub fn run() {
             set_tray_enabled,
             is_dev_build,
             kill_sidecar,
+            open_in_editor,
         ])
         .setup(|app| {
             sidecar::spawn(app)?;

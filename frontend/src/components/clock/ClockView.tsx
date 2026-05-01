@@ -18,6 +18,7 @@ import {
 } from "./ClockTableHeader";
 import { EntryRow } from "./EntryRow";
 import { HelpButton } from "../common/HelpButton";
+import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { SearchInput } from "../common/SearchInput";
 import { Toggle } from "../common/Toggle";
@@ -411,6 +412,7 @@ export function ClockView() {
             <Plus size={11} />
             {t("book")}
           </button>
+          <OpenInEditorButton kind="clocks" />
           <HelpButton
             title="Clock Entries"
             doc={DOCS.clocks}

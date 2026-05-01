@@ -22,6 +22,7 @@ import { AddInboxForm } from "./AddInboxForm";
 import { InboxItemRow } from "./InboxItemRow";
 import { CollapsibleSection } from "../common/CollapsibleSection";
 import { HelpButton } from "../common/HelpButton";
+import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { SearchInput } from "../common/SearchInput";
 import { DOCS } from "../../docs/panelDocs";
@@ -165,6 +166,7 @@ export function InboxView() {
           >
             {t("addItem")}
           </button>
+          <OpenInEditorButton kind="inbox" />
           <HelpButton
             title="Inbox"
             doc={DOCS.inbox}

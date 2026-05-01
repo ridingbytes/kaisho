@@ -1296,6 +1296,46 @@ export function updateGithubSettings(
   return patch<GithubSettings>("/settings/github", updates);
 }
 
+// ─── External editor ────────────────────────────────
+
+/** External-editor settings: a toggle and a command
+ * template with a {file} placeholder. */
+export interface ExternalEditorSettings {
+  enabled: boolean;
+  command: string;
+}
+
+export function fetchExternalEditorSettings(
+): Promise<ExternalEditorSettings> {
+  return get<ExternalEditorSettings>(
+    "/settings/external_editor",
+  );
+}
+
+export function updateExternalEditorSettings(
+  updates: Partial<ExternalEditorSettings>,
+): Promise<ExternalEditorSettings> {
+  return patch<ExternalEditorSettings>(
+    "/settings/external_editor", updates,
+  );
+}
+
+/** Resolve the absolute file path for a known panel kind.
+ * Returns null when the active backend does not expose a
+ * single file per kind (markdown, json, sql) — the caller
+ * uses this to hide the "open in editor" icon. */
+export async function fetchPanelFilePath(
+  kind: string,
+): Promise<{ path: string; exists: boolean } | null> {
+  try {
+    return await get<{ path: string; exists: boolean }>(
+      `/files/path?kind=${encodeURIComponent(kind)}`,
+    );
+  } catch {
+    return null;
+  }
+}
+
 // ─── Cloud Sync ─────────────────────────────────────
 
 /** Status of the cloud sync connection. */

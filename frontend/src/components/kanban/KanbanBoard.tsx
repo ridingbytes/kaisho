@@ -37,6 +37,7 @@ import type { ArchivedTask, Task } from "../../types";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { Toggle } from "../common/Toggle";
 import { HelpButton } from "../common/HelpButton";
+import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import {
   profileGet,
   profileSet,
@@ -657,6 +658,7 @@ export function KanbanBoard() {
             <Plus size={12} />
             {tc("new")}
           </button>
+          <OpenInEditorButton kind="tasks" />
           <HelpButton title="Board" doc={DOCS.board} view="board" />
         </>}
       />

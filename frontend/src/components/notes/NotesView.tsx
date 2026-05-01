@@ -30,6 +30,7 @@ import { CollapsibleSection } from "../common/CollapsibleSection";
 import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
+import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { TagDropdown } from "../common/TagDropdown";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
@@ -826,6 +827,7 @@ export function NotesView() {
           >
             {t("addNote")}
           </button>
+          <OpenInEditorButton kind="notes" />
           <HelpButton
             title={t("notes")}
             doc={DOCS.notes}
