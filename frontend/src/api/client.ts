@@ -1454,6 +1454,7 @@ export function syncNow(): Promise<CloudSyncResult> {
 export interface UseKaishoModelsResult {
   advisor_model: string;
   cron_model: string;
+  advisor_changed: boolean;
   jobs_changed: number;
 }
 
