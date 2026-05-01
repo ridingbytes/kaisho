@@ -291,6 +291,29 @@ function CloudNudgeBanner({
   );
 }
 
+// Cached lookup of the Tauri shell's debug_assertions
+// flag. Build mode never changes within a session, so the
+// IPC roundtrip happens exactly once per page load.
+let _devBuildPromise: Promise<boolean> | null = null;
+
+async function isDevBuild(): Promise<boolean> {
+  if (_devBuildPromise === null) {
+    _devBuildPromise = (async () => {
+      try {
+        const { invoke } = await import(
+          "@tauri-apps/api/core"
+        );
+        return await invoke<boolean>("is_dev_build");
+      } catch {
+        // Older Tauri shells that pre-date the IPC
+        // command treat themselves as release.
+        return false;
+      }
+    })();
+  }
+  return _devBuildPromise;
+}
+
 function UpdateBanner() {
   const [version, setVersion] = useState("");
   const [installing, setInstalling] = useState(false);
@@ -302,14 +325,11 @@ function UpdateBanner() {
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {
-        const { invoke } = await import(
-          "@tauri-apps/api/core"
-        );
         // Skip in dev builds: ``tauri dev`` builds the
         // shell with debug_assertions, and a published
         // release version older than the dev tree would
         // otherwise show as an "available update".
-        if (await invoke<boolean>("is_dev_build")) return;
+        if (await isDevBuild()) return;
         if (cancelled) return;
         const { check } = await import(
           "@tauri-apps/plugin-updater"
