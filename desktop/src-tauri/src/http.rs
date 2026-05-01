@@ -2,7 +2,7 @@
 //!
 //! Uses raw TCP sockets so the desktop shell has no
 //! dependency on reqwest or other HTTP crates. Only
-//! talks to ``127.0.0.1:8765``.
+//! talks to ``127.0.0.1:8765`` (8767 in debug builds).
 
 use std::io::{Read, Write};
 use std::net::TcpStream;

@@ -24,14 +24,21 @@ pub fn kill(state: &State<'_, KaiProcess>) {
     }
 }
 
-/// Kill any leftover kai-server process on port 8765
-/// from a previous session (e.g. after auto-update).
+// Release builds run the sidecar on 8765, debug builds
+// on 8767 (kept in sync with ``BACKEND_URL`` in lib.rs).
+#[cfg(not(debug_assertions))]
+const SIDECAR_PORT: &str = "8765";
+#[cfg(debug_assertions)]
+const SIDECAR_PORT: &str = "8767";
+
+/// Kill any leftover kai-server process on the sidecar
+/// port from a previous session (e.g. after auto-update).
 fn kill_stale() {
     #[cfg(unix)]
     {
         use std::process::Command;
         if let Ok(out) = Command::new("lsof")
-            .args(["-ti", ":8765"])
+            .args(["-ti", &format!(":{}", SIDECAR_PORT)])
             .output()
         {
             let pids = String::from_utf8_lossy(&out.stdout);
@@ -77,7 +84,7 @@ pub fn spawn(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .args([
             "serve",
             "--host", "127.0.0.1",
-            "--port", "8765",
+            "--port", SIDECAR_PORT,
         ])
         .spawn()?;
 

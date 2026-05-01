@@ -17,8 +17,19 @@ use tauri::Url;
 
 use sidecar::KaiProcess;
 
+// Release builds bind 8765 (production port). Debug
+// builds (``tauri dev``) bind 8767 so a running
+// installed Kaisho.app on 8765 does not collide with
+// `bin/dev --desktop` and silently take over the port.
+#[cfg(not(debug_assertions))]
 const BACKEND_URL: &str = "http://127.0.0.1:8765";
+#[cfg(not(debug_assertions))]
 const BACKEND_ADDR: &str = "127.0.0.1:8765";
+
+#[cfg(debug_assertions)]
+const BACKEND_URL: &str = "http://127.0.0.1:8767";
+#[cfg(debug_assertions)]
+const BACKEND_ADDR: &str = "127.0.0.1:8767";
 
 /// Whether the app should keep running in the tray
 /// when the main window is closed. Toggled from the
@@ -142,6 +153,15 @@ fn set_tray_enabled(enabled: bool) {
     TRAY_ENABLED.store(enabled, Ordering::Relaxed);
 }
 
+/// IPC command: true when this is a debug build
+/// (``tauri dev``). The frontend uses it to skip the
+/// auto-updater check, which would otherwise nag with
+/// stale "update available" banners during development.
+#[tauri::command]
+fn is_dev_build() -> bool {
+    cfg!(debug_assertions)
+}
+
 /// Toggle the running timer via the backend API.
 /// If a timer is running, stop it. Otherwise open the
 /// tray panel so the user can pick a customer.
@@ -200,6 +220,7 @@ pub fn run() {
             toggle_timer,
             get_tray_enabled,
             set_tray_enabled,
+            is_dev_build,
         ])
         .setup(|app| {
             sidecar::spawn(app)?;
