@@ -42,5 +42,6 @@
   "noHistoryYet": "Noch kein Verlauf.",
   "saving": "Speichern…",
   "creating": "Erstellen…",
-  "jobNamePlaceholder": "z.B. Tägliches Briefing"
+  "jobNamePlaceholder": "z.B. Tägliches Briefing",
+  "placeholderHint": "Verfügbare Platzhalter:"
 }
