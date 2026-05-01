@@ -16,6 +16,10 @@ import {
   useDeleteProfile,
 } from "../../hooks/useSettings";
 import { inputCls, saveBtnCls } from "./styles";
+import {
+  isGithubNavHidden,
+  setGithubNavHidden,
+} from "../../utils/navPrefs";
 
 // -----------------------------------------------------------------
 // App title
@@ -63,6 +67,47 @@ function AppTitleSection() {
           {t("appTitleHint")}
         </span>
       </div>
+    </section>
+  );
+}
+
+// -----------------------------------------------------------------
+// Navigation preferences
+// -----------------------------------------------------------------
+
+function NavigationSection() {
+  const { t } = useTranslation("settings");
+  const [hideGithub, setHideGithub] = useState(() =>
+    isGithubNavHidden(),
+  );
+
+  function toggleHideGithub() {
+    const next = !hideGithub;
+    setHideGithub(next);
+    setGithubNavHidden(next);
+  }
+
+  return (
+    <section>
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        {t("navigation")}
+      </h2>
+      <label className="flex items-start gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={hideGithub}
+          onChange={toggleHideGithub}
+          className="mt-0.5"
+        />
+        <span className="flex flex-col gap-0.5">
+          <span className="text-sm text-stone-800">
+            {t("hideGithubNav")}
+          </span>
+          <span className="text-[10px] text-stone-400">
+            {t("hideGithubNavHint")}
+          </span>
+        </span>
+      </label>
     </section>
   );
 }
@@ -782,6 +827,7 @@ export function GeneralTab(): JSX.Element {
       <AppTitleSection />
       <LanguageSection />
       <TraySection />
+      <NavigationSection />
       <UserProfileSection />
       <ProfilesTab />
       <ResetLocalStorageSection />
