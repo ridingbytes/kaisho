@@ -1,5 +1,58 @@
 # Changelog
 
+## 1.4.4
+
+### Features
+
+- Settings > AI: every saved API key now shows a masked
+  ``••••XXXX`` preview so users can recognise their key
+  without exposing it. A small **X** next to each
+  configured field deletes the saved value via a new
+  ``DELETE /api/settings/ai/keys/{field}`` endpoint
+- Settings > Cloud Sync now reports ``advisor_changed``
+  alongside ``jobs_changed`` so the toast after "Use
+  Kaisho models" is honest about whether the advisor
+  was already on ``kaisho:advisor``
+
+### Fixes
+
+- Advisor + ``GET /api/settings/ai/models``: forward
+  ``ollama_cloud_api_key`` (not ``ollama_api_key``) when
+  authenticating against ``ollama_cloud_url``. Previously
+  the advisor's chat against an ``ollama_cloud:*`` model
+  silently sent the local key (or empty), and the model
+  dropdown for Ollama Cloud came back empty for users
+  who only had the cloud key set. Same class of bug as
+  v1.4.3 fixed for the cron path
+- One-shot migration on settings load: when a user has
+  ``ollama_cloud_url`` configured and no local
+  ``ollama_url``, but the cloud key slot is empty and the
+  local key slot has a value, relocate it. Recovers users
+  who saved a cloud key while the form binding was
+  pointing at the wrong slot
+- Cron output normalize: tighter heuristic so brief
+  one-line answers that legitimately mention ``\n`` (e.g.
+  explaining a regex) are no longer mangled. Now requires
+  no real newlines AND ≥2 ``\n`` literals AND length ≥80
+  chars before decoding
+
+### Improvements
+
+- ``<SecretKeyField>`` extracted from ``AiTab.tsx``,
+  collapses 6 nearly-identical password+badge blocks
+  into one component. The hardcoded English string
+  ``"Configured — type to replace"`` is now an i18n key
+- Configured-key badge stretches to match input height
+  (cosmetic)
+
+### Docs
+
+- ``docs/integrations/cloud-sync.md`` covers the new
+  "Use Kaisho models" button
+- ``docs/integrations/desktop.md`` covers the external
+  editor configuration with vim, emacs, emacsclient,
+  VS Code examples
+
 ## 1.4.3
 
 ### Features
