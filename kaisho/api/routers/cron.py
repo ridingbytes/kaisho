@@ -8,7 +8,6 @@ from ...config import get_config
 from ...cron.executor import (
     ExecutorError,
     execute_job,
-    load_prompt,
     resolve_model_label,
 )
 from ...cron.scheduler import sync_jobs
@@ -161,21 +160,47 @@ def api_delete_job(job_id: str):
     sync_jobs(_jobs_file())
 
 
+def _resolve_prompt_path(prompt_file: str) -> Path:
+    """Resolve a ``prompt_file`` string to an absolute
+    path. Expands ``~`` BEFORE the absolute-path check so
+    user-override paths like
+    ``~/.kaisho/profiles/<p>/prompts/<id>.md`` resolve
+    against ``$HOME``, not ``project_root/~/...``.
+    """
+    p = Path(prompt_file).expanduser()
+    if not p.is_absolute():
+        p = _project_root() / p
+    return p
+
+
 @router.get("/jobs/{job_id}/prompt")
 def api_get_prompt(job_id: str):
-    """Return the prompt template for a cron job."""
+    """Return the RAW prompt source for editing.
+
+    Must NOT call ``load_prompt()`` here — that runs the
+    full assembly pipeline (frontmatter ``fetch:`` URLs,
+    placeholder substitution) and returns a runtime-
+    rendered prompt that can be many megabytes. If the
+    user then saves, the rendered content gets baked into
+    the file permanently. Always return what's actually
+    on disk.
+    """
     job = get_job(_jobs_file(), job_id)
     if job is None:
-        raise HTTPException(status_code=404, detail="Job not found")
-    try:
-        content = load_prompt(job["prompt_file"], _project_root())
-    except ExecutorError as exc:
+        raise HTTPException(
+            status_code=404, detail="Job not found",
+        )
+    p = _resolve_prompt_path(job["prompt_file"])
+    if not p.exists():
         return {
             "content": "",
             "path": job.get("prompt_file", ""),
-            "error": str(exc),
+            "error": f"prompt file not found: {p}",
         }
-    return {"content": content, "path": job.get("prompt_file", "")}
+    return {
+        "content": p.read_text(encoding="utf-8"),
+        "path": job.get("prompt_file", ""),
+    }
 
 
 @router.put("/jobs/{job_id}/prompt")
@@ -183,14 +208,16 @@ def api_update_prompt(job_id: str, body: PromptUpdate):
     """Save updated prompt content for a cron job."""
     job = get_job(_jobs_file(), job_id)
     if job is None:
-        raise HTTPException(status_code=404, detail="Job not found")
-    p = Path(job["prompt_file"])
-    if not p.is_absolute():
-        p = _project_root() / p
-    p = p.expanduser()
+        raise HTTPException(
+            status_code=404, detail="Job not found",
+        )
+    p = _resolve_prompt_path(job["prompt_file"])
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(body.content, encoding="utf-8")
-    return {"content": body.content, "path": job.get("prompt_file", "")}
+    return {
+        "content": body.content,
+        "path": job.get("prompt_file", ""),
+    }
 
 
 @router.post("/jobs/{job_id}/enable")
