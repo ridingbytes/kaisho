@@ -581,6 +581,12 @@ class TestCursorState:
         self, backend, fake_cloud,
         profile_dir, patched_backend,
     ):
+        """After a sync cycle, last_pull_cursor must be at
+        least as recent as the cloud's max-updated_at AND
+        as recent as the cycle's start time. The latter
+        prevents the echo-loop where pushed-back entries
+        get pulled on the next cycle.
+        """
         fake_cloud.entries["abc"] = {
             "id": "abc",
             "customer": "Beta",

@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.3.2
+
+- Fix sync snapshot oscillation. ``push_reference_snapshot``
+  fired on every cycle without checking whether anything
+  had actually changed, so users saw "snapshot" appear in
+  the sync result on every click even when no customer or
+  task data had changed. Now skips the network round-trip
+  when the SHA-256 of the canonical-JSON payload matches
+  the last successful push (digest stored at
+  ``profile_dir/.snapshot_digest``)
+- Pair with kaisho-cloud >= 1.2.4 for the full sync
+  echo-loop fix (cloud now preserves client's
+  ``updated_at`` so locally-pushed entries don't bounce
+  back as if cloud-modified)
+
 ## 1.3.1
 
 - Fix cron prompt loading for ``~``-prefixed paths.
