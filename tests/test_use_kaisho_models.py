@@ -94,6 +94,7 @@ def test_apply_kaisho_models_switches_all(client):
     assert body["jobs_changed"] == 2
     assert body["advisor_model"] == "kaisho:advisor"
     assert body["cron_model"] == "kaisho:cron"
+    assert body["advisor_changed"] is True
 
     # Verify jobs.yaml: every job is now on kaisho:cron.
     jobs = client.get("/api/cron/jobs").json()
@@ -113,3 +114,4 @@ def test_apply_kaisho_models_idempotent(client):
     r = client.post("/api/cloud-sync/use-kaisho-models")
     assert r.status_code == 200
     assert r.json()["jobs_changed"] == 0
+    assert r.json()["advisor_changed"] is False

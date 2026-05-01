@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from ...backends import get_backend
 from ...config import get_config
 from ...services import cloud_sync as sync_svc
+from ...services import cron as cron_svc
 from ...services import settings as settings_svc
 from ...services import sync_state
 
@@ -354,9 +355,13 @@ def use_kaisho_models():
     Sync+AI plan so users do not have to walk through
     every job + AI Settings to opt into the hosted models.
     """
-    from ...services import cron as cron_svc
-
     cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    ai = settings_svc.get_ai_settings(data)
+    advisor_changed = (
+        ai.get("advisor_model") != "kaisho:advisor"
+        or ai.get("cron_model") != "kaisho:cron"
+    )
 
     settings_svc.set_ai_settings(
         cfg.SETTINGS_FILE,
@@ -380,6 +385,7 @@ def use_kaisho_models():
     return {
         "advisor_model": "kaisho:advisor",
         "cron_model": "kaisho:cron",
+        "advisor_changed": advisor_changed,
         "jobs_changed": jobs_changed,
     }
 
