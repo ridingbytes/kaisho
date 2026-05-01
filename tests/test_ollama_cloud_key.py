@@ -99,6 +99,43 @@ def test_patch_separates_local_and_cloud_keys(client):
     assert raw["ollama_cloud_api_key"] == "CLOUD"
 
 
+def test_get_returns_preview_for_set_key(client):
+    """Saving a key must surface its last 4 chars as
+    ``<key>_preview`` so the UI can show ``••••XXXX``."""
+    client.patch(
+        "/api/settings/ai",
+        json={"claude_api_key": "sk-ant-secret123ABCD"},
+    )
+    body = client.get("/api/settings/ai").json()
+    assert body["claude_api_key_set"] is True
+    assert body["claude_api_key_preview"] == "ABCD"
+
+
+def test_delete_ai_key(client):
+    """DELETE /api/settings/ai/keys/<field> clears the
+    saved value and zeroes the preview."""
+    client.patch(
+        "/api/settings/ai",
+        json={"claude_api_key": "sk-ant-secret"},
+    )
+    r = client.delete(
+        "/api/settings/ai/keys/claude_api_key",
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["claude_api_key_set"] is False
+    assert body["claude_api_key_preview"] == ""
+
+
+def test_delete_unknown_key_400(client):
+    """Unknown / non-secret fields cannot be wiped via
+    this endpoint."""
+    r = client.delete(
+        "/api/settings/ai/keys/advisor_model",
+    )
+    assert r.status_code == 400
+
+
 def test_probe_uses_cloud_key_for_cloud(client):
     """The probe must report ``ollama_cloud: true`` only
     when both the cloud URL AND the cloud key are set."""

@@ -206,6 +206,24 @@ export function updateAiSettings(
   return patch<AiSettings>("/settings/ai", updates);
 }
 
+/** Clear a single AI secret key (the user clicked the X
+ * next to a configured field). PATCH cannot do this
+ * because it intentionally ignores empty-string values. */
+export async function deleteAiKey(
+  field: string,
+): Promise<AiSettings> {
+  const res = await fetch(
+    `${BASE}/settings/ai/keys/${field}`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) {
+    throw await extractError(
+      "DELETE", `/settings/ai/keys/${field}`, res,
+    );
+  }
+  return res.json() as Promise<AiSettings>;
+}
+
 /** Fetch the list of AI models available from the
  *  configured provider. */
 export function fetchAvailableModels(): Promise<{ models: string[] }> {

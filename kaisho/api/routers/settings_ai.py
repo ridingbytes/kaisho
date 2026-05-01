@@ -2,7 +2,7 @@ import json
 import urllib.request
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ...config import get_config
@@ -190,6 +190,27 @@ def update_ai(body: AiSettingsUpdate):
     return settings_svc.set_ai_settings(
         cfg.SETTINGS_FILE, updates,
     )
+
+
+@router.delete("/ai/keys/{field}")
+def delete_ai_key(field: str):
+    """Clear a single AI secret key.
+
+    PATCH cannot do this because empty-string values are
+    intentionally ignored (so users can submit forms
+    without overwriting existing keys). This is the
+    explicit "forget my key" action wired to the small X
+    button next to a configured input.
+    """
+    cfg = get_config()
+    try:
+        return settings_svc.clear_ai_key(
+            cfg.SETTINGS_FILE, field,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400, detail=str(exc),
+        )
 
 
 @router.get("/ai/models")

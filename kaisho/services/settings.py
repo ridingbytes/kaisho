@@ -149,20 +149,48 @@ _SECRET_KEYS = {
 
 
 def _mask_secrets(data: dict) -> dict:
-    """Replace secret values with ``*_set`` booleans.
+    """Replace secret values with ``*_set`` booleans plus
+    a short preview suffix.
 
     Recursively walks dicts. Any key in ``_SECRET_KEYS``
-    is replaced with ``<key>_set: bool``.
+    is replaced with:
+
+    - ``<key>_set: bool`` — backwards-compatible flag
+    - ``<key>_preview: str`` — last 4 characters of the
+      stored value (or empty string), so the UI can show
+      ``••••XXXX`` and the user can recognise their key
+      without exposing the full value
+
+    The raw value is never returned.
     """
     out = {}
     for k, v in data.items():
         if k in _SECRET_KEYS:
-            out[f"{k}_set"] = bool(v)
+            value = v or ""
+            out[f"{k}_set"] = bool(value)
+            out[f"{k}_preview"] = (
+                value[-4:] if len(value) >= 4 else ""
+            )
         elif isinstance(v, dict):
             out[k] = _mask_secrets(v)
         else:
             out[k] = v
     return out
+
+
+def clear_ai_key(path: Path, field: str) -> dict:
+    """Wipe a single AI secret key. Returns the masked
+    AI block. Raises ``ValueError`` if ``field`` is not a
+    known secret key, so callers can map to a 400 response.
+    """
+    if field not in _SECRET_KEYS:
+        raise ValueError(f"unknown secret key: {field}")
+    data = load_settings(path)
+    ai = data.get("ai", {}) or {}
+    ai[field] = ""
+    data["ai"] = ai
+    save_settings(path, data)
+    return get_ai_settings_safe(data)
 
 
 def get_ai_settings(settings: dict) -> dict:
