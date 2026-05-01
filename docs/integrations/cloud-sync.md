@@ -70,6 +70,16 @@ No local AI provider or API keys needed. Toggle this in
 The AI token usage meter shows your consumption against the monthly
 quota.
 
+### Use Kaisho models everywhere
+
+After connecting on a Sync + AI plan, click
+**Settings > Cloud Sync > Use Kaisho models** to switch the advisor
+and every cron job to the hosted models in one step. The button
+sets `advisor_model` to `kaisho:advisor`, `cron_model` to
+`kaisho:cron`, and rewrites every cron job's `model` to
+`kaisho:cron`. Idempotent: running it again on an already-converted
+profile is a no-op.
+
 ## Disconnecting
 
 Go to **Settings > Cloud Sync** and press **Disconnect**. This
