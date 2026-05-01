@@ -20,6 +20,7 @@ import {
   useUpdateUrlAllowlist,
 } from "../../hooks/useSettings";
 import type { AiSettings } from "../../types";
+import { KeyStatusBadge } from "./KeyStatusBadge";
 import {
   DATALIST_ID,
   fieldCls,
@@ -525,8 +526,20 @@ export function AiSection(): JSX.Element {
     fallback: string,
   ): string {
     const setKey = `${field}_set` as keyof AiSettings;
-    if (aiSettings?.[setKey]) return "••••••••";
+    if (aiSettings?.[setKey]) {
+      // Field is configured but empty (backend masks
+      // the value). Tell the user explicitly so they do
+      // not panic and overwrite a working key.
+      return "Configured — type to replace";
+    }
     return fallback;
+  }
+
+  function isKeySet(
+    field: keyof AiSettings,
+  ): boolean {
+    const setKey = `${field}_set` as keyof AiSettings;
+    return Boolean(aiSettings?.[setKey]);
   }
 
   function handleSave() {
@@ -735,6 +748,12 @@ export function AiSection(): JSX.Element {
                 )}
                 className={inputCls}
               />
+              <KeyStatusBadge
+                configured={isKeySet(
+                  "ollama_cloud_api_key",
+                )}
+                currentValue={form.ollama_cloud_api_key}
+              />
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
@@ -753,6 +772,10 @@ export function AiSection(): JSX.Element {
                   "claude_api_key", "sk-ant-...",
                 )}
                 className={inputCls}
+              />
+              <KeyStatusBadge
+                configured={isKeySet("claude_api_key")}
+                currentValue={form.claude_api_key}
               />
             </label>
             <label className="flex items-center gap-3">
@@ -790,6 +813,12 @@ export function AiSection(): JSX.Element {
                 )}
                 className={inputCls}
               />
+              <KeyStatusBadge
+                configured={isKeySet(
+                  "openrouter_api_key",
+                )}
+                currentValue={form.openrouter_api_key}
+              />
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
@@ -823,6 +852,10 @@ export function AiSection(): JSX.Element {
                 )}
                 className={inputCls}
               />
+              <KeyStatusBadge
+                configured={isKeySet("openai_api_key")}
+                currentValue={form.openai_api_key}
+              />
             </label>
           </div>
         </div>
@@ -854,6 +887,10 @@ export function AiSection(): JSX.Element {
                 )}
                 className={inputCls}
               />
+              <KeyStatusBadge
+                configured={isKeySet("brave_api_key")}
+                currentValue={form.brave_api_key}
+              />
             </label>
             <label className="flex items-center gap-3">
               <span className="text-xs text-stone-700 w-32 shrink-0">
@@ -872,6 +909,10 @@ export function AiSection(): JSX.Element {
                   "tavily_api_key", "tvly-...",
                 )}
                 className={inputCls}
+              />
+              <KeyStatusBadge
+                configured={isKeySet("tavily_api_key")}
+                currentValue={form.tavily_api_key}
               />
             </label>
           </div>

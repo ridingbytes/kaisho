@@ -9,6 +9,8 @@
   "externalEditorCommandHint": "Usa {file} como marcador del path absoluto. Ejemplos: alacritty -e vim \"{file}\" — alacritty -e emacs -nw \"{file}\" — alacritty -e emacsclient -t \"{file}\" — code -g \"{file}\"",
   "externalEditorNotConfigured": "Comando de editor no configurado. Defínelo en Ajustes → General.",
   "openInEditor": "Abrir en editor externo",
+  "keyConfigured": "Configurado",
+  "keyConfiguredHint": "Ya hay una clave guardada. Escribe un valor nuevo para reemplazarla; deja en blanco para mantener la existente.",
   "tagsAndTypes": "Etiquetas y tipos",
   "ai": "IA",
   "github": "GitHub",
