@@ -24,6 +24,25 @@ def test_no_escapes_passthrough():
     assert _normalize_model_output(text) == text
 
 
+def test_short_single_line_with_n_literal_passthrough():
+    """A short answer that legitimately mentions ``\\n``
+    (e.g. explaining a regex) must not be mangled even
+    though it contains no real newline."""
+    text = "The regex \\n+ matches one or more newlines."
+    assert _normalize_model_output(text) == text
+
+
+def test_long_single_line_with_one_n_literal_passthrough():
+    """Long but only one ``\\n`` literal: not enough
+    signal to assume JSON-escaping. Pass through."""
+    text = (
+        "This is a fairly long sentence that mentions"
+        " \\n exactly once and definitely should not be"
+        " treated as a JSON-encoded payload."
+    )
+    assert _normalize_model_output(text) == text
+
+
 def test_decodes_json_escaped_output():
     """Single-line output peppered with ``\\n``,
     ``\\t`` and ``\\\"`` is treated as JSON-escaped and

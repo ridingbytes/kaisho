@@ -834,17 +834,28 @@ def _normalize_model_output(text: str) -> str:
     breaks.
 
     We only apply the fix when the heuristic strongly
-    suggests escaping happened: there is at least one
-    ``\\n`` literal AND not a single real newline. Anything
-    that already contains real line breaks is left alone so
-    legitimate backslash content (e.g. code samples, regex)
-    survives untouched. We do targeted string replaces
-    rather than ``codecs.decode(..., 'unicode_escape')`` so
-    multi-byte UTF-8 (emoji, umlauts) is not corrupted.
+    suggests escaping happened. All three must hold:
+
+    - no real newlines in the text (cron outputs almost
+      always span multiple lines, so this alone is a
+      strong signal)
+    - at least TWO ``\\n`` literals (catches ``\\n\\n``
+      paragraph breaks; rejects "the regex \\n+ matches
+      newlines" — a single \\n in prose is more likely
+      to be a literal mention than encoded output)
+    - the body length is non-trivial (>= 80 chars), so
+      a brief one-line answer can't accidentally trip
+      the heuristic
+
+    Anything else passes through. Targeted string
+    replaces (not ``codecs.decode(..., 'unicode_escape')``)
+    so multi-byte UTF-8 (emoji, umlauts) is not corrupted.
     """
     if "\n" in text:
         return text
-    if "\\n" not in text:
+    if text.count("\\n") < 2:
+        return text
+    if len(text) < 80:
         return text
     return (
         text
