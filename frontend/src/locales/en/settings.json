@@ -9,6 +9,8 @@
   "externalEditorCommandHint": "Use {file} as a placeholder for the absolute file path. Examples: alacritty -e vim \"{file}\" — alacritty -e emacs -nw \"{file}\" — alacritty -e emacsclient -t \"{file}\" — code -g \"{file}\"",
   "externalEditorNotConfigured": "External editor command not configured. Set one in Settings → General.",
   "openInEditor": "Open in external editor",
+  "keyConfigured": "Configured",
+  "keyConfiguredHint": "An API key is already saved. Type a new value to replace it; leave blank to keep the existing one.",
   "tagsAndTypes": "Tags & Types",
   "ai": "AI",
   "github": "GitHub",
