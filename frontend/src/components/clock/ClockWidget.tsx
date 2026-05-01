@@ -150,8 +150,12 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
       </div>
 
       <div className="flex flex-col gap-4 p-4 overflow-y-auto flex-1">
-        {/* Active timer (local) */}
-        {timer && (
+        {/* Active timer (local). Only renders when the
+            timer is actively running — the API may
+            return ``{active: false}`` after a stop, so
+            we gate on ``isRunning`` rather than truthiness
+            of ``timer``. */}
+        {isRunning && timer && (
           <ActiveTimer
             timer={timer}
             onStopSnapshot={setStopped}
@@ -160,7 +164,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
 
         {/* Pinned-stopped snapshot — replaces the start
             form between Stop and Resume/Clear. */}
-        {!timer && stopped && (
+        {!isRunning && stopped && (
           <StoppedTimer
             snapshot={stopped}
             onClear={() => setStopped(null)}
