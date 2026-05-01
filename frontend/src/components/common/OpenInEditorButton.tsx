@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Terminal } from "lucide-react";
+import { SquareArrowOutUpRight } from "lucide-react";
 import {
   fetchPanelFilePath,
 } from "../../api/client";
@@ -88,7 +88,7 @@ export function OpenInEditorButton(
         "transition-colors"
       }
     >
-      <Terminal size={16} />
+      <SquareArrowOutUpRight size={16} />
     </button>
   );
 }
