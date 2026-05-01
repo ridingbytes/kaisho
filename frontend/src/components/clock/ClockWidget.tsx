@@ -12,6 +12,8 @@ import { useActiveTimer } from "../../hooks/useClocks";
 import { useCloudActiveTimer } from "../../hooks/useSettings";
 import { syncNow } from "../../api/client";
 import { ActiveTimer } from "./ActiveTimer";
+import { StoppedTimer } from "./StoppedTimer";
+import type { ActiveTimer as ActiveTimerType } from "../../types";
 import { CloudTimer } from "./CloudTimer";
 import { CalendarWidget } from "./CalendarWidget";
 import { ClockList } from "./ClockList";
@@ -39,6 +41,22 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
   const { t: tc } = useTranslation("common");
   const { data: timer } = useActiveTimer();
   const { data: cloudTimer } = useCloudActiveTimer();
+  // Pinned snapshot of the timer that just stopped — keeps
+  // the user's customer/description/elapsed visible so they
+  // can re-fire it with a single click. Cleared by Resume
+  // (after a new timer is in flight) or Clear (explicit).
+  const [stopped, setStopped] = useState<{
+    timer: ActiveTimerType;
+    finalElapsed: string;
+  } | null>(null);
+
+  // Drop the snapshot the moment a fresh active timer
+  // shows up — covers the case where another device
+  // started one (cloud → sync → local) while the snapshot
+  // was sitting on screen.
+  useEffect(() => {
+    if (timer?.active) setStopped(null);
+  }, [timer?.active]);
   const qc = useQueryClient();
 
   // When the cloud timer disappears (stopped on mobile),
@@ -133,11 +151,25 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
 
       <div className="flex flex-col gap-4 p-4 overflow-y-auto flex-1">
         {/* Active timer (local) */}
-        {timer && <ActiveTimer timer={timer} />}
+        {timer && (
+          <ActiveTimer
+            timer={timer}
+            onStopSnapshot={setStopped}
+          />
+        )}
+
+        {/* Pinned-stopped snapshot — replaces the start
+            form between Stop and Resume/Clear. */}
+        {!timer && stopped && (
+          <StoppedTimer
+            snapshot={stopped}
+            onClear={() => setStopped(null)}
+          />
+        )}
 
         {/* Cloud timer (running on mobile). Hidden when
             a local timer is running to avoid clutter. */}
-        {!isRunning && cloudTimer?.active && (
+        {!isRunning && !stopped && cloudTimer?.active && (
           <CloudTimer
             timer={cloudTimer}
             onStopped={refreshCloudTimer}
@@ -145,7 +177,9 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
         )}
 
         {/* Start timer form */}
-        {!isRunning && !cloudTimer?.active && <StartForm />}
+        {!isRunning && !stopped && !cloudTimer?.active && (
+          <StartForm />
+        )}
 
         <div className="border-t border-border-subtle" />
 
