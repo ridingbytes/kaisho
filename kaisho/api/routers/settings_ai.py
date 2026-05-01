@@ -161,6 +161,7 @@ class AiSettingsUpdate(BaseModel):
     ollama_url: str | None = None
     ollama_cloud_url: str | None = None
     ollama_api_key: str | None = None
+    ollama_cloud_api_key: str | None = None
     lm_studio_url: str | None = None
     claude_api_key: str | None = None
     openrouter_url: str | None = None
@@ -265,7 +266,7 @@ def probe_providers():
         ),
         "ollama_cloud": bool(
             ai.get("ollama_cloud_url")
-            and ai.get("ollama_api_key")
+            and ai.get("ollama_cloud_api_key")
         ),
         "lm_studio": _probe_url(
             ai.get("lm_studio_url", ""),
