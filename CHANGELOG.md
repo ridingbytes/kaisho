@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.1
+
+- Fix cron prompt loading for ``~``-prefixed paths.
+  ``Path.is_absolute()`` returns False on ``~/...``, so
+  the loader was joining the path onto project_root
+  before expanding ``~``, producing
+  ``<runtime>/_internal/~/.kaisho/profiles/...`` and a
+  "prompt file not found" error. ``~`` now expands
+  before the absolute-path check. Affects users who set
+  jobs.yaml ``prompt_file`` to a profile-relative
+  override
+
 ## 1.3.0
 
 - Cron jobs now pre-inject Kaisho data (open tasks,
