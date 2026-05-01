@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { DOCS } from "../../docs/panelDocs";
-import { GeneralTab } from "./GeneralTab";
+import { GeneralTab, NavigationSection } from "./GeneralTab";
+import { ProfileTab } from "./ProfileTab";
 import { TagsAndTypesTab } from "./TagsTab";
 import { AiSection } from "./AiTab";
 import { GithubSection } from "./GithubTab";
@@ -15,6 +16,7 @@ import { InvoiceExportSection } from "./InvoiceExportTab";
 import { UpdateSection } from "./UpdateTab";
 
 type TabId =
+  | "profile"
   | "general"
   | "tags"
   | "ai"
@@ -27,6 +29,7 @@ type TabId =
   | "updates";
 
 const TABS: { id: TabId; labelKey: string }[] = [
+  { id: "profile", labelKey: "profile" },
   { id: "general", labelKey: "general" },
   { id: "tags", labelKey: "tagsAndTypes" },
   { id: "ai", labelKey: "ai" },
@@ -71,7 +74,7 @@ export function SettingsView(): JSX.Element {
   const [activeTab, setActiveTab] = useState<TabId>(
     () =>
       (localStorage.getItem("settings_tab") as TabId) ||
-      "general",
+      "profile",
   );
 
   function changeTab(id: TabId) {
@@ -112,10 +115,16 @@ export function SettingsView(): JSX.Element {
             active={activeTab}
             onChange={changeTab}
           />
+          {activeTab === "profile" && <ProfileTab />}
           {activeTab === "general" && <GeneralTab />}
           {activeTab === "tags" && <TagsAndTypesTab />}
           {activeTab === "ai" && <AiSection />}
-          {activeTab === "github" && <GithubSection />}
+          {activeTab === "github" && (
+            <div className="flex flex-col gap-8">
+              <GithubSection />
+              <NavigationSection />
+            </div>
+          )}
           {activeTab === "cloud" && <CloudSyncSection />}
           {activeTab === "backup" && <BackupSection />}
           {activeTab === "export" && (

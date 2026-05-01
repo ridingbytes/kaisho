@@ -75,7 +75,7 @@ function AppTitleSection() {
 // Navigation preferences
 // -----------------------------------------------------------------
 
-function NavigationSection() {
+export function NavigationSection() {
   const { t } = useTranslation("settings");
   const [hideGithub, setHideGithub] = useState(() =>
     isGithubNavHidden(),
@@ -116,7 +116,7 @@ function NavigationSection() {
 // User profile
 // -----------------------------------------------------------------
 
-function UserProfileSection() {
+export function UserProfileSection() {
   const { t } = useTranslation("settings");
   const { t: tc } = useTranslation("common");
   const { data: userData } = useCurrentUser();
@@ -328,7 +328,7 @@ function UserProfileSection() {
 // Profiles
 // -----------------------------------------------------------------
 
-function ProfilesTab() {
+export function ProfilesSection() {
   const { t } = useTranslation("settings");
   const { t: tc } = useTranslation("common");
   const { data: userData } = useCurrentUser();
@@ -827,9 +827,6 @@ export function GeneralTab(): JSX.Element {
       <AppTitleSection />
       <LanguageSection />
       <TraySection />
-      <NavigationSection />
-      <UserProfileSection />
-      <ProfilesTab />
       <ResetLocalStorageSection />
     </div>
   );
