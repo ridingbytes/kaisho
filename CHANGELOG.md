@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.4.3
+
+### Features
+
+- Settings: new dedicated **Profile** tab (now the
+  default landing tab) holds the user-profile fields and
+  the Profiles switcher. **General** is slimmed down to
+  app-level prefs (App Title, Language, Tray, Reset
+  Local Storage). The Hide-GitHub-menu control moved
+  into the GitHub tab where users naturally look for it,
+  rendered as a Toggle to match the board's "Show Done"
+  switch
+- New external-editor integration. Each panel (Board,
+  Clocks, Notes, Inbox) gets a small icon next to its
+  Help button that opens the file backing the panel
+  (``todos.org``, ``clocks.org``, ``notes.org``,
+  ``inbox.org``, ``tasks.json``, ...) in the user's
+  configured editor. Configured under
+  Settings > General > External Editor with a toggle
+  and a shell-style command template, e.g.
+  ``alacritty -e vim "{file}"`` or
+  ``alacritty -e emacs -nw "{file}"``. Honours the
+  profile's configured ``org_dir``/``markdown_dir``/
+  ``json_dir`` and supports the org, markdown, and json
+  backends; the icon hides itself for the SQL backend or
+  in the browser
+
+### Improvements
+
+- ContentPopup expand icon switched from
+  ``ExternalLink`` to ``Maximize2`` so it no longer
+  visually clashes with the new "open in external
+  editor" affordance
+
+### Docs
+
+- Removed concept papers (``whisper-concept.md``,
+  ``sync-expansion-concept.md``) from the published
+  MkDocs site. They live on as working notes under
+  ``notes/concepts/`` for future implementation
+
 ## 1.4.2
 
 ### Fixes
