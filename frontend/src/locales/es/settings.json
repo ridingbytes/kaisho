@@ -215,6 +215,7 @@
   "githubApiError": "Error de la API de GitHub o no hay token configurado.",
   "runOnboard": "Cuéntale al asesor sobre ti → ejecutar /onboard",
   "bioHelp": "Una breve descripción de quién eres. El asesor la usa para adaptar las respuestas.",
-  "versionHistory": "Historial de versiones",
-  "versionHistoryCount": "{{count}} versiones anteriores"
+  "navigation": "Navegación",
+  "hideGithubNav": "Ocultar entrada de menú GitHub",
+  "hideGithubNavHint": "Elimina GitHub de la barra lateral. Útil si no haces seguimiento de issues o PRs en Kaisho."
 }

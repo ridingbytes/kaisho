@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Bot,
@@ -15,6 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import type { View } from "../../App";
+import { isGithubNavHidden } from "../../utils/navPrefs";
 import {
   displayShortcut,
   useShortcutsContext,
@@ -64,6 +66,30 @@ export function Sidebar({
   const unread = useUnreadBadges(active);
   const { config } = useShortcutsContext();
 
+  // ``hideGithub`` mirrors localStorage so the user can
+  // hide the GitHub menu entry from Settings > General
+  // without restarting the app. ``nav-prefs-changed`` is
+  // dispatched by the toggle so we re-read state without
+  // a global store.
+  const [hideGithub, setHideGithub] = useState(
+    isGithubNavHidden,
+  );
+  useEffect(() => {
+    function refresh() {
+      setHideGithub(isGithubNavHidden());
+    }
+    window.addEventListener(
+      "nav-prefs-changed", refresh,
+    );
+    return () => window.removeEventListener(
+      "nav-prefs-changed", refresh,
+    );
+  }, []);
+
+  const visibleNav = hideGithub
+    ? NAV_ITEMS.filter((n) => n.id !== "github")
+    : NAV_ITEMS;
+
   // On mobile the sidebar is in an overlay, always expanded.
   // On desktop, the open prop controls collapsed/expanded.
   const expanded = open;
@@ -100,7 +126,7 @@ export function Sidebar({
       </button>
 
       {/* Nav items */}
-      {NAV_ITEMS.map(({ id, labelKey, icon: Icon }) => {
+      {visibleNav.map(({ id, labelKey, icon: Icon }) => {
         const isActive = active === id;
         const badge = unread[id] ?? 0;
         const label = t(labelKey);
