@@ -43,15 +43,23 @@ log = logging.getLogger(__name__)
 _PLACEHOLDER_RE = re.compile(r"(?<!\\)\$\{([^}\n]+)\}")
 _ESCAPED_RE = re.compile(r"\\\$\{")
 
-# Valid user.* fields. Updates here flow into validation
-# diagnostics shown in the editor.
-USER_FIELDS = {
+# Canonical, ordered list of valid ``user.*`` placeholder
+# fields. This is the SINGLE SOURCE OF TRUTH — config.py
+# builds the user.yaml template from it, tools.py iterates
+# the string fields from it, and the API surfaces it to
+# the frontend so the editor highlighter cannot drift.
+USER_FIELDS: tuple[str, ...] = (
     "name", "email", "bio",
     "company", "industry", "research_targets",
-}
+)
+
+# Frozen set for fast membership checks. Derived — do not
+# edit directly.
+_USER_FIELD_SET = frozenset(USER_FIELDS)
 
 # Top-level placeholders (no namespace).
-SYSTEM_FIELDS = {"date", "fetch_results"}
+SYSTEM_FIELDS: tuple[str, ...] = ("date", "fetch_results")
+_SYSTEM_FIELD_SET = frozenset(SYSTEM_FIELDS)
 
 
 def render_placeholders(
@@ -123,7 +131,7 @@ def _resolve_one(
         return fetch_results if fetch_results else ""
     if name.startswith("user."):
         field = name[len("user."):]
-        if field not in USER_FIELDS:
+        if field not in _USER_FIELD_SET:
             return None
         value = user.get(field, "")
         if isinstance(value, list):
@@ -162,8 +170,8 @@ def is_known_placeholder(name: str) -> bool:
     which both strip whitespace before lookup.
     """
     name = name.strip()
-    if name in SYSTEM_FIELDS:
+    if name in _SYSTEM_FIELD_SET:
         return True
     if name.startswith("user."):
-        return name[len("user."):] in USER_FIELDS
+        return name[len("user."):] in _USER_FIELD_SET
     return False

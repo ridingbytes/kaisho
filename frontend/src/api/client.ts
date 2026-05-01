@@ -1523,6 +1523,18 @@ export function fetchBuiltinPrompt(
   return get(`/advisor/builtin-prompt/${name}`);
 }
 
+/** Fetch the canonical placeholder vocabulary used by
+ *  cron prompts and the advisor's ${...} substitution.
+ *  The cron prompt editor uses this to drive its syntax
+ *  highlighter so the highlight stays in sync with the
+ *  backend without manual edits. */
+export function fetchPlaceholderVocab(): Promise<{
+  user_fields: string[];
+  system_fields: string[];
+}> {
+  return get("/advisor/placeholder-vocab");
+}
+
 /** Fetch all custom advisor skill definitions. */
 export function fetchAdvisorSkills(): Promise<
   { name: string; content: string }[]

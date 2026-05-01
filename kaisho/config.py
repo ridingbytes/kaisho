@@ -133,20 +133,27 @@ def reset_config() -> Settings:
 # -------------------------------------------------------------------
 
 def _user_template() -> dict:
-    return {
-        "name": "",
-        "email": "",
-        "bio": "",
+    """Default shape of user.yaml.
+
+    The placeholder fields (``${user.<field>}``) are
+    derived from ``placeholders.USER_FIELDS`` so adding a
+    new placeholder lights up everywhere automatically.
+    Avatar seed and creation date are profile-local
+    metadata, not placeholders, so they are kept here
+    explicitly.
+    """
+    # Local import to avoid a top-level dep cycle: services
+    # modules typically import from config, not vice versa.
+    from .services.placeholders import USER_FIELDS
+    template: dict = {
         "avatar_seed": "",
         "created": "",
-        # Per-profile context surfaced in advisor and
-        # cron prompts via ``${user.<field>}`` placeholders.
-        # See docs/ai/cron-jobs.md for the substitution
-        # vocabulary.
-        "company": "",
-        "industry": "",
-        "research_targets": [],
     }
+    for field in USER_FIELDS:
+        template[field] = (
+            [] if field == "research_targets" else ""
+        )
+    return template
 
 
 def load_user_yaml(

@@ -167,6 +167,46 @@ def test_tools_registered_in_dispatch():
     assert "update_user_profile" in names
 
 
+def test_update_then_render_pipeline(isolated_profile):
+    """End-to-end: write profile via the tool, then render
+    a prompt that uses every user.* placeholder. Catches
+    drift between the canonical USER_FIELDS list and the
+    individual call sites (config template, get/update
+    tool, render layer)."""
+    from kaisho.config import load_user_yaml
+    from kaisho.cron.tools import _update_user_profile
+    from kaisho.services.placeholders import (
+        USER_FIELDS, render_placeholders,
+    )
+
+    payload = {
+        "name": "Alice",
+        "email": "a@example.com",
+        "bio": "Engineer",
+        "company": "Acme",
+        "industry": "fintech",
+        "research_targets": ["llm", "agents"],
+    }
+    _update_user_profile(payload)
+
+    # Build a prompt that mentions every known user field.
+    body = "\n".join(
+        f"{f}: ${{user.{f}}}" for f in USER_FIELDS
+    )
+    rendered, unresolved = render_placeholders(
+        body, user=load_user_yaml(isolated_profile),
+    )
+    assert unresolved == []
+    assert "name: Alice" in rendered
+    assert "email: a@example.com" in rendered
+    assert "bio: Engineer" in rendered
+    assert "company: Acme" in rendered
+    assert "industry: fintech" in rendered
+    # research_targets renders as a markdown bullet list.
+    assert "- llm" in rendered
+    assert "- agents" in rendered
+
+
 def test_get_is_cron_safe_update_is_not():
     """Cron should be able to read but not write the
     user profile."""
