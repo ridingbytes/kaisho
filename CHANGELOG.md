@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.3
+
+- Cron view: history table now polls every 3s while a
+  job run is in ``status: running`` so the user sees the
+  output as soon as the job finishes — no more
+  right-click → reload to see the result. Polling stops
+  automatically when no run is running
+
 ## 1.3.2
 
 - Fix sync snapshot oscillation. ``push_reference_snapshot``
