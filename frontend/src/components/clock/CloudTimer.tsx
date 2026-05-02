@@ -59,14 +59,36 @@ export function CloudTimer({ timer, onStopped }: Props) {
         "text-center",
       ].join(" ")}
     >
-      <div
-        key={tick}
-        className={
-          "text-3xl font-light font-mono text-stone-600 "
-          + "tabular-nums tracking-wide"
-        }
-      >
-        {elapsed(timer.start)}
+      <div className="flex items-center justify-center gap-3">
+        <div
+          key={tick}
+          className={
+            "text-3xl font-light font-mono "
+            + "text-stone-600 tabular-nums tracking-wide"
+          }
+        >
+          {elapsed(timer.start)}
+        </div>
+        <button
+          type="button"
+          onClick={handleStop}
+          disabled={stopping}
+          title={t("stopTimer")}
+          aria-label={t("stopTimer")}
+          className={[
+            // Same circular filled-red Stop as
+            // ActiveTimer / tray / PWA so all four
+            // running-timer surfaces look identical.
+            "inline-flex items-center justify-center",
+            "w-6 h-6 rounded-full",
+            "bg-red-500 text-white",
+            "border border-red-500",
+            "hover:brightness-110 transition-all",
+            "disabled:opacity-40 disabled:cursor-wait",
+          ].join(" ")}
+        >
+          <Square size={10} fill="currentColor" />
+        </button>
       </div>
 
       <div className="flex items-center justify-center mt-2">
@@ -132,24 +154,6 @@ export function CloudTimer({ timer, onStopped }: Props) {
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={handleStop}
-        disabled={stopping}
-        className={[
-          "mt-3 inline-flex items-center gap-1.5",
-          "px-3 py-1.5 rounded-md text-xs font-medium",
-          "border border-border bg-surface-raised",
-          "text-stone-600 hover:text-red-600",
-          "hover:border-red-400 transition-colors",
-          "disabled:opacity-60 disabled:cursor-wait",
-        ].join(" ")}
-      >
-        <Square size={11} />
-        {stopping
-          ? t("starting")
-          : t("stopTimer")}
-      </button>
     </div>
   );
 }
