@@ -47,6 +47,12 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
   return (
     <form
       onSubmit={handleSubmit}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onClose();
+        }
+      }}
       className="flex flex-wrap items-end gap-3 px-6 py-3 border-b border-border-subtle bg-surface-card/60"
     >
       <div className="flex flex-col gap-1">

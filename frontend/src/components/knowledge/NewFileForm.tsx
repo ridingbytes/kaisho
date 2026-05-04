@@ -60,6 +60,12 @@ export function NewFileForm({
   return (
     <form
       onSubmit={handleCreate}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onClose();
+        }
+      }}
       className={
         "flex flex-wrap items-end gap-3 px-4 py-3 " +
         "border-b border-border-subtle " +

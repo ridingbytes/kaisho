@@ -231,6 +231,12 @@ function AddTagForm({
   return (
     <form
       onSubmit={handleSubmit}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onDone();
+        }
+      }}
       className="flex items-center gap-2 px-4 py-2.5 border-t border-border-subtle"
     >
       <input
@@ -412,6 +418,12 @@ function AddTaskStateForm({
   return (
     <form
       onSubmit={handleSubmit}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onDone();
+        }
+      }}
       className="flex items-center gap-2 px-4 py-2 border-t border-border-subtle bg-surface-raised/40"
     >
       <input

@@ -55,6 +55,12 @@ export function AddContractForm({
   return (
     <form
       onSubmit={handleSubmit}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onDone();
+        }
+      }}
       className={
         "flex flex-col gap-1 mt-2 p-2 rounded-lg "
         + "bg-surface-overlay border border-border"

@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.4.6
+
+### Features
+
+- Menu-bar / system-tray HH:MM title now keeps ticking even
+  when the popover panel is closed. The hidden tray webview
+  was being throttled by the OS and missed minute-rollovers,
+  so the title is now driven from the always-running main
+  window via a ``useTrayIconSync`` hook
+- Dashboard active-timer banner now ticks live every second
+  (it was frozen at first render) and uses the same circular
+  filled-red Stop button as the right-sidebar ``ActiveTimer``
+  and the PWA — one Stop affordance everywhere
+- Notes popup on clock entries renders Markdown when opened
+  from the entries table, matching the inline editor that
+  produces the notes
+- Sidebar clock-list edit form now focuses the notes field
+  on open instead of the customer field. Focusing customer
+  caused the contract to be flushed as soon as the user
+  typed (the autocomplete clears the contract on every
+  customer change), so a quick edit-notes flow lost the
+  contract assignment
+- Uniform Escape-to-close across every inline create form:
+  Add Customer, Add Contract, New Knowledge File, New Cron
+  Job, Add Tag, Add State, Add Skill. Previously some closed
+  on Escape and some did not — now they all behave the same
+
 ## 1.4.5
 
 ### Features

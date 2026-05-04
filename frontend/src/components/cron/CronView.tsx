@@ -617,6 +617,12 @@ function AddJobForm({
   return (
     <form
       onSubmit={handleSubmit}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onClose();
+        }
+      }}
       className="border-b border-border-subtle bg-surface-card px-4 py-4 flex flex-col gap-3"
     >
       <div className="flex items-center justify-between">

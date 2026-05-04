@@ -210,6 +210,7 @@ export function EntryRow({
               content={entry.notes}
               title={tc("notes")}
               icon="notes"
+              markdown
             />
           )}
         </span>

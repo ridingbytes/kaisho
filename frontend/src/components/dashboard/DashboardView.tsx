@@ -9,11 +9,12 @@ import {
   CloudOff,
   Inbox,
   Pencil,
+  Square,
   Trash2,
   TrendingDown,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
@@ -542,6 +543,15 @@ export function DashboardView() {
   const customerColors = useCustomerColors();
   const [expandedCustomers, setExpandedCustomers] =
     useState<Set<string>>(new Set());
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!timer?.active) return;
+    const id = setInterval(
+      () => setTick((n) => n + 1), 1000,
+    );
+    return () => clearInterval(id);
+  }, [timer?.active]);
 
   function toggleCustomer(name: string) {
     setExpandedCustomers((prev) => {
@@ -627,14 +637,18 @@ export function DashboardView() {
             <button
               onClick={() => stopTimer.mutate()}
               disabled={stopTimer.isPending}
-              className={
-                "p-1.5 rounded-lg " +
-                "hover:bg-red-500/10 " +
-                "transition-colors disabled:opacity-40"
-              }
               title={tClocks("stopTimer")}
+              aria-label={tClocks("stopTimer")}
+              className={[
+                "inline-flex items-center justify-center",
+                "w-6 h-6 rounded-full shrink-0",
+                "bg-red-500 text-white",
+                "border border-red-500",
+                "hover:brightness-110 transition-all",
+                "disabled:opacity-40 disabled:cursor-wait",
+              ].join(" ")}
             >
-              <span className="block w-3.5 h-3.5 rounded-sm bg-red-500" />
+              <Square size={10} fill="currentColor" />
             </button>
           </div>
         )}

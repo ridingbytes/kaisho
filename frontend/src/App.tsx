@@ -62,6 +62,7 @@ import {
 import { ViewContext } from "./context/ViewContext";
 import { isTauri, openExternal } from "./utils/tauri";
 import { useWebSocket } from "./hooks/useWebSocket";
+import { useTrayIconSync } from "./hooks/useTrayIconSync";
 import { schedulePanelAction } from "./utils/panelActions";
 import { WhatsNewDialog } from "./components/common/WhatsNewDialog";
 
@@ -464,6 +465,7 @@ function AppShell() {
   );
   const { data: timerData } = useActiveTimer();
   const timerActive = timerData?.active === true;
+  useTrayIconSync(timerData);
   const { data: cloudStatus } = useCloudSyncStatus();
   const { data: versionData } = useVersionInfo();
 

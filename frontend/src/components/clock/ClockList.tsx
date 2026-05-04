@@ -205,7 +205,6 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
       <div className="pl-3 pt-1.5 pb-2">
         <div className="flex flex-col gap-1">
           <CustomerAutocomplete
-            autoFocus
             value={editCustomer}
             onChange={(v) => {
               setEditCustomer(v);
@@ -280,6 +279,7 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
             />
           </div>
           <textarea
+            autoFocus
             value={editNotes}
             onChange={(e) =>
               setEditNotes(e.target.value)

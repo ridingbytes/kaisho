@@ -373,6 +373,12 @@ function AddSkillForm({
   return (
     <form
       onSubmit={handleSubmit}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onDone();
+        }
+      }}
       className="px-4 py-3 border-t border-border-subtle"
     >
       <div className="flex items-center gap-2 mb-2">
