@@ -249,13 +249,15 @@ function ClockEntryRow({
       </span>
       <span
         className={
-          "text-xs text-stone-700 truncate overflow-hidden " +
-          "min-w-0 flex-1 inline-flex items-center gap-1"
+          "text-xs text-stone-700 overflow-hidden " +
+          "min-w-0 flex-1 flex items-center gap-1"
         }
       >
-        {entry.description || (
-          <em className="text-stone-500">{tc("noDescription")}</em>
-        )}
+        <span className="truncate min-w-0">
+          {entry.description || (
+            <em className="text-stone-500">{tc("noDescription")}</em>
+          )}
+        </span>
         {entry.notes && (
           <ContentPopup
             content={entry.notes}

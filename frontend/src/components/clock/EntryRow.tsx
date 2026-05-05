@@ -196,10 +196,11 @@ export function EntryRow({
         "overflow-hidden"
       }>
         <span className={
-          "inline-flex items-center gap-1 " +
-          "max-w-full truncate align-middle"
+          "flex items-center gap-1 max-w-full"
         }>
-          {entry.description}
+          <span className="truncate min-w-0">
+            {entry.description}
+          </span>
           {entry.description.length > 40 && (
             <ContentPopup
               content={entry.description}

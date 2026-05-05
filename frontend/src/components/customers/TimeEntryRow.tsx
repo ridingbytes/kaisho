@@ -188,11 +188,13 @@ export function TimeEntryRow({
       </span>
       <span
         className={
-          "text-xs text-stone-800 truncate min-w-0 "
-          + "flex-1 inline-flex items-center gap-1"
+          "text-xs text-stone-800 min-w-0 flex-1 "
+          + "flex items-center gap-1 overflow-hidden"
         }
       >
-        {entry.description}
+        <span className="truncate min-w-0">
+          {entry.description}
+        </span>
         {entry.notes && (
           <ContentPopup
             content={entry.notes}

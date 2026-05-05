@@ -135,7 +135,7 @@ export function AddInboxForm({
         value={body}
         onChange={(e) => setBody(e.target.value)}
         rows={2}
-        className={[inputCls, "resize-none"].join(" ")}
+        className={[inputCls, "resize-y min-h-[60px]"].join(" ")}
       />
     </form>
   );

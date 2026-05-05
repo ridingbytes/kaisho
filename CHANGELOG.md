@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.4.7
+
+### Fixes
+
+- Inbox capture form: the body textarea is now resizable
+  vertically (was hard-locked at two rows). Helpful when
+  pasting longer notes or email bodies into the inbox
+- Clock entry rows render long descriptions with an
+  ellipsis again (single-line, uniform row height) and the
+  description-popup + notes speech-bubble icons are now
+  flex siblings outside the truncated text span — so they
+  stay clickable no matter how long the description is.
+  Same pattern applied uniformly across the clock panel
+  (``EntryRow``), customer panel (``TimeEntryRow``),
+  kanban task expanded entries (``ClockEntryRow``), and
+  the dashboard drill-down
+
 ## 1.4.6
 
 ### Features

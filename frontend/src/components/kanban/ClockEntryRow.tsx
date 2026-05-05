@@ -117,8 +117,10 @@ export function ClockEntryRow({
       >
         {fmtDate(entry.start)}
       </span>
-      <span className="flex-1 truncate text-stone-600 inline-flex items-center gap-1">
-        {entry.description}
+      <span className="flex-1 min-w-0 text-stone-600 flex items-center gap-1 overflow-hidden">
+        <span className="truncate min-w-0">
+          {entry.description}
+        </span>
         {entry.notes && (
           <ContentPopup
             content={entry.notes}
