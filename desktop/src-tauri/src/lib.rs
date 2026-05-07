@@ -10,6 +10,7 @@ mod tray;
 mod http;
 
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use tauri::{Manager, RunEvent, State, WindowEvent};
@@ -192,13 +193,53 @@ fn open_in_editor(command: String) -> Result<(), String> {
     })?;
     let args: Vec<String> = iter.collect();
 
-    std::process::Command::new(&bin)
-        .args(&args)
-        .spawn()
-        .map_err(|e| {
-            format!("failed to launch {}: {}", bin, e)
-        })?;
+    let mut cmd = std::process::Command::new(&bin);
+    cmd.args(&args);
+    if let Some(path) = shell_path() {
+        cmd.env("PATH", path);
+    }
+    cmd.spawn().map_err(|e| {
+        format!("failed to launch {}: {}", bin, e)
+    })?;
     Ok(())
+}
+
+/// Cached PATH as seen by the user's interactive login
+/// shell. GUI-launched apps inherit only the launchd
+/// PATH (/usr/bin:/bin:/usr/sbin:/sbin) and miss anything
+/// added by ~/.zshrc, ~/.bash_profile, etc., so bare-name
+/// lookups for editors like ``alacritty`` fail. We resolve
+/// the real PATH once at startup by spawning the login
+/// shell and asking it to print ``$PATH``.
+static SHELL_PATH: OnceLock<Option<String>> =
+    OnceLock::new();
+
+fn shell_path() -> Option<&'static str> {
+    SHELL_PATH
+        .get_or_init(detect_shell_path)
+        .as_deref()
+}
+
+fn detect_shell_path() -> Option<String> {
+    let shell = std::env::var("SHELL").ok()?;
+    // ``-l -i`` so the shell sources login + interactive
+    // rc files (.zprofile, .zshrc, .bash_profile, etc.).
+    // Redirect stderr to /dev/null to avoid noisy banners
+    // from rc files polluting our captured value.
+    let output = std::process::Command::new(&shell)
+        .args(["-l", "-i", "-c", "printf %s \"$PATH\""])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let path = String::from_utf8(output.stdout).ok()?;
+    let path = path.trim().to_string();
+    if path.is_empty() {
+        None
+    } else {
+        Some(path)
+    }
 }
 
 /// Toggle the running timer via the backend API.
@@ -264,6 +305,13 @@ pub fn run() {
             open_in_editor,
         ])
         .setup(|app| {
+            // Warm the shell-PATH cache off the main
+            // thread so the first editor launch doesn't
+            // pay the shell-spawn latency.
+            std::thread::spawn(|| {
+                let _ = shell_path();
+            });
+
             sidecar::spawn(app)?;
 
             let handle = app.handle().clone();

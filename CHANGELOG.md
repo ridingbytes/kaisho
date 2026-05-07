@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.4.8
+
+### Fixes
+
+- External editor: ``open_in_editor`` now spawns the user's
+  configured editor with a PATH derived from their login
+  shell (``$SHELL -l -i -c 'printf %s "$PATH"'``), captured
+  once at startup. GUI-launched ``.app`` bundles on macOS
+  inherit only the minimal launchd PATH and miss Homebrew /
+  asdf / pyenv locations, so bare-name lookups for tools
+  like ``alacritty`` failed with "No such file or directory"
+- Knowledge base sources for new profiles: the default KB
+  now lives at ``~/.kaisho/profiles/<name>/knowledge`` (one
+  per profile) instead of the shared ``~/.kaisho/knowledge``,
+  and the legacy auto-fallbacks that pulled in
+  ``data/knowledge`` / ``data/research`` whenever those
+  folders happened to exist on disk are gone. Existing
+  installs that still have content in the shared directory
+  keep accessing it via an automatically added ``shared``
+  source, so no data is lost on upgrade
+
 ## 1.4.7
 
 ### Fixes

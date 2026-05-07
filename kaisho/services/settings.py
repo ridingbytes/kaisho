@@ -405,8 +405,9 @@ def get_kb_sources(settings: dict, cfg=None) -> list[dict]:
     """Return KB source list with defaults.
 
     Each entry: {"label": str, "path": str}.
-    Default: a "knowledge" folder in the user's data dir,
-    plus KNOWLEDGE_DIR/RESEARCH_DIR from config.
+    Default: a per-profile ``knowledge`` folder under the
+    profile dir. Users can override or add more sources
+    via Settings -> Paths.
     """
     sources = settings.get("kb_sources")
     if sources:
@@ -414,25 +415,25 @@ def get_kb_sources(settings: dict, cfg=None) -> list[dict]:
     if cfg is None:
         from ..config import get_config
         cfg = get_config()
-    # Default KB in user's data dir (shared across profiles)
-    user_kb = cfg.DATA_DIR / "knowledge"
-    user_kb.mkdir(parents=True, exist_ok=True)
+    profile_kb = cfg.PROFILE_DIR / "knowledge"
+    profile_kb.mkdir(parents=True, exist_ok=True)
     defaults = [
         {
             "label": "knowledge",
-            "path": str(user_kb),
+            "path": str(profile_kb),
         },
     ]
-    # Add legacy dirs if they exist
-    for label, path_attr in [
-        ("knowledge", cfg.KNOWLEDGE_DIR),
-        ("research", cfg.RESEARCH_DIR),
-    ]:
-        p = path_attr.expanduser()
-        if p.is_dir():
+    # Migration safeguard: if a pre-1.4.x install left
+    # populated content in the shared ``~/.kaisho/knowledge``
+    # dir, expose it as an extra source so users do not
+    # silently lose access after upgrading. Empty/absent
+    # legacy dirs are skipped so new profiles stay clean.
+    legacy = cfg.DATA_DIR / "knowledge"
+    if legacy != profile_kb and legacy.is_dir():
+        if any(legacy.iterdir()):
             defaults.append({
-                "label": label,
-                "path": str(p),
+                "label": "shared",
+                "path": str(legacy),
             })
     return defaults
 
