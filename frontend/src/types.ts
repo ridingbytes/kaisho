@@ -162,6 +162,15 @@ export interface KnowledgeFile {
   name: string;
   kind?: "file" | "folder";
   size: number;
+  /** Title from YAML frontmatter (markdown only). */
+  title?: string;
+  /** Free-text tags from YAML frontmatter. */
+  tags?: string[];
+  /** ``status: archived`` hides the file unless the
+   * "show hidden" toggle is enabled. */
+  status?: string;
+  /** Free-text type from YAML frontmatter. */
+  type?: string;
 }
 
 export interface KnowledgeSearchResult {
@@ -169,6 +178,26 @@ export interface KnowledgeSearchResult {
   label: string;
   line_number: number;
   snippet: string;
+}
+
+export interface KnowledgeMetadata {
+  title: string;
+  tags: string[];
+  created?: string;
+  customer?: string;
+  task_id?: string;
+  type?: string;
+  status?: string;
+}
+
+/** Result returned by ``POST /api/knowledge/reindex``. */
+export interface KnowledgeReindexReport {
+  scanned: number;
+  added: number;
+  updated: number;
+  renamed: number;
+  pruned: number;
+  unchanged: number;
 }
 
 export interface NoteItem {

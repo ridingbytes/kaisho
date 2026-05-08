@@ -179,6 +179,8 @@
   "knowledgeBaseSources": "Fuentes de la base de conocimiento",
   "noKbSources": "No hay fuentes KB definidas. Añade una abajo.",
   "addSource": "Añadir fuente",
+  "moveUp": "Mover arriba",
+  "moveDown": "Mover abajo",
   "saveKbSources": "Guardar fuentes KB",
   "label": "Etiqueta",
   "info": "Info",

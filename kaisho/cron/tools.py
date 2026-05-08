@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from . import guards
 from .tool_defs import TOOL_DEFS
 
 # Slug pattern for cron job ids and any user-supplied
@@ -88,6 +89,38 @@ def openai_tools() -> list[dict]:
     return _to_openai_tools(TOOL_DEFS)
 
 
+def advisor_safe_tool_defs() -> list[dict]:
+    """Return tool defs the advisor is allowed to call.
+
+    The advisor runs in front of the user but is exposed
+    to prompt-injection vectors (URLs the user pastes in,
+    KB files fetched as context, etc.). To bound the
+    blast radius we hand it ``tier=read`` and
+    ``tier=write`` tools but never ``tier=destructive``
+    ones -- a hostile prompt can't talk the model into
+    calling ``delete_*`` or ``rename_profile`` if those
+    functions are not in the toolbox in the first place.
+
+    Pair this with the per-session caps in
+    :mod:`.guards` and the size/overwrite checks in
+    :func:`_write_kb_file` for defence in depth.
+    """
+    return [
+        {
+            "name": t["name"],
+            "description": t["description"],
+            "input_schema": t["input_schema"],
+        }
+        for t in TOOL_DEFS
+        if t.get("tier", "read") in ("read", "write")
+    ]
+
+
+def advisor_safe_tools() -> list[dict]:
+    """Advisor-safe tools in OpenAI / Ollama chat shape."""
+    return _to_openai_tools(advisor_safe_tool_defs())
+
+
 def cron_safe_tool_defs() -> list[dict]:
     """Return cron-safe tool defs in Anthropic schema
     shape: ``{name, description, input_schema}``.
@@ -152,6 +185,21 @@ def execute_tool(name: str, args: Any) -> dict:
 
     ``args`` may be a dict or a JSON string (Ollama sends strings).
     Never raises -- errors are returned as {"error": "..."}.
+
+    Before dispatch every non-read tool goes through the
+    shared :mod:`.guards` so cron and advisor share one
+    set of defences:
+
+    * Per-session **write cap** (and a separate, tighter
+      cap for ``write_kb_file``).
+    * **Auto-snapshot** of the profile directory the
+      first time a session attempts a write, throttled
+      across the process so we don't spam backups.
+
+    Callers must invoke :func:`guards.reset_session` at
+    the start of each agentic run (already wired in cron
+    and advisor) so counters don't leak between runs on a
+    re-used worker thread.
     """
     if isinstance(args, str):
         try:
@@ -161,10 +209,31 @@ def execute_tool(name: str, args: Any) -> dict:
     if not isinstance(args, dict):
         args = {}
 
+    tier = _tool_tier(name)
+    cap_err = guards.check_caps(name, tier)
+    if cap_err is not None:
+        return cap_err
+    guards.maybe_auto_snapshot(name, tier)
+
     try:
         return _dispatch(name, args)
     except Exception as exc:  # noqa: BLE001
         return {"error": str(exc)}
+
+
+_TIER_BY_NAME: dict[str, str] = {
+    t["name"]: t.get("tier", "read") for t in TOOL_DEFS
+}
+
+
+def _tool_tier(name: str) -> str:
+    """Look up the declared tier for a tool name.
+
+    Unknown tools are treated as ``read`` (the safest
+    default for the caps; ``_dispatch`` will reject them
+    on its own).
+    """
+    return _TIER_BY_NAME.get(name, "read")
 
 
 # -------------------------------------------------------------------
@@ -604,6 +673,7 @@ _HANDLERS: dict[str, Any] = {
     ),
     "write_kb_file": lambda a: _write_kb_file(
         a["label"], a["filename"], a["content"],
+        overwrite=bool(a.get("overwrite", False)),
     ),
     "web_search": lambda a: _web_search(
         a["query"], a.get("max_results", 5),
@@ -797,15 +867,57 @@ def _list_kb_files() -> dict:
     return {"files": kb_svc.file_tree(_kb_sources())}
 
 
+_KB_WRITE_MAX_BYTES = 1_000_000
+
+
 def _write_kb_file(
     label: str, filename: str, content: str,
+    overwrite: bool = False,
 ) -> dict:
-    """Write a file to the knowledge base."""
+    """Write a file to the knowledge base.
+
+    Two safety rails on top of
+    :func:`kaisho.services.knowledge.write_file`:
+
+    * Refuse content larger than ``_KB_WRITE_MAX_BYTES``
+      so a runaway model can't dump megabytes of repeated
+      tokens onto disk.
+    * Refuse to clobber an existing file unless the caller
+      explicitly passes ``overwrite=True``. The error
+      message tells the model how to retry, so a
+      legitimate update path stays available -- the rail
+      is against silent overwrites the user never asked
+      for.
+    """
     from ..services import knowledge as kb_svc
+    if not isinstance(content, str):
+        content = str(content)
+    size = len(content.encode("utf-8"))
+    if size > _KB_WRITE_MAX_BYTES:
+        return {
+            "error": (
+                f"KB write rejected: payload is {size} "
+                f"bytes, limit is {_KB_WRITE_MAX_BYTES}."
+            ),
+        }
+    # ``resolve_path`` only does a filesystem ``exists``
+    # check -- crucially it does NOT decode PDFs or run
+    # any extractor, unlike ``read_file``. This keeps the
+    # overwrite probe O(1).
+    existing = kb_svc.resolve_path(_kb_sources(), filename)
+    if existing is not None and not overwrite:
+        return {
+            "error": (
+                "File already exists. Pass "
+                "overwrite=true to replace it, or "
+                "choose a different filename."
+            ),
+        }
     return {
         "file": kb_svc.write_file(
             _kb_sources(), label, filename, content,
         ),
+        "overwritten": existing is not None,
     }
 
 

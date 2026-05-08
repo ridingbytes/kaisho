@@ -11,6 +11,9 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  FileText,
+  Folder,
+  FolderOpen,
   FolderPlus,
   Pencil,
   Star,
@@ -274,11 +277,21 @@ export function TreeNodeRow({
           }
           className={
             "flex-1 min-w-0 text-left " +
-            "text-xs truncate"
+            "text-xs truncate flex items-center gap-1.5"
           }
           title={node.path}
         >
-          {node.name}
+          <FileText
+            size={10}
+            className={
+              "shrink-0 " + (
+                isSelected
+                  ? "text-cta"
+                  : "text-stone-400"
+              )
+            }
+          />
+          <span className="truncate">{node.name}</span>
         </button>
         <div
           className={
@@ -351,20 +364,31 @@ export function TreeNodeRow({
           onClick={() => onToggle(node.path)}
           className={
             "flex-1 text-left py-1 pr-2 text-xs "
-            + "text-stone-700 flex items-center "
-            + "gap-1"
+            + "font-semibold text-stone-700 "
+            + "flex items-center gap-1"
           }
           style={{ paddingLeft: indent }}
         >
           {node.expanded ? (
             <ChevronDown
               size={10}
-              className="shrink-0"
+              className="shrink-0 text-stone-500"
             />
           ) : (
             <ChevronRight
               size={10}
-              className="shrink-0"
+              className="shrink-0 text-stone-500"
+            />
+          )}
+          {node.expanded ? (
+            <FolderOpen
+              size={11}
+              className="shrink-0 text-amber-500/80"
+            />
+          ) : (
+            <Folder
+              size={11}
+              className="shrink-0 text-amber-500/80"
             />
           )}
           <span className="truncate">

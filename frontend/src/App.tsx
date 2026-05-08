@@ -556,6 +556,28 @@ function AppShell() {
     return () => window.removeEventListener("hashchange", handler);
   }, []);
 
+  // Knowledge -> Advisor handover. The KB SummaryPopover
+  // dispatches "advisor-handover" with a list of seed
+  // messages (file context + Q/A history). We append them
+  // to the advisor history and switch views so the user
+  // can keep going with the full agentic toolset.
+  useEffect(() => {
+    function onHandover(e: Event) {
+      const detail = (e as CustomEvent<{
+        messages: AdvisorMessage[];
+      }>).detail;
+      if (!detail?.messages?.length) return;
+      setAdvisorMessages((prev) => [
+        ...prev, ...detail.messages,
+      ]);
+      setView("advisor");
+    }
+    window.addEventListener("advisor-handover", onHandover);
+    return () => window.removeEventListener(
+      "advisor-handover", onHandover,
+    );
+  }, []);
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       // Skip if another handler already consumed the event

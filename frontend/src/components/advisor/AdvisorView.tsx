@@ -10,6 +10,7 @@ import {
   fetchBuiltinPrompt,
 } from "../../api/client";
 import { useToast } from "../../context/ToastContext";
+import { useAutosizeTextarea } from "../../hooks/useAutosizeTextarea";
 import {
   useAiSettings,
   useAvailableModels,
@@ -169,6 +170,8 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
   }
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  useAutosizeTextarea(inputRef, input);
 
   const stopRequest = useCallback(() => {
     abortRef.current?.abort();
@@ -576,7 +579,8 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
         )}
         <div className="flex gap-3 items-end">
         <textarea
-          rows={3}
+          ref={inputRef}
+          rows={1}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}

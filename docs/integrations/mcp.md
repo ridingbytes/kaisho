@@ -188,20 +188,23 @@ for write and destructive operations.
 | `book_time` | Book retroactive time |
 | `update_clock_entry` | Edit clock entry |
 | `batch_invoice` | Mark entries invoiced |
-| `write_kb_file` | Create KB file |
-| `create_skill` | Create advisor skill |
+| `write_kb_file` | Create KB file (max 1 MB; refuses overwrite without `overwrite=true`) |
+| `archive_task` | Archive a task (reversible) |
 | `approve_url_domain` | Add URL to allowlist |
 | `create_backup` | Create data backup |
-| `trigger_cron_job` | Run cron job now |
 
 ### Destructive Tools
 
 | Tool | Description |
 |------|-------------|
-| `archive_task` | Archive a task |
+| `delete_task` | Delete a task |
 | `delete_note` | Delete a note |
+| `delete_customer` | Delete a customer and all linked data |
+| `delete_clock_entry` | Delete a clock entry |
 | `delete_profile` | Delete a profile |
 | `rename_profile` | Rename a profile |
+| `create_skill` | Skill content is auto-injected into every advisor prompt |
+| `trigger_cron_job` | Spawns a fresh agentic loop with its own write budget |
 | `execute_cli` | Run arbitrary CLI commands |
 
 ## Use Cases
@@ -273,6 +276,34 @@ Every tool call is logged to
 
 This provides traceability for tool calls made outside the Kaisho
 UI.
+
+## Safety guards
+
+Every call into `execute_tool()` (MCP, cron, advisor) goes through
+a shared per-session guard layer in `kaisho/cron/guards.py`:
+
+- **Per-session write cap**: 5 non-read tool calls per session.
+- **KB-specific write cap**: 3 `write_kb_file` calls per session,
+  on top of the general cap.
+- **No silent overwrite**: `write_kb_file` refuses to replace an
+  existing file unless the caller passes `overwrite=true`.
+- **Size cap**: `write_kb_file` rejects payloads larger than 1 MB.
+- **Auto-snapshot**: the first non-read tool call of a session
+  triggers a full profile backup (same path as `create_backup`),
+  throttled to once every 10 minutes process-wide. If the
+  snapshot fails the throttle is rolled back so the next attempt
+  retries instead of being silently locked out.
+
+The `MCP server` resets the guard counters at the start of every
+request so a long-lived MCP client doesn't monotonically deplete
+its budget over the lifetime of the connection.
+
+The advisor uses an additional allowlist that excludes every
+`tier=destructive` tool, so a prompt-injection cannot talk it
+into a `delete_*` or `rename_profile` call regardless of what
+the user prompt asks for. MCP clients that pass `allow="destructive"`
+explicitly bypass that allowlist (the assumption being that the
+human running the MCP client made an informed choice).
 
 ## Architecture
 

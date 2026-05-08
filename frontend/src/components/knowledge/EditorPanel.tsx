@@ -6,18 +6,22 @@
  * preview via Markdown, save, and delete.
  */
 
-import { Check, Trash2, X } from "lucide-react";
+import { Check, Copy, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { fetchKnowledgeAbsolutePath } from "../../api/client";
+import { useToast } from "../../context/ToastContext";
 import {
   useDeleteKnowledgeFile,
   useSaveKnowledgeFile,
 } from "../../hooks/useKnowledge";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { Markdown } from "../common/Markdown";
+import { CodeViewer } from "./CodeViewer";
 import {
   actionsForType,
   applySyntax,
+  detectCodeLanguage,
   detectFileType,
   FILE_TYPE_COLORS,
 } from "./knowledgeEditorUtils";
@@ -50,11 +54,32 @@ export function EditorPanel({
 }: EditorPanelProps) {
   const { t } = useTranslation("knowledge");
   const { t: tc } = useTranslation("common");
+  const toast = useToast();
   const [content, setContent] = useState(initialContent);
-  const [preview, setPreview] = useState(false);
+  // Code files default to preview (read-with-highlighting)
+  // since they're usually consulted, not edited inline.
+  // Markup files default to edit so the user can start
+  // typing immediately. Pass ``initialContent`` so
+  // extensionless scripts get classified via shebang.
+  const initialPreview = detectFileType(
+    file.path, initialContent,
+  ) === "code";
+  const [preview, setPreview] = useState(initialPreview);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const save = useSaveKnowledgeFile();
   const remove = useDeleteKnowledgeFile();
+
+  async function handleCopyPath() {
+    try {
+      const { path } = await fetchKnowledgeAbsolutePath(
+        file.path,
+      );
+      await navigator.clipboard.writeText(path);
+      toast(t("pathCopied"), "success");
+    } catch (err) {
+      toast(String(err), "error");
+    }
+  }
 
   useEffect(() => {
     if (!preview) textareaRef.current?.focus();
@@ -72,7 +97,7 @@ export function EditorPanel({
   }
 
   const dirty = content !== initialContent;
-  const fileType = detectFileType(file.path);
+  const fileType = detectFileType(file.path, content);
   const syntaxActions = actionsForType(fileType);
 
   return (
@@ -91,6 +116,17 @@ export function EditorPanel({
         >
           {file.label}/{file.path}
         </span>
+        <button
+          onClick={handleCopyPath}
+          aria-label={t("copyPath")}
+          title={t("copyPath")}
+          className={
+            "shrink-0 p-0.5 rounded text-stone-400 " +
+            "hover:text-cta transition-colors"
+          }
+        >
+          <Copy size={11} />
+        </button>
         <span
           className={[
             "shrink-0 px-1.5 py-0.5 rounded text-[10px]",
@@ -175,9 +211,18 @@ export function EditorPanel({
         />
       ) : preview ? (
         <div className="flex-1 overflow-y-auto p-6">
-          <Markdown className="p-1">
-            {content}
-          </Markdown>
+          {fileType === "code" ? (
+            <CodeViewer
+              content={content}
+              language={
+                detectCodeLanguage(file.path, content)
+              }
+            />
+          ) : (
+            <Markdown className="p-1">
+              {content}
+            </Markdown>
+          )}
         </div>
       ) : (
         <div className="flex flex-col flex-1 min-h-0">

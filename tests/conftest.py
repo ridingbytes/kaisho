@@ -5,6 +5,27 @@ from pathlib import Path
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _reset_tool_guards():
+    """Reset the per-session write counters AND the
+    process-wide auto-snapshot throttle before every test.
+
+    Tests call ``execute_tool`` ad-hoc without going
+    through an agentic loop, so without this fixture the
+    cumulative count would leak across tests on the same
+    worker thread and trip the cap mid-suite. The
+    throttle reset matters for any test that exercises
+    the snapshot path -- otherwise the order in which
+    ``pytest`` happens to run the suite would silently
+    skip backups for whichever test came second within a
+    10-minute window.
+    """
+    from kaisho.cron import guards
+    guards.reset_session()
+    guards._last_auto_snapshot = None  # noqa: SLF001
+    yield
+
+
 @pytest.fixture
 def tmp_dir(tmp_path):
     """Provide a temporary directory as a Path."""

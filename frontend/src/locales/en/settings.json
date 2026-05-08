@@ -179,6 +179,8 @@
   "knowledgeBaseSources": "Knowledge Base Sources",
   "noKbSources": "No KB sources defined. Add one below.",
   "addSource": "Add source",
+  "moveUp": "Move up",
+  "moveDown": "Move down",
   "saveKbSources": "Save KB Sources",
   "label": "Label",
   "info": "Info",

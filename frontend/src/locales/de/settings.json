@@ -179,6 +179,8 @@
   "knowledgeBaseSources": "Wissensbasis-Quellen",
   "noKbSources": "Keine KB-Quellen definiert. Füge unten eine hinzu.",
   "addSource": "Quelle hinzufügen",
+  "moveUp": "Nach oben verschieben",
+  "moveDown": "Nach unten verschieben",
   "saveKbSources": "KB-Quellen speichern",
   "label": "Bezeichnung",
   "info": "Info",

@@ -401,6 +401,16 @@ def set_external_editor_settings(
     return get_external_editor_settings(data)
 
 
+def current_kb_sources() -> list[dict]:
+    """Convenience: load the active profile's settings and
+    return its KB sources. Removes the duplicated 3-line
+    bootstrap from the API router and CLI."""
+    from ..config import get_config
+    cfg = get_config()
+    data = load_settings(cfg.SETTINGS_FILE)
+    return get_kb_sources(data, cfg)
+
+
 def get_kb_sources(settings: dict, cfg=None) -> list[dict]:
     """Return KB source list with defaults.
 

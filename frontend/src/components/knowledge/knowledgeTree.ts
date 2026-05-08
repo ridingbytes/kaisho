@@ -132,13 +132,25 @@ function buildLabelNodes(
   return nodes;
 }
 
-/** Build a label-keyed tree from a flat file list. */
+/** Build a label-keyed tree from a flat file list.
+ *
+ * Labels appear in the order they're first seen in
+ * ``files`` -- the backend already iterates KB sources in
+ * the order configured in settings, so this preserves the
+ * user's preferred top-level folder ordering instead of
+ * alphabetising it.
+ */
 export function buildTree(
   files: KnowledgeFile[]
 ): Record<string, TreeNode[]> {
-  const labels = Array.from(
-    new Set(files.map((f) => f.label))
-  ).sort();
+  const labels: string[] = [];
+  const seen = new Set<string>();
+  for (const f of files) {
+    if (!seen.has(f.label)) {
+      seen.add(f.label);
+      labels.push(f.label);
+    }
+  }
   const result: Record<string, TreeNode[]> = {};
   for (const label of labels) {
     result[label] = buildLabelNodes(files, label);

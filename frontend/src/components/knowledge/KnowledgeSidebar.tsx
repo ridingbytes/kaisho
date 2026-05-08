@@ -12,12 +12,17 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Filter,
   FolderPlus,
+  RefreshCw,
   Star,
   X,
 } from "lucide-react";
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useToast } from "../../context/ToastContext";
+import { useReindexKnowledge } from "../../hooks/useKnowledge";
+import { freeTagBadgeStyle } from "../../utils/tagColors";
 import { TreeNodeRow } from "./TreeNodeRow";
 import { MAX_WIDTH, MIN_WIDTH } from "./knowledgeEditorUtils";
 import {
@@ -87,6 +92,17 @@ export interface KnowledgeSidebarProps {
   onToggleStar: (path: string) => void;
   /** Show only starred files. */
   showStarredOnly?: boolean;
+  /** Live filename-filter input value. */
+  filenameFilter: string;
+  /** Update the filename filter. */
+  onFilenameFilterChange: (next: string) => void;
+  /** Active tag filter set; chips render in a row
+   *  beneath the funnel input when non-empty. */
+  activeTagFilters: ReadonlySet<string>;
+  /** Toggle a tag in/out of the filter set. */
+  onToggleTagFilter: (tag: string) => void;
+  /** Drop all active tag filters at once. */
+  onClearTagFilters: () => void;
 }
 
 /**
@@ -118,9 +134,16 @@ export function KnowledgeSidebar({
   starred,
   onToggleStar,
   showStarredOnly,
+  filenameFilter,
+  onFilenameFilterChange,
+  activeTagFilters,
+  onToggleTagFilter,
+  onClearTagFilters,
 }: KnowledgeSidebarProps) {
   const { t } = useTranslation("knowledge");
   const { t: tc } = useTranslation("common");
+  const toast = useToast();
+  const reindex = useReindexKnowledge();
   const [resizing, setResizing] = useState(false);
   const isDragging = useRef(false);
   const dragStartX = useRef(0);
@@ -178,22 +201,80 @@ export function KnowledgeSidebar({
           width: sidebarOpen ? sidebarWidth : 0,
         }}
       >
-        {/* Header */}
+        {/* Header: funnel filter (always visible) +
+            collapse */}
         <div
           className={
-            "flex items-center justify-between " +
+            "flex items-center gap-1 " +
             "px-2 py-1.5 shrink-0 " +
             "border-b border-border-subtle"
           }
         >
-          <span
-            className={
-              "text-[10px] text-stone-500 " +
-              "uppercase tracking-wider"
+          <Filter
+            size={11}
+            className="text-stone-400 shrink-0"
+          />
+          <input
+            type="text"
+            value={filenameFilter}
+            onChange={(e) =>
+              onFilenameFilterChange(e.target.value)
             }
+            placeholder={t("filterPlaceholder")}
+            aria-label={t("filterPlaceholder")}
+            className={
+              "flex-1 min-w-0 bg-transparent " +
+              "text-[11px] text-stone-700 " +
+              "placeholder:text-stone-400 " +
+              "focus:outline-none"
+            }
+          />
+          {filenameFilter && (
+            <button
+              onClick={() => onFilenameFilterChange("")}
+              className={
+                "p-0.5 rounded text-stone-400 " +
+                "hover:text-stone-900 transition-colors"
+              }
+              title={tc("clear")}
+              aria-label={tc("clear")}
+            >
+              <X size={11} />
+            </button>
+          )}
+          <button
+            onClick={() =>
+              reindex.mutate(undefined, {
+                onSuccess: (r) =>
+                  toast(
+                    t("reindexedToast", {
+                      scanned: r.scanned,
+                      added: r.added,
+                      renamed: r.renamed,
+                      pruned: r.pruned,
+                    }),
+                    "success",
+                  ),
+                onError: (e) =>
+                  toast(String(e), "error"),
+              })
+            }
+            disabled={reindex.isPending}
+            className={
+              "p-0.5 rounded text-stone-500 " +
+              "hover:text-cta transition-colors " +
+              "disabled:opacity-40"
+            }
+            title={t("reindex")}
+            aria-label={t("reindex")}
           >
-            {t("files")}
-          </span>
+            <RefreshCw
+              size={11}
+              className={
+                reindex.isPending ? "animate-spin" : ""
+              }
+            />
+          </button>
           <button
             onClick={() => onSetSidebarOpen(false)}
             className={
@@ -201,10 +282,49 @@ export function KnowledgeSidebar({
               "hover:text-stone-900 transition-colors"
             }
             title={tc("collapse")}
+            aria-label={tc("collapse")}
           >
             <ChevronLeft size={12} />
           </button>
         </div>
+
+        {/* Active tag filters */}
+        {activeTagFilters.size > 0 && (
+          <div
+            className={
+              "flex flex-wrap items-center gap-1 " +
+              "px-2 py-1.5 shrink-0 " +
+              "border-b border-border-subtle " +
+              "bg-cta-muted/30"
+            }
+          >
+            {[...activeTagFilters].sort().map((tag) => (
+              <button
+                key={tag}
+                onClick={() => onToggleTagFilter(tag)}
+                style={freeTagBadgeStyle(tag)}
+                className={
+                  "inline-flex items-center gap-0.5 " +
+                  "px-1.5 py-0.5 rounded text-[10px] " +
+                  "font-medium hover:shadow-sm"
+                }
+                title={tc("clear")}
+              >
+                {tag}
+                <X size={9} />
+              </button>
+            ))}
+            <button
+              onClick={onClearTagFilters}
+              className={
+                "ml-auto text-[10px] text-stone-500 " +
+                "hover:text-stone-900 px-1"
+              }
+            >
+              {tc("clearAllFilters")}
+            </button>
+          </div>
+        )}
 
         {/* Tree / search content */}
         <div className="flex-1 overflow-y-auto py-1">

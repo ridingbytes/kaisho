@@ -330,8 +330,13 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "archive_task",
-        "tier": "destructive",
-        "description": "Archive a task by ID.",
+        "tier": "write",
+        "description": (
+            "Archive a task by ID. Reversible -- the "
+            "archive list is queryable and tasks can be "
+            "moved back. The advisor is allowed to do "
+            "this without confirmation."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
@@ -661,11 +666,16 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "create_skill",
-        "tier": "write",
+        "tier": "destructive",
         "description": (
             "Create a reusable advisor skill template. "
             "The skill will be automatically applied when "
-            "the user's request matches."
+            "the user's request matches. Marked destructive "
+            "because the skill content becomes part of "
+            "every future advisor system prompt -- a "
+            "malicious or buggy skill silently rewrites "
+            "model behaviour. The advisor cannot create "
+            "skills; the user creates them via the UI / CLI."
         ),
         "input_schema": {
             "type": "object",
@@ -748,6 +758,9 @@ TOOL_DEFS: list[dict] = [
             "base entry, KB article, or documentation page. "
             "Do NOT use add_note for knowledge base entries — "
             "use this tool instead. "
+            "Refuses content larger than 1 MB and refuses to "
+            "overwrite an existing file unless overwrite=true "
+            "is passed explicitly. "
             "Requires a label (KB source name) and a filename."
         ),
         "input_schema": {
@@ -772,6 +785,14 @@ TOOL_DEFS: list[dict] = [
                     "type": "string",
                     "description": (
                         "File content (Markdown recommended)"
+                    ),
+                },
+                "overwrite": {
+                    "type": "boolean",
+                    "description": (
+                        "Set to true to replace an existing "
+                        "file. Defaults to false so silent "
+                        "clobbering is impossible."
                     ),
                 },
             },
@@ -1046,14 +1067,18 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "trigger_cron_job",
-        "tier": "write",
+        "tier": "destructive",
         "description": (
             "Trigger a cron job to run immediately in the "
             "background. The job runs asynchronously — you "
             "cannot wait for or monitor the result. Simply "
             "confirm to the user that it was triggered and "
             "they can check results in the Cron view. "
-            "Use list_cron_jobs first to find the job ID."
+            "Marked destructive because the spawned job "
+            "starts a fresh agentic loop with its own "
+            "fresh write budget, sidestepping the caps of "
+            "the calling session. The advisor cannot trigger "
+            "jobs; the user does so from the Cron view."
         ),
         "input_schema": {
             "type": "object",

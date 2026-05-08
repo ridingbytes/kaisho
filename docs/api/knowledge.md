@@ -136,5 +136,10 @@ POST /api/knowledge/move
 ## Delete File
 
 ```
-DELETE /api/knowledge/file?path=notes/obsolete.md
+DELETE /api/knowledge/file?path=notes/obsolete.md&confirm=true
 ```
+
+`confirm=true` is required (1.5.0+). Calls without it return
+`400 Bad Request`. The web UI always sends the flag; the
+requirement is there to stop bare HTTP clients from dropping
+files in a single request.

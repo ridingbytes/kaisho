@@ -1,5 +1,241 @@
 # Changelog
 
+## 1.5.0
+
+### Knowledge base: central metadata index
+
+The knowledge base no longer stores metadata as YAML
+frontmatter inside markdown files. A central
+``kb_meta.yaml`` per profile is now the single source of
+truth for tags, title, status, customer, task_id, type,
+and created. Source files on disk are never modified --
+write your KB any way you like (Obsidian, Emacs, plain
+editor) and Kaisho leaves it alone.
+
+- ``POST /api/knowledge/reindex`` (and ``kai kb reindex``,
+  plus a refresh button in the sidebar header) hashes
+  files (md5, cached by mtime+size), detects renames
+  (path changed but content matches -- metadata reattaches
+  automatically), and prunes records for files that
+  disappeared. Default is dry-run; ``--apply`` writes.
+- ``kai kb import-frontmatter [--apply]`` is a one-shot
+  helper that copies legacy in-file YAML frontmatter into
+  the index without modifying the file. Existing index
+  values win on conflict, so you can safely re-run it.
+- The metadata index is profile-scoped (lives at
+  ``<profile>/kb_meta.yaml``), atomically written, and
+  diff-stable -- sorted by ``(label, path)`` so you can
+  commit it to git without churn.
+
+### Knowledge base: tags, filtering, and discoverability
+
+- **Free-text tags** stored only in the index; the editor
+  offers autocomplete from the union of all tags in use
+  via the new ``GET /api/knowledge/tags`` endpoint and
+  ``kai kb list-tags`` CLI.
+- **Click-to-filter**: clicking any tag chip toggles it in
+  an active-filter set with AND semantics. Active filters
+  show as a chip row at the top of the sidebar with
+  per-chip remove and a Clear-all button. Persisted in
+  localStorage so the narrowed view survives reloads.
+- **Funnel filename filter** moved into the sidebar header
+  (live, client-side, regex-tolerant). Combines with the
+  panel-toolbar content search and tag filters; the
+  server-side grep is automatically scoped to the
+  post-filter visible subset via a new ``paths`` query
+  param.
+- **Hidden-files toggle** (eye icon in the sidebar
+  header). Hides any path with a dot-prefixed segment
+  (``.obsidian``, ``.git``, ``.trash``), files starting
+  with ``_``, and files where metadata
+  ``status: archived``. Defaults off; persisted. Backend
+  also skips dot-folders unconditionally so they never
+  surface even with the toggle on.
+- **Tag rename/merge**: ``POST /api/knowledge/tags/rename``
+  and ``kai kb retag <old> <new>``. Records already
+  carrying the new tag drop the old one without
+  duplicating, so the same command handles both typo
+  fixes and tag consolidation.
+
+### Knowledge base: metadata card
+
+The MetadataCard above the file body replaces the YAML
+frontmatter card.
+
+- Defaults to a thin one-row strip showing the chevron,
+  colored tag chips, and customer/task/status pills (the
+  doc body already shows the title via its H1, so the
+  card no longer duplicates it).
+- Click the chevron to expand for the full read view, the
+  pencil to enter edit mode.
+- Edit mode: title input, TagPicker with autocomplete,
+  customer autocomplete (from ``useCustomers``), task
+  autocomplete that displays the title and stores the id
+  (``RichMetaAutocomplete``), and type/status
+  autocompletes seeded from values already in use plus
+  common defaults (``active`` / ``draft`` / ``archived``
+  / ``in-progress`` / ``note`` / ``reference`` /
+  ``research`` / ``guide``).
+- The card renders above the iframe for PDFs too, so PDFs
+  are taggable. Free-text tag chips use a deterministic
+  djb2-hash auto-color so the same tag always lands on the
+  same hue.
+
+### Knowledge base: AI summaries + chat
+
+The Sparkles button in the panel toolbar opens a chat
+popover. The first AI bubble is a summary of the file
+(cached in the index); below it the user can keep asking
+follow-up questions about the same document. Each AI
+bubble has a hover-revealed inbox icon for one-click
+capture with an auto-generated headline.
+
+- ``POST /api/knowledge/file/summarize`` with optional
+  ``force: true``. The cached summary lives on the same
+  index record as the tags (``summary``, ``summary_model``,
+  ``summary_hash``, ``summary_at``); cache hits skip the
+  model call entirely.
+- Stale detection compares the summary's hash snapshot
+  against the file's current content hash; the popover
+  surfaces a "Stale" badge and a Regenerate button when
+  the document has changed.
+- Cached summaries can be deleted via the popover trash
+  icon, ``DELETE /api/knowledge/file/summary``, or
+  ``kai kb forget-summary <path>``.
+- ``kai kb summarize <path> [--force --no-cache --model X
+  --json]`` runs the same pipeline from the terminal --
+  pipe summaries into ``gh issue create`` or your morning
+  briefing prompt.
+- ``POST /api/knowledge/file/chat`` powers the chat
+  follow-ups. Stateless on the server (UI sends the full
+  Q/A history each turn); the document text and the
+  cached summary are stitched into the prompt so the
+  model stays grounded in the actual content.
+
+### Knowledge base: full CLI parity
+
+Every API endpoint now has a CLI counterpart with
+consistent option naming (``--json`` everywhere,
+``--apply`` for dry-run-by-default destructive work,
+``--yes`` / ``-y`` for confirmations, ``-`` sentinel to
+clear an optional metadata field).
+
+- ``kai kb list [--tag --status --json]`` -- enriched text
+  output now shows title, tag chips, and status inline.
+- ``kai kb search [--path --tag --max --json]`` --
+  composable filter-then-search.
+- ``kai kb get-metadata`` / ``kai kb set-metadata`` --
+  ``--add-tag`` / ``--remove-tag`` for delta edits, full
+  field set on ``set-metadata``.
+- ``kai kb retag <old> <new>`` -- bulk tag rename / merge.
+- ``kai kb write`` / ``mkdir`` / ``rename`` / ``move`` /
+  ``delete`` -- file management round-out.
+
+### AI safety nets
+
+The advisor and cron now share a single guard layer that
+makes it much harder for a misbehaving model -- or a
+prompt-injection vector via fetched URLs / KB content --
+to corrupt the data store.
+
+- **Advisor allowlist.** ``advisor_safe_tool_defs()``
+  excludes every ``tier=destructive`` tool. The advisor
+  cannot call ``delete_task``, ``delete_note``,
+  ``delete_customer``, ``delete_clock_entry``,
+  ``delete_profile``, ``rename_profile``, ``execute_cli``,
+  ``create_skill`` (skills become part of every future
+  system prompt), or ``trigger_cron_job`` (the spawned
+  job runs with a fresh budget that bypasses the caller's
+  caps). ``archive_task`` was demoted to ``write`` because
+  archive is reversible -- the advisor can move tasks to
+  the archive but not delete them. Cron stays on the
+  read-only allowlist as before.
+- **Per-session write caps.** Every advisor turn and
+  every cron run is capped at ``MAX_WRITES_PER_RUN = 5``
+  total writes; ``write_kb_file`` has a separate, tighter
+  ``MAX_KB_WRITES_PER_RUN = 3`` so a runaway summariser
+  cannot mass-duplicate KB files even when other writes
+  are bounded. The caps are enforced inside
+  ``execute_tool`` itself, so cloud-side agentic paths
+  benefit too.
+- **No silent overwrites.** ``write_kb_file`` refuses to
+  replace an existing KB file unless the model passes
+  ``overwrite=true`` explicitly. Same call also caps
+  payloads at 1 MB.
+- **Auto-snapshot before AI writes.** The first
+  non-read tool call of any agentic session triggers a
+  full profile backup (the same path as
+  ``create_backup``), throttled to once every 10 minutes
+  across the process so a busy user doesn't accumulate
+  dozens of near-identical archives. The throttle slot
+  is rolled back if the snapshot itself fails, so a
+  misconfigured backup directory cannot silently lock
+  the safety net out for 10 minutes. The MCP server,
+  cloud advisor path, and every local provider all reset
+  the per-session counters at request boundaries so
+  long-lived clients don't monotonically deplete their
+  budget.
+- **HTTP DELETE confirmation.** ``DELETE
+  /api/knowledge/file`` now requires ``?confirm=true``
+  to mirror the CLI's ``--yes`` and the UI's
+  ConfirmPopover. The frontend always sends it, so this
+  is invisible in normal use; the change blocks
+  bare-curl mistakes and locks the door for any
+  third-party MCP client that wraps the HTTP API.
+
+### Other changes
+
+- Indexable file extensions widened to include common
+  text and code formats: ``.sh``/``.bash``/``.zsh``,
+  ``.py``/``.js``/``.ts``/``.html``/``.css``,
+  ``.json``/``.yaml``/``.toml``/``.xml``/``.csv``,
+  ``.tex``/``.bib``/``.adoc``, ``Dockerfile``,
+  ``Makefile``, and a few dozen more. Reindex once
+  after upgrading to surface them.
+- Cross-process index locking. The metadata index
+  ``kb_meta.yaml`` is now protected by an advisory OS
+  file lock (``kb_meta.yaml.lock`` via ``fcntl.flock``)
+  in addition to the in-process ``RLock``. A running
+  ``kai serve`` and a parallel ``kai kb set-metadata``
+  / ``reindex`` / ``retag`` from the terminal can no
+  longer race or clobber each other's writes. Falls
+  back to in-process locking on Windows where ``fcntl``
+  is unavailable.
+- Locale-independent org-mode date writers. The 1.4.9
+  parser fix tolerated locale-dependent weekday tokens
+  (``Do.``, ``jeu.``); the writers in ``format_clock`` and
+  the heading-title formatter now also emit a hardcoded
+  English weekday so org files stay stable regardless of
+  the running process locale -- no more git churn for
+  users syncing org files between machines with different
+  ``LC_TIME``.
+- KB external-editor button: a Tauri-only "Open in editor"
+  toolbar button next to Edit launches the configured
+  external editor on a KB file directly. Reuses the v1.4.8
+  login-shell PATH fix, so Homebrew tools like
+  ``alacritty`` resolve correctly.
+- ``MetadataCard`` is collapsible per-profile
+  (``kaisho_kb_meta_collapsed``) and remembers your choice
+  across files.
+
+### Migration notes
+
+The 1.4.9 release wrote in-file YAML frontmatter into your
+markdown files via the now-removed ``kai kb migrate``
+command. After upgrading to 1.5.0:
+
+1. Run ``kai kb reindex --apply`` once to populate the
+   metadata index for every file.
+2. Optionally run ``kai kb import-frontmatter --apply`` to
+   copy the existing in-file frontmatter into the index.
+   Files on disk are not modified -- the leftover
+   frontmatter blocks are silently stripped from the
+   rendered view and from search snippets.
+3. From here on, all metadata edits go through the index.
+   You can leave old frontmatter blocks in place
+   indefinitely or strip them manually with your editor of
+   choice.
+
 ## 1.4.9
 
 ### Features

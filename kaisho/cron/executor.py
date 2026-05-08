@@ -15,7 +15,6 @@ app data autonomously.
 """
 import json
 import logging
-import threading
 from datetime import date
 from pathlib import Path
 
@@ -24,6 +23,7 @@ from ..ai_utils import (
     http_post as _http_post,
     parse_model as _parse_model,
 )
+from . import guards as _guards
 from .tool_defs import TOOL_DEFS  # noqa: F401 — used by external imports
 from .tools import (
     cron_safe_tool_defs,
@@ -237,67 +237,22 @@ def write_output(
 
 MAX_TOOL_ITERATIONS = 30
 
-# Tools that modify data — limited to prevent runaway writes
-_WRITE_TOOLS = {
-    "add_inbox_item", "add_task", "move_task",
-    "update_task", "set_task_tags",
-    "start_clock", "stop_clock", "book_time",
-    "write_kb_file", "add_note", "update_note",
-    "update_clock_entry", "batch_invoice",
-    "create_skill", "approve_url_domain",
-    "create_backup", "trigger_cron_job",
-}
-MAX_WRITES_PER_RUN = 3
-
-# Per-thread write counter. Each cron run lives in its
-# own thread (scheduler firing OR the advisor's
-# trigger_cron_job spawning a daemon thread), so a
-# threading.local() gives each run an isolated counter
-# without explicit plumbing through every helper. Avoids
-# the previous module-global race where a concurrent run
-# could reset or inflate another's count.
-_thread_state = threading.local()
-
-
-def _writes_count() -> int:
-    return getattr(_thread_state, "writes", 0)
-
-
-def _reset_write_counter():
-    _thread_state.writes = 0
-
-
-def _bump_write(name: str) -> dict | None:
-    """Increment the per-run write counter and return an
-    error dict when the cap is exceeded, else None."""
-    _thread_state.writes = _writes_count() + 1
-    if _thread_state.writes > MAX_WRITES_PER_RUN:
-        return {
-            "error": (
-                f"Write limit reached "
-                f"({MAX_WRITES_PER_RUN} per run)"
-            ),
-        }
-    return None
-
 
 def _execute_tool_calls(
     tool_calls: list[dict], include_id: bool = True,
 ) -> list[dict]:
-    """Execute tool calls and return tool-result messages."""
+    """Execute tool calls and return tool-result messages.
+
+    Per-run caps and auto-snapshot live in
+    :mod:`.guards` and are applied inside
+    :func:`execute_tool` itself, so this function just
+    forwards.
+    """
     results = []
     for call in tool_calls:
         fn = call.get("function", {})
         name = fn.get("name", "")
-        if name in _WRITE_TOOLS:
-            limit_err = _bump_write(name)
-            result = limit_err or execute_tool(
-                name, fn.get("arguments", {}),
-            )
-        else:
-            result = execute_tool(
-                name, fn.get("arguments", {}),
-            )
+        result = execute_tool(name, fn.get("arguments", {}))
         msg: dict = {
             "role": "tool",
             "content": json.dumps(result, default=str),
@@ -314,29 +269,19 @@ def _execute_tool_calls(
 
 
 def _execute_tool_block(name: str, input_data: dict) -> dict:
-    """Execute a single tool call, enforcing write limits."""
-    if name in _WRITE_TOOLS:
-        limit_err = _bump_write(name)
-        if limit_err:
-            return limit_err
+    """Execute a single Claude tool block. Caps are
+    enforced inside :func:`execute_tool`."""
     return execute_tool(name, input_data)
 
 
 def _bounded_execute(name: str, args) -> dict:
-    """Tool executor that honors the per-run write cap.
+    """Identity wrapper kept for cloud_sync compatibility.
 
-    Used by the kaisho-cloud agentic path
-    (cloud_ai_agentic) which invokes tool_executor
-    directly without going through _execute_tool_calls /
-    _execute_tool_block. Without this wrapper, cloud cron
-    would be silently uncapped — fine today (cron tools
-    are read-only) but a latent footgun if the allowlist
-    grows.
+    Caps used to live here; they have moved into
+    :func:`execute_tool` so every entry point is covered
+    uniformly. The wrapper stays so existing call sites
+    don't need to change shape.
     """
-    if name in _WRITE_TOOLS:
-        limit_err = _bump_write(name)
-        if limit_err:
-            return limit_err
     return execute_tool(name, args)
 
 
@@ -367,7 +312,7 @@ def run_prompt_claude(
     model: str, prompt: str, api_key: str = "",
 ) -> str:
     """Run an agentic Claude session with tools."""
-    _reset_write_counter()
+    _guards.reset_session()
     try:
         import anthropic
     except ImportError as exc:
@@ -421,7 +366,7 @@ def run_prompt_ollama(
     ``timeout`` is per HTTP turn; an agentic run may make
     several calls and total wall time can exceed it.
     """
-    _reset_write_counter()
+    _guards.reset_session()
     tools = cron_safe_tools()
     messages: list[dict] = [
         {"role": "user", "content": prompt},
@@ -474,7 +419,7 @@ def run_prompt_openai_compatible(
     api_key: str = "",
 ) -> str:
     """Run an agentic OpenAI-compatible session with tools."""
-    _reset_write_counter()
+    _guards.reset_session()
     tools = cron_safe_tools()
     messages: list[dict] = [
         {"role": "user", "content": prompt},
@@ -653,13 +598,11 @@ def _dispatch_prompt(
         # tools terminate after one turn — same wire cost
         # as cloud_ai_complete used to be.
         #
-        # The tool executor goes through _bounded_execute
-        # so the per-run write cap (MAX_WRITES_PER_RUN)
-        # applies on the cloud path too. Today this is
-        # belt-and-braces — cron_safe_tools is read-only
-        # — but if the allowlist ever expands the cap
-        # already covers it.
-        _reset_write_counter()
+        # Per-session caps and auto-snapshot live in
+        # ``execute_tool`` itself, so the cloud path
+        # inherits them automatically -- _bounded_execute
+        # is a passthrough kept only for symmetry.
+        _guards.reset_session()
         return cloud_ai_agentic(
             cloud_url=cloud_url,
             api_key=cloud_api_key,

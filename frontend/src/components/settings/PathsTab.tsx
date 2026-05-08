@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
 import {
   usePaths,
   useUpdatePaths,
@@ -206,6 +206,16 @@ export function PathsSection(): JSX.Element {
     );
   }
 
+  function moveSource(idx: number, delta: -1 | 1) {
+    setSources((prev) => {
+      const target = idx + delta;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[target]] = [next[target], next[idx]];
+      return next;
+    });
+  }
+
   return (
     <section className="space-y-8">
       {/* Backend selector */}
@@ -366,6 +376,26 @@ export function PathsSection(): JSX.Element {
                 placeholder="~/path/to/folder"
                 className={inputCls}
               />
+              <div className="flex items-center shrink-0">
+                <button
+                  onClick={() => moveSource(idx, -1)}
+                  disabled={idx === 0}
+                  title={t("moveUp")}
+                  aria-label={t("moveUp")}
+                  className="p-1 rounded text-stone-500 hover:text-stone-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ArrowUp size={14} />
+                </button>
+                <button
+                  onClick={() => moveSource(idx, 1)}
+                  disabled={idx === sources.length - 1}
+                  title={t("moveDown")}
+                  aria-label={t("moveDown")}
+                  className="p-1 rounded text-stone-500 hover:text-stone-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ArrowDown size={14} />
+                </button>
+              </div>
               <button
                 onClick={() => removeSource(idx)}
                 className="p-1 rounded text-stone-500 hover:text-red-400 transition-colors shrink-0"

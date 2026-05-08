@@ -13,6 +13,8 @@ import type {
   GithubSettings,
   InboxItem,
   KnowledgeFile,
+  KnowledgeMetadata,
+  KnowledgeReindexReport,
   KnowledgeSearchResult,
   NoteItem,
   Settings,
@@ -996,10 +998,155 @@ export function fetchKnowledgeFile(
 }
 
 /** Search the knowledge base by query string.
- *  Returns matching files with highlighted excerpts. */
-export function searchKnowledge(q: string): Promise<KnowledgeSearchResult[]> {
+ *  When ``paths`` is provided, the search is restricted to
+ *  files whose relative path matches an entry -- the
+ *  "filter then search" pattern. */
+export function searchKnowledge(
+  q: string, paths?: string[],
+): Promise<KnowledgeSearchResult[]> {
+  const params = new URLSearchParams({ q });
+  if (paths && paths.length > 0) {
+    for (const p of paths) params.append("paths", p);
+  }
   return get<KnowledgeSearchResult[]>(
-    `/knowledge/search?q=${encodeURIComponent(q)}`
+    `/knowledge/search?${params.toString()}`,
+  );
+}
+
+/** Fetch every free-text tag in use across all KB files. */
+export function fetchKnowledgeTags(): Promise<string[]> {
+  return get<string[]>("/knowledge/tags");
+}
+
+export interface KnowledgeDistinctValues {
+  status: string[];
+  type: string[];
+  customer: string[];
+}
+
+/** Fetch the distinct values for each enum-ish metadata
+ *  key. Drives the autocomplete dropdowns in the
+ *  metadata editor without requiring the full file
+ *  tree. */
+export function fetchKnowledgeDistinctValues(): Promise<
+  KnowledgeDistinctValues
+> {
+  return get<KnowledgeDistinctValues>(
+    "/knowledge/distinct-values",
+  );
+}
+
+/** Resolve a KB-relative path to its absolute filesystem
+ *  path. Used by the desktop app to launch the configured
+ *  external editor on a KB file. */
+export function fetchKnowledgeAbsolutePath(
+  path: string,
+): Promise<{ path: string }> {
+  return get<{ path: string }>(
+    `/knowledge/file/path?path=${encodeURIComponent(path)}`,
+  );
+}
+
+/** Fetch the indexed metadata for a single KB file. */
+export function fetchKnowledgeMetadata(
+  path: string,
+): Promise<{ path: string; metadata: KnowledgeMetadata }> {
+  return get<{
+    path: string; metadata: KnowledgeMetadata;
+  }>(
+    `/knowledge/file/metadata?path=${encodeURIComponent(path)}`,
+  );
+}
+
+/** Patch a KB file's metadata in the index. The KB file
+ *  on disk is never modified. ``patchBody`` keys
+ *  overwrite existing values; setting a canonical key to
+ *  ``null`` clears it. */
+export function patchKnowledgeMetadata(
+  path: string, patchBody: Record<string, unknown>,
+): Promise<{ path: string; metadata: KnowledgeMetadata }> {
+  return patch<{
+    path: string; metadata: KnowledgeMetadata;
+  }>(
+    "/knowledge/file/metadata",
+    { path, patch: patchBody },
+  );
+}
+
+/** Trigger a reindex pass that hashes files, detects
+ *  renames, and prunes missing entries. Files are not
+ *  modified. */
+export function reindexKnowledge(): Promise<
+  KnowledgeReindexReport
+> {
+  return post<KnowledgeReindexReport>(
+    "/knowledge/reindex", {},
+  );
+}
+
+/** Result returned by ``POST /knowledge/file/summarize``. */
+export interface KnowledgeSummary {
+  path: string;
+  model: string;
+  summary: string;
+  /** True when the summary came from the cache instead
+   *  of a fresh model call. */
+  cached: boolean;
+  /** True when the cached summary's snapshot hash no
+   *  longer matches the file's current content hash. */
+  stale: boolean;
+  /** ISO timestamp of when the cached summary was made
+   *  (only set on cache hits). */
+  summary_at?: string;
+  default_inbox_text: string;
+}
+
+/** Summarize a KB file via the configured AI advisor
+ *  model. By default returns the cached summary when one
+ *  exists and is fresh; pass ``force: true`` to always
+ *  re-run the model. */
+export function summarizeKnowledgeFile(
+  path: string,
+  options: { force?: boolean } = {},
+): Promise<KnowledgeSummary> {
+  return post<KnowledgeSummary>(
+    "/knowledge/file/summarize",
+    { path, force: options.force ?? false },
+  );
+}
+
+/** Drop the cached summary for a KB file. */
+export function clearKnowledgeSummary(
+  path: string,
+): Promise<void> {
+  return del(
+    `/knowledge/file/summary?path=${
+      encodeURIComponent(path)
+    }`,
+  );
+}
+
+export interface KnowledgeChatTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface KnowledgeChatReply {
+  path: string;
+  model: string;
+  answer: string;
+}
+
+/** Ask a follow-up question about a KB file. The server
+ *  is stateless; the UI keeps the running history and
+ *  sends it on every request. */
+export function chatAboutKnowledgeFile(params: {
+  path: string;
+  question: string;
+  history: KnowledgeChatTurn[];
+}): Promise<KnowledgeChatReply> {
+  return post<KnowledgeChatReply>(
+    "/knowledge/file/chat", params,
   );
 }
 
@@ -1026,9 +1173,20 @@ export function createKnowledgeFolder(
   return post("/knowledge/folder", { label, path });
 }
 
-/** Delete a knowledge base file by its path. */
+/** Delete a knowledge base file by its path.
+ *  The ``confirm=true`` flag is required by the backend
+ *  so external clients cannot drop files in a single
+ *  request -- the UI always sends it because every delete
+ *  in the UI is already gated behind a ConfirmPopover.
+ *  Verified at 1.5.0: ``KnowledgeView.tsx`` and
+ *  ``EditorPanel.tsx`` are the only call sites and both
+ *  wrap the delete in ConfirmPopover. If you add a new
+ *  caller, keep that invariant. */
 export function deleteKnowledgeFile(path: string): Promise<void> {
-  return del(`/knowledge/file?path=${encodeURIComponent(path)}`);
+  return del(
+    `/knowledge/file?path=${encodeURIComponent(path)}` +
+    `&confirm=true`,
+  );
 }
 
 /** Rename a knowledge base file (change its path). */

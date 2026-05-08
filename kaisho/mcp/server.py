@@ -121,7 +121,19 @@ def _build_handler(
 def _dispatch_call(
     name: str, args: dict, audit_file: Path,
 ) -> str:
-    """Execute a tool and return JSON result."""
+    """Execute a tool and return JSON result.
+
+    Each MCP request is treated as a fresh session so the
+    per-session caps (write count, KB-write count,
+    auto-snapshot flag) don't accumulate across calls
+    from a long-lived MCP client. A single request that
+    chain-fires several tools internally is still bounded
+    by the run's caps; resetting at the request boundary
+    just stops the budget from monotonically depleting
+    over the lifetime of the connection.
+    """
+    from ..cron import guards
+    guards.reset_session()
     result = execute_tool(name, args)
     log_call(audit_file, name, args, result)
     if "error" in result:

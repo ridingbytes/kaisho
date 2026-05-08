@@ -16,6 +16,49 @@ export function tagBadgeStyle(
   };
 }
 
+/**
+ * Curated palette for free-text tags. Picked for
+ * legibility on the light surface; same input always maps
+ * to the same color so the user can recognize tags by hue
+ * at a glance.
+ */
+const FREE_TAG_PALETTE = [
+  "#dc2626",
+  "#ea580c",
+  "#d97706",
+  "#16a34a",
+  "#0891b2",
+  "#2563eb",
+  "#7c3aed",
+  "#c026d3",
+  "#db2777",
+  "#475569",
+] as const;
+
+/**
+ * Deterministic auto-color for a free-text tag string.
+ * Uses a small djb2 hash so the same tag maps to the same
+ * palette slot across sessions and devices.
+ */
+export function autoTagColor(tag: string): string {
+  let hash = 5381;
+  for (let i = 0; i < tag.length; i++) {
+    hash = ((hash << 5) + hash + tag.charCodeAt(i)) | 0;
+  }
+  const idx = Math.abs(hash) % FREE_TAG_PALETTE.length;
+  return FREE_TAG_PALETTE[idx];
+}
+
+/**
+ * Convenience for rendering a free-text tag chip without
+ * passing an explicit color.
+ */
+export function freeTagBadgeStyle(
+  tag: string,
+): React.CSSProperties {
+  return tagBadgeStyle(autoTagColor(tag));
+}
+
 function hexToRgb(
   hex: string,
 ): { r: number; g: number; b: number } | null {

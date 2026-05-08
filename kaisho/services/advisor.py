@@ -24,7 +24,12 @@ from ..ai_utils import (
     http_post as _http_post,
     parse_model as _parse_model,
 )
-from ..cron.tools import TOOL_DEFS, execute_tool, openai_tools
+from ..cron import guards as _guards
+from ..cron.tools import (
+    advisor_safe_tool_defs,
+    advisor_safe_tools,
+    execute_tool,
+)
 
 # Optional callback: (event_type, data_dict) -> None
 EventCallback = Callable[[str, dict[str, Any]], None] | None
@@ -359,7 +364,8 @@ def ask_ollama(
     Supports both local Ollama and Ollama Cloud
     (https://ollama.com) via the api_key parameter.
     """
-    tools = openai_tools()
+    tools = advisor_safe_tools()
+    _guards.reset_session()
     messages: list[dict] = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
@@ -425,7 +431,8 @@ def ask_openai_compatible(
     Works with LM Studio, OpenRouter, OpenAI, and any provider
     that implements the /v1/chat/completions endpoint.
     """
-    tools = openai_tools()
+    tools = advisor_safe_tools()
+    _guards.reset_session()
     messages: list[dict] = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
@@ -494,6 +501,8 @@ def ask_claude(
         {"role": "user", "content": prompt},
     ]
     tools_called = False
+    _guards.reset_session()
+    tools = advisor_safe_tool_defs()
 
     for _ in range(_MAX_TURNS):
         if on_event:
@@ -502,7 +511,7 @@ def ask_claude(
             model=model,
             max_tokens=4096,
             system=system_prompt,
-            tools=TOOL_DEFS,
+            tools=tools,
             messages=messages,
         )
 
@@ -675,6 +684,11 @@ def ask(
         # e.g. ``advisor`` for ``kaisho:advisor``. The
         # gateway uses this to pick model + budget.
         kaisho_mode = model_name or "default"
+        # Like the local providers, reset the per-session
+        # guard counters so a previous turn on this same
+        # FastAPI worker thread doesn't carry budget into
+        # this one.
+        _guards.reset_session()
         # Only expose the kai CLI tool — the advisor
         # can create tasks, book time, etc. via CLI
         # commands but cannot fetch URLs or access

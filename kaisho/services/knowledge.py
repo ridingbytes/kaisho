@@ -1,15 +1,65 @@
 """Knowledge base service.
 
-Searches and reads files from configurable KB source directories.
-Each source has a label (shown in the UI) and a filesystem path.
+Searches and reads files from configurable KB source
+directories. Each source has a label (shown in the UI)
+and a filesystem path.
+
+Metadata (tags, title, status, ...) lives in a separate
+``kb_meta.yaml`` index per profile -- see ``kb_index``.
+This module never reads or writes YAML frontmatter from
+the source files; the index is the single source of
+truth.
 """
 import re
 from pathlib import Path
 
-# File extensions to index
+from . import kb_frontmatter, kb_index
+
+# File extensions to index. We deliberately keep this
+# curated rather than "anything that decodes as utf-8" so
+# we don't pollute the tree with images, archives, or
+# build artefacts. Add new shapes here as they show up in
+# real KBs.
 KB_EXTENSIONS = {
-    "*.md", "*.org", "*.rst", "*.txt", "*.pdf",
+    # Prose / docs
+    "*.md", "*.markdown", "*.mdx",
+    "*.org", "*.rst",
+    "*.txt", "*.text",
+    "*.tex", "*.bib",
+    "*.adoc", "*.asciidoc",
+    "*.pdf",
+    # Structured data the user actually reads
+    "*.json", "*.jsonc",
+    "*.yaml", "*.yml",
+    "*.toml",
+    "*.xml",
+    "*.csv", "*.tsv",
+    "*.ini", "*.cfg", "*.conf",
+    "*.env",
+    "*.log",
+    # Shell / scripting
+    "*.sh", "*.bash", "*.zsh", "*.fish",
+    "*.ps1",
+    # Languages we commonly take notes alongside
+    "*.py", "*.pyx",
+    "*.js", "*.mjs", "*.cjs", "*.ts", "*.tsx",
+    "*.html", "*.htm", "*.css", "*.scss",
+    "*.go", "*.rs", "*.java", "*.kt",
+    "*.c", "*.h", "*.cpp", "*.hpp", "*.cc", "*.hh",
+    "*.cs", "*.swift",
+    "*.rb", "*.php", "*.pl",
+    "*.lua", "*.r",
+    "*.lisp", "*.clj", "*.el", "*.scm",
+    "*.sql",
+    # Build / infra
+    "*.dockerfile", "Dockerfile",
+    "*.mk", "Makefile",
+    "*.gradle",
 }
+
+# Markdown-only extensions, used for the opt-in
+# ``import_frontmatter`` migration helper.
+MARKDOWN_EXTENSIONS = {".md", ".markdown", ".mdx"}
 
 
 def _safe_path(base: Path, rel_path: str) -> Path:
@@ -49,10 +99,28 @@ def _expand_sources(
     return result
 
 
+def _has_dot_segment(rel: Path) -> bool:
+    """True when any path segment starts with ``.``.
+
+    Dot-folders (``.obsidian``, ``.git``, ``.trash``, etc.)
+    are tool metadata that should never appear in the KB
+    tree, regardless of the frontend hidden toggle. We
+    skip them at the iteration layer so they don't even
+    enter the cache or get parsed for frontmatter.
+    """
+    return any(p.startswith(".") for p in rel.parts)
+
+
 def _iter_files(base: Path):
-    """Yield all knowledge base files in a directory."""
+    """Yield all knowledge base files in a directory.
+
+    Skips files inside dot-folders -- see
+    ``_has_dot_segment``.
+    """
     for ext in KB_EXTENSIONS:
-        yield from sorted(base.rglob(ext))
+        for f in sorted(base.rglob(ext)):
+            if not _has_dot_segment(f.relative_to(base)):
+                yield f
 
 
 def _iter_empty_dirs(base: Path) -> list[Path]:
@@ -60,6 +128,8 @@ def _iter_empty_dirs(base: Path) -> list[Path]:
     result = []
     for d in sorted(base.rglob("*")):
         if not d.is_dir():
+            continue
+        if _has_dot_segment(d.relative_to(base)):
             continue
         has_files = any(
             f for ext in KB_EXTENSIONS
@@ -70,23 +140,28 @@ def _iter_empty_dirs(base: Path) -> list[Path]:
     return result
 
 
-def file_tree(sources: list[dict]) -> list[dict]:
+def file_tree(
+    sources: list[dict], profile_dir: Path,
+) -> list[dict]:
     """Return list of all KB files and empty folders.
 
-    Files: {path, label, name, size, kind: "file"}
-    Folders: {path, label, name, size: 0, kind: "folder"}
+    Each file entry is enriched with metadata from the
+    central index (``kb_meta.yaml``): ``title``, ``tags``,
+    ``status``, ``type``. Files unknown to the index get
+    an empty ``tags: []`` so the UI shape stays stable.
+
+    Files: ``{path, label, name, size, kind, title?,
+    tags?, status?, type?}``.
+    Folders: ``{path, label, name, size, kind}``.
     """
-    entries = []
+    records = kb_index.load_index(profile_dir)
+    by_key = {r.key: r for r in records}
+    entries: list[dict] = []
     for label, base in _expand_sources(sources):
         for f in _iter_files(base):
-            rel = f.relative_to(base)
-            entries.append({
-                "path": str(rel),
-                "label": label,
-                "name": f.stem,
-                "size": f.stat().st_size,
-                "kind": "file",
-            })
+            entries.append(
+                _file_entry(label, base, f, by_key),
+            )
         for d in _iter_empty_dirs(base):
             rel = d.relative_to(base)
             entries.append({
@@ -97,6 +172,35 @@ def file_tree(sources: list[dict]) -> list[dict]:
                 "kind": "folder",
             })
     return entries
+
+
+def _file_entry(
+    label: str,
+    base: Path,
+    f: Path,
+    index_by_key: dict[tuple[str, str], "kb_index.FileRecord"],
+) -> dict:
+    """Build the tree entry for a single file."""
+    rel = str(f.relative_to(base))
+    entry = {
+        "path": rel,
+        "label": label,
+        "name": f.stem,
+        "size": f.stat().st_size,
+        "kind": "file",
+    }
+    record = index_by_key.get((label, rel))
+    if record is not None:
+        if record.title:
+            entry["title"] = record.title
+        entry["tags"] = list(record.tags)
+        if record.status:
+            entry["status"] = record.status
+        if record.type:
+            entry["type"] = record.type
+    else:
+        entry["tags"] = []
+    return entry
 
 
 def create_folder(
@@ -333,21 +437,29 @@ def search(
     sources: list[dict],
     query: str,
     max_results: int = 20,
+    paths: list[str] | None = None,
 ) -> list[dict]:
     """Full-text search across KB files.
 
-    Returns up to max_results matches.
-    Each dict: {path, label, line_number, snippet}
+    :param paths: When provided, restrict the search to files
+        whose ``rel_path`` matches an entry. Lets the UI run a
+        filename filter first and search only inside what
+        passed -- the "filter then search" pattern.
+    :returns: Up to ``max_results`` matches as
+        ``{path, label, line_number, snippet}``.
     """
     if not query.strip():
         return []
     pattern = re.compile(
         re.escape(query.strip()), re.IGNORECASE
     )
+    allow = set(paths) if paths is not None else None
     results = []
     for label, base in _expand_sources(sources):
         for f in _iter_files(base):
             rel = str(f.relative_to(base))
+            if allow is not None and rel not in allow:
+                continue
             try:
                 if f.suffix.lower() == ".pdf":
                     text = _extract_pdf_text(f)
@@ -355,10 +467,21 @@ def search(
                         continue
                     lines = text.splitlines()
                 else:
-                    lines = f.read_text(
+                    text = f.read_text(
                         encoding="utf-8",
                         errors="replace",
-                    ).splitlines()
+                    )
+                    if f.suffix.lower() in \
+                            MARKDOWN_EXTENSIONS:
+                        # Skip leftover YAML frontmatter
+                        # so old in-file blocks don't
+                        # surface as search hits now
+                        # that the index is the source
+                        # of truth.
+                        text = kb_frontmatter.parse(
+                            text,
+                        ).body or text
+                    lines = text.splitlines()
             except OSError:
                 continue
             for i, line in enumerate(lines, start=1):
@@ -372,3 +495,134 @@ def search(
                     if len(results) >= max_results:
                         return results
     return results
+
+
+def resolve_label(
+    sources: list[dict], rel_path: str,
+) -> str | None:
+    """Return the source label that owns ``rel_path``, or
+    ``None`` when the file is not under any KB source."""
+    for label, base in _expand_sources(sources):
+        try:
+            candidate = _safe_path(base, rel_path)
+        except ValueError:
+            continue
+        if candidate.is_file():
+            return label
+    return None
+
+
+def iter_kb_files(sources: list[dict]):
+    """Yield ``(label, base, file_path)`` for every file
+    across all KB sources, regardless of extension. Used
+    by the index reindex pass."""
+    for label, base in _expand_sources(sources):
+        for f in _iter_files(base):
+            yield label, base, f
+
+
+def iter_markdown_files(sources: list[dict]):
+    """Same as :func:`iter_kb_files` but only markdown.
+    Used by the opt-in frontmatter import."""
+    for label, base, f in iter_kb_files(sources):
+        if f.suffix.lower() in MARKDOWN_EXTENSIONS:
+            yield label, base, f
+
+
+def list_tags(profile_dir: Path) -> list[str]:
+    """Return the sorted unique union of tags from the
+    metadata index."""
+    return kb_index.list_tags(
+        kb_index.load_index(profile_dir),
+    )
+
+
+def distinct_values(profile_dir: Path) -> dict:
+    """Sorted unique values for each indexable enum-ish
+    metadata key, sourced from the index. Powers the
+    metadata-editor autocompletes without fetching the
+    full file tree."""
+    records = kb_index.load_index(profile_dir)
+    statuses: set[str] = set()
+    types: set[str] = set()
+    customers: set[str] = set()
+    for record in records:
+        if record.status:
+            statuses.add(record.status)
+        if record.type:
+            types.add(record.type)
+        if record.customer:
+            customers.add(record.customer)
+    return {
+        "status": sorted(statuses),
+        "type": sorted(types),
+        "customer": sorted(customers),
+    }
+
+
+def get_metadata(
+    sources: list[dict],
+    profile_dir: Path,
+    rel_path: str,
+) -> dict | None:
+    """Return the indexed metadata for a KB file.
+
+    Resolves the file under one of the configured sources
+    so the call short-circuits to ``None`` for missing
+    files. When the file exists but the index has no
+    record (e.g. between reindex runs), the function
+    returns an empty-but-shape-stable dict so the UI can
+    still write keys via PATCH.
+
+    :returns: ``{"title": str, "tags": list, ...}`` with
+        only set optional keys present, or ``None`` if
+        the file does not exist on disk.
+    """
+    for label, base in _expand_sources(sources):
+        try:
+            candidate = _safe_path(base, rel_path)
+        except ValueError:
+            continue
+        if not candidate.is_file():
+            continue
+        records = kb_index.load_index(profile_dir)
+        record = kb_index.lookup(records, label, rel_path)
+        if record is None:
+            return {"title": "", "tags": []}
+        return record.metadata_dict()
+    return None
+
+
+def update_metadata(
+    sources: list[dict],
+    profile_dir: Path,
+    rel_path: str,
+    patch: dict,
+) -> dict:
+    """Patch a file's metadata in the index. The KB file
+    on disk is never touched.
+
+    The load -> mutate -> save cycle runs under
+    ``kb_index.index_guard`` so a concurrent reindex pass
+    -- including one running in another process via the
+    CLI -- cannot interleave and overwrite the patch.
+
+    :raises ValueError: If the file is not found under
+        any source.
+    """
+    for label, base in _expand_sources(sources):
+        try:
+            candidate = _safe_path(base, rel_path)
+        except ValueError:
+            continue
+        if not candidate.is_file():
+            continue
+        with kb_index.index_guard(profile_dir):
+            records = kb_index.load_index(profile_dir)
+            record = kb_index.update_metadata(
+                records, label, rel_path, patch,
+            )
+            if patch:
+                kb_index.save_index(profile_dir, records)
+        return record.metadata_dict()
+    raise ValueError(f"File not found: {rel_path}")
