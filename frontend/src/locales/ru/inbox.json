@@ -1,0 +1,23 @@
+{
+  "inbox": "Входящие",
+  "addItem": "+ Добавить",
+  "captureSomething": "Записать что-нибудь...",
+  "inboxEmpty": "Входящие пусты",
+  "inboxEmptyHint": "Нажмите «+ Добавить», чтобы что-то записать",
+  "autoType": "Автотип",
+  "anyChannel": "Любой канал",
+  "anyDirection": "Любое направление",
+  "bodyOptional": "Текст (необязательно)",
+  "inboxItemCaptured": "Элемент добавлен во входящие",
+  "inboxItemDeleted": "Элемент входящих удалён",
+  "inboxItemUpdated": "Элемент входящих обновлён",
+  "movedTo": "Перемещено в {{destination}}",
+  "promotedToTask": "Преобразовано в задачу",
+  "in": "Вход.",
+  "out": "Исх.",
+  "any": "Любое",
+  "emailChannel": "Email",
+  "phoneChannel": "Телефон",
+  "chatChannel": "Чат",
+  "otherChannel": "Другое"
+}

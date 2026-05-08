@@ -56,6 +56,21 @@ import cronDe from "./locales/de/cron.json";
 import knowledgeDe from "./locales/de/knowledge.json";
 import notesDe from "./locales/de/notes.json";
 
+// -- Russian ---------------------------------------------
+
+import commonRu from "./locales/ru/common.json";
+import navRu from "./locales/ru/nav.json";
+import clocksRu from "./locales/ru/clocks.json";
+import kanbanRu from "./locales/ru/kanban.json";
+import customersRu from "./locales/ru/customers.json";
+import settingsRu from "./locales/ru/settings.json";
+import inboxRu from "./locales/ru/inbox.json";
+import advisorRu from "./locales/ru/advisor.json";
+import dashboardRu from "./locales/ru/dashboard.json";
+import cronRu from "./locales/ru/cron.json";
+import knowledgeRu from "./locales/ru/knowledge.json";
+import notesRu from "./locales/ru/notes.json";
+
 // -- Detect language -------------------------------------
 
 const STORAGE_KEY = "kaisho_lang";
@@ -64,7 +79,7 @@ function detectLanguage(): string {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) return stored;
   const browser = navigator.language.split("-")[0];
-  return ["en", "de", "es"].includes(browser) ? browser : "en";
+  return ["en", "de", "es", "ru"].includes(browser) ? browser : "en";
 }
 
 // -- Init ------------------------------------------------
@@ -112,6 +127,20 @@ i18n.use(initReactI18next).init({
       cron: cronEs,
       knowledge: knowledgeEs,
       notes: notesEs,
+    },
+    ru: {
+      common: commonRu,
+      nav: navRu,
+      clocks: clocksRu,
+      kanban: kanbanRu,
+      customers: customersRu,
+      settings: settingsRu,
+      inbox: inboxRu,
+      advisor: advisorRu,
+      dashboard: dashboardRu,
+      cron: cronRu,
+      knowledge: knowledgeRu,
+      notes: notesRu,
     },
   },
   lng: detectLanguage(),

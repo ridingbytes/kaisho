@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.4.9
+
+### Features
+
+- Russian (``ru``) is now a fully-supported UI language
+  alongside English, German, and Spanish. All twelve
+  locale namespaces (``common``, ``nav``, ``clocks``,
+  ``kanban``, ``customers``, ``settings``, ``inbox``,
+  ``advisor``, ``dashboard``, ``cron``, ``knowledge``,
+  ``notes``) are translated. Switch via Settings →
+  General → Language → Русский. Browser locales starting
+  with ``ru`` auto-detect on first launch
+- First release signed under the new ``RIDING BYTES GmbH``
+  Apple Developer ID certificate. Team ID stays
+  ``75EHWS7L8X`` so existing installs auto-update without
+  any user-visible difference
+
+### Fixes
+
+- Clock entries written by Emacs on a non-English macOS
+  locale (e.g. ``CLOCK: [2026-05-07 Do. 08:00]...``)
+  are no longer silently dropped by the org parser. The
+  weekday abbreviation inside ``[...]`` timestamps was
+  parsed via ``%a`` which is locale-bound; we now ignore
+  the abbreviation entirely (the date already encodes the
+  weekday) so German ``Do.``, French ``jeu.``, etc. all
+  parse correctly
+
 ## 1.4.8
 
 ### Fixes

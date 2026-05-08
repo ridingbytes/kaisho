@@ -10,11 +10,26 @@ CLOCK_CLOSED_RE = re.compile(
 )
 CLOCK_OPEN_RE = re.compile(r"CLOCK:\s+\[(.+?)\]\s*$")
 
+# Weekday abbreviations inside org timestamps are purely
+# cosmetic and locale-dependent (Emacs writes ``Do.`` on a
+# German system, ``Thu`` on English). The date already
+# encodes the weekday, so we drop the abbreviation before
+# parsing rather than relying on ``%a`` which is tied to
+# the running process locale.
+_DATETIME_RE = re.compile(
+    r"^\s*(\d{4}-\d{2}-\d{2})\s+\S+\s+(\d{2}:\d{2})\s*$"
+)
+
 
 def parse_datetime(s: str) -> datetime | None:
     """Parse an org datetime string."""
+    m = _DATETIME_RE.match(s)
+    if m is None:
+        return None
     try:
-        return datetime.strptime(s.strip(), ORG_DATETIME_FMT)
+        return datetime.strptime(
+            f"{m.group(1)} {m.group(2)}", "%Y-%m-%d %H:%M",
+        )
     except ValueError:
         return None
 

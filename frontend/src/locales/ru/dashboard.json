@@ -1,0 +1,15 @@
+{
+  "dashboard": "Панель",
+  "openTasks": "Открытые задачи",
+  "inboxItems": "Элементы во входящих",
+  "hoursThisMonth": "Часов в этом месяце",
+  "budgetsAtRisk": "Бюджеты под риском",
+  "unassignedEntries": "Непривязанные записи",
+  "inboxOlderThan7Days": "Входящие старше 7 дней",
+  "budgetStatus": "Состояние бюджета",
+  "timeInsights": "Аналитика времени",
+  "activity": "Активность",
+  "billableSplit": "Оплачиваемое / неоплачиваемое",
+  "byCustomer": "По клиентам",
+  "loadingInsights": "Загрузка аналитики..."
+}
