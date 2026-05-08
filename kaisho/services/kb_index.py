@@ -530,8 +530,6 @@ def import_frontmatter(
         every markdown file to import.
     :returns: ``(records, imported_count)``.
     """
-    from . import kb_frontmatter
-
     with index_guard(profile_dir):
         return _import_frontmatter_unlocked(
             profile_dir,
