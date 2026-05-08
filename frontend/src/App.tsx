@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { setLanguage } from "./i18n";
+import { LANGUAGES, setLanguage } from "./i18n";
 import {
   profileGet,
   profileSet,
@@ -754,9 +754,11 @@ function AppShell() {
                 "text-stone-700 hover:text-stone-900"
               }
             >
-              <option value="en">English</option>
-              <option value="de">Deutsch</option>
-              <option value="es">Español</option>
+              {LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.label}
+                </option>
+              ))}
             </select>
           </div>
 

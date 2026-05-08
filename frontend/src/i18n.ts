@@ -75,11 +75,28 @@ import notesRu from "./locales/ru/notes.json";
 
 const STORAGE_KEY = "kaisho_lang";
 
+/** Single source of truth for supported UI languages.
+ * Add a new entry here when introducing a locale -- both
+ * the menu-bar dropdown and the Settings > General
+ * dropdown render off this list. */
+export const LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "de", label: "Deutsch" },
+  { code: "es", label: "Español" },
+  { code: "ru", label: "Русский" },
+] as const;
+
+const SUPPORTED_CODES = LANGUAGES.map((l) => l.code);
+
 function detectLanguage(): string {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) return stored;
   const browser = navigator.language.split("-")[0];
-  return ["en", "de", "es", "ru"].includes(browser) ? browser : "en";
+  return SUPPORTED_CODES.includes(
+    browser as (typeof SUPPORTED_CODES)[number],
+  )
+    ? browser
+    : "en";
 }
 
 // -- Init ------------------------------------------------

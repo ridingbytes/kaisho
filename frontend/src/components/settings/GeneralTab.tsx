@@ -19,6 +19,7 @@ import {
 } from "../../hooks/useSettings";
 import { Toggle } from "../common/Toggle";
 import { inputCls, saveBtnCls } from "./styles";
+import { LANGUAGES } from "../../i18n";
 
 // -----------------------------------------------------------------
 // App title
@@ -729,13 +730,6 @@ function TraySection() {
 
 // Language
 // -----------------------------------------------------------------
-
-const LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "de", label: "Deutsch" },
-  { code: "es", label: "Español" },
-  { code: "ru", label: "Русский" },
-];
 
 function LanguageSection() {
   const { t } = useTranslation("settings");
