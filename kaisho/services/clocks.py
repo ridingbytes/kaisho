@@ -34,6 +34,7 @@ from pathlib import Path
 
 from ..time_utils import local_now_naive as local_now
 
+from ..org.clock import format_org_date
 from ..org.models import Clock, Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
@@ -136,8 +137,7 @@ def format_entry_title(
     """
     if dt is None:
         dt = local_now()
-    date_str = dt.strftime("%Y-%m-%d %a")
-    return f"[{date_str}] [{customer}]: {description}"
+    return f"[{format_org_date(dt)}] [{customer}]: {description}"
 
 
 def parse_duration(duration_str: str) -> int | None:

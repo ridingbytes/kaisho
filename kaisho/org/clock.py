@@ -3,8 +3,6 @@ from datetime import datetime
 
 from .models import Clock
 
-ORG_DATETIME_FMT = "%Y-%m-%d %a %H:%M"
-
 CLOCK_CLOSED_RE = re.compile(
     r"CLOCK:\s+\[(.+?)\]--\[(.+?)\]\s+=>\s+(\d+:\d+)"
 )
@@ -14,11 +12,26 @@ CLOCK_OPEN_RE = re.compile(r"CLOCK:\s+\[(.+?)\]\s*$")
 # cosmetic and locale-dependent (Emacs writes ``Do.`` on a
 # German system, ``Thu`` on English). The date already
 # encodes the weekday, so we drop the abbreviation before
-# parsing rather than relying on ``%a`` which is tied to
-# the running process locale.
+# parsing and emit a hardcoded English abbreviation when
+# writing -- this keeps org files locale-independent and
+# avoids ``strftime("%a")`` / ``strptime("%a")`` which are
+# both tied to the running process locale.
 _DATETIME_RE = re.compile(
     r"^\s*(\d{4}-\d{2}-\d{2})\s+\S+\s+(\d{2}:\d{2})\s*$"
 )
+_EN_WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+
+def format_org_date(dt: datetime) -> str:
+    """Format ``dt`` as ``YYYY-MM-DD Day`` with an English
+    weekday abbreviation, regardless of process locale."""
+    return f"{dt:%Y-%m-%d} {_EN_WEEKDAYS[dt.weekday()]}"
+
+
+def format_org_datetime(dt: datetime) -> str:
+    """Format ``dt`` as ``YYYY-MM-DD Day HH:MM`` with an
+    English weekday abbreviation, regardless of locale."""
+    return f"{format_org_date(dt)} {dt:%H:%M}"
 
 
 def parse_datetime(s: str) -> datetime | None:
@@ -59,10 +72,10 @@ def parse_clock_line(line: str) -> Clock | None:
 
 def format_clock(clock: Clock) -> str:
     """Format a Clock object as an org CLOCK line."""
-    start_str = clock.start.strftime(ORG_DATETIME_FMT)
+    start_str = format_org_datetime(clock.start)
     if clock.end is None:
         return f"CLOCK: [{start_str}]"
-    end_str = clock.end.strftime(ORG_DATETIME_FMT)
+    end_str = format_org_datetime(clock.end)
     duration = clock.duration or _calc_duration(clock)
     return f"CLOCK: [{start_str}]--[{end_str}] =>  {duration}"
 
