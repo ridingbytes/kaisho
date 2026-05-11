@@ -43,6 +43,7 @@ def get_current_user():
         "email": meta.get("email", ""),
         "bio": meta.get("bio", ""),
         "avatar_seed": meta.get("avatar_seed", ""),
+        "avatar_style": meta.get("avatar_style", ""),
         "company": meta.get("company", ""),
         "industry": meta.get("industry", ""),
         "research_targets": (
@@ -57,6 +58,7 @@ class UserProfileUpdate(BaseModel):
     email: str | None = None
     bio: str | None = None
     avatar_seed: str | None = None
+    avatar_style: str | None = None
     company: str | None = None
     industry: str | None = None
     research_targets: list[str] | None = None
@@ -72,7 +74,8 @@ def update_user_profile(body: UserProfileUpdate):
     cfg = get_config()
     data = load_user_yaml(cfg)
     for field in (
-        "name", "email", "bio", "avatar_seed",
+        "name", "email", "bio",
+        "avatar_seed", "avatar_style",
         "company", "industry",
     ):
         value = getattr(body, field)

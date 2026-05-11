@@ -36,7 +36,9 @@ def reorder_notes(note_ids: list[str] = Body(...)):
 @router.post("/", status_code=201)
 def add_note(body: NoteCreate):
     """Create a new note."""
-    return get_backend().notes.add_note(
+    backend = get_backend()
+    backend.customers.ensure_customer(body.customer or "")
+    return backend.notes.add_note(
         title=body.title,
         body=body.body,
         customer=body.customer or None,
@@ -80,8 +82,11 @@ def update_note(note_id: str, body: NoteUpdate):
         k: v
         for k, v in body.model_dump(exclude_unset=True).items()
     }
+    backend = get_backend()
+    if updates.get("customer"):
+        backend.customers.ensure_customer(updates["customer"])
     try:
-        return get_backend().notes.update_note(note_id, updates)
+        return backend.notes.update_note(note_id, updates)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -90,6 +95,7 @@ def update_note(note_id: str, body: NoteUpdate):
 def promote_note(note_id: str, body: PromoteRequest):
     """Promote a note to a kanban task."""
     backend = get_backend()
+    backend.customers.ensure_customer(body.customer or "")
     try:
         return backend.notes.promote_to_task(
             note_id=note_id,
@@ -118,6 +124,7 @@ def move_note(note_id: str, body: MoveRequest):
                 status_code=400,
                 detail="customer is required for destination=task",
             )
+        backend.customers.ensure_customer(body.customer)
         try:
             return backend.notes.promote_to_task(
                 note_id=note_id,

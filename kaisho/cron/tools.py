@@ -257,7 +257,9 @@ def _list_tasks(args: dict) -> dict:
 
 
 def _add_task(args: dict) -> dict:
-    task = _backend().tasks.add_task(
+    backend = _backend()
+    backend.customers.ensure_customer(args.get("customer", ""))
+    task = backend.tasks.add_task(
         customer=args.get("customer", ""),
         title=args["title"],
         status=args.get("status", "TODO"),
@@ -288,7 +290,9 @@ def _list_inbox(args: dict) -> dict:
 
 
 def _add_inbox_item(args: dict) -> dict:
-    item = _backend().inbox.add_item(
+    backend = _backend()
+    backend.customers.ensure_customer(args.get("customer") or "")
+    item = backend.inbox.add_item(
         text=args["text"],
         item_type=args.get("item_type"),
         customer=args.get("customer"),
@@ -305,7 +309,9 @@ def _list_clock_entries(args: dict) -> dict:
 
 
 def _book_time(args: dict) -> dict:
-    entry = _backend().clocks.quick_book(
+    backend = _backend()
+    backend.customers.ensure_customer(args.get("customer", ""))
+    entry = backend.clocks.quick_book(
         duration_str=args["duration"],
         customer=args.get("customer", ""),
         description=args.get("description", ""),
@@ -344,7 +350,9 @@ def _list_notes(args: dict) -> dict:
 
 
 def _add_note(args: dict) -> dict:
-    note = _backend().notes.add_note(
+    backend = _backend()
+    backend.customers.ensure_customer(args.get("customer") or "")
+    note = backend.notes.add_note(
         title=args["title"],
         body=args.get("body", ""),
         customer=args.get("customer"),

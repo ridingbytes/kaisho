@@ -43,7 +43,9 @@ def notes():
 def notes_add(title, body, customer, tags,
               task_id, as_json):
     """Add a new note."""
-    result = get_backend().notes.add_note(
+    backend = get_backend()
+    backend.customers.ensure_customer(customer or "")
+    result = backend.notes.add_note(
         title=" ".join(title),
         body=body,
         customer=customer,

@@ -4,7 +4,10 @@
   "description": "Default capabilities for the Kaisho desktop app.",
   "windows": ["main", "tray"],
   "remote": {
-    "urls": ["http://127.0.0.1:8765/*"]
+    "urls": [
+      "http://127.0.0.1:8765/*",
+      "http://127.0.0.1:8767/*"
+    ]
   },
   "permissions": [
     "core:default",

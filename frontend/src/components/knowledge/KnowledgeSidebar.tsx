@@ -358,14 +358,11 @@ export function KnowledgeSidebar({
                 const isSel =
                   selectedPath === path;
                 return (
-                  <button
+                  <div
                     key={path}
-                    onClick={() =>
-                      onSelectFile(path, "")
-                    }
                     className={[
                       "flex items-center gap-2",
-                      "w-full text-left px-4 py-1.5",
+                      "w-full px-4 py-1.5",
                       "text-xs hover:bg-surface-raised",
                       "transition-colors",
                       isSel
@@ -373,15 +370,30 @@ export function KnowledgeSidebar({
                         : "text-stone-800",
                     ].join(" ")}
                   >
-                    <Star
-                      size={10}
-                      className="text-amber-400 shrink-0"
-                      fill="currentColor"
-                    />
-                    <span className="truncate">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleStar(path);
+                      }}
+                      title="Unstar"
+                      className="shrink-0 p-0.5 rounded text-amber-400 hover:text-amber-500 transition-colors"
+                    >
+                      <Star
+                        size={10}
+                        fill="currentColor"
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onSelectFile(path, "")
+                      }
+                      className="flex-1 min-w-0 text-left truncate"
+                    >
                       {name}
-                    </span>
-                  </button>
+                    </button>
+                  </div>
                 );
               })
             )

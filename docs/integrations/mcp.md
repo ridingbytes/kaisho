@@ -332,8 +332,17 @@ not via HTTP to the running FastAPI server.
 **Transport**: stdio only (no network ports). The MCP client starts
 the server as a subprocess. Trust boundary = OS user.
 
-**Profile scoping**: the server operates on one profile, set at
-launch time. Two profiles = two separate server processes.
+**Profile scoping**: by default (no `--profile`), the MCP server
+follows the active profile of the running `kai serve` instance. It
+re-reads `<data_dir>/.active_profile` at the start of every tool
+dispatch and rebuilds its backend if the user has switched profiles
+in the UI, so tool writes always land in the profile you currently
+see. The audit log path is recomputed per dispatch too, so
+`<profile>/mcp-audit.log` follows the data.
+
+Pass `--profile NAME` to pin the server to one profile regardless of
+UI switches (useful when you run several MCP servers in parallel for
+different profiles, or want stable scoping for automation).
 
 **Tier filtering**: tools are filtered at startup based on
 `--allow`. A read-only server cannot call write tools even if the

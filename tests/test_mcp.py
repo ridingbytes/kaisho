@@ -498,3 +498,85 @@ def test_new_tools_registered_in_destructive_tier():
     dest_names = {t["name"] for t in destructive}
     assert "delete_clock_entry" in dest_names
     assert "delete_task" in dest_names
+
+
+# -- Profile follow on dispatch ------------------------
+
+
+@pytest.fixture
+def two_profiles(tmp_path, monkeypatch):
+    """Two profiles under a shared data dir with the
+    first one selected as active."""
+    from kaisho.config import (
+        reset_config, save_active_profile,
+    )
+    from kaisho.backends import reset_backend
+
+    (tmp_path / "profiles" / "alpha").mkdir(parents=True)
+    (tmp_path / "profiles" / "beta").mkdir(parents=True)
+    monkeypatch.setenv("KAISHO_HOME", str(tmp_path))
+    monkeypatch.setenv("PROFILE", "alpha")
+    save_active_profile(tmp_path, "alpha")
+    reset_config()
+    reset_backend()
+    yield tmp_path
+    reset_backend()
+    reset_config()
+
+
+def test_dispatch_follows_active_profile_switch(
+    two_profiles, monkeypatch,
+):
+    """When MCP was launched without an explicit profile
+    pin, flipping ``.active_profile`` between dispatches
+    must redirect tool writes to the new profile."""
+    from kaisho.config import (
+        save_active_profile, get_config,
+    )
+    from kaisho.mcp import server as mcp_server
+
+    monkeypatch.setattr(mcp_server, "_profile_pinned", False)
+    audit_file = (
+        two_profiles / "profiles" / "alpha"
+        / "mcp-audit.log"
+    )
+
+    mcp_server._dispatch_call(
+        "add_task",
+        {"customer": "Acme", "title": "In alpha"},
+        audit_file,
+    )
+    assert get_config().PROFILE == "alpha"
+
+    save_active_profile(two_profiles, "beta")
+    mcp_server._dispatch_call(
+        "add_task",
+        {"customer": "Acme", "title": "In beta"},
+        audit_file,
+    )
+    assert get_config().PROFILE == "beta"
+
+
+def test_dispatch_ignores_active_profile_when_pinned(
+    two_profiles, monkeypatch,
+):
+    """A pinned MCP server must not drift to whatever
+    profile the UI happens to be on."""
+    from kaisho.config import (
+        save_active_profile, get_config,
+    )
+    from kaisho.mcp import server as mcp_server
+
+    monkeypatch.setattr(mcp_server, "_profile_pinned", True)
+    audit_file = (
+        two_profiles / "profiles" / "alpha"
+        / "mcp-audit.log"
+    )
+
+    save_active_profile(two_profiles, "beta")
+    mcp_server._dispatch_call(
+        "add_task",
+        {"customer": "Acme", "title": "Stay on alpha"},
+        audit_file,
+    )
+    assert get_config().PROFILE == "alpha"

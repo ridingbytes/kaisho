@@ -147,6 +147,7 @@ def _user_template() -> dict:
     from .services.placeholders import USER_FIELDS
     template: dict = {
         "avatar_seed": "",
+        "avatar_style": "",
         "created": "",
     }
     for field in USER_FIELDS:

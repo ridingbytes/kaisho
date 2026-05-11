@@ -803,6 +803,7 @@ function AppShell() {
                 </span>
                 <PixelAvatar
                   seed={currentUser.avatar_seed || "kaisho"}
+                  style={currentUser.avatar_style}
                   size={22}
                 />
               </button>

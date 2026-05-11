@@ -32,7 +32,9 @@ def clock():
 @click.option("--json", "as_json", is_flag=True)
 def clock_book(duration, customer_name, description, as_json):
     """Book time retroactively (e.g. 2h, 30min)."""
-    result = get_backend().clocks.quick_book(
+    backend = get_backend()
+    backend.customers.ensure_customer(customer_name or "")
+    result = backend.clocks.quick_book(
         duration_str=duration,
         customer=customer_name,
         description=" ".join(description),

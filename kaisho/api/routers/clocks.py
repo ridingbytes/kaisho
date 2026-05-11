@@ -186,7 +186,9 @@ def quick_book(body: QuickBookRequest):
             if body.date
             else None
         )
-        entry = get_backend().clocks.quick_book(
+        backend = get_backend()
+        backend.customers.ensure_customer(body.customer or "")
+        entry = backend.clocks.quick_book(
             duration_str=body.duration,
             customer=body.customer,
             description=body.description,
@@ -206,7 +208,9 @@ def start_timer(body: TimerStart):
     """Start a new running timer."""
     from ...services import cloud_sync as sync_svc
     try:
-        entry = get_backend().clocks.start(
+        backend = get_backend()
+        backend.customers.ensure_customer(body.customer or "")
+        entry = backend.clocks.start(
             customer=body.customer,
             description=body.description,
             task_id=body.task_id,
@@ -254,7 +258,10 @@ def update_entry(
             status_code=400,
             detail="sync_id or start required",
         )
-    result = get_backend().clocks.update_entry(
+    backend = get_backend()
+    if body.customer:
+        backend.customers.ensure_customer(body.customer)
+    result = backend.clocks.update_entry(
         start_iso=start,
         sync_id=sync_id,
         customer=body.customer,

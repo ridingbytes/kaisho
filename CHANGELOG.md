@@ -1,5 +1,102 @@
 # Changelog
 
+## 1.5.1
+
+Patch release focused on data-integrity bugs around
+multi-profile usage, MCP, and external link handling.
+
+### MCP server follows the active profile
+
+The MCP server is a long-lived subprocess spawned by Claude
+Desktop / Claude Code, and previously resolved the profile
+once at boot. Switching profiles in the UI left MCP writing
+to the old profile -- both the data and the audit log.
+
+- ``kai mcp-server`` (no ``--profile``) now re-reads
+  ``.active_profile`` at the start of every tool dispatch
+  and rebuilds the backend on a switch. The env / config /
+  backend flip is held under a lock so two concurrent
+  dispatches can never see a half-flipped state. The audit
+  log path is recomputed per dispatch as well, so
+  ``<profile>/mcp-audit.log`` follows the data.
+- ``kai mcp-server --profile NAME`` keeps the previous pin
+  behavior for setups that intentionally want stable
+  scoping (e.g. one MCP server per profile).
+- See ``docs/integrations/mcp.md`` for the updated guidance
+  including how to wire the bundled binary into Claude
+  Desktop / Claude Code without the Python dev install.
+
+### Customer auto-creation across all write paths
+
+Booking time, adding a task / note / inbox item, or
+pulling those from the cloud with a brand-new customer
+name silently left the customer unregistered. Drilldowns
+and dropdowns wouldn't find it.
+
+- New idempotent ``CustomerBackend.ensure_customer(name)``
+  on the ABC (org / markdown / json / sql all inherit it).
+  Auto-selects the first configured ``customer_types``
+  entry as the default type so the new record shows up
+  under a meaningful group, and tolerates a concurrent
+  create race by re-fetching on ``ValueError``.
+- Wired through MCP / cron tools, the API routers
+  (clocks book/start/update, kanban add/update, notes
+  add/update/promote/move, inbox capture/update/promote/
+  move), the CLI add commands, and the cloud-sync pull
+  paths for inbox, tasks, and notes.
+- ``cloud_sync.autocreate_customer`` (previously a
+  bespoke clock-pull helper) now delegates to the shared
+  ABC method, so all auto-create paths agree on what the
+  default record looks like.
+
+### Stable inbox IDs (org backend)
+
+The org inbox backend identified items by 1-based file
+position. Any concurrent insert (cron jobs, cloud-sync
+pulls, MCP ``add_inbox_item``) shifted positions, so the
+user-visible "delete this entry" silently hit the wrong
+heading -- and ``on_local_delete_inbox`` recorded the
+wrong tombstone, so the cloud kept pushing the targeted
+item back.
+
+- Inbox items now expose ``id = sync_id``; ``remove_item``,
+  ``update_item``, ``promote_to_task``, ``move_to_note``,
+  ``move_to_kb``, and ``reorder_items`` all look up by
+  SYNC_ID instead of positional index. Markdown / JSON /
+  SQL backends were already using stable ids and are
+  unaffected.
+- The starred-only filter view now exposes a clickable
+  star icon per row so you can unstar from inside the
+  filter (previously the only way was to disable the
+  filter first).
+
+### Avatars: multi-style picker, fully offline
+
+The user avatar gained a small style picker hidden behind
+the avatar itself (click to open). The legacy 5x5 pixel
+sprite is now called ``invaders`` and remains the default;
+three DiceBear styles (``pixel-art``, ``bottts``,
+``adventurer``) join it.
+
+- All four styles render fully client-side. No network
+  calls, no DiceBear public API, no leaking the seed (your
+  name) to a third party. DiceBear styles are lazy-imported
+  so the main bundle only carries the renderer you use.
+- ``avatar_style`` rides through ``user.yaml``, the
+  ``/settings/user`` API, and the cloud reference snapshot.
+  The mobile PWA picks up the new field and renders the
+  matching avatar (separate kaisho-cloud release covers
+  the API and PWA changes).
+
+### Other fixes
+
+- Tauri desktop: external links (mobile-app button,
+  pricing, github, etc.) failed silently in dev mode
+  because the dev webview origin
+  (``http://127.0.0.1:8767``) was missing from the
+  capability remote allowlist. ``openExternal`` now also
+  logs Tauri shell errors instead of swallowing them.
+
 ## 1.5.0
 
 ### Knowledge base: central metadata index

@@ -58,15 +58,7 @@ def create_task(body: TaskCreate):
     Auto-creates the customer if it doesn't exist.
     """
     backend = get_backend()
-    if body.customer:
-        existing = {
-            c["name"].lower()
-            for c in backend.customers.list_customers()
-        }
-        if body.customer.lower() not in existing:
-            backend.customers.add_customer(
-                name=body.customer,
-            )
+    backend.customers.ensure_customer(body.customer or "")
     return backend.tasks.add_task(
         customer=body.customer,
         title=body.title,
@@ -81,17 +73,20 @@ def create_task(body: TaskCreate):
 def update_task(task_id: str, body: TaskUpdate):
     """Update task status, title, customer, or body."""
     try:
-        backend = get_backend().tasks
+        backend = get_backend()
+        if body.customer:
+            backend.customers.ensure_customer(body.customer)
+        tasks = backend.tasks
         result = None
         if body.status is not None:
-            result = backend.move_task(task_id, body.status)
+            result = tasks.move_task(task_id, body.status)
         if (
             body.title is not None
             or body.customer is not None
             or body.body is not None
             or body.github_url is not None
         ):
-            result = backend.update_task(
+            result = tasks.update_task(
                 task_id,
                 title=body.title,
                 customer=body.customer,

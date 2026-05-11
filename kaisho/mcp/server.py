@@ -7,6 +7,7 @@ executor and advisor, so tool behavior is identical.
 import json
 import os
 import re
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,23 @@ from .tiers import filter_tools, parse_tiers
 
 # Valid Python identifier pattern for exec() safety
 _IDENT_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+# Module-level mutable state for the follow-active-profile
+# behavior. ``_profile_pinned`` is True when the server was
+# launched with an explicit ``--profile`` pin; in that case
+# the MCP process stays on that profile regardless of UI
+# switches. When False, every dispatch re-reads
+# ``.active_profile`` and follows the running ``kai serve``
+# instance so tools land in the right profile after a
+# switch.
+#
+# ``_profile_lock`` guards the env / config / backend flip
+# triple so two concurrent dispatches can't read a torn
+# mid-flip state. FastMCP stdio dispatches are typically
+# serial, but the lock makes the contract explicit and
+# defends against any future async dispatcher.
+_profile_pinned = False
+_profile_lock = threading.Lock()
 
 # Tier annotations for MCP client hints
 _TIER_ANNOTATIONS = {
@@ -131,14 +149,48 @@ def _dispatch_call(
     by the run's caps; resetting at the request boundary
     just stops the budget from monotonically depleting
     over the lifetime of the connection.
+
+    When the server was not pinned to a specific profile at
+    launch, every dispatch re-reads ``.active_profile`` and
+    rebuilds the config + backend if the user has switched
+    profiles in the running ``kai serve`` instance. The
+    audit log is re-pointed at the new profile too, so
+    traceability follows the data.
     """
     from ..cron import guards
+    audit_file = _follow_active_profile(audit_file)
     guards.reset_session()
     result = execute_tool(name, args)
     log_call(audit_file, name, args, result)
     if "error" in result:
         raise RuntimeError(result["error"])
     return json.dumps(result, default=str)
+
+
+def _follow_active_profile(audit_file: Path) -> Path:
+    """Re-sync the MCP process to the currently active
+    profile when launched without a ``--profile`` pin.
+
+    Returns the audit-log path for the (possibly switched)
+    active profile. When pinned, returns ``audit_file``
+    unchanged. The env / config / backend flip is held
+    under ``_profile_lock`` so concurrent dispatches can't
+    see a half-flipped state.
+    """
+    if _profile_pinned:
+        return audit_file
+    from ..backends import reset_backend
+    from ..config import init_data_dir, load_active_profile
+    with _profile_lock:
+        cfg = get_config()
+        active = load_active_profile(cfg.DATA_DIR)
+        if not active or active == cfg.PROFILE:
+            return audit_file
+        os.environ["PROFILE"] = active
+        cfg = reset_config()
+        init_data_dir(cfg)
+        reset_backend()
+        return Path(str(cfg.PROFILE_DIR)) / "mcp-audit.log"
 
 
 def create_server(
@@ -152,6 +204,8 @@ def create_server(
     :param allow: Comma-separated tier string.
     :returns: Configured FastMCP instance.
     """
+    global _profile_pinned
+    _profile_pinned = bool(profile)
     if profile:
         os.environ["PROFILE"] = profile
     reset_config()

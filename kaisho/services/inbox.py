@@ -93,18 +93,21 @@ def _extract_customer_from_text(text: str) -> str | None:
     return m.group(1) if m else None
 
 
-def _heading_to_item(heading: Heading, item_id: str) -> dict:
+def _heading_to_item(heading: Heading) -> dict:
     """Convert inbox heading to item dict.
 
     Ensures a SYNC_ID and UPDATED_AT property exist on the
-    heading (backfills on first read).
+    heading (backfills on first read). The dict's ``id``
+    is the heading's stable SYNC_ID so mutating callers
+    (delete, update, promote, ...) are immune to position
+    shifts from concurrent cron writes or cloud-sync pulls.
     """
     sync_id, updated_at = ensure_sync_identity(heading)
     props = heading.properties
     item_type = _extract_type(heading)
     customer = _extract_customer(heading)
     return {
-        "id": item_id,
+        "id": sync_id,
         "sync_id": sync_id,
         "type": item_type,
         "customer": customer,
@@ -118,6 +121,20 @@ def _heading_to_item(heading: Heading, item_id: str) -> dict:
     }
 
 
+def _find_by_sync_id(
+    org_file: OrgFile, sync_id: str,
+) -> Heading | None:
+    """Return the heading whose SYNC_ID matches, or
+    ``None`` if no heading matches.
+    """
+    if not sync_id:
+        return None
+    for heading in org_file.headings:
+        if heading.properties.get("SYNC_ID") == sync_id:
+            return heading
+    return None
+
+
 def list_items(inbox_file: Path) -> list[dict]:
     """List all inbox items.
 
@@ -127,9 +144,7 @@ def list_items(inbox_file: Path) -> list[dict]:
     if not inbox_file.exists():
         return []
     org_file = parse_org_file(inbox_file, INBOX_KEYWORDS)
-    items = []
-    for idx, heading in enumerate(org_file.headings, start=1):
-        items.append(_heading_to_item(heading, str(idx)))
+    items = [_heading_to_item(h) for h in org_file.headings]
     # Persist any backfilled sync identities
     if any(h.dirty for h in org_file.headings):
         write_org_file(inbox_file, org_file)
@@ -139,28 +154,34 @@ def list_items(inbox_file: Path) -> list[dict]:
 def reorder_items(
     inbox_file: Path, item_ids: list[str],
 ) -> list[dict]:
-    """Reorder inbox items to match the given ID list."""
+    """Reorder inbox items to match the given list of
+    sync_ids. Unknown ids in ``item_ids`` are skipped;
+    headings whose sync_id does not appear in
+    ``item_ids`` keep their relative order and are
+    appended at the end.
+
+    Example: current headings have sync_ids [A, B, C],
+    ``item_ids=[C, A]`` produces [C, A, B].
+    """
     if not inbox_file.exists():
         return []
     org_file = parse_org_file(
         inbox_file, INBOX_KEYWORDS,
     )
-    old = list(org_file.headings)
-    by_id = {str(i): h for i, h in enumerate(old, 1)}
+    by_id = {
+        h.properties.get("SYNC_ID"): h
+        for h in org_file.headings
+    }
     ordered = [
-        by_id[iid] for iid in item_ids
-        if iid in by_id
+        by_id[iid] for iid in item_ids if iid in by_id
     ]
     seen = set(item_ids)
-    for i, h in enumerate(old, 1):
-        if str(i) not in seen:
+    for h in org_file.headings:
+        if h.properties.get("SYNC_ID") not in seen:
             ordered.append(h)
     org_file.headings = ordered
     write_org_file(inbox_file, org_file)
-    return [
-        _heading_to_item(h, str(i))
-        for i, h in enumerate(ordered, start=1)
-    ]
+    return [_heading_to_item(h) for h in ordered]
 
 
 def add_item(
@@ -214,8 +235,7 @@ def add_item(
     org_file.headings.append(new_heading)
     write_org_file(inbox_file, org_file)
 
-    item_id = str(len(org_file.headings))
-    return _heading_to_item(new_heading, item_id)
+    return _heading_to_item(new_heading)
 
 
 def update_item(
@@ -227,10 +247,9 @@ def update_item(
     if not inbox_file.exists():
         raise ValueError("Item not found")
     org_file = parse_org_file(inbox_file, INBOX_KEYWORDS)
-    idx = int(item_id) - 1
-    if idx < 0 or idx >= len(org_file.headings):
+    heading = _find_by_sync_id(org_file, item_id)
+    if heading is None:
         raise ValueError("Item not found")
-    heading = org_file.headings[idx]
     heading.dirty = True
     if "title" in updates:
         heading.title = updates["title"]
@@ -262,7 +281,7 @@ def update_item(
     heading.properties["UPDATED_AT"] = current_timestamp()
     ensure_sync_identity(heading)
     write_org_file(inbox_file, org_file)
-    return _heading_to_item(heading, item_id)
+    return _heading_to_item(heading)
 
 
 def promote_to_task(
@@ -276,12 +295,7 @@ def promote_to_task(
     if not inbox_file.exists():
         raise ValueError("Inbox file not found")
 
-    org_file = parse_org_file(inbox_file, INBOX_KEYWORDS)
-    idx = int(item_id) - 1
-    if idx < 0 or idx >= len(org_file.headings):
-        raise ValueError(f"Item not found: {item_id}")
-
-    heading = org_file.headings[idx]
+    org_file, heading = _load_heading(inbox_file, item_id)
     title = heading.title.strip()
 
     # Remove [CUSTOMER] prefix if present, will be re-added by add_task
@@ -299,7 +313,7 @@ def promote_to_task(
     )
 
     # Remove item from inbox
-    org_file.headings.pop(idx)
+    org_file.headings.remove(heading)
     write_org_file(inbox_file, org_file)
 
     return task
@@ -307,15 +321,20 @@ def promote_to_task(
 
 def _load_heading(
     inbox_file: Path, item_id: str
-) -> tuple[OrgFile, int, Heading]:
-    """Parse inbox file and return (org_file, idx, heading)."""
+) -> tuple[OrgFile, Heading]:
+    """Parse inbox file and return ``(org_file, heading)``
+    for the heading whose SYNC_ID matches ``item_id``.
+    Raises ``ValueError`` if not found. Callers that want
+    to drop the heading use ``org_file.headings.remove(
+    heading)`` rather than positional indexing.
+    """
     if not inbox_file.exists():
         raise ValueError("Inbox file not found")
     org_file = parse_org_file(inbox_file, INBOX_KEYWORDS)
-    idx = int(item_id) - 1
-    if idx < 0 or idx >= len(org_file.headings):
+    heading = _find_by_sync_id(org_file, item_id)
+    if heading is None:
         raise ValueError(f"Item not found: {item_id}")
-    return org_file, idx, org_file.headings[idx]
+    return org_file, heading
 
 
 def move_to_note(
@@ -327,7 +346,7 @@ def move_to_note(
 
     Returns the created note dict.
     """
-    org_file, idx, heading = _load_heading(inbox_file, item_id)
+    org_file, heading = _load_heading(inbox_file, item_id)
 
     title = re.sub(r"^\[[^\]]+\]\s*", "", heading.title.strip())
     customer = _extract_customer(heading)
@@ -340,7 +359,7 @@ def move_to_note(
         customer=customer,
     )
 
-    org_file.headings.pop(idx)
+    org_file.headings.remove(heading)
     write_org_file(inbox_file, org_file)
 
     return note
@@ -360,7 +379,7 @@ def move_to_kb(
     if not filename.endswith(".md"):
         raise ValueError("filename must end with .md")
 
-    org_file, idx, heading = _load_heading(inbox_file, item_id)
+    org_file, heading = _load_heading(inbox_file, item_id)
 
     props = heading.properties
     title = re.sub(r"^\[[^\]]+\]\s*", "", heading.title.strip())
@@ -397,7 +416,7 @@ def move_to_kb(
     dest = kb_dir / filename
     dest.write_text(content, encoding="utf-8")
 
-    org_file.headings.pop(idx)
+    org_file.headings.remove(heading)
     write_org_file(inbox_file, org_file)
 
     return {"path": str(dest)}

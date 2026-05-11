@@ -38,7 +38,9 @@ def reorder_items(
 @router.post("/capture", status_code=201)
 def capture(body: CaptureRequest):
     """Capture a new item into the inbox."""
-    return get_backend().inbox.add_item(
+    backend = get_backend()
+    backend.customers.ensure_customer(body.customer or "")
+    return backend.inbox.add_item(
         text=body.text,
         item_type=body.type,
         customer=body.customer,
@@ -90,8 +92,11 @@ def update_item(item_id: str, body: ItemUpdate):
         filtered["channel"] = channel_val
     if direction_val is not None:
         filtered["direction"] = direction_val
+    backend = get_backend()
+    if filtered.get("customer"):
+        backend.customers.ensure_customer(filtered["customer"])
     try:
-        return get_backend().inbox.update_item(item_id, filtered)
+        return backend.inbox.update_item(item_id, filtered)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -100,6 +105,7 @@ def update_item(item_id: str, body: ItemUpdate):
 def promote(item_id: str, body: PromoteRequest):
     """Promote an inbox item to a task."""
     backend = get_backend()
+    backend.customers.ensure_customer(body.customer or "")
     try:
         return backend.inbox.promote_to_task(
             item_id=item_id,
@@ -125,6 +131,7 @@ def _move_to_todo(item_id: str, customer: str | None):
             "destination=todo",
         )
     backend = get_backend()
+    backend.customers.ensure_customer(customer)
     try:
         return backend.inbox.promote_to_task(
             item_id=item_id,

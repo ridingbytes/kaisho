@@ -63,10 +63,10 @@ class OrgInboxBackend(InboxBackend):
         if not self._inbox_file.exists():
             return False
         org_file = parse_org_file(self._inbox_file, INBOX_KEYWORDS)
-        idx = int(item_id) - 1
-        if idx < 0 or idx >= len(org_file.headings):
+        heading = inbox._find_by_sync_id(org_file, item_id)
+        if heading is None:
             return False
-        org_file.headings.pop(idx)
+        org_file.headings.remove(heading)
         write_org_file(self._inbox_file, org_file)
         return True
 
@@ -85,11 +85,9 @@ class OrgInboxBackend(InboxBackend):
             raise ValueError("Inbox file not found")
 
         org_file = parse_org_file(self._inbox_file, INBOX_KEYWORDS)
-        idx = int(item_id) - 1
-        if idx < 0 or idx >= len(org_file.headings):
+        heading = inbox._find_by_sync_id(org_file, item_id)
+        if heading is None:
             raise ValueError(f"Item not found: {item_id}")
-
-        heading = org_file.headings[idx]
         title = heading.title.strip()
         clean_title = _CUSTOMER_PREFIX_RE.sub("", title)
 
@@ -102,7 +100,7 @@ class OrgInboxBackend(InboxBackend):
             body=body,
         )
 
-        org_file.headings.pop(idx)
+        org_file.headings.remove(heading)
         write_org_file(self._inbox_file, org_file)
 
         return task

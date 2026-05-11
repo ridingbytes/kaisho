@@ -1,10 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   X, Check, Copy, Pencil, RotateCcw, Trash2,
 } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
-import { PixelAvatar } from "../common/PixelAvatar";
+import {
+  PixelAvatar,
+  AVATAR_STYLES,
+  DEFAULT_AVATAR_STYLE,
+  AvatarStyle,
+} from "../common/PixelAvatar";
 import {
   useCurrentUser,
   useUpdateUserProfile,
@@ -75,6 +80,99 @@ function AppTitleSection() {
 // User profile
 // -----------------------------------------------------------------
 
+/** Avatar with a click-to-open style picker.
+ *
+ * Keeps the form chrome quiet: by default the user only
+ * sees the avatar itself. Clicking opens a small floating
+ * row of style thumbnails anchored below; clicking
+ * elsewhere or hitting Escape closes it. Selecting a style
+ * persists immediately and closes the popover. */
+function AvatarStylePicker({
+  seed, currentStyle, onSelect,
+}: {
+  seed: string;
+  currentStyle: AvatarStyle;
+  onSelect: (style: AvatarStyle) => void;
+}) {
+  const { t } = useTranslation("settings");
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointer(e: MouseEvent) {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        title={t("avatarStyle")}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="rounded-lg focus:outline-none focus:ring-2 focus:ring-cta"
+      >
+        <PixelAvatar
+          seed={seed}
+          style={currentStyle}
+          size={64}
+        />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute left-0 top-full mt-2 z-20 flex flex-row flex-nowrap gap-1 p-2 rounded-lg bg-surface-overlay border border-border shadow-lg w-max"
+        >
+          {AVATAR_STYLES.map((style) => {
+            const selected = style === currentStyle;
+            return (
+              <button
+                key={style}
+                type="button"
+                role="menuitemradio"
+                aria-checked={selected}
+                onClick={() => {
+                  onSelect(style);
+                  setOpen(false);
+                }}
+                title={style}
+                className={[
+                  "p-0.5 rounded border-2 transition-colors",
+                  selected
+                    ? "border-cta"
+                    : "border-transparent hover:border-border",
+                ].join(" ")}
+              >
+                <PixelAvatar
+                  seed={seed}
+                  style={style}
+                  size={36}
+                />
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 export function UserProfileSection() {
   const { t } = useTranslation("settings");
   const { t: tc } = useTranslation("common");
@@ -84,6 +182,9 @@ export function UserProfileSection() {
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
   const [avatarSeed, setAvatarSeed] = useState("");
+  const [avatarStyle, setAvatarStyle] = useState<AvatarStyle>(
+    DEFAULT_AVATAR_STYLE,
+  );
   const [company, setCompany] = useState("");
   const [industry, setIndustry] = useState("");
   const [researchTargets, setResearchTargets] = useState(
@@ -98,6 +199,12 @@ export function UserProfileSection() {
       setBio(userData.bio ?? "");
       setAvatarSeed(
         userData.avatar_seed || userData.name || "kaisho"
+      );
+      const style = (userData.avatar_style || "") as AvatarStyle;
+      setAvatarStyle(
+        AVATAR_STYLES.includes(style)
+          ? style
+          : DEFAULT_AVATAR_STYLE,
       );
       setCompany(userData.company ?? "");
       setIndustry(userData.industry ?? "");
@@ -115,6 +222,11 @@ export function UserProfileSection() {
     update.mutate({ avatar_seed: seed });
   }
 
+  function selectStyle(style: AvatarStyle) {
+    setAvatarStyle(style);
+    update.mutate({ avatar_style: style });
+  }
+
   function handleSave() {
     const targets = researchTargets
       .split(/\r?\n/)
@@ -122,7 +234,9 @@ export function UserProfileSection() {
       .filter(Boolean);
     update.mutate(
       {
-        name, email, bio, avatar_seed: avatarSeed,
+        name, email, bio,
+        avatar_seed: avatarSeed,
+        avatar_style: avatarStyle,
         company, industry,
         research_targets: targets,
       },
@@ -141,11 +255,14 @@ export function UserProfileSection() {
         {t("userProfile")}
       </h2>
       <div className="bg-surface-card rounded-xl border border-border p-4 flex flex-col gap-4">
-        {/* Avatar + username */}
+        {/* Avatar + username. Clicking the avatar opens a
+            compact style picker -- intentionally hidden by
+            default to keep the form uncluttered. */}
         <div className="flex items-center gap-3">
-          <PixelAvatar
+          <AvatarStylePicker
             seed={avatarSeed}
-            size={64}
+            currentStyle={avatarStyle}
+            onSelect={selectStyle}
           />
           <div className="flex flex-col gap-1">
             <span className="text-sm text-stone-600 font-mono">

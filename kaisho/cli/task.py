@@ -46,7 +46,9 @@ def task():
 def task_add(customer_name, title, tags, status,
              body, github_url, as_json):
     """Add a new task."""
-    result = get_backend().tasks.add_task(
+    backend = get_backend()
+    backend.customers.ensure_customer(customer_name or "")
+    result = backend.tasks.add_task(
         customer=customer_name,
         title=" ".join(title),
         status=status,

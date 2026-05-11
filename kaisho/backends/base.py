@@ -422,6 +422,62 @@ class CustomerBackend(ABC):
     ) -> dict:
         """Create a new customer. Raises ValueError if name exists."""
 
+    def ensure_customer(self, name: str) -> dict | None:
+        """Idempotent: return existing customer or create a
+        minimal active one if the name is unknown.
+
+        Returns ``None`` when ``name`` is empty so callers
+        can pass through optional customer fields without
+        guarding. Concrete backends override only when they
+        need different create defaults; the default impl
+        delegates to ``get_customer`` and ``add_customer``
+        and works for every backend.
+
+        Picks ``customer_type`` from the first configured
+        ``customer_types`` entry in settings.yaml when
+        present, so auto-created customers show up under a
+        meaningful group (typically ``LEAD``). Tolerates a
+        concurrent ``add_customer`` race by re-fetching on
+        ``ValueError``.
+        """
+        if not name:
+            return None
+        existing = self.get_customer(name)
+        if existing:
+            return existing
+        try:
+            return self.add_customer(
+                name=name,
+                status="active",
+                customer_type=self._default_customer_type(),
+            )
+        except ValueError:
+            return self.get_customer(name)
+
+    def _default_customer_type(self) -> str:
+        """Return the first ``customer_types`` entry from
+        settings.yaml, or ``""`` when none is configured.
+        Used as the default for auto-created customers so
+        they appear under a meaningful group instead of an
+        unclassified bucket.
+        """
+        import yaml
+        from ..config import get_config
+
+        settings_file = get_config().SETTINGS_FILE
+        if not settings_file.exists():
+            return ""
+        try:
+            data = yaml.safe_load(
+                settings_file.read_text(encoding="utf-8"),
+            ) or {}
+        except (OSError, yaml.YAMLError):
+            return ""
+        types = data.get("customer_types") or []
+        if types and isinstance(types[0], str):
+            return types[0]
+        return ""
+
     @abstractmethod
     def update_customer(
         self, name: str, updates: dict

@@ -20,8 +20,16 @@ export async function openExternal(
       );
       await open(url);
       return;
-    } catch {
-      // fall through to window.open
+    } catch (err) {
+      // Log so silent permission failures surface in
+      // devtools. ``plugins.shell.open`` must be set in
+      // ``tauri.conf.json`` (regex or ``true``) -- without
+      // it Tauri 2 rejects every URL.
+      console.warn(
+        "[openExternal] tauri shell.open failed,"
+        + " falling back to window.open:",
+        err,
+      );
     }
   }
   window.open(url, "_blank", "noreferrer");

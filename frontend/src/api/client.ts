@@ -264,6 +264,7 @@ export function fetchCurrentUser(): Promise<{
   email: string;
   bio: string;
   avatar_seed: string;
+  avatar_style: string;
   company: string;
   industry: string;
   research_targets: string[];
@@ -345,6 +346,7 @@ export function updateUserProfile(updates: {
   email?: string;
   bio?: string;
   avatar_seed?: string;
+  avatar_style?: string;
   company?: string;
   industry?: string;
   research_targets?: string[];

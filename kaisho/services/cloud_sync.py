@@ -1198,7 +1198,8 @@ def autocreate_customer(
     backend, names: set[str],
 ) -> None:
     """Create local customer records for names that don't
-    exist yet.
+    exist yet, by delegating to the backend's idempotent
+    ``ensure_customer`` helper.
 
     Mobile users can type free-text customer names when
     starting a timer. When those entries sync to the
@@ -1208,21 +1209,17 @@ def autocreate_customer(
     :param backend: Kaisho backend instance.
     :param names: Set of customer names to check.
     """
-    if not names:
+    customers = getattr(backend, "customers", None)
+    if customers is None or not hasattr(
+        customers, "ensure_customer",
+    ):
         return
-    try:
-        existing = {
-            c.get("name")
-            for c in backend.customers.list_customers(
-                include_inactive=True,
-            )
-        }
-    except (AttributeError, TypeError):
-        return
-    for name in names - existing:
+    for name in names:
+        if not name:
+            continue
         try:
-            backend.customers.add_customer(name=name)
-        except (ValueError, Exception) as exc:  # noqa: BLE001
+            customers.ensure_customer(name)
+        except ValueError as exc:
             log.info(
                 "Skipping autocreate for %r: %s",
                 name, exc,
@@ -1489,6 +1486,9 @@ def pull_and_apply_inbox(
                     )
                     total_up += 1
             else:
+                backend.customers.ensure_customer(
+                    incoming.get("customer") or "",
+                )
                 backend.inbox.add_item(
                     text=incoming["title"],
                     item_type=incoming["type"],
@@ -1656,6 +1656,9 @@ def pull_and_apply_tasks(
                         )
                     total_up += 1
             else:
+                backend.customers.ensure_customer(
+                    incoming.get("customer") or "",
+                )
                 backend.tasks.add_task(
                     customer=incoming["customer"],
                     title=incoming["title"],
@@ -1811,6 +1814,9 @@ def pull_and_apply_notes(
                     )
                     total_up += 1
             else:
+                backend.customers.ensure_customer(
+                    incoming.get("customer") or "",
+                )
                 backend.notes.add_note(
                     title=incoming["title"],
                     body=incoming["body"],
@@ -1957,6 +1963,7 @@ def _build_snapshot_config(
         "avatar_seed": user.get(
             "avatar_seed", "kaisho",
         ),
+        "avatar_style": user.get("avatar_style", ""),
         "user_name": user.get("name", ""),
     }
 

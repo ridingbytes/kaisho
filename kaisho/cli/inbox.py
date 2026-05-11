@@ -58,7 +58,9 @@ def inbox_add(text, item_type, customer, body,
     joined = " ".join(text)
     if joined == "-":
         joined = sys.stdin.read().strip()
-    result = get_backend().inbox.add_item(
+    backend = get_backend()
+    backend.customers.ensure_customer(customer or "")
+    result = backend.inbox.add_item(
         text=joined,
         item_type=item_type,
         customer=customer,

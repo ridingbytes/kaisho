@@ -6,6 +6,7 @@ from pathlib import Path
 from kaisho.services.inbox import (
     add_item,
     list_items,
+    promote_to_task,
     update_item,
 )
 from kaisho.services.cloud_sync import (
@@ -150,3 +151,165 @@ class TestInboxWireFormat:
         assert wire["customer"] == ""
         assert wire["title"] == ""
         assert wire["direction"] == "in"
+
+
+class TestStableItemId:
+    """The dict ``id`` must be the sync_id, not a position
+    index. Position-based ids race with concurrent writes
+    (cron, cloud-sync pulls, MCP) and silently delete or
+    update the wrong heading."""
+
+    def test_id_equals_sync_id(self):
+        p = _tmp_inbox()
+        item = add_item(p, "Pick me")
+        assert item["id"] == item["sync_id"]
+
+    def test_id_survives_prepended_insert(self):
+        """If a second item is inserted *before* the
+        first heading (e.g. cron prepended an item, or
+        a cloud-sync pull reordered the file), removing
+        the first item by its original id must still
+        target the original heading -- not whatever now
+        occupies position 1."""
+        from kaisho.org.parser import parse_org_file
+        from kaisho.org.writer import write_org_file
+        from kaisho.services.inbox import (
+            INBOX_KEYWORDS, _find_by_sync_id,
+        )
+
+        p = _tmp_inbox()
+        first = add_item(p, "First item")
+        second = add_item(p, "Second item")
+
+        # Simulate an out-of-band reorder: swap the two
+        # headings in place, as a cron / sync writer
+        # might do.
+        of = parse_org_file(p, INBOX_KEYWORDS)
+        of.headings.reverse()
+        write_org_file(p, of)
+
+        items = list_items(p)
+        # IDs are still stable (sync_id), order flipped
+        assert items[0]["id"] == second["id"]
+        assert items[1]["id"] == first["id"]
+
+        # Lookup by first's id still finds first's
+        # heading despite the shuffle.
+        of2 = parse_org_file(p, INBOX_KEYWORDS)
+        heading = _find_by_sync_id(of2, first["id"])
+        assert heading is not None
+        assert "First item" in heading.title
+
+    def test_update_by_sync_id(self):
+        p = _tmp_inbox()
+        first = add_item(p, "Original title")
+        add_item(p, "Decoy")
+
+        updated = update_item(
+            p, first["id"], {"title": "Renamed"},
+        )
+        assert updated["title"] == "Renamed"
+        assert updated["id"] == first["id"]
+
+        # Decoy was not touched.
+        titles = {i["title"] for i in list_items(p)}
+        assert "Renamed" in titles
+        assert any("Decoy" in t for t in titles)
+
+    def test_tombstone_records_deleted_item_after_reorder(
+        self, tmp_path, monkeypatch,
+    ):
+        """Deleting an inbox item by sync_id must tombstone
+        *that* item even after the file has been reshuffled
+        by an out-of-band writer. Pre-fix this was the
+        wrong-item-deleted-and-tombstoned bug.
+        """
+        from kaisho.backends.org.inbox import OrgInboxBackend
+        from kaisho.org.parser import parse_org_file
+        from kaisho.org.writer import write_org_file
+        from kaisho.services import cloud_sync, sync_state
+        from kaisho.services.inbox import INBOX_KEYWORDS
+
+        inbox_file = tmp_path / "inbox.org"
+        inbox_file.write_text("", encoding="utf-8")
+        profile_dir = tmp_path / "profile"
+        profile_dir.mkdir()
+
+        backend = OrgInboxBackend(inbox_file)
+        target = backend.add_item(text="Pick me")
+        backend.add_item(text="Decoy")
+
+        of = parse_org_file(inbox_file, INBOX_KEYWORDS)
+        of.headings.reverse()
+        write_org_file(inbox_file, of)
+
+        recorded = {}
+
+        def fake_record(profile, entity, tombstone):
+            recorded["entity"] = entity
+            recorded["tombstone"] = tombstone
+
+        monkeypatch.setattr(
+            sync_state, "record_entity_tombstone",
+            fake_record,
+        )
+        monkeypatch.setattr(
+            cloud_sync, "schedule_push", lambda: None,
+        )
+
+        items = backend.list_items()
+        deleted = next(
+            i for i in items if i["sync_id"] == target["id"]
+        )
+        ok = backend.remove_item(deleted["id"])
+        assert ok
+
+        class _FakeCfg:
+            PROFILE_DIR = profile_dir
+
+        monkeypatch.setattr(
+            "kaisho.config.get_config",
+            lambda: _FakeCfg(),
+        )
+        cloud_sync.on_local_delete_inbox(deleted)
+
+        assert recorded["entity"] == "inbox"
+        assert recorded["tombstone"]["sync_id"] == target["id"]
+        assert "Pick me" in recorded["tombstone"]["title"]
+
+        remaining = backend.list_items()
+        assert len(remaining) == 1
+        assert "Decoy" in remaining[0]["title"]
+
+    def test_promote_targets_correct_heading(self, tmp_path):
+        """Promote-to-task must pick the heading whose
+        sync_id matches, regardless of file position."""
+        inbox_file = tmp_path / "inbox.org"
+        todos_file = tmp_path / "todos.org"
+        inbox_file.write_text("", encoding="utf-8")
+        todos_file.write_text("", encoding="utf-8")
+
+        target = add_item(inbox_file, "Promote me")
+        add_item(inbox_file, "Leave me alone")
+
+        # Reverse so the target sits at position 2.
+        from kaisho.org.parser import parse_org_file
+        from kaisho.org.writer import write_org_file
+        from kaisho.services.inbox import INBOX_KEYWORDS
+
+        of = parse_org_file(inbox_file, INBOX_KEYWORDS)
+        of.headings.reverse()
+        write_org_file(inbox_file, of)
+
+        task = promote_to_task(
+            inbox_file=inbox_file,
+            todos_file=todos_file,
+            keywords=set(),
+            item_id=target["id"],
+            customer="Acme",
+        )
+        assert "Promote me" in task["title"]
+
+        remaining = list_items(inbox_file)
+        assert len(remaining) == 1
+        assert "Leave me alone" in remaining[0]["title"]
