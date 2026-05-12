@@ -33,7 +33,7 @@ from .routers import settings_states
 from .routers import cli as cli_router
 from .routers import version as version_router
 from ..cron.scheduler import build_scheduler
-from .watcher.service import watch_files
+from .watcher.service import start_watcher, stop_watcher
 
 
 def _init_ssl():
@@ -90,13 +90,10 @@ async def lifespan(app: FastAPI):
     scheduler = build_scheduler(cfg.JOBS_FILE)
     scheduler.start()
 
-    watch_paths = get_backend().watch_paths
-    task = asyncio.create_task(
-        watch_files(*watch_paths)
-    )
+    start_watcher(*get_backend().watch_paths)
     yield
     scheduler.shutdown(wait=False)
-    task.cancel()
+    stop_watcher()
 
 
 app = FastAPI(title="Kaisho", lifespan=lifespan)

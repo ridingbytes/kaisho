@@ -715,3 +715,129 @@ class TestWireHelpers:
         })
         assert out["sync_id"] == "x"
         assert "id" not in out
+
+
+class TestSnapshotDigestEcho:
+    """Server-echoed digest behavior.
+
+    When the cloud silently strips an unknown field
+    (e.g. a newer client field on an older API), the
+    desktop must not store a digest implying the field
+    was persisted -- otherwise the next push gets skipped
+    and the cloud stays stale.
+    """
+
+    def _stub(self, monkeypatch, echo_config):
+        """Stub push_snapshot to return ``echo_config``
+        (or no config field when ``None``) and stub
+        _build_snapshot_config to a fixed payload that
+        includes ``avatar_style``."""
+        def fake_push(
+            cloud_url, api_key,
+            customers, tasks, config=None,
+        ):
+            if echo_config is None:
+                return {"ok": True}
+            return {"ok": True, "config": echo_config}
+
+        monkeypatch.setattr(
+            sync_svc, "push_snapshot", fake_push,
+        )
+        monkeypatch.setattr(
+            sync_svc, "_build_snapshot_config",
+            lambda *a, **kw: {
+                "tags": [],
+                "github_configured": False,
+                "avatar_seed": "seed",
+                "avatar_style": "bottts",
+                "user_name": "x",
+            },
+        )
+
+    def test_stale_field_invalidates_digest(
+        self, tmp_path, monkeypatch,
+    ):
+        """Server drops ``avatar_style`` (older API). The
+        stored digest reflects the *echo* without the
+        field, so the next push -- once the server is
+        upgraded and accepts the field -- fires again
+        instead of being silently skipped."""
+        profile = tmp_path / "p"
+        profile.mkdir()
+        echo_old = {
+            "tags": [],
+            "github_configured": False,
+            "avatar_seed": "seed",
+            "user_name": "x",
+        }
+        self._stub(monkeypatch, echo_old)
+
+        assert sync_svc.push_reference_snapshot(
+            "https://cloud", "key",
+            customers_fn=lambda: [],
+            tasks_fn=lambda: [],
+            profile_dir=profile,
+        ) is True
+        digest_after_old = (
+            profile / ".snapshot_digest"
+        ).read_text()
+
+        # Same local state, but local digest (with
+        # avatar_style) does NOT match stored digest
+        # (echo without). Re-push fires deliberately --
+        # the cloud is missing data, retrying is correct.
+        assert sync_svc.push_reference_snapshot(
+            "https://cloud", "key",
+            customers_fn=lambda: [],
+            tasks_fn=lambda: [],
+            profile_dir=profile,
+        ) is True
+
+        # Server upgrades; echo now contains avatar_style.
+        # Push fires, stored digest now matches the local
+        # payload digest.
+        echo_new = {**echo_old, "avatar_style": "bottts"}
+        self._stub(monkeypatch, echo_new)
+        assert sync_svc.push_reference_snapshot(
+            "https://cloud", "key",
+            customers_fn=lambda: [],
+            tasks_fn=lambda: [],
+            profile_dir=profile,
+        ) is True
+        digest_after_new = (
+            profile / ".snapshot_digest"
+        ).read_text()
+        assert digest_after_old != digest_after_new
+
+        # Now stored digest matches local payload digest:
+        # subsequent pushes correctly skip.
+        assert sync_svc.push_reference_snapshot(
+            "https://cloud", "key",
+            customers_fn=lambda: [],
+            tasks_fn=lambda: [],
+            profile_dir=profile,
+        ) is False
+
+    def test_no_echo_falls_back_to_local_digest(
+        self, tmp_path, monkeypatch,
+    ):
+        """Pre-echo deployment: response carries no
+        ``config`` key. The local payload remains the
+        digest basis so the change-detection optimization
+        still works."""
+        profile = tmp_path / "p"
+        profile.mkdir()
+        self._stub(monkeypatch, None)
+
+        assert sync_svc.push_reference_snapshot(
+            "https://cloud", "key",
+            customers_fn=lambda: [],
+            tasks_fn=lambda: [],
+            profile_dir=profile,
+        ) is True
+        assert sync_svc.push_reference_snapshot(
+            "https://cloud", "key",
+            customers_fn=lambda: [],
+            tasks_fn=lambda: [],
+            profile_dir=profile,
+        ) is False

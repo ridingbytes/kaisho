@@ -2037,7 +2037,7 @@ def push_reference_snapshot(
         return False
 
     try:
-        push_snapshot(
+        response = push_snapshot(
             cloud_url, api_key,
             customers_payload,
             tasks_payload,
@@ -2046,8 +2046,28 @@ def push_reference_snapshot(
     except CloudUnavailable as exc:
         log.warning("Snapshot push failed: %s", exc)
         return False
+
+    # Digest the config the *server* actually stored, not
+    # the local payload. The server may strip unknown
+    # fields (older API version vs newer client field), so
+    # digesting the local payload would convince us the
+    # field was persisted when it wasn't -- and the next
+    # sync would skip the push, leaving the cloud stale
+    # until the user manually nukes ``.snapshot_digest``.
+    # When the server doesn't echo (pre-echo deploy), we
+    # fall back to the local payload so older deployments
+    # still benefit from the change-detection optimization.
+    stored_digest = digest
+    if isinstance(response, dict):
+        echoed = response.get("config")
+        if echoed is not None:
+            stored_digest = _snapshot_digest(
+                customers_payload,
+                tasks_payload,
+                echoed,
+            )
     if profile_dir is not None:
-        _store_digest(profile_dir, digest)
+        _store_digest(profile_dir, stored_digest)
     return True
 
 

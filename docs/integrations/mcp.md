@@ -41,6 +41,101 @@ kai mcp-server --profile work --allow read,write
 This launches a stdio-based MCP server that exposes all read and
 write tools for the `work` profile.
 
+## App-Only Setup (No Python Install)
+
+If you installed the Kaisho desktop app (Mac/Linux DMG, AppImage,
+deb, or rpm) and don't have a Python development environment, you
+don't need to `pip install` anything. The app bundles a
+self-contained `kai-server` binary that supports `mcp-server` as a
+subcommand identical to the dev CLI.
+
+Point your MCP client at the bundled binary directly.
+
+=== "macOS"
+
+    Binary path:
+
+    ```
+    /Applications/Kaisho.app/Contents/MacOS/kai-server
+    ```
+
+    Example `~/.claude.json` (Claude Code) or
+    `claude_desktop_config.json` (Claude Desktop):
+
+    ```json
+    {
+      "mcpServers": {
+        "kaisho": {
+          "command": "/Applications/Kaisho.app/Contents/MacOS/kai-server",
+          "args": ["mcp-server", "--allow", "read,write"]
+        }
+      }
+    }
+    ```
+
+=== "Linux (deb / rpm)"
+
+    Typical install path:
+
+    ```
+    /usr/bin/kai-server
+    ```
+
+    (verify with `which kai-server`). Config:
+
+    ```json
+    {
+      "mcpServers": {
+        "kaisho": {
+          "command": "/usr/bin/kai-server",
+          "args": ["mcp-server", "--allow", "read,write"]
+        }
+      }
+    }
+    ```
+
+=== "Linux (AppImage)"
+
+    The AppImage isn't directly callable from outside its sandbox.
+    Extract the bundled binary once:
+
+    ```bash
+    ./Kaisho-*.AppImage --appimage-extract
+    cp ./squashfs-root/usr/bin/kai-server ~/.local/bin/kai-server
+    ```
+
+    Then reference `~/.local/bin/kai-server` in your MCP config.
+
+### Profile Selection
+
+By default (no `--profile` argument), the MCP server **follows the
+profile currently active in the Kaisho app** -- if you switch
+profiles in the UI, tools land in the new profile automatically.
+This is usually what you want.
+
+Pass `--profile NAME` only when you intentionally need a pinned
+scope (running multiple MCP servers for different profiles, or for
+automation that should not drift):
+
+```json
+"args": ["mcp-server", "--profile", "personal", "--allow", "read,write"]
+```
+
+### Verification
+
+After restarting your MCP client, you should see Kaisho's tools in
+its tool list (`list_tasks`, `start_clock`, `add_note`, etc.). To
+confirm which profile the server is talking to, tail the per-call
+audit log -- the path tracks the active profile:
+
+```bash
+ls -lt ~/.kaisho/profiles/*/mcp-audit.log
+```
+
+The file that updates after a tool call is the profile MCP just
+wrote to. The data dir is `~/.kaisho/` regardless of how the app
+was installed, so the bundled binary and the GUI app share state.
+
 ## Client Configuration
 
 ### Claude Code

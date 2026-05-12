@@ -72,6 +72,11 @@ def set_event_loop(
     _loop = loop
 
 
+def get_event_loop() -> asyncio.AbstractEventLoop | None:
+    """Return the captured event loop, or None if not set."""
+    return _loop
+
+
 def broadcast_sync(message: dict) -> None:
     """Broadcast from a non-async context.
 

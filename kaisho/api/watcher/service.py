@@ -1,11 +1,19 @@
+import asyncio
+from functools import partial
 from pathlib import Path
 
 from watchfiles import awatch
 
-from ..ws.manager import manager
+from ...backends import get_backend
+from ..ws.manager import get_event_loop, manager
 
 # Set of paths currently being written by Kaisho itself
 _expected_writes: set[str] = set()
+
+# Module-level handle to the currently running watcher task
+# so it can be cancelled/restarted on profile switch.
+# Assumes single-worker uvicorn (kaisho's default deployment).
+_watcher_task: asyncio.Task | None = None
 
 # Map data-file stem → WebSocket resource name
 _STEM_TO_RESOURCE: dict[str, str] = {
@@ -68,3 +76,36 @@ def _build_event(
             "file": path.name,
         }
     return None
+
+
+def start_watcher(*paths: Path) -> None:
+    """Launch the file watcher task for *paths*.
+
+    Cancels any previously running watcher task before
+    starting a new one.
+    """
+    global _watcher_task
+    stop_watcher()
+    _watcher_task = asyncio.create_task(watch_files(*paths))
+
+
+def stop_watcher() -> None:
+    """Cancel the currently running watcher task, if any."""
+    global _watcher_task
+    if _watcher_task is not None and not _watcher_task.done():
+        _watcher_task.cancel()
+    _watcher_task = None
+
+
+def restart_watcher() -> None:
+    """Restart the watcher with the active backend's paths.
+
+    Safe to call from a request handler; schedules the
+    restart on the running event loop. No-op if called
+    before the loop is up.
+    """
+    loop = get_event_loop()
+    if loop is None:
+        return
+    watch_paths = get_backend().watch_paths
+    loop.call_soon_threadsafe(partial(start_watcher, *watch_paths))

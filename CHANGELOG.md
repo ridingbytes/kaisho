@@ -1,5 +1,54 @@
 # Changelog
 
+## 1.5.2
+
+Patch release fixing three stale-state bugs around profile
+switching, the markdown backend, and cloud config sync.
+
+### File watcher restarts on profile switch
+
+The file watcher was launched once at app startup with the
+initial profile's paths and stayed bound to those paths for
+the life of the process. Switching profiles in the UI swapped
+the backend correctly but left the watcher pointed at the
+previous profile's directory, so writes to the new profile's
+data files never produced ``file_changed`` WebSocket events.
+The visible symptom: newly booked clock entries did not
+appear automatically, and edits to notes only surfaced after
+a hard reload.
+
+- The watcher is now managed via ``start_watcher`` /
+  ``stop_watcher`` / ``restart_watcher`` in
+  ``kaisho/api/watcher/service.py``. The lifespan uses the
+  start/stop pair; ``switch_profile`` calls ``restart_watcher``
+  alongside ``reset_backend`` and ``restart_cloud_ws``.
+- ``restart_watcher`` is thread-safe (schedules onto the
+  captured uvicorn loop via ``call_soon_threadsafe``), so the
+  sync FastAPI handler can call it without ceremony. It
+  no-ops before the loop is up.
+
+### Markdown backend persists ``quick_book`` notes
+
+``MarkdownClockBackend.quick_book`` was dropping the
+``notes`` field on insert -- the entry stored an empty
+string regardless of what the API was given. The org-mode
+backend already persisted them. Now both backends agree.
+
+### Cloud config digest uses the server's stored value
+
+``push_reference_snapshot`` was digesting the *local*
+payload and storing the result as ``.snapshot_digest``.
+When the server stripped unknown fields (e.g. an older
+deployment vs a newer client field), the local digest
+matched on the next cycle and the push was skipped --
+leaving the server permanently behind until the user
+manually deleted the digest file.
+
+- Now digests the server-echoed config when the response
+  includes one, falling back to the local payload for
+  pre-echo deployments so older servers still benefit
+  from the change-detection optimization.
+
 ## 1.5.1
 
 Patch release focused on data-integrity bugs around

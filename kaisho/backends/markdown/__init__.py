@@ -1125,7 +1125,7 @@ class MarkdownClockBackend(ClockBackend):
             "task_id": task_id or "",
             "contract": contract or "",
             "invoiced": False,
-            "notes": "",
+            "notes": notes or "",
             "sync_id": str(uuid.uuid4()),
             "updated_at": _local_now().isoformat(),
         }

@@ -125,6 +125,9 @@ def switch_profile(body: ProfileSwitch):
     from ...cron.scheduler import restart_cloud_ws
     restart_cloud_ws()
 
+    from ..watcher.service import restart_watcher
+    restart_watcher()
+
     return {
         "profile": cfg.PROFILE,
     }
