@@ -427,7 +427,7 @@ export function InboxItemRow({ item }: Props) {
                 onChange={(e) => setEditBody(e.target.value)}
                 placeholder={t("bodyOptional")}
                 rows={3}
-                className={`${fieldCls} w-full resize-none`}
+                className={`${fieldCls} w-full resize-y`}
               />
               <div className="flex gap-2">
                 <button

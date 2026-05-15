@@ -9,7 +9,7 @@
  */
 
 import {
-  Eye, EyeOff, FilePlus, Pencil, Sparkles, Star,
+  Clock, Eye, EyeOff, FilePlus, Pencil, Sparkles, Star,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -85,6 +85,8 @@ export function KnowledgeView() {
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showStarredOnly, setShowStarredOnly] =
+    useState(false);
+  const [showRecentOnly, setShowRecentOnly] =
     useState(false);
   // Hidden-files toggle (off by default; persisted).
   const SHOW_HIDDEN_KEY = "kaisho_kb_show_hidden";
@@ -204,6 +206,21 @@ export function KnowledgeView() {
     () => filteredTree
       .filter((f) => f.kind === "file")
       .map((f) => f.path),
+    [filteredTree],
+  );
+
+  // Top-N flat list ordered by mtime desc — drives the
+  // "Recent" sidebar view. Built from the filtered tree
+  // so active filters/tags continue to apply.
+  const RECENT_LIMIT = 30;
+  const recentFiles = useMemo(
+    () => filteredTree
+      .filter((f) => f.kind === "file")
+      .slice()
+      .sort(
+        (a, b) => (b.mtime ?? 0) - (a.mtime ?? 0),
+      )
+      .slice(0, RECENT_LIMIT),
     [filteredTree],
   );
 
@@ -440,9 +457,10 @@ export function KnowledgeView() {
               : <EyeOff size={13} />}
           </button>
           <button
-            onClick={() =>
-              setShowStarredOnly((v) => !v)
-            }
+            onClick={() => {
+              setShowStarredOnly((v) => !v);
+              setShowRecentOnly(false);
+            }}
             className={[
               "p-1.5 rounded transition-colors",
               showStarredOnly
@@ -459,6 +477,23 @@ export function KnowledgeView() {
                   : "none"
               }
             />
+          </button>
+          <button
+            onClick={() => {
+              setShowRecentOnly((v) => !v);
+              setShowStarredOnly(false);
+            }}
+            aria-pressed={showRecentOnly}
+            className={[
+              "p-1.5 rounded transition-colors",
+              showRecentOnly
+                ? "text-cta bg-cta-muted"
+                : "text-stone-400 hover:text-cta",
+            ].join(" ")}
+            title={t("recentFilter")}
+            aria-label={t("recentFilter")}
+          >
+            <Clock size={13} />
           </button>
         </>) : undefined}
         right={<>
@@ -579,6 +614,8 @@ export function KnowledgeView() {
             starred={starred}
             onToggleStar={toggleStar}
             showStarredOnly={showStarredOnly}
+            showRecentOnly={showRecentOnly}
+            recentFiles={recentFiles}
             filenameFilter={filenameFilter}
             onFilenameFilterChange={setFilenameFilter}
             activeTagFilters={activeTagFilters}

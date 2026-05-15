@@ -288,9 +288,8 @@ function ClockEntryRow({
       </span>
       <div
         className={
-          "flex items-center gap-0.5 " +
-          "opacity-0 group-hover:opacity-100 " +
-          "transition-opacity shrink-0"
+          "hidden group-hover:flex items-center " +
+          "gap-0.5 shrink-0"
         }
       >
         <button
@@ -343,9 +342,11 @@ function CustomerClockEntries({
     );
   }
 
-  const completed = (entries ?? []).filter(
-    (e) => e.duration_minutes !== null
-  );
+  const completed = (entries ?? [])
+    .filter((e) => e.duration_minutes !== null)
+    .sort((a, b) =>
+      (b.start ?? "").localeCompare(a.start ?? ""),
+    );
 
   if (completed.length === 0) {
     return (

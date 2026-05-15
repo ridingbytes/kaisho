@@ -90,10 +90,6 @@ export function TrayPanel() {
   const { t } = useTranslation("clocks");
   const { t: tc } = useTranslation("common");
 
-  const [stopped, setStopped] = useState<{
-    timer: ActiveTimer;
-    finalElapsed: string;
-  } | null>(null);
   const [timer, setTimer] =
     useState<ActiveTimer | null>(null);
   const [entries, setEntries] = useState<ClockEntry[]>(
@@ -248,35 +244,8 @@ export function TrayPanel() {
   }
 
   async function handleStop() {
-    if (!timer?.start) {
-      await stopTimer();
-      refresh();
-      return;
-    }
-    // Snapshot what was running so the user can resume
-    // or clear from the same surface.
-    const snapshot = {
-      timer,
-      finalElapsed: formatElapsed(timer.start),
-    };
     await stopTimer();
-    setStopped(snapshot);
     refresh();
-  }
-
-  async function handleResumeStopped() {
-    if (!stopped) return;
-    const src = stopped.timer;
-    setStopped(null);
-    await startTimer({
-      customer: src.customer ?? "",
-      description: src.description ?? "",
-    });
-    refresh();
-  }
-
-  function handleClearStopped() {
-    setStopped(null);
   }
 
   async function handleUpdateDescription(desc: string) {
@@ -320,11 +289,8 @@ export function TrayPanel() {
           isRunning ? formatElapsed(timer!.start!) : ""
         }
         customers={customers}
-        stopped={stopped}
         onStart={handleStart}
         onStop={handleStop}
-        onResume={handleResumeStopped}
-        onClear={handleClearStopped}
         onUpdateDescription={handleUpdateDescription}
         onUpdateNotes={handleUpdateNotes}
       />

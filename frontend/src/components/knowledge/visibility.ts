@@ -12,6 +12,7 @@
  *     ``archived``.
  */
 import type { KnowledgeFile } from "../../types";
+import { parseFilter, type ParsedFilter } from "./filterTokens";
 
 /** ``status: archived`` in frontmatter hides a file unless
  * the user toggles "show hidden". Centralized here so the
@@ -36,30 +37,42 @@ export function filterVisibleFiles(
   return files.filter((f) => !isHidden(f));
 }
 
-/** Apply filename + tag filters to the tree.
+/** Apply filename + tag + scoped-token filters to the
+ *  tree.
  *
- * Files match when they pass both filters; tag filters
- * use AND semantics (the file's tag set must be a
- * superset of the active filter set). Folders are kept
- * when at least one descendant still matches, so the
- * tree stays navigable.
+ * ``query`` is parsed for ``key:value`` tokens
+ * (``customer:`` / ``task:`` / ``type:`` / ``tag:``);
+ * the remaining free text is filename / path substring
+ * matched. ``activeTags`` (from the chip row) is unioned
+ * with any ``tag:`` tokens parsed from the query, all
+ * combined with AND semantics. Folders are kept when at
+ * least one descendant still matches so the tree stays
+ * navigable.
  */
 export function filterTree(
   files: KnowledgeFile[],
   query: string,
   activeTags: ReadonlySet<string>,
 ): KnowledgeFile[] {
-  const q = query.trim().toLowerCase();
-  const hasNameFilter = q.length > 0;
-  const hasTagFilter = activeTags.size > 0;
-  if (!hasNameFilter && !hasTagFilter) return files;
+  const parsed = parseFilter(query);
+  const tags = new Set<string>(activeTags);
+  for (const t of parsed.tags) tags.add(t);
+  const anyFilter =
+    parsed.free.length > 0
+    || parsed.customer !== null
+    || parsed.taskId !== null
+    || parsed.type !== null
+    || tags.size > 0;
+  if (!anyFilter) return files;
 
+  const free = parsed.free.toLowerCase();
   const matchingPaths = new Set(
     files
       .filter((f) =>
         f.kind === "file"
-        && _matchesFilename(f, q, hasNameFilter)
-        && _matchesTags(f, activeTags, hasTagFilter),
+        && _matchesFree(f, free)
+        && _matchesScoped(f, parsed)
+        && _matchesTags(f, tags),
       )
       .map((f) => f.path),
   );
@@ -74,12 +87,10 @@ export function filterTree(
 }
 
 
-function _matchesFilename(
-  file: KnowledgeFile,
-  q: string,
-  enabled: boolean,
+function _matchesFree(
+  file: KnowledgeFile, q: string,
 ): boolean {
-  if (!enabled) return true;
+  if (!q) return true;
   return (
     file.path.toLowerCase().includes(q)
     || file.name.toLowerCase().includes(q)
@@ -87,12 +98,32 @@ function _matchesFilename(
 }
 
 
+function _matchesScoped(
+  file: KnowledgeFile, parsed: ParsedFilter,
+): boolean {
+  if (parsed.customer !== null
+    && (file.customer ?? "").toLowerCase()
+       !== parsed.customer.toLowerCase()) {
+    return false;
+  }
+  if (parsed.taskId !== null
+    && (file.task_id ?? "") !== parsed.taskId) {
+    return false;
+  }
+  if (parsed.type !== null
+    && (file.type ?? "").toLowerCase()
+       !== parsed.type.toLowerCase()) {
+    return false;
+  }
+  return true;
+}
+
+
 function _matchesTags(
   file: KnowledgeFile,
   active: ReadonlySet<string>,
-  enabled: boolean,
 ): boolean {
-  if (!enabled) return true;
+  if (active.size === 0) return true;
   const tags = new Set(file.tags ?? []);
   for (const tag of active) {
     if (!tags.has(tag)) return false;

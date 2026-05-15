@@ -29,6 +29,8 @@ import {
   collectFolderPaths,
   type TreeNode,
 } from "./knowledgeTree";
+import type { KnowledgeFile } from "../../types";
+import { RelDate } from "../common/RelDate";
 
 /** A single search hit returned by the knowledge API. */
 interface SearchResult {
@@ -92,6 +94,12 @@ export interface KnowledgeSidebarProps {
   onToggleStar: (path: string) => void;
   /** Show only starred files. */
   showStarredOnly?: boolean;
+  /** Show a flat list of recently-modified files instead
+   *  of the tree. Mutually exclusive with starred. */
+  showRecentOnly?: boolean;
+  /** Top-N most recently modified files (already filter-
+   *  scoped by the parent). */
+  recentFiles?: KnowledgeFile[];
   /** Live filename-filter input value. */
   filenameFilter: string;
   /** Update the filename filter. */
@@ -134,6 +142,8 @@ export function KnowledgeSidebar({
   starred,
   onToggleStar,
   showStarredOnly,
+  showRecentOnly,
+  recentFiles,
   filenameFilter,
   onFilenameFilterChange,
   activeTagFilters,
@@ -345,6 +355,47 @@ export function KnowledgeSidebar({
             >
               {tc("loading")}
             </p>
+          ) : showRecentOnly ? (
+            /* Flat list of recently-modified files */
+            (recentFiles ?? []).length === 0 ? (
+              <p className="text-xs text-stone-400 px-4 py-3">
+                No matching files
+              </p>
+            ) : (
+              (recentFiles ?? []).map((f) => {
+                const isSel = selectedPath === f.path;
+                return (
+                  <button
+                    key={`${f.label}/${f.path}`}
+                    type="button"
+                    onClick={() =>
+                      onSelectFile(f.path, f.label)
+                    }
+                    className={[
+                      "flex items-center gap-2 w-full",
+                      "px-4 py-1.5 text-xs",
+                      "hover:bg-surface-raised",
+                      "transition-colors text-left",
+                      isSel
+                        ? "text-cta bg-cta-muted"
+                        : "text-stone-800",
+                    ].join(" ")}
+                  >
+                    <span className="flex-1 min-w-0 truncate">
+                      {f.title || f.name}
+                    </span>
+                    {f.mtime !== undefined && (
+                      <RelDate
+                        date={new Date(
+                          f.mtime * 1000,
+                        ).toISOString()}
+                        className="shrink-0 text-[10px] text-stone-400 tabular-nums"
+                      />
+                    )}
+                  </button>
+                );
+              })
+            )
           ) : showStarredOnly ? (
             /* Flat list of starred files */
             [...starred].length === 0 ? (

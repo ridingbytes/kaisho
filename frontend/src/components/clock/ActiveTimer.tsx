@@ -8,22 +8,9 @@ import type { ActiveTimer as ActiveTimerType } from "../../types";
 
 interface Props {
   timer: ActiveTimerType;
-  /** Called right before the API stop request fires.
-   * Receives a frozen snapshot of the timer + the
-   * displayed elapsed text so the parent can show a
-   * "stopped, ready to resume" state in place of the
-   * empty start form. */
-  onStopSnapshot?: (
-    snapshot: {
-      timer: ActiveTimerType;
-      finalElapsed: string;
-    },
-  ) => void;
 }
 
-export function ActiveTimer(
-  { timer, onStopSnapshot }: Props,
-) {
+export function ActiveTimer({ timer }: Props) {
   const { t } = useTranslation("clocks");
   const { t: tc } = useTranslation("common");
   const [tick, setTick] = useState(0);
@@ -92,15 +79,7 @@ export function ActiveTimer(
           {elapsed(timer.start)}
         </div>
         <button
-          onClick={() => {
-            if (onStopSnapshot && timer.start) {
-              onStopSnapshot({
-                timer,
-                finalElapsed: elapsed(timer.start),
-              });
-            }
-            stop.mutate();
-          }}
+          onClick={() => stop.mutate()}
           disabled={stop.isPending}
           title={t("stopTimer")}
           aria-label={t("stopTimer")}

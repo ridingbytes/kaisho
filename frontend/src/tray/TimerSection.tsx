@@ -1,35 +1,20 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pencil, Play, Square, X } from "lucide-react";
+import { Pencil, Play, Square } from "lucide-react";
 import { Markdown } from "../components/common/Markdown";
 import type { ActiveTimer, Customer } from "../types";
-
-/** A pinned snapshot of the timer that just stopped.
- * The elapsed text is frozen at the moment of stop so
- * the displayed duration matches what was recorded in
- * the entry. */
-export interface StoppedSnapshot {
-  timer: ActiveTimer;
-  finalElapsed: string;
-}
 
 interface Props {
   timer: ActiveTimer | null;
   isRunning: boolean;
   elapsed: string;
   customers: Customer[];
-  /** Snapshot of the just-stopped timer, present only
-   * when the user has Stop'd but not yet Resumed or
-   * Cleared. */
-  stopped: StoppedSnapshot | null;
   onStart: (
     customer: string,
     description: string,
     contract?: string,
   ) => void;
   onStop: () => void;
-  onResume: () => void;
-  onClear: () => void;
   onUpdateDescription: (desc: string) => void;
   onUpdateNotes: (notes: string) => void;
 }
@@ -39,11 +24,8 @@ export function TimerSection({
   isRunning,
   elapsed,
   customers,
-  stopped,
   onStart,
   onStop,
-  onResume,
-  onClear,
   onUpdateDescription,
   onUpdateNotes,
 }: Props) {
@@ -255,53 +237,6 @@ export function TimerSection({
           </button>
         )}
 
-      </div>
-    );
-  }
-
-  if (stopped) {
-    return (
-      <div className="px-4 py-3">
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-2">
-            <div className="text-3xl font-light font-mono text-stone-900 tabular-nums tracking-wide">
-              {stopped.finalElapsed}
-            </div>
-            <button
-              type="button"
-              onClick={onResume}
-              title={tc("resume")}
-              aria-label={tc("resume")}
-              className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-500 border border-green-500 text-white hover:brightness-110 transition-all"
-            >
-              <Play size={10} fill="currentColor" />
-            </button>
-            <button
-              type="button"
-              onClick={onClear}
-              title={tc("clear")}
-              aria-label={tc("clear")}
-              className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-border text-stone-500 hover:border-stone-400 hover:text-stone-800 transition-colors"
-            >
-              <X size={12} />
-            </button>
-          </div>
-          <div className="inline-flex items-center mt-1.5 px-2.5 py-0.5 rounded-full bg-stone-500/15 border border-stone-500/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-600">
-              {tc("stopped")}
-            </span>
-          </div>
-        </div>
-        {stopped.timer.customer && (
-          <p className="text-xs text-stone-500 text-center mt-1.5">
-            {stopped.timer.customer}
-          </p>
-        )}
-        {stopped.timer.description && (
-          <p className="text-xs text-stone-500 text-center mt-1 italic">
-            {stopped.timer.description}
-          </p>
-        )}
       </div>
     );
   }

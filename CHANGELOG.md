@@ -1,5 +1,69 @@
 # Changelog
 
+## 1.6.0
+
+Feature release: better knowledge-base discovery, safer mobile
+delete UX, and several dashboard and tray polish fixes.
+
+### Knowledge base: scoped filter tokens and Recent view
+
+The sidebar filter input now accepts ``key:value`` tokens
+alongside free-text filename matching. Supported keys:
+``customer:``, ``task:``, ``type:``, ``tag:``. Tokens AND
+together (e.g. ``customer:acme tag:wip``) and can be quoted
+to allow spaces. A new clock icon in the toolbar flips the
+sidebar into a flat list of the 30 most recently modified
+files, honouring any active filters — useful for finding a
+file you just added or edited without remembering where it
+lives in the tree.
+
+The KB tree endpoint now includes ``mtime``, ``customer``,
+and ``task_id`` so the frontend can filter and sort without
+extra round-trips.
+
+### Mobile: swipe-to-reveal delete on notes
+
+Tapping a notes row's trash icon was a one-tap-to-confirm
+flow that occasionally caught stray taps on small screens.
+On touch devices the in-row trash icon is now hidden and
+deletion happens via a swipe-left gesture that reveals a red
+Delete button on the right of the row; tap outside or swipe
+back to dismiss. Desktop UX is unchanged. Implemented as a
+reusable ``SwipeToReveal`` wrapper plus a ``useIsTouch``
+media-query hook.
+
+### Dashboard: sorting and budget refresh
+
+- Expanded clock entries under a customer in the dashboard
+  are now sorted newest-first. Previously they appeared in
+  raw API order.
+- Editing or deleting a clock entry now refreshes the
+  customer budget bars immediately. The clock mutations were
+  invalidating ``clocks`` / ``customers`` / ``contracts`` but
+  not ``dashboard``, so used/remaining totals stayed stale
+  until the next refetch.
+- Hover-only edit/trash icons on dashboard entries now use
+  ``hidden`` / ``group-hover:flex`` so they fully leave the
+  layout when not hovered. The prior opacity-based pattern
+  could keep them visually present in some focus states.
+
+### Tray: drop the frozen stopped-timer snapshot
+
+Stopping a timer used to pin a snapshot of the last duration
+in the tray and the in-app clock widget so the user could
+resume with one click. The snapshot did not re-read from the
+underlying entry, so manually editing the clock entry
+afterwards left a misleading frozen value visible. The
+stopped-state UI is removed everywhere; after Stop the
+surface goes back to the start form. The recent entries
+list is the canonical way to resume.
+
+### Inbox and notes: resizable body textarea
+
+Both edit forms had ``resize-none`` on the body textarea,
+making longer entries awkward to read while editing.
+Switched to ``resize-y``.
+
 ## 1.5.2
 
 Patch release fixing three stale-state bugs around profile

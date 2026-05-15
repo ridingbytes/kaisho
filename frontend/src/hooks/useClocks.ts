@@ -104,6 +104,9 @@ export function useStartTimer() {
       void qc.invalidateQueries({
         queryKey: ["contracts"],
       });
+      void qc.invalidateQueries({
+        queryKey: ["dashboard"],
+      });
       toast(`Timer started: ${vars.customer}`);
     },
   });
@@ -125,6 +128,9 @@ export function useStopTimer() {
       });
       void qc.invalidateQueries({
         queryKey: ["contracts"],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["dashboard"],
       });
       toast("Timer stopped");
     },
@@ -167,6 +173,9 @@ export function useQuickBook() {
       void qc.invalidateQueries({
         queryKey: ["contracts"],
       });
+      void qc.invalidateQueries({
+        queryKey: ["dashboard"],
+      });
       toast(`Booked ${vars.duration} for ${vars.customer}`);
     },
   });
@@ -207,6 +216,9 @@ export function useUpdateClockEntry() {
       void qc.invalidateQueries({
         queryKey: ["contracts"],
       });
+      void qc.invalidateQueries({
+        queryKey: ["dashboard"],
+      });
       toast("Clock entry updated");
     },
   });
@@ -231,6 +243,9 @@ export function useDeleteClockEntry() {
       });
       void qc.invalidateQueries({
         queryKey: ["contracts"],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["dashboard"],
       });
       toast("Clock entry deleted");
     },

@@ -182,11 +182,13 @@ def _file_entry(
 ) -> dict:
     """Build the tree entry for a single file."""
     rel = str(f.relative_to(base))
+    stat = f.stat()
     entry = {
         "path": rel,
         "label": label,
         "name": f.stem,
-        "size": f.stat().st_size,
+        "size": stat.st_size,
+        "mtime": stat.st_mtime,
         "kind": "file",
     }
     record = index_by_key.get((label, rel))
@@ -198,6 +200,10 @@ def _file_entry(
             entry["status"] = record.status
         if record.type:
             entry["type"] = record.type
+        if record.customer:
+            entry["customer"] = record.customer
+        if record.task_id:
+            entry["task_id"] = record.task_id
     else:
         entry["tags"] = []
     return entry

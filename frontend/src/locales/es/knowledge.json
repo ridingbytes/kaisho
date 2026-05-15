@@ -30,7 +30,7 @@
   "starredFilter": "Mostrar solo destacados",
   "showHidden": "Mostrar ocultos",
   "hideHidden": "Ocultar archivos ocultos",
-  "filterPlaceholder": "Filtrar nombres de archivos…",
+  "filterPlaceholder": "Filtrar… (p. ej. customer:acme o tag:wip)",
   "searchInFiltered": "Buscar en archivos filtrados…",
   "metadata": "Metadatos",
   "tagsField": "Etiquetas",
@@ -65,5 +65,6 @@
   "chatSend": "Enviar",
   "chatThinking": "Pensando…",
   "summaryInboxHeadline": "Resumen: {{name}}",
-  "chatInboxHeadline": "{{name}}: {{snippet}}"
+  "chatInboxHeadline": "{{name}}: {{snippet}}",
+  "recentFilter": "Mostrar solo recientes"
 }

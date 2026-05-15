@@ -30,7 +30,7 @@
   "starredFilter": "Nur markierte anzeigen",
   "showHidden": "Versteckte einblenden",
   "hideHidden": "Versteckte ausblenden",
-  "filterPlaceholder": "Dateinamen filtern…",
+  "filterPlaceholder": "Filter… (z. B. customer:acme oder tag:wip)",
   "searchInFiltered": "In gefilterten Dateien suchen…",
   "metadata": "Metadaten",
   "tagsField": "Tags",
@@ -65,5 +65,6 @@
   "chatSend": "Senden",
   "chatThinking": "Denke nach…",
   "summaryInboxHeadline": "Zusammenfassung: {{name}}",
-  "chatInboxHeadline": "{{name}}: {{snippet}}"
+  "chatInboxHeadline": "{{name}}: {{snippet}}",
+  "recentFilter": "Nur kürzlich geänderte anzeigen"
 }

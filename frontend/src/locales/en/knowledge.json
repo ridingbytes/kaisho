@@ -30,7 +30,7 @@
   "starredFilter": "Show starred only",
   "showHidden": "Show hidden",
   "hideHidden": "Hide hidden files",
-  "filterPlaceholder": "Filter filenames…",
+  "filterPlaceholder": "Filter… (try customer:acme or tag:wip)",
   "searchInFiltered": "Search in filtered files…",
   "metadata": "Metadata",
   "tagsField": "Tags",
@@ -65,5 +65,6 @@
   "chatSend": "Send",
   "chatThinking": "Thinking…",
   "summaryInboxHeadline": "Summary: {{name}}",
-  "chatInboxHeadline": "{{name}}: {{snippet}}"
+  "chatInboxHeadline": "{{name}}: {{snippet}}",
+  "recentFilter": "Show recent only"
 }

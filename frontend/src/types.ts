@@ -162,6 +162,8 @@ export interface KnowledgeFile {
   name: string;
   kind?: "file" | "folder";
   size: number;
+  /** Filesystem mtime as a unix timestamp (seconds). */
+  mtime?: number;
   /** Title from YAML frontmatter (markdown only). */
   title?: string;
   /** Free-text tags from YAML frontmatter. */
@@ -171,6 +173,10 @@ export interface KnowledgeFile {
   status?: string;
   /** Free-text type from YAML frontmatter. */
   type?: string;
+  /** Linked customer name from YAML frontmatter. */
+  customer?: string;
+  /** Linked task id from YAML frontmatter. */
+  task_id?: string;
 }
 
 export interface KnowledgeSearchResult {

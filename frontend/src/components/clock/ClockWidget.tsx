@@ -12,9 +12,6 @@ import { useActiveTimer } from "../../hooks/useClocks";
 import { useCloudActiveTimer } from "../../hooks/useSettings";
 import { syncNow } from "../../api/client";
 import { ActiveTimer } from "./ActiveTimer";
-import { StoppedTimer } from "./StoppedTimer";
-import type { ActiveTimer as ActiveTimerType } from "../../types";
-import { elapsed } from "../../utils/formatting";
 import { CloudTimer } from "./CloudTimer";
 import { CalendarWidget } from "./CalendarWidget";
 import { ClockList } from "./ClockList";
@@ -42,46 +39,6 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
   const { t: tc } = useTranslation("common");
   const { data: timer } = useActiveTimer();
   const { data: cloudTimer } = useCloudActiveTimer();
-  // Pinned snapshot of the timer that just stopped — keeps
-  // the user's customer/description/elapsed visible so they
-  // can re-fire it with a single click. Cleared by Resume
-  // (after a new timer is in flight) or Clear (explicit).
-  const [stopped, setStopped] = useState<{
-    timer: ActiveTimerType;
-    finalElapsed: string;
-  } | null>(null);
-
-  // Drop the snapshot the moment a fresh active timer
-  // shows up — covers the case where another device
-  // started one (cloud → sync → local) while the snapshot
-  // was sitting on screen.
-  useEffect(() => {
-    if (timer?.active) setStopped(null);
-  }, [timer?.active]);
-
-  // Pin a stopped snapshot whenever the running timer
-  // disappears. Covers both the user's own Stop click
-  // (ActiveTimer's onStopSnapshot already set it, so the
-  // !stopped guard makes this branch a no-op) AND a stop
-  // initiated by another device, where invalidation flips
-  // timer.active to false without setting the snapshot.
-  const prevTimerRef = useRef<ActiveTimerType | null>(
-    null,
-  );
-  useEffect(() => {
-    const prev = prevTimerRef.current;
-    prevTimerRef.current = timer ?? null;
-    const wasRunning = !!(
-      prev && prev.active && prev.start
-    );
-    const stillRunning = !!(timer && timer.active);
-    if (wasRunning && !stillRunning && !stopped) {
-      setStopped({
-        timer: prev as ActiveTimerType,
-        finalElapsed: elapsed(prev!.start!),
-      });
-    }
-  }, [timer, stopped]);
   const qc = useQueryClient();
 
   // When the cloud timer disappears (stopped on mobile),
@@ -180,25 +137,11 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
             return ``{active: false}`` after a stop, so
             we gate on ``isRunning`` rather than truthiness
             of ``timer``. */}
-        {isRunning && timer && (
-          <ActiveTimer
-            timer={timer}
-            onStopSnapshot={setStopped}
-          />
-        )}
-
-        {/* Pinned-stopped snapshot — replaces the start
-            form between Stop and Resume/Clear. */}
-        {!isRunning && stopped && (
-          <StoppedTimer
-            snapshot={stopped}
-            onClear={() => setStopped(null)}
-          />
-        )}
+        {isRunning && timer && <ActiveTimer timer={timer} />}
 
         {/* Cloud timer (running on mobile). Hidden when
             a local timer is running to avoid clutter. */}
-        {!isRunning && !stopped && cloudTimer?.active && (
+        {!isRunning && cloudTimer?.active && (
           <CloudTimer
             timer={cloudTimer}
             onStopped={refreshCloudTimer}
@@ -206,7 +149,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
         )}
 
         {/* Start timer form */}
-        {!isRunning && !stopped && !cloudTimer?.active && (
+        {!isRunning && !cloudTimer?.active && (
           <StartForm />
         )}
 

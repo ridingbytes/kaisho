@@ -30,7 +30,7 @@
   "starredFilter": "Только избранное",
   "showHidden": "Показать скрытые",
   "hideHidden": "Скрыть скрытые файлы",
-  "filterPlaceholder": "Фильтровать имена файлов…",
+  "filterPlaceholder": "Фильтр… (например, customer:acme или tag:wip)",
   "searchInFiltered": "Поиск в отфильтрованных файлах…",
   "metadata": "Метаданные",
   "tagsField": "Теги",
@@ -65,5 +65,6 @@
   "chatSend": "Отправить",
   "chatThinking": "Думаю…",
   "summaryInboxHeadline": "Резюме: {{name}}",
-  "chatInboxHeadline": "{{name}}: {{snippet}}"
+  "chatInboxHeadline": "{{name}}: {{snippet}}",
+  "recentFilter": "Только недавние"
 }

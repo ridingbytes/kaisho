@@ -102,12 +102,35 @@ across reloads.
 Filtering happens in two stages and they compose:
 
 1. The funnel icon in the sidebar header opens a filename filter.
-   It runs live, client-side, and tolerates partial regex.
+   It runs live, client-side, and tolerates partial regex. Beyond
+   plain text, it also accepts scoped tokens:
+
+   - `customer:acme` — only files whose frontmatter `customer`
+     matches.
+   - `task:onboarding-flow` — only files linked to a specific
+     task id.
+   - `type:guide` — only files of a given frontmatter `type`.
+   - `tag:wip` — equivalent to clicking a tag chip, useful when
+     mixing with other tokens.
+
+   Tokens AND together. Quote values with double quotes to allow
+   spaces, e.g. `customer:"Acme Corp"`. Anything outside a token
+   is matched against the filename / path as before.
+
 2. The content search input lives in the panel toolbar. Server-side
    search is automatically scoped to the post-funnel-filter visible
    subset, which the client passes via a `paths` parameter.
 
 Active tag filters apply on top of both stages.
+
+## Recent view
+
+The clock icon in the panel toolbar flips the sidebar into a flat
+list of the 30 most recently modified files. The list honours
+any active filters and the hidden toggle, so you can combine
+`customer:acme` with the recent view to see only that customer's
+latest entries. Useful for quickly finding a note you just added
+without remembering where in the tree it lives.
 
 ## Hidden files
 
