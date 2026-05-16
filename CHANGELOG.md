@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.6.1
+
+Patch release reverting the touch swipe-to-delete UX that
+shipped in 1.6.0 for notes.
+
+Swipe-to-reveal belongs in the dedicated cloud mobile PWA,
+not in the main Kaisho frontend. On touch devices the notes
+row's delete button is again the in-row trash + ConfirmPopover
+that has been the convention elsewhere in the app, restoring
+parity across all surfaces.
+
+- Removed `frontend/src/components/common/SwipeToReveal.tsx`
+  and `frontend/src/hooks/useIsTouch.ts`.
+- `NotesView` no longer branches on touch capability.
+
 ## 1.6.0
 
 Feature release: better knowledge-base discovery, safer mobile

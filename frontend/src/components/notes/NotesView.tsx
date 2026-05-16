@@ -48,8 +48,6 @@ import { useTasks } from "../../hooks/useTasks";
 import { usePendingSearch, useSetView } from "../../context/ViewContext";
 import { reorderNotes } from "../../api/client";
 import { SearchInput } from "../common/SearchInput";
-import { SwipeToReveal } from "../common/SwipeToReveal";
-import { useIsTouch } from "../../hooks/useIsTouch";
 import { matchesAny } from "../../utils/filterMatch";
 import { registerPanelAction } from "../../utils/panelActions";
 import type { NoteItem } from "../../types";
@@ -114,7 +112,6 @@ function NoteRow({
   } | null>(null);
   const updateNote = useUpdateNote();
   const move = useMoveNote();
-  const isTouch = useIsTouch();
 
   function startEdit(e: React.MouseEvent) {
     e.stopPropagation();
@@ -237,21 +234,6 @@ function NoteRow({
       style={style}
       className="group border-b border-border-subtle"
     >
-      <SwipeToReveal
-        revealAction={
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="flex-1 flex items-center justify-center gap-1.5 bg-red-500 text-white text-xs font-medium"
-            title="Delete"
-          >
-            <Trash2 size={14} />
-            Delete
-          </button>
-        }
-      >
       <div
         className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-surface-raised transition-colors"
         onClick={() => !editing && setExpanded((v) => !v)}
@@ -392,18 +374,15 @@ function NoteRow({
             </div>
           )}
         </div>
-        {!isTouch && (
-          <ConfirmPopover onConfirm={onDelete}>
-            <button
-              className="text-stone-500 hover:text-red-400 transition-colors shrink-0"
-              title="Delete"
-            >
-              <Trash2 size={13} />
-            </button>
-          </ConfirmPopover>
-        )}
+        <ConfirmPopover onConfirm={onDelete}>
+          <button
+            className="text-stone-500 hover:text-red-400 transition-colors shrink-0"
+            title="Delete"
+          >
+            <Trash2 size={13} />
+          </button>
+        </ConfirmPopover>
       </div>
-      </SwipeToReveal>
 
       {expanded && (
         <div
