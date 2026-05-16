@@ -10,10 +10,16 @@ This module never reads or writes YAML frontmatter from
 the source files; the index is the single source of
 truth.
 """
+import hashlib
+import logging
+import os
 import re
+import tempfile
 from pathlib import Path
 
 from . import kb_frontmatter, kb_index
+
+log = logging.getLogger(__name__)
 
 # File extensions to index. We deliberately keep this
 # curated rather than "anything that decodes as utf-8" so
@@ -228,6 +234,105 @@ def create_folder(
 _pdf_cache: dict[str, str | None] = {}
 
 
+def _pdf_disk_cache_dir() -> Path | None:
+    """Profile-independent on-disk PDF text cache root.
+
+    Returns ``None`` if the config can't be loaded (e.g.
+    a test importing this module without bootstrapping
+    config), if the directory cannot be created, or if
+    settings validation fails. The directory is created
+    lazily on first access.
+    """
+    try:
+        from ..config import get_config
+        root = get_config().DATA_DIR / "cache" / "kb_pdf"
+        root.mkdir(parents=True, exist_ok=True)
+        return root
+    except (OSError, RuntimeError, ValueError):
+        # ``ValueError`` covers pydantic-settings
+        # ``ValidationError`` (a ValueError subclass).
+        return None
+
+
+def _pdf_cache_key(path: Path) -> str | None:
+    """md5 of ``abs_path:mtime:size``.
+
+    The key invalidates on any content edit that touches
+    the file's mtime or size -- the common case. Two
+    edge cases remain theoretically possible but rare:
+
+    1. An atomic rename-replace (``mv tmp.pdf foo.pdf``)
+       that inherits the original mtime *and* yields the
+       same byte size. Practical risk near zero.
+    2. Filesystems with coarse mtime resolution (HFS+ at
+       1s, some networked FSes at 2s) where two writes
+       within the resolution window report the same
+       mtime. Hash-of-content would be more robust;
+       cheap stat-based key is the trade-off chosen for
+       speed.
+
+    Returns ``None`` when the file is gone.
+    """
+    try:
+        st = path.stat()
+    except OSError:
+        return None
+    raw = f"{path.resolve()}:{st.st_mtime}:{st.st_size}"
+    return hashlib.md5(raw.encode("utf-8")).hexdigest()
+
+
+def _read_pdf_disk_cache(key: str) -> str | None:
+    root = _pdf_disk_cache_dir()
+    if root is None:
+        return None
+    cache_file = root / f"{key}.txt"
+    if not cache_file.exists():
+        return None
+    try:
+        return cache_file.read_text(
+            encoding="utf-8", errors="replace",
+        )
+    except OSError:
+        return None
+
+
+_disk_cache_warned = False
+
+
+def _write_pdf_disk_cache(key: str, text: str) -> None:
+    """Atomic write: tempfile in same directory then
+    ``os.replace`` so concurrent readers never see a
+    truncated cache file. Failures (disk full, perms,
+    read-only mount) are logged once per process rather
+    than spamming -- subsequent failures are swallowed
+    silently so search isn't disrupted."""
+    global _disk_cache_warned
+    root = _pdf_disk_cache_dir()
+    if root is None:
+        return
+    cache_file = root / f"{key}.txt"
+    try:
+        # ``delete=False`` so we can rename; tempfile is
+        # closed before the rename happens.
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8",
+            dir=root, prefix=f".{key}.",
+            suffix=".tmp", delete=False,
+        ) as tmp:
+            tmp.write(text)
+            tmp_path = tmp.name
+        os.replace(tmp_path, cache_file)
+    except OSError as exc:
+        if not _disk_cache_warned:
+            log.warning(
+                "PDF text cache write failed: %s. "
+                "Searches will still work but cold-start "
+                "extraction will repeat each session.",
+                exc,
+            )
+            _disk_cache_warned = True
+
+
 def _pdftotext(path: str) -> str | None:
     """Try extracting text via the pdftotext CLI tool.
 
@@ -274,16 +379,106 @@ def _pypdf_extract(path: str) -> str | None:
 def _extract_pdf_text(path: Path) -> str | None:
     """Extract text from a PDF file.
 
-    Tries ``pdftotext`` (poppler) first for best
-    results, falls back to ``pypdf``. Results are
-    cached in memory.
+    Looks up the on-disk cache first (keyed by path,
+    mtime, and size). On miss, falls back to ``pdftotext``
+    (poppler) or ``pypdf``, writing the result back to
+    both the in-memory and on-disk caches.
+
+    The in-memory cache is keyed by the *disk* cache key
+    (path+mtime+size) rather than by raw path so an edit
+    to the source PDF invalidates the in-memory entry
+    naturally on the next call.
     """
-    key = str(path)
-    if key in _pdf_cache:
-        return _pdf_cache[key]
-    result = _pdftotext(key) or _pypdf_extract(key)
-    _pdf_cache[key] = result
+    disk_key = _pdf_cache_key(path)
+    if disk_key is None:
+        return None
+    if disk_key in _pdf_cache:
+        return _pdf_cache[disk_key]
+    cached = _read_pdf_disk_cache(disk_key)
+    if cached is not None:
+        _pdf_cache[disk_key] = cached
+        return cached
+    result = _pdftotext(str(path)) or _pypdf_extract(
+        str(path),
+    )
+    _pdf_cache[disk_key] = result
+    if result:
+        _write_pdf_disk_cache(disk_key, result)
     return result
+
+
+def refresh_pdf_cache(
+    sources: list[dict],
+) -> tuple[int, int]:
+    """Walk every PDF once: extract text into the cache,
+    record live keys, then prune any on-disk cache file
+    whose key isn't in the live set.
+
+    :returns: ``(warmed, pruned)``.
+    """
+    keep: set[str] = set()
+    warmed = 0
+    for _label, base in _expand_sources(sources):
+        for f in _iter_files(base):
+            if f.suffix.lower() != ".pdf":
+                continue
+            key = _pdf_cache_key(f)
+            if key is None:
+                continue
+            keep.add(f"{key}.txt")
+            text = _extract_pdf_text(f)
+            if text:
+                warmed += 1
+    pruned = _prune_unknown(keep)
+    return warmed, pruned
+
+
+def _prune_unknown(keep: set[str]) -> int:
+    """Remove cache entries whose name isn't in ``keep``.
+    Treats real files and dangling symlinks as candidates;
+    leaves subdirectories alone."""
+    root = _pdf_disk_cache_dir()
+    if root is None or not root.exists():
+        return 0
+    pruned = 0
+    for entry in root.iterdir():
+        if entry.is_dir() and not entry.is_symlink():
+            continue
+        if entry.name in keep:
+            continue
+        try:
+            entry.unlink()
+            pruned += 1
+        except OSError:
+            pass
+    return pruned
+
+
+def clear_pdf_cache() -> int:
+    """Wipe every entry from the on-disk PDF cache.
+    Returns the count of removed files. Used by
+    ``kai kb cache clear``."""
+    _pdf_cache.clear()
+    return _prune_unknown(keep=set())
+
+
+def pdf_cache_info() -> dict:
+    """Return ``{path, entries, size_bytes}`` describing
+    the on-disk PDF cache. ``path`` is ``None`` when the
+    cache hasn't been initialised yet."""
+    root = _pdf_disk_cache_dir()
+    if root is None or not root.exists():
+        return {
+            "path": None, "entries": 0, "size_bytes": 0,
+        }
+    entries = [e for e in root.iterdir() if e.is_file()]
+    return {
+        "path": str(root),
+        "entries": len(entries),
+        "size_bytes": sum(
+            e.stat().st_size for e in entries
+        ),
+    }
 
 
 def read_file(
@@ -442,65 +637,118 @@ def move_file(
 def search(
     sources: list[dict],
     query: str,
-    max_results: int = 20,
+    max_files: int = 50,
+    max_hits_per_file: int = 20,
     paths: list[str] | None = None,
+    mode: str = "substring",
 ) -> list[dict]:
     """Full-text search across KB files.
+
+    The result cap is **per file**, not per line. The
+    UI groups hits by file, so a common term used to
+    burn the entire budget on a single common file.
+    Now each file contributes up to ``max_hits_per_file``
+    hits, and at most ``max_files`` distinct files
+    surface in total.
 
     :param paths: When provided, restrict the search to files
         whose ``rel_path`` matches an entry. Lets the UI run a
         filename filter first and search only inside what
         passed -- the "filter then search" pattern.
-    :returns: Up to ``max_results`` matches as
-        ``{path, label, line_number, snippet}``.
+    :param mode: Match mode. Only ``"substring"`` is wired
+        today; the parameter exists so future ``"regex"``
+        and ``"glob"`` modes can be threaded through
+        callers without another signature change.
+    :returns: Matches as ``{path, label, line_number,
+        snippet}``, file-grouped order preserved.
     """
     if not query.strip():
         return []
-    pattern = re.compile(
-        re.escape(query.strip()), re.IGNORECASE
-    )
+    pattern = _compile_query(query.strip(), mode)
     allow = set(paths) if paths is not None else None
-    results = []
+    results: list[dict] = []
+    files_with_hits = 0
     for label, base in _expand_sources(sources):
+        if files_with_hits >= max_files:
+            break
         for f in _iter_files(base):
+            if files_with_hits >= max_files:
+                break
             rel = str(f.relative_to(base))
             if allow is not None and rel not in allow:
                 continue
-            try:
-                if f.suffix.lower() == ".pdf":
-                    text = _extract_pdf_text(f)
-                    if not text:
-                        continue
-                    lines = text.splitlines()
-                else:
-                    text = f.read_text(
-                        encoding="utf-8",
-                        errors="replace",
-                    )
-                    if f.suffix.lower() in \
-                            MARKDOWN_EXTENSIONS:
-                        # Skip leftover YAML frontmatter
-                        # so old in-file blocks don't
-                        # surface as search hits now
-                        # that the index is the source
-                        # of truth.
-                        text = kb_frontmatter.parse(
-                            text,
-                        ).body or text
-                    lines = text.splitlines()
-            except OSError:
+            lines = _read_lines_for_search(f)
+            if lines is None:
                 continue
-            for i, line in enumerate(lines, start=1):
-                if pattern.search(line):
-                    results.append({
-                        "path": rel,
-                        "label": label,
-                        "line_number": i,
-                        "snippet": line.strip(),
-                    })
-                    if len(results) >= max_results:
-                        return results
+            hits_for_file = _collect_file_hits(
+                lines, pattern, rel, label,
+                max_hits_per_file,
+            )
+            if hits_for_file:
+                results.extend(hits_for_file)
+                files_with_hits += 1
     return results
+
+
+def _compile_query(query: str, mode: str) -> re.Pattern:
+    """Translate a user query into a regex per ``mode``.
+
+    Only ``"substring"`` is wired today. Unknown modes
+    fall back to substring so an out-of-date caller
+    never crashes the search. Reserved for future
+    ``"regex"`` / ``"glob"`` branches."""
+    return re.compile(re.escape(query), re.IGNORECASE)
+
+
+def _read_lines_for_search(f: Path) -> list[str] | None:
+    """Read text content of a KB file as a list of lines.
+
+    Returns ``None`` when the file cannot be read or
+    yields no text (e.g. unreadable PDF). Strips YAML
+    frontmatter from markdown files so old in-file
+    blocks don't surface as search hits.
+
+    Loads the entire file into memory; fine for the
+    current corpus (markdown notes + extracted PDF
+    text). Switch to a streaming iterator only when
+    multi-MB logs or full books become a real workload.
+    """
+    try:
+        if f.suffix.lower() == ".pdf":
+            text = _extract_pdf_text(f)
+            if not text:
+                return None
+            return text.splitlines()
+        text = f.read_text(
+            encoding="utf-8", errors="replace",
+        )
+        if f.suffix.lower() in MARKDOWN_EXTENSIONS:
+            text = kb_frontmatter.parse(text).body or text
+        return text.splitlines()
+    except OSError:
+        return None
+
+
+def _collect_file_hits(
+    lines: list[str],
+    pattern: re.Pattern,
+    rel: str,
+    label: str,
+    limit: int,
+) -> list[dict]:
+    """Return up to ``limit`` matching lines for one file."""
+    hits: list[dict] = []
+    for i, line in enumerate(lines, start=1):
+        if pattern.search(line):
+            hits.append({
+                "path": rel,
+                "label": label,
+                "line_number": i,
+                "snippet": line.strip(),
+            })
+            if len(hits) >= limit:
+                break
+    return hits
 
 
 def resolve_label(

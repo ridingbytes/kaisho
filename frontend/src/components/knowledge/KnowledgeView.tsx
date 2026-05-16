@@ -9,26 +9,31 @@
  */
 
 import {
-  Clock, Eye, EyeOff, FilePlus, Pencil, Sparkles, Star,
+  Clock, Eye, EyeOff, FilePlus, Filter,
+  Pencil, Sparkles, Star, X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   profileGet,
+  profileRemove,
   profileSet,
 } from "../../utils/profileStorage";
 import { useTranslation } from "react-i18next";
 import {
   useCreateKnowledgeFolder,
   useDeleteKnowledgeFile,
+  useKnowledgeDistinctValues,
   useKnowledgeFile,
   useKnowledgeSearch,
+  useKnowledgeTags,
   useKnowledgeTree,
   useMoveKnowledgeFile,
   useRenameKnowledgeFile,
 } from "../../hooks/useKnowledge";
+import { useCustomers } from "../../hooks/useCustomers";
+import { useTasks } from "../../hooks/useTasks";
 import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
-import { SearchInput } from "../common/SearchInput";
 import { Markdown } from "../common/Markdown";
 import { DOCS } from "../../docs/panelDocs";
 import { CodeViewer } from "./CodeViewer";
@@ -40,6 +45,7 @@ import {
 } from "./knowledgeEditorUtils";
 import { stripFrontmatter } from "./markdownBody";
 import { KnowledgeSidebar } from "./KnowledgeSidebar";
+import { TokenFilterInput } from "../common/TokenFilterInput";
 import { NewFileForm } from "./NewFileForm";
 import { CopyKbFilePathButton } from "./CopyKbFilePathButton";
 import { OpenKbFileInEditorButton } from "./OpenKbFileInEditorButton";
@@ -48,6 +54,11 @@ import {
   filterTree,
   filterVisibleFiles,
 } from "./visibility";
+import {
+  chipToRaw,
+  parseFilter,
+  splitChipsAndFree,
+} from "./filterTokens";
 import {
   readCollapsedLabels,
   readStoredOpen,
@@ -69,6 +80,33 @@ import type { KnowledgeFile } from "../../types";
  * Main Knowledge view composing sidebar, editor, and
  * file viewer into a full-height layout.
  */
+/** Read the new ``kaisho_kb_filter_query`` value, falling
+ *  back to a one-time migration from the legacy
+ *  ``kaisho_kb_tag_filters`` Set. Removes the legacy key
+ *  once read, plus orphan ``kaisho_kb_group_search``. */
+function migrateLegacyFilter(): string {
+  const fresh = profileGet("kaisho_kb_filter_query");
+  if (fresh !== null) return fresh;
+  const legacy = profileGet("kaisho_kb_tag_filters");
+  const orphan = profileGet("kaisho_kb_group_search");
+  if (orphan !== null) {
+    profileRemove("kaisho_kb_group_search");
+  }
+  if (!legacy) return "";
+  profileRemove("kaisho_kb_tag_filters");
+  try {
+    const tags = JSON.parse(legacy) as string[];
+    const chips = tags.map((t) => {
+      const needsQuote = /\s/.test(t);
+      const v = needsQuote ? `"${t}"` : t;
+      return `tag:${v}`;
+    });
+    return chips.length ? chips.join(" ") + " " : "";
+  } catch {
+    return "";
+  }
+}
+
 export function KnowledgeView() {
   const { t } = useTranslation("knowledge");
   const { t: tc } = useTranslation("common");
@@ -76,11 +114,19 @@ export function KnowledgeView() {
     useState<string | null>(null);
   const [selectedLabel, setSelectedLabel] =
     useState<string>("knowledge");
-  // Stage 1: filename filter (client-side).
-  const [filenameFilter, setFilenameFilter] = useState("");
-  // Stage 2: content search (server-side, scoped to the
-  // currently-visible filtered subset).
-  const [searchInput, setSearchInput] = useState("");
+  // Unified filter: scoped chips narrow the tree, the
+  // trailing free text drives the content-search backend.
+  const FILTER_QUERY_KEY = "kaisho_kb_filter_query";
+  const [filterValue, setFilterValue] = useState<string>(
+    () => migrateLegacyFilter(),
+  );
+  useEffect(() => {
+    if (filterValue) {
+      profileSet(FILTER_QUERY_KEY, filterValue);
+    } else {
+      profileSet(FILTER_QUERY_KEY, "");
+    }
+  }, [filterValue]);
   const [debouncedQ, setDebouncedQ] = useState("");
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -100,37 +146,20 @@ export function KnowledgeView() {
     );
   }, [showHidden]);
 
-  // Active tag filters: AND semantics, persisted so the
-  // user's narrowed view survives reloads.
-  const TAG_FILTERS_KEY = "kaisho_kb_tag_filters";
-  const [activeTagFilters, setActiveTagFilters] =
-    useState<Set<string>>(() => {
-      const raw = profileGet(TAG_FILTERS_KEY);
-      if (!raw) return new Set();
-      try {
-        return new Set(JSON.parse(raw) as string[]);
-      } catch {
-        return new Set();
-      }
-    });
-  useEffect(() => {
-    profileSet(
-      TAG_FILTERS_KEY,
-      JSON.stringify([...activeTagFilters]),
-    );
-  }, [activeTagFilters]);
-
   function toggleTagFilter(tag: string) {
-    setActiveTagFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(tag)) next.delete(tag);
-      else next.add(tag);
-      return next;
-    });
-  }
-
-  function clearTagFilters() {
-    setActiveTagFilters(new Set());
+    const { chips, free } = splitChipsAndFree(filterValue);
+    const hasIt = chips.some(
+      (c) => c.key === "tag" && c.value === tag,
+    );
+    const nextChips = hasIt
+      ? chips.filter(
+          (c) => !(c.key === "tag" && c.value === tag),
+        )
+      : [...chips, { key: "tag" as const, value: tag }];
+    const head = nextChips.map(chipToRaw).join(" ");
+    setFilterValue(
+      head + (head ? " " : "") + free,
+    );
   }
 
   // Summary popover visibility -- the popover takes
@@ -177,15 +206,49 @@ export function KnowledgeView() {
   const [collapsedLabels, setCollapsedLabels] =
     useState<Set<string>>(readCollapsedLabels);
 
+  // Free-text portion drives the content-search query.
+  const parsedFilter = useMemo(
+    () => parseFilter(filterValue),
+    [filterValue],
+  );
+  // Currently-active tag chips (rendered as "highlighted"
+  // on file/metadata tag pills so a click toggles them).
+  const activeTagFilters = useMemo(
+    () => new Set(parsedFilter.tags),
+    [parsedFilter.tags],
+  );
   useEffect(() => {
     const timer = setTimeout(
-      () => setDebouncedQ(searchInput), 300
+      () => setDebouncedQ(parsedFilter.free), 300,
     );
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [parsedFilter.free]);
 
   const { data: tree = [], isLoading: treeLoading } =
     useKnowledgeTree();
+  const { data: kbTags = [] } = useKnowledgeTags();
+  const { data: distinct } = useKnowledgeDistinctValues();
+  const { data: customers = [] } = useCustomers(true);
+  const { data: tasks = [] } = useTasks(true);
+  const filenamePool = useMemo(() => {
+    const set = new Set<string>();
+    for (const f of tree) {
+      if (f.kind === "file") set.add(f.name);
+    }
+    return [...set].sort();
+  }, [tree]);
+  const suggestions = useMemo(
+    () => ({
+      customers: customers.map((c) => c.name),
+      tasks: tasks.map(
+        (t) => ({ id: t.id, title: t.title }),
+      ),
+      types: distinct?.type ?? [],
+      tags: kbTags,
+      filenames: filenamePool,
+    }),
+    [customers, tasks, distinct, kbTags, filenamePool],
+  );
   const isPdf = selectedPath?.endsWith(".pdf");
   const { data: fileData, isLoading: fileLoading } =
     useKnowledgeFile(isPdf ? null : selectedPath);
@@ -196,11 +259,17 @@ export function KnowledgeView() {
     () => filterVisibleFiles(tree, showHidden),
     [tree, showHidden],
   );
+  // Chip-driven narrowing. Free text is excluded so it
+  // can drive the backend content search instead.
+  const chipsOnlyQuery = useMemo(() => {
+    const { chips } = splitChipsAndFree(filterValue);
+    return chips.map(chipToRaw).join(" ");
+  }, [filterValue]);
   const filteredTree = useMemo(
     () => filterTree(
-      visibleTree, filenameFilter, activeTagFilters,
+      visibleTree, chipsOnlyQuery, new Set(),
     ),
-    [visibleTree, filenameFilter, activeTagFilters],
+    [visibleTree, chipsOnlyQuery],
   );
   const filteredPaths = useMemo(
     () => filteredTree
@@ -426,12 +495,39 @@ export function KnowledgeView() {
       {/* Toolbar */}
       <PanelToolbar
         left={!editing ? (<>
-          <SearchInput
-            value={searchInput}
-            onChange={setSearchInput}
-            placeholder={t("searchInFiltered")}
-            className="w-64"
-          />
+          <div
+            className={[
+              "flex items-center gap-1 px-2 h-7",
+              "rounded border border-border",
+              "bg-surface-raised",
+              "w-72 max-w-full",
+            ].join(" ")}
+          >
+            <Filter
+              size={11}
+              className="text-stone-400 shrink-0"
+            />
+            <TokenFilterInput
+              value={filterValue}
+              onChange={setFilterValue}
+              suggestions={suggestions}
+              placeholder={t("filterPlaceholder")}
+              className="flex-1 min-w-0"
+            />
+            {filterValue && (
+              <button
+                onClick={() => setFilterValue("")}
+                className={[
+                  "p-0.5 rounded text-stone-400",
+                  "hover:text-stone-900 transition-colors",
+                ].join(" ")}
+                title={tc("clear")}
+                aria-label={tc("clear")}
+              >
+                <X size={11} />
+              </button>
+            )}
+          </div>
           <button
             onClick={() => setShowHidden((v) => !v)}
             aria-pressed={showHidden}
@@ -602,7 +698,17 @@ export function KnowledgeView() {
             selectedPath={selectedPath}
             onSelectFile={selectFile}
             onClearSearch={() => {
-              setSearchInput("");
+              // Drop the free-text portion only; leave
+              // chip filters intact.
+              const { chips } = splitChipsAndFree(
+                filterValue,
+              );
+              const head = chips
+                .map(chipToRaw)
+                .join(" ");
+              setFilterValue(
+                head ? head + " " : "",
+              );
               setDebouncedQ("");
             }}
             onToggleLabel={handleToggleLabel}
@@ -616,11 +722,7 @@ export function KnowledgeView() {
             showStarredOnly={showStarredOnly}
             showRecentOnly={showRecentOnly}
             recentFiles={recentFiles}
-            filenameFilter={filenameFilter}
-            onFilenameFilterChange={setFilenameFilter}
-            activeTagFilters={activeTagFilters}
             onToggleTagFilter={toggleTagFilter}
-            onClearTagFilters={clearTagFilters}
           />
 
           {/* Right panel: file content */}

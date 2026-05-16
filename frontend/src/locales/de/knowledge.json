@@ -30,7 +30,7 @@
   "starredFilter": "Nur markierte anzeigen",
   "showHidden": "Versteckte einblenden",
   "hideHidden": "Versteckte ausblenden",
-  "filterPlaceholder": "Filter… (z. B. customer:acme oder tag:wip)",
+  "filterPlaceholder": "Filter… (customer:, tag:, filename:, plus Text)",
   "searchInFiltered": "In gefilterten Dateien suchen…",
   "metadata": "Metadaten",
   "tagsField": "Tags",
@@ -66,5 +66,7 @@
   "chatThinking": "Denke nach…",
   "summaryInboxHeadline": "Zusammenfassung: {{name}}",
   "chatInboxHeadline": "{{name}}: {{snippet}}",
-  "recentFilter": "Nur kürzlich geänderte anzeigen"
+  "recentFilter": "Nur kürzlich geänderte anzeigen",
+  "groupSearchByFile": "Suchergebnisse pro Datei zusammenfassen",
+  "matches": "{{count}} Treffer"
 }

@@ -1,5 +1,91 @@
 # Changelog
 
+## 1.7.0
+
+Feature release. The knowledge-base panel gets a unified
+chip-based filter, a faster search backend, and a persistent
+PDF text cache. Other panels are unchanged.
+
+### Unified chip-based KB filter
+
+The sidebar filter and the panel-toolbar content search are
+collapsed into a single input that lives in the top toolbar.
+Scoped tokens become removable chips inline as you type:
+
+- `customer:`, `task:`, `type:`, `tag:`, `filename:` -- each
+  with autocomplete drawn from your actual data.
+- Quoted values for whitespace, e.g. `customer:"RIDING BYTES"`.
+- Backspace at the start of the input removes the rightmost
+  chip; X on a chip removes that chip.
+- Free text in the same input drives the backend content
+  search, scoped to whatever the chips have narrowed.
+
+Search results now group by file with a chevron that expands
+to the per-line snippets. Hovering a snippet shows the full
+matched line in a tooltip.
+
+The previous tag chip row, the dedicated content-search
+input, and the separate "filename filter" funnel are gone --
+they were three places to express what one input now handles.
+
+### Recent / Starred sidebar views
+
+New clock-icon toolbar button flips the tree into a flat list
+of the 30 most recently modified files. Stars work inside
+both the recent view and the tree view.
+
+### Faster content search
+
+Two changes:
+
+- **Result cap rework**. The previous `max_results=20` was a
+  per-line cap, so a common search term burned every slot in
+  the first noisy file and other files never surfaced. The
+  cap is now per-file (`max_files=50`) plus per-file hits
+  (`max_hits_per_file=20`). Searching `screen` no longer
+  drowns out `screencast`.
+- **Persistent PDF text cache**. PDF extraction is the
+  cold-start bottleneck. Extracted text is now stored at
+  `<DATA_DIR>/cache/kb_pdf/<hash>.txt` keyed by path +
+  mtime + size. The cache survives server restarts and
+  invalidates automatically when a PDF is edited. Writes
+  are atomic (tempfile + `os.replace`) so concurrent
+  searches can't read a truncated file.
+
+### Reindex pre-warms the cache
+
+`kai kb reindex --apply` (and the `/knowledge/reindex` API)
+now triggers a background refresh of the PDF cache after
+the metadata pass. The HTTP request returns immediately;
+extraction happens in a FastAPI `BackgroundTasks` worker.
+
+### New CLI: `kai kb cache`
+
+- `kai kb cache info` -- show cache directory size and entry
+  count.
+- `kai kb cache warm` -- ahead-of-time extract every PDF.
+- `kai kb cache clear` -- wipe the cache directory.
+
+### Breaking changes for direct API / CLI / MCP consumers
+
+- `/knowledge/search` accepts `max_files` and
+  `max_hits_per_file`. The deprecated `max_results` query
+  param is kept as an alias for `max_files` so existing
+  scripts don't silently fall back to defaults.
+- `kai kb search --max` semantics changed from "max line
+  hits" to "max distinct files". A new
+  `--max-per-file` flag controls hits per file.
+- The MCP `search_knowledge` tool's `max_results` parameter
+  now caps distinct files. Its descriptor advertises this so
+  AI consumers know each matching file may contribute up to
+  20 line hits.
+- The localStorage key `kaisho_kb_tag_filters` (a JSON
+  array) is replaced by `kaisho_kb_filter_query` (the
+  canonical filter string). A one-time migration converts
+  existing tag filters to `tag:<name>` chips on first load.
+- The transient `kaisho_kb_group_search` localStorage key
+  used in pre-1.7 dev builds is cleaned up automatically.
+
 ## 1.6.1
 
 Patch release reverting the touch swipe-to-delete UX that

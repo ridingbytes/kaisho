@@ -38,10 +38,16 @@ export function useKnowledgeSearch(
   // Stable cache key: sorted paths so the order at the
   // call site does not invalidate the query.
   const sortedPaths = paths ? [...paths].sort() : null;
+  // When the caller passed an explicit empty path scope
+  // (e.g. chip filters narrowed to zero files) we must
+  // not run the search -- otherwise the backend gets no
+  // ``paths`` constraint and searches the whole KB.
+  const explicitlyEmpty = paths !== undefined
+    && paths.length === 0;
   return useQuery({
     queryKey: ["knowledge", "search", q, sortedPaths],
     queryFn: () => searchKnowledge(q, paths),
-    enabled: q.length > 1,
+    enabled: q.length > 1 && !explicitlyEmpty,
     staleTime: 10_000,
   });
 }

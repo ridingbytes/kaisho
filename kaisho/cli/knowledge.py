@@ -125,7 +125,13 @@ def kb_show(path):
 @knowledge.command("search")
 @click.argument("query", nargs=-1, required=True)
 @click.option(
-    "--max", "max_results", default=20, show_default=True,
+    "--max", "max_files", default=50, show_default=True,
+    help="Maximum number of distinct files to surface.",
+)
+@click.option(
+    "--max-per-file", "max_hits_per_file",
+    default=20, show_default=True,
+    help="Maximum hits surfaced per file.",
 )
 @click.option(
     "--path", "paths",
@@ -144,7 +150,10 @@ def kb_show(path):
     ),
 )
 @click.option("--json", "as_json", is_flag=True)
-def kb_search(query, max_results, paths, tags, as_json):
+def kb_search(
+    query, max_files, max_hits_per_file,
+    paths, tags, as_json,
+):
     """Search knowledge base files for a query.
 
     With --path and/or --tag the search is scoped to a
@@ -178,7 +187,8 @@ def kb_search(query, max_results, paths, tags, as_json):
             return
     results = kb_service.search(
         _sources(), q,
-        max_results=max_results,
+        max_files=max_files,
+        max_hits_per_file=max_hits_per_file,
         paths=scope,
     )
     if as_json:
@@ -205,12 +215,24 @@ def kb_reindex(apply):
     Hashes each file, detects renames (path changed but
     content matches), and prunes records for files that
     have disappeared. Source files are never modified.
+    When ``--apply`` is set, the PDF text cache is also
+    pre-warmed so the next content search is fast.
     """
+    sources = _sources()
     _records, report = kb_index.reindex(
         _profile_dir(),
-        kb_service.iter_kb_files(_sources()),
+        kb_service.iter_kb_files(sources),
         apply=apply,
     )
+    if apply:
+        warmed, pruned_cache = kb_service.refresh_pdf_cache(
+            sources,
+        )
+        if warmed or pruned_cache:
+            click.echo(
+                f"PDF cache: warmed {warmed}, "
+                f"pruned {pruned_cache}",
+            )
     click.echo(
         f"Scanned {report.scanned} file(s): "
         f"+{report.added} added, "
@@ -221,6 +243,41 @@ def kb_reindex(apply):
     )
     if not apply:
         click.echo("Dry run. Re-run with --apply to write.")
+
+
+@knowledge.group("cache")
+def kb_cache():
+    """Manage the on-disk PDF text cache."""
+
+
+@kb_cache.command("info")
+def kb_cache_info():
+    """Show cache directory size and entry count."""
+    info = kb_service.pdf_cache_info()
+    if info["path"] is None:
+        click.echo("PDF cache not initialised.")
+        return
+    mb = info["size_bytes"] / 1024 / 1024
+    click.echo(f"Path:    {info['path']}")
+    click.echo(f"Entries: {info['entries']}")
+    click.echo(f"Size:    {mb:.1f} MB")
+
+
+@kb_cache.command("clear")
+def kb_cache_clear():
+    """Wipe the on-disk PDF text cache."""
+    n = kb_service.clear_pdf_cache()
+    click.echo(f"Removed {n} cache file(s).")
+
+
+@kb_cache.command("warm")
+def kb_cache_warm():
+    """Pre-extract every PDF's text into the cache so
+    subsequent searches stay fast."""
+    warmed, pruned = kb_service.refresh_pdf_cache(
+        _sources(),
+    )
+    click.echo(f"Warmed {warmed}, pruned {pruned}.")
 
 
 @knowledge.command("import-frontmatter")

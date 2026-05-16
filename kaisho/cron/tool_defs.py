@@ -243,9 +243,13 @@ TOOL_DEFS: list[dict] = [
         "name": "search_knowledge",
         "tier": "read",
         "description": (
-            "Search the knowledge base (documentation, notes, "
-            "research files) for relevant information. Returns "
-            "matching snippets with file path and line number."
+            "Search the knowledge base (documentation, "
+            "notes, research files) for relevant "
+            "information. Returns matching snippets with "
+            "file path and line number. The result cap "
+            "limits distinct files, not raw line hits -- "
+            "each matching file may contribute up to 20 "
+            "lines."
         ),
         "input_schema": {
             "type": "object",
@@ -256,7 +260,12 @@ TOOL_DEFS: list[dict] = [
                 },
                 "max_results": {
                     "type": "integer",
-                    "description": "Max results (default 10)",
+                    "description": (
+                        "Cap on the number of distinct "
+                        "files surfaced (default 10). "
+                        "Each file may contribute up to "
+                        "20 matching lines."
+                    ),
                 },
             },
             "required": ["query"],

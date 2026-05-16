@@ -30,7 +30,7 @@
   "starredFilter": "Show starred only",
   "showHidden": "Show hidden",
   "hideHidden": "Hide hidden files",
-  "filterPlaceholder": "Filter… (try customer:acme or tag:wip)",
+  "filterPlaceholder": "Filter… (customer:, tag:, filename:, plus text)",
   "searchInFiltered": "Search in filtered files…",
   "metadata": "Metadata",
   "tagsField": "Tags",
@@ -66,5 +66,9 @@
   "chatThinking": "Thinking…",
   "summaryInboxHeadline": "Summary: {{name}}",
   "chatInboxHeadline": "{{name}}: {{snippet}}",
-  "recentFilter": "Show recent only"
+  "recentFilter": "Show recent only",
+  "groupSearchByFile": "Group search results by file",
+  "matches": "{{count}} match",
+  "matches_one": "{{count}} match",
+  "matches_other": "{{count}} matches"
 }

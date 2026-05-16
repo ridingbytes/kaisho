@@ -12,7 +12,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Filter,
   FolderPlus,
   RefreshCw,
   Star,
@@ -22,7 +21,6 @@ import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "../../context/ToastContext";
 import { useReindexKnowledge } from "../../hooks/useKnowledge";
-import { freeTagBadgeStyle } from "../../utils/tagColors";
 import { TreeNodeRow } from "./TreeNodeRow";
 import { MAX_WIDTH, MIN_WIDTH } from "./knowledgeEditorUtils";
 import {
@@ -100,17 +98,9 @@ export interface KnowledgeSidebarProps {
   /** Top-N most recently modified files (already filter-
    *  scoped by the parent). */
   recentFiles?: KnowledgeFile[];
-  /** Live filename-filter input value. */
-  filenameFilter: string;
-  /** Update the filename filter. */
-  onFilenameFilterChange: (next: string) => void;
-  /** Active tag filter set; chips render in a row
-   *  beneath the funnel input when non-empty. */
-  activeTagFilters: ReadonlySet<string>;
-  /** Toggle a tag in/out of the filter set. */
+  /** Toggle a tag chip in/out of the filter (called by
+   *  tag-pill clicks elsewhere). */
   onToggleTagFilter: (tag: string) => void;
-  /** Drop all active tag filters at once. */
-  onClearTagFilters: () => void;
 }
 
 /**
@@ -144,11 +134,6 @@ export function KnowledgeSidebar({
   showStarredOnly,
   showRecentOnly,
   recentFiles,
-  filenameFilter,
-  onFilenameFilterChange,
-  activeTagFilters,
-  onToggleTagFilter,
-  onClearTagFilters,
 }: KnowledgeSidebarProps) {
   const { t } = useTranslation("knowledge");
   const { t: tc } = useTranslation("common");
@@ -211,47 +196,14 @@ export function KnowledgeSidebar({
           width: sidebarOpen ? sidebarWidth : 0,
         }}
       >
-        {/* Header: funnel filter (always visible) +
-            collapse */}
+        {/* Header: reindex + collapse */}
         <div
           className={
-            "flex items-center gap-1 " +
+            "flex items-center justify-end gap-1 " +
             "px-2 py-1.5 shrink-0 " +
             "border-b border-border-subtle"
           }
         >
-          <Filter
-            size={11}
-            className="text-stone-400 shrink-0"
-          />
-          <input
-            type="text"
-            value={filenameFilter}
-            onChange={(e) =>
-              onFilenameFilterChange(e.target.value)
-            }
-            placeholder={t("filterPlaceholder")}
-            aria-label={t("filterPlaceholder")}
-            className={
-              "flex-1 min-w-0 bg-transparent " +
-              "text-[11px] text-stone-700 " +
-              "placeholder:text-stone-400 " +
-              "focus:outline-none"
-            }
-          />
-          {filenameFilter && (
-            <button
-              onClick={() => onFilenameFilterChange("")}
-              className={
-                "p-0.5 rounded text-stone-400 " +
-                "hover:text-stone-900 transition-colors"
-              }
-              title={tc("clear")}
-              aria-label={tc("clear")}
-            >
-              <X size={11} />
-            </button>
-          )}
           <button
             onClick={() =>
               reindex.mutate(undefined, {
@@ -298,44 +250,6 @@ export function KnowledgeSidebar({
           </button>
         </div>
 
-        {/* Active tag filters */}
-        {activeTagFilters.size > 0 && (
-          <div
-            className={
-              "flex flex-wrap items-center gap-1 " +
-              "px-2 py-1.5 shrink-0 " +
-              "border-b border-border-subtle " +
-              "bg-cta-muted/30"
-            }
-          >
-            {[...activeTagFilters].sort().map((tag) => (
-              <button
-                key={tag}
-                onClick={() => onToggleTagFilter(tag)}
-                style={freeTagBadgeStyle(tag)}
-                className={
-                  "inline-flex items-center gap-0.5 " +
-                  "px-1.5 py-0.5 rounded text-[10px] " +
-                  "font-medium hover:shadow-sm"
-                }
-                title={tc("clear")}
-              >
-                {tag}
-                <X size={9} />
-              </button>
-            ))}
-            <button
-              onClick={onClearTagFilters}
-              className={
-                "ml-auto text-[10px] text-stone-500 " +
-                "hover:text-stone-900 px-1"
-              }
-            >
-              {tc("clearAllFilters")}
-            </button>
-          </div>
-        )}
-
         {/* Tree / search content */}
         <div className="flex-1 overflow-y-auto py-1">
           {isSearching ? (
@@ -364,26 +278,51 @@ export function KnowledgeSidebar({
             ) : (
               (recentFiles ?? []).map((f) => {
                 const isSel = selectedPath === f.path;
+                const isStarred = starred.has(f.path);
                 return (
-                  <button
+                  <div
                     key={`${f.label}/${f.path}`}
-                    type="button"
-                    onClick={() =>
-                      onSelectFile(f.path, f.label)
-                    }
                     className={[
                       "flex items-center gap-2 w-full",
                       "px-4 py-1.5 text-xs",
                       "hover:bg-surface-raised",
-                      "transition-colors text-left",
+                      "transition-colors",
                       isSel
                         ? "text-cta bg-cta-muted"
                         : "text-stone-800",
                     ].join(" ")}
                   >
-                    <span className="flex-1 min-w-0 truncate">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleStar(f.path);
+                      }}
+                      title={isStarred ? "Unstar" : "Star"}
+                      className={[
+                        "shrink-0 p-0.5 rounded",
+                        "transition-colors",
+                        isStarred
+                          ? "text-amber-400 hover:text-amber-500"
+                          : "text-stone-400 hover:text-amber-400",
+                      ].join(" ")}
+                    >
+                      <Star
+                        size={10}
+                        fill={isStarred
+                          ? "currentColor"
+                          : "none"}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onSelectFile(f.path, f.label)
+                      }
+                      className="flex-1 min-w-0 text-left truncate"
+                    >
                       {f.title || f.name}
-                    </span>
+                    </button>
                     {f.mtime !== undefined && (
                       <RelDate
                         date={new Date(
@@ -392,7 +331,7 @@ export function KnowledgeSidebar({
                         className="shrink-0 text-[10px] text-stone-400 tabular-nums"
                       />
                     )}
-                  </button>
+                  </div>
                 );
               })
             )
@@ -699,6 +638,19 @@ function SearchResultsList({
 }: SearchResultsListProps) {
   const { t } = useTranslation("knowledge");
   const { t: tc } = useTranslation("common");
+  const [expanded, setExpanded] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  function toggleExpanded(key: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
   if (loading) {
     return (
       <p className="text-xs text-stone-500 px-4 py-2">
@@ -713,32 +665,117 @@ function SearchResultsList({
       </p>
     );
   }
+
+  const groups = groupResultsByPath(results);
   return (
     <>
-      {results.map((r, i) => (
-        <button
-          key={i}
-          onClick={() => onSelect(r.path, r.label)}
-          className={
-            "w-full text-left px-4 py-2 " +
-            "hover:bg-surface-raised transition-colors"
-          }
-        >
-          <p className="text-xs text-stone-800 truncate">
-            {r.label}/{r.path.split("/").pop()}
-          </p>
-          <p className="text-xs text-stone-600">
-            {t("line", { n: r.line_number })}
-          </p>
-          <p
-            className={
-              "text-xs text-stone-700 truncate mt-0.5"
-            }
-          >
-            {r.snippet}
-          </p>
-        </button>
-      ))}
+      {groups.map((g) => {
+        const key = `${g.label}/${g.path}`;
+        const isOpen = expanded.has(key);
+        const Chevron = isOpen ? ChevronDown : ChevronRight;
+        return (
+          <div key={key}>
+            <div
+              className={
+                "flex items-start gap-1 px-2 py-2 " +
+                "hover:bg-surface-raised " +
+                "transition-colors"
+              }
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleExpanded(key);
+                }}
+                className={
+                  "shrink-0 p-0.5 rounded " +
+                  "text-stone-500 " +
+                  "hover:text-stone-900 " +
+                  "transition-colors mt-0.5"
+                }
+                title={
+                  isOpen ? tc("collapse") : tc("expand")
+                }
+                aria-label={
+                  isOpen ? tc("collapse") : tc("expand")
+                }
+              >
+                <Chevron size={12} />
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  onSelect(g.path, g.label)
+                }
+                className="flex-1 min-w-0 text-left"
+              >
+                <p className="text-xs text-stone-800 truncate">
+                  {g.label}/{g.path.split("/").pop()}
+                </p>
+                <p className="text-[10px] text-stone-500 mt-0.5">
+                  {t("matches", { count: g.count })}
+                </p>
+              </button>
+            </div>
+            {isOpen && (
+              <div className="pl-7">
+                {g.hits.map((r, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() =>
+                      onSelect(r.path, r.label)
+                    }
+                    title={r.snippet}
+                    className={
+                      "w-full text-left px-2 py-1.5 " +
+                      "hover:bg-surface-raised " +
+                      "transition-colors"
+                    }
+                  >
+                    <p className="text-[10px] text-stone-500">
+                      {t("line", { n: r.line_number })}
+                    </p>
+                    <p className="text-xs text-stone-700 truncate mt-0.5">
+                      {r.snippet}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </>
   );
+}
+
+interface SearchGroup {
+  path: string;
+  label: string;
+  count: number;
+  hits: SearchResult[];
+}
+
+function groupResultsByPath(
+  results: SearchResult[],
+): SearchGroup[] {
+  const map = new Map<string, SearchGroup>();
+  for (const r of results) {
+    const key = `${r.label}/${r.path}`;
+    const existing = map.get(key);
+    if (existing) {
+      existing.count += 1;
+      existing.hits.push(r);
+    } else {
+      map.set(key, {
+        path: r.path,
+        label: r.label,
+        count: 1,
+        hits: [r],
+      });
+    }
+  }
+  return [...map.values()];
 }

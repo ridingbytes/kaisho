@@ -1,6 +1,8 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import (
+    APIRouter, BackgroundTasks, HTTPException, Query,
+)
 from pydantic import BaseModel
 
 from ...config import get_config
@@ -88,19 +90,31 @@ def get_file_raw(path: str):
 @router.get("/search")
 def search_kb(
     q: str,
-    max_results: int = 20,
+    max_files: int = 50,
+    max_hits_per_file: int = 20,
+    max_results: int | None = None,
     paths: list[str] | None = Query(default=None),
 ):
     """Search knowledge base files by query string.
 
+    :param max_files: Cap the number of distinct files
+        that may contribute hits.
+    :param max_hits_per_file: Cap matches surfaced per
+        file. Files whose hit count exceeds the cap still
+        surface, but only up to the cap hits each.
+    :param max_results: Deprecated alias for ``max_files``
+        kept for back-compat with pre-1.7 callers.
     :param paths: Optional list of relative file paths to
         restrict the search to. Lets the UI run a filename
         filter first and search only inside the visible
         subset.
     """
+    if max_results is not None:
+        max_files = max_results
     return kb_service.search(
         _sources(), q,
-        max_results=max_results,
+        max_files=max_files,
+        max_hits_per_file=max_hits_per_file,
         paths=paths,
     )
 
@@ -344,14 +358,21 @@ def rename_tag(body: TagRenameRequest):
 
 
 @router.post("/reindex")
-def reindex():
+def reindex(background: BackgroundTasks):
     """Sync the metadata index with the current state on
     disk: hash files, detect renames, prune missing.
-    Files are not modified."""
+    Files are not modified. The PDF text cache refresh
+    (extract + prune) is dispatched as a background task
+    so the HTTP request returns immediately even on KBs
+    with many large PDFs."""
+    sources = _sources()
     _records, report = kb_index.reindex(
         _profile_dir(),
-        kb_service.iter_kb_files(_sources()),
+        kb_service.iter_kb_files(sources),
         apply=True,
+    )
+    background.add_task(
+        kb_service.refresh_pdf_cache, sources,
     )
     return {
         "scanned": report.scanned,

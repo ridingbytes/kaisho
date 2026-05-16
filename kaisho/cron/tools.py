@@ -1096,10 +1096,13 @@ def _web_search(query: str, max_results: int = 5) -> dict:
 
 
 def _search_knowledge(query: str, max_results: int = 10) -> dict:
+    # ``max_results`` is the historical name exposed to the
+    # LLM tool; it now caps distinct *files* rather than
+    # raw line hits (post-1.6 search rework).
     from ..services import knowledge as kb_svc
     return {
         "results": kb_svc.search(
-            _kb_sources(), query, max_results=max_results,
+            _kb_sources(), query, max_files=max_results,
         ),
     }
 

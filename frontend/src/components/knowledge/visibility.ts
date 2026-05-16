@@ -62,6 +62,7 @@ export function filterTree(
     || parsed.customer !== null
     || parsed.taskId !== null
     || parsed.type !== null
+    || parsed.filename !== null
     || tags.size > 0;
   if (!anyFilter) return files;
 
@@ -114,6 +115,13 @@ function _matchesScoped(
     && (file.type ?? "").toLowerCase()
        !== parsed.type.toLowerCase()) {
     return false;
+  }
+  if (parsed.filename !== null) {
+    const q = parsed.filename.toLowerCase();
+    if (!file.path.toLowerCase().includes(q)
+      && !file.name.toLowerCase().includes(q)) {
+      return false;
+    }
   }
   return true;
 }

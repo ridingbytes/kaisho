@@ -97,31 +97,33 @@ of the sidebar with an X to remove individual tags or a
 **Clear all** action. The filter set is persisted in localStorage
 across reloads.
 
-## Two-stage filter and search
+## Unified filter and search
 
-Filtering happens in two stages and they compose:
+The sidebar header has a single filter input that drives both
+metadata narrowing and content search. It accepts scoped
+`key:value` tokens and free text:
 
-1. The funnel icon in the sidebar header opens a filename filter.
-   It runs live, client-side, and tolerates partial regex. Beyond
-   plain text, it also accepts scoped tokens:
+- `customer:acme` — only files whose frontmatter `customer`
+  matches.
+- `task:onboarding-flow` — only files linked to a specific task
+  id.
+- `type:guide` — only files of a given frontmatter `type`.
+- `tag:wip` — files carrying that tag.
+- `filename:ansi` — narrow by filename / path substring.
+- Anything outside a `key:value` token is treated as a
+  **content search** query and runs on the backend, scoped to
+  the chip-narrowed subset.
 
-   - `customer:acme` — only files whose frontmatter `customer`
-     matches.
-   - `task:onboarding-flow` — only files linked to a specific
-     task id.
-   - `type:guide` — only files of a given frontmatter `type`.
-   - `tag:wip` — equivalent to clicking a tag chip, useful when
-     mixing with other tokens.
+Tokens AND together. Quote values with double quotes to allow
+spaces, e.g. `customer:"Acme Corp"`. Once a token is recognised
+and followed by a space (or selected from autocomplete) it
+becomes a removable chip with an X. Click the X or press
+Backspace at the start of the input to drop the rightmost chip.
 
-   Tokens AND together. Quote values with double quotes to allow
-   spaces, e.g. `customer:"Acme Corp"`. Anything outside a token
-   is matched against the filename / path as before.
-
-2. The content search input lives in the panel toolbar. Server-side
-   search is automatically scoped to the post-funnel-filter visible
-   subset, which the client passes via a `paths` parameter.
-
-Active tag filters apply on top of both stages.
+Autocomplete: type `customer:` to open a popover with available
+customers (same for `task:`, `tag:`, `type:`). ArrowUp/Down to
+navigate, Enter to pick. Selecting a value with whitespace
+auto-quotes it.
 
 ## Recent view
 
@@ -241,11 +243,29 @@ path, matching line number, and a snippet:
 === "CLI"
 
     ```bash
+    # --max caps the number of distinct files surfaced
+    # (default 50). --max-per-file caps lines per file
+    # (default 20). The old per-line cap is gone.
     kai kb search "connection pooling" --max 10
     ```
 
 PDF files are included in search results. Kaisho extracts text
-using `pdftotext` (poppler) with a fallback to `pypdf`.
+using `pdftotext` (poppler) with a fallback to `pypdf`. The
+extracted text is cached on disk at
+`<DATA_DIR>/cache/kb_pdf/` keyed by path + mtime + size,
+so cold-start search is only slow the first time. Edit a
+PDF and the cache invalidates automatically.
+
+### Managing the cache
+
+```bash
+kai kb cache info     # show size + entry count
+kai kb cache warm     # extract every PDF up-front
+kai kb cache clear    # wipe the cache directory
+```
+
+`kai kb reindex --apply` (and the UI reindex button) also
+trigger a background warm-and-prune pass.
 
 ## File operations
 

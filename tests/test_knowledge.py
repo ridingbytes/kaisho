@@ -116,6 +116,39 @@ def test_search_empty_paths_filter(tmp_path):
     assert search(sources, "step", paths=[]) == []
 
 
+def test_search_caps_distinct_files(tmp_path):
+    """``max_files`` limits distinct files in the result,
+    not raw line hits."""
+    src = tmp_path / "kb"
+    src.mkdir()
+    for i in range(5):
+        (src / f"f{i}.md").write_text(
+            "screen\nscreen again\n",
+            encoding="utf-8",
+        )
+    sources = [{"label": "kb", "path": str(src)}]
+    results = search(sources, "screen", max_files=3)
+    paths = {r["path"] for r in results}
+    assert len(paths) == 3
+
+
+def test_search_caps_hits_per_file(tmp_path):
+    """``max_hits_per_file`` limits lines surfaced from a
+    single file."""
+    src = tmp_path / "kb"
+    src.mkdir()
+    (src / "noisy.md").write_text(
+        "\n".join(["screen"] * 30) + "\n",
+        encoding="utf-8",
+    )
+    sources = [{"label": "kb", "path": str(src)}]
+    results = search(
+        sources, "screen",
+        max_files=10, max_hits_per_file=4,
+    )
+    assert len(results) == 4
+
+
 # ---------------------------------------------------------------------------
 # Index-backed metadata
 # ---------------------------------------------------------------------------
