@@ -11,6 +11,7 @@ import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { RelDate } from "../common/RelDate";
 import { Markdown } from "../common/Markdown";
+import { KbDestinationPicker } from "../common/KbDestinationPicker";
 import {
   useDeleteItem,
   useMoveItem,
@@ -190,13 +191,18 @@ export function InboxItemRow({ item }: Props) {
     );
   }
 
-  function handleMoveKb() {
-    if (!targetFilename.trim()) return;
+  function handleMoveKb(dest: {
+    sourceLabel: string;
+    folder: string;
+    filename: string;
+  }) {
     move.mutate(
       {
         itemId: item.id,
         destination: "kb",
-        filename: targetFilename.trim(),
+        filename: dest.filename,
+        sourceLabel: dest.sourceLabel,
+        folder: dest.folder || undefined,
       },
       { onSuccess: () => setMoving(false) }
     );
@@ -497,34 +503,16 @@ export function InboxItemRow({ item }: Props) {
               className="mt-1 p-2 rounded-md bg-surface-overlay border border-border"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  autoFocus
-                  value={targetFilename}
-                  onChange={(e) => setTargetFilename(e.target.value)}
-                  placeholder="filename.md"
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && handleMoveKb()
-                  }
-                  className={`${fieldCls} flex-1`}
-                />
-                <button
-                  onClick={handleMoveKb}
-                  disabled={
-                    move.isPending || !targetFilename.trim()
-                  }
-                  className="px-2 py-1 rounded-md text-xs font-semibold bg-cta text-white disabled:opacity-40"
-                >
-                  {move.isPending ? "…" : tc("move")}
-                </button>
-                <button
-                  onClick={() => { setMoveDest(null); setMoving(false); }}
-                  className="px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
-                >
-                  <X size={11} />
-                </button>
-              </div>
+              <KbDestinationPicker
+                initialFilename={targetFilename}
+                onSubmit={handleMoveKb}
+                onCancel={() => {
+                  setMoveDest(null);
+                  setMoving(false);
+                }}
+                busy={move.isPending}
+                fieldCls={fieldCls}
+              />
             </div>
           )}
         </div>

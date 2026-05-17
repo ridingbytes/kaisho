@@ -370,14 +370,24 @@ def move_to_kb(
     kb_dir: Path,
     item_id: str,
     filename: str,
+    subdir: str | None = None,
 ) -> dict:
     """Write inbox item body as a markdown KB file then delete it.
 
-    filename must end with '.md'.
-    Returns a dict with the file path.
+    ``filename`` must end with ``.md``. ``subdir`` is an optional
+    relative folder path under ``kb_dir``. The KB file on disk
+    contains only the title heading and body -- all metadata
+    (customer, type, channel, direction, status, created date,
+    tags) is returned in the ``metadata`` dict so the caller can
+    patch the central ``kb_meta.yaml`` index.
+
+    Returns ``{path, rel_path, metadata}`` where ``rel_path`` is
+    relative to ``kb_dir``.
     """
     if not filename.endswith(".md"):
         raise ValueError("filename must end with .md")
+    if "/" in filename or "\\" in filename:
+        raise ValueError("filename must not contain path separators")
 
     org_file, heading = _load_heading(inbox_file, item_id)
 
@@ -386,37 +396,39 @@ def move_to_kb(
     customer = _extract_customer(heading)
     body = "\n".join(heading.body).strip()
 
-    # Build metadata frontmatter
-    meta_lines = []
+    metadata: dict = {"title": title}
     if props.get("CREATED"):
-        meta_lines.append(
-            f"date: {props['CREATED'].strip('[]')}"
-        )
+        metadata["created"] = props["CREATED"].strip("[]")
     if customer:
-        meta_lines.append(f"customer: {customer}")
+        metadata["customer"] = customer
     item_type = _extract_type(heading)
     if item_type:
-        meta_lines.append(f"type: {item_type}")
+        metadata["type"] = item_type
     if props.get("CHANNEL"):
-        meta_lines.append(f"channel: {props['CHANNEL']}")
+        metadata["channel"] = props["CHANNEL"]
     if props.get("DIRECTION"):
-        meta_lines.append(
-            f"direction: {props['DIRECTION']}"
-        )
+        metadata["direction"] = props["DIRECTION"]
     if heading.keyword:
-        meta_lines.append(f"status: {heading.keyword}")
+        metadata["status"] = heading.keyword
+    if heading.tags:
+        metadata["tags"] = list(heading.tags)
 
-    header = f"# {title}\n\n"
-    if meta_lines:
-        header += "\n".join(meta_lines) + "\n---\n\n"
+    content = f"# {title}\n\n{body}\n" if body else f"# {title}\n"
 
-    content = header + body + "\n" if body else header
-
-    kb_dir.mkdir(parents=True, exist_ok=True)
-    dest = kb_dir / filename
+    rel_dir = Path(subdir.strip("/")) if subdir else Path()
+    target_dir = (kb_dir / rel_dir).resolve()
+    if not str(target_dir).startswith(str(kb_dir.resolve())):
+        raise ValueError("subdir escapes KB source root")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    dest = target_dir / filename
     dest.write_text(content, encoding="utf-8")
 
     org_file.headings.remove(heading)
     write_org_file(inbox_file, org_file)
 
-    return {"path": str(dest)}
+    rel_path = str(rel_dir / filename) if subdir else filename
+    return {
+        "path": str(dest),
+        "rel_path": rel_path,
+        "metadata": metadata,
+    }

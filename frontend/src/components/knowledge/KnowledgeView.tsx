@@ -31,6 +31,7 @@ import {
   useRenameKnowledgeFile,
 } from "../../hooks/useKnowledge";
 import { useCustomers } from "../../hooks/useCustomers";
+import { useKbSources } from "../../hooks/useSettings";
 import { useTasks } from "../../hooks/useTasks";
 import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
@@ -226,6 +227,7 @@ export function KnowledgeView() {
 
   const { data: tree = [], isLoading: treeLoading } =
     useKnowledgeTree();
+  const { data: kbSources = [] } = useKbSources();
   const { data: kbTags = [] } = useKnowledgeTags();
   const { data: distinct } = useKnowledgeDistinctValues();
   const { data: customers = [] } = useCustomers(true);
@@ -305,7 +307,10 @@ export function KnowledgeView() {
   // live to hidden + filename filters.
   useEffect(() => {
     setTreeNodes((prev) => {
-      const fresh = buildTree(filteredTree);
+      const fresh = buildTree(
+        filteredTree,
+        kbSources.map((s) => s.label),
+      );
       const merged: Record<string, TreeNode[]> = {};
       for (const label of Object.keys(fresh)) {
         merged[label] = preserveExpanded(
@@ -314,7 +319,7 @@ export function KnowledgeView() {
       }
       return merged;
     });
-  }, [filteredTree]);
+  }, [filteredTree, kbSources]);
 
   // Auto-expand folders containing search results
   useEffect(() => {

@@ -104,13 +104,19 @@ export function useMoveItem() {
       destination,
       customer,
       filename,
+      sourceLabel,
+      folder,
     }: {
       itemId: string;
       destination: "todo" | "note" | "kb" | "archive";
       customer?: string;
       filename?: string;
+      sourceLabel?: string;
+      folder?: string;
     }) => moveInboxItem(
-      itemId, destination, { customer, filename },
+      itemId,
+      destination,
+      { customer, filename, sourceLabel, folder },
     ),
     onSuccess: (_d, vars) => {
       void qc.invalidateQueries({
@@ -122,6 +128,11 @@ export function useMoveItem() {
       void qc.invalidateQueries({
         queryKey: ["notes"],
       });
+      if (vars.destination === "kb") {
+        void qc.invalidateQueries({
+          queryKey: ["knowledge"],
+        });
+      }
       toast(`Moved to ${vars.destination}`);
     },
   });

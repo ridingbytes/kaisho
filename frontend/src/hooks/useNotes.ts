@@ -97,15 +97,28 @@ export function useMoveNote() {
       destination,
       customer,
       filename,
+      sourceLabel,
+      folder,
     }: {
       noteId: string;
       destination: "task" | "kb" | "archive";
       customer?: string;
       filename?: string;
-    }) => moveNote(noteId, destination, { customer, filename }),
-    onSuccess: () => {
+      sourceLabel?: string;
+      folder?: string;
+    }) => moveNote(
+      noteId,
+      destination,
+      { customer, filename, sourceLabel, folder },
+    ),
+    onSuccess: (_d, vars) => {
       void qc.invalidateQueries({ queryKey: ["notes"] });
       void qc.invalidateQueries({ queryKey: ["tasks"] });
+      if (vars.destination === "kb") {
+        void qc.invalidateQueries({
+          queryKey: ["knowledge"],
+        });
+      }
     },
   });
 }

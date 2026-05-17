@@ -139,9 +139,15 @@ function buildLabelNodes(
  * the order configured in settings, so this preserves the
  * user's preferred top-level folder ordering instead of
  * alphabetising it.
+ *
+ * ``extraLabels`` adds source labels that should appear
+ * even when no files belong to them yet (a freshly added,
+ * still-empty KB source). They are appended in order so
+ * pre-existing labels keep their first-seen order.
  */
 export function buildTree(
-  files: KnowledgeFile[]
+  files: KnowledgeFile[],
+  extraLabels: string[] = [],
 ): Record<string, TreeNode[]> {
   const labels: string[] = [];
   const seen = new Set<string>();
@@ -149,6 +155,12 @@ export function buildTree(
     if (!seen.has(f.label)) {
       seen.add(f.label);
       labels.push(f.label);
+    }
+  }
+  for (const label of extraLabels) {
+    if (!seen.has(label)) {
+      seen.add(label);
+      labels.push(label);
     }
   }
   const result: Record<string, TreeNode[]> = {};

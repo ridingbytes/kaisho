@@ -238,13 +238,26 @@ def move_to_kb(
     kb_dir: Path,
     note_id: str,
     filename: str,
+    subdir: str | None = None,
 ) -> dict:
     """Write note body as a markdown KB file then delete it.
 
-    Returns a dict with the file path.
+    ``filename`` must end with ``.md``. ``subdir`` is an optional
+    relative folder path under ``kb_dir``. The KB file on disk
+    contains only the title heading and body -- all metadata
+    (customer, tags, task_id, created date) is returned in the
+    ``metadata`` dict so the caller can patch the central
+    ``kb_meta.yaml`` index.
+
+    Returns ``{path, rel_path, metadata}`` where ``rel_path`` is
+    relative to ``kb_dir``.
     """
     if not filename.endswith(".md"):
         raise ValueError("filename must end with .md")
+    if "/" in filename or "\\" in filename:
+        raise ValueError(
+            "filename must not contain path separators"
+        )
 
     org_file, idx, heading = _load_heading(notes_file, note_id)
 
@@ -253,34 +266,35 @@ def move_to_kb(
     customer = _extract_customer(heading.title.strip())
     body = "\n".join(heading.body).strip()
 
-    meta_lines = []
+    metadata: dict = {"title": title}
     if props.get("CREATED"):
-        meta_lines.append(
-            f"date: {props['CREATED'].strip('[]')}"
-        )
+        metadata["created"] = props["CREATED"].strip("[]")
     if customer:
-        meta_lines.append(f"customer: {customer}")
+        metadata["customer"] = customer
     if heading.tags:
-        meta_lines.append(
-            f"tags: {', '.join(heading.tags)}"
-        )
+        metadata["tags"] = list(heading.tags)
     if props.get("TASK_ID"):
-        meta_lines.append(f"task_id: {props['TASK_ID']}")
+        metadata["task_id"] = props["TASK_ID"]
 
-    header = f"# {title}\n\n"
-    if meta_lines:
-        header += "\n".join(meta_lines) + "\n---\n\n"
+    content = f"# {title}\n\n{body}\n" if body else f"# {title}\n"
 
-    content = header + body + "\n" if body else header
-
-    kb_dir.mkdir(parents=True, exist_ok=True)
-    dest = kb_dir / filename
+    rel_dir = Path(subdir.strip("/")) if subdir else Path()
+    target_dir = (kb_dir / rel_dir).resolve()
+    if not str(target_dir).startswith(str(kb_dir.resolve())):
+        raise ValueError("subdir escapes KB source root")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    dest = target_dir / filename
     dest.write_text(content, encoding="utf-8")
 
     org_file.headings.pop(idx)
     write_org_file(notes_file, org_file)
 
-    return {"path": str(dest)}
+    rel_path = str(rel_dir / filename) if subdir else filename
+    return {
+        "path": str(dest),
+        "rel_path": rel_path,
+        "metadata": metadata,
+    }
 
 
 def archive_note(notes_file: Path, note_id: str) -> bool:

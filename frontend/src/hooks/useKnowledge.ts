@@ -15,11 +15,14 @@ import {
   searchKnowledge,
 } from "../api/client";
 
-export function useKnowledgeTree() {
+export function useKnowledgeTree(
+  options?: { refetchOnMount?: boolean | "always" },
+) {
   return useQuery({
     queryKey: ["knowledge", "tree"],
     queryFn: fetchKnowledgeTree,
     staleTime: 60_000,
+    refetchOnMount: options?.refetchOnMount,
   });
 }
 

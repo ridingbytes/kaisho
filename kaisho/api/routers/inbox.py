@@ -1,9 +1,15 @@
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 
+from pathlib import Path
+
 from ...backends import get_backend
 from ...config import get_config
 from ...services import inbox as inbox_service
+from ...services import knowledge as kb_service
+from ...services.settings import (
+    get_kb_sources, load_settings,
+)
 
 router = APIRouter(prefix="/api/inbox", tags=["inbox"])
 
@@ -120,6 +126,8 @@ class MoveRequest(BaseModel):
     destination: str  # "todo" | "note" | "kb"
     customer: str | None = None  # required for destination="todo"
     filename: str | None = None  # required for destination="kb"
+    source_label: str | None = None  # optional for destination="kb"
+    folder: str | None = None  # optional subdir under the source
 
 
 def _move_to_todo(item_id: str, customer: str | None):
@@ -159,7 +167,33 @@ def _move_to_note(item_id: str):
         )
 
 
-def _move_to_kb(item_id: str, filename: str | None):
+def _pick_kb_source(
+    sources: list[dict], label: str | None,
+) -> dict:
+    """Pick a KB source by label. Falls back to the first
+    configured source when label is None."""
+    if not sources:
+        raise HTTPException(
+            status_code=400,
+            detail="No KB sources configured",
+        )
+    if label is None:
+        return sources[0]
+    for src in sources:
+        if src["label"] == label:
+            return src
+    raise HTTPException(
+        status_code=400,
+        detail=f"Unknown KB source: {label!r}",
+    )
+
+
+def _move_to_kb(
+    item_id: str,
+    filename: str | None,
+    source_label: str | None,
+    folder: str | None,
+):
     """Move an inbox item to the knowledge base."""
     if not filename:
         raise HTTPException(
@@ -168,30 +202,36 @@ def _move_to_kb(item_id: str, filename: str | None):
             "destination=kb",
         )
     cfg = get_config()
-    from ...services.settings import (
-        get_kb_sources, load_settings,
-    )
     data = load_settings(cfg.SETTINGS_FILE)
     sources = get_kb_sources(data, cfg)
-    if not sources:
-        raise HTTPException(
-            status_code=400,
-            detail="No KB sources configured",
-        )
-    from pathlib import Path
+    src = _pick_kb_source(sources, source_label)
+    kb_dir = Path(src["path"]).expanduser()
     backend = get_backend()
-    kb_dir = Path(sources[0]["path"]).expanduser()
     try:
-        return inbox_service.move_to_kb(
+        result = inbox_service.move_to_kb(
             inbox_file=backend.inbox.data_file,
             kb_dir=kb_dir,
             item_id=item_id,
             filename=filename,
+            subdir=folder,
         )
     except ValueError as e:
         raise HTTPException(
             status_code=400, detail=str(e),
         )
+
+    if result.get("metadata"):
+        try:
+            kb_service.update_metadata(
+                sources=sources,
+                profile_dir=cfg.PROFILE_DIR,
+                rel_path=result["rel_path"],
+                patch=result["metadata"],
+            )
+        except ValueError:
+            pass
+
+    return {"path": result["path"]}
 
 
 def _move_to_archive(item_id: str):
@@ -212,7 +252,7 @@ _MOVE_HANDLERS = {
     ),
     "note": lambda iid, body: _move_to_note(iid),
     "kb": lambda iid, body: _move_to_kb(
-        iid, body.filename,
+        iid, body.filename, body.source_label, body.folder,
     ),
     "archive": lambda iid, body: _move_to_archive(iid),
 }

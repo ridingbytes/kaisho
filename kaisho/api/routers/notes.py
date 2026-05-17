@@ -1,9 +1,15 @@
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 
+from pathlib import Path
+
 from ...backends import get_backend
 from ...config import get_config
 from ...services import notes as notes_service
+from ...services import knowledge as kb_service
+from ...services.settings import (
+    get_kb_sources, load_settings,
+)
 
 router = APIRouter(prefix="/api/notes", tags=["notes"])
 
@@ -110,6 +116,27 @@ class MoveRequest(BaseModel):
     destination: str  # "task" | "kb" | "archive"
     customer: str | None = None
     filename: str | None = None
+    source_label: str | None = None
+    folder: str | None = None
+
+
+def _pick_kb_source(
+    sources: list[dict], label: str | None,
+) -> dict:
+    if not sources:
+        raise HTTPException(
+            status_code=400,
+            detail="No KB sources configured",
+        )
+    if label is None:
+        return sources[0]
+    for src in sources:
+        if src["label"] == label:
+            return src
+    raise HTTPException(
+        status_code=400,
+        detail=f"Unknown KB source: {label!r}",
+    )
 
 
 @router.post("/{note_id}/move", status_code=201)
@@ -140,17 +167,33 @@ def move_note(note_id: str, body: MoveRequest):
                 status_code=400,
                 detail="filename is required for destination=kb",
             )
+        data = load_settings(cfg.SETTINGS_FILE)
+        sources = get_kb_sources(data, cfg)
+        src = _pick_kb_source(sources, body.source_label)
+        kb_dir = Path(src["path"]).expanduser()
         try:
-            return notes_service.move_to_kb(
+            result = notes_service.move_to_kb(
                 notes_file=backend.notes.data_file,
-                kb_dir=cfg.KNOWLEDGE_DIR.expanduser(),
+                kb_dir=kb_dir,
                 note_id=note_id,
                 filename=body.filename,
+                subdir=body.folder,
             )
         except ValueError as e:
             raise HTTPException(
                 status_code=400, detail=str(e)
             )
+        if result.get("metadata"):
+            try:
+                kb_service.update_metadata(
+                    sources=sources,
+                    profile_dir=cfg.PROFILE_DIR,
+                    rel_path=result["rel_path"],
+                    patch=result["metadata"],
+                )
+            except ValueError:
+                pass
+        return {"path": result["path"]}
 
     if body.destination == "archive":
         try:

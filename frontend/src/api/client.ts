@@ -811,12 +811,19 @@ export function promoteInboxItem(
 export function moveInboxItem(
   itemId: string,
   destination: "todo" | "note" | "kb" | "archive",
-  opts: { customer?: string; filename?: string } = {}
+  opts: {
+    customer?: string;
+    filename?: string;
+    sourceLabel?: string;
+    folder?: string;
+  } = {}
 ): Promise<unknown> {
   return post<unknown>(`/inbox/${itemId}/move`, {
     destination,
     customer: opts.customer ?? null,
     filename: opts.filename ?? null,
+    source_label: opts.sourceLabel ?? null,
+    folder: opts.folder ?? null,
   });
 }
 
@@ -1283,12 +1290,19 @@ export function promoteNote(
 export function moveNote(
   noteId: string,
   destination: "task" | "kb" | "archive",
-  opts: { customer?: string; filename?: string } = {}
+  opts: {
+    customer?: string;
+    filename?: string;
+    sourceLabel?: string;
+    folder?: string;
+  } = {}
 ): Promise<unknown> {
   return post<unknown>(`/notes/${noteId}/move`, {
     destination,
     customer: opts.customer ?? null,
     filename: opts.filename ?? null,
+    source_label: opts.sourceLabel ?? null,
+    folder: opts.folder ?? null,
   });
 }
 

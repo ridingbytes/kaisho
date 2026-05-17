@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.7.1
+
+Bugfix release. Move-to-KB from the inbox and notes panels
+now actually targets the right place and writes metadata
+where the new (1.5+) index expects it.
+
+### Move-to-KB
+
+- The inbox and notes move dialogs gained a KB source
+  selector and a folder autocomplete. Previously the
+  destination was hardcoded to the first configured source
+  with no way to pick a subfolder.
+- The service no longer writes legacy YAML frontmatter into
+  the moved file. Customer, type, channel, direction,
+  status, tags, and the creation date land in `kb_meta.yaml`
+  so the KB filter, MetadataCard, and customer chips pick
+  them up.
+- The service `mkdir(parents=True)` for nested target
+  folders, so a path like `customers/acme/note.md` works
+  instead of silently failing.
+- The destination folder field treats unknown paths as a
+  "create new folder" affordance (the backend creates
+  parents on write).
+- The picker forces a fresh tree fetch on mount so folders
+  created seconds earlier show up immediately.
+- After a successful move the `knowledge` query is
+  invalidated so the sidebar refreshes.
+
+### Empty KB sources
+
+A KB source with no files and no subfolders -- typically a
+freshly added one pointing at an empty directory -- now
+appears in the sidebar as an empty top-level node.
+Previously the tree-builder derived labels only from file
+entries, so empty sources rendered nothing.
+
 ## 1.7.0
 
 Feature release. The knowledge-base panel gets a unified
