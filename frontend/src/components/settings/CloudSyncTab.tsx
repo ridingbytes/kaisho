@@ -204,26 +204,6 @@ export function CloudSyncSection(): JSX.Element {
             <p className="text-xs text-stone-600 leading-relaxed mb-3">
               {t("unlockCloudSyncHint")}
             </p>
-            <ul className="text-xs text-stone-600 space-y-1 mb-3">
-              <li className="flex items-start gap-2">
-                <span className="text-cta mt-0.5">
-                  *
-                </span>
-                <span>{t("cloudSyncFeature")}</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-cta mt-0.5">
-                  *
-                </span>
-                <span>{t("mobileAppFeature")}</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-cta mt-0.5">
-                  *
-                </span>
-                <span>{t("kaishoAiFeature")}</span>
-              </li>
-            </ul>
             <button
               onClick={() =>
                 openExternal(
@@ -234,11 +214,6 @@ export function CloudSyncSection(): JSX.Element {
             >
               {t("viewPlans")}
             </button>
-          </div>
-          <div className="px-4 py-2.5 bg-amber-500/10 border-t border-amber-500/20">
-            <p className="text-[10px] text-amber-700">
-              {t("spamFolderHint")}
-            </p>
           </div>
         </div>
       )}

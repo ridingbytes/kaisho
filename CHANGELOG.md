@@ -1,5 +1,54 @@
 # Changelog
 
+## 1.7.3
+
+Defensive UI patch ahead of the Track AI tier rollout
+(Companion / Pro / Team). The old "Cloud Sync, Mobile
+App & AI" SKUs are archived in Stripe; this release
+removes the in-app upsell that pointed at them and
+replaces it with an honest "Companion, Pro and Team
+launch Q3 2026" notice. Standalone use is unaffected.
+
+### Cloud Sync settings tab
+
+- Promo card shortened: the three-bullet feature pitch
+  (Cloud Sync / Mobile App / Kaisho AI) is gone. The
+  card now shows the new heading + a one-paragraph
+  description of what's coming in Q3, plus the
+  existing "View plans & pricing" button (still
+  pointing at kaisho.dev/#pricing, which already
+  reflects the new tier model).
+- "Spam folder" amber footer removed — there's no
+  in-app signup flow to send a confirmation email
+  while the paid plans are in development.
+
+### Top nudge banner
+
+- "Unlock AI advisor, cloud sync, and mobile access —
+  See plans or connect now" rewritten to "Companion,
+  Pro and Team launch Q3 2026 — See pricing or
+  connect to a self-hosted cloud". The connect path
+  to a self-hosted Kaisho Cloud still works.
+
+### Translations
+
+- EN, DE, ES, RU `settings.unlockCloudSync` and
+  `settings.unlockCloudSyncHint` rewritten to match.
+  Orphan keys (`cloudSyncFeature`, `mobileAppFeature`,
+  `kaishoAiFeature`, `spamFolderHint`) left in the
+  catalogs for now — they return when the new tier
+  surface ships.
+
+### No functional change
+
+- Cloud-sync connect flow itself is unchanged. Users
+  who already had a paid plan keep their data and
+  their plan label.
+- The "Sync+AI" / "Cloud" / "Free" plan badge in the
+  app header is unchanged — the hard rename to
+  Companion / Pro / Team ships with the in-app upgrade
+  flow, not now.
+
 ## 1.7.1
 
 Bugfix release. Move-to-KB from the inbox and notes panels

@@ -261,8 +261,7 @@ function CloudNudgeBanner({
   return (
     <div className="flex items-center gap-3 px-4 py-1.5 bg-cta/10 border-b border-cta/20 shrink-0">
       <p className="flex-1 text-[11px] text-stone-700">
-        Unlock AI advisor, cloud sync, and
-        mobile access —{" "}
+        Companion, Pro and Team launch Q3 2026 —{" "}
         <button
           onClick={() =>
             openExternal(
@@ -271,14 +270,14 @@ function CloudNudgeBanner({
           }
           className="text-cta hover:underline font-medium"
         >
-          See plans
+          See pricing
         </button>
         {" "}or{" "}
         <button
           onClick={onOpenSettings}
           className="text-cta hover:underline font-medium"
         >
-          connect now
+          connect to a self-hosted cloud
         </button>
       </p>
       <button
