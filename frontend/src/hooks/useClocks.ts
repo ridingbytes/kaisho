@@ -5,6 +5,19 @@ import {
 } from "@tanstack/react-query";
 import { useToast } from "../context/ToastContext";
 import { isTauri } from "../utils/tauri";
+import {
+  deleteClockEntry,
+  mergeClockEntries,
+  fetchActiveTimer,
+  fetchClockEntries,
+  fetchCustomerClockEntries,
+  fetchTaskClockEntries,
+  fetchTodayEntries,
+  quickBook,
+  startTimer,
+  stopTimer,
+  updateClockEntry,
+} from "../api/client";
 
 /** Fire a Tauri ``timer-changed`` event so the tray
  *  popover (a separate webview) re-fetches its data
@@ -19,19 +32,6 @@ async function emitTimerChanged(): Promise<void> {
     // not in Tauri shell
   }
 }
-import {
-  deleteClockEntry,
-  mergeClockEntries,
-  fetchActiveTimer,
-  fetchClockEntries,
-  fetchCustomerClockEntries,
-  fetchTaskClockEntries,
-  fetchTodayEntries,
-  quickBook,
-  startTimer,
-  stopTimer,
-  updateClockEntry,
-} from "../api/client";
 
 /** Provides the currently running timer, polling
  *  every 5 seconds. Use this to show elapsed time. */

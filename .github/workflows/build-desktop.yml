@@ -97,6 +97,10 @@ jobs:
             -s -k actions build.keychain
           rm /tmp/cert.p12
 
+      - name: Fetch tray font
+        shell: bash
+        run: ./scripts/fetch-tray-font.sh
+
       - name: Build Tauri app
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}

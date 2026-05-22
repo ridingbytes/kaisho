@@ -489,8 +489,18 @@ class JsonClockBackend(ClockBackend):
         _write_json(self._clocks_file, entries)
         return self._enrich(entry)
 
-    def stop(self) -> dict:
-        """Close the running clock entry. Raises if none."""
+    def stop(
+        self,
+        rounding_minutes: int = 0,
+        rounding_mode: str = "nearest",
+    ) -> dict:
+        """Close the running clock entry. Raises if none.
+
+        ``rounding_minutes`` / ``rounding_mode`` are accepted
+        for interface parity but ignored: only the org
+        backend implements rounding today.
+        """
+        _ = rounding_minutes, rounding_mode
         entries = _read_json(self._clocks_file)
         for entry in entries:
             if entry.get("end") is None:
@@ -635,9 +645,10 @@ class JsonClockBackend(ClockBackend):
         into_sync_id: str,
         from_sync_id: str,
     ) -> dict:
-        raise NotImplementedError(
-            "merge_entries is only implemented for the "
-            "org backend"
+        _ = into_sync_id, from_sync_id
+        raise ValueError(
+            "Merging clock entries is only available on "
+            "the org backend",
         )
 
     def delete_entry(

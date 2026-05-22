@@ -214,6 +214,10 @@ case "$MODE" in
         ensure_deps
         echo "Syncing version..."
         "$ROOT/scripts/bump-version.sh"
+        # Tray pill renderer needs JetBrains Mono Bold; the
+        # font is gitignored so the fetcher pulls it on
+        # first run. Idempotent: skips when already present.
+        "$ROOT/scripts/fetch-tray-font.sh"
         if ! $SKIP_SIDECAR; then
             echo "Building frontend..."
             (cd "$ROOT/frontend" && pnpm build)

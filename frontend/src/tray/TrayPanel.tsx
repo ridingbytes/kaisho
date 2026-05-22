@@ -164,12 +164,11 @@ export function TrayPanel() {
 
   const isRunning =
     timer?.active === true && !!timer.start;
+  // The popover scrolls when there are more entries than
+  // fit, so we don't cap the list.
   const completedToday = entries.filter(
     (e) => e.end !== null,
   );
-  // Show every completed entry from today. The popover
-  // scrolls so the height is bounded by the window.
-  const recentEntries = completedToday;
   const todayTotal = totalMinutes(completedToday);
 
   async function handleStart(
@@ -246,7 +245,7 @@ export function TrayPanel() {
 
       {/* Recent entries */}
       <RecentSection
-        entries={recentEntries}
+        entries={completedToday}
         onResume={handleResume}
         isRunning={isRunning}
       />

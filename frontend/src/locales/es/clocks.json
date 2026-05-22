@@ -22,6 +22,7 @@
   "entryUpdated": "Entrada de tiempo actualizada",
   "entryDeleted": "Entrada de tiempo eliminada",
   "noEntriesFound": "No se encontraron entradas.",
+  "noEntriesMatchFilter": "Ninguna entrada coincide con el filtro activo.",
   "expandTimeTracking": "Expandir control de tiempo",
   "editDescriptionNotes": "Editar descripción y notas",
   "sessionNotes": "Notas de sesión...",

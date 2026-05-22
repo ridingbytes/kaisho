@@ -1060,15 +1060,14 @@ def _reopen_today_match(
     today = date.today()
     best: tuple[Clock, Heading] | None = None
     best_end: datetime | None = None
+    target_desc = (description or "").strip()
     for h in org_file.headings:
+        h_customer, h_desc = parse_entry_title(h.title)
+        if h_customer != customer:
+            continue
+        if h_desc.strip() != target_desc:
+            continue
         props = h.properties
-        if props.get("CUSTOMER", "") != customer:
-            continue
-        if (
-            (h.title or "").strip()
-            != (description or "").strip()
-        ):
-            continue
         if (props.get("TASK_ID") or None) != task_id:
             continue
         if (props.get("CONTRACT") or None) != contract:
@@ -1521,12 +1520,8 @@ def merge_entries(
             "Cannot merge a running timer",
         )
 
-    into_customer = into_heading.properties.get(
-        "CUSTOMER", "",
-    )
-    src_customer = src_heading.properties.get(
-        "CUSTOMER", "",
-    )
+    into_customer, _ = parse_entry_title(into_heading.title)
+    src_customer, _ = parse_entry_title(src_heading.title)
     if into_customer != src_customer:
         raise ValueError(
             "Cannot merge across customers",
