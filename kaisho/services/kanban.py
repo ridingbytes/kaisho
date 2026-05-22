@@ -280,7 +280,7 @@ def add_task(
 
     org_file = parse_org_file(todos_file, keywords)
 
-    full_title = f"[{customer}]: {title}"
+    full_title = f"[{customer}]: {title}" if customer else title
     now = local_now()
     created_str = now.strftime(CREATED_FMT)
 

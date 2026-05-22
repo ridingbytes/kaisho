@@ -40,6 +40,7 @@ export function ActiveTimer({ timer }: Props) {
         start: timer.start!,
       },
       updates: { notes: value },
+      silent: true,
     });
   }
 
