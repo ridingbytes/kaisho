@@ -109,7 +109,7 @@ export function SettingsView(): JSX.Element {
         }
       />
 
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex-1 overflow-y-auto p-5 pb-20">
         <div className="max-w-3xl">
           <TabBar
             active={activeTab}
