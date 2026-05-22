@@ -4,6 +4,21 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useToast } from "../context/ToastContext";
+import { isTauri } from "../utils/tauri";
+
+/** Fire a Tauri ``timer-changed`` event so the tray
+ *  popover (a separate webview) re-fetches its data
+ *  after a start / stop / merge / delete from the main
+ *  window. No-op outside Tauri. */
+async function emitTimerChanged(): Promise<void> {
+  if (!isTauri()) return;
+  try {
+    const { emit } = await import("@tauri-apps/api/event");
+    await emit("timer-changed", "");
+  } catch {
+    // not in Tauri shell
+  }
+}
 import {
   deleteClockEntry,
   mergeClockEntries,
@@ -87,13 +102,15 @@ export function useStartTimer() {
       description,
       taskId,
       contract,
+      forceNew,
     }: {
       customer: string;
       description?: string;
       taskId?: string;
       contract?: string;
+      forceNew?: boolean;
     }) => startTimer({
-      customer, description, taskId, contract,
+      customer, description, taskId, contract, forceNew,
     }),
     onSuccess: (_d, vars) => {
       void qc.invalidateQueries({
@@ -108,6 +125,7 @@ export function useStartTimer() {
       void qc.invalidateQueries({
         queryKey: ["dashboard"],
       });
+      void emitTimerChanged();
       toast(`Timer started: ${vars.customer}`);
     },
   });
@@ -133,6 +151,7 @@ export function useStopTimer() {
       void qc.invalidateQueries({
         queryKey: ["dashboard"],
       });
+      void emitTimerChanged();
       toast("Timer stopped");
     },
   });
@@ -177,6 +196,7 @@ export function useQuickBook() {
       void qc.invalidateQueries({
         queryKey: ["dashboard"],
       });
+      void emitTimerChanged();
       toast(`Booked ${vars.duration} for ${vars.customer}`);
     },
   });
@@ -221,6 +241,7 @@ export function useUpdateClockEntry() {
       void qc.invalidateQueries({
         queryKey: ["dashboard"],
       });
+      void emitTimerChanged();
       if (!vars.silent) toast("Clock entry updated");
     },
   });
@@ -254,6 +275,7 @@ export function useMergeClockEntries() {
       void qc.invalidateQueries({
         queryKey: ["dashboard"],
       });
+      void emitTimerChanged();
       toast("Entries merged");
     },
     onError: (err: Error) => {
@@ -285,6 +307,7 @@ export function useDeleteClockEntry() {
       void qc.invalidateQueries({
         queryKey: ["dashboard"],
       });
+      void emitTimerChanged();
       toast("Clock entry deleted");
     },
   });
