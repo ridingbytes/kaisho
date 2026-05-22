@@ -636,6 +636,25 @@ export function stopTimer(): Promise<ClockEntry> {
   return post<ClockEntry>("/clocks/stop", {});
 }
 
+/** Result of merging two clock entries: the surviving
+ *  ``into`` entry and the deleted ``from`` entry. */
+export interface MergeClockResult {
+  into: ClockEntry;
+  deleted: ClockEntry;
+}
+
+/** Merge two stopped clock entries. ``from`` is deleted
+ *  and its time + notes are folded into ``into``. */
+export function mergeClockEntries(
+  intoSyncId: string,
+  fromSyncId: string,
+): Promise<MergeClockResult> {
+  return post<MergeClockResult>("/clocks/merge", {
+    into_sync_id: intoSyncId,
+    from_sync_id: fromSyncId,
+  });
+}
+
 /** Params for booking time without the timer. */
 export interface QuickBookParams {
   duration: string;
@@ -1857,6 +1876,25 @@ export interface BackupInfo {
 export interface BackupRunResult {
   backup: BackupInfo;
   removed: BackupInfo[];
+}
+
+export type RoundingMode = "nearest" | "up" | "down";
+
+export interface ClocksSettings {
+  rounding_minutes: number;
+  rounding_mode: RoundingMode;
+}
+
+/** Fetch clock-related settings. */
+export function fetchClocksSettings(): Promise<ClocksSettings> {
+  return get<ClocksSettings>("/settings/clocks");
+}
+
+/** Update clock-related settings. */
+export function updateClocksSettings(
+  updates: Partial<ClocksSettings>,
+): Promise<ClocksSettings> {
+  return patch<ClocksSettings>("/settings/clocks", updates);
 }
 
 /** Fetch the backup schedule + storage settings. */

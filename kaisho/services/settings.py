@@ -315,6 +315,54 @@ def resolve_backup_dir(settings: dict, cfg=None) -> Path:
     return cfg.DATA_DIR / "backups"
 
 
+DEFAULT_CLOCKS: dict = {
+    # Round stopped clock entries to N-minute buckets.
+    # 0 disables rounding. Allowed: 0, 15, 30, 60.
+    "rounding_minutes": 0,
+    # How to round: "nearest" (half-up), "up" (ceil), or
+    # "down" (floor). Ignored when rounding_minutes == 0.
+    "rounding_mode": "nearest",
+    # When true, starting a timer with the same customer +
+    # description + task + contract as a stopped entry
+    # from today reopens that entry instead of creating
+    # a new one. Hold Alt on the start action to override
+    # and force a new entry.
+    "continue_existing": False,
+}
+
+
+def get_clocks_settings(settings: dict) -> dict:
+    """Return clock settings with defaults filled in."""
+    return {**DEFAULT_CLOCKS, **settings.get("clocks", {})}
+
+
+def get_rounding(settings: dict) -> tuple[int, str]:
+    """Return ``(rounding_minutes, rounding_mode)``.
+
+    Coerces values to safe defaults so callers can pass
+    the tuple straight to ``stop_timer`` without
+    re-validating.
+    """
+    block = get_clocks_settings(settings)
+    minutes = int(block.get("rounding_minutes", 0) or 0)
+    mode = str(block.get("rounding_mode", "nearest"))
+    if mode not in ("nearest", "up", "down"):
+        mode = "nearest"
+    return minutes, mode
+
+
+def set_clocks_settings(
+    path: Path, updates: dict,
+) -> dict:
+    """Persist clock settings updates; return the new block."""
+    data = load_settings(path)
+    block = data.get("clocks", {})
+    block.update(updates)
+    data["clocks"] = block
+    save_settings(path, data)
+    return get_clocks_settings(data)
+
+
 DEFAULT_INVOICE_EXPORT: dict = {
     "columns": [
         {"field": "date"},

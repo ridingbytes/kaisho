@@ -37,6 +37,8 @@
   "totalToday": "Total today",
   "addTimeEntry": "Add time entry",
   "resume": "Resume",
+  "mergeIntoPrevious": "Merge into previous entry",
+  "mergeIntoPreviousConfirm": "Merge into the previous entry? This deletes the later entry and folds its time and notes into the earlier one.",
   "runningOnMobile": "Running on mobile",
   "usedLeft": "{{used}}h used / {{left}}h left",
   "unassignedCloudEntries": "Unassigned cloud entries ({{count}})",

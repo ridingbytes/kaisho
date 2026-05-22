@@ -157,12 +157,24 @@ class ClockBackend(ABC):
         description: str,
         task_id: str | None = None,
         contract: str | None = None,
+        continue_existing: bool = False,
     ) -> dict:
         """Open a new clock entry (raises ValueError if one is running)."""
 
     @abstractmethod
-    def stop(self) -> dict:
-        """Close the running clock entry (raises ValueError if none)."""
+    def stop(
+        self,
+        rounding_minutes: int = 0,
+        rounding_mode: str = "nearest",
+    ) -> dict:
+        """Close the running clock entry.
+
+        :param rounding_minutes: When > 0, round the entry's
+            duration to N-minute buckets on stop.
+        :param rounding_mode: ``"nearest"``, ``"up"``, or
+            ``"down"``. Ignored when rounding is off.
+        :raises ValueError: If no timer is running.
+        """
 
     @abstractmethod
     def quick_book(
@@ -199,6 +211,23 @@ class ClockBackend(ABC):
         else by ``start_iso``. Prefer ``sync_id``: two
         entries can legitimately share a start time, so
         ``start_iso`` is not a unique identifier.
+        """
+
+    @abstractmethod
+    def merge_entries(
+        self,
+        into_sync_id: str,
+        from_sync_id: str,
+    ) -> dict:
+        """Merge ``from_sync_id`` into ``into_sync_id``.
+
+        The surviving entry's start/end are extended to
+        cover both, and the source's notes are appended.
+        The source entry is deleted.
+
+        :returns: ``{"into": ..., "deleted": ...}``.
+        :raises ValueError: For mismatched customer,
+            running timer, or missing entries.
         """
 
     @abstractmethod

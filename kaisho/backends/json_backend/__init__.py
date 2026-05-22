@@ -460,8 +460,14 @@ class JsonClockBackend(ClockBackend):
         description,
         task_id=None,
         contract=None,
+        continue_existing: bool = False,
     ) -> dict:
-        """Open a new clock entry. Raises if one is running."""
+        """Open a new clock entry. Raises if one is
+        running. ``continue_existing`` is accepted for
+        interface parity but ignored: only the org
+        backend supports continuation today.
+        """
+        _ = continue_existing
         if self.get_active() is not None:
             raise ValueError(
                 "A clock entry is already running"
@@ -623,6 +629,16 @@ class JsonClockBackend(ClockBackend):
             _write_json(self._clocks_file, entries)
             return self._enrich(entry)
         return None
+
+    def merge_entries(
+        self,
+        into_sync_id: str,
+        from_sync_id: str,
+    ) -> dict:
+        raise NotImplementedError(
+            "merge_entries is only implemented for the "
+            "org backend"
+        )
 
     def delete_entry(
         self,

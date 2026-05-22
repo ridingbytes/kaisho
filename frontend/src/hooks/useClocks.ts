@@ -6,6 +6,7 @@ import {
 import { useToast } from "../context/ToastContext";
 import {
   deleteClockEntry,
+  mergeClockEntries,
   fetchActiveTimer,
   fetchClockEntries,
   fetchCustomerClockEntries,
@@ -205,8 +206,9 @@ export function useUpdateClockEntry() {
         notes?: string;
         contract?: string;
       };
+      silent?: boolean;
     }) => updateClockEntry(entry, updates),
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       void qc.invalidateQueries({
         queryKey: ["clocks"],
       });
@@ -219,7 +221,43 @@ export function useUpdateClockEntry() {
       void qc.invalidateQueries({
         queryKey: ["dashboard"],
       });
-      toast("Clock entry updated");
+      if (!vars.silent) toast("Clock entry updated");
+    },
+  });
+}
+
+/** Returns a mutation that merges two clock entries:
+ *  ``from`` is deleted and its time + notes are folded
+ *  into ``into``. Both entries must share a customer
+ *  and be stopped. */
+export function useMergeClockEntries() {
+  const qc = useQueryClient();
+  const toast = useToast();
+  return useMutation({
+    mutationFn: (args: {
+      into: { sync_id: string | null };
+      from: { sync_id: string | null };
+    }) => {
+      if (!args.into.sync_id || !args.from.sync_id) {
+        return Promise.reject(
+          new Error("Both entries need a sync_id"),
+        );
+      }
+      return mergeClockEntries(
+        args.into.sync_id, args.from.sync_id,
+      );
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["clocks"],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["dashboard"],
+      });
+      toast("Entries merged");
+    },
+    onError: (err: Error) => {
+      toast(err.message || "Could not merge entries");
     },
   });
 }

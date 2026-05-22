@@ -92,7 +92,15 @@ def clock_stop(desc, notes, customer, as_json):
                 start_iso=timer["start"],
                 **updates,
             )
-    result = backend.clocks.stop()
+    from ..config import get_config
+    from ..services import settings as settings_svc
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    minutes, mode = settings_svc.get_rounding(data)
+    result = backend.clocks.stop(
+        rounding_minutes=minutes,
+        rounding_mode=mode,
+    )
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:

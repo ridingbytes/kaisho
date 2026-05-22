@@ -37,6 +37,8 @@
   "totalToday": "Heute gesamt",
   "addTimeEntry": "Zeiteintrag hinzufügen",
   "resume": "Fortsetzen",
+  "mergeIntoPrevious": "In vorherigen Eintrag zusammenführen",
+  "mergeIntoPreviousConfirm": "In den vorherigen Eintrag zusammenführen? Der spätere Eintrag wird gelöscht und seine Zeit sowie Notizen in den früheren Eintrag eingefügt.",
   "runningOnMobile": "Läuft auf dem Handy",
   "usedLeft": "{{used}}h verbraucht / {{left}}h übrig",
   "unassignedCloudEntries": "Nicht zugewiesene Cloud-Einträge ({{count}})",

@@ -25,6 +25,7 @@ import {
   fetchAvailableModels,
   fetchBackups,
   fetchBackupSettings,
+  fetchClocksSettings,
   fetchClaudeCliStatus,
   fetchCloudActiveTimer,
   fetchCloudSyncStatus,
@@ -36,6 +37,7 @@ import {
   pruneBackupsRemote,
   runBackup,
   updateBackupSettings,
+  updateClocksSettings,
   fetchExternalEditorSettings,
   fetchGithubSettings,
   fetchKbSources,
@@ -745,6 +747,29 @@ export function useUpdateUserProfile() {
   });
 }
 
+
+
+// ─── Clocks ─────────────────────────────────────────
+
+export function useClocksSettings() {
+  return useQuery({
+    queryKey: ["settings", "clocks"],
+    queryFn: fetchClocksSettings,
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateClocksSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: updateClocksSettings,
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["settings", "clocks"],
+      });
+    },
+  });
+}
 
 
 // ─── Backup ─────────────────────────────────────────

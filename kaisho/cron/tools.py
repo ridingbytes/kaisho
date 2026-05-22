@@ -413,7 +413,17 @@ def _start_clock(args: dict) -> dict:
 
 
 def _stop_clock(args: dict) -> dict:
-    return {"entry": _backend().clocks.stop()}
+    from ..config import get_config
+    from ..services import settings as settings_svc
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    minutes, mode = settings_svc.get_rounding(data)
+    return {
+        "entry": _backend().clocks.stop(
+            rounding_minutes=minutes,
+            rounding_mode=mode,
+        ),
+    }
 
 
 def _update_clock_entry(args: dict) -> dict:

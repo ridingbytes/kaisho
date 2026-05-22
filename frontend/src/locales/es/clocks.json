@@ -36,6 +36,8 @@
   "totalToday": "Total hoy",
   "addTimeEntry": "Añadir entrada de tiempo",
   "resume": "Reanudar",
+  "mergeIntoPrevious": "Fusionar con la entrada anterior",
+  "mergeIntoPreviousConfirm": "¿Fusionar con la entrada anterior? Se eliminará la entrada posterior y su tiempo y notas se añadirán a la anterior.",
   "runningOnMobile": "En ejecución en móvil",
   "usedLeft": "{{used}}h usadas / {{left}}h restantes",
   "unassignedCloudEntries": "Entradas cloud sin asignar ({{count}})",

@@ -21,6 +21,8 @@ import {
   useDeleteProfile,
   useExternalEditorSettings,
   useUpdateExternalEditorSettings,
+  useClocksSettings,
+  useUpdateClocksSettings,
 } from "../../hooks/useSettings";
 import { Toggle } from "../common/Toggle";
 import { inputCls, saveBtnCls } from "./styles";
@@ -976,12 +978,129 @@ function ExternalEditorSection() {
   );
 }
 
+function ClockSection() {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
+  const { data: cfg } = useClocksSettings();
+  const update = useUpdateClocksSettings();
+  const [minutes, setMinutes] = useState<number>(0);
+  const [mode, setMode] =
+    useState<"nearest" | "up" | "down">("nearest");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!cfg) return;
+    setMinutes(cfg.rounding_minutes ?? 0);
+    setMode(cfg.rounding_mode ?? "nearest");
+  }, [cfg]);
+
+  function flashSaved() {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  }
+
+  function changeMinutes(next: number) {
+    setMinutes(next);
+    update.mutate(
+      { rounding_minutes: next },
+      { onSuccess: flashSaved },
+    );
+  }
+
+  function changeMode(next: "nearest" | "up" | "down") {
+    setMode(next);
+    update.mutate(
+      { rounding_mode: next },
+      { onSuccess: flashSaved },
+    );
+  }
+
+  const minutesOptions: {
+    value: number; label: string;
+  }[] = [
+    { value: 0,  label: t("roundingOff") },
+    { value: 15, label: t("rounding15min") },
+    { value: 30, label: t("rounding30min") },
+    { value: 60, label: t("rounding60min") },
+  ];
+
+  const modeOptions: {
+    value: "nearest" | "up" | "down"; label: string;
+  }[] = [
+    { value: "nearest", label: t("roundingNearest") },
+    { value: "up",      label: t("roundingUp") },
+    { value: "down",    label: t("roundingDown") },
+  ];
+
+  return (
+    <section>
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        {t("clockEntries")}
+      </h2>
+      <label className="flex items-center gap-3">
+        <span className="text-xs text-stone-700 w-40 shrink-0">
+          {t("roundOnStop")}
+        </span>
+        <select
+          value={minutes}
+          onChange={(e) =>
+            changeMinutes(Number(e.target.value))
+          }
+          className={`${inputCls} !w-48 !flex-none`}
+        >
+          {minutesOptions.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        {saved && (
+          <span className="text-xs text-green-500">
+            {tc("saved")}
+          </span>
+        )}
+      </label>
+      <label
+        className={`flex items-center gap-3 mt-3 ${
+          minutes === 0 ? "opacity-50" : ""
+        }`}
+      >
+        <span className="text-xs text-stone-700 w-40 shrink-0">
+          {t("roundingDirection")}
+        </span>
+        <select
+          value={mode}
+          disabled={minutes === 0}
+          onChange={(e) =>
+            changeMode(
+              e.target.value as
+                "nearest" | "up" | "down",
+            )
+          }
+          className={`${inputCls} !w-48 !flex-none`}
+        >
+          {modeOptions.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="mt-2 text-[10px] text-stone-400">
+        {t("roundOnStopHint")}
+      </p>
+    </section>
+  );
+}
+
+
 export function GeneralTab(): JSX.Element {
   return (
     <div className="flex flex-col gap-8">
       <AppTitleSection />
       <LanguageSection />
       <TraySection />
+      <ClockSection />
       <ExternalEditorSection />
       <ResetLocalStorageSection />
     </div>

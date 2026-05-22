@@ -43,7 +43,60 @@ def get_settings():
     merged["inbox_channels"] = (
         settings_svc.get_inbox_channels(data)
     )
+    merged["clocks"] = settings_svc.get_clocks_settings(data)
     return merged
+
+
+# ── Clocks ───────────────────────────────────────────
+
+
+_ALLOWED_ROUNDING = (0, 15, 30, 60)
+_ALLOWED_ROUNDING_MODE = ("nearest", "up", "down")
+
+
+class ClocksUpdate(BaseModel):
+    rounding_minutes: int | None = None
+    rounding_mode: str | None = None
+
+
+@router.get("/clocks")
+def get_clocks():
+    """Return clock-related settings."""
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    return settings_svc.get_clocks_settings(data)
+
+
+@router.patch("/clocks")
+def update_clocks(body: ClocksUpdate):
+    """Update clock-related settings."""
+    cfg = get_config()
+    updates = body.model_dump(exclude_none=True)
+    if "rounding_minutes" in updates:
+        if updates["rounding_minutes"] not in (
+            _ALLOWED_ROUNDING
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "rounding_minutes must be one of "
+                    f"{_ALLOWED_ROUNDING}"
+                ),
+            )
+    if "rounding_mode" in updates:
+        if updates["rounding_mode"] not in (
+            _ALLOWED_ROUNDING_MODE
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "rounding_mode must be one of "
+                    f"{_ALLOWED_ROUNDING_MODE}"
+                ),
+            )
+    return settings_svc.set_clocks_settings(
+        cfg.SETTINGS_FILE, updates,
+    )
 
 
 # ── Invoice export ───────────────────────────────────

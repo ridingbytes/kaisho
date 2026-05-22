@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { Pencil, RotateCw, Trash2 } from "lucide-react";
+import {
+  ArrowUpToLine, Pencil, RotateCw, Trash2,
+} from "lucide-react";
 import { EditFooter } from "../common/EditFooter";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
@@ -13,6 +15,7 @@ import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import {
   useClockEntries,
   useDeleteClockEntry,
+  useMergeClockEntries,
   useStartTimer,
   useUpdateClockEntry,
 } from "../../hooks/useClocks";
@@ -104,10 +107,16 @@ function ContractSelect({
 interface SlotRowProps {
   invoicedSet: Set<string>;
   entry: ClockEntry;
+  previousEntry?: ClockEntry;
   tasks: Task[];
 }
 
-function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
+function SlotRow({
+  entry,
+  previousEntry,
+  tasks,
+  invoicedSet,
+}: SlotRowProps) {
   const { t } = useTranslation("clocks");
   const { t: tc } = useTranslation("common");
   const [mode, setMode] = useState<"view" | "edit">("view");
@@ -125,6 +134,14 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
   const [editTaskTitle, setEditTaskTitle] = useState("");
   const updateEntry = useUpdateClockEntry();
   const deleteEntry = useDeleteClockEntry();
+  const mergeEntry = useMergeClockEntries();
+  const canMerge = Boolean(
+    previousEntry?.sync_id &&
+    entry.sync_id &&
+    entry.end &&
+    previousEntry?.end &&
+    previousEntry?.customer === entry.customer,
+  );
 
   function startEdit() {
     setEditCustomer(entry.customer);
@@ -357,6 +374,28 @@ function SlotRow({ entry, tasks, invoicedSet }: SlotRowProps) {
       >
         <Pencil size={10} />
       </button>
+      {canMerge && (
+        <ConfirmPopover
+          label={t("mergeIntoPreviousConfirm")}
+          onConfirm={() =>
+            mergeEntry.mutate({
+              into: previousEntry!,
+              from: entry,
+            })
+          }
+          disabled={mergeEntry.isPending}
+        >
+          <button
+            disabled={mergeEntry.isPending}
+            className={[actionBtn, "hover:text-cta"].join(
+              " ",
+            )}
+            title={t("mergeIntoPrevious")}
+          >
+            <ArrowUpToLine size={10} />
+          </button>
+        </ConfirmPopover>
+      )}
       <ConfirmPopover
         onConfirm={() => deleteEntry.mutate(entry)}
         disabled={deleteEntry.isPending}
@@ -471,8 +510,16 @@ function TaskGroupRow({
 
       {/* Slots */}
       <div className="mt-0.5">
-        {group.entries.map((entry) => (
-          <SlotRow key={entry.start} entry={entry} tasks={tasks} invoicedSet={invoicedSet} />
+        {group.entries.map((entry, i) => (
+          <SlotRow
+            key={entry.start}
+            entry={entry}
+            previousEntry={
+              i > 0 ? group.entries[i - 1] : undefined
+            }
+            tasks={tasks}
+            invoicedSet={invoicedSet}
+          />
         ))}
       </div>
     </div>

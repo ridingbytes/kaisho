@@ -1044,6 +1044,63 @@ def quick_book(
     )
 
 
+def _reopen_today_match(
+    clocks_file: Path,
+    customer: str,
+    description: str,
+    task_id: str | None,
+    contract: str | None,
+) -> dict | None:
+    """Reopen the most recent matching stopped entry from
+    today, if any. Clears the entry's ``end`` so it
+    becomes the running timer again and returns the
+    updated entry dict. Returns ``None`` if no match.
+    """
+    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
+    today = date.today()
+    best: tuple[Clock, Heading] | None = None
+    best_end: datetime | None = None
+    for h in org_file.headings:
+        props = h.properties
+        if props.get("CUSTOMER", "") != customer:
+            continue
+        if (
+            (h.title or "").strip()
+            != (description or "").strip()
+        ):
+            continue
+        if (props.get("TASK_ID") or None) != task_id:
+            continue
+        if (props.get("CONTRACT") or None) != contract:
+            continue
+        for clock in h.logbook:
+            if clock.end is None:
+                continue
+            if clock.start.date() != today:
+                continue
+            if best_end is None or clock.end > best_end:
+                best_end = clock.end
+                best = (clock, h)
+    if best is None:
+        return None
+    clock, heading = best
+    clock.end = None
+    clock.duration = None
+    heading.properties["UPDATED_AT"] = current_timestamp()
+    heading.dirty = True
+    write_org_file(clocks_file, org_file)
+    sync_id, updated_at = ensure_sync_identity(heading)
+    return clock_to_entry(
+        clock,
+        customer,
+        description,
+        task_id,
+        contract=contract,
+        sync_id=sync_id,
+        updated_at=updated_at,
+    )
+
+
 def start_timer(
     clocks_file: Path,
     customer: str,
@@ -1053,6 +1110,7 @@ def start_timer(
     sync_id: str | None = None,
     updated_at: str | None = None,
     start_at: datetime | None = None,
+    continue_existing: bool = False,
 ) -> dict:
     """Start a new running timer.
 
@@ -1061,7 +1119,12 @@ def start_timer(
     :param description: Entry description.
     :param start_at: Override the start timestamp
         (used by the sync protocol when reconciling).
-    :returns: The new entry dict (``end`` is ``None``).
+    :param continue_existing: When true, reopen the most
+        recent matching stopped entry from today instead
+        of creating a new one. Matches on customer +
+        description + task_id + contract.
+    :returns: The new (or reopened) entry dict
+        (``end`` is ``None``).
     :raises ValueError: If a timer is already running.
     """
     active = get_active_timer(clocks_file)
@@ -1072,6 +1135,17 @@ def start_timer(
         raise ValueError(
             f"Timer already running for {label}"
         )
+
+    if continue_existing and clocks_file.exists():
+        reopened = _reopen_today_match(
+            clocks_file,
+            customer,
+            description,
+            task_id,
+            contract,
+        )
+        if reopened is not None:
+            return reopened
 
     start = (
         start_at or local_now().replace(microsecond=0)
@@ -1091,15 +1165,67 @@ def start_timer(
     )
 
 
+def _round_minutes(
+    total: int,
+    granularity: int,
+    mode: str = "nearest",
+) -> int:
+    """Round a minute count to a ``granularity`` bucket.
+
+    A granularity of 0 (or less) returns ``total``
+    unchanged. ``mode`` selects the rounding direction:
+
+    * ``"nearest"`` -- half-up to the closest bucket.
+    * ``"up"``      -- ceiling; any partial bucket bumps up.
+    * ``"down"``    -- floor; partial buckets are dropped.
+
+    >>> _round_minutes(11, 15, "nearest")
+    15
+    >>> _round_minutes(7, 15, "nearest")
+    0
+    >>> _round_minutes(1, 15, "up")
+    15
+    >>> _round_minutes(16, 15, "down")
+    15
+    >>> _round_minutes(89, 60, "nearest")
+    60
+    >>> _round_minutes(42, 0, "nearest")
+    42
+    """
+    if granularity <= 0:
+        return total
+    if mode == "up":
+        return (
+            (total + granularity - 1) // granularity
+        ) * granularity
+    if mode == "down":
+        return (total // granularity) * granularity
+    # Default: nearest (half-up).
+    return (
+        (total + granularity // 2) // granularity
+    ) * granularity
+
+
 def stop_timer(
     clocks_file: Path,
     end_at: datetime | None = None,
+    rounding_minutes: int = 0,
+    rounding_mode: str = "nearest",
 ) -> dict:
     """Stop the currently running timer.
 
     :param clocks_file: Path to clocks.org.
     :param end_at: Override the end timestamp (used by
         the sync protocol for precise stop-at times).
+    :param rounding_minutes: When > 0, round the entry's
+        duration to N-minute buckets and adjust the end
+        time so ``end - start == rounded_duration``. A
+        duration that rounds to 0 minutes is clamped to
+        ``rounding_minutes`` so no entry is silently
+        dropped.
+    :param rounding_mode: ``"nearest"`` (default),
+        ``"up"`` (ceil), or ``"down"`` (floor). Ignored
+        when ``rounding_minutes == 0``.
     :returns: The completed entry dict.
     :raises ValueError: If no timer is running.
     """
@@ -1125,6 +1251,18 @@ def stop_timer(
     end = end_at or local_now().replace(microsecond=0)
     delta = end - found_clock.start
     total_minutes = int(delta.total_seconds() / 60)
+    if rounding_minutes > 0:
+        rounded = _round_minutes(
+            total_minutes, rounding_minutes, rounding_mode,
+        )
+        # Never drop an entry to zero -- a started+stopped
+        # timer should bill at least one rounding bucket.
+        if rounded == 0:
+            rounded = rounding_minutes
+        total_minutes = rounded
+        end = found_clock.start + timedelta(
+            minutes=total_minutes,
+        )
     hours = total_minutes // 60
     mins = total_minutes % 60
     found_clock.end = end
@@ -1335,6 +1473,102 @@ def insert_clock_entry_from_sync(
         sync_id=fields["sync_id"],
         updated_at=fields["updated_at"],
     )
+
+
+def merge_entries(
+    clocks_file: Path,
+    into_sync_id: str,
+    from_sync_id: str,
+) -> dict:
+    """Merge ``from`` into ``into`` and delete ``from``.
+
+    Extends ``into.end`` to ``max(into.end, from.end)`` so
+    the surviving entry covers both intervals. Appends
+    ``from``'s notes onto ``into``'s notes, separated by a
+    blank line.
+
+    Both entries must belong to the same customer and
+    both must be stopped (``end`` set). The ``into`` entry
+    is kept; the ``from`` entry is deleted and returned so
+    the caller can record a sync tombstone.
+
+    :param clocks_file: Path to clocks.org.
+    :param into_sync_id: SYNC_ID of the entry to keep.
+    :param from_sync_id: SYNC_ID of the entry to delete.
+    :returns: ``{"into": <merged entry>,
+        "deleted": <removed entry>}``.
+    :raises ValueError: If either entry is missing, still
+        running, or the customers differ.
+    """
+    if into_sync_id == from_sync_id:
+        raise ValueError(
+            "Cannot merge an entry into itself",
+        )
+    if not clocks_file.exists():
+        raise ValueError("Clocks file not found")
+
+    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
+    into = find_by_sync_id(org_file, into_sync_id)
+    src = find_by_sync_id(org_file, from_sync_id)
+    if into is None or src is None:
+        raise ValueError("Entry not found")
+
+    into_clock, into_heading = into
+    src_clock, src_heading = src
+
+    if into_clock.end is None or src_clock.end is None:
+        raise ValueError(
+            "Cannot merge a running timer",
+        )
+
+    into_customer = into_heading.properties.get(
+        "CUSTOMER", "",
+    )
+    src_customer = src_heading.properties.get(
+        "CUSTOMER", "",
+    )
+    if into_customer != src_customer:
+        raise ValueError(
+            "Cannot merge across customers",
+        )
+
+    # Extend the surviving entry to cover both ranges.
+    new_end = max(into_clock.end, src_clock.end)
+    new_start = min(into_clock.start, src_clock.start)
+    into_clock.start = new_start
+    into_clock.end = new_end
+    delta = new_end - new_start
+    total = int(delta.total_seconds() / 60)
+    into_clock.duration = (
+        f"{total // 60}:{total % 60:02d}"
+    )
+
+    # Append the source notes if any.
+    src_notes = extract_notes(src_heading) or ""
+    if src_notes.strip():
+        existing = "\n".join(into_heading.body).rstrip()
+        merged_notes = (
+            f"{existing}\n\n{src_notes}".lstrip()
+            if existing
+            else src_notes
+        )
+        into_heading.body = merged_notes.splitlines()
+
+    into_heading.properties["UPDATED_AT"] = (
+        current_timestamp()
+    )
+    into_heading.dirty = True
+
+    deleted_entry = heading_to_entry(
+        src_heading, src_clock,
+    )
+    org_file.headings.remove(src_heading)
+    write_org_file(clocks_file, org_file)
+
+    return {
+        "into": heading_to_entry(into_heading, into_clock),
+        "deleted": deleted_entry,
+    }
 
 
 def delete_clock_entry(

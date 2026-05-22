@@ -49,6 +49,7 @@ class OrgClockBackend(ClockBackend):
         description: str,
         task_id: str | None = None,
         contract: str | None = None,
+        continue_existing: bool = False,
     ) -> dict:
         return clocks.start_timer(
             clocks_file=self._clocks_file,
@@ -56,10 +57,19 @@ class OrgClockBackend(ClockBackend):
             description=description,
             task_id=task_id,
             contract=contract,
+            continue_existing=continue_existing,
         )
 
-    def stop(self) -> dict:
-        return clocks.stop_timer(clocks_file=self._clocks_file)
+    def stop(
+        self,
+        rounding_minutes: int = 0,
+        rounding_mode: str = "nearest",
+    ) -> dict:
+        return clocks.stop_timer(
+            clocks_file=self._clocks_file,
+            rounding_minutes=rounding_minutes,
+            rounding_mode=rounding_mode,
+        )
 
     def quick_book(
         self,
@@ -111,6 +121,17 @@ class OrgClockBackend(ClockBackend):
             notes=notes,
             contract=contract,
             sync_id=sync_id,
+        )
+
+    def merge_entries(
+        self,
+        into_sync_id: str,
+        from_sync_id: str,
+    ) -> dict:
+        return clocks.merge_entries(
+            clocks_file=self._clocks_file,
+            into_sync_id=into_sync_id,
+            from_sync_id=from_sync_id,
         )
 
     def delete_entry(

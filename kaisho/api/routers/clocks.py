@@ -134,6 +134,10 @@ class TimerStart(BaseModel):
     description: str = ""
     task_id: str | None = None
     contract: str | None = None
+    # When true, ignore the profile's continue_existing
+    # setting and always create a fresh entry. Used by the
+    # frontend Alt-click override.
+    force_new: bool = False
 
 
 class EntryUpdate(BaseModel):
@@ -206,7 +210,19 @@ def quick_book(body: QuickBookRequest):
 @router.post("/start", status_code=201)
 def start_timer(body: TimerStart):
     """Start a new running timer."""
+    from ...config import get_config
     from ...services import cloud_sync as sync_svc
+    from ...services import settings as settings_svc
+
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    cont = bool(
+        settings_svc.get_clocks_settings(data)
+        .get("continue_existing", False)
+    )
+    if body.force_new:
+        cont = False
+
     try:
         backend = get_backend()
         backend.customers.ensure_customer(body.customer or "")
@@ -215,6 +231,7 @@ def start_timer(body: TimerStart):
             description=body.description,
             task_id=body.task_id,
             contract=body.contract,
+            continue_existing=cont,
         )
         sync_svc.schedule_push()
         return entry
@@ -225,13 +242,48 @@ def start_timer(body: TimerStart):
 @router.post("/stop")
 def stop_timer():
     """Stop the active timer and save the entry."""
+    from ...config import get_config
     from ...services import cloud_sync as sync_svc
+    from ...services import settings as settings_svc
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    minutes, mode = settings_svc.get_rounding(data)
     try:
-        entry = get_backend().clocks.stop()
+        entry = get_backend().clocks.stop(
+            rounding_minutes=minutes,
+            rounding_mode=mode,
+        )
         sync_svc.schedule_push()
         return entry
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+class MergeRequest(BaseModel):
+    into_sync_id: str
+    from_sync_id: str
+
+
+@router.post("/merge")
+def merge_entries(body: MergeRequest):
+    """Merge two stopped clock entries.
+
+    The source is deleted; the target's range and notes
+    are extended to cover it. Both entries must share a
+    customer.
+    """
+    from ...services import cloud_sync as sync_svc
+    try:
+        result = get_backend().clocks.merge_entries(
+            into_sync_id=body.into_sync_id,
+            from_sync_id=body.from_sync_id,
+        )
+        sync_svc.schedule_push()
+        return result
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400, detail=str(e),
+        )
 
 
 @router.get("/summary")
