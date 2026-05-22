@@ -167,7 +167,9 @@ export function TrayPanel() {
   const completedToday = entries.filter(
     (e) => e.end !== null,
   );
-  const recentEntries = completedToday.slice(0, 3);
+  // Show every completed entry from today. The popover
+  // scrolls so the height is bounded by the window.
+  const recentEntries = completedToday;
   const todayTotal = totalMinutes(completedToday);
 
   async function handleStart(
@@ -202,11 +204,15 @@ export function TrayPanel() {
     refresh();
   }
 
-  async function handleResume(entry: ClockEntry) {
+  async function handleResume(
+    entry: ClockEntry,
+    forceNew = false,
+  ) {
     await startTimer({
       customer: entry.customer,
       description: entry.description,
       contract: entry.contract ?? undefined,
+      forceNew,
     });
     refresh();
   }

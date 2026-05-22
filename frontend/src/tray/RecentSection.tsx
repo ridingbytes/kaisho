@@ -4,7 +4,7 @@ import type { ClockEntry } from "../types";
 
 interface Props {
   entries: ClockEntry[];
-  onResume: (entry: ClockEntry) => void;
+  onResume: (entry: ClockEntry, forceNew?: boolean) => void;
   isRunning: boolean;
 }
 
@@ -78,7 +78,7 @@ export function RecentSection({
             {/* Resume button */}
             {!isRunning && (
               <button
-                onClick={() => onResume(entry)}
+                onClick={(e) => onResume(entry, e.altKey)}
                 title={t("resume")}
                 className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-cta hover:bg-cta/10 transition-all"
               >
