@@ -7,6 +7,7 @@
 
 mod sidecar;
 mod tray;
+mod tray_render;
 mod http;
 
 use std::sync::atomic::{AtomicBool, Ordering};

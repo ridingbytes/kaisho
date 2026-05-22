@@ -144,6 +144,40 @@ pub fn update_icon(
     tooltip: &str,
     title: &str,
 ) {
+    let Some(tray) = app.tray_by_id(TRAY_ID) else {
+        return;
+    };
+
+    let _ = tray.set_tooltip(Some(tooltip));
+
+    // Try the modern pill renderer first. Treat an empty
+    // title as "00:00" so the idle pill is always shown
+    // even when an older callsite forgets to populate it.
+    // Falls back to the static template-icon + text-title
+    // path on any failure so the menu bar is never blank.
+    let display_title = if title.is_empty() {
+        "00:00"
+    } else {
+        title
+    };
+    if let Some(png) = super::tray_render::render_pill(
+        state, display_title,
+    ) {
+        if let Ok(img) = Image::from_bytes(&png) {
+            let _ = tray.set_icon(Some(img));
+            // The pill bakes the time into the icon, so
+            // clear the OS-rendered title and don't draw
+            // it as a template (we want our brand colours).
+            #[cfg(target_os = "macos")]
+            {
+                let _ = tray.set_icon_as_template(false);
+                let _ = tray.set_title(None::<String>);
+            }
+            return;
+        }
+    }
+
+    // Fallback path: static icon + Tauri text title.
     let bytes = match state {
         "active" => icons::ACTIVE,
         "long" => icons::LONG,
@@ -151,28 +185,23 @@ pub fn update_icon(
         _ => icons::IDLE,
     };
     let is_template = state == "idle";
-    if let Some(tray) = app.tray_by_id(TRAY_ID) {
-        if let Ok(img) = Image::from_bytes(bytes) {
-            let _ = tray.set_icon(Some(img));
-        }
-        let _ = tray.set_tooltip(Some(tooltip));
-        #[cfg(target_os = "macos")]
-        {
-            let _ = tray.set_icon_as_template(
-                is_template,
-            );
-            let value = if title.is_empty() {
-                None
-            } else {
-                Some(title)
-            };
-            let _ = tray.set_title(value);
-        }
-        #[cfg(not(target_os = "macos"))]
-        {
-            let _ = title;
-            let _ = is_template;
-        }
+    if let Ok(img) = Image::from_bytes(bytes) {
+        let _ = tray.set_icon(Some(img));
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = tray.set_icon_as_template(is_template);
+        let value = if title.is_empty() {
+            None
+        } else {
+            Some(title)
+        };
+        let _ = tray.set_title(value);
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = title;
+        let _ = is_template;
     }
 }
 

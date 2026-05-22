@@ -222,6 +222,19 @@ case "$MODE" in
             echo "Building sidecar (use --skip-sidecar to skip)..."
             "$ROOT/scripts/build-sidecar.sh"
         fi
+        # macOS Sequoia rejects NSStatusItem (menu bar tray)
+        # for unsigned bare binaries. Precompile and ad-hoc
+        # sign so the dev binary gets a tray icon. The
+        # subsequent `pnpm dev` will detect an up-to-date
+        # binary and skip relinking, preserving the
+        # signature.
+        if [[ "$(uname -s)" == "Darwin" ]]; then
+            echo "Precompiling and ad-hoc signing dev binary..."
+            (cd "$ROOT/desktop/src-tauri" && cargo build)
+            codesign --force --deep --sign - \
+                "$ROOT/desktop/src-tauri/target/debug/kaisho-desktop" \
+                >/dev/null 2>&1 || true
+        fi
         echo "Starting Tauri dev (hot reload for Rust changes)..."
         echo "  Press Ctrl+C to stop."
         (cd "$ROOT/desktop" && pnpm dev)
