@@ -59,6 +59,8 @@
   "roundingNearest": "Nächster Wert (kaufmännisch)",
   "roundingUp": "Immer aufrunden",
   "roundingDown": "Immer abrunden",
+  "continueExisting": "Bestehenden Eintrag fortsetzen",
+  "continueExistingHint": "Wenn ein Timer mit gleichem Kunden, Beschreibung, Aufgabe und Vertrag wie ein gestoppter Eintrag von heute gestartet wird, wird dieser Eintrag wieder geöffnet, statt einen neuen anzulegen. Die Lücke zählt zur Dauer des Eintrags. Beim Starten Alt/Option halten, um einen neuen Eintrag zu erzwingen.",
   "localPreferences": "Lokale Einstellungen",
   "localPreferencesHint": "Löscht den zwischengespeicherten UI-Zustand: Theme, Seitenleiste, ausgeblendete Banner, Berater-Chatverlauf und andere browserlokale Einstellungen. Serverdaten bleiben erhalten.",
   "resetLocalPreferences": "Lokale Einstellungen zurücksetzen",

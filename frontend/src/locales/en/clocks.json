@@ -14,6 +14,7 @@
   "booking": "Booking...",
   "startTimer": "Start Timer",
   "starting": "Starting...",
+  "startTimerAltHint": "Hold Alt/Option to force a new entry instead of continuing an existing one.",
   "stopTimer": "Stop timer",
   "timerStarted": "Timer started: {{customer}}",
   "timerStopped": "Timer stopped",

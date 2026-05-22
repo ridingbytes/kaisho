@@ -59,6 +59,8 @@
   "roundingNearest": "Nearest (half-up)",
   "roundingUp": "Always up (ceiling)",
   "roundingDown": "Always down (floor)",
+  "continueExisting": "Continue an existing entry",
+  "continueExistingHint": "When you start a timer with the same customer, description, task and contract as a stopped entry from today, that entry is reopened instead of creating a new one. The gap counts toward the entry's duration. Hold Alt/Option when starting to force a new entry.",
   "localPreferences": "Local Preferences",
   "localPreferencesHint": "Clears cached UI state: theme, sidebar, dismissed banners, advisor chat history, and other browser-local preferences. Server data is not affected.",
   "resetLocalPreferences": "Reset local preferences",

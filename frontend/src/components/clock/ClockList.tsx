@@ -483,12 +483,13 @@ function TaskGroupRow({
         <div className="flex items-center gap-0.5 shrink-0">
           {showResume && (
             <button
-              onClick={() =>
+              onClick={(e) =>
                 resumeTimer.mutate({
                   customer: group.customer,
                   description: group.description,
                   contract: latest?.contract ?? undefined,
                   taskId: latest?.task_id ?? undefined,
+                  forceNew: e.altKey,
                 })
               }
               disabled={isRunning || resumeTimer.isPending}

@@ -14,6 +14,7 @@
   "booking": "Запись...",
   "startTimer": "Запустить таймер",
   "starting": "Запуск...",
+  "startTimerAltHint": "Удерживайте Alt/Option, чтобы создать новую запись вместо продолжения существующей.",
   "stopTimer": "Остановить таймер",
   "timerStarted": "Таймер запущен: {{customer}}",
   "timerStopped": "Таймер остановлен",

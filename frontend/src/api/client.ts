@@ -615,6 +615,10 @@ export interface StartTimerParams {
   description?: string;
   taskId?: string;
   contract?: string;
+  /** Force a fresh entry even when the profile's
+   *  continue_existing setting is on. Set by an
+   *  Alt-click on the start button. */
+  forceNew?: boolean;
 }
 
 /** Start a new timer for a customer. Optionally link
@@ -627,6 +631,7 @@ export function startTimer(
     description: params.description ?? "",
     task_id: params.taskId ?? null,
     contract: params.contract ?? null,
+    force_new: params.forceNew ?? false,
   });
 }
 
@@ -1883,6 +1888,7 @@ export type RoundingMode = "nearest" | "up" | "down";
 export interface ClocksSettings {
   rounding_minutes: number;
   rounding_mode: RoundingMode;
+  continue_existing: boolean;
 }
 
 /** Fetch clock-related settings. */
