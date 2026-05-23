@@ -481,7 +481,11 @@ export function AiSection(): JSX.Element {
   const { data: cloudStatus } = useCloudSyncStatus();
   const { data: probe } = useAiProbe();
   const update = useUpdateAiSettings();
-  const onSyncAi = cloudStatus?.plan === "sync_ai";
+  // Every paid tier (Companion / Pro / Team) includes the
+  // cloud AI gateway.
+  const onSyncAi = ["companion", "pro", "team"].includes(
+    cloudStatus?.plan ?? "",
+  );
 
   const [form, setForm] = useState<AiSettings>({
     ollama_url: "",

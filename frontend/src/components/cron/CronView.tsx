@@ -988,7 +988,11 @@ export function CronView() {
   const { data: models = [] } = useAvailableModels();
   const { data: cloudStatus } = useCloudSyncStatus();
   const { data: aiSettings } = useAiSettings();
-  const onSyncAi = cloudStatus?.plan === "sync_ai";
+  // Every paid tier (Companion / Pro / Team) includes the
+  // cloud AI gateway.
+  const onSyncAi = ["companion", "pro", "team"].includes(
+    cloudStatus?.plan ?? "",
+  );
   const defaultCronModel =
     aiSettings?.cron_model || "";
   const deleteRun = useDeleteCronRun();

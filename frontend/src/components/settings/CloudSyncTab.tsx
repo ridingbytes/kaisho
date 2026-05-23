@@ -26,11 +26,19 @@ export function CloudSyncSection(): JSX.Element {
   function planLabel(plan: string): string {
     const map: Record<string, string> = {
       free: t("planFree"),
-      sync: t("planSync"),
-      sync_ai: t("planSyncAi"),
+      companion: t("planCompanion"),
+      pro: t("planPro"),
+      team: t("planTeam"),
     };
     return map[plan] || plan;
   }
+
+  // Every paid tier includes the AI gateway (Companion
+  // 500k tokens/mo, Pro/Team 2M). Used to gate the AI
+  // usage panels below.
+  const PAID_AI_PLANS = ["companion", "pro", "team"];
+  const planHasAi = (plan?: string | null): boolean =>
+    !!plan && PAID_AI_PLANS.includes(plan);
 
   const DEFAULT_CLOUD_URL = "https://cloud.kaisho.dev";
   const isDev = window.location.hostname === "localhost";
@@ -284,8 +292,8 @@ export function CloudSyncSection(): JSX.Element {
             </dl>
           </div>
 
-          {/* Kaisho AI info — sync_ai plan only */}
-          {status?.plan === "sync_ai" && (
+          {/* Kaisho AI info — any paid plan */}
+          {planHasAi(status?.plan) && (
             <div className="px-4 py-3 border-b border-border-subtle">
               <p className="text-xs font-medium text-stone-700">
                 {t("useKaishoAi")}
@@ -316,7 +324,7 @@ export function CloudSyncSection(): JSX.Element {
           )}
 
           {/* AI token usage meter */}
-          {status?.plan === "sync_ai" && aiUsage && (
+          {planHasAi(status?.plan) && aiUsage && (
             <div className="px-4 py-3 border-b border-border-subtle">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
                 {t("aiUsage")} ({aiUsage.month || "---"})

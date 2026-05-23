@@ -724,11 +724,13 @@ function AppShell() {
                 title="Cloud Sync settings"
               >
                 <CloudCog size={12} />
-                {cloudStatus.plan === "sync_ai"
-                  ? "Sync+AI"
-                  : cloudStatus.plan === "sync"
-                    ? "Cloud"
-                    : "Free"}
+                {cloudStatus.plan === "pro"
+                  ? "Pro"
+                  : cloudStatus.plan === "team"
+                    ? "Team"
+                    : cloudStatus.plan === "companion"
+                      ? "Companion"
+                      : "Free"}
               </button>
               <button
                 onClick={() =>

@@ -130,7 +130,7 @@ def connect(body: ConnectBody):
         )
 
     plan = stats.get("plan", "free")
-    if plan not in ("sync", "sync_ai"):
+    if plan not in ("companion", "pro", "team"):
         raise HTTPException(
             status_code=403,
             detail=(

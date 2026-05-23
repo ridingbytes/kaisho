@@ -586,7 +586,7 @@ def _dispatch_prompt(
     The ``cloud`` provider sends the prompt through the
     kaisho-cloud AI gateway (``POST /ai/complete``),
     which proxies to Claude and meters usage against
-    the user's sync_ai quota.
+    the user's monthly plan quota.
     """
     if provider == "kaisho":
         from ..services.cloud_sync import (
