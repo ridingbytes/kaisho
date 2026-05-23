@@ -7,10 +7,13 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use serde_json::Value;
 use tauri::image::Image;
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 use tauri::Manager;
+
+use crate::http;
 
 const TRAY_ID: &str = "kaisho-tray";
 const PANEL_WIDTH: f64 = 320.0;
@@ -315,6 +318,98 @@ fn refresh_from_state(app: &tauri::AppHandle) {
     }
 }
 
+/// Parse the ``ISO 8601`` timestamp emitted by the
+/// backend (e.g. ``2026-05-23T14:09:54+02:00`` or
+/// ``2026-05-23T14:09:54.123456``) into Unix epoch
+/// seconds. Returns ``None`` when the string is missing
+/// or unparseable. Strict enough for the only shape the
+/// backend produces; deliberately avoids pulling in a
+/// full chrono dep.
+fn iso_to_unix(iso: &str) -> Option<i64> {
+    // Split off any fractional seconds + timezone so we
+    // can parse the date+time portion with the same
+    // algorithm the rest of the codebase uses.
+    let (date_part, time_part) = iso.split_once('T')?;
+    let mut parts = date_part.split('-');
+    let y: i64 = parts.next()?.parse().ok()?;
+    let mo: i64 = parts.next()?.parse().ok()?;
+    let d: i64 = parts.next()?.parse().ok()?;
+    // ``time_part`` looks like ``HH:MM:SS[.fff][+HH:MM]``
+    // or ``HH:MM:SS[.fff]Z``. Take the first 8 chars for
+    // HH:MM:SS; ignore subsecond + timezone (the entries
+    // the backend writes are in local time without an
+    // explicit zone -- close enough for HH:MM display).
+    let hms = time_part.get(..8)?;
+    let mut tp = hms.split(':');
+    let h: i64 = tp.next()?.parse().ok()?;
+    let m: i64 = tp.next()?.parse().ok()?;
+    let s: i64 = tp.next()?.parse().ok()?;
+
+    // Days from civil date using Howard Hinnant's formula
+    // (proleptic Gregorian). Returns days since Unix
+    // epoch (1970-01-01).
+    let y = if mo <= 2 { y - 1 } else { y };
+    let era = (if y >= 0 { y } else { y - 399 }) / 400;
+    let yoe = (y - era * 400) as u32;
+    let mp = if mo > 2 { mo - 3 } else { mo + 9 } as u32;
+    let doy = (153u32 * mp + 2) / 5 + d as u32 - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days_since_epoch =
+        era * 146097 + (doe as i64) - 719468;
+
+    Some(days_since_epoch * 86400 + h * 3600 + m * 60 + s)
+}
+
+/// Fetch the running timer from the backend and update
+/// the in-process snapshot. Called periodically by the
+/// ticker so the tray self-heals when the frontend's
+/// transition push is missed (e.g. after auto-update
+/// restart). Errors are swallowed; the previous state
+/// stays in place until the next attempt succeeds.
+fn self_heal_from_backend() {
+    let body = match http::get("/api/clocks/active") {
+        Ok(b) => b,
+        Err(_) => return,
+    };
+    let value: Value = match serde_json::from_str(&body) {
+        Ok(v) => v,
+        Err(_) => return,
+    };
+    let active = value
+        .get("active")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let next = if active {
+        let start = value
+            .get("start")
+            .and_then(Value::as_str)
+            .and_then(iso_to_unix);
+        let label = value
+            .get("customer")
+            .and_then(Value::as_str)
+            .map(str::to_string)
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "Kaisho".to_string());
+        match start {
+            Some(start_secs) => Some(TimerInfo {
+                start_secs,
+                label,
+            }),
+            None => return,
+        }
+    } else {
+        None
+    };
+    if let Ok(mut g) = TIMER_STATE.lock() {
+        *g = next;
+    }
+    // The backend answered, so we're online -- flip the
+    // offline flag if it was set. Avoids the menu bar
+    // sitting red after a transient blip even when
+    // nothing else updates it.
+    OFFLINE.store(false, Ordering::Relaxed);
+}
+
 /// Spawn the background ticker that refreshes the menu
 /// bar in sync with the minute boundary so the tray pill
 /// flips to a new HH:MM at the same moment the main
@@ -324,6 +419,23 @@ fn refresh_from_state(app: &tauri::AppHandle) {
 pub fn spawn_ticker(app: tauri::AppHandle) {
     tauri::async_runtime::spawn(async move {
         loop {
+            // Re-query the backend each tick so the
+            // tray self-heals when the frontend's
+            // transition push is missed (e.g. when the
+            // main window mounts during the brief
+            // backend-respawn window after auto-update
+            // and never sees the active timer
+            // transition). The frontend's set_/clear_
+            // calls remain the fast path for instant
+            // reaction; this is the slow safety net.
+            // Wrapped in the same panic guard as the
+            // refresh below so a bad response or socket
+            // hiccup doesn't kill the ticker.
+            let _ = std::panic::catch_unwind(
+                std::panic::AssertUnwindSafe(
+                    self_heal_from_backend,
+                ),
+            );
             // Wrap the refresh in catch_unwind so a panic
             // in the renderer (e.g. an edge case in the
             // pill bitmap path) just skips this tick

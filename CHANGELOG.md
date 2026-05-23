@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.8.2
+
+Self-healing menu-bar tray.
+
+### Tray ticker reads the backend directly
+
+- The Rust-side ticker now re-queries
+  ``/api/clocks/active`` on every wall-clock minute
+  tick and reconciles its in-process snapshot
+  accordingly. The frontend's transition pushes
+  (``set_active_timer`` / ``clear_active_timer``) stay
+  as the fast path for instant reaction, but the tray
+  no longer depends on the main window seeing every
+  transition.
+- This fixes a stuck-tray edge case after the
+  auto-updater restart: the brief backend-respawn
+  window could make ``useActiveTimer`` resolve to
+  ``{active: false}`` before the timer was actually
+  picked back up, leaving ``useTrayIconSync`` in an
+  "idle" state. The next minute boundary now repairs
+  itself instead of waiting for a manual reload.
+- The tray ticker also clears its own ``offline``
+  flag whenever a backend query succeeds, so a
+  transient connection blip can't leave the menu bar
+  sitting red after recovery.
+
 ## 1.8.1
 
 Pause/Resume for clock entries, plus a sizable cleanup
