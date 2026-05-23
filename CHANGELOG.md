@@ -1,5 +1,92 @@
 # Changelog
 
+## 1.8.0
+
+Time-tracking polish across three new features plus a
+modern, retina-crisp menu bar pill that replaces the
+text-next-to-icon look.
+
+### Clock entry rounding
+
+- New setting under Settings > General > Clock Entries
+  rounds a stopped timer's duration to 15 / 30 / 60
+  minute buckets, or leaves it exact (the default).
+  A second dropdown picks the direction: nearest
+  (half-up), always up (ceiling), or always down
+  (floor). The end timestamp is adjusted so the entry
+  covers exactly the rounded interval -- nothing is
+  silently dropped to zero; a sub-bucket duration
+  bumps up to one bucket.
+
+### Merge two adjacent entries
+
+- Each non-first entry within a customer group on the
+  clocks page gets a merge button next to edit and
+  delete. Clicking folds the entry into the previous
+  one: the earlier entry's range extends to cover
+  both, and notes are appended with a blank-line
+  separator. Cross-customer or running-timer merges
+  are refused. Available on the org backend.
+
+### Continue an existing timer
+
+- Optional setting that, when on, reopens the most
+  recent stopped entry from today instead of creating
+  a new one if customer + description + task +
+  contract all match. The gap between stop and start
+  counts toward the entry's duration. Hold Alt/Option
+  when clicking Start or Resume to force a new entry
+  regardless of the setting. Available on the org
+  backend.
+
+### Modern tray icon
+
+- The menu bar item is now a coloured rounded pill
+  with the elapsed HH:MM baked in. Green when a timer
+  runs, amber after eight hours, red when the backend
+  is offline, neutral grey when idle. Renders at 2x
+  with an embedded pHYs chunk so macOS treats it as
+  a retina image and the text stays crisp.
+
+### macOS Sequoia dev-mode fix
+
+- On macOS 15, an unsigned bare debug binary cannot
+  register an NSStatusItem -- the tray icon would
+  never appear when running via `bin/dev --desktop`.
+  An embedded Info.plist plus ad-hoc codesigning in
+  the dev script gives the binary a real bundle
+  identity so the tray works end-to-end in dev. Only
+  affects the dev workflow; release builds were never
+  broken.
+
+### Tray popover
+
+- Recent-entries list now shows every completed entry
+  from today, scrolling when the popover fills.
+  Previously hard-capped at three.
+- Listens for a new `timer-changed` event fired by the
+  main window's start / stop / merge / delete / book
+  / update mutations, so the popover refreshes
+  immediately instead of waiting up to five seconds
+  for the next poll.
+
+### Translations
+
+- EN, DE, ES, RU strings added for rounding, merge,
+  continue-existing, and the start-button modifier
+  hint. Russian also picked up the rounding-direction
+  strings that were missing from earlier drafts.
+
+### Fixes
+
+- ActiveTimer notes autosave no longer fires a toast
+  on every keystroke.
+- Kanban add_task drops the leading `[]:` prefix when
+  no customer is set, so headings read just the task
+  title.
+- Settings page bottom padding bumped so the
+  Profiles > Create row clears the bottom edge.
+
 ## 1.7.3
 
 Defensive UI patch ahead of the Track AI tier rollout
