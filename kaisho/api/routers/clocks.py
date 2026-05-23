@@ -134,10 +134,6 @@ class TimerStart(BaseModel):
     description: str = ""
     task_id: str | None = None
     contract: str | None = None
-    # When true, ignore the profile's continue_existing
-    # setting and always create a fresh entry. Used by the
-    # frontend Alt-click override.
-    force_new: bool = False
 
 
 class EntryUpdate(BaseModel):
@@ -210,18 +206,7 @@ def quick_book(body: QuickBookRequest):
 @router.post("/start", status_code=201)
 def start_timer(body: TimerStart):
     """Start a new running timer."""
-    from ...config import get_config
     from ...services import cloud_sync as sync_svc
-    from ...services import settings as settings_svc
-
-    cfg = get_config()
-    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
-    cont = bool(
-        settings_svc.get_clocks_settings(data)
-        .get("continue_existing", False)
-    )
-    if body.force_new:
-        cont = False
 
     try:
         backend = get_backend()
@@ -231,7 +216,6 @@ def start_timer(body: TimerStart):
             description=body.description,
             task_id=body.task_id,
             contract=body.contract,
-            continue_existing=cont,
         )
         sync_svc.schedule_push()
         return entry
@@ -240,23 +224,65 @@ def start_timer(body: TimerStart):
 
 
 @router.post("/stop")
-def stop_timer():
-    """Stop the active timer and save the entry."""
+def stop_timer(
+    apply_rounding: bool = True,
+    paused: bool = False,
+):
+    """Stop the active timer and save the entry.
+
+    :param apply_rounding: When false, the profile's
+        rounding setting is ignored. Set by Pause so a
+        mid-segment stop is recorded at exact length.
+    :param paused: When true, mark the entry as paused
+        so the UI can show a Resume affordance. Set by
+        the Pause action; defaults to false so the Stop
+        action clears any prior paused state cleanly.
+    """
     from ...config import get_config
     from ...services import cloud_sync as sync_svc
     from ...services import settings as settings_svc
     cfg = get_config()
-    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
-    minutes, mode = settings_svc.get_rounding(data)
+    if apply_rounding:
+        data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+        minutes, mode = settings_svc.get_rounding(data)
+    else:
+        minutes, mode = 0, "nearest"
     try:
         entry = get_backend().clocks.stop(
             rounding_minutes=minutes,
             rounding_mode=mode,
+            paused=paused,
         )
         sync_svc.schedule_push()
         return entry
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/paused")
+def get_paused():
+    """Return the currently paused entry, or ``null``.
+
+    Paused state means the user clicked Pause; the entry
+    is closed but the UI should surface a Resume button.
+    A regular Stop clears the paused state.
+    """
+    entry = get_backend().clocks.get_paused()
+    return entry
+
+
+@router.delete("/paused", status_code=204)
+def clear_paused():
+    """Clear the paused flag without touching the entry.
+
+    Used by the paused widget's Stop button: the user
+    decided not to resume. The closed entry stays in the
+    file as a normal stopped entry; only the PAUSED hint
+    goes away.
+    """
+    from ...services import cloud_sync as sync_svc
+    get_backend().clocks.clear_paused()
+    sync_svc.schedule_push()
 
 
 class MergeRequest(BaseModel):

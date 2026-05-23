@@ -9,6 +9,9 @@ import {
   fetchActiveTimer,
   fetchCustomers,
   fetchTodayEntries,
+  clearPausedTimer,
+  fetchPausedTimer,
+  pauseTimer,
   startTimer,
   stopTimer,
   updateClockEntry,
@@ -64,6 +67,18 @@ async function invokeTauri(
   }
 }
 
+/** Notify other webviews (main window) that the timer
+ *  state changed so they can refresh their cache. */
+async function emitTimerChanged(): Promise<void> {
+  if (!isTauri()) return;
+  try {
+    const { emit } = await import("@tauri-apps/api/event");
+    await emit("timer-changed", "");
+  } catch {
+    // not in Tauri shell
+  }
+}
+
 export function TrayPanel() {
   const { t } = useTranslation("clocks");
   const { t: tc } = useTranslation("common");
@@ -76,6 +91,8 @@ export function TrayPanel() {
   const [customers, setCustomers] = useState<Customer[]>(
     [],
   );
+  const [paused, setPaused] =
+    useState<ClockEntry | null>(null);
   const [, setTick] = useState(0);
 
   // Poll active timer + today entries every 5s. The
@@ -83,16 +100,19 @@ export function TrayPanel() {
   // so this loop only refreshes the popover content.
   const refresh = useCallback(async () => {
     try {
-      const [t, e, c] = await Promise.all([
+      const [t, e, c, p] = await Promise.all([
         fetchActiveTimer(),
         fetchTodayEntries(),
         fetchCustomers(),
+        fetchPausedTimer(),
       ]);
       setTimer(t);
       setEntries(e);
       setCustomers(c);
+      setPaused(p);
     } catch {
       setTimer(null);
+      setPaused(null);
     }
   }, []);
 
@@ -178,11 +198,36 @@ export function TrayPanel() {
   ) {
     await startTimer({ customer, description, contract });
     refresh();
+    void emitTimerChanged();
   }
 
   async function handleStop() {
     await stopTimer();
     refresh();
+    void emitTimerChanged();
+  }
+
+  async function handlePause() {
+    await pauseTimer();
+    refresh();
+    void emitTimerChanged();
+  }
+
+  async function handleResumePaused(entry: ClockEntry) {
+    await startTimer({
+      customer: entry.customer,
+      description: entry.description,
+      contract: entry.contract ?? undefined,
+      taskId: entry.task_id ?? undefined,
+    });
+    refresh();
+    void emitTimerChanged();
+  }
+
+  async function handleDismissPaused() {
+    await clearPausedTimer();
+    refresh();
+    void emitTimerChanged();
   }
 
   async function handleUpdateDescription(desc: string) {
@@ -192,6 +237,7 @@ export function TrayPanel() {
       { description: desc },
     );
     refresh();
+    void emitTimerChanged();
   }
 
   async function handleUpdateNotes(notes: string) {
@@ -201,19 +247,17 @@ export function TrayPanel() {
       { notes },
     );
     refresh();
+    void emitTimerChanged();
   }
 
-  async function handleResume(
-    entry: ClockEntry,
-    forceNew = false,
-  ) {
+  async function handleResume(entry: ClockEntry) {
     await startTimer({
       customer: entry.customer,
       description: entry.description,
       contract: entry.contract ?? undefined,
-      forceNew,
     });
     refresh();
+    void emitTimerChanged();
   }
 
   function openMainWindow() {
@@ -230,8 +274,12 @@ export function TrayPanel() {
           isRunning ? formatElapsed(timer!.start!) : ""
         }
         customers={customers}
+        pausedEntry={paused}
         onStart={handleStart}
         onStop={handleStop}
+        onPause={handlePause}
+        onResumePaused={handleResumePaused}
+        onDismissPaused={handleDismissPaused}
         onUpdateDescription={handleUpdateDescription}
         onUpdateNotes={handleUpdateNotes}
       />

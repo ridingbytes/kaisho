@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pencil, Square } from "lucide-react";
-import { useStopTimer, useUpdateClockEntry } from "../../hooks/useClocks";
+import { Pause, Pencil, Square } from "lucide-react";
+import {
+  usePauseTimer,
+  useStopTimer,
+  useUpdateClockEntry,
+} from "../../hooks/useClocks";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
 import { elapsed } from "../../utils/formatting";
 import type { ActiveTimer as ActiveTimerType } from "../../types";
@@ -18,6 +22,7 @@ export function ActiveTimer({ timer }: Props) {
   const [notes, setNotes] = useState(timer.notes ?? "");
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stop = useStopTimer();
+  const pause = usePauseTimer();
   const updateEntry = useUpdateClockEntry();
   const customerColors = useCustomerColors();
 
@@ -80,8 +85,24 @@ export function ActiveTimer({ timer }: Props) {
           {elapsed(timer.start)}
         </div>
         <button
+          onClick={() => pause.mutate()}
+          disabled={pause.isPending || stop.isPending}
+          title={t("pauseTimer")}
+          aria-label={t("pauseTimer")}
+          className={[
+            "inline-flex items-center justify-center",
+            "w-6 h-6 rounded-full",
+            "bg-amber-500 text-white",
+            "border border-amber-500",
+            "hover:brightness-110 transition-all",
+            "disabled:opacity-40 disabled:cursor-wait",
+          ].join(" ")}
+        >
+          <Pause size={10} fill="currentColor" />
+        </button>
+        <button
           onClick={() => stop.mutate()}
-          disabled={stop.isPending}
+          disabled={stop.isPending || pause.isPending}
           title={t("stopTimer")}
           aria-label={t("stopTimer")}
           className={[

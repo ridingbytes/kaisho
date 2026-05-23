@@ -3,7 +3,9 @@
 //! Left-click toggles the popover panel, right-click
 //! shows the context menu (Open, Start/Stop, Quit).
 
-use std::time::Duration;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use tauri::image::Image;
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
@@ -13,6 +15,34 @@ use tauri::Manager;
 const TRAY_ID: &str = "kaisho-tray";
 const PANEL_WIDTH: f64 = 320.0;
 const PANEL_HEIGHT: f64 = 480.0;
+
+/// Snapshot of the currently running timer, pushed by
+/// the frontend on start / stop. The Rust ticker
+/// recomputes elapsed from ``start_secs`` so the menu
+/// bar stays current even when every webview is
+/// suspended in the background (where ``setInterval``
+/// is throttled or paused).
+#[derive(Clone)]
+struct TimerInfo {
+    start_secs: i64,
+    label: String,
+}
+
+static TIMER_STATE: Mutex<Option<TimerInfo>> =
+    Mutex::new(None);
+static OFFLINE: AtomicBool = AtomicBool::new(false);
+
+fn now_unix() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
+}
+
+fn format_hhmm(total_minutes: i64) -> String {
+    let m = total_minutes.max(0);
+    format!("{:02}:{:02}", m / 60, m % 60)
+}
 
 // -----------------------------------------------------------
 // Icon bytes (embedded at compile time)
@@ -203,6 +233,130 @@ pub fn update_icon(
         let _ = title;
         let _ = is_template;
     }
+}
+
+/// Set the active-timer snapshot. The Rust-side ticker
+/// uses ``start_secs`` (Unix epoch seconds) to recompute
+/// elapsed every 30 seconds, so the menu bar updates
+/// even when the main window is suspended and its
+/// JavaScript timer is throttled or paused. Pushes one
+/// refresh immediately so the user sees the new state
+/// without waiting for the next tick.
+pub fn set_active_timer(
+    app: &tauri::AppHandle,
+    start_secs: i64,
+    label: String,
+) {
+    if let Ok(mut g) = TIMER_STATE.lock() {
+        *g = Some(TimerInfo { start_secs, label });
+    }
+    refresh_from_state(app);
+}
+
+/// Drop the active-timer snapshot; menu bar reverts to
+/// the idle pill.
+pub fn clear_active_timer(app: &tauri::AppHandle) {
+    if let Ok(mut g) = TIMER_STATE.lock() {
+        *g = None;
+    }
+    refresh_from_state(app);
+}
+
+/// Mark the backend connection as reachable or offline.
+/// When offline, the ticker pushes the red icon and
+/// skips the active-timer refresh so the offline state
+/// isn't overwritten by a stale timer snapshot.
+pub fn set_offline(app: &tauri::AppHandle, offline: bool) {
+    OFFLINE.store(offline, Ordering::Relaxed);
+    refresh_from_state(app);
+}
+
+/// Recompute and push icon + tooltip + title from the
+/// in-process timer / offline state. Called by the
+/// setters above and by the background ticker.
+fn refresh_from_state(app: &tauri::AppHandle) {
+    if OFFLINE.load(Ordering::Relaxed) {
+        update_icon(
+            app,
+            "offline",
+            "Kaisho \u{2014} backend offline",
+            "",
+        );
+        return;
+    }
+    let snapshot = TIMER_STATE.lock().ok().and_then(
+        |g| g.clone(),
+    );
+    match snapshot {
+        Some(info) => {
+            let minutes =
+                ((now_unix() - info.start_secs).max(0))
+                    / 60;
+            let hours = minutes / 60;
+            let state =
+                if hours > 8 { "long" } else { "active" };
+            let title = format_hhmm(minutes);
+            let suffix =
+                if hours > 8 { " (long)" } else { "" };
+            let tooltip = format!(
+                "{} \u{2014} {}{}",
+                info.label, title, suffix,
+            );
+            update_icon(app, state, &tooltip, &title);
+        }
+        None => {
+            update_icon(
+                app,
+                "idle",
+                "Kaisho \u{2014} no active timer",
+                "00:00",
+            );
+        }
+    }
+}
+
+/// Spawn the background ticker that refreshes the menu
+/// bar in sync with the minute boundary so the tray pill
+/// flips to a new HH:MM at the same moment the main
+/// window's per-second clock does. Without alignment,
+/// the tray could lag by up to one tick interval and
+/// show "4" while the main app shows "5".
+pub fn spawn_ticker(app: tauri::AppHandle) {
+    tauri::async_runtime::spawn(async move {
+        loop {
+            // Wrap the refresh in catch_unwind so a panic
+            // in the renderer (e.g. an edge case in the
+            // pill bitmap path) just skips this tick
+            // instead of killing the whole ticker task.
+            // Without this guard a single bad frame
+            // freezes the menu-bar pill indefinitely
+            // until the user restarts the app.
+            let app_for_refresh = app.clone();
+            let result = std::panic::catch_unwind(
+                std::panic::AssertUnwindSafe(|| {
+                    refresh_from_state(&app_for_refresh)
+                }),
+            );
+            if result.is_err() {
+                eprintln!(
+                    "[tray] ticker refresh panicked; \
+                     skipping this tick",
+                );
+            }
+            // Sleep until just after the next wall-clock
+            // minute. Add 250ms slack so the minute has
+            // definitively turned by the time we read
+            // ``now_unix`` again.
+            let now = now_unix();
+            let secs_until_next_minute =
+                60 - (now.rem_euclid(60)) as u64;
+            tokio::time::sleep(
+                Duration::from_secs(secs_until_next_minute)
+                    + Duration::from_millis(250),
+            )
+            .await;
+        }
+    });
 }
 
 /// Toggle the tray popover window. Shows it centered

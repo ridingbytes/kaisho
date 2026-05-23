@@ -322,12 +322,6 @@ DEFAULT_CLOCKS: dict = {
     # How to round: "nearest" (half-up), "up" (ceil), or
     # "down" (floor). Ignored when rounding_minutes == 0.
     "rounding_mode": "nearest",
-    # When true, starting a timer with the same customer +
-    # description + task + contract as a stopped entry
-    # from today reopens that entry instead of creating
-    # a new one. Hold Alt on the start action to override
-    # and force a new entry.
-    "continue_existing": False,
 }
 
 

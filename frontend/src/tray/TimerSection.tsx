@@ -1,20 +1,29 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pencil, Play, Square } from "lucide-react";
+import { Pause, Pencil, Play, Square } from "lucide-react";
 import { Markdown } from "../components/common/Markdown";
-import type { ActiveTimer, Customer } from "../types";
+import { PausedTimerView } from "../components/common/PausedTimerView";
+import type {
+  ActiveTimer,
+  ClockEntry,
+  Customer,
+} from "../types";
 
 interface Props {
   timer: ActiveTimer | null;
   isRunning: boolean;
   elapsed: string;
   customers: Customer[];
+  pausedEntry?: ClockEntry | null;
   onStart: (
     customer: string,
     description: string,
     contract?: string,
   ) => void;
   onStop: () => void;
+  onPause: () => void;
+  onResumePaused?: (entry: ClockEntry) => void;
+  onDismissPaused?: () => void;
   onUpdateDescription: (desc: string) => void;
   onUpdateNotes: (notes: string) => void;
 }
@@ -24,8 +33,12 @@ export function TimerSection({
   isRunning,
   elapsed,
   customers,
+  pausedEntry,
   onStart,
   onStop,
+  onPause,
+  onResumePaused,
+  onDismissPaused,
   onUpdateDescription,
   onUpdateNotes,
 }: Props) {
@@ -112,6 +125,24 @@ export function TimerSection({
     }
   }
 
+  // Paused state: timer is closed but user clicked
+  // Pause. Show the frozen view with Resume + Stop
+  // (dismiss) buttons. Hidden while an active timer is
+  // running (running takes precedence). Shares the
+  // presentational widget with the main app via
+  // ``PausedTimerView``.
+  if (!isRunning && pausedEntry) {
+    return (
+      <div className="px-4 py-3">
+        <PausedTimerView
+          entry={pausedEntry}
+          onResume={() => onResumePaused?.(pausedEntry)}
+          onStop={() => onDismissPaused?.()}
+        />
+      </div>
+    );
+  }
+
   if (isRunning && timer?.start) {
     return (
       <div className="px-4 py-3">
@@ -123,6 +154,15 @@ export function TimerSection({
             <div className="text-3xl font-light font-mono text-stone-900 tabular-nums tracking-wide">
               {elapsed}
             </div>
+            <button
+              type="button"
+              onClick={onPause}
+              title={t("pauseTimer")}
+              aria-label={t("pauseTimer")}
+              className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 border border-amber-500 text-white hover:brightness-110 transition-all"
+            >
+              <Pause size={10} fill="currentColor" />
+            </button>
             <button
               type="button"
               onClick={onStop}
@@ -241,15 +281,15 @@ export function TimerSection({
     );
   }
 
-  // Start form
+  // Start form. The "pick up your last entry"
+  // affordance is the Resume button on each row in the
+  // Recent Entries section below; no banner here.
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="px-4 py-4"
-    >
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
-        {t("quickStart")}
-      </p>
+    <div className="px-4 py-4">
+      <form onSubmit={handleSubmit}>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+          {t("quickStart")}
+        </p>
       <div className="flex flex-col gap-2">
         <input
           list="tray-customers"
@@ -285,7 +325,8 @@ export function TimerSection({
           {t("startTimer")}
         </button>
       </div>
-    </form>
+      </form>
+    </div>
   );
 }
 

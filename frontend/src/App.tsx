@@ -22,12 +22,15 @@ import {
 import ReactDOM from "react-dom";
 import {
   useActiveTimer,
+  usePausedTimer,
   useStopTimer,
+  useTimerChangedListener,
 } from "./hooks/useClocks";
 import { ToastProvider } from "./context/ToastContext";
 import { CalendarWidget } from "./components/clock/CalendarWidget";
 import { ClockList } from "./components/clock/ClockList";
 import { StartForm } from "./components/clock/StartForm";
+import { PausedTimer } from "./components/clock/PausedTimer";
 import {
   useCloudSyncStatus,
   useCreateProfile,
@@ -93,10 +96,12 @@ function MobileTimerModal({
 }) {
   const { t: tClocks } = useTranslation("clocks");
   const { data: timer } = useActiveTimer();
+  const { data: pausedEntry } = usePausedTimer();
   const [selectedDate, setSelectedDate] = useState<
     string | null
   >(null);
   const isRunning = timer?.active === true;
+  const showPaused = !isRunning && !!pausedEntry;
 
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[60] flex flex-col bg-surface-card">
@@ -134,7 +139,10 @@ function MobileTimerModal({
             }}
           />
         )}
-        {!isRunning && <StartForm onStarted={() => {}} />}
+        {showPaused && <PausedTimer entry={pausedEntry} />}
+        {!isRunning && !showPaused && (
+          <StartForm onStarted={() => {}} />
+        )}
         <CalendarWidget
           selectedDate={selectedDate}
           onDateChange={setSelectedDate}
@@ -462,9 +470,13 @@ function AppShell() {
   const [mobileTimerOpen, setMobileTimerOpen] = useState(
     false,
   );
-  const { data: timerData } = useActiveTimer();
+  useTimerChangedListener();
+  const {
+    data: timerData,
+    isError: timerError,
+  } = useActiveTimer();
   const timerActive = timerData?.active === true;
-  useTrayIconSync(timerData);
+  useTrayIconSync(timerData, timerError);
   const { data: cloudStatus } = useCloudSyncStatus();
   const { data: versionData } = useVersionInfo();
 

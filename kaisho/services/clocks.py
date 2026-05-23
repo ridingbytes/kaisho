@@ -1044,62 +1044,6 @@ def quick_book(
     )
 
 
-def _reopen_today_match(
-    clocks_file: Path,
-    customer: str,
-    description: str,
-    task_id: str | None,
-    contract: str | None,
-) -> dict | None:
-    """Reopen the most recent matching stopped entry from
-    today, if any. Clears the entry's ``end`` so it
-    becomes the running timer again and returns the
-    updated entry dict. Returns ``None`` if no match.
-    """
-    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
-    today = date.today()
-    best: tuple[Clock, Heading] | None = None
-    best_end: datetime | None = None
-    target_desc = (description or "").strip()
-    for h in org_file.headings:
-        h_customer, h_desc = parse_entry_title(h.title)
-        if h_customer != customer:
-            continue
-        if h_desc.strip() != target_desc:
-            continue
-        props = h.properties
-        if (props.get("TASK_ID") or None) != task_id:
-            continue
-        if (props.get("CONTRACT") or None) != contract:
-            continue
-        for clock in h.logbook:
-            if clock.end is None:
-                continue
-            if clock.start.date() != today:
-                continue
-            if best_end is None or clock.end > best_end:
-                best_end = clock.end
-                best = (clock, h)
-    if best is None:
-        return None
-    clock, heading = best
-    clock.end = None
-    clock.duration = None
-    heading.properties["UPDATED_AT"] = current_timestamp()
-    heading.dirty = True
-    write_org_file(clocks_file, org_file)
-    sync_id, updated_at = ensure_sync_identity(heading)
-    return clock_to_entry(
-        clock,
-        customer,
-        description,
-        task_id,
-        contract=contract,
-        sync_id=sync_id,
-        updated_at=updated_at,
-    )
-
-
 def start_timer(
     clocks_file: Path,
     customer: str,
@@ -1109,7 +1053,6 @@ def start_timer(
     sync_id: str | None = None,
     updated_at: str | None = None,
     start_at: datetime | None = None,
-    continue_existing: bool = False,
 ) -> dict:
     """Start a new running timer.
 
@@ -1118,12 +1061,7 @@ def start_timer(
     :param description: Entry description.
     :param start_at: Override the start timestamp
         (used by the sync protocol when reconciling).
-    :param continue_existing: When true, reopen the most
-        recent matching stopped entry from today instead
-        of creating a new one. Matches on customer +
-        description + task_id + contract.
-    :returns: The new (or reopened) entry dict
-        (``end`` is ``None``).
+    :returns: The new entry dict (``end`` is ``None``).
     :raises ValueError: If a timer is already running.
     """
     active = get_active_timer(clocks_file)
@@ -1135,17 +1073,18 @@ def start_timer(
             f"Timer already running for {label}"
         )
 
-    if continue_existing and clocks_file.exists():
-        reopened = _reopen_today_match(
-            clocks_file,
-            customer,
-            description,
-            task_id,
-            contract,
+    # A fresh start clears any stale PAUSED flag: the
+    # user has moved on to a different entry and the
+    # Resume affordance
+    # should disappear. The clear happens on the existing
+    # org file before ``append_entry`` writes the new
+    # heading.
+    if clocks_file.exists():
+        org_file = parse_org_file(
+            clocks_file, CLOCK_KEYWORDS,
         )
-        if reopened is not None:
-            return reopened
-
+        if _clear_paused_flag(org_file, except_heading=None):
+            write_org_file(clocks_file, org_file)
     start = (
         start_at or local_now().replace(microsecond=0)
     )
@@ -1210,6 +1149,7 @@ def stop_timer(
     end_at: datetime | None = None,
     rounding_minutes: int = 0,
     rounding_mode: str = "nearest",
+    paused: bool = False,
 ) -> dict:
     """Stop the currently running timer.
 
@@ -1225,6 +1165,11 @@ def stop_timer(
     :param rounding_mode: ``"nearest"`` (default),
         ``"up"`` (ceil), or ``"down"`` (floor). Ignored
         when ``rounding_minutes == 0``.
+    :param paused: When true, mark the heading with
+        ``PAUSED=true`` so the UI can show a "Resume"
+        affordance for it. Cleared by ``start_timer``
+        when a different entry is started, or by a
+        subsequent non-paused ``stop_timer`` call.
     :returns: The completed entry dict.
     :raises ValueError: If no timer is running.
     """
@@ -1269,10 +1214,176 @@ def stop_timer(
     found_heading.properties["UPDATED_AT"] = (
         current_timestamp()
     )
+    if paused:
+        found_heading.properties["PAUSED"] = "true"
+    else:
+        found_heading.properties.pop("PAUSED", None)
     found_heading.dirty = True
+
+    # A normal (non-paused) stop also clears the PAUSED
+    # flag from any other heading so the UI doesn't keep
+    # showing a stale "Resume" affordance for a
+    # previously paused entry that the user has since
+    # abandoned.
+    if not paused:
+        _clear_paused_flag(org_file, except_heading=None)
 
     write_org_file(clocks_file, org_file)
     return heading_to_entry(found_heading, found_clock)
+
+
+def split_multi_clock_headings(clocks_file: Path) -> int:
+    """One-shot migration: split any heading with more
+    than one CLOCK line into separate sibling headings,
+    one CLOCK per heading. Each new heading gets a fresh
+    ``SYNC_ID`` so the rows have independent identity
+    again (the original heading keeps its existing
+    ``SYNC_ID``; the extras get freshly generated ones).
+
+    Required because an earlier Pause/Resume iteration
+    appended CLOCKs to the same heading, which broke
+    merge / edit / delete identity. Running this once
+    after upgrading restores the 1:1 heading-to-row
+    invariant the rest of the codebase assumes.
+
+    Returns the number of *new* headings produced (0
+    when no migration was needed). Idempotent: running
+    again on already-split data is a no-op.
+    """
+    if not clocks_file.exists():
+        return 0
+    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
+    new_headings: list[Heading] = []
+    produced = 0
+    for h in org_file.headings:
+        if len(h.logbook) <= 1:
+            new_headings.append(h)
+            continue
+        # First clock stays on the original heading.
+        first, rest = h.logbook[0], h.logbook[1:]
+        h.logbook = [first]
+        h.properties["UPDATED_AT"] = current_timestamp()
+        h.dirty = True
+        new_headings.append(h)
+        # Subsequent clocks become their own sibling
+        # headings with fresh SYNC_IDs but identical
+        # title / properties (minus PAUSED, which we
+        # only keep on the original).
+        for clock in rest:
+            sibling_props = {
+                k: v for k, v in h.properties.items()
+                if k not in (
+                    "SYNC_ID", "UPDATED_AT", "PAUSED",
+                )
+            }
+            sibling_props["SYNC_ID"] = generate_sync_id()
+            sibling_props["UPDATED_AT"] = current_timestamp()
+            sibling = Heading(
+                level=h.level,
+                keyword=h.keyword,
+                title=h.title,
+                tags=list(h.tags),
+                properties=sibling_props,
+                logbook=[clock],
+                body=[],
+                children=[],
+                raw_lines=[],
+                dirty=True,
+            )
+            new_headings.append(sibling)
+            produced += 1
+    if produced > 0:
+        org_file.headings = new_headings
+        write_org_file(clocks_file, org_file)
+    return produced
+
+
+def _clear_paused_flag(
+    org_file: OrgFile,
+    except_heading: Heading | None,
+) -> bool:
+    """Remove ``PAUSED`` properties from every heading
+    except ``except_heading``. Returns True when any
+    flag was actually cleared (so the caller knows the
+    file needs to be re-written).
+    """
+    changed = False
+    for h in org_file.headings:
+        if h is except_heading:
+            continue
+        if h.properties.pop("PAUSED", None) is not None:
+            h.properties["UPDATED_AT"] = current_timestamp()
+            h.dirty = True
+            changed = True
+    return changed
+
+
+def clear_paused_flag(clocks_file: Path) -> dict | None:
+    """Clear the ``PAUSED`` flag from every heading.
+
+    Used when the user explicitly dismisses the paused
+    widget without resuming. Returns the previously
+    paused entry dict (so the caller can act on it), or
+    ``None`` if no paused entry was present.
+    """
+    if not clocks_file.exists():
+        return None
+    # Capture the paused entry *before* we mutate so we
+    # can hand it back to the caller. There's at most one
+    # paused entry by construction (start/stop both
+    # clear the flag everywhere else).
+    previous = get_paused_entry(clocks_file)
+    if previous is None:
+        return None
+    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
+    if not _clear_paused_flag(org_file, except_heading=None):
+        return None
+    write_org_file(clocks_file, org_file)
+    return previous
+
+
+def get_paused_entry(clocks_file: Path) -> dict | None:
+    """Return the most recent paused entry, or ``None``.
+
+    The "paused" state is signalled by a ``PAUSED=true``
+    property on the heading whose last CLOCK line is
+    closed (i.e. the timer has stopped, but the user
+    intends to resume it). Returns the entry dict in
+    the same shape as the active timer, except that
+    ``end`` is set to the pause moment.
+
+    ``PAUSED`` is treated as a local UI hint: it is not
+    included in the cloud sync payload (see
+    ``apply_sync_payload``), so a paused entry remains
+    "paused" only on the device where Pause was clicked.
+    Other devices see it as a plain stopped entry.
+    """
+    if not clocks_file.exists():
+        return None
+    org_file = parse_org_file(clocks_file, CLOCK_KEYWORDS)
+    best: tuple[Clock, Heading] | None = None
+    best_end: datetime | None = None
+    for h in org_file.headings:
+        if (
+            h.properties.get("PAUSED", "").lower()
+            != "true"
+        ):
+            continue
+        if not h.logbook:
+            continue
+        # The most recent CLOCK on the heading must be
+        # closed -- if it's still open, the timer is
+        # running, not paused.
+        last_clock = h.logbook[-1]
+        if last_clock.end is None:
+            continue
+        if best_end is None or last_clock.end > best_end:
+            best_end = last_clock.end
+            best = (last_clock, h)
+    if best is None:
+        return None
+    clock, heading = best
+    return heading_to_entry(heading, clock)
 
 
 def get_summary(
@@ -1570,7 +1681,14 @@ def delete_clock_entry(
     clocks_file: Path,
     start_iso: str,
 ) -> dict | None:
-    """Delete a clock entry by its start timestamp.
+    """Delete a single clock segment by its start time.
+
+    Removes only the matching CLOCK line from its
+    heading's logbook. When that was the last clock on
+    the heading, the heading itself is also removed.
+    Headings with multiple CLOCK lines (created by the
+    Pause / Resume flow) keep their remaining segments
+    intact.
 
     Returns the deleted entry so the caller can record a
     sync tombstone. Returns ``None`` if nothing matched.
@@ -1590,7 +1708,14 @@ def delete_clock_entry(
         for clock in h.logbook:
             if clock.start == target:
                 entry = heading_to_entry(h, clock)
-                org_file.headings.remove(h)
+                h.logbook.remove(clock)
+                if h.logbook:
+                    h.properties["UPDATED_AT"] = (
+                        current_timestamp()
+                    )
+                    h.dirty = True
+                else:
+                    org_file.headings.remove(h)
                 write_org_file(clocks_file, org_file)
                 return entry
     return None

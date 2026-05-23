@@ -1,39 +1,14 @@
 /**
- * Keep the system-tray icon and (macOS) menu-bar title
- * in sync with the active timer.
- *
- * Driven from the main window so the title keeps ticking
- * even when the tray popover is closed (the hidden tray
- * webview gets background-throttled and misses updates).
+ * Push the active-timer snapshot to the Rust tray
+ * helper on each transition. A Rust-side ticker
+ * recomputes elapsed at every wall-clock minute
+ * boundary so the menu bar stays current even when the
+ * main window is backgrounded and its setInterval is
+ * OS-throttled.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { isTauri } from "../utils/tauri";
 import type { ActiveTimer } from "../types";
-
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
-function formatElapsed(startIso: string): string {
-  const ms = Date.now() - new Date(startIso).getTime();
-  const s = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  return `${pad(h)}:${pad(m)}:${pad(s % 60)}`;
-}
-
-function formatElapsedShort(startIso: string): string {
-  const ms = Date.now() - new Date(startIso).getTime();
-  const total = Math.max(0, Math.floor(ms / 60_000));
-  return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
-}
-
-function hoursElapsed(startIso: string): number {
-  return (
-    (Date.now() - new Date(startIso).getTime())
-    / 3_600_000
-  );
-}
 
 async function invokeTauri(
   cmd: string,
@@ -52,46 +27,41 @@ async function invokeTauri(
 
 export function useTrayIconSync(
   timer: ActiveTimer | null | undefined,
+  isError: boolean = false,
 ) {
-  const [, setTick] = useState(0);
   const lastKeyRef = useRef<string>("");
+  const lastOfflineRef = useRef<boolean | null>(null);
 
+  // Push backend offline state separately from the
+  // timer snapshot so the offline icon doesn't get
+  // overwritten by a stale timer push.
   useEffect(() => {
     if (!isTauri()) return;
-    if (!timer?.active) return;
-    const id = setInterval(
-      () => setTick((n) => n + 1), 1000,
-    );
-    return () => clearInterval(id);
-  }, [timer?.active]);
+    if (lastOfflineRef.current === isError) return;
+    lastOfflineRef.current = isError;
+    invokeTauri("set_backend_offline", { offline: isError });
+  }, [isError]);
 
   useEffect(() => {
     if (!isTauri()) return;
     if (!timer) return;
     if (!timer.active || !timer.start) {
       if (lastKeyRef.current !== "idle") {
-        invokeTauri("update_tray_icon", {
-          state: "idle",
-          tooltip: "Kaisho — no active timer",
-          title: "",
-        });
+        invokeTauri("clear_active_timer");
         lastKeyRef.current = "idle";
       }
       return;
     }
-    const hours = hoursElapsed(timer.start);
-    const elapsed = formatElapsed(timer.start);
-    const elapsedShort = formatElapsedShort(timer.start);
+    const startSecs = Math.floor(
+      new Date(timer.start).getTime() / 1000,
+    );
     const label = timer.customer || "Kaisho";
-    const state = hours > 8 ? "long" : "active";
-    const tooltip = hours > 8
-      ? `${label} — ${elapsed} (long)`
-      : `${label} — ${elapsed}`;
-    const key = `${state}|${elapsedShort}`;
+    const key = `${startSecs}|${label}`;
     if (lastKeyRef.current === key) return;
     lastKeyRef.current = key;
-    invokeTauri("update_tray_icon", {
-      state, tooltip, title: elapsedShort,
+    invokeTauri("set_active_timer", {
+      startSecs,
+      label,
     });
-  });
+  }, [timer]);
 }

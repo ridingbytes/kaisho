@@ -1054,14 +1054,8 @@ class MarkdownClockBackend(ClockBackend):
         description,
         task_id=None,
         contract=None,
-        continue_existing: bool = False,
     ) -> dict:
-        """Open a new clock entry. Raises if one is
-        running. ``continue_existing`` is accepted for
-        interface parity but ignored: only the org
-        backend supports continuation today.
-        """
-        _ = continue_existing
+        """Open a new clock entry. Raises if one is running."""
         if self.get_active() is not None:
             raise ValueError(
                 "A clock entry is already running"
@@ -1087,14 +1081,15 @@ class MarkdownClockBackend(ClockBackend):
         self,
         rounding_minutes: int = 0,
         rounding_mode: str = "nearest",
+        paused: bool = False,
     ) -> dict:
         """Close the running clock entry. Raises if none.
 
-        ``rounding_minutes`` / ``rounding_mode`` are accepted
-        for interface parity but ignored: only the org
-        backend implements rounding today.
+        ``rounding_minutes`` / ``rounding_mode`` / ``paused``
+        are accepted for interface parity but ignored:
+        only the org backend implements them today.
         """
-        _ = rounding_minutes, rounding_mode
+        _ = rounding_minutes, rounding_mode, paused
         entries = self._load_entries()
         for entry in entries:
             if entry.get("end") is None:

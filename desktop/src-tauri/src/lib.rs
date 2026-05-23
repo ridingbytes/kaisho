@@ -122,6 +122,41 @@ fn update_tray_icon(
     );
 }
 
+/// Push the active timer snapshot to Rust. The Rust
+/// ticker (see ``tray::spawn_ticker``) recomputes
+/// elapsed at each wall-clock minute boundary from
+/// ``start_secs``, so the menu bar stays current even
+/// when the main window is backgrounded and its
+/// setInterval is OS-throttled.
+#[tauri::command]
+fn set_active_timer(
+    app: tauri::AppHandle,
+    start_secs: i64,
+    label: String,
+) {
+    tray::set_active_timer(&app, start_secs, label);
+}
+
+/// Drop the active-timer snapshot; the tray reverts to
+/// the idle pill on the next tick (or immediately, since
+/// this also triggers a refresh).
+#[tauri::command]
+fn clear_active_timer(app: tauri::AppHandle) {
+    tray::clear_active_timer(&app);
+}
+
+/// Mark the backend connection state. Frontend should
+/// call this on poll success / failure so the tray
+/// reflects offline cleanly without racing the timer
+/// snapshot.
+#[tauri::command]
+fn set_backend_offline(
+    app: tauri::AppHandle,
+    offline: bool,
+) {
+    tray::set_offline(&app, offline);
+}
+
 /// Hide the tray popover panel.
 #[tauri::command]
 fn hide_tray_window(app: tauri::AppHandle) {
@@ -296,6 +331,9 @@ pub fn run() {
         )
         .invoke_handler(tauri::generate_handler![
             update_tray_icon,
+            set_active_timer,
+            clear_active_timer,
+            set_backend_offline,
             hide_tray_window,
             show_main_window,
             toggle_timer,
@@ -321,6 +359,7 @@ pub fn run() {
             );
 
             tray::setup(app)?;
+            tray::spawn_ticker(app.handle().clone());
             register_shortcuts(app);
 
             Ok(())
@@ -408,6 +447,23 @@ fn handle_run_event(
                     app_handle.state();
                 sidecar::kill(&state);
                 std::process::exit(0);
+            }
+        }
+        RunEvent::WindowEvent {
+            label,
+            event: WindowEvent::Focused(false),
+            ..
+        } => {
+            // Auto-close the tray popover when focus
+            // moves elsewhere -- standard menu-bar
+            // behavior. The user can re-open it by
+            // clicking the tray icon.
+            if label == "tray" {
+                if let Some(win) =
+                    app_handle.get_webview_window("tray")
+                {
+                    let _ = win.hide();
+                }
             }
         }
         RunEvent::WindowEvent {

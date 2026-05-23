@@ -30,14 +30,13 @@ export function StartForm({ onStarted }: Props) {
     setContract("");
   }
 
-  function submitTimer(forceNew: boolean) {
+  function submitTimer() {
     start.mutate(
       {
         customer: customer.trim(),
         description: description.trim(),
         contract: contract || undefined,
         taskId: taskId ?? undefined,
-        forceNew,
       },
       {
         onSuccess: () => {
@@ -53,12 +52,8 @@ export function StartForm({ onStarted }: Props) {
   }
 
   function handleSubmit(e: React.FormEvent) {
-    // Form-submit fires from the Enter key in an input.
-    // Modifier state isn't reliable here, so default to
-    // non-forced. The Alt-click override lives on the
-    // button below.
     e.preventDefault();
-    submitTimer(false);
+    submitTimer();
   }
 
   return (
@@ -108,8 +103,7 @@ export function StartForm({ onStarted }: Props) {
       <button
         type="button"
         disabled={start.isPending}
-        onClick={(e) => submitTimer(e.altKey)}
-        title={t("startTimerAltHint") || ""}
+        onClick={() => submitTimer()}
         className={[
           "w-full py-2 rounded-lg text-xs font-semibold",
           "bg-cta text-white",

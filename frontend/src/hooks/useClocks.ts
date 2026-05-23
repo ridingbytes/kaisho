@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   useMutation,
   useQuery,
@@ -6,8 +7,11 @@ import {
 import { useToast } from "../context/ToastContext";
 import { isTauri } from "../utils/tauri";
 import {
+  clearPausedTimer,
   deleteClockEntry,
+  fetchPausedTimer,
   mergeClockEntries,
+  pauseTimer,
   fetchActiveTimer,
   fetchClockEntries,
   fetchCustomerClockEntries,
@@ -19,19 +23,6 @@ import {
   updateClockEntry,
 } from "../api/client";
 
-/** Fire a Tauri ``timer-changed`` event so the tray
- *  popover (a separate webview) re-fetches its data
- *  after a start / stop / merge / delete from the main
- *  window. No-op outside Tauri. */
-async function emitTimerChanged(): Promise<void> {
-  if (!isTauri()) return;
-  try {
-    const { emit } = await import("@tauri-apps/api/event");
-    await emit("timer-changed", "");
-  } catch {
-    // not in Tauri shell
-  }
-}
 
 /** Provides the currently running timer, polling
  *  every 5 seconds. Use this to show elapsed time. */
@@ -42,6 +33,50 @@ export function useActiveTimer() {
     refetchInterval: 5_000,
     staleTime: 0,
   });
+}
+
+/** Provides the currently paused entry, if any. The UI
+ *  shows a Resume affordance for it. Polled at the same
+ *  cadence as the active timer so toggles propagate
+ *  quickly. */
+export function usePausedTimer() {
+  return useQuery({
+    queryKey: ["clocks", "paused"],
+    queryFn: fetchPausedTimer,
+    refetchInterval: 5_000,
+    staleTime: 0,
+  });
+}
+
+/** Listen for ``timer-changed`` Tauri events emitted by
+ *  the tray popover (separate webview) and global
+ *  shortcuts (Rust), and invalidate clocks queries so
+ *  the main window picks up the new state immediately
+ *  instead of waiting for the next 5s poll. */
+export function useTimerChangedListener() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!isTauri()) return;
+    let unlisten: (() => void) | undefined;
+    (async () => {
+      try {
+        const { listen } = await import(
+          "@tauri-apps/api/event"
+        );
+        unlisten = await listen("timer-changed", () => {
+          void qc.invalidateQueries({
+            queryKey: ["clocks"],
+          });
+          void qc.invalidateQueries({
+            queryKey: ["dashboard"],
+          });
+        });
+      } catch {
+        // not in Tauri shell
+      }
+    })();
+    return () => unlisten?.();
+  }, [qc]);
 }
 
 /** Provides today's clock entries. Refreshes on
@@ -102,15 +137,13 @@ export function useStartTimer() {
       description,
       taskId,
       contract,
-      forceNew,
     }: {
       customer: string;
       description?: string;
       taskId?: string;
       contract?: string;
-      forceNew?: boolean;
     }) => startTimer({
-      customer, description, taskId, contract, forceNew,
+      customer, description, taskId, contract,
     }),
     onSuccess: (_d, vars) => {
       void qc.invalidateQueries({
@@ -125,7 +158,6 @@ export function useStartTimer() {
       void qc.invalidateQueries({
         queryKey: ["dashboard"],
       });
-      void emitTimerChanged();
       toast(`Timer started: ${vars.customer}`);
     },
   });
@@ -151,8 +183,43 @@ export function useStopTimer() {
       void qc.invalidateQueries({
         queryKey: ["dashboard"],
       });
-      void emitTimerChanged();
       toast("Timer stopped");
+    },
+  });
+}
+
+/** Dismiss the paused state without touching the
+ *  underlying clock entry. The Resume widget disappears
+ *  and the closed entry stays in the file. */
+export function useClearPaused() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: clearPausedTimer,
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["clocks"],
+      });
+    },
+  });
+}
+
+/** Returns a mutation that pauses the running timer:
+ *  stops it but skips the round-on-stop setting so the
+ *  partial segment is recorded at exact length. The
+ *  user can Resume from the entry's row to reopen it. */
+export function usePauseTimer() {
+  const qc = useQueryClient();
+  const toast = useToast();
+  return useMutation({
+    mutationFn: pauseTimer,
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["clocks"],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["dashboard"],
+      });
+      toast("Timer paused");
     },
   });
 }
@@ -196,7 +263,6 @@ export function useQuickBook() {
       void qc.invalidateQueries({
         queryKey: ["dashboard"],
       });
-      void emitTimerChanged();
       toast(`Booked ${vars.duration} for ${vars.customer}`);
     },
   });
@@ -241,7 +307,6 @@ export function useUpdateClockEntry() {
       void qc.invalidateQueries({
         queryKey: ["dashboard"],
       });
-      void emitTimerChanged();
       if (!vars.silent) toast("Clock entry updated");
     },
   });
@@ -275,7 +340,6 @@ export function useMergeClockEntries() {
       void qc.invalidateQueries({
         queryKey: ["dashboard"],
       });
-      void emitTimerChanged();
       toast("Entries merged");
     },
     onError: (err: Error) => {
@@ -307,7 +371,6 @@ export function useDeleteClockEntry() {
       void qc.invalidateQueries({
         queryKey: ["dashboard"],
       });
-      void emitTimerChanged();
       toast("Clock entry deleted");
     },
   });

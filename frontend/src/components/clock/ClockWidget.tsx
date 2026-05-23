@@ -8,10 +8,14 @@ import {
   Plus,
   Rss,
 } from "lucide-react";
-import { useActiveTimer } from "../../hooks/useClocks";
+import {
+  useActiveTimer,
+  usePausedTimer,
+} from "../../hooks/useClocks";
 import { useCloudActiveTimer } from "../../hooks/useSettings";
 import { syncNow } from "../../api/client";
 import { ActiveTimer } from "./ActiveTimer";
+import { PausedTimer } from "./PausedTimer";
 import { CloudTimer } from "./CloudTimer";
 import { CalendarWidget } from "./CalendarWidget";
 import { ClockList } from "./ClockList";
@@ -38,6 +42,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
   const { t } = useTranslation("clocks");
   const { t: tc } = useTranslation("common");
   const { data: timer } = useActiveTimer();
+  const { data: pausedEntry } = usePausedTimer();
   const { data: cloudTimer } = useCloudActiveTimer();
   const qc = useQueryClient();
 
@@ -91,6 +96,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
   }, []);
 
   const isRunning = timer?.active === true;
+  const showPaused = !isRunning && !!pausedEntry;
 
   function toggleCalendar() {
     setCalendarOpen((v) => {
@@ -139,9 +145,17 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
             of ``timer``. */}
         {isRunning && timer && <ActiveTimer timer={timer} />}
 
+        {/* Paused state: timer is closed but the user
+            expects to resume. Renders a frozen widget
+            with Resume + Stop buttons. Hidden while a
+            local or cloud timer is running. */}
+        {showPaused && !cloudTimer?.active && (
+          <PausedTimer entry={pausedEntry!} />
+        )}
+
         {/* Cloud timer (running on mobile). Hidden when
             a local timer is running to avoid clutter. */}
-        {!isRunning && cloudTimer?.active && (
+        {!isRunning && !showPaused && cloudTimer?.active && (
           <CloudTimer
             timer={cloudTimer}
             onStopped={refreshCloudTimer}
@@ -149,7 +163,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
         )}
 
         {/* Start timer form */}
-        {!isRunning && !cloudTimer?.active && (
+        {!isRunning && !showPaused && !cloudTimer?.active && (
           <StartForm />
         )}
 

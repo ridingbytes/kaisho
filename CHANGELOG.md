@@ -1,5 +1,91 @@
 # Changelog
 
+## 1.8.1
+
+Pause/Resume for clock entries, plus a sizable cleanup
+of the tray + clock plumbing surfaced by code review.
+
+### Pause / Resume
+
+- A new amber Pause button next to Stop on the active
+  timer (main app and tray popover). Pause closes the
+  entry at exact length (rounding bypassed) and flags
+  it server-side as paused.
+- A frozen "Paused" widget then replaces the active
+  timer with the elapsed time at the moment of pausing,
+  the customer/description, and two buttons: green
+  Resume (creates a fresh sibling entry with the same
+  metadata, starting from 00:00 — the gap is excluded
+  from billed time) and red Stop (clears the paused
+  flag without touching the entry; it stays in the
+  recent-entries list as a plain stopped row).
+- Paused state is stored on the org heading via a
+  ``PAUSED=true`` property and exposed by a new
+  ``GET /api/clocks/paused`` endpoint. The flag is a
+  local UI hint -- it is not synced to the cloud, so
+  Pause on one device does not show as paused on
+  another.
+
+### Tray icon ticker fix
+
+- The tray pill is now redrawn on each wall-clock
+  minute boundary instead of on a fixed 30-second
+  interval. The main-app timer and the tray title now
+  flip from one minute to the next at the same moment;
+  previously they could drift by up to 30 seconds.
+
+### Tray popover
+
+- Auto-closes when focus moves elsewhere -- standard
+  menu-bar behavior. Click the tray icon to reopen.
+- Listens for ``timer-changed`` events so the main
+  window picks up popover-initiated mutations
+  immediately instead of waiting for the next 5-second
+  poll.
+
+### Multi-CLOCK heading migration
+
+- An earlier iteration of Pause/Resume put multiple
+  CLOCK lines under one heading and broke merge /
+  edit / delete identity. The new model is one
+  heading per entry (each Resume creates a sibling),
+  matching the rest of the codebase.
+- A one-shot migration runs on first start of the org
+  backend: any heading carrying more than one CLOCK
+  line is split into separate sibling headings, with
+  fresh ``SYNC_ID``s on the new ones. Idempotent --
+  running again on a clean file is a no-op.
+
+### Surgical per-row delete
+
+- Deleting one row of a multi-CLOCK heading (legacy
+  data only after the migration above) now removes
+  just that CLOCK line and keeps the heading when
+  more CLOCKs remain. The router prefers the start
+  timestamp over ``sync_id`` for UI deletes since
+  ``start_iso`` is unique per row.
+
+### Cleanup
+
+- Dead ``continue_existing`` profile setting, the
+  matching Alt-click ``force_new``/``force_continue``
+  override flags, and the ``_reopen_today_match``
+  service helper are removed across the stack (router,
+  backends, frontend client, hooks, settings UI, and
+  locale strings). They were no-ops after the
+  one-heading-per-entry pivot.
+- Mutation hooks no longer emit ``timer-changed`` on
+  success; the same-window listener and the per-hook
+  ``invalidateQueries`` calls already cover that
+  surface. The popover handlers still emit the event
+  to notify the main window across webviews.
+- ``PausedTimerView`` extracted to ``components/
+  common/`` so the main app and the tray popover
+  render identical widgets.
+- ``round`` query parameter on ``POST /clocks/stop``
+  renamed to ``apply_rounding`` so it no longer
+  shadows the Python built-in.
+
 ## 1.8.0
 
 Time-tracking polish across three new features plus a

@@ -59,8 +59,6 @@
   "roundingNearest": "Más cercano (mitad arriba)",
   "roundingUp": "Siempre hacia arriba",
   "roundingDown": "Siempre hacia abajo",
-  "continueExisting": "Continuar una entrada existente",
-  "continueExistingHint": "Cuando inicies un temporizador con el mismo cliente, descripción, tarea y contrato que una entrada detenida de hoy, se reabrirá esa entrada en lugar de crear una nueva. El intervalo cuenta en la duración. Mantén Alt/Option al iniciar para forzar una entrada nueva.",
   "localPreferences": "Preferencias locales",
   "localPreferencesHint": "Borra el estado de la interfaz en caché: tema, barra lateral, banners descartados, historial del chat del asesor y otras preferencias locales del navegador. Los datos del servidor no se ven afectados.",
   "resetLocalPreferences": "Restablecer preferencias locales",

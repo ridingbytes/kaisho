@@ -615,10 +615,6 @@ export interface StartTimerParams {
   description?: string;
   taskId?: string;
   contract?: string;
-  /** Force a fresh entry even when the profile's
-   *  continue_existing setting is on. Set by an
-   *  Alt-click on the start button. */
-  forceNew?: boolean;
 }
 
 /** Start a new timer for a customer. Optionally link
@@ -631,7 +627,6 @@ export function startTimer(
     description: params.description ?? "",
     task_id: params.taskId ?? null,
     contract: params.contract ?? null,
-    force_new: params.forceNew ?? false,
   });
 }
 
@@ -639,6 +634,33 @@ export function startTimer(
  *  the resulting clock entry. */
 export function stopTimer(): Promise<ClockEntry> {
   return post<ClockEntry>("/clocks/stop", {});
+}
+
+/** Pause the currently running timer: stop it but skip
+ *  rounding so the partial segment isn't inflated, and
+ *  mark the entry as paused so the UI can show a
+ *  Resume affordance. */
+export function pauseTimer(): Promise<ClockEntry> {
+  return post<ClockEntry>(
+    "/clocks/stop?apply_rounding=false&paused=true",
+    {},
+  );
+}
+
+/** Fetch the currently paused entry (most-recent
+ *  heading with ``PAUSED=true`` and a closed last
+ *  CLOCK), or ``null`` when none. */
+export function fetchPausedTimer(): Promise<
+  ClockEntry | null
+> {
+  return get<ClockEntry | null>("/clocks/paused");
+}
+
+/** Dismiss the paused state without touching the entry.
+ *  The closed entry stays in the file; only the PAUSED
+ *  hint is cleared so the Resume widget disappears. */
+export function clearPausedTimer(): Promise<void> {
+  return del("/clocks/paused");
 }
 
 /** Result of merging two clock entries: the surviving
@@ -1888,7 +1910,6 @@ export type RoundingMode = "nearest" | "up" | "down";
 export interface ClocksSettings {
   rounding_minutes: number;
   rounding_mode: RoundingMode;
-  continue_existing: boolean;
 }
 
 /** Fetch clock-related settings. */

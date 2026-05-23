@@ -10,6 +10,12 @@ class OrgClockBackend(ClockBackend):
 
     def __init__(self, clocks_file: Path) -> None:
         self._clocks_file = clocks_file
+        # One-shot migration: split any heading carrying
+        # more than one CLOCK line (a leftover from the
+        # earlier Pause/Resume implementation that
+        # shared headings). Idempotent and cheap on
+        # already-split files.
+        clocks.split_multi_clock_headings(clocks_file)
 
     @property
     def data_file(self) -> Path:
@@ -49,7 +55,6 @@ class OrgClockBackend(ClockBackend):
         description: str,
         task_id: str | None = None,
         contract: str | None = None,
-        continue_existing: bool = False,
     ) -> dict:
         return clocks.start_timer(
             clocks_file=self._clocks_file,
@@ -57,19 +62,30 @@ class OrgClockBackend(ClockBackend):
             description=description,
             task_id=task_id,
             contract=contract,
-            continue_existing=continue_existing,
         )
 
     def stop(
         self,
         rounding_minutes: int = 0,
         rounding_mode: str = "nearest",
+        paused: bool = False,
     ) -> dict:
         return clocks.stop_timer(
             clocks_file=self._clocks_file,
             rounding_minutes=rounding_minutes,
             rounding_mode=rounding_mode,
+            paused=paused,
         )
+
+    def get_paused(self) -> dict | None:
+        return clocks.get_paused_entry(
+            clocks_file=self._clocks_file,
+        )
+
+    def clear_paused(self) -> bool:
+        return clocks.clear_paused_flag(
+            clocks_file=self._clocks_file,
+        ) is not None
 
     def quick_book(
         self,
@@ -139,15 +155,24 @@ class OrgClockBackend(ClockBackend):
         start_iso: str | None = None,
         sync_id: str | None = None,
     ) -> dict | None:
-        if sync_id:
-            return clocks.delete_clock_entry_by_sync_id(
-                clocks_file=self._clocks_file,
-                sync_id=sync_id,
-            )
+        # Prefer start_iso when both are provided. The
+        # frontend always sends both, but ``start_iso`` is
+        # unique per CLOCK segment (a heading can in
+        # principle carry more than one CLOCK -- e.g.
+        # legacy data from earlier Pause/Resume builds),
+        # so it's the correct identifier for surgical
+        # per-row deletes. ``sync_id`` remains the
+        # identifier the cloud sync path uses for whole-
+        # entry deletions.
         if start_iso:
             return clocks.delete_clock_entry(
                 clocks_file=self._clocks_file,
                 start_iso=start_iso,
+            )
+        if sync_id:
+            return clocks.delete_clock_entry_by_sync_id(
+                clocks_file=self._clocks_file,
+                sync_id=sync_id,
             )
         return None
 

@@ -986,15 +986,12 @@ function ClockSection() {
   const [minutes, setMinutes] = useState<number>(0);
   const [mode, setMode] =
     useState<"nearest" | "up" | "down">("nearest");
-  const [continueExisting, setContinueExisting] =
-    useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (!cfg) return;
     setMinutes(cfg.rounding_minutes ?? 0);
     setMode(cfg.rounding_mode ?? "nearest");
-    setContinueExisting(cfg.continue_existing ?? false);
   }, [cfg]);
 
   function flashSaved() {
@@ -1014,14 +1011,6 @@ function ClockSection() {
     setMode(next);
     update.mutate(
       { rounding_mode: next },
-      { onSuccess: flashSaved },
-    );
-  }
-
-  function changeContinue(next: boolean) {
-    setContinueExisting(next);
-    update.mutate(
-      { continue_existing: next },
       { onSuccess: flashSaved },
     );
   }
@@ -1100,38 +1089,6 @@ function ClockSection() {
       <p className="mt-2 text-[10px] text-stone-400">
         {t("roundOnStopHint")}
       </p>
-
-      <label className="flex items-center justify-between cursor-pointer mt-5">
-        <div>
-          <p className="text-xs font-medium text-stone-700">
-            {t("continueExisting")}
-          </p>
-          <p className="text-[10px] text-stone-500 mt-0.5">
-            {t("continueExistingHint")}
-          </p>
-        </div>
-        <button
-          onClick={() =>
-            changeContinue(!continueExisting)
-          }
-          className={[
-            "relative w-9 h-5 rounded-full",
-            "transition-colors shrink-0 ml-4",
-            continueExisting
-              ? "bg-cta"
-              : "bg-stone-300",
-          ].join(" ")}
-        >
-          <span
-            className={[
-              "absolute top-0.5 left-0.5",
-              "w-4 h-4 rounded-full bg-white",
-              "shadow transition-transform",
-              continueExisting ? "translate-x-4" : "",
-            ].join(" ")}
-          />
-        </button>
-      </label>
     </section>
   );
 }
