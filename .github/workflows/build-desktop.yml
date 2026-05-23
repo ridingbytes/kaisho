@@ -43,7 +43,12 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          # Must match local toolchain (v11) so the new
+          # ``allowBuilds`` field in frontend/pnpm-
+          # workspace.yaml is recognised. pnpm v9 errors
+          # out with "packages field missing" because it
+          # treats the file as a workspace root.
+          version: 11
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
