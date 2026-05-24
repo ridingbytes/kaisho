@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.8.3
+
+Fix the tray pill displaying ``00:00`` even though a
+timer is running.
+
+### Tray timer timezone bug
+
+- The self-healing tray ticker added in 1.8.2 reads the
+  active timer's ``start`` from the backend. The org
+  file stores naive local timestamps (no timezone
+  suffix), but the Rust parser interpreted them as
+  UTC -- so a user in CEST (UTC+2) ended up with
+  ``start_secs`` two hours in the future of
+  ``now_unix()``. ``elapsed.max(0)`` then clamped to
+  zero and the green pill drew ``00:00`` forever.
+- ``GET /api/clocks/active`` now returns a
+  ``start_unix`` field (canonical Unix epoch seconds,
+  computed server-side with the local zone correctly
+  applied). The Rust ticker reads that directly; the
+  hand-rolled ISO parser is gone. Frontend pushes
+  remain unaffected since JavaScript's ``new Date()``
+  already handles naive ISO correctly.
+
 ## 1.8.2
 
 Self-healing menu-bar tray.

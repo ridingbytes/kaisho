@@ -318,48 +318,6 @@ fn refresh_from_state(app: &tauri::AppHandle) {
     }
 }
 
-/// Parse the ``ISO 8601`` timestamp emitted by the
-/// backend (e.g. ``2026-05-23T14:09:54+02:00`` or
-/// ``2026-05-23T14:09:54.123456``) into Unix epoch
-/// seconds. Returns ``None`` when the string is missing
-/// or unparseable. Strict enough for the only shape the
-/// backend produces; deliberately avoids pulling in a
-/// full chrono dep.
-fn iso_to_unix(iso: &str) -> Option<i64> {
-    // Split off any fractional seconds + timezone so we
-    // can parse the date+time portion with the same
-    // algorithm the rest of the codebase uses.
-    let (date_part, time_part) = iso.split_once('T')?;
-    let mut parts = date_part.split('-');
-    let y: i64 = parts.next()?.parse().ok()?;
-    let mo: i64 = parts.next()?.parse().ok()?;
-    let d: i64 = parts.next()?.parse().ok()?;
-    // ``time_part`` looks like ``HH:MM:SS[.fff][+HH:MM]``
-    // or ``HH:MM:SS[.fff]Z``. Take the first 8 chars for
-    // HH:MM:SS; ignore subsecond + timezone (the entries
-    // the backend writes are in local time without an
-    // explicit zone -- close enough for HH:MM display).
-    let hms = time_part.get(..8)?;
-    let mut tp = hms.split(':');
-    let h: i64 = tp.next()?.parse().ok()?;
-    let m: i64 = tp.next()?.parse().ok()?;
-    let s: i64 = tp.next()?.parse().ok()?;
-
-    // Days from civil date using Howard Hinnant's formula
-    // (proleptic Gregorian). Returns days since Unix
-    // epoch (1970-01-01).
-    let y = if mo <= 2 { y - 1 } else { y };
-    let era = (if y >= 0 { y } else { y - 399 }) / 400;
-    let yoe = (y - era * 400) as u32;
-    let mp = if mo > 2 { mo - 3 } else { mo + 9 } as u32;
-    let doy = (153u32 * mp + 2) / 5 + d as u32 - 1;
-    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-    let days_since_epoch =
-        era * 146097 + (doe as i64) - 719468;
-
-    Some(days_since_epoch * 86400 + h * 3600 + m * 60 + s)
-}
-
 /// Fetch the running timer from the backend and update
 /// the in-process snapshot. Called periodically by the
 /// ticker so the tray self-heals when the frontend's
@@ -380,17 +338,23 @@ fn self_heal_from_backend() {
         .and_then(Value::as_bool)
         .unwrap_or(false);
     let next = if active {
-        let start = value
-            .get("start")
-            .and_then(Value::as_str)
-            .and_then(iso_to_unix);
+        // The backend's ``start`` field is a naive local
+        // ISO string; parsing it manually is timezone-
+        // unsafe (would land in the future for users
+        // east of UTC and clamp elapsed to 0). The
+        // ``start_unix`` field is the canonical
+        // epoch-seconds version computed server-side
+        // with the local zone correctly applied.
+        let start_secs = value
+            .get("start_unix")
+            .and_then(Value::as_i64);
         let label = value
             .get("customer")
             .and_then(Value::as_str)
             .map(str::to_string)
             .filter(|s| !s.is_empty())
             .unwrap_or_else(|| "Kaisho".to_string());
-        match start {
+        match start_secs {
             Some(start_secs) => Some(TimerInfo {
                 start_secs,
                 label,

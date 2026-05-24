@@ -1,5 +1,5 @@
 import hashlib
-from datetime import date
+from datetime import date, datetime
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import PlainTextResponse
@@ -168,10 +168,27 @@ def list_entries(
 
 @router.get("/active")
 def get_active():
-    """Return the currently running timer, if any."""
+    """Return the currently running timer, if any.
+
+    Adds a ``start_unix`` field (Unix epoch seconds) to
+    the payload so clients don't have to interpret the
+    ``start`` ISO string -- the org file stores naive
+    local timestamps, which JavaScript ``new Date()``
+    handles correctly but a hand-rolled parser
+    (e.g. the Rust tray ticker) easily mistakes for
+    UTC, ending up in the future of ``now`` and
+    drawing ``00:00`` forever.
+    """
     timer = get_backend().clocks.get_active()
     if timer is None:
         return {"active": False}
+    start_iso = timer.get("start")
+    if start_iso:
+        try:
+            dt = datetime.fromisoformat(start_iso)
+            timer["start_unix"] = int(dt.timestamp())
+        except (ValueError, TypeError):
+            pass
     return {"active": True, **timer}
 
 
