@@ -1415,6 +1415,50 @@ export function deleteCronJob(jobId: string): Promise<void> {
   return del(`/cron/jobs/${encodeURIComponent(jobId)}`);
 }
 
+// ── Premium integrations (Pro) ──────────────────────────
+
+/** A connected premium integration (metadata only). */
+export interface ConnectedIntegration {
+  kind: string;
+  scopes: string[] | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
+/** List the user's connected integrations. */
+export function listIntegrations(): Promise<
+  ConnectedIntegration[]
+> {
+  return get("/integrations");
+}
+
+/** Connect an API-key / PAT integration (Linear, GitHub). */
+export function connectIntegrationKey(
+  kind: string,
+  apiKey: string
+): Promise<{ connected: string }> {
+  return post(`/integrations/${encodeURIComponent(kind)}`, {
+    api_key: apiKey,
+  });
+}
+
+/** Get the OAuth authorize URL for a provider (Slack,
+ *  Google) to open in the browser. */
+export function getIntegrationConnectUrl(
+  kind: string
+): Promise<{ url?: string }> {
+  return get(
+    `/integrations/${encodeURIComponent(kind)}/connect-url`
+  );
+}
+
+/** Disconnect an integration. */
+export function disconnectIntegration(
+  kind: string
+): Promise<void> {
+  return del(`/integrations/${encodeURIComponent(kind)}`);
+}
+
 /** Fetch the prompt template for a cron job. */
 export function fetchJobPrompt(
   jobId: string
