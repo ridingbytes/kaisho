@@ -16,6 +16,7 @@
   "model": "Modelo",
   "output": "Salida",
   "timeoutS": "Tiempo límite (s)",
+  "runInCloud": "Ejecutar en la nube (aunque este dispositivo esté apagado)",
   "prompt": "Prompt",
   "enterPrompt": "Introduce el texto del prompt que se enviará al modelo…",
   "enterPromptNew": "Introduce el prompt que se enviará al modelo en cada ejecución…",

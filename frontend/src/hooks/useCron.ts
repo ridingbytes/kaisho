@@ -105,7 +105,11 @@ export function useUpdateCronJob() {
     }: {
       jobId: string;
       updates: Partial<
-        Pick<CronJob, "name" | "schedule" | "model" | "output" | "timeout">
+        Pick<
+          CronJob,
+          "name" | "schedule" | "model" | "output"
+          | "timeout" | "cloud"
+        >
       >;
     }) => updateCronJob(jobId, updates),
     onSuccess: () => {
