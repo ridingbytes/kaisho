@@ -11,6 +11,7 @@ from ...cron.executor import (
     resolve_model_label,
 )
 from ...cron.scheduler import sync_jobs
+from ...services import cloud_cron
 from ...services import settings as settings_svc
 from ...services.cron_templates import (
     get_cron_template,
@@ -55,6 +56,9 @@ class JobCreate(BaseModel):
     output: str = "inbox"
     timeout: int = 600
     enabled: bool = True
+    # Mirror this job to the hosted cloud cron worker so it
+    # runs even when the laptop is closed (Companion+).
+    cloud: bool = False
 
 
 class JobUpdate(BaseModel):
@@ -65,6 +69,7 @@ class JobUpdate(BaseModel):
     output: str | None = None
     timeout: int | None = None
     enabled: bool | None = None
+    cloud: bool | None = None
 
 
 class PromptUpdate(BaseModel):
@@ -136,7 +141,8 @@ def api_add_job(body: JobCreate):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     sync_jobs(_jobs_file())
-    return job
+    _reconcile_cloud(cfg, body.id)
+    return get_job(_jobs_file(), body.id) or job
 
 
 @router.patch("/jobs/{job_id}")
@@ -148,16 +154,64 @@ def api_update_job(job_id: str, body: JobUpdate):
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     sync_jobs(_jobs_file())
-    return job
+    _reconcile_cloud(get_config(), job_id)
+    return get_job(_jobs_file(), job_id) or job
 
 
 @router.delete("/jobs/{job_id}", status_code=204)
 def api_delete_job(job_id: str):
-    """Delete a cron job."""
+    """Delete a cron job (and its cloud mirror, if any)."""
+    job = get_job(_jobs_file(), job_id)
     ok = delete_job(_jobs_file(), job_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Job not found")
+    if job and job.get("cloud_job_id"):
+        cloud_cron.remove_job(get_config(), job["cloud_job_id"])
     sync_jobs(_jobs_file())
+
+
+def _prompt_content(job: dict) -> str:
+    """Read a job's raw prompt text for cloud mirroring.
+
+    Returns empty string if the file is missing/unreadable
+    — the cloud push still goes through with an empty
+    prompt rather than failing the local mutation.
+    """
+    prompt_file = job.get("prompt_file")
+    if not prompt_file:
+        return ""
+    path = _resolve_prompt_path(prompt_file)
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+
+
+def _reconcile_cloud(cfg, job_id: str) -> None:
+    """Bring a job's cloud mirror in line with its ``cloud``
+    flag: push (create/update) when on, delete when off.
+
+    Persists the assigned ``cloud_job_id`` back to the
+    local job so future updates target the same remote row.
+    Best-effort — never raises into the request path.
+    """
+    job = get_job(_jobs_file(), job_id)
+    if not job:
+        return
+    if job.get("cloud"):
+        cloud_id = cloud_cron.push_job(
+            cfg, job, _prompt_content(job),
+        )
+        if cloud_id and cloud_id != job.get("cloud_job_id"):
+            update_job(
+                _jobs_file(), job_id,
+                {"cloud_job_id": cloud_id},
+            )
+    elif job.get("cloud_job_id"):
+        cloud_cron.remove_job(cfg, job["cloud_job_id"])
+        update_job(
+            _jobs_file(), job_id, {"cloud_job_id": None},
+        )
 
 
 def _resolve_prompt_path(prompt_file: str) -> Path:
@@ -214,6 +268,10 @@ def api_update_prompt(job_id: str, body: PromptUpdate):
     p = _resolve_prompt_path(job["prompt_file"])
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(body.content, encoding="utf-8")
+    # Push the new prompt to the cloud mirror if this job
+    # runs in the cloud.
+    if job.get("cloud"):
+        _reconcile_cloud(get_config(), job_id)
     return {
         "content": body.content,
         "path": job.get("prompt_file", ""),
@@ -228,7 +286,8 @@ def api_enable_job(job_id: str):
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     sync_jobs(_jobs_file())
-    return job
+    _reconcile_cloud(get_config(), job_id)
+    return get_job(_jobs_file(), job_id) or job
 
 
 @router.post("/jobs/{job_id}/disable")
@@ -239,7 +298,8 @@ def api_disable_job(job_id: str):
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     sync_jobs(_jobs_file())
-    return job
+    _reconcile_cloud(get_config(), job_id)
+    return get_job(_jobs_file(), job_id) or job
 
 
 # ---------------------------------------------------------------------------
