@@ -105,7 +105,14 @@ def advisor_safe_tool_defs() -> list[dict]:
     :mod:`.guards` and the size/overwrite checks in
     :func:`_write_kb_file` for defence in depth.
     """
-    return [
+    # Local read/write tools, plus the user's connected
+    # premium integrations (Pro) — executed server-side via
+    # execute_tool's dispatch. Lazy import avoids an import
+    # cycle (integration_tools -> services -> cron.tools).
+    from ..services.integration_tools import (
+        advisor_integration_defs,
+    )
+    defs = [
         {
             "name": t["name"],
             "description": t["description"],
@@ -114,6 +121,8 @@ def advisor_safe_tool_defs() -> list[dict]:
         for t in TOOL_DEFS
         if t.get("tier", "read") in ("read", "write")
     ]
+    defs.extend(advisor_integration_defs())
+    return defs
 
 
 def advisor_safe_tools() -> list[dict]:
@@ -208,6 +217,17 @@ def execute_tool(name: str, args: Any) -> dict:
             return {"error": f"invalid JSON args: {args!r}"}
     if not isinstance(args, dict):
         args = {}
+
+    # Premium integration tools (linear_*/github_*/slack_*/
+    # google_*) execute server-side in Kaisho Cloud, where
+    # their credentials live. Lazy import: see
+    # advisor_safe_tool_defs.
+    from ..services.integration_tools import (
+        dispatch_integration_tool,
+        is_integration_tool,
+    )
+    if is_integration_tool(name):
+        return dispatch_integration_tool(name, args)
 
     tier = _tool_tier(name)
     cap_err = guards.check_caps(name, tier)
