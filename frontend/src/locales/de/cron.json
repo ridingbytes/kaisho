@@ -16,6 +16,7 @@
   "model": "Modell",
   "output": "Ausgabe",
   "timeoutS": "Timeout (s)",
+  "runInCloud": "In der Cloud ausführen (auch wenn dieses Gerät aus ist)",
   "prompt": "Prompt",
   "enterPrompt": "Prompttext eingeben, der an das Modell gesendet wird…",
   "enterPromptNew": "Prompt eingeben, der bei jedem Durchlauf gesendet wird…",

@@ -178,6 +178,12 @@ function JobCard({
   const [editModel, setEditModel] = useState(job.model);
   const [editOutput, setEditOutput] = useState(job.output);
   const [editTimeout, setEditTimeout] = useState(String(job.timeout));
+  const [editCloud, setEditCloud] = useState(!!job.cloud);
+  const { data: cloudStatus } = useCloudSyncStatus();
+  // Cloud cron requires a connected paid plan.
+  const canCloud = ["companion", "pro", "team"].includes(
+    cloudStatus?.plan ?? ""
+  );
   // undefined = not yet edited; string = user has typed something
   const [promptDraft, setPromptDraft] = useState<string | undefined>(
     undefined
@@ -213,6 +219,7 @@ function JobCard({
     setEditModel(job.model);
     setEditOutput(job.output);
     setEditTimeout(String(job.timeout));
+    setEditCloud(!!job.cloud);
     setEditing(true);
     setExpanded(true);
   }
@@ -226,6 +233,7 @@ function JobCard({
           model: editModel,
           output: editOutput,
           timeout: Number(editTimeout),
+          cloud: canCloud ? editCloud : false,
         },
       },
       { onSuccess: () => setEditing(false) }
@@ -411,6 +419,18 @@ function JobCard({
                   />
                 </label>
               </div>
+              {canCloud && (
+                <label className="flex items-center gap-2 text-xs text-stone-600">
+                  <input
+                    type="checkbox"
+                    checked={editCloud}
+                    onChange={(e) =>
+                      setEditCloud(e.target.checked)
+                    }
+                  />
+                  <span>{t("runInCloud")}</span>
+                </label>
+              )}
               <div className="flex gap-2">
                 <button
                   onClick={handleSaveFields}
@@ -596,6 +616,12 @@ function AddJobForm({
   const [promptContent, setPromptContent] = useState(
     template?.prompt ?? "",
   );
+  const [cloud, setCloud] = useState(false);
+  const { data: cloudStatus } = useCloudSyncStatus();
+  // Cloud cron requires a connected paid plan.
+  const canCloud = ["companion", "pro", "team"].includes(
+    cloudStatus?.plan ?? ""
+  );
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -609,6 +635,7 @@ function AddJobForm({
         output,
         timeout: Number(jobTimeout),
         enabled: true,
+        cloud: canCloud ? cloud : false,
       },
       { onSuccess: onClose }
     );
@@ -710,6 +737,17 @@ function AddJobForm({
           />
         </label>
       </div>
+
+      {canCloud && (
+        <label className="flex items-center gap-2 text-xs text-stone-600">
+          <input
+            type="checkbox"
+            checked={cloud}
+            onChange={(e) => setCloud(e.target.checked)}
+          />
+          <span>{t("runInCloud")}</span>
+        </label>
+      )}
 
       <label className="flex flex-col gap-1">
         <span className="text-[10px] text-stone-500 uppercase tracking-wide">

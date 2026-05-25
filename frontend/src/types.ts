@@ -225,6 +225,8 @@ export interface CronJob {
   output: string;
   timeout: number;
   enabled: boolean;
+  /** Mirror this job to the hosted cloud worker. */
+  cloud?: boolean;
 }
 
 export interface CronRun {
