@@ -89,8 +89,9 @@ advisor_model: openrouter:anthropic/claude-sonnet-4
 
 ## Kaisho Cloud AI
 
-When connected to Kaisho Cloud with a `sync_ai` plan, the advisor
-can use the hosted AI gateway. No API keys needed:
+When connected to Kaisho Cloud with a paid plan (Companion, Pro
+or Team), the advisor can use the hosted AI gateway. No API keys
+needed:
 
 ```yaml
 # Automatically configured when Cloud Sync is connected

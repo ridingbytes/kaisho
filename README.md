@@ -45,7 +45,7 @@ arts -- the position of readiness.
 - **Cloud Sync** (paid plan) -- mobile clock tracking via
   PWA at cloud.kaisho.dev/m with password reset, markdown
   advisor, and plan badge. Entries sync back to the local
-  app. Requires a sync or sync_ai plan via
+  app. Requires a paid plan (Companion, Pro or Team) via
   [kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud)
 - **Calendar Feed** -- subscribe any CalDAV/iCal client
   (iCloud, Google, Outlook) to
@@ -193,7 +193,7 @@ cd frontend && pnpm build  # Production build
   Windows, and Linux. Bundles a sidecar binary and
   includes an auto-updater. No terminal needed.
 - **[kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud)** --
-  cloud sync service (requires paid sync or sync_ai plan).
+  cloud sync service (requires a paid Companion/Pro/Team plan).
   Provides a mobile PWA at cloud.kaisho.dev/m for time
   tracking on the go with password reset, markdown
   advisor, and plan badge. Entries sync back to your
