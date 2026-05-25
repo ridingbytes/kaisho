@@ -8,6 +8,7 @@ import {
   askAdvisor,
   captureInboxItem,
   fetchBuiltinPrompt,
+  listIntegrations,
 } from "../../api/client";
 import { useToast } from "../../context/ToastContext";
 import { useAutosizeTextarea } from "../../hooks/useAutosizeTextarea";
@@ -32,6 +33,49 @@ const QUESTION_TEMPLATE_KEYS = [
   "monthHours",
   "openIssues",
 ] as const;
+
+// Example prompts surfaced per connected premium
+// integration (Pro). Each group is tinted in the
+// provider's colour; chips only render for integrations
+// the user has actually connected. ``keys`` are advisor
+// i18n keys.
+const INTEGRATION_PROMPTS: Record<
+  string,
+  { label: string; chip: string; keys: string[] }
+> = {
+  google: {
+    label: "Google Calendar",
+    chip:
+      "border-blue-300 text-blue-700 bg-blue-50 "
+      + "hover:border-blue-400",
+    keys: ["intCalToday", "intCalFree", "intCalBook"],
+  },
+  linear: {
+    label: "Linear",
+    chip:
+      "border-indigo-300 text-indigo-700 bg-indigo-50 "
+      + "hover:border-indigo-400",
+    keys: ["intLinearMine", "intLinearCreate"],
+  },
+  github: {
+    label: "GitHub",
+    chip:
+      "border-stone-400 text-stone-800 bg-stone-100 "
+      + "hover:border-stone-500",
+    keys: ["intGithubItems", "intGithubDraft"],
+  },
+  slack: {
+    label: "Slack",
+    chip:
+      "border-purple-300 text-purple-800 bg-purple-50 "
+      + "hover:border-purple-400",
+    keys: ["intSlackSearch", "intSlackPost"],
+  },
+};
+
+const INTEGRATION_ORDER = [
+  "google", "linear", "github", "slack",
+];
 
 export interface AdvisorMessage {
   role: "user" | "assistant";
@@ -163,6 +207,19 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
   const [onboardDismissed, setOnboardDismissed] = useState(
     () => localStorage.getItem("kaisho.onboardHintDismissed") === "1",
   );
+  // Connected premium integrations → surface example
+  // prompts for them. Best-effort: errors (free plan /
+  // not connected) just leave the list empty.
+  const [connectedKinds, setConnectedKinds] = useState<
+    string[]
+  >([]);
+  useEffect(() => {
+    listIntegrations()
+      .then((rows) =>
+        setConnectedKinds(rows.map((r) => r.kind)),
+      )
+      .catch(() => setConnectedKinds([]));
+  }, []);
 
   function dismissOnboardHint() {
     localStorage.setItem("kaisho.onboardHintDismissed", "1");
@@ -487,6 +544,33 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
                 </button>
               ))}
             </div>
+            {INTEGRATION_ORDER.filter((k) =>
+              connectedKinds.includes(k),
+            ).map((kind) => {
+              const grp = INTEGRATION_PROMPTS[kind];
+              return (
+                <div key={kind} className="space-y-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 text-center">
+                    {grp.label}
+                  </p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {grp.keys.map((key) => (
+                      <button
+                        key={key}
+                        onClick={() => { setInput(t(key)); }}
+                        className={[
+                          "px-3 py-1.5 rounded-lg text-xs",
+                          "border transition-colors text-left",
+                          grp.chip,
+                        ].join(" ")}
+                      >
+                        {t(key)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
         {messages.map((msg, i) =>
