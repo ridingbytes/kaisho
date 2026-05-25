@@ -192,6 +192,7 @@
   "backend": "Backend",
   "orgMode": "Org-mode (archivos *.org)",
   "markdown": "Markdown (archivos *.md)",
+  "sql": "SQL (base de datos SQLite local)",
   "dataNotMigrated": "Los datos no se migran entre backends.",
   "dataDirectories": "Directorios de datos",
   "savePaths": "Guardar rutas",
