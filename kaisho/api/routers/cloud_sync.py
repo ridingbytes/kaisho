@@ -168,11 +168,12 @@ def connect(body: ConnectBody):
 
 
 def _autoset_kaisho_models(cfg, plan: str) -> dict:
-    """On Sync+AI plan activation, populate empty
+    """On paid-plan activation, populate empty
     advisor_model / cron_model with kaisho:advisor /
     kaisho:cron so the cloud gateway is wired up by
-    default. Existing non-empty values are kept."""
-    if plan != "sync_ai":
+    default. Every paid tier includes the AI gateway.
+    Existing non-empty values are kept."""
+    if plan not in ("companion", "pro", "team"):
         return {}
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     ai = settings_svc.get_ai_settings(data)
