@@ -192,6 +192,7 @@
   "backend": "Бэкенд",
   "orgMode": "Org-mode (*.org файлы)",
   "markdown": "Markdown (*.md файлы)",
+  "sql": "SQL (локальная база данных SQLite)",
   "dataNotMigrated": "Данные между бэкендами не мигрируются.",
   "dataDirectories": "Каталоги данных",
   "savePaths": "Сохранить пути",
