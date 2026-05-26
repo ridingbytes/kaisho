@@ -19,9 +19,8 @@ your tasks and time tracking.
     desktop is closed (see [MCP Server](mcp.md)). On the free tier it
     stays strictly local.
 
-    The **Settings → GitHub** page no longer holds the token — it
-    configures the issues & PRs view (sidebar entry, Enterprise API
-    URL).
+    View options (hide the sidebar entry, GitHub Enterprise API URL)
+    live under the connected GitHub row in **Settings → Integrations**.
 
 ![GitHub Integration](../assets/images/github.png){.screenshot}
 
