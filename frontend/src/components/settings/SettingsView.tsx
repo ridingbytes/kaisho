@@ -7,7 +7,6 @@ import { GeneralTab } from "./GeneralTab";
 import { ProfileTab } from "./ProfileTab";
 import { TagsAndTypesTab } from "./TagsTab";
 import { AiSection } from "./AiTab";
-import { GithubSection } from "./GithubTab";
 import { ShortcutsSection } from "./ShortcutsTab";
 import { PathsSection } from "./PathsTab";
 import { CloudSyncSection } from "./CloudSyncTab";
@@ -21,7 +20,6 @@ type TabId =
   | "general"
   | "tags"
   | "ai"
-  | "github"
   | "cloud"
   | "integrations"
   | "backup"
@@ -35,7 +33,6 @@ const TABS: { id: TabId; labelKey: string }[] = [
   { id: "general", labelKey: "general" },
   { id: "tags", labelKey: "tagsAndTypes" },
   { id: "ai", labelKey: "ai" },
-  { id: "github", labelKey: "github" },
   { id: "cloud", labelKey: "cloudSync" },
   { id: "integrations", labelKey: "integrations.tab" },
   { id: "backup", labelKey: "backup" },
@@ -122,7 +119,6 @@ export function SettingsView(): JSX.Element {
           {activeTab === "general" && <GeneralTab />}
           {activeTab === "tags" && <TagsAndTypesTab />}
           {activeTab === "ai" && <AiSection />}
-          {activeTab === "github" && <GithubSection />}
           {activeTab === "cloud" && <CloudSyncSection />}
           {activeTab === "integrations" && (
             <IntegrationsSection />

@@ -9,6 +9,7 @@ import {
 } from "../../api/client";
 import { useCloudSyncStatus } from "../../hooks/useSettings";
 import { openExternal } from "../../utils/tauri";
+import { GithubAdvanced } from "./GithubAdvanced";
 
 type ProviderType = "key" | "oauth";
 
@@ -29,8 +30,7 @@ interface Provider {
 // Linear/Slack/Google are Pro and live in the cloud.
 const PROVIDERS: Provider[] = [
   { kind: "github", label: "GitHub", type: "key",
-    free: true, hintKey: "integrations.hint.github",
-    crossRefKey: "integrations.github.crossref" },
+    free: true, hintKey: "integrations.hint.github" },
   { kind: "linear", label: "Linear", type: "key",
     hintKey: "integrations.hint.linear" },
   { kind: "slack", label: "Slack", type: "oauth" },
@@ -223,6 +223,9 @@ export function IntegrationsSection() {
                   {t("integrations.connect")}
                 </button>
               </div>
+            )}
+            {p.kind === "github" && conn && (
+              <GithubAdvanced />
             )}
           </div>
         );
