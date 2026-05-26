@@ -1,3 +1,5 @@
+import json
+
 import click
 
 from ..config import get_config
@@ -7,6 +9,24 @@ from ..services import settings as settings_svc
 @click.group("config")
 def config_cmd():
     """Manage Kaisho configuration (task states, etc.)."""
+
+
+@config_cmd.command("backend")
+@click.option("--json", "as_json", is_flag=True)
+def show_backend(as_json):
+    """Print the active storage backend and its paths.
+
+    Lets external clients (e.g. kaisho-mode in Emacs) adapt
+    to the configured backend -- org files exist only on
+    the org backend.
+    """
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    paths = settings_svc.get_path_settings(data, cfg)
+    if as_json:
+        click.echo(json.dumps(paths, default=str))
+        return
+    click.echo(paths["backend"])
 
 
 @config_cmd.command("states")
