@@ -244,6 +244,9 @@ export function PathsSection(): JSX.Element {
               <option value="markdown">
                 {t("markdown")}
               </option>
+              <option value="json">
+                {t("json")}
+              </option>
               <option value="sql">
                 {t("sql")}
               </option>
