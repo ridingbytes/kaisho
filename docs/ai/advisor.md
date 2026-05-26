@@ -68,6 +68,25 @@ The advisor has access to 40 tools covering every domain:
 | Research | web search, fetch URLs, YouTube transcripts |
 | System | list profiles, create backups, time insights |
 
+## Premium Integrations (Pro)
+
+When you connect a premium integration in **Settings >
+Integrations** (a Pro feature), its tools are added to the
+advisor automatically, so you can ask things like "what's on
+my calendar tomorrow?" or "post a summary to #standup":
+
+| Integration | Tools |
+|-------------|-------|
+| Google Calendar | list events, free/busy, create event |
+| Slack | list channels, search messages, post message |
+| Linear | list teams, list/get/create issues |
+| GitHub Projects | list projects, list items, create draft |
+
+The credentials live in Kaisho Cloud and the calls run
+server-side, so the advisor never sees your tokens. Only the
+integrations you have actually connected appear; nothing is
+offered on the free tier.
+
 ## Model Selection
 
 The advisor model is configured in **Settings > AI**. You can change
