@@ -194,6 +194,7 @@
   "orgMode": "Org-mode (*.org files)",
   "markdown": "Markdown (*.md files)",
   "sql": "SQL (local SQLite database)",
+  "json": "JSON (*.json files)",
   "dataNotMigrated": "Data is not migrated between backends.",
   "dataDirectories": "Data Directories",
   "savePaths": "Save Paths",
