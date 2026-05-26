@@ -17,15 +17,22 @@ interface Provider {
   label: string;
   type: ProviderType;
   hintKey?: string;
+  // Always-shown line under the label, e.g. to point at a
+  // related settings tab.
+  crossRefKey?: string;
+  // Connectable on every plan (GitHub). Others are Pro.
+  free?: boolean;
 }
 
-// Premium integrations. Linear/GitHub connect with a
-// pasted token; Slack/Google via OAuth in the browser.
+// GitHub is the one free integration: it stores its token
+// locally and powers the GitHub sidebar + local AI tools.
+// Linear/Slack/Google are Pro and live in the cloud.
 const PROVIDERS: Provider[] = [
+  { kind: "github", label: "GitHub", type: "key",
+    free: true, hintKey: "integrations.hint.github",
+    crossRefKey: "integrations.github.crossref" },
   { kind: "linear", label: "Linear", type: "key",
     hintKey: "integrations.hint.linear" },
-  { kind: "github", label: "GitHub Projects", type: "key",
-    hintKey: "integrations.hint.github" },
   { kind: "slack", label: "Slack", type: "oauth" },
   { kind: "google", label: "Google Calendar",
     type: "oauth" },
@@ -57,7 +64,9 @@ export function IntegrationsSection() {
   }
 
   useEffect(() => {
-    if (isPro) refresh();
+    // Always refresh: GitHub is connectable on every plan
+    // and its connected state comes from the local token.
+    refresh();
   }, [isPro]);
 
   const isConnected = (kind: string) =>
@@ -107,16 +116,6 @@ export function IntegrationsSection() {
     }
   }
 
-  if (!isPro) {
-    return (
-      <div className="bg-surface-card rounded-xl border border-border p-4">
-        <p className="text-sm text-stone-600">
-          {t("integrations.proOnly")}
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -137,17 +136,27 @@ export function IntegrationsSection() {
       {PROVIDERS.map((p) => {
         const conn = isConnected(p.kind);
         const isBusy = busy === p.kind;
+        // Non-free integrations need Pro; lock the row and
+        // show a Pro note instead of connect controls.
+        const locked = !p.free && !isPro;
         return (
           <div
             key={p.kind}
-            className="bg-surface-card rounded-xl border border-border p-4"
+            className={
+              "bg-surface-card rounded-xl border border-border p-4"
+              + (locked ? " opacity-60" : "")
+            }
           >
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-semibold text-sm text-stone-900">
                   {p.label}
                 </p>
-                {conn ? (
+                {locked ? (
+                  <p className="text-[10px] text-stone-500 mt-0.5">
+                    {t("integrations.proOnly.short")}
+                  </p>
+                ) : conn ? (
                   <p className="text-xs text-green-600 mt-0.5">
                     {t("integrations.connected")}
                   </p>
@@ -158,8 +167,13 @@ export function IntegrationsSection() {
                     </p>
                   )
                 )}
+                {p.crossRefKey && (
+                  <p className="text-[10px] text-stone-400 mt-0.5">
+                    {t(p.crossRefKey)}
+                  </p>
+                )}
               </div>
-              {conn ? (
+              {!locked && conn ? (
                 <button
                   type="button"
                   onClick={() => handleDisconnect(p.kind)}
@@ -169,7 +183,7 @@ export function IntegrationsSection() {
                   {t("integrations.disconnect")}
                 </button>
               ) : (
-                p.type === "oauth" && (
+                !locked && p.type === "oauth" && (
                   <button
                     type="button"
                     onClick={() =>
@@ -183,7 +197,7 @@ export function IntegrationsSection() {
                 )
               )}
             </div>
-            {!conn && p.type === "key" && (
+            {!locked && !conn && p.type === "key" && (
               <div className="flex gap-2 mt-2">
                 <input
                   type="password"

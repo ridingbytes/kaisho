@@ -234,11 +234,26 @@ def connected_kinds() -> list[str]:
     return [r.get("kind") for r in rows if r.get("kind")]
 
 
+# GitHub is excluded from the advisor's cloud integration
+# tools on the desktop: the desktop already has local
+# GitHub tools (issues/PRs + projects), so exposing the
+# cloud github_* tools too would give the model two
+# overlapping GitHub surfaces. The cloud github_* tools
+# stay for cloud-only consumers (PWA, external MCP).
+_DESKTOP_EXCLUDED_KINDS = {"github"}
+
+
 def advisor_integration_defs() -> list[dict]:
     """Tool defs (internal shape) for connected
-    integrations, to append to the advisor toolbox."""
+    integrations, to append to the advisor toolbox.
+
+    Excludes integrations that already have a local tool
+    equivalent on the desktop (GitHub) to avoid handing the
+    model two overlapping surfaces."""
     out: list[dict] = []
     for kind in connected_kinds():
+        if kind in _DESKTOP_EXCLUDED_KINDS:
+            continue
         out.extend(INTEGRATION_DEFS.get(kind, []))
     return out
 

@@ -3,6 +3,26 @@
 Kaisho connects to GitHub to show issues and pull requests alongside
 your tasks and time tracking.
 
+!!! note "One token, in Integrations"
+
+    GitHub is the one integration available on every plan. You
+    connect it **once** under **Settings → Integrations**, and that
+    single token powers everything:
+
+    - the GitHub sidebar view (issues & PRs grouped by customer) and
+      the `kai gh` commands, and
+    - the AI advisor's GitHub tools.
+
+    The token is stored **locally**. On **Pro**, the same token is
+    additionally stored encrypted in Kaisho Cloud so the hosted MCP
+    gateway and the server-side advisor can reach GitHub when the
+    desktop is closed (see [MCP Server](mcp.md)). On the free tier it
+    stays strictly local.
+
+    The **Settings → GitHub** page no longer holds the token — it
+    configures the issues & PRs view (sidebar entry, Enterprise API
+    URL).
+
 ![GitHub Integration](../assets/images/github.png){.screenshot}
 
 ## Setup
@@ -10,7 +30,8 @@ your tasks and time tracking.
 1. Create a [personal access token](https://github.com/settings/tokens)
    with `repo` scope (classic token) or fine-grained token with
    Issues and Pull Requests read access.
-2. Go to **Settings > GitHub** and paste the token.
+2. Go to **Settings → Integrations** and paste the token into the
+   GitHub row.
 
 Or edit `settings.yaml`:
 
