@@ -130,6 +130,21 @@ def advisor_safe_tools() -> list[dict]:
     return _to_openai_tools(advisor_safe_tool_defs())
 
 
+def advisor_integration_tools() -> list[dict]:
+    """Connected premium-integration tools (Pro) in
+    OpenAI / Ollama chat shape.
+
+    Unlike :func:`advisor_safe_tools`, this returns only
+    the integration tools (no local read/write tools) so
+    the cloud ``kaisho:`` advisor can offer them on top of
+    its CLI tool without also exposing the local toolbox.
+    """
+    from ..services.integration_tools import (
+        advisor_integration_defs,
+    )
+    return _to_openai_tools(advisor_integration_defs())
+
+
 def cron_safe_tool_defs() -> list[dict]:
     """Return cron-safe tool defs in Anthropic schema
     shape: ``{name, description, input_schema}``.

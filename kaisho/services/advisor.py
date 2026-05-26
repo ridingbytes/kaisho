@@ -26,6 +26,7 @@ from ..ai_utils import (
 )
 from ..cron import guards as _guards
 from ..cron.tools import (
+    advisor_integration_tools,
     advisor_safe_tool_defs,
     advisor_safe_tools,
     execute_tool,
@@ -689,10 +690,15 @@ def ask(
         # FastAPI worker thread doesn't carry budget into
         # this one.
         _guards.reset_session()
-        # Only expose the kai CLI tool — the advisor
-        # can create tasks, book time, etc. via CLI
-        # commands but cannot fetch URLs or access
-        # the filesystem directly.
+        # Expose the kai CLI tool — the advisor can create
+        # tasks, book time, etc. via CLI commands but
+        # cannot fetch URLs or access the filesystem
+        # directly. On top of that, expose the user's
+        # connected premium integrations (Pro): calendar,
+        # Linear, GitHub, Slack. Those run server-side via
+        # execute_tool's cloud dispatch, so the advisor can
+        # answer "what's on my calendar?" instead of
+        # claiming it has no access.
         cli_tool = [{
             "type": "function",
             "function": {
@@ -720,12 +726,13 @@ def ask(
                 },
             },
         }]
+        tools = cli_tool + advisor_integration_tools()
         return cloud_ai_agentic(
             cloud_url=cloud_url,
             api_key=cloud_api_key,
             system=sp,
             prompt=prompt,
-            tools=cli_tool,
+            tools=tools,
             tool_executor=execute_tool,
             max_tokens=4096,
             on_event=on_event,
