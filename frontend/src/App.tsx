@@ -269,7 +269,8 @@ function CloudNudgeBanner({
   return (
     <div className="flex items-center gap-3 px-4 py-1.5 bg-cta/10 border-b border-cta/20 shrink-0">
       <p className="flex-1 text-[11px] text-stone-700">
-        Companion, Pro and Team launch Q3 2026 —{" "}
+        Companion and Pro add hosted sync, the MCP gateway,
+        mobile and scheduled AI runs.{" "}
         <button
           onClick={() =>
             openExternal(
