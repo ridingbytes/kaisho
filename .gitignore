@@ -16,3 +16,8 @@ frontend/dist/
 product/
 site/
 .coverage
+
+# Built sidecar binaries — produced by scripts/build-sidecar.sh
+# (and bin/dev); never commit (they go stale and pin the app to
+# an old version). The dir is kept via .gitkeep.
+desktop/src-tauri/binaries/kai-server-*
