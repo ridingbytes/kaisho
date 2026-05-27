@@ -863,7 +863,12 @@ TOOL_DEFS: list[dict] = [
     },
     {
         "name": "approve_url_domain",
-        "tier": "write",
+        # Destructive so the AI advisor/cron never get it: a
+        # prompt-injected model could otherwise self-approve a
+        # domain it was just told to fetch, defeating the
+        # human-in-the-loop. Users approve domains in
+        # Settings > AI (the /settings/url_allowlist endpoint).
+        "tier": "destructive",
         "description": (
             "Add a domain to the URL allowlist so fetch_url can "
             "access it. Call this when the user approves a domain."

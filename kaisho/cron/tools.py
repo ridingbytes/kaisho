@@ -864,20 +864,24 @@ def _fetch_url(url: str, accept: str = "") -> dict:
     if not url.startswith(("http://", "https://")):
         return {"error": "only http/https URLs are supported"}
 
-    # PyPI project pages are JS-rendered; use JSON API
-    pypi_url = _rewrite_pypi_url(url)
-    if pypi_url:
-        try:
-            return _fetch_pypi(pypi_url)
-        except (OSError, ValueError) as exc:
-            return {"error": str(exc)}
-
+    # Enforce the allowlist first, for every URL. The PyPI
+    # JSON-API rewrite below used to run before this check,
+    # letting any pypi.org URL through unconditionally — a
+    # hole in the SSRF/allowlist guard the model controls.
     domain = _extract_domain(url)
     if not _is_domain_allowed(domain):
         return {
             "pending_approval": True,
             "domain": domain, "url": url,
         }
+
+    # PyPI project pages are JS-rendered; use the JSON API.
+    pypi_url = _rewrite_pypi_url(url)
+    if pypi_url:
+        try:
+            return _fetch_pypi(pypi_url)
+        except (OSError, ValueError) as exc:
+            return {"error": str(exc)}
     headers = {"User-Agent": "kaisho/1.0"}
     if accept:
         headers["Accept"] = accept
