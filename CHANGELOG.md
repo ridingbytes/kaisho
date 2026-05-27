@@ -1,5 +1,54 @@
 # Changelog
 
+## 2.0.0
+
+Track AI: hosted Companion & Pro plans, premium integrations,
+the mobile PWA, a backend-agnostic storage layer, and a
+hardened agentic advisor.
+
+### Hosted plans + cloud
+
+- Companion & Pro add cross-device sync, the mobile PWA, the
+  hosted MCP gateway (reach your tools from Claude Code /
+  Cursor when the laptop is closed), and scheduled cron-AI
+  runs on a token quota. Hobby stays fully local and free.
+
+### Premium integrations (Pro)
+
+- The advisor can read and act on Google Calendar, Slack,
+  Linear and GitHub Projects through the hosted gateway —
+  connect them in Settings > Integrations. Credentials are
+  stored encrypted server-side; the calls run there, so the
+  advisor never sees your tokens.
+
+### Storage, your way
+
+- Backend-agnostic: org-mode (default), Markdown, JSON and SQL,
+  all selectable in Settings > Paths. The SQL backend now
+  supports cloud sync.
+
+### GitHub
+
+- Consolidated to a single connection in the Integrations tab,
+  available on every plan; the standalone GitHub settings tab
+  is gone. View options (sidebar entry, Enterprise URL) live
+  under the connected GitHub row.
+
+### Security
+
+- The advisor/cron `execute_cli` tool is gated by an allowlist
+  and rejects destructive verbs — a prompt-injected model
+  can't run `delete --yes`.
+- The URL-fetch allowlist is enforced before any fetch (no
+  PyPI bypass), and the model can no longer self-approve
+  domains; you approve them in Settings > AI.
+
+### Emacs
+
+- kaisho-mode works with any backend; on non-org backends the
+  file commands render read-only CLI buffers instead of
+  visiting org files.
+
 ## 1.8.3
 
 Fix the tray pill displaying ``00:00`` even though a
