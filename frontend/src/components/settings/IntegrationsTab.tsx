@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   listIntegrations,
@@ -56,11 +57,23 @@ export function IntegrationsSection() {
   );
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const qc = useQueryClient();
 
   function refresh() {
     listIntegrations()
       .then(setConnected)
       .catch(() => {});
+  }
+
+  // The sidebar shows the GitHub entry based on the
+  // ["settings", "github"] query (token_set). Connecting or
+  // disconnecting GitHub here must invalidate it so the entry
+  // appears/disappears without an app reload.
+  function syncGithubNav(kind: string) {
+    if (kind !== "github") return;
+    void qc.invalidateQueries({
+      queryKey: ["settings", "github"],
+    });
   }
 
   useEffect(() => {
@@ -83,6 +96,7 @@ export function IntegrationsSection() {
       await connectIntegrationKey(kind, keys[kind] || "");
       setKeys((k) => ({ ...k, [kind]: "" }));
       refresh();
+      syncGithubNav(kind);
     } catch (e) {
       fail(e);
     } finally {
@@ -109,6 +123,7 @@ export function IntegrationsSection() {
     try {
       await disconnectIntegration(kind);
       refresh();
+      syncGithubNav(kind);
     } catch (e) {
       fail(e);
     } finally {
