@@ -1267,12 +1267,22 @@ def _list_github_issues(customer: str | None = None) -> dict:
     }
 
 
-# Commands blocked from execute_cli (destructive or
-# irrelevant in an agentic context).
-_CLI_BLOCKED = {
-    "serve", "mcp-server", "profiles", "config",
-    "convert",
+# execute_cli is reachable by the AI advisor and cron, both
+# of which are exposed to prompt injection. Gate it with an
+# ALLOWLIST of safe top-level commands (a blocklist let
+# "task delete <id> --yes" through), and additionally reject
+# any destructive verb or confirm/force flag inside an
+# otherwise-allowed command. Deletes/renames are not
+# available to the agent at all -- they go through the UI.
+_CLI_ALLOWED = {
+    "task", "clock", "note", "customer", "contract",
+    "inbox", "kb", "knowledge", "tag", "briefing", "ask",
+    "gh", "version",
 }
+_CLI_DESTRUCTIVE = {
+    "delete", "remove", "rm", "rename", "purge", "destroy",
+}
+_CLI_DESTRUCTIVE_FLAGS = {"--yes", "-y", "--force", "-f"}
 
 
 def _execute_cli(command: str) -> dict:
@@ -1282,9 +1292,16 @@ def _execute_cli(command: str) -> dict:
     if not command.strip():
         return {"error": "empty command"}
     args = shlex.split(command)
-    if args and args[0] in _CLI_BLOCKED:
+    if not args or args[0] not in _CLI_ALLOWED:
         return {
-            "error": f"command not allowed: {args[0]}",
+            "error": f"command not allowed: {args[0] if args else ''}",
+        }
+    lowered = {a.lower() for a in args}
+    if (lowered & _CLI_DESTRUCTIVE
+            or lowered & _CLI_DESTRUCTIVE_FLAGS):
+        return {
+            "error": "destructive commands are not allowed "
+                     "from the advisor; use the app UI",
         }
     kai_bin = shutil.which("kai")
     if kai_bin:
