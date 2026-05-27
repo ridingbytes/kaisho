@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { View } from "../../App";
 import { isGithubNavHidden } from "../../utils/navPrefs";
+import { useGithubSettings } from "../../hooks/useSettings";
 import {
   displayShortcut,
   useShortcutsContext,
@@ -86,9 +87,14 @@ export function Sidebar({
     );
   }, []);
 
-  const visibleNav = hideGithub
-    ? NAV_ITEMS.filter((n) => n.id !== "github")
-    : NAV_ITEMS;
+  // Show the GitHub entry only once a token is connected;
+  // the manual toggle then lets the user hide it anyway.
+  const { data: githubSettings } = useGithubSettings();
+  const showGithub =
+    !!githubSettings?.token_set && !hideGithub;
+  const visibleNav = showGithub
+    ? NAV_ITEMS
+    : NAV_ITEMS.filter((n) => n.id !== "github");
 
   // On mobile the sidebar is in an overlay, always expanded.
   // On desktop, the open prop controls collapsed/expanded.
