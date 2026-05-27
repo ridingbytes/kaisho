@@ -265,5 +265,7 @@
   "bioHelp": "Краткое описание того, кто вы. Советник использует его, чтобы подстраивать ответы.",
   "navigation": "Навигация",
   "hideGithubNav": "Скрыть пункт GitHub в меню",
-  "hideGithubNavHint": "Убирает GitHub из боковой панели. Полезно, если вы не отслеживаете issues и PR в Kaisho."
+  "hideGithubNavHint": "Убирает GitHub из боковой панели. Полезно, если вы не отслеживаете issues и PR в Kaisho.",
+  "githubEnterprise": "Используете GitHub Enterprise?",
+  "githubEnterpriseHint": "Нужно только для self-hosted GitHub Enterprise. На github.com адрес API всегда api.github.com — оставьте без изменений."
 }

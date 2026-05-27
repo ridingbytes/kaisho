@@ -265,5 +265,7 @@
   "bioHelp": "Una breve descripción de quién eres. El asesor la usa para adaptar las respuestas.",
   "navigation": "Navegación",
   "hideGithubNav": "Ocultar entrada de menú GitHub",
-  "hideGithubNavHint": "Elimina GitHub de la barra lateral. Útil si no haces seguimiento de issues o PRs en Kaisho."
+  "hideGithubNavHint": "Elimina GitHub de la barra lateral. Útil si no haces seguimiento de issues o PRs en Kaisho.",
+  "githubEnterprise": "¿Usas GitHub Enterprise?",
+  "githubEnterpriseHint": "Solo es necesario para GitHub Enterprise autoalojado. En github.com el host de la API siempre es api.github.com — déjalo como está."
 }
