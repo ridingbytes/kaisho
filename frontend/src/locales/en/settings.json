@@ -265,5 +265,7 @@
   "bioHelp": "A short description of who you are. The advisor uses it to tailor responses.",
   "navigation": "Navigation",
   "hideGithubNav": "Hide GitHub menu entry",
-  "hideGithubNavHint": "Removes GitHub from the sidebar. Useful if you don't track issues or PRs in Kaisho."
+  "hideGithubNavHint": "Removes GitHub from the sidebar. Useful if you don't track issues or PRs in Kaisho.",
+  "githubEnterprise": "Using GitHub Enterprise?",
+  "githubEnterpriseHint": "Only needed for self-hosted GitHub Enterprise. On github.com the API host is always api.github.com — leave this alone."
 }

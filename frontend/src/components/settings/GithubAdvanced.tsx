@@ -29,14 +29,23 @@ export function GithubAdvanced(): JSX.Element {
   const [baseUrl, setBaseUrl] = useState(
     "https://api.github.com",
   );
+  // The base URL only matters for GitHub Enterprise; on
+  // github.com it is always api.github.com. Keep it tucked
+  // behind a disclosure, opened automatically when a custom
+  // (Enterprise) host is already configured.
+  const [showEnterprise, setShowEnterprise] =
+    useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (githubSettings) {
-      setBaseUrl(
+      const url =
         githubSettings.base_url ||
-          "https://api.github.com",
-      );
+        "https://api.github.com";
+      setBaseUrl(url);
+      if (url !== "https://api.github.com") {
+        setShowEnterprise(true);
+      }
     }
   }, [githubSettings]);
 
@@ -73,31 +82,46 @@ export function GithubAdvanced(): JSX.Element {
           </span>
         </span>
       </label>
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-stone-700 w-20 shrink-0">
-          {t("baseUrl")}
-        </span>
-        <input
-          type="text"
-          value={baseUrl}
-          onChange={(e) => setBaseUrl(e.target.value)}
-          placeholder="https://api.github.com"
-          className={inputCls}
-        />
+      {!showEnterprise ? (
         <button
           type="button"
-          onClick={handleSave}
-          disabled={update.isPending}
-          className={saveBtnCls}
+          onClick={() => setShowEnterprise(true)}
+          className="text-[11px] text-stone-400 hover:text-stone-600 underline"
         >
-          {update.isPending ? tc("saving") : tc("save")}
+          {t("githubEnterprise")}
         </button>
-        {saved && (
-          <span className="text-xs text-green-400">
-            {tc("saved")}
-          </span>
-        )}
-      </div>
+      ) : (
+        <div>
+          <p className="text-[10px] text-stone-400 mb-1.5">
+            {t("githubEnterpriseHint")}
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-stone-700 w-20 shrink-0">
+              {t("baseUrl")}
+            </span>
+            <input
+              type="text"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder="https://api.github.com"
+              className={inputCls}
+            />
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={update.isPending}
+              className={saveBtnCls}
+            >
+              {update.isPending ? tc("saving") : tc("save")}
+            </button>
+            {saved && (
+              <span className="text-xs text-green-400">
+                {tc("saved")}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

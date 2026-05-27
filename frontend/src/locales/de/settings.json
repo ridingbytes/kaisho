@@ -265,5 +265,7 @@
   "bioHelp": "Eine kurze Beschreibung, wer du bist. Der Advisor nutzt sie, um Antworten auf dich zuzuschneiden.",
   "navigation": "Navigation",
   "hideGithubNav": "GitHub-Menüeintrag ausblenden",
-  "hideGithubNavHint": "Entfernt GitHub aus der Seitenleiste. Hilfreich, wenn du keine Issues oder PRs in Kaisho verfolgst."
+  "hideGithubNavHint": "Entfernt GitHub aus der Seitenleiste. Hilfreich, wenn du keine Issues oder PRs in Kaisho verfolgst.",
+  "githubEnterprise": "GitHub Enterprise im Einsatz?",
+  "githubEnterpriseHint": "Nur für selbst gehostetes GitHub Enterprise nötig. Auf github.com ist der API-Host immer api.github.com — bitte unverändert lassen."
 }
