@@ -30,6 +30,13 @@ export function WhatsNewDialog() {
     const parsed = parseChangelog(data.changelog);
     if (parsed.length > 0) setLatest(parsed[0]);
 
+    // Don't auto-pop release notes during local dev: the
+    // version churns across rebuilds and `bin/dev --clean`
+    // wipes the seen-state, so it would reappear on every
+    // start. The manual "open from Settings" path still
+    // works; production updates pop once as before.
+    if (import.meta.env.DEV) return;
+
     const seen = localStorage.getItem(SEEN_KEY);
     if (seen !== data.version && parsed.length > 0) {
       setOpen(true);
