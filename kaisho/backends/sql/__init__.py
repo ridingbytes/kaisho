@@ -1078,6 +1078,102 @@ class SqlClockBackend(ClockBackend):
         finally:
             session.close()
 
+    def delete_entry_by_sync_id(
+        self, sync_id: str,
+    ) -> dict | None:
+        """Delete a clock entry by sync UUID.
+
+        Overrides the base scan with a direct, collision-free
+        lookup. Used by the sync protocol when the cloud
+        propagates a deletion.
+        """
+        return self.delete_entry(sync_id=sync_id)
+
+    def apply_sync_payload(self, fields: dict) -> dict:
+        """Upsert a cloud-origin entry by sync_id.
+
+        Last-writer-wins: if a local entry with the same
+        sync_id is newer, the incoming change is skipped.
+        Falls back to a content match (start + customer +
+        description) for an entry whose sync_id was lost
+        locally; otherwise inserts a new entry.
+        """
+        sid = fields["sync_id"]
+        session = self._eng.session()
+        try:
+            row = (
+                session.query(ClockRow)
+                .filter(ClockRow.sync_id == sid)
+                .first()
+            )
+            if row is None:
+                row = self._match_clock_by_content(
+                    session, fields,
+                )
+            if row is not None:
+                local_ts = row.updated_at or ""
+                remote_ts = fields.get("updated_at", "")
+                if local_ts and remote_ts and (
+                    remote_ts <= local_ts
+                ):
+                    return _enrich_clock(
+                        _clock_row_to_dict(row)
+                    )
+                _apply_clock_fields(row, fields)
+                session.commit()
+                return _enrich_clock(
+                    _clock_row_to_dict(row)
+                )
+            row = ClockRow()
+            _apply_clock_fields(row, fields)
+            session.add(row)
+            session.commit()
+            return _enrich_clock(_clock_row_to_dict(row))
+        finally:
+            session.close()
+
+    @staticmethod
+    def _match_clock_by_content(session, fields):
+        """Find a local entry that lost its sync_id, matched
+        by start + customer + description. Returns the row or
+        None."""
+        start = fields.get("start") or ""
+        if not start:
+            return None
+        return (
+            session.query(ClockRow)
+            .filter(
+                ClockRow.sync_id.is_(None),
+                ClockRow.start == start,
+                ClockRow.customer == (
+                    fields.get("customer") or ""
+                ),
+                ClockRow.description == (
+                    fields.get("description") or ""
+                ),
+            )
+            .first()
+        )
+
+
+def _apply_clock_fields(row: ClockRow, fields: dict) -> None:
+    """Set ClockRow columns from a sync payload. The caller
+    enforces last-writer-wins before calling this."""
+    for col in (
+        "customer", "description", "start",
+        "task_id", "contract", "notes",
+    ):
+        if col in fields:
+            setattr(row, col, fields[col] or "")
+    if "end" in fields:
+        row.end = fields["end"] or None
+    if "invoiced" in fields:
+        row.invoiced = bool(fields["invoiced"])
+    row.sync_id = fields["sync_id"]
+    row.updated_at = (
+        fields.get("updated_at") or _local_now().isoformat()
+    )
+
 
 # ====================================================================
 #  InboxBackend
