@@ -250,6 +250,13 @@ def execute_tool(name: str, args: Any) -> dict:
         return cap_err
     guards.maybe_auto_snapshot(name, tier)
 
+    # Dispatcher boundary: any handler error is converted
+    # into a structured tool-result so a single bad call
+    # cannot tear down the advisor / cron loop. Do not
+    # tighten to a narrower exception type without
+    # preserving that contract -- a future linter sweep
+    # that "fixes" this BLE001 will surface handler errors
+    # to the agent loop instead of the model.
     try:
         return _dispatch(name, args)
     except Exception as exc:  # noqa: BLE001
