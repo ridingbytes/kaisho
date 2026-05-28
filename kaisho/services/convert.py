@@ -59,6 +59,7 @@ def _try_or_skip(
     label: str,
     identifier: str,
     fn,
+    treat_exists_as_success: bool = False,
 ) -> bool:
     """Run *fn*; on any exception log and record a skip.
 
@@ -72,11 +73,34 @@ def _try_or_skip(
         *skipped* and the log line.
     :param fn: Zero-arg callable that performs the actual
         write. Its return value is ignored.
+    :param treat_exists_as_success: When True, a ``ValueError``
+        whose message contains "already exists" returns True
+        without logging a skip. Used by add-paths that are
+        meant to be idempotent across re-runs: the customer
+        or contract is already in the target, so subsequent
+        update/close steps should still proceed.
     :returns: True on success, False on failure.
     """
     try:
         fn()
         return True
+    except ValueError as exc:
+        # Idempotent no-op: target already has this row, so
+        # the caller's downstream update/close still applies.
+        if (
+            treat_exists_as_success
+            and "already exists" in str(exc)
+        ):
+            return True
+        skipped.append(identifier)
+        log.warning(
+            "convert: skipped %s %r: %s: %s",
+            label,
+            identifier,
+            type(exc).__name__,
+            exc,
+        )
+        return False
     except Exception as exc:  # noqa: BLE001 (see module docstring)
         log.warning(
             "convert: skipped %s %r: %s: %s",
@@ -250,6 +274,7 @@ def _convert_customers(
                 repo=c.get("repo"),
                 tags=c.get("tags"),
             ),
+            treat_exists_as_success=True,
         )
         if not ok:
             continue
@@ -287,6 +312,7 @@ def _convert_contract(
             billable=ct.get("billable", True),
             invoiced=ct.get("invoiced", False),
         ),
+        treat_exists_as_success=True,
     )
     if not created:
         return
