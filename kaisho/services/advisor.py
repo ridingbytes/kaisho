@@ -256,9 +256,9 @@ def build_system_prompt(
     user = load_user(data_dir)
     if user:
         parts.append(f"\n## User Profile\n{user}")
-    # TODO: All skills are injected into every prompt.
-    # Consider selective loading via a use_skill() tool
-    # when the number of skills grows. See
+    # TODO(#101): All skills are injected into every
+    # prompt. Consider selective loading via a use_skill()
+    # tool when the number of skills grows. See
     # docs/IMPROVEMENTS.md for details.
     skills = list_skills(data_dir)
     if skills:
