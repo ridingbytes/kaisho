@@ -639,3 +639,106 @@ class TestCustomerBackend:
             s for s in summary if s["name"] == "Acme"
         )
         assert acme["budget"] == 100
+
+
+# ---------------------------------------------------------------
+# SQL clock pause/resume tests
+#
+# Pause/resume is only implemented in the SQL backend (and the
+# org backend, tested elsewhere). Markdown/JSON still discard
+# the ``paused`` flag in ``stop`` -- tracked separately.
+# ---------------------------------------------------------------
+
+
+@pytest.fixture
+def sql_clocks(tmp_path):
+    db = _Engine(_sql_dsn(tmp_path))
+    return SqlClockBackend(db)
+
+
+class TestSqlClockPause:
+    def test_stop_paused_marks_entry(self, sql_clocks):
+        sql_clocks.start(
+            customer="Acme", description="Work"
+        )
+        stopped = sql_clocks.stop(paused=True)
+        assert stopped["paused"] is True
+        paused = sql_clocks.get_paused()
+        assert paused is not None
+        assert paused["customer"] == "Acme"
+
+    def test_plain_stop_clears_paused(self, sql_clocks):
+        # Pause one entry, then stop a new one without pause.
+        sql_clocks.start(customer="A", description="W1")
+        sql_clocks.stop(paused=True)
+        assert sql_clocks.get_paused() is not None
+        sql_clocks.start(customer="B", description="W2")
+        sql_clocks.stop(paused=False)
+        assert sql_clocks.get_paused() is None
+
+    def test_start_clears_prior_paused(self, sql_clocks):
+        sql_clocks.start(customer="A", description="W1")
+        sql_clocks.stop(paused=True)
+        assert sql_clocks.get_paused() is not None
+        # Starting a fresh entry must drop the stale flag.
+        sql_clocks.start(customer="B", description="W2")
+        assert sql_clocks.get_paused() is None
+
+    def test_clear_paused_explicit(self, sql_clocks):
+        sql_clocks.start(customer="A", description="W")
+        sql_clocks.stop(paused=True)
+        assert sql_clocks.clear_paused() is True
+        assert sql_clocks.get_paused() is None
+        # Idempotent: second call is a no-op.
+        assert sql_clocks.clear_paused() is False
+
+    def test_get_paused_returns_none_when_no_paused(
+        self, sql_clocks
+    ):
+        sql_clocks.start(customer="A", description="W")
+        sql_clocks.stop(paused=False)
+        assert sql_clocks.get_paused() is None
+
+    def test_at_most_one_paused_entry(self, sql_clocks):
+        # Pause -> pause again -> still only one paused row.
+        sql_clocks.start(customer="A", description="W1")
+        sql_clocks.stop(paused=True)
+        sql_clocks.start(customer="B", description="W2")
+        sql_clocks.stop(paused=True)
+        paused = sql_clocks.get_paused()
+        assert paused is not None
+        assert paused["customer"] == "B"
+
+
+def test_ensure_paused_column_on_legacy_db(tmp_path):
+    """Engine init must ALTER a pre-existing clocks table
+    that was created before the paused column landed."""
+    from sqlalchemy import create_engine, inspect, text
+    dsn = _sql_dsn(tmp_path)
+    # Hand-build a legacy clocks table (no paused column).
+    eng = create_engine(dsn)
+    with eng.begin() as conn:
+        conn.execute(text(
+            "CREATE TABLE clocks ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "customer TEXT NOT NULL, "
+            "description TEXT DEFAULT '', "
+            "start TEXT NOT NULL, "
+            "end TEXT, "
+            "task_id TEXT, "
+            "contract TEXT, "
+            "invoiced BOOLEAN DEFAULT 0, "
+            "notes TEXT DEFAULT '', "
+            "sync_id TEXT, "
+            "updated_at TEXT"
+            ")"
+        ))
+    eng.dispose()
+    # Engine boot should silently add the column.
+    _Engine(dsn)
+    eng2 = create_engine(dsn)
+    cols = {
+        c["name"]
+        for c in inspect(eng2).get_columns("clocks")
+    }
+    assert "paused" in cols

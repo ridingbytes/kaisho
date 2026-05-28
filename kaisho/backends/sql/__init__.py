@@ -76,6 +76,11 @@ class ClockRow(Base):  # noqa: E302
     notes = Column(Text, default="")
     sync_id = Column(String, nullable=True)
     updated_at = Column(String, nullable=True)
+    # Local UI hint: signals that the entry was stopped
+    # with the intent to resume. Mirrors the org backend's
+    # PAUSED=true heading property. Not part of the cloud
+    # sync payload, by design (paused state is per device).
+    paused = Column(Boolean, default=False)
 
 
 class InboxRow(Base):
@@ -154,11 +159,35 @@ class _Engine:
             )
         self.engine = create_engine(dsn)
         Base.metadata.create_all(self.engine)
+        _ensure_paused_column(self.engine)
         self._Session = sessionmaker(bind=self.engine)
 
     def session(self):
         """Create and return a new database session."""
         return self._Session()
+
+
+def _ensure_paused_column(engine) -> None:
+    """Add the ``clocks.paused`` column on legacy databases.
+
+    ``Base.metadata.create_all`` only creates missing
+    tables, not missing columns. Databases created before
+    pause/resume support need an ``ALTER TABLE`` to grow
+    the new column. Idempotent: silently skips when the
+    column already exists.
+    """
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    if "clocks" not in inspector.get_table_names():
+        return
+    cols = {c["name"] for c in inspector.get_columns("clocks")}
+    if "paused" in cols:
+        return
+    with engine.begin() as conn:
+        conn.execute(text(
+            "ALTER TABLE clocks "
+            "ADD COLUMN paused BOOLEAN DEFAULT 0"
+        ))
 
 
 # -- ID generation ---------------------------------------------------
@@ -335,6 +364,7 @@ def _clock_row_to_dict(row: ClockRow) -> dict:
         "notes": row.notes or "",
         "sync_id": row.sync_id or "",
         "updated_at": row.updated_at or "",
+        "paused": bool(row.paused),
     }
 
 
@@ -837,7 +867,13 @@ class SqlClockBackend(ClockBackend):
         task_id=None,
         contract=None,
     ) -> dict:
-        """Open a new clock entry. Raises if one is running."""
+        """Open a new clock entry. Raises if one is running.
+
+        Also clears the ``paused`` flag on any previously
+        paused entry: starting a new timer means the user
+        moved on, so a stale "Resume" affordance would be
+        misleading.
+        """
         if self.get_active() is not None:
             raise ValueError(
                 "A clock entry is already running"
@@ -856,9 +892,11 @@ class SqlClockBackend(ClockBackend):
             notes="",
             sync_id=sid,
             updated_at=now,
+            paused=False,
         )
         session = self._eng.session()
         try:
+            self._clear_paused(session)
             session.add(row)
             session.commit()
         finally:
@@ -885,11 +923,20 @@ class SqlClockBackend(ClockBackend):
     ) -> dict:
         """Close the running clock entry. Raises if none.
 
-        ``rounding_minutes`` / ``rounding_mode`` / ``paused``
-        are accepted for interface parity but ignored:
-        only the org backend implements them today.
+        ``rounding_minutes`` / ``rounding_mode`` are
+        accepted for interface parity but ignored:
+        rounding is only implemented in the org backend
+        today.
+
+        ``paused`` mirrors the org backend's semantics:
+        when true, the just-stopped entry is marked
+        ``paused=true`` so the UI can offer "Resume". When
+        false, the flag is cleared on every row of this
+        backend, matching the org backend's behaviour of
+        wiping any stale "Resume" affordance on a plain
+        stop.
         """
-        _ = rounding_minutes, rounding_mode, paused
+        _ = rounding_minutes, rounding_mode
         session = self._eng.session()
         try:
             row = (
@@ -902,11 +949,75 @@ class SqlClockBackend(ClockBackend):
             now = _local_now().isoformat()
             row.end = now
             row.updated_at = now
+            if paused:
+                # Clear any stale paused flag on other rows
+                # first, then mark this one paused -- there
+                # is at most one paused entry by design.
+                self._clear_paused(session, except_id=row.id)
+                row.paused = True
+            else:
+                self._clear_paused(session)
+                row.paused = False
             session.commit()
             entry = _clock_row_to_dict(row)
         finally:
             session.close()
         return _enrich_clock(entry)
+
+    def get_paused(self) -> dict | None:
+        """Return the most-recent paused entry, or ``None``.
+
+        Mirrors ``services.clocks.get_paused_entry``: there
+        is at most one paused row at a time, so we just
+        return the newest match.
+        """
+        session = self._eng.session()
+        try:
+            row = (
+                session.query(ClockRow)
+                .filter(ClockRow.paused.is_(True))
+                .filter(ClockRow.end.isnot(None))
+                .order_by(ClockRow.end.desc())
+                .first()
+            )
+            if row is None:
+                return None
+            return _enrich_clock(_clock_row_to_dict(row))
+        finally:
+            session.close()
+
+    def clear_paused(self) -> bool:
+        """Clear the paused flag from all rows.
+
+        :returns: True if any row was actually changed.
+        """
+        session = self._eng.session()
+        try:
+            changed = self._clear_paused(session)
+            session.commit()
+            return changed
+        finally:
+            session.close()
+
+    def _clear_paused(
+        self, session, except_id: int | None = None
+    ) -> bool:
+        """Set ``paused=False`` on every row except *except_id*.
+
+        Returns True if any row was actually updated.
+        Internal helper for ``start`` / ``stop`` /
+        ``clear_paused``; the caller owns the commit.
+        """
+        q = session.query(ClockRow).filter(
+            ClockRow.paused.is_(True)
+        )
+        if except_id is not None:
+            q = q.filter(ClockRow.id != except_id)
+        changed = False
+        for r in q.all():
+            r.paused = False
+            changed = True
+        return changed
 
     def quick_book(
         self,
