@@ -1,5 +1,51 @@
 # Changelog
 
+## 2.0.1
+
+Patch release for the new SQL / Markdown / JSON backends and
+the convert pipeline. Surfaced from real use of the SQL
+backend right after 2.0.0 shipped.
+
+### SQL / Markdown / JSON backends
+
+- SQL backend now persists `used_offset` updates on contracts.
+  Previously dropped silently by `update_contract`, so converted
+  contracts lost their hours-already-used from the previous
+  period.
+- SQL backend implements proper pause/resume semantics: paused
+  entries are now distinct from stopped entries and the "Resume"
+  affordance works. Adds an `_ensure_paused_column` schema
+  migration helper for legacy databases.
+- Markdown and JSON backends gain the same pause/resume parity
+  with org and SQL. All four backends now share one contract.
+- Active-customer predicate unified across all backends. The
+  org backend treats anything not in `{inactive, archiv,
+  archived}` as active; the three new backends were strict
+  `status == "active"` and silently hid `intern` / `prospect` /
+  custom statuses behind the "show inactive" toggle. Shared
+  `INACTIVE_STATUSES` constant in `services.customers` is now
+  the single source of truth.
+
+### Convert tool
+
+- Re-runs no longer skip contracts when a customer already
+  exists in the target. A `treat_exists_as_success` opt-in on
+  `_try_or_skip` makes the customer- and contract-add paths
+  idempotent so downstream `update_contract` / `close_contract`
+  steps still apply.
+- Every silent skip now logs at WARNING with the entity name
+  and exception class; each `_convert_*` helper prints a
+  summary line at the end ("3 customer(s) skipped: foo, bar
+  -- re-run with KAISHO_LOG=DEBUG for details").
+
+### UI
+
+- Invoice panel now opens as a centred modal instead of inline
+  inside the narrow customer card. Descriptions no longer
+  truncate to 'Change t...' / 'Hermes C...'; date pickers stay
+  on one line; the entry list fills the available height. ESC
+  or click-outside closes.
+
 ## 2.0.0
 
 Track AI: hosted Companion & Pro plans, premium integrations,
