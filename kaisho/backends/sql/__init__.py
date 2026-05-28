@@ -265,6 +265,42 @@ def _serialize_properties(props: dict | None) -> str:
     return json.dumps(props, ensure_ascii=False)
 
 
+def _normalize_sync_ts(ts: str) -> str:
+    """Normalise a sync timestamp to naive-local ISO so two
+    timestamps from different origins (cloud UTC vs local
+    naive) can be compared lexicographically.
+
+    The sync protocol assumes naive-local on disk and UTC on
+    the wire; ``kaisho.services.cloud_sync._utc_to_local``
+    converts the wire format to naive-local before calling
+    into the backend. This helper is a defensive backstop so
+    a future direct caller (MCP, tests, a third-party tool)
+    cannot silently overwrite a newer local entry by passing
+    a still-UTC timestamp -- which would sort *earlier* than
+    the equivalent naive-local string and lose the LWW
+    compare.
+
+    Empty input is returned unchanged so the existing
+    ``if local_ts and remote_ts`` guard in
+    :meth:`SqlClockBackend.apply_sync_payload` still applies.
+    Malformed input is returned unchanged for the same
+    reason (callers already tolerate it).
+    """
+    if not ts:
+        return ts
+    try:
+        parsed = datetime.fromisoformat(
+            ts.replace("Z", "+00:00")
+        )
+    except (ValueError, TypeError):
+        return ts
+    if parsed.tzinfo is None:
+        return ts
+    return parsed.astimezone().replace(
+        tzinfo=None,
+    ).isoformat()
+
+
 # -- Row-to-dict converters ------------------------------------------
 
 
@@ -1111,8 +1147,18 @@ class SqlClockBackend(ClockBackend):
                     session, fields,
                 )
             if row is not None:
-                local_ts = row.updated_at or ""
-                remote_ts = fields.get("updated_at", "")
+                # Normalise both sides so a still-UTC remote
+                # cannot beat a naive-local row on a string
+                # compare. cloud_sync._utc_to_local already
+                # does this for the cloud path; the call
+                # here is a defensive backstop for any
+                # future direct caller.
+                local_ts = _normalize_sync_ts(
+                    row.updated_at or "",
+                )
+                remote_ts = _normalize_sync_ts(
+                    fields.get("updated_at", ""),
+                )
                 if local_ts and remote_ts and (
                     remote_ts <= local_ts
                 ):
