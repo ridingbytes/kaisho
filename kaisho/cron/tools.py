@@ -264,11 +264,13 @@ _TIER_BY_NAME: dict[str, str] = {
 def _tool_tier(name: str) -> str:
     """Look up the declared tier for a tool name.
 
-    Unknown tools are treated as ``read`` (the safest
-    default for the caps; ``_dispatch`` will reject them
-    on its own).
+    Unknown tools are treated as ``destructive`` so a tool
+    added to dispatch without a ``TOOL_DEFS`` entry is
+    counted against the write cap rather than slipping past
+    it. ``_dispatch`` will still reject genuinely unknown
+    names on its own.
     """
-    return _TIER_BY_NAME.get(name, "read")
+    return _TIER_BY_NAME.get(name, "destructive")
 
 
 # -------------------------------------------------------------------
