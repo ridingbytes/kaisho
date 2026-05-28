@@ -10,6 +10,7 @@ import hashlib
 import json
 import re
 import uuid
+from ...services.customers import INACTIVE_STATUSES
 from collections import Counter
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -1682,8 +1683,18 @@ class SqlCustomerBackend(CustomerBackend):
         try:
             q = session.query(CustomerRow)
             if not include_inactive:
+                # Mirror the org backend's permissive
+                # blocklist (see services.customers
+                # ._is_active). Strict ``== "active"`` here
+                # would silently hide intern / prospect /
+                # custom statuses that the org backend
+                # surfaces.
                 q = q.filter(
-                    CustomerRow.status == "active"
+                    func.lower(
+                        func.coalesce(
+                            CustomerRow.status, "active"
+                        )
+                    ).notin_(INACTIVE_STATUSES)
                 )
             rows = q.all()
             customers = [
