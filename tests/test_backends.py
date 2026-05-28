@@ -645,8 +645,8 @@ class TestCustomerBackend:
 # SQL clock pause/resume tests
 #
 # Pause/resume parity with the org backend is now implemented
-# in SQL and JSON (separate test class below). Markdown still
-# discards the ``paused`` flag in ``stop`` -- tracked separately.
+# in SQL, markdown and JSON (separate test classes below).
+# All four backends share the same contract.
 # ---------------------------------------------------------------
 
 
@@ -708,6 +708,99 @@ class TestSqlClockPause:
         paused = sql_clocks.get_paused()
         assert paused is not None
         assert paused["customer"] == "B"
+
+
+# ---------------------------------------------------------------
+# Markdown clock pause/resume tests
+#
+# Mirrors the SQL pause/resume contract on the markdown backend.
+# Storage: per-entry ``paused: true`` property in the entry's
+# props block (omitted when false). No migration needed --
+# missing field reads as false.
+# ---------------------------------------------------------------
+
+
+@pytest.fixture
+def md_clocks(tmp_path):
+    return MarkdownClockBackend(tmp_path / "clocks.md")
+
+
+class TestMarkdownClockPause:
+    def test_stop_paused_marks_entry(self, md_clocks):
+        md_clocks.start(
+            customer="Acme", description="Work"
+        )
+        stopped = md_clocks.stop(paused=True)
+        assert stopped["paused"] is True
+        paused = md_clocks.get_paused()
+        assert paused is not None
+        assert paused["customer"] == "Acme"
+
+    def test_plain_stop_clears_paused(self, md_clocks):
+        md_clocks.start(customer="A", description="W1")
+        md_clocks.stop(paused=True)
+        assert md_clocks.get_paused() is not None
+        md_clocks.start(customer="B", description="W2")
+        md_clocks.stop(paused=False)
+        assert md_clocks.get_paused() is None
+
+    def test_start_clears_prior_paused(self, md_clocks):
+        md_clocks.start(customer="A", description="W1")
+        md_clocks.stop(paused=True)
+        assert md_clocks.get_paused() is not None
+        md_clocks.start(customer="B", description="W2")
+        assert md_clocks.get_paused() is None
+
+    def test_clear_paused_explicit(self, md_clocks):
+        md_clocks.start(customer="A", description="W")
+        md_clocks.stop(paused=True)
+        assert md_clocks.clear_paused() is True
+        assert md_clocks.get_paused() is None
+        assert md_clocks.clear_paused() is False
+
+    def test_get_paused_returns_none_when_no_paused(
+        self, md_clocks
+    ):
+        md_clocks.start(customer="A", description="W")
+        md_clocks.stop(paused=False)
+        assert md_clocks.get_paused() is None
+
+    def test_at_most_one_paused_entry(self, md_clocks):
+        md_clocks.start(customer="A", description="W1")
+        md_clocks.stop(paused=True)
+        md_clocks.start(customer="B", description="W2")
+        md_clocks.stop(paused=True)
+        paused = md_clocks.get_paused()
+        assert paused is not None
+        assert paused["customer"] == "B"
+
+    def test_paused_persists_across_reloads(
+        self, md_clocks, tmp_path
+    ):
+        """The ``paused: true`` prop must survive a write+
+        read round trip via the markdown file."""
+        md_clocks.start(customer="Acme", description="W")
+        md_clocks.stop(paused=True)
+        fresh = MarkdownClockBackend(
+            tmp_path / "clocks.md"
+        )
+        paused = fresh.get_paused()
+        assert paused is not None
+        assert paused["customer"] == "Acme"
+
+    def test_legacy_entry_without_paused_reads_false(
+        self, md_clocks
+    ):
+        """Markdown files written before this change have no
+        ``paused`` prop; they must read as not-paused."""
+        md_clocks.start(customer="A", description="W")
+        md_clocks.stop(paused=False)
+        # Hand-strip just to simulate a pre-feature file:
+        # plain stop already does not write the prop, so
+        # this also asserts that omission.
+        text = (md_clocks.data_file).read_text()
+        assert "paused:" not in text
+        assert md_clocks.get_paused() is None
 
 
 # ---------------------------------------------------------------
@@ -813,7 +906,6 @@ class TestJsonClockPause:
         entries = backend.list_entries(period="all")
         assert len(entries) == 1
         assert entries[0]["paused"] is False
-
 
 def test_ensure_paused_column_on_legacy_db(tmp_path):
     """Engine init must ALTER a pre-existing clocks table
