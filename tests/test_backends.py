@@ -603,6 +603,32 @@ class TestCustomerBackend:
         assert customers_backend.delete_contract("Acme", "Q1")
         assert customers_backend.list_contracts("Acme") == []
 
+    def test_update_contract_used_offset(
+        self, customers_backend
+    ):
+        """used_offset must persist through update_contract.
+
+        Regression for the SQL backend, which silently
+        dropped this key during conversion from another
+        backend, losing prior-period used hours.
+        """
+        customers_backend.add_customer(name="Acme")
+        customers_backend.add_contract(
+            name="Acme",
+            contract_name="Q1",
+            budget=100,
+            start_date="2026-01-01",
+        )
+        updated = customers_backend.update_contract(
+            name="Acme",
+            contract_name="Q1",
+            updates={"used_offset": 12.5},
+        )
+        assert updated is not None
+        assert updated["used_offset"] == 12.5
+        contracts = customers_backend.list_contracts("Acme")
+        assert contracts[0]["used_offset"] == 12.5
+
     def test_budget_summary(self, customers_backend):
         customers_backend.add_customer(
             name="Acme", budget=100
