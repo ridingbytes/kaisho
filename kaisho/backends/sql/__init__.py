@@ -1800,7 +1800,7 @@ class SqlCustomerBackend(CustomerBackend):
             for key in (
                 "name", "budget", "start_date",
                 "end_date", "notes", "billable",
-                "invoiced",
+                "invoiced", "used_offset",
             ):
                 if key in updates:
                     setattr(row, key, updates[key])
