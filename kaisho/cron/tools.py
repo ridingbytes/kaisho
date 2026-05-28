@@ -264,11 +264,13 @@ _TIER_BY_NAME: dict[str, str] = {
 def _tool_tier(name: str) -> str:
     """Look up the declared tier for a tool name.
 
-    Unknown tools are treated as ``read`` (the safest
-    default for the caps; ``_dispatch`` will reject them
-    on its own).
+    Unknown tools are treated as ``destructive`` so a tool
+    added to dispatch without a ``TOOL_DEFS`` entry is
+    counted against the write cap rather than slipping past
+    it. ``_dispatch`` will still reject genuinely unknown
+    names on its own.
     """
-    return _TIER_BY_NAME.get(name, "read")
+    return _TIER_BY_NAME.get(name, "destructive")
 
 
 # -------------------------------------------------------------------
@@ -1278,9 +1280,17 @@ def _list_github_issues(customer: str | None = None) -> dict:
 # any destructive verb or confirm/force flag inside an
 # otherwise-allowed command. Deletes/renames are not
 # available to the agent at all -- they go through the UI.
+# ``kb`` / ``knowledge`` are intentionally NOT here -- the
+# model has dedicated ``write_kb_file``, ``read_knowledge_file``,
+# ``search_knowledge`` and ``list_kb_files`` tools that go
+# through the KB write rails (1 MB cap, overwrite=true,
+# per-run write counter). The CLI variants bypass those.
+# ``ask`` is excluded so the advisor cannot recursively
+# invoke another advisor and escape its token budget; the
+# dedicated ``advisor`` tool is the right escalation path.
 _CLI_ALLOWED = {
     "task", "clock", "note", "customer", "contract",
-    "inbox", "kb", "knowledge", "tag", "briefing", "ask",
+    "inbox", "tag", "briefing",
     "gh", "version",
 }
 _CLI_DESTRUCTIVE = {

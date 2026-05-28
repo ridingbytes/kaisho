@@ -1,6 +1,15 @@
+import os
 from pathlib import Path
 
 import yaml
+
+# Settings YAML holds plaintext credentials (Ollama keys,
+# Claude/OpenAI/OpenRouter keys, GitHub PAT, cloud-sync
+# token). Lock both the file and its parent directory to
+# the current user. 0o600 = rw for owner only; 0o700 = rwx
+# for owner only on the directory.
+_SETTINGS_FILE_MODE = 0o600
+_SETTINGS_DIR_MODE = 0o700
 
 DEFAULT_CUSTOMER_TYPES: list[str] = [
     "LEAD", "CLIENT", "PROSPECT", "PARTNER", "INTERN",
@@ -89,9 +98,36 @@ def _migrate_ollama_cloud_key(data: dict) -> bool:
 
 
 def save_settings(path: Path, settings: dict) -> None:
-    """Save settings to a YAML file."""
+    """Save settings to a YAML file.
+
+    The file holds plaintext credentials, so we lock the
+    parent directory to 0o700 and the file itself to 0o600
+    after every write. ``chmod`` is best-effort on
+    platforms where it is a no-op (Windows) -- the file
+    will still be created, just without POSIX permissions.
+    """
+    parent = path.parent
+    parent.mkdir(parents=True, exist_ok=True)
+    _restrict_path_mode(parent, _SETTINGS_DIR_MODE)
     with open(path, "w", encoding="utf-8") as f:
-        yaml.dump(settings, f, allow_unicode=True, default_flow_style=False)
+        yaml.dump(
+            settings, f,
+            allow_unicode=True, default_flow_style=False,
+        )
+    _restrict_path_mode(path, _SETTINGS_FILE_MODE)
+
+
+def _restrict_path_mode(path: Path, mode: int) -> None:
+    """Best-effort ``chmod`` that tolerates platforms
+    where POSIX permissions are not enforced (e.g. Windows
+    on a FAT volume). Any OS error is logged at debug and
+    swallowed so a hardened-perms tightening cannot break
+    settings writes on those platforms."""
+    try:
+        os.chmod(path, mode)
+    except OSError:
+        # Windows / non-POSIX filesystems: nothing to do.
+        pass
 
 
 def get_task_states(settings: dict) -> list[dict]:
