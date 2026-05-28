@@ -78,10 +78,21 @@ def _heading_to_customer(heading: Heading) -> dict:
     }
 
 
+# Statuses that count as inactive across every backend.
+# The set is permissive — anything not in here (active,
+# intern, prospect, custom statuses, ...) shows up by
+# default. Backends import this so the predicate cannot
+# drift again. ``archiv`` is the legacy German spelling
+# kept for older org files.
+INACTIVE_STATUSES = frozenset({
+    "inactive", "archiv", "archived",
+})
+
+
 def _is_active(customer: dict) -> bool:
     """Check if customer is active."""
     status = customer.get("status", "active").lower()
-    return status not in ("inactive", "archiv", "archived")
+    return status not in INACTIVE_STATUSES
 
 
 def _find_customer_heading(

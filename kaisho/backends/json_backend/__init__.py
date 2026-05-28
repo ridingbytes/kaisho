@@ -11,6 +11,7 @@ import json
 import re
 import tempfile
 import uuid
+from ...services.customers import INACTIVE_STATUSES
 from collections import Counter
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -976,9 +977,12 @@ class JsonCustomerBackend(CustomerBackend):
         """Return customers, optionally including inactive."""
         custs = _read_json(self._customers_file)
         if not include_inactive:
+            # Mirror org's permissive blocklist; see
+            # services.customers._is_active.
             custs = [
                 c for c in custs
-                if c.get("status", "active") == "active"
+                if c.get("status", "active").lower()
+                not in INACTIVE_STATUSES
             ]
         return [self._enrich_customer(c) for c in custs]
 
