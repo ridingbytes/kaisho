@@ -1278,9 +1278,17 @@ def _list_github_issues(customer: str | None = None) -> dict:
 # any destructive verb or confirm/force flag inside an
 # otherwise-allowed command. Deletes/renames are not
 # available to the agent at all -- they go through the UI.
+# ``kb`` / ``knowledge`` are intentionally NOT here -- the
+# model has dedicated ``write_kb_file``, ``read_knowledge_file``,
+# ``search_knowledge`` and ``list_kb_files`` tools that go
+# through the KB write rails (1 MB cap, overwrite=true,
+# per-run write counter). The CLI variants bypass those.
+# ``ask`` is excluded so the advisor cannot recursively
+# invoke another advisor and escape its token budget; the
+# dedicated ``advisor`` tool is the right escalation path.
 _CLI_ALLOWED = {
     "task", "clock", "note", "customer", "contract",
-    "inbox", "kb", "knowledge", "tag", "briefing", "ask",
+    "inbox", "tag", "briefing",
     "gh", "version",
 }
 _CLI_DESTRUCTIVE = {
