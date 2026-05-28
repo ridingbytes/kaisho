@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -39,6 +40,16 @@ export function InvoicePanel({
   const { t } = useTranslation("customers");
   const { t: tc } = useTranslation("common");
   const { data: contracts = [] } = useContracts(customer);
+
+  // ESC closes the modal — standard dialog affordance.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const [contract, setContract] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -110,8 +121,17 @@ export function InvoicePanel({
     );
   }
 
-  return (
-    <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[1px] p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-surface-card rounded-xl border border-border overflow-hidden shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-600 flex-1">
           {t("invoiceTitle", { customer })}
@@ -209,8 +229,8 @@ export function InvoicePanel({
         </div>
       )}
 
-      {/* Entry list */}
-      <div className="max-h-64 overflow-y-auto">
+      {/* Entry list — fills the rest of the modal */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {isLoading && (
           <p className="text-xs text-stone-500 text-center py-4">
             {tc("loading")}
@@ -224,25 +244,27 @@ export function InvoicePanel({
         {entries.map((e: ClockEntry) => (
           <div
             key={e.start}
-            className="flex items-center gap-3 px-4 py-1.5 text-xs border-b border-border-subtle last:border-b-0"
+            className="flex items-start gap-3 px-4 py-1.5 text-xs border-b border-border-subtle last:border-b-0"
           >
             <span className="text-stone-400 tabular-nums w-20 shrink-0">
               {formatDate(e.start)}
             </span>
-            <span className="flex-1 text-stone-700 truncate">
+            <span className="flex-1 text-stone-700 break-words min-w-0">
               {e.description || tc("noDescription")}
             </span>
             {e.contract && (
-              <span className="text-[10px] text-stone-400">
+              <span className="text-[10px] text-stone-400 shrink-0">
                 {e.contract}
               </span>
             )}
-            <span className="font-medium tabular-nums text-stone-900">
+            <span className="font-medium tabular-nums text-stone-900 shrink-0">
               {formatHours(e.duration_minutes)}
             </span>
           </div>
         ))}
       </div>
-    </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
