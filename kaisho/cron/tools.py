@@ -900,14 +900,29 @@ def _fetch_url(url: str, accept: str = "") -> dict:
 
 
 def _approve_url_domain(domain: str) -> dict:
+    """Add a domain to the URL allowlist on behalf of the
+    advisor.
+
+    Logs the approval at INFO so a later review can see
+    which domains the agent (vs. the user via the Settings
+    UI) added to the allowlist. Source is always
+    ``advisor`` here because this is the tool-dispatch
+    path; the UI route writes via the
+    ``PUT /url_allowlist`` endpoint.
+    """
+    import logging
     from ..config import get_config
     from ..services.settings import add_to_url_allowlist
+    logger = logging.getLogger(__name__)
     cfg = get_config()
-    return {
-        "allowlist": add_to_url_allowlist(
-            cfg.SETTINGS_FILE, domain,
-        ),
-    }
+    allowlist = add_to_url_allowlist(
+        cfg.SETTINGS_FILE, domain,
+    )
+    logger.info(
+        "url_allowlist approved domain=%r source=advisor",
+        domain,
+    )
+    return {"allowlist": allowlist}
 
 
 def _kb_sources() -> list[dict]:
