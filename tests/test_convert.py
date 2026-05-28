@@ -184,3 +184,88 @@ class TestRoundTrip:
             assert count > 0, (
                 f"{entity} was not converted"
             )
+
+
+# ---------------------------------------------------------------
+# Skip logging
+#
+# Regression: previously _convert_customers swallowed every
+# ValueError silently, so a customer that failed to import was
+# only discovered weeks later by missing rows in dependent
+# tables. The convert pipeline must now log each skip and
+# print a summary line at the end.
+# ---------------------------------------------------------------
+
+
+class _StubBackend:
+    """Minimum surface needed by the customer convert path."""
+
+    def __init__(self, fail_on):
+        self._fail_on = fail_on
+        self.added = []
+
+    def list_customers(self, include_inactive=False):
+        return []
+
+    def add_customer(self, name, **_):
+        if name in self._fail_on:
+            raise RuntimeError(
+                f"simulated SQL integrity error for {name}"
+            )
+        self.added.append(name)
+
+
+def test_customer_skip_is_logged_and_summarised(
+    caplog, capsys,
+):
+    """A failing add_customer must be logged with class +
+    message and surface in the final summary line."""
+    from kaisho.services.convert import _convert_customers
+
+    src = type("S", (), {})()
+    src.customers = type("C", (), {})()
+    src.customers.list_customers = lambda include_inactive=True: [
+        {"name": "Good"},
+        {"name": "RIDING BYTES"},
+    ]
+    tgt = type("T", (), {})()
+    tgt.customers = _StubBackend(fail_on={"RIDING BYTES"})
+
+    skipped_customers: list[str] = []
+    skipped_contracts: list[str] = []
+    import logging
+    with caplog.at_level(logging.WARNING):
+        count = _convert_customers(
+            src, tgt,
+            skipped_customers=skipped_customers,
+            skipped_contracts=skipped_contracts,
+        )
+
+    assert count == 1
+    assert skipped_customers == ["RIDING BYTES"]
+    # The log line must include the customer name + class +
+    # message so the user can debug from the log alone.
+    msg = " ".join(r.getMessage() for r in caplog.records)
+    assert "RIDING BYTES" in msg
+    assert "RuntimeError" in msg
+    assert "simulated SQL integrity error" in msg
+
+
+def test_summary_line_lists_skipped_names(capsys):
+    """convert_backend prints a one-line summary per
+    non-empty skip list."""
+    from kaisho.services.convert import _summarise_skips
+
+    _summarise_skips("customer", ["Foo", "Bar"])
+    out = capsys.readouterr().out
+    assert "2 customer(s) skipped" in out
+    assert "Foo" in out and "Bar" in out
+
+
+def test_summary_silent_when_no_skips(capsys):
+    """Empty skip list emits no output."""
+    from kaisho.services.convert import _summarise_skips
+
+    _summarise_skips("customer", [])
+    out = capsys.readouterr().out
+    assert out == ""
