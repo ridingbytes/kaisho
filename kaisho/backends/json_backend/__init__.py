@@ -344,6 +344,24 @@ class JsonTaskBackend(TaskBackend):
 # ====================================================================
 
 
+def _clear_paused_in_place(
+    entries: list[dict],
+    except_entry: dict | None = None,
+) -> bool:
+    """Set ``paused=False`` on every entry except *except_entry*.
+
+    :returns: ``True`` when any entry was actually changed.
+    """
+    changed = False
+    for entry in entries:
+        if entry is except_entry:
+            continue
+        if entry.get("paused"):
+            entry["paused"] = False
+            changed = True
+    return changed
+
+
 class JsonClockBackend(ClockBackend):
     """ClockBackend backed by a JSON file."""
 
@@ -380,6 +398,10 @@ class JsonClockBackend(ClockBackend):
             entry["sync_id"] = str(uuid.uuid4())
         if not entry.get("updated_at"):
             entry["updated_at"] = _local_now().isoformat()
+        # Normalise so callers can rely on a bool. Missing
+        # on legacy entries (no pause/resume support) reads
+        # as False, which is the correct interpretation.
+        entry["paused"] = bool(entry.get("paused"))
         return entry
 
     # -- queries -------------------------------------------------
@@ -461,12 +483,19 @@ class JsonClockBackend(ClockBackend):
         task_id=None,
         contract=None,
     ) -> dict:
-        """Open a new clock entry. Raises if one is running."""
+        """Open a new clock entry. Raises if one is running.
+
+        Also clears the ``paused`` flag on any previously
+        paused entry: starting a new timer means the user
+        moved on, so a stale "Resume" affordance would be
+        misleading. Mirrors the SQL/org backends.
+        """
         if self.get_active() is not None:
             raise ValueError(
                 "A clock entry is already running"
             )
         entries = _read_json(self._clocks_file)
+        _clear_paused_in_place(entries)
         entry = {
             "customer": customer,
             "description": description,
@@ -478,6 +507,7 @@ class JsonClockBackend(ClockBackend):
             "notes": "",
             "sync_id": str(uuid.uuid4()),
             "updated_at": _local_now().isoformat(),
+            "paused": False,
         }
         entries.append(entry)
         _write_json(self._clocks_file, entries)
@@ -491,19 +521,62 @@ class JsonClockBackend(ClockBackend):
     ) -> dict:
         """Close the running clock entry. Raises if none.
 
-        ``rounding_minutes`` / ``rounding_mode`` / ``paused``
-        are accepted for interface parity but ignored:
-        only the org backend implements them today.
+        ``rounding_minutes`` / ``rounding_mode`` are
+        accepted for interface parity but ignored:
+        rounding is only implemented in the org backend
+        today.
+
+        ``paused`` mirrors the org/SQL backends: when true,
+        the just-stopped entry is marked ``paused=true`` so
+        the UI can offer "Resume". When false, the flag is
+        cleared on every entry, matching a plain stop's
+        wipe of any stale Resume affordance.
         """
-        _ = rounding_minutes, rounding_mode, paused
+        _ = rounding_minutes, rounding_mode
         entries = _read_json(self._clocks_file)
         for entry in entries:
             if entry.get("end") is None:
                 entry["end"] = _local_now().isoformat()
                 entry["updated_at"] = _local_now().isoformat()
+                if paused:
+                    # At most one paused entry by design.
+                    _clear_paused_in_place(
+                        entries, except_entry=entry,
+                    )
+                    entry["paused"] = True
+                else:
+                    _clear_paused_in_place(entries)
+                    entry["paused"] = False
                 _write_json(self._clocks_file, entries)
                 return self._enrich(entry)
         raise ValueError("No running clock entry")
+
+    def get_paused(self) -> dict | None:
+        """Return the most-recent paused entry, or ``None``.
+
+        Mirrors ``services.clocks.get_paused_entry``: there
+        is at most one paused entry at a time by design, so
+        we just return the newest match.
+        """
+        paused = [
+            e for e in _read_json(self._clocks_file)
+            if e.get("paused") and e.get("end")
+        ]
+        if not paused:
+            return None
+        newest = max(paused, key=lambda e: e.get("end", ""))
+        return self._enrich(newest)
+
+    def clear_paused(self) -> bool:
+        """Clear the paused flag from every entry.
+
+        :returns: ``True`` when any entry was changed.
+        """
+        entries = _read_json(self._clocks_file)
+        if not _clear_paused_in_place(entries):
+            return False
+        _write_json(self._clocks_file, entries)
+        return True
 
     def quick_book(
         self,

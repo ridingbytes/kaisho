@@ -644,9 +644,9 @@ class TestCustomerBackend:
 # ---------------------------------------------------------------
 # SQL clock pause/resume tests
 #
-# Pause/resume is only implemented in the SQL backend (and the
-# org backend, tested elsewhere). Markdown/JSON still discard
-# the ``paused`` flag in ``stop`` -- tracked separately.
+# Pause/resume parity with the org backend is now implemented
+# in SQL and JSON (separate test class below). Markdown still
+# discards the ``paused`` flag in ``stop`` -- tracked separately.
 # ---------------------------------------------------------------
 
 
@@ -708,6 +708,111 @@ class TestSqlClockPause:
         paused = sql_clocks.get_paused()
         assert paused is not None
         assert paused["customer"] == "B"
+
+
+# ---------------------------------------------------------------
+# JSON clock pause/resume tests
+#
+# Mirrors the SQL pause/resume contract on the JSON backend.
+# Storage: ``paused: bool`` field on the clock entry record.
+# No migration needed -- missing field reads as False.
+# ---------------------------------------------------------------
+
+
+@pytest.fixture
+def json_clocks(tmp_path):
+    return JsonClockBackend(tmp_path / "clocks.json")
+
+
+class TestJsonClockPause:
+    def test_stop_paused_marks_entry(self, json_clocks):
+        json_clocks.start(
+            customer="Acme", description="Work"
+        )
+        stopped = json_clocks.stop(paused=True)
+        assert stopped["paused"] is True
+        paused = json_clocks.get_paused()
+        assert paused is not None
+        assert paused["customer"] == "Acme"
+
+    def test_plain_stop_clears_paused(self, json_clocks):
+        json_clocks.start(customer="A", description="W1")
+        json_clocks.stop(paused=True)
+        assert json_clocks.get_paused() is not None
+        json_clocks.start(customer="B", description="W2")
+        json_clocks.stop(paused=False)
+        assert json_clocks.get_paused() is None
+
+    def test_start_clears_prior_paused(self, json_clocks):
+        json_clocks.start(customer="A", description="W1")
+        json_clocks.stop(paused=True)
+        assert json_clocks.get_paused() is not None
+        json_clocks.start(customer="B", description="W2")
+        assert json_clocks.get_paused() is None
+
+    def test_clear_paused_explicit(self, json_clocks):
+        json_clocks.start(customer="A", description="W")
+        json_clocks.stop(paused=True)
+        assert json_clocks.clear_paused() is True
+        assert json_clocks.get_paused() is None
+        assert json_clocks.clear_paused() is False
+
+    def test_get_paused_returns_none_when_no_paused(
+        self, json_clocks
+    ):
+        json_clocks.start(customer="A", description="W")
+        json_clocks.stop(paused=False)
+        assert json_clocks.get_paused() is None
+
+    def test_at_most_one_paused_entry(self, json_clocks):
+        json_clocks.start(customer="A", description="W1")
+        json_clocks.stop(paused=True)
+        json_clocks.start(customer="B", description="W2")
+        json_clocks.stop(paused=True)
+        paused = json_clocks.get_paused()
+        assert paused is not None
+        assert paused["customer"] == "B"
+
+    def test_paused_persists_across_reloads(
+        self, json_clocks, tmp_path
+    ):
+        """The ``paused`` field must survive a write+read
+        round trip via the JSON file."""
+        json_clocks.start(customer="Acme", description="W")
+        json_clocks.stop(paused=True)
+        fresh = JsonClockBackend(
+            tmp_path / "clocks.json"
+        )
+        paused = fresh.get_paused()
+        assert paused is not None
+        assert paused["customer"] == "Acme"
+
+    def test_legacy_entry_without_paused_reads_false(
+        self, tmp_path
+    ):
+        """JSON files written before this change have no
+        ``paused`` field; they must read as not-paused."""
+        import json
+        path = tmp_path / "clocks.json"
+        path.write_text(json.dumps([
+            {
+                "customer": "Legacy",
+                "description": "Old work",
+                "start": "2026-01-01T09:00:00",
+                "end": "2026-01-01T10:00:00",
+                "task_id": "",
+                "contract": "",
+                "invoiced": False,
+                "notes": "",
+                "sync_id": "legacy-sid",
+                "updated_at": "2026-01-01T10:00:00",
+            },
+        ]))
+        backend = JsonClockBackend(path)
+        assert backend.get_paused() is None
+        entries = backend.list_entries(period="all")
+        assert len(entries) == 1
+        assert entries[0]["paused"] is False
 
 
 def test_ensure_paused_column_on_legacy_db(tmp_path):
