@@ -67,6 +67,12 @@ KB_EXTENSIONS = {
 # ``import_frontmatter`` migration helper.
 MARKDOWN_EXTENSIONS = {".md", ".markdown", ".mdx"}
 
+# Hard cap on the encoded payload of a single KB write.
+# Enforced inside ``write_file`` so the invariant applies
+# to every caller (tool layer, CLI, MCP, future API
+# endpoints) rather than living in just the tool wrapper.
+WRITE_MAX_BYTES = 1_000_000
+
 
 def _safe_path(base: Path, rel_path: str) -> Path:
     """Resolve rel_path under base and verify it
@@ -530,7 +536,23 @@ def write_file(
     rel_path: str,
     content: str,
 ) -> dict:
-    """Write content to a KB file, creating it if needed."""
+    """Write content to a KB file, creating it if needed.
+
+    Enforces ``WRITE_MAX_BYTES`` as an invariant so the cap
+    applies to every caller (tool layer, CLI, MCP, future
+    direct API callers), not just ``_write_kb_file``.
+    Raises :class:`ValueError` on oversize input so the
+    caller can surface a tool-layer error string of its
+    choosing.
+    """
+    if not isinstance(content, str):
+        content = str(content)
+    size = len(content.encode("utf-8"))
+    if size > WRITE_MAX_BYTES:
+        raise ValueError(
+            f"KB write rejected: payload is {size} bytes, "
+            f"limit is {WRITE_MAX_BYTES}.",
+        )
     for src_label, base in _expand_sources(sources):
         if src_label == label:
             path = _safe_path(base, rel_path)
