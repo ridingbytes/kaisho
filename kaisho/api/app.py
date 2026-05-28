@@ -99,16 +99,37 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Kaisho", lifespan=lifespan)
 
-_DEFAULT_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:5174",
+# The Tauri webview hosts the production UI from
+# tauri://localhost (or http://localhost:8765 in some
+# configurations), so 8765 is always allowed. The Vite dev
+# server origins are added only when running from source
+# (``sys.frozen`` is False), so production builds don't
+# ship them.
+_PROD_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:8765",
 ]
+_DEV_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+]
+
+
+def _is_dev_build() -> bool:
+    """True when running from source (not a frozen sidecar)."""
+    import sys
+    return not getattr(sys, "frozen", False)
 
 
 def _cors_origins() -> list[str]:
-    """Read CORS origins from env or defaults."""
+    """Read CORS origins from env, or fall back to a
+    build-aware default.
+
+    ``CORS_ORIGINS`` (comma-separated) wins when set so
+    self-hosters can override. Otherwise: prod builds get
+    the production origins only; dev builds (running from
+    source) additionally allow the Vite dev server.
+    """
     import os
     env = os.environ.get("CORS_ORIGINS", "")
     if env:
@@ -116,7 +137,9 @@ def _cors_origins() -> list[str]:
             o.strip() for o in env.split(",")
             if o.strip()
         ]
-    return _DEFAULT_ORIGINS
+    if _is_dev_build():
+        return _PROD_ORIGINS + _DEV_ORIGINS
+    return _PROD_ORIGINS
 
 
 app.add_middleware(

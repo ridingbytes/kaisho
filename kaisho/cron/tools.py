@@ -250,6 +250,13 @@ def execute_tool(name: str, args: Any) -> dict:
         return cap_err
     guards.maybe_auto_snapshot(name, tier)
 
+    # Dispatcher boundary: any handler error is converted
+    # into a structured tool-result so a single bad call
+    # cannot tear down the advisor / cron loop. Do not
+    # tighten to a narrower exception type without
+    # preserving that contract -- a future linter sweep
+    # that "fixes" this BLE001 will surface handler errors
+    # to the agent loop instead of the model.
     try:
         return _dispatch(name, args)
     except Exception as exc:  # noqa: BLE001
@@ -902,14 +909,29 @@ def _fetch_url(url: str, accept: str = "") -> dict:
 
 
 def _approve_url_domain(domain: str) -> dict:
+    """Add a domain to the URL allowlist on behalf of the
+    advisor.
+
+    Logs the approval at INFO so a later review can see
+    which domains the agent (vs. the user via the Settings
+    UI) added to the allowlist. Source is always
+    ``advisor`` here because this is the tool-dispatch
+    path; the UI route writes via the
+    ``PUT /url_allowlist`` endpoint.
+    """
+    import logging
     from ..config import get_config
     from ..services.settings import add_to_url_allowlist
+    logger = logging.getLogger(__name__)
     cfg = get_config()
-    return {
-        "allowlist": add_to_url_allowlist(
-            cfg.SETTINGS_FILE, domain,
-        ),
-    }
+    allowlist = add_to_url_allowlist(
+        cfg.SETTINGS_FILE, domain,
+    )
+    logger.info(
+        "url_allowlist approved domain=%r source=advisor",
+        domain,
+    )
+    return {"allowlist": allowlist}
 
 
 def _kb_sources() -> list[dict]:
