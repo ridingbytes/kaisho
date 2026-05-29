@@ -7,6 +7,8 @@
 [![Tests](https://github.com/ridingbytes/kaisho/actions/workflows/test.yml/badge.svg)](https://github.com/ridingbytes/kaisho/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+*The time- and mindkeeper.*
+
 **The local-first AI work companion.** Give your AI a memory,
 a calendar, and a to-do list.
 
@@ -21,7 +23,8 @@ Keep your data as plain text or in a SQL database -- local
 on your machine, always yours.
 
 **Kaisho** (開手) means "open hand" in Japanese martial arts
--- the position of readiness.
+-- the position of readiness. An open hand holds your time
+and your mind.
 
 
 ## What you get
