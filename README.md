@@ -29,7 +29,7 @@ and your mind.
 
 ## What you get
 
-### Hobby (free, open source, fully local)
+### Local (free, open source, fully local)
 
 - **MCP server** out of the box. One-line config for Claude
   Code / Cursor / Claude Desktop and any other MCP client.
@@ -88,7 +88,7 @@ want cross-device convenience without setting up a server:
 
 See [pricing](https://kaisho.dev/#pricing) and the
 [cloud repo](https://github.com/ridingbytes/kaisho-cloud)
-for the hosted side. Hobby stays fully local and free; the
+for the hosted side. Local stays free forever; the
 core software is MIT.
 
 

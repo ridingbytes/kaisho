@@ -57,7 +57,7 @@ hardened agentic advisor.
 - Companion & Pro add cross-device sync, the mobile PWA, the
   hosted MCP gateway (reach your tools from Claude Code /
   Cursor when the laptop is closed), and scheduled cron-AI
-  runs on a token quota. Hobby stays fully local and free.
+  runs on a token quota. Local stays free forever.
 
 ### Premium integrations (Pro)
 
