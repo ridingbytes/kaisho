@@ -31,6 +31,7 @@ from .routers import settings as settings_router
 from .routers import settings_ai
 from .routers import settings_profiles
 from .routers import settings_states
+from .routers import caldav as caldav_router
 from .routers import cli as cli_router
 from .routers import version as version_router
 from ..cron.scheduler import build_scheduler
@@ -166,6 +167,7 @@ app.include_router(settings_states.router)
 app.include_router(settings_ai.router)
 app.include_router(settings_profiles.router)
 app.include_router(github.router)
+app.include_router(caldav_router.router)
 app.include_router(advisor.router)
 app.include_router(dashboard.router)
 app.include_router(ws_router.router)
