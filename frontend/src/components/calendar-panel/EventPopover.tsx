@@ -1,0 +1,133 @@
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { X } from "lucide-react";
+
+import type { CalendarEvent } from "../../api/client";
+import { colorFor } from "./calendarColors";
+import { hhmm, parseIso, sameDay } from "./dateUtils";
+
+interface Props {
+  event: CalendarEvent;
+  onClose: () => void;
+}
+
+/** Side popover with full event details: title, when,
+ *  where, organizer, source. Read-only in PR 4. Closes on
+ *  backdrop click and Escape. */
+export function EventPopover({ event, onClose }: Props) {
+  const { t, i18n } = useTranslation("calendar");
+  const color = colorFor(event);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-40 bg-black/30 flex justify-end"
+      onClick={onClose}
+    >
+      <aside
+        className="w-full max-w-md h-full bg-surface-card shadow-2xl border-l border-border p-4 flex flex-col gap-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className={`w-2 h-6 rounded ${color.bar}`}
+            />
+            <h2 className="text-sm font-semibold text-stone-900 truncate">
+              {event.title || "(no title)"}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded hover:bg-surface-raised text-stone-500"
+            aria-label={t("close")}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <DetailRow
+          label={t("when")}
+          value={formatWhen(event, i18n.language)}
+        />
+        {event.location && (
+          <DetailRow
+            label={t("where")}
+            value={event.location}
+          />
+        )}
+        <DetailRow
+          label={t("source.label")}
+          value={t(`source.${event.source}`)}
+        />
+        {event.status && (
+          <DetailRow
+            label={t("status")}
+            value={event.status}
+          />
+        )}
+        {event.html_link && (
+          <a
+            href={event.html_link}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs text-cta hover:text-cta-hover underline"
+          >
+            {t("openExternal")}
+          </a>
+        )}
+      </aside>
+    </div>
+  );
+}
+
+
+function DetailRow({
+  label, value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-wide text-stone-500">
+        {label}
+      </div>
+      <div className="text-sm text-stone-800">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+
+function formatWhen(event: CalendarEvent, locale: string) {
+  const start = parseIso(event.start);
+  const end = parseIso(event.end);
+  const dateFmt = new Intl.DateTimeFormat(locale, {
+    weekday: "long", year: "numeric",
+    month: "long", day: "numeric",
+  });
+
+  if (event.all_day) {
+    return sameDay(start, end)
+      ? dateFmt.format(start)
+      : `${dateFmt.format(start)} – ${dateFmt.format(end)}`;
+  }
+
+  const sameDayEvt = sameDay(start, end);
+  if (sameDayEvt) {
+    return `${dateFmt.format(start)}, ${hhmm(start)}–${hhmm(end)}`;
+  }
+  return (
+    `${dateFmt.format(start)} ${hhmm(start)} → `
+    + `${dateFmt.format(end)} ${hhmm(end)}`
+  );
+}

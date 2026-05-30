@@ -26,5 +26,6 @@
   "addText": "Добавить текст...",
   "removeFilter": "Убрать фильтр {{prefix}}",
   "goToOrCreate": "Перейти или создать…",
-  "noResults": "Ничего не найдено."
+  "noResults": "Ничего не найдено.",
+  "calendar": "Календарь"
 }

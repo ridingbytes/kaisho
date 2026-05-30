@@ -1,0 +1,29 @@
+{
+  "title": "Calendario",
+  "today": "Hoy",
+  "prev": "Anterior",
+  "next": "Siguiente",
+  "refresh": "Actualizar",
+  "day": "Día",
+  "week": "Semana",
+  "empty": "Sin eventos en este intervalo.",
+  "loadFailed": "No se pudieron cargar los eventos.",
+  "noSources": "Sin fuentes de calendario conectadas. Añade una cuenta en Ajustes > Integraciones.",
+  "close": "Cerrar",
+  "when": "Cuándo",
+  "where": "Dónde",
+  "status": "Estado",
+  "openExternal": "Abrir en el proveedor",
+  "source": {
+    "label": "Fuente",
+    "caldav": "CalDAV",
+    "google": "Google Calendar"
+  },
+  "day.0": "Dom",
+  "day.1": "Lun",
+  "day.2": "Mar",
+  "day.3": "Mié",
+  "day.4": "Jue",
+  "day.5": "Vie",
+  "day.6": "Sáb"
+}

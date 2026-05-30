@@ -45,6 +45,7 @@ import { AdvisorView } from "./components/advisor/AdvisorView";
 import { CommandPalette } from "./components/commandPalette/CommandPalette";
 import { CommandBar } from "./components/commandBar/CommandBar";
 import { ClockWidget } from "./components/clock/ClockWidget";
+import { CalendarPanel } from "./components/calendar-panel/CalendarPanel";
 import { ClockView } from "./components/clock/ClockView";
 import { CronView } from "./components/cron/CronView";
 import { CustomersView } from "./components/customers/CustomersView";
@@ -78,6 +79,7 @@ export type View =
   | "knowledge"
   | "github"
   | "clocks"
+  | "calendar"
   | "cron"
   | "settings"
   | "advisor";
@@ -86,7 +88,7 @@ export type View =
 const VALID_VIEWS = new Set<View>([
   "dashboard", "board", "inbox", "notes", "customers",
   "knowledge", "github",
-  "clocks", "cron", "settings", "advisor",
+  "clocks", "calendar", "cron", "settings", "advisor",
 ]);
 
 function MobileTimerModal({
@@ -957,6 +959,7 @@ function AppShell() {
             {view === "knowledge" && <KnowledgeView />}
             {view === "github" && <GithubView />}
             {view === "clocks" && <ClockView />}
+            {view === "calendar" && <CalendarPanel />}
             {view === "cron" && <CronView />}
             {view === "settings" && <SettingsView />}
             {/* Always mounted so chat state survives navigation */}

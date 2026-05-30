@@ -23,8 +23,9 @@
   "clockEntries": "Entradas de tiempo",
   "cronJobs": "Trabajos cron",
   "searchTasks": "Buscar tareas...",
-  "addText": "A\u00f1adir texto...",
+  "addText": "Añadir texto...",
   "removeFilter": "Eliminar filtro {{prefix}}",
-  "goToOrCreate": "Ir a o crear\u2026",
-  "noResults": "Sin resultados."
+  "goToOrCreate": "Ir a o crear…",
+  "noResults": "Sin resultados.",
+  "calendar": "Calendario"
 }

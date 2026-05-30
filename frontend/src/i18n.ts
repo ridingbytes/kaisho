@@ -25,6 +25,7 @@ import dashboardEn from "./locales/en/dashboard.json";
 import cronEn from "./locales/en/cron.json";
 import knowledgeEn from "./locales/en/knowledge.json";
 import notesEn from "./locales/en/notes.json";
+import calendarEn from "./locales/en/calendar.json";
 
 // -- Spanish ---------------------------------------------
 
@@ -40,6 +41,7 @@ import dashboardEs from "./locales/es/dashboard.json";
 import cronEs from "./locales/es/cron.json";
 import knowledgeEs from "./locales/es/knowledge.json";
 import notesEs from "./locales/es/notes.json";
+import calendarEs from "./locales/es/calendar.json";
 
 // -- German ----------------------------------------------
 
@@ -55,6 +57,7 @@ import dashboardDe from "./locales/de/dashboard.json";
 import cronDe from "./locales/de/cron.json";
 import knowledgeDe from "./locales/de/knowledge.json";
 import notesDe from "./locales/de/notes.json";
+import calendarDe from "./locales/de/calendar.json";
 
 // -- Russian ---------------------------------------------
 
@@ -70,6 +73,7 @@ import dashboardRu from "./locales/ru/dashboard.json";
 import cronRu from "./locales/ru/cron.json";
 import knowledgeRu from "./locales/ru/knowledge.json";
 import notesRu from "./locales/ru/notes.json";
+import calendarRu from "./locales/ru/calendar.json";
 
 // -- Detect language -------------------------------------
 
@@ -116,6 +120,7 @@ i18n.use(initReactI18next).init({
       cron: cronEn,
       knowledge: knowledgeEn,
       notes: notesEn,
+      calendar: calendarEn,
     },
     de: {
       common: commonDe,
@@ -130,6 +135,7 @@ i18n.use(initReactI18next).init({
       cron: cronDe,
       knowledge: knowledgeDe,
       notes: notesDe,
+      calendar: calendarDe,
     },
     es: {
       common: commonEs,
@@ -144,6 +150,7 @@ i18n.use(initReactI18next).init({
       cron: cronEs,
       knowledge: knowledgeEs,
       notes: notesEs,
+      calendar: calendarEs,
     },
     ru: {
       common: commonRu,
@@ -158,6 +165,7 @@ i18n.use(initReactI18next).init({
       cron: cronRu,
       knowledge: knowledgeRu,
       notes: notesRu,
+      calendar: calendarRu,
     },
   },
   lng: detectLanguage(),

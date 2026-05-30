@@ -20,11 +20,12 @@
   "newKbFile": "Neue KB-Datei",
   "newCustomer": "Neuer Kunde",
   "githubIssues": "GitHub Issues",
-  "clockEntries": "Zeiteintr\u00e4ge",
+  "clockEntries": "Zeiteinträge",
   "cronJobs": "Cron-Jobs",
   "searchTasks": "Aufgaben suchen...",
-  "addText": "Text hinzuf\u00fcgen...",
+  "addText": "Text hinzufügen...",
   "removeFilter": "{{prefix}}-Filter entfernen",
-  "goToOrCreate": "Gehe zu oder erstelle\u2026",
-  "noResults": "Keine Ergebnisse."
+  "goToOrCreate": "Gehe zu oder erstelle…",
+  "noResults": "Keine Ergebnisse.",
+  "calendar": "Kalender"
 }
