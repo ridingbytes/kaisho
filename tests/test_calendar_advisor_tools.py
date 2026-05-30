@@ -45,16 +45,16 @@ def test_handler_table_includes_calendar_tools():
     assert "get_calendar_event" in _HANDLERS
 
 
-def test_list_calendar_events_proxies_to_service(
+def test_list_calendar_events_account_filter_calls_caldav_only(
     monkeypatch,
 ):
+    """With an explicit account_id, skip the aggregator's
+    fan-out: that filter is CalDAV-only by definition."""
     from kaisho.services import caldav as svc
 
     called = {}
 
     def fake_list(*, frm, to, account_id, limit):
-        called["frm"] = frm
-        called["to"] = to
         called["account_id"] = account_id
         called["limit"] = limit
         return [{"id": "e1", "title": "Standup"}]
@@ -68,30 +68,50 @@ def test_list_calendar_events_proxies_to_service(
         account_id="ac_x",
         limit=5,
     )
-    assert out == {"events": [{
-        "id": "e1", "title": "Standup",
-    }]}
+    assert out["events"] == [
+        {"id": "e1", "title": "Standup"},
+    ]
+    assert out["sources"] == [{
+        "id": "caldav", "ok": True, "count": 1,
+    }]
     assert called["account_id"] == "ac_x"
     assert called["limit"] == 5
 
 
-def test_list_calendar_events_defaults_window(monkeypatch):
-    from kaisho.services import caldav as svc
+def test_list_calendar_events_uses_aggregator_by_default(
+    monkeypatch,
+):
+    """Without ``account_id``, fan out via the calendar
+    aggregator so the model sees both CalDAV and Google in
+    one call. See review S2."""
+    from kaisho.services import calendar_aggregator as agg
+
     captured = {}
 
-    def fake_list(*, frm, to, **_):
-        captured["delta_days"] = (to - frm).days
-        return []
+    def fake_agg(*, frm, to, limit=None, sources=None):
+        captured["frm"] = frm
+        captured["to"] = to
+        captured["limit"] = limit
+        return {"events": ["aggregated"], "sources": []}
 
-    monkeypatch.setattr(svc, "list_events", fake_list)
+    monkeypatch.setattr(agg, "list_events", fake_agg)
+
     from kaisho.cron.tools import _list_calendar_events
-    _list_calendar_events()
-    assert captured["delta_days"] == 7
+    out = _list_calendar_events()
+    assert out == {"events": ["aggregated"], "sources": []}
+    # Default window is 7 days snapped to today midnight.
+    delta = captured["to"] - captured["frm"]
+    assert delta.days == 7
+    assert captured["frm"].hour == 0
+    assert captured["frm"].minute == 0
+    assert captured["frm"].second == 0
 
 
 def test_list_calendar_events_surfaces_caldav_error(
     monkeypatch,
 ):
+    """When account_id is supplied, CalDAV errors surface
+    as ``{"error": ...}`` for the model to read."""
     from kaisho.services import caldav as svc
 
     def boom(**_):
@@ -99,7 +119,7 @@ def test_list_calendar_events_surfaces_caldav_error(
 
     monkeypatch.setattr(svc, "list_events", boom)
     from kaisho.cron.tools import _list_calendar_events
-    out = _list_calendar_events()
+    out = _list_calendar_events(account_id="ac_x")
     assert out == {"error": "offline"}
 
 

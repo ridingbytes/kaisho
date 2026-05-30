@@ -71,10 +71,23 @@ export function weekBounds(date: Date): {
   };
 }
 
-/** Parse an ISO datetime to a local Date. CalDAV server
- *  may give YYYY-MM-DD (all-day); treat as local midnight.
+/** Bare YYYY-MM-DD without a time component. */
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Parse an ISO datetime to a local Date.
+ *
+ *  Bare ``YYYY-MM-DD`` (the all-day form CalDAV servers
+ *  emit) is parsed as **local midnight**. The browser's
+ *  default `new Date("2026-05-30")` parses as UTC, which
+ *  in any TZ west of UTC shifts the event onto the
+ *  preceding day in the panel grid (regression seen
+ *  during the 2026-05-30 review).
  */
 export function parseIso(value: string): Date {
+  if (DATE_ONLY_RE.test(value)) {
+    const [y, m, d] = value.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
   return new Date(value);
 }
 

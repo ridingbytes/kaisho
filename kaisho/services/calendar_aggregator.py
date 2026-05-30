@@ -20,7 +20,8 @@ includes a ``sources`` list so the panel can show which
 sources succeeded vs failed.
 """
 import logging
-from datetime import datetime
+import re
+from datetime import date, datetime, timezone
 from typing import Iterable
 
 from . import caldav as caldav_svc
@@ -30,6 +31,16 @@ log = logging.getLogger(__name__)
 
 GOOGLE_KIND = "google"
 GOOGLE_LIST_TOOL = "google_list_events"
+
+# Bare ``YYYY-MM-DD`` (the all-day form CalDAV servers and
+# the Google API both emit). Matched against event start
+# strings before sort so we synthesise midnight-UTC for
+# the comparison key.
+_DATE_ONLY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+# Lone "Z" suffix on a datetime. ``datetime.fromisoformat``
+# in Py3.11+ accepts it, but earlier paths do not, and a
+# stripped string normalises the comparison.
+_TRAILING_Z_RE = re.compile(r"Z$")
 
 
 # -- Public API ------------------------------------------------------
@@ -71,7 +82,11 @@ def list_events(
         events.extend(ev)
         source_status.append(status)
 
-    events.sort(key=lambda e: e["start"])
+    # Sort by parsed datetime, not lexicographic ISO --
+    # the latter only agrees with real time when every
+    # event uses the same offset suffix and the same
+    # length (no bare-date forms). See review C2.
+    events.sort(key=lambda e: _sort_key(e["start"]))
     if limit is not None:
         events = events[:limit]
 
@@ -170,6 +185,40 @@ def _normalize_google_event(g: dict) -> dict:
 
 
 # -- Status helpers --------------------------------------------------
+
+
+def _sort_key(start: str) -> datetime:
+    """Return a comparable datetime for any of the start
+    string shapes we see across sources.
+
+    - Bare ``YYYY-MM-DD`` (all-day, CalDAV + Google) ->
+      midnight UTC of that day.
+    - ``...Z`` (Google) -> aware UTC.
+    - ``...+HH:MM`` (CalDAV after local-TZ conversion) ->
+      aware in that offset.
+    - Naive ISO (unlikely but defensive) -> assumed UTC.
+
+    On anything we cannot parse, fall back to
+    ``datetime.max`` so the bad row sorts last and does
+    not crash the panel.
+    """
+    if _DATE_ONLY_RE.match(start):
+        return datetime.combine(
+            date.fromisoformat(start), datetime.min.time(),
+            tzinfo=timezone.utc,
+        )
+    cleaned = _TRAILING_Z_RE.sub("+00:00", start)
+    try:
+        dt = datetime.fromisoformat(cleaned)
+    except ValueError:
+        log.warning(
+            "unparseable event start, sorting last: %r",
+            start,
+        )
+        return datetime.max.replace(tzinfo=timezone.utc)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
 
 
 def _ok_status(source_id: str, count: int) -> dict:
