@@ -3,6 +3,7 @@
 //! Spawns the `kai-server` Python backend as a child
 //! process and pipes its stdout/stderr to the terminal.
 
+use std::path::PathBuf;
 use std::sync::Mutex;
 
 use tauri::{Manager, State};
@@ -105,11 +106,81 @@ fn kill_stale() {
     }
 }
 
+/// Resolve the user's home directory across platforms.
+/// `dirs` / `home` aren't dependencies; this keeps the crate
+/// dependency-free for one tiny lookup.
+fn home_dir() -> Option<PathBuf> {
+    #[cfg(unix)]
+    {
+        std::env::var_os("HOME").map(PathBuf::from)
+    }
+    #[cfg(windows)]
+    {
+        std::env::var_os("USERPROFILE").map(PathBuf::from)
+    }
+}
+
+/// Delete extracted sidecar runtimes from older app versions.
+///
+/// The sidecar is a self-extracting PyInstaller bundle that
+/// unpacks to ``~/.kaisho/runtime/<version>-<hash>/`` on
+/// first launch. Each install is ~64 MB. The auto-updater
+/// installs new versions but never cleaned up the old
+/// extractions, so the directory grew unbounded
+/// (1.8.x + 2.0.0 + 2.0.1 = ~192 MB after a single update).
+///
+/// Match by version prefix (``<current-version>-*``) so any
+/// dir for an older version is pruned. Keeping all dirs for
+/// the current version is intentional: dev rebuilds bump the
+/// content hash but not the version, and the running binary
+/// holds whichever is its own.
+///
+/// Errors are swallowed: a transient permissions issue or a
+/// concurrent second instance holding the old runtime open
+/// must not prevent the new sidecar from launching. The next
+/// run picks up where this one left off.
+fn prune_old_runtimes() {
+    let Some(home) = home_dir() else { return };
+    let runtime_dir = home.join(".kaisho").join("runtime");
+    let entries = match std::fs::read_dir(&runtime_dir) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+    let current_version = env!("CARGO_PKG_VERSION");
+    let keep_prefix = format!("{}-", current_version);
+    for entry in entries.flatten() {
+        let path = entry.path();
+        // Skip files (e.g. macOS .DS_Store) and the
+        // current-version directory itself. The
+        // version-hash format is "X.Y.Z-<hash>", so a
+        // prefix match on "X.Y.Z-" cleanly keeps every
+        // current-version extraction.
+        let Ok(file_type) = entry.file_type() else { continue };
+        if !file_type.is_dir() {
+            continue;
+        }
+        let name = entry.file_name();
+        let name_str = name.to_string_lossy();
+        if name_str.starts_with(&keep_prefix) {
+            continue;
+        }
+        eprintln!(
+            "[kai] pruning stale sidecar runtime: {}",
+            name_str,
+        );
+        // best-effort; if a concurrent process holds files
+        // open on Windows the delete will fail and that's
+        // fine -- next launch will retry.
+        let _ = std::fs::remove_dir_all(&path);
+    }
+}
+
 /// Spawn the `kai-server` sidecar and start piping
 /// its output. Registers the child process as managed
 /// state so it can be killed later.
 pub fn spawn(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     kill_stale();
+    prune_old_runtimes();
     let shell = app.shell();
     let (mut rx, child) = shell
         .sidecar("kai-server")
