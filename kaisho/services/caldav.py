@@ -281,6 +281,12 @@ def add_account(
         "enabled_calendars": [],
         "created_at": _utc_now_iso(),
         "storage": storage,
+        # Phase 1.5: per-account toggle for pushing
+        # kaisho clock entries onto a CalDAV calendar.
+        # Both fields are mutated via set_push_config;
+        # default is off + auto-resolved Kaisho calendar.
+        "push_enabled": False,
+        "push_calendar_id": "",
     }
 
     data = _load_settings()
@@ -321,6 +327,117 @@ def set_enabled_calendars(
             _invalidate_cache_for_account(account_id)
             return True
     return False
+
+
+def get_push_config(account_id: str) -> dict | None:
+    """Return the per-account push config for the UI.
+
+    Shape:
+        {
+          "enabled": bool,
+          "calendar_id": str,   # empty -> use Kaisho cal
+        }
+    """
+    acc = get_account(account_id)
+    if acc is None:
+        return None
+    return {
+        "enabled": bool(acc.get("push_enabled", False)),
+        "calendar_id": acc.get("push_calendar_id", "") or "",
+    }
+
+
+def set_push_config(
+    account_id: str,
+    enabled: bool,
+    calendar_id: str = "",
+) -> dict:
+    """Persist the per-account push config.
+
+    When ``enabled`` is True and ``calendar_id`` is empty,
+    the side effect creates (or finds) the dedicated
+    "Kaisho" calendar on the account and pins its URL.
+    The intent: the user can either pick an existing
+    calendar from the dropdown or accept the default,
+    which sandboxes our writes to a calendar they did
+    not pre-own. This avoids polluting the user's
+    primary "Work" calendar by accident.
+
+    :raises CalDavError: when ``enabled`` is True but the
+        provided ``calendar_id`` is not writable, or the
+        Kaisho-calendar autocreate fails.
+    """
+    data = _load_settings()
+    for acc in data["accounts"]:
+        if acc["id"] != account_id:
+            continue
+        if enabled:
+            # On enable we either honour the picked
+            # calendar (after verifying it's writable)
+            # or fall back to the dedicated Kaisho one.
+            if calendar_id:
+                _verify_writable(account_id, calendar_id)
+            else:
+                kaisho = ensure_kaisho_calendar(account_id)
+                calendar_id = kaisho["id"]
+            acc["push_enabled"] = True
+            acc["push_calendar_id"] = calendar_id
+        else:
+            # On disable we preserve the previously-
+            # selected calendar so a toggle-off-then-on
+            # does not force the user to pick again. The
+            # verify-on-enable above catches the case
+            # where the user deleted the calendar in
+            # Apple Calendar in the meantime.
+            acc["push_enabled"] = False
+            # Allow the caller to *also* swap the
+            # calendar atomically with the disable by
+            # passing both. Empty string keeps the
+            # existing value.
+            if calendar_id:
+                acc["push_calendar_id"] = calendar_id
+        _save_settings(data)
+        log.info(
+            "caldav push config set: id=%s "
+            "enabled=%s calendar=%s",
+            account_id, enabled,
+            acc["push_calendar_id"],
+        )
+        return {
+            "enabled": acc["push_enabled"],
+            "calendar_id": acc["push_calendar_id"],
+        }
+    raise CalDavError(f"unknown account: {account_id}")
+
+
+def push_enabled_accounts() -> list[dict]:
+    """Helper for the upcoming sync engine (Phase 1.5
+    PR 3): which accounts opted into push, and which
+    calendar to write into per-account."""
+    out = []
+    for acc in list_accounts():
+        if not acc.get("push_enabled"):
+            continue
+        out.append({
+            "account_id": acc["id"],
+            "calendar_id": acc.get("push_calendar_id") or "",
+        })
+    return out
+
+
+def _verify_writable(
+    account_id: str, calendar_id: str,
+) -> None:
+    """Reject a calendar id the user does not actually
+    own on this account. Without this the UI dropdown
+    could be tampered with to push to a shared / system
+    calendar the user is not the owner of."""
+    cals = list_writable_calendars(account_id)
+    ids = {c["id"] for c in cals}
+    if calendar_id not in ids:
+        raise CalDavError(
+            f"calendar not on account: {calendar_id}"
+        )
 
 
 # -- Connection / event reads ----------------------------------------

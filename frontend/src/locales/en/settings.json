@@ -281,5 +281,9 @@
   "integrations.caldav.testOk": "OK - {{count}} calendar(s) discovered",
   "integrations.caldav.docs": "How to generate an app password",
   "integrations.caldav.fallbackWarning": "Stored in an encrypted file (no system keychain available)",
-  "integrations.caldav.note": "Connect once; events appear in the Calendar panel and become available to the advisor."
+  "integrations.caldav.note": "Connect once; events appear in the Calendar panel and become available to the advisor.",
+  "integrations.caldav.push.label": "Push clock entries to this calendar",
+  "integrations.caldav.push.hint": "Time you book in kaisho appears as events on the chosen calendar. One-way: edits in the Calendar app are ignored.",
+  "integrations.caldav.push.toggle": "Toggle clock-entry push",
+  "integrations.caldav.push.calendar": "Calendar"
 }

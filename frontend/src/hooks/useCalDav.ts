@@ -5,13 +5,16 @@ import {
 } from "@tanstack/react-query";
 import {
   addCalDavAccount,
+  getCalDavPushConfig,
   listCalDavAccounts,
   listCalDavCalendars,
   listCalDavPresets,
   refreshCalDavAccount,
   removeCalDavAccount,
+  setCalDavPushConfig,
   testCalDavConnection,
   type CalDavConnectInput,
+  type CalDavPushConfig,
 } from "../api/client";
 
 const ACCOUNTS_KEY = ["caldav", "accounts"];
@@ -99,6 +102,42 @@ export function useTestCalDavConnection() {
       testCalDavConnection(body),
   });
 }
+
+/** Read the per-account "push clock entries to a
+ *  calendar" config (Phase 1.5). */
+export function useCalDavPushConfig(
+  accountId: string | null,
+) {
+  return useQuery({
+    queryKey: ["caldav", "push-config", accountId],
+    queryFn: () =>
+      getCalDavPushConfig(accountId as string),
+    enabled: !!accountId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Update the per-account push config. Invalidates the
+ *  push-config + accounts queries so the UI reflects the
+ *  new state instantly. */
+export function useSetCalDavPushConfig(
+  accountId: string,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CalDavPushConfig) =>
+      setCalDavPushConfig(accountId, body),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["caldav", "push-config", accountId],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["caldav", "accounts"],
+      });
+    },
+  });
+}
+
 
 /** Manual cache-bust for an account. */
 export function useRefreshCalDavAccount() {

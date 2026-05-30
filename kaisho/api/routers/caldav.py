@@ -45,6 +45,11 @@ class EnabledCalendarsBody(BaseModel):
     calendars: list[str]
 
 
+class PushConfigBody(BaseModel):
+    enabled: bool
+    calendar_id: str = ""
+
+
 # -- Helpers ---------------------------------------------------------
 
 
@@ -126,6 +131,36 @@ def list_calendars(account_id: str):
     per-account enable/disable UI)."""
     cals = _wrap(caldav_svc.list_calendars, account_id)
     return {"calendars": cals}
+
+
+@router.get("/accounts/{account_id}/push-config")
+def get_push_config(account_id: str):
+    """Per-account push toggle + selected calendar.
+
+    Returns ``{"enabled": bool, "calendar_id": str}``
+    where an empty ``calendar_id`` means "use the
+    auto-created Kaisho calendar."""
+    cfg = caldav_svc.get_push_config(account_id)
+    if cfg is None:
+        raise HTTPException(
+            status_code=404, detail="unknown account",
+        )
+    return cfg
+
+
+@router.post("/accounts/{account_id}/push-config")
+def set_push_config(account_id: str, body: PushConfigBody):
+    """Persist the per-account push config.
+
+    Side effect when ``enabled=True`` and ``calendar_id``
+    is empty: discover or create the dedicated "Kaisho"
+    calendar on the account.
+    """
+    cfg = _wrap(
+        caldav_svc.set_push_config,
+        account_id, body.enabled, body.calendar_id,
+    )
+    return cfg
 
 
 @router.post("/test-connection")

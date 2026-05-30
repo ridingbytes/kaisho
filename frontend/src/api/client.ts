@@ -1563,6 +1563,36 @@ export function refreshCalDavAccount(
   );
 }
 
+/** Per-account "push clock entries to a calendar"
+ *  toggle (Phase 1.5). An empty ``calendar_id`` means
+ *  the backend will auto-create / re-use the dedicated
+ *  "Kaisho" calendar on the account. */
+export interface CalDavPushConfig {
+  enabled: boolean;
+  calendar_id: string;
+}
+
+export function getCalDavPushConfig(
+  accountId: string,
+): Promise<CalDavPushConfig> {
+  return get(
+    `/caldav/accounts/${
+      encodeURIComponent(accountId)
+    }/push-config`,
+  );
+}
+
+export function setCalDavPushConfig(
+  accountId: string, body: CalDavPushConfig,
+): Promise<CalDavPushConfig> {
+  return post(
+    `/caldav/accounts/${
+      encodeURIComponent(accountId)
+    }/push-config`,
+    body,
+  );
+}
+
 // ── Calendar aggregator ─────────────────────────────────
 
 /** A normalized calendar event from any source. */
