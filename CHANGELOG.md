@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.0.2
+
+Patch release with a desktop disk-hygiene fix and a backend
+cleanup pass surfaced by an end-to-end review on the way to
+2.0.x stability.
+
+### Desktop
+
+- Sidecar prunes stale runtime extractions on launch. Each
+  installer ships a self-extracting PyInstaller bundle into
+  `~/.kaisho/runtime/<version>-<hash>/`; previous versions
+  never cleaned up, so every update added another ~50 MB.
+  The desktop now removes runtime directories whose version
+  prefix doesn't match the current build before spawning
+  the sidecar [#112].
+
+### Backend
+
+- Backend cleanup: dedup task-status keywords, tombstone
+  helpers, dead re-export. Centralised the `{TODO, NEXT,
+  IN-PROGRESS, WAIT, DONE, CANCELLED}` set in a new
+  `kaisho/constants.py`, collapsed three near-identical
+  tombstone-wire-format helpers in `cloud_sync.py` to a
+  single factory, dropped a stale `TOOL_DEFS` re-export in
+  `cron/executor.py`, and aligned 8 untagged broad-except
+  sites on the project's `# noqa: BLE001` convention. No
+  behaviour change; full pytest suite passes [#113].
+
 ## 2.0.1
 
 Patch release for the new SQL / Markdown / JSON backends and
