@@ -267,5 +267,19 @@
   "hideGithubNav": "Hide GitHub menu entry",
   "hideGithubNavHint": "Removes GitHub from the sidebar. Useful if you don't track issues or PRs in Kaisho.",
   "githubEnterprise": "Using GitHub Enterprise?",
-  "githubEnterpriseHint": "Only needed for self-hosted GitHub Enterprise. On github.com the API host is always api.github.com — leave this alone."
+  "githubEnterpriseHint": "Only needed for self-hosted GitHub Enterprise. On github.com the API host is always api.github.com — leave this alone.",
+  "integrations.caldav.label": "CalDAV calendar",
+  "integrations.caldav.hint": "Apple iCloud, Fastmail, Nextcloud, or any CalDAV server. Free on every plan; credentials stay on this machine.",
+  "integrations.caldav.connected": "{{count}} connected",
+  "integrations.caldav.addAccount": "Add account",
+  "integrations.caldav.labelPlaceholder": "Label (optional, e.g. Work iCloud)",
+  "integrations.caldav.hostPlaceholder": "Server host, e.g. cloud.example.com",
+  "integrations.caldav.urlPlaceholder": "Full CalDAV server URL",
+  "integrations.caldav.usernamePlaceholder": "Username or email",
+  "integrations.caldav.passwordPlaceholder": "App-specific / device password",
+  "integrations.caldav.test": "Test connection",
+  "integrations.caldav.testOk": "OK - {{count}} calendar(s) discovered",
+  "integrations.caldav.docs": "How to generate an app password",
+  "integrations.caldav.fallbackWarning": "Stored in an encrypted file (no system keychain available)",
+  "integrations.caldav.note": "Connect once; events appear in the Calendar panel and become available to the advisor."
 }

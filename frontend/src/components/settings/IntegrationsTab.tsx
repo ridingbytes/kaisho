@@ -10,6 +10,7 @@ import {
 } from "../../api/client";
 import { useCloudSyncStatus } from "../../hooks/useSettings";
 import { openExternal } from "../../utils/tauri";
+import { CalDavSection } from "./CalDavSection";
 import { GithubAdvanced } from "./GithubAdvanced";
 
 type ProviderType = "key" | "oauth";
@@ -245,6 +246,7 @@ export function IntegrationsSection() {
           </div>
         );
       })}
+      <CalDavSection />
       <p className="text-[10px] text-stone-400">
         {t("integrations.oauthNote")}
       </p>

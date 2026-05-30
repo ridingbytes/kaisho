@@ -1459,6 +1459,110 @@ export function disconnectIntegration(
   return del(`/integrations/${encodeURIComponent(kind)}`);
 }
 
+// ── CalDAV calendar accounts (local) ────────────────────
+
+/** A provider preset for the CalDAV connect form. */
+export interface CalDavPreset {
+  id: "icloud" | "fastmail" | "nextcloud" | "custom";
+  label: string;
+  url_template: string;
+  needs_host: boolean;
+  needs_user_in_url: boolean;
+  hint_url: string;
+  auth_note: string;
+}
+
+/** A connected CalDAV account (no password exposed). */
+export interface CalDavAccount {
+  id: string;
+  label: string;
+  preset: string;
+  url: string;
+  username: string;
+  enabled_calendars: string[];
+  created_at: string;
+  /** "keyring" = OS keychain, "fallback" = encrypted file
+   *  (headless Linux). The UI warns on the latter. */
+  storage: "keyring" | "fallback";
+}
+
+/** One calendar on a CalDAV account. */
+export interface CalDavCalendar {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
+/** Preflight result of /caldav/test-connection. */
+export interface CalDavTestResult {
+  ok: boolean;
+  principal_url: string;
+  calendar_count: number;
+}
+
+/** Input for connecting a new CalDAV account. */
+export interface CalDavConnectInput {
+  preset: string;
+  username: string;
+  password: string;
+  label?: string;
+  host?: string;
+  url?: string;
+}
+
+export function listCalDavPresets(): Promise<{
+  presets: CalDavPreset[];
+}> {
+  return get("/caldav/presets");
+}
+
+export function listCalDavAccounts(): Promise<{
+  accounts: CalDavAccount[];
+}> {
+  return get("/caldav/accounts");
+}
+
+export function addCalDavAccount(
+  body: CalDavConnectInput,
+): Promise<{ account: CalDavAccount }> {
+  return post("/caldav/accounts", body);
+}
+
+export function removeCalDavAccount(
+  accountId: string,
+): Promise<void> {
+  return del(`/caldav/accounts/${
+    encodeURIComponent(accountId)
+  }`);
+}
+
+export function testCalDavConnection(
+  body: CalDavConnectInput,
+): Promise<CalDavTestResult> {
+  return post("/caldav/test-connection", body);
+}
+
+export function listCalDavCalendars(
+  accountId: string,
+): Promise<{ calendars: CalDavCalendar[] }> {
+  return get(
+    `/caldav/accounts/${
+      encodeURIComponent(accountId)
+    }/calendars`,
+  );
+}
+
+export function refreshCalDavAccount(
+  accountId: string,
+): Promise<{ cache_entries_dropped: number }> {
+  return post(
+    `/caldav/accounts/${
+      encodeURIComponent(accountId)
+    }/refresh`,
+    {},
+  );
+}
+
 /** Fetch the prompt template for a cron job. */
 export function fetchJobPrompt(
   jobId: string
