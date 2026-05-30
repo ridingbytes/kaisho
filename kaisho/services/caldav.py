@@ -522,11 +522,9 @@ def _vevent_to_dict(
 ) -> dict:
     start_raw = vevent.get("DTSTART")
     end_raw = vevent.get("DTEND")
+    duration_raw = vevent.get("DURATION")
     start = _ical_dt_to_iso(start_raw)
-    end = (
-        _ical_dt_to_iso(end_raw)
-        if end_raw is not None else start
-    )
+    end = _resolve_end_iso(start_raw, end_raw, duration_raw)
     all_day = (
         start_raw is not None
         and not _is_datetime(start_raw.dt)
@@ -551,6 +549,50 @@ def _vevent_to_dict(
         ),
         "source": "caldav",
     }
+
+
+def _resolve_end_iso(start_raw, end_raw, duration_raw) -> str:
+    """Compute the wire-format ``end`` for an event.
+
+    iCalendar permits one of three encodings for an event's
+    end: DTEND directly, DURATION relative to DTSTART, or
+    neither (in which case zero-duration is implied -- not
+    common but legal). Apple Calendar and Nextcloud both
+    emit DTEND for normal events but external invites
+    relayed through some servers prefer DURATION. The
+    earlier version ignored DURATION and rendered such
+    events as 0-minute pills. See review F6.
+    """
+    if end_raw is not None:
+        return _ical_dt_to_iso(end_raw)
+    if duration_raw is not None and start_raw is not None:
+        try:
+            return _to_local_iso(
+                _add_dt(start_raw.dt, duration_raw.dt),
+            )
+        except Exception:  # noqa: BLE001
+            log.debug(
+                "could not apply DURATION %r to %r",
+                duration_raw, start_raw,
+            )
+    return _ical_dt_to_iso(start_raw)
+
+
+def _add_dt(start_val, duration_val):
+    """Add a timedelta to a date or datetime, preserving
+    the type so all-day + duration stays all-day."""
+    return start_val + duration_val
+
+
+def _to_local_iso(value) -> str:
+    """Wire-format a date/datetime as the rest of the
+    module does (local TZ for datetimes, bare ISO for
+    dates)."""
+    if _is_datetime(value):
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone().isoformat()
+    return value.isoformat()
 
 
 def _ical_dt_to_iso(prop) -> str:
@@ -592,34 +634,18 @@ def _decode_event_id(event_id: str) -> tuple[str, str, str]:
 def get_event(event_id: str) -> dict:
     """Fetch one event by its opaque id (returned by
     ``list_events``). Returns the full record incl.
-    description + organizer."""
+    description + organizer.
+
+    The earlier implementation passed the event URL to
+    ``client.calendar(url=...)``, which iCloud either 404s
+    or routes to the wrong principal. We now share the
+    same `_fetch_event_object` helper the write path
+    (`update_event`, `delete_event`) uses, so all four
+    read/write code paths agree on how to derive the
+    calendar URL from an event URL.
+    """
     account_id, event_url, _uid = _decode_event_id(event_id)
-    acc = get_account(account_id)
-    if acc is None:
-        raise CalDavError(
-            f"unknown account: {account_id}"
-        )
-    password = _get_password(account_id)
-    if password is None:
-        raise CalDavError(
-            f"no password stored for: {account_id}"
-        )
-
-    import caldav
-    client = caldav.DAVClient(
-        url=acc["url"],
-        username=acc["username"],
-        password=password,
-    )
-    try:
-        ev = client.calendar(url=event_url).event_by_url(
-            event_url,
-        )
-    except Exception as exc:  # noqa: BLE001
-        raise CalDavError(
-            f"could not fetch event: {exc}"
-        ) from exc
-
+    ev = _fetch_event_object(account_id, event_url)
     vevent = next(iter(
         ev.icalendar_instance.walk("VEVENT")
     ), None)
@@ -762,8 +788,10 @@ def update_event(
 
     Returns ``{event_url, etag, uid}``. If the event no
     longer exists on the server (manual delete in the
-    Calendar app), raises CalDavError -- the sync engine
-    catches that and recreates the event.
+    Calendar app), raises CalDavError. The sync engine
+    that will land in Phase 1.5 PR 3 (#117) handles the
+    re-create path; until then callers should treat the
+    error as terminal.
     """
     ev = _fetch_event_object(account_id, event_url)
     vevent = next(iter(

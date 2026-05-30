@@ -1310,29 +1310,60 @@ def _list_calendar_events(
     account_id: str | None = None,
     limit: int | None = None,
 ) -> dict:
-    """Advisor handler for the local CalDAV calendar.
+    """Advisor handler returning events across every
+    connected calendar source (local CalDAV + cloud
+    Google Calendar when the user is Pro and connected).
 
-    Lazy-imports the heavy caldav library so users without
-    a calendar connected never load it.
+    Defaults: ``from`` = today **00:00 local**, ``to`` =
+    ``from + 7 days``. The earlier implementation defaulted
+    ``from`` to ``datetime.now()`` so a 14:00 advisor query
+    silently dropped every event earlier the same day (the
+    user saw "your calendar is empty" with morning meetings
+    scheduled). See review L1.
+
+    Returns ``{"events": [...], "sources": [...]}`` so the
+    model can say "your Google calendar is unreachable"
+    instead of silently returning a partial result. See
+    review S2.
     """
-    from datetime import datetime, timedelta
+    from datetime import datetime, time as dtime, timedelta
+    from ..services import calendar_aggregator as agg
     from ..services import caldav as caldav_svc
-    frm_dt = (
-        datetime.fromisoformat(frm)
-        if frm else datetime.now()
-    )
+
+    if frm:
+        frm_dt = datetime.fromisoformat(frm)
+    else:
+        today = datetime.now().date()
+        frm_dt = datetime.combine(today, dtime.min)
     to_dt = (
         datetime.fromisoformat(to)
         if to else frm_dt + timedelta(days=7)
     )
-    try:
-        events = caldav_svc.list_events(
-            frm=frm_dt, to=to_dt,
-            account_id=account_id, limit=limit,
-        )
-    except caldav_svc.CalDavError as exc:
-        return {"error": str(exc)}
-    return {"events": events}
+
+    # ``account_id`` filters CalDAV only -- Google events
+    # would not be retrievable that way anyway. When an
+    # account_id is supplied, skip Google to honour the
+    # user's restriction.
+    if account_id:
+        try:
+            events = caldav_svc.list_events(
+                frm=frm_dt, to=to_dt,
+                account_id=account_id, limit=limit,
+            )
+        except caldav_svc.CalDavError as exc:
+            return {"error": str(exc)}
+        return {
+            "events": events,
+            "sources": [{
+                "id": "caldav",
+                "ok": True,
+                "count": len(events),
+            }],
+        }
+
+    return agg.list_events(
+        frm=frm_dt, to=to_dt, limit=limit,
+    )
 
 
 def _get_calendar_event(event_id: str) -> dict:

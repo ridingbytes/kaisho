@@ -106,8 +106,9 @@ class TestListEvents:
             caldav_svc, "list_events",
             lambda **_: [{
                 "id": "cd1", "source": "caldav",
-                "title": "CalDAV evt", "start": "10:00",
-                "end": "11:00",
+                "title": "CalDAV evt",
+                "start": "2026-05-30T10:00:00+02:00",
+                "end": "2026-05-30T11:00:00+02:00",
             }],
         )
         monkeypatch.setattr(
@@ -118,8 +119,12 @@ class TestListEvents:
             integration_tools, "dispatch_integration_tool",
             lambda *_a, **_kw: {"result": [{
                 "id": "g1", "summary": "Google evt",
-                "start": {"dateTime": "09:00"},
-                "end": {"dateTime": "10:00"},
+                "start": {
+                    "dateTime": "2026-05-30T09:00:00Z",
+                },
+                "end": {
+                    "dateTime": "2026-05-30T10:00:00Z",
+                },
             }]},
         )
 
@@ -128,9 +133,14 @@ class TestListEvents:
             to=datetime(2026, 5, 31, tzinfo=timezone.utc),
         )
         events = result["events"]
+        # CalDAV is 10:00+02:00 = 08:00 UTC; Google is
+        # 09:00Z. Real-instant order is CalDAV first.
+        # See review C2 -- the old test relied on
+        # lexicographic ISO comparison which silently
+        # disagreed with chronological order.
         assert [e["title"] for e in events] == [
-            "Google evt", "CalDAV evt",
-        ], "events should be sorted by start"
+            "CalDAV evt", "Google evt",
+        ], "events should be sorted by real instant"
 
         sources = {s["id"]: s for s in result["sources"]}
         assert sources["caldav"]["ok"] is True
