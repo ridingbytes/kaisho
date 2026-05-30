@@ -89,7 +89,7 @@ def _run_job(job: dict) -> None:
             profile, run_id, "error", error=str(exc)
         )
         completed = True
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         finish_run(
             profile, run_id, "error", error=str(exc)
         )
@@ -494,7 +494,7 @@ def _run_recurring_tasks() -> None:
             logging.getLogger(__name__).info(
                 "Recurring tasks: created %d", created,
             )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logging.getLogger(__name__).warning(
             "Recurring tasks failed: %s", exc,
         )
@@ -519,7 +519,7 @@ def sync_jobs(jobs_file: Path) -> None:
             # Remove if it was previously scheduled
             try:
                 _scheduler.remove_job(job["id"])
-            except Exception:
+            except Exception:  # noqa: BLE001
                 pass
 
     # Remove user jobs that no longer exist in YAML.

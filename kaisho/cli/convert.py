@@ -63,7 +63,7 @@ def convert_cmd(from_fmt, to_fmt, source, target):
         src = make_backend_from_spec(from_fmt, source)
         tgt = make_backend_from_spec(to_fmt, target)
         summary = convert_backend(src, tgt)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
 

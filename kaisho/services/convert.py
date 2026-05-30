@@ -14,14 +14,11 @@ import re
 from pathlib import Path
 
 from ..backends import Backend
+from ..constants import TASK_STATUSES as _STATUS_KEYWORDS
 
 log = logging.getLogger(__name__)
 
 _CUSTOMER_PREFIX_RE = re.compile(r"^\[[^\]]+\]:\s*")
-_STATUS_KEYWORDS = {
-    "TODO", "NEXT", "IN-PROGRESS", "WAIT",
-    "DONE", "CANCELLED",
-}
 _INBOX_TYPE_RE = re.compile(r"^[A-Za-z][\w-]*$")
 
 # Default colors for auto-discovered states

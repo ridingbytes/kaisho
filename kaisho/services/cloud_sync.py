@@ -827,59 +827,42 @@ def wire_to_note(entry: dict) -> dict:
 
 # -- Entity tombstone wire format --------------------------------
 
-def inbox_tombstone_to_wire(item: dict) -> dict:
-    """Convert a local inbox tombstone to wire format.
+def _entity_tombstone_to_wire(item: dict, to_wire) -> dict:
+    """Shared body for entity tombstone wire conversion.
 
-    Inherits all fields from ``inbox_item_to_wire`` and
-    sets ``deleted_at`` and ``updated_at`` to the deletion
-    timestamp.
+    Spreads the per-entity wire converter and overrides both
+    ``updated_at`` and ``deleted_at`` with the tombstone's
+    deletion timestamp (UTC).
 
-    :param item: Tombstone dict (must contain
-        ``sync_id`` and ``deleted_at``).
+    :param item: Tombstone dict (must contain ``sync_id``
+        and ``deleted_at``).
+    :param to_wire: Per-entity wire converter
+        (e.g. `inbox_item_to_wire`).
     :returns: Wire-format dict with ``deleted_at`` set.
     """
     now = _local_to_utc(
         item.get("deleted_at") or local_now().isoformat()
     )
     return {
-        **inbox_item_to_wire(item),
+        **to_wire(item),
         "updated_at": now,
         "deleted_at": now,
     }
+
+
+def inbox_tombstone_to_wire(item: dict) -> dict:
+    """Convert a local inbox tombstone to wire format."""
+    return _entity_tombstone_to_wire(item, inbox_item_to_wire)
 
 
 def task_tombstone_to_wire(task: dict) -> dict:
-    """Convert a local task tombstone to wire format.
-
-    :param task: Tombstone dict (must contain
-        ``sync_id`` and ``deleted_at``).
-    :returns: Wire-format dict with ``deleted_at`` set.
-    """
-    now = _local_to_utc(
-        task.get("deleted_at") or local_now().isoformat()
-    )
-    return {
-        **task_to_wire(task),
-        "updated_at": now,
-        "deleted_at": now,
-    }
+    """Convert a local task tombstone to wire format."""
+    return _entity_tombstone_to_wire(task, task_to_wire)
 
 
 def note_tombstone_to_wire(note: dict) -> dict:
-    """Convert a local note tombstone to wire format.
-
-    :param note: Tombstone dict (must contain
-        ``sync_id`` and ``deleted_at``).
-    :returns: Wire-format dict with ``deleted_at`` set.
-    """
-    now = _local_to_utc(
-        note.get("deleted_at") or local_now().isoformat()
-    )
-    return {
-        **note_to_wire(note),
-        "updated_at": now,
-        "deleted_at": now,
-    }
+    """Convert a local note tombstone to wire format."""
+    return _entity_tombstone_to_wire(note, note_to_wire)
 
 
 # -- Clock wire format -------------------------------------------

@@ -1,13 +1,12 @@
 import re
 from pathlib import Path
 
+from ..constants import TASK_STATUSES
 from .clock import parse_clock_line
 from .models import Heading, OrgFile
 
-KEYWORDS = {
-    "TODO", "NEXT", "IN-PROGRESS", "WAIT",
-    "DONE", "CANCELLED",
-}
+# Re-exported for the org-mode parser's historical name.
+KEYWORDS = TASK_STATUSES
 
 HEADING_RE = re.compile(r"^(\*+)\s+(.*)$")
 TAG_RE = re.compile(

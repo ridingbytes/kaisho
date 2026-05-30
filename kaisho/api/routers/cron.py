@@ -345,7 +345,7 @@ def _run_job_bg(job: dict, run_id: int) -> None:
         finish_run(_profile(), run_id, "ok", output=output[:4000])
     except ExecutorError as exc:
         finish_run(_profile(), run_id, "error", error=str(exc))
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         finish_run(_profile(), run_id, "error", error=str(exc))
         raise
 
