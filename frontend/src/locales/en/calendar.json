@@ -25,5 +25,7 @@
   "day.3": "Wed",
   "day.4": "Thu",
   "day.5": "Fri",
-  "day.6": "Sat"
+  "day.6": "Sat",
+  "bookFromEvent": "Book as time entry",
+  "bookFromEventHint": "Opens the quick-book form with the event's title and duration prefilled. Edit any field before saving."
 }

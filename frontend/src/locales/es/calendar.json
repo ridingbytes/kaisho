@@ -25,5 +25,7 @@
   "day.3": "Mié",
   "day.4": "Jue",
   "day.5": "Vie",
-  "day.6": "Sáb"
+  "day.6": "Sáb",
+  "bookFromEvent": "Registrar como tiempo",
+  "bookFromEventHint": "Abre el formulario de registro rápido con el título y la duración del evento prerellenados. Edita cualquier campo antes de guardar."
 }

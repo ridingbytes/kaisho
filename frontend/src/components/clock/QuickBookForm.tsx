@@ -8,18 +8,33 @@ import { useQuickBook } from "../../hooks/useClocks";
 interface QuickBookFormProps {
   defaultDate?: string;
   onDone?: () => void;
+  /** Pre-populate fields when opening the form from a
+   *  calendar event ("book this meeting as a time entry").
+   *  Each field is optional and falls back to empty. */
+  initial?: {
+    duration?: string;
+    customer?: string;
+    description?: string;
+  };
 }
 
 export function QuickBookForm({
   defaultDate,
   onDone,
+  initial,
 }: QuickBookFormProps = {}) {
   const { t } = useTranslation("clocks");
   const { t: tc } = useTranslation("common");
-  const [duration, setDuration] = useState("");
-  const [customer, setCustomer] = useState("");
+  const [duration, setDuration] = useState(
+    initial?.duration ?? "",
+  );
+  const [customer, setCustomer] = useState(
+    initial?.customer ?? "",
+  );
   const [contract, setContract] = useState("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(
+    initial?.description ?? "",
+  );
   const [taskId, setTaskId] = useState<string | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
   const [notes, setNotes] = useState("");

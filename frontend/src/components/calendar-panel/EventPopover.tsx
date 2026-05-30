@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { X } from "lucide-react";
+import { Clock4, X } from "lucide-react";
 
 import type { CalendarEvent } from "../../api/client";
 import { colorFor } from "./calendarColors";
@@ -9,12 +9,15 @@ import { hhmm, parseIso, sameDay } from "./dateUtils";
 interface Props {
   event: CalendarEvent;
   onClose: () => void;
+  onBook?: (event: CalendarEvent) => void;
 }
 
 /** Side popover with full event details: title, when,
  *  where, organizer, source. Read-only in PR 4. Closes on
  *  backdrop click and Escape. */
-export function EventPopover({ event, onClose }: Props) {
+export function EventPopover({
+  event, onClose, onBook,
+}: Props) {
   const { t, i18n } = useTranslation("calendar");
   const color = colorFor(event);
 
@@ -82,6 +85,21 @@ export function EventPopover({ event, onClose }: Props) {
           >
             {t("openExternal")}
           </a>
+        )}
+        {onBook && (
+          <div className="mt-auto pt-3 border-t border-border">
+            <button
+              type="button"
+              onClick={() => onBook(event)}
+              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-cta text-white text-sm font-medium hover:bg-cta-hover"
+            >
+              <Clock4 className="w-4 h-4" />
+              {t("bookFromEvent")}
+            </button>
+            <p className="text-[10px] text-stone-500 mt-1 text-center">
+              {t("bookFromEventHint")}
+            </p>
+          </div>
         )}
       </aside>
     </div>

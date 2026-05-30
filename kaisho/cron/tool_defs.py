@@ -1205,4 +1205,69 @@ TOOL_DEFS: list[dict] = [
             },
         },
     },
+    {
+        "name": "list_calendar_events",
+        "tier": "read",
+        "description": (
+            "List calendar events from connected CalDAV "
+            "accounts (Apple iCloud, Fastmail, Nextcloud, "
+            "custom). Local-only -- credentials stay on the "
+            "user's machine. Pass ``from`` / ``to`` as "
+            "ISO-8601 datetimes; window capped at 42 days."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "from": {
+                    "type": "string",
+                    "description": (
+                        "Start of window (ISO-8601). "
+                        "Defaults to today."
+                    ),
+                },
+                "to": {
+                    "type": "string",
+                    "description": (
+                        "End of window (ISO-8601). "
+                        "Defaults to 7 days after 'from'."
+                    ),
+                },
+                "account_id": {
+                    "type": "string",
+                    "description": (
+                        "Restrict to one CalDAV account "
+                        "(optional)."
+                    ),
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": (
+                        "Cap on returned event count."
+                    ),
+                },
+            },
+        },
+    },
+    {
+        "name": "get_calendar_event",
+        "tier": "read",
+        "description": (
+            "Fetch one calendar event by the opaque id "
+            "returned by list_calendar_events. Returns the "
+            "full record including description and "
+            "organizer when the provider supplies them."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "event_id": {
+                    "type": "string",
+                    "description": (
+                        "Opaque id from list_calendar_events."
+                    ),
+                },
+            },
+            "required": ["event_id"],
+        },
+    },
 ]
