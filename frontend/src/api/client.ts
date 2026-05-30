@@ -1563,6 +1563,67 @@ export function refreshCalDavAccount(
   );
 }
 
+// ── Calendar aggregator ─────────────────────────────────
+
+/** A normalized calendar event from any source. */
+export interface CalendarEvent {
+  id: string;
+  account_id: string;
+  calendar_id: string;
+  uid: string;
+  title: string;
+  /** ISO-8601. For all-day events this is a YYYY-MM-DD
+   *  string. */
+  start: string;
+  end: string;
+  all_day: boolean;
+  location?: string | null;
+  status?: string | null;
+  source: "caldav" | "google";
+  html_link?: string | null;
+}
+
+/** Per-source health from the aggregator response. */
+export interface CalendarSourceStatus {
+  id: string;
+  ok: boolean;
+  count: number;
+  error?: string;
+}
+
+/** Connected-source descriptor for the panel header. */
+export interface CalendarSource {
+  id: "caldav" | "google";
+  label: string;
+  connected: boolean;
+  account_count?: number;
+}
+
+export function listCalendarSources(): Promise<{
+  sources: CalendarSource[];
+}> {
+  return get("/calendar/sources");
+}
+
+export function listCalendarEvents(args: {
+  from: string;
+  to: string;
+  source?: string;
+  limit?: number;
+}): Promise<{
+  events: CalendarEvent[];
+  sources: CalendarSourceStatus[];
+}> {
+  const params = new URLSearchParams({
+    from: args.from, to: args.to,
+  });
+  if (args.source) params.set("source", args.source);
+  if (args.limit != null) {
+    params.set("limit", String(args.limit));
+  }
+  return get(`/calendar/events?${params.toString()}`);
+}
+
 /** Fetch the prompt template for a cron job. */
 export function fetchJobPrompt(
   jobId: string

@@ -25,6 +25,7 @@
   "searchTasks": "Search tasks...",
   "addText": "Add text...",
   "removeFilter": "Remove {{prefix}} filter",
-  "goToOrCreate": "Go to or create\u2026",
-  "noResults": "No results."
+  "goToOrCreate": "Go to or create…",
+  "noResults": "No results.",
+  "calendar": "Calendar"
 }

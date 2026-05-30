@@ -1,0 +1,29 @@
+{
+  "title": "Kalender",
+  "today": "Heute",
+  "prev": "Zurück",
+  "next": "Weiter",
+  "refresh": "Aktualisieren",
+  "day": "Tag",
+  "week": "Woche",
+  "empty": "Keine Termine in diesem Zeitraum.",
+  "loadFailed": "Termine konnten nicht geladen werden.",
+  "noSources": "Keine Kalenderquellen verbunden. Konto unter Einstellungen > Integrationen hinzufügen.",
+  "close": "Schließen",
+  "when": "Wann",
+  "where": "Wo",
+  "status": "Status",
+  "openExternal": "Beim Anbieter öffnen",
+  "source": {
+    "label": "Quelle",
+    "caldav": "CalDAV",
+    "google": "Google Kalender"
+  },
+  "day.0": "So",
+  "day.1": "Mo",
+  "day.2": "Di",
+  "day.3": "Mi",
+  "day.4": "Do",
+  "day.5": "Fr",
+  "day.6": "Sa"
+}

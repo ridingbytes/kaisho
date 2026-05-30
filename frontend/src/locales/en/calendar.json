@@ -1,0 +1,29 @@
+{
+  "title": "Calendar",
+  "today": "Today",
+  "prev": "Previous",
+  "next": "Next",
+  "refresh": "Refresh",
+  "day": "Day",
+  "week": "Week",
+  "empty": "No events in this window.",
+  "loadFailed": "Could not load events.",
+  "noSources": "No calendar sources connected. Add an account in Settings > Integrations.",
+  "close": "Close",
+  "when": "When",
+  "where": "Where",
+  "status": "Status",
+  "openExternal": "Open in provider",
+  "source": {
+    "label": "Source",
+    "caldav": "CalDAV",
+    "google": "Google Calendar"
+  },
+  "day.0": "Sun",
+  "day.1": "Mon",
+  "day.2": "Tue",
+  "day.3": "Wed",
+  "day.4": "Thu",
+  "day.5": "Fri",
+  "day.6": "Sat"
+}

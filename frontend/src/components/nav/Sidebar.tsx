@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   Bot,
   BookOpen,
+  Calendar,
   ChevronsLeft,
   ChevronsRight,
   Clock4,
@@ -40,6 +41,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "knowledge", labelKey: "knowledge", icon: BookOpen },
   { id: "github", labelKey: "github", icon: GitPullRequest },
   { id: "clocks", labelKey: "clocks", icon: History },
+  { id: "calendar", labelKey: "calendar", icon: Calendar },
   { id: "cron", labelKey: "cron", icon: Clock4 },
   { id: "advisor", labelKey: "advisor", icon: Bot },
 ];
