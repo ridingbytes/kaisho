@@ -10,6 +10,7 @@ import hashlib
 import re
 import tempfile
 import uuid
+from ...constants import TASK_STATUSES as _TASK_STATUSES
 from ...services.customers import INACTIVE_STATUSES
 from collections import Counter
 from datetime import date, datetime, timedelta
@@ -344,12 +345,6 @@ def _task_heading(task: dict) -> str:
     else:
         base = f"{status} {title}"
     return _append_tags(base, task.get("tags", []))
-
-
-_TASK_STATUSES = {
-    "TODO", "NEXT", "IN-PROGRESS", "WAIT",
-    "DONE", "CANCELLED",
-}
 
 
 def _parse_task_heading(heading: str) -> dict:

@@ -259,7 +259,7 @@ def build_system_prompt(
     # TODO(#101): All skills are injected into every
     # prompt. Consider selective loading via a use_skill()
     # tool when the number of skills grows. See
-    # docs/IMPROVEMENTS.md for details.
+    # product/IMPROVEMENTS.md for details.
     skills = list_skills(data_dir)
     if skills:
         skill_block = "\n## Skills\n\n"

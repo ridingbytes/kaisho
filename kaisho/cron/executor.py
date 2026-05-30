@@ -24,7 +24,6 @@ from ..ai_utils import (
     parse_model as _parse_model,
 )
 from . import guards as _guards
-from .tool_defs import TOOL_DEFS  # noqa: F401 — used by external imports
 from .tools import (
     cron_safe_tool_defs,
     cron_safe_tools,

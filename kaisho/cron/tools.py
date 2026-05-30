@@ -1354,7 +1354,7 @@ def _execute_cli(command: str) -> dict:
                 cli(args, standalone_mode=False)
         except SystemExit:
             pass
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             return {"error": str(exc)}
         output = out.getvalue().strip()
         return {"output": output} if output else {
@@ -1606,7 +1606,7 @@ def _trigger_cron_job(job_id: str) -> dict:
                 cfg.PROFILE_DIR, run_id,
                 "ok", output=output[:4000],
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             finish_run(
                 cfg.PROFILE_DIR, run_id,
                 "error", error=str(exc),
