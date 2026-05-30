@@ -13,6 +13,7 @@ import {
   useCalendarSources,
 } from "../../hooks/useCalendar";
 import { addDays, dayBounds, weekBounds } from "./dateUtils";
+import { BookFromEventDialog } from "./BookFromEventDialog";
 import { DayGrid } from "./DayGrid";
 import { EventPopover } from "./EventPopover";
 import { SourceBadges } from "./SourceBadges";
@@ -29,6 +30,9 @@ export function CalendarPanel() {
   const [mode, setMode] = useState<ViewMode>("week");
   const [anchor, setAnchor] = useState(() => new Date());
   const [selected, setSelected] = (
+    useState<CalendarEvent | null>(null)
+  );
+  const [booking, setBooking] = (
     useState<CalendarEvent | null>(null)
   );
 
@@ -99,6 +103,16 @@ export function CalendarPanel() {
         <EventPopover
           event={selected}
           onClose={() => setSelected(null)}
+          onBook={(e) => {
+            setSelected(null);
+            setBooking(e);
+          }}
+        />
+      )}
+      {booking && (
+        <BookFromEventDialog
+          event={booking}
+          onClose={() => setBooking(null)}
         />
       )}
     </div>

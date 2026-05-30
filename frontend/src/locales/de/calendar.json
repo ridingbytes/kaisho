@@ -25,5 +25,7 @@
   "day.3": "Mi",
   "day.4": "Do",
   "day.5": "Fr",
-  "day.6": "Sa"
+  "day.6": "Sa",
+  "bookFromEvent": "Als Zeiteintrag buchen",
+  "bookFromEventHint": "Öffnet das Schnellbuchungs-Formular mit Titel und Dauer des Termins vorbelegt. Felder vor dem Speichern bearbeitbar."
 }

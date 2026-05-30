@@ -754,6 +754,15 @@ _HANDLERS: dict[str, Any] = {
     "list_github_issues": lambda a: _list_github_issues(
         customer=a.get("customer"),
     ),
+    "list_calendar_events": lambda a: _list_calendar_events(
+        frm=a.get("from"),
+        to=a.get("to"),
+        account_id=a.get("account_id"),
+        limit=a.get("limit"),
+    ),
+    "get_calendar_event": lambda a: _get_calendar_event(
+        event_id=a["event_id"],
+    ),
     "execute_cli": lambda a: _execute_cli(
         a.get("command", ""),
     ),
@@ -1293,6 +1302,48 @@ def _list_github_issues(customer: str | None = None) -> dict:
     return {
         "groups": _filter_by_customer(groups, customer),
     }
+
+
+def _list_calendar_events(
+    frm: str | None = None,
+    to: str | None = None,
+    account_id: str | None = None,
+    limit: int | None = None,
+) -> dict:
+    """Advisor handler for the local CalDAV calendar.
+
+    Lazy-imports the heavy caldav library so users without
+    a calendar connected never load it.
+    """
+    from datetime import datetime, timedelta
+    from ..services import caldav as caldav_svc
+    frm_dt = (
+        datetime.fromisoformat(frm)
+        if frm else datetime.now()
+    )
+    to_dt = (
+        datetime.fromisoformat(to)
+        if to else frm_dt + timedelta(days=7)
+    )
+    try:
+        events = caldav_svc.list_events(
+            frm=frm_dt, to=to_dt,
+            account_id=account_id, limit=limit,
+        )
+    except caldav_svc.CalDavError as exc:
+        return {"error": str(exc)}
+    return {"events": events}
+
+
+def _get_calendar_event(event_id: str) -> dict:
+    """Advisor handler returning the full record for one
+    calendar event by its opaque id."""
+    from ..services import caldav as caldav_svc
+    try:
+        event = caldav_svc.get_event(event_id)
+    except caldav_svc.CalDavError as exc:
+        return {"error": str(exc)}
+    return {"event": event}
 
 
 # execute_cli is reachable by the AI advisor and cron, both
