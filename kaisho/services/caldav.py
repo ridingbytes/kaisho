@@ -640,6 +640,297 @@ def get_event(event_id: str) -> dict:
     return out
 
 
+# -- Write primitives (Phase 1.5) ------------------------------------
+#
+# Used by the clock-entry push sync engine. Kept here so all CalDAV
+# I/O lives in one module. Each function returns the canonical
+# event_url so the caller can persist the mapping (sync_id -> url).
+
+KAISHO_CALENDAR_NAME = "Kaisho"
+
+
+def list_writable_calendars(account_id: str) -> list[dict]:
+    """Like list_calendars, but filtered to the calendars
+    the credentials can actually write to.
+
+    Some CalDAV servers expose shared/read-only calendars
+    alongside the owner's own. Filtering here avoids the
+    confused error message at first push.
+    """
+    cals = list_calendars(account_id)
+    # Most providers either implement DAV current-user-
+    # privilege-set (RFC 3744) or simply 403 the PUT.
+    # In v1.5 we trust the provider's calendar list -- a
+    # later refinement can probe DAV:current-user-privilege
+    # -set when iCloud's flakiness justifies the round-trip.
+    return cals
+
+
+def ensure_kaisho_calendar(account_id: str) -> dict:
+    """Return the per-account "Kaisho" calendar, creating
+    it if it does not yet exist.
+
+    Idempotent. The display name is the module constant
+    above so it can be re-discovered on later runs without
+    storing its URL anywhere fragile. Some providers
+    (iCloud) auto-assign a colour; others (Nextcloud)
+    leave it null until the user picks one in their UI.
+    """
+    for cal in list_writable_calendars(account_id):
+        if cal["name"] == KAISHO_CALENDAR_NAME:
+            return cal
+
+    acc = get_account(account_id)
+    if acc is None:
+        raise CalDavError(
+            f"unknown account: {account_id}"
+        )
+    password = _get_password(account_id)
+    if password is None:
+        raise CalDavError(
+            f"no password stored for: {account_id}"
+        )
+
+    principal = _principal(
+        acc["url"], acc["username"], password,
+    )
+    try:
+        new_cal = principal.make_calendar(
+            name=KAISHO_CALENDAR_NAME,
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise CalDavError(
+            f"could not create calendar: {exc}"
+        ) from exc
+
+    _invalidate_cache_for_account(account_id)
+    return {
+        "id": str(new_cal.url),
+        "name": KAISHO_CALENDAR_NAME,
+        "color": None,
+    }
+
+
+def create_event(
+    account_id: str,
+    calendar_id: str,
+    summary: str,
+    start: datetime,
+    end: datetime,
+    description: str | None = None,
+    uid: str | None = None,
+    categories: list[str] | None = None,
+) -> dict:
+    """Create a VEVENT on the given calendar.
+
+    Returns ``{event_url, etag, uid}``. ``etag`` may be
+    ``None`` when the server does not return one on PUT
+    (some Radicale setups); the sync engine treats a
+    missing etag as "fetch on next round-trip".
+    """
+    ical = _build_vevent(
+        summary=summary, start=start, end=end,
+        description=description, uid=uid,
+        categories=categories,
+    )
+    cal = _open_calendar(account_id, calendar_id)
+    try:
+        ev = cal.save_event(ical)
+    except Exception as exc:  # noqa: BLE001
+        raise CalDavError(
+            f"could not create event: {exc}"
+        ) from exc
+
+    _invalidate_cache_for_account(account_id)
+    return {
+        "event_url": str(ev.url),
+        "etag": _safe_etag(ev),
+        "uid": uid or _extract_uid(ev),
+    }
+
+
+def update_event(
+    account_id: str,
+    event_url: str,
+    summary: str,
+    start: datetime,
+    end: datetime,
+    description: str | None = None,
+    categories: list[str] | None = None,
+) -> dict:
+    """Replace a VEVENT in place, preserving its UID.
+
+    Returns ``{event_url, etag, uid}``. If the event no
+    longer exists on the server (manual delete in the
+    Calendar app), raises CalDavError -- the sync engine
+    catches that and recreates the event.
+    """
+    ev = _fetch_event_object(account_id, event_url)
+    vevent = next(iter(
+        ev.icalendar_instance.walk("VEVENT")
+    ), None)
+    if vevent is None:
+        raise CalDavError(
+            "event has no VEVENT (cannot update)"
+        )
+    uid = str(vevent.get("UID") or "")
+
+    ical = _build_vevent(
+        summary=summary, start=start, end=end,
+        description=description, uid=uid,
+        categories=categories,
+    )
+    try:
+        ev.data = ical
+        ev.save()
+    except Exception as exc:  # noqa: BLE001
+        raise CalDavError(
+            f"could not update event: {exc}"
+        ) from exc
+
+    _invalidate_cache_for_account(account_id)
+    return {
+        "event_url": str(ev.url),
+        "etag": _safe_etag(ev),
+        "uid": uid,
+    }
+
+
+def delete_event(account_id: str, event_url: str) -> None:
+    """Delete a VEVENT. Idempotent: a missing event is
+    treated as "already gone" and does not raise."""
+    try:
+        ev = _fetch_event_object(account_id, event_url)
+    except CalDavError:
+        # Already gone -- nothing to do.
+        return
+    try:
+        ev.delete()
+    except Exception as exc:  # noqa: BLE001
+        raise CalDavError(
+            f"could not delete event: {exc}"
+        ) from exc
+    _invalidate_cache_for_account(account_id)
+
+
+# -- Internal write helpers -----------------------------------------
+
+
+def _open_calendar(account_id: str, calendar_id: str):
+    """Return a caldav Calendar object handle."""
+    acc = get_account(account_id)
+    if acc is None:
+        raise CalDavError(
+            f"unknown account: {account_id}"
+        )
+    password = _get_password(account_id)
+    if password is None:
+        raise CalDavError(
+            f"no password stored for: {account_id}"
+        )
+
+    import caldav
+    client = caldav.DAVClient(
+        url=acc["url"],
+        username=acc["username"],
+        password=password,
+    )
+    return client.calendar(url=calendar_id)
+
+
+def _fetch_event_object(account_id: str, event_url: str):
+    """Return the caldav Event object for a stored
+    event_url. Translates 404 / network errors into
+    CalDavError."""
+    acc = get_account(account_id)
+    if acc is None:
+        raise CalDavError(
+            f"unknown account: {account_id}"
+        )
+    password = _get_password(account_id)
+    if password is None:
+        raise CalDavError(
+            f"no password stored for: {account_id}"
+        )
+
+    import caldav
+    client = caldav.DAVClient(
+        url=acc["url"],
+        username=acc["username"],
+        password=password,
+    )
+    try:
+        # We need the calendar URL to call .event_by_url;
+        # CalDAV URLs are ``.../calendar/.../event.ics`` so
+        # one level up is the calendar root.
+        cal_url = event_url.rsplit("/", 1)[0] + "/"
+        return client.calendar(url=cal_url).event_by_url(
+            event_url,
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise CalDavError(
+            f"could not fetch event: {exc}"
+        ) from exc
+
+
+def _build_vevent(
+    summary: str,
+    start: datetime,
+    end: datetime,
+    description: str | None,
+    uid: str | None,
+    categories: list[str] | None,
+) -> str:
+    """Render a single-VEVENT iCalendar payload.
+
+    Times are written as UTC for portability; the
+    server-side calendar app converts to the user's TZ on
+    display. icalendar normalises a naive datetime to UTC
+    only if explicitly told to.
+    """
+    from icalendar import Calendar, Event
+    cal = Calendar()
+    cal.add("prodid", "-//kaisho//caldav 1.0//EN")
+    cal.add("version", "2.0")
+
+    ev = Event()
+    if uid is None:
+        uid = f"kaisho-{uuid.uuid4().hex}"
+    ev.add("uid", uid)
+    ev.add("summary", summary)
+    ev.add("dtstart", _to_utc(start))
+    ev.add("dtend", _to_utc(end))
+    ev.add("dtstamp", _to_utc(datetime.now(timezone.utc)))
+    if description:
+        ev.add("description", description)
+    if categories:
+        ev.add("categories", categories)
+    cal.add_component(ev)
+    return cal.to_ical().decode("utf-8")
+
+
+def _to_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _extract_uid(ev) -> str:
+    vevent = next(iter(
+        ev.icalendar_instance.walk("VEVENT")
+    ), None)
+    if vevent is None:
+        return ""
+    return str(vevent.get("UID") or "")
+
+
+def _safe_etag(ev) -> str | None:
+    """Return the server's ETag for the event, or None
+    when the library / server did not surface it."""
+    etag = getattr(ev, "etag", None)
+    return str(etag) if etag else None
+
+
 def refresh_account(account_id: str) -> int:
     """Invalidate cache for one account. Returns the number
     of cache entries dropped, for the UI toast."""

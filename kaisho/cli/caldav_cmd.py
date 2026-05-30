@@ -161,3 +161,69 @@ def remove(account_id):
         raise click.ClickException(
             f"unknown account: {account_id}"
         )
+
+
+# -- Write surface (Phase 1.5 smoke commands) ------------------------
+
+
+@caldav_cmd.command("ensure-calendar")
+@click.argument("account_id")
+def ensure_calendar(account_id):
+    """Make sure the per-account 'Kaisho' calendar exists,
+    creating it if missing. Returns its URL."""
+    try:
+        cal = caldav_svc.ensure_kaisho_calendar(account_id)
+    except caldav_svc.CalDavError as exc:
+        raise click.ClickException(str(exc))
+    click.echo(f"  name: {cal['name']}")
+    click.echo(f"  url:  {cal['id']}")
+
+
+@caldav_cmd.command("push-test")
+@click.option("--account", "account_id", required=True)
+@click.option("--calendar", "calendar_id", default=None)
+@click.option("--summary", default="Kaisho test event")
+@click.option(
+    "--minutes", type=int, default=60,
+    help="Event duration; starts now.",
+)
+def push_test(account_id, calendar_id, summary, minutes):
+    """Push a one-shot test event to verify writes work."""
+    from datetime import datetime, timedelta, timezone
+    if calendar_id is None:
+        try:
+            cal = caldav_svc.ensure_kaisho_calendar(
+                account_id,
+            )
+        except caldav_svc.CalDavError as exc:
+            raise click.ClickException(str(exc))
+        calendar_id = cal["id"]
+        click.echo(f"Using {cal['name']}")
+
+    start = datetime.now(timezone.utc)
+    end = start + timedelta(minutes=minutes)
+    try:
+        created = caldav_svc.create_event(
+            account_id=account_id,
+            calendar_id=calendar_id,
+            summary=summary,
+            start=start,
+            end=end,
+        )
+    except caldav_svc.CalDavError as exc:
+        raise click.ClickException(str(exc))
+    click.echo(f"Created {created['event_url']}")
+    click.echo(f"  uid:  {created['uid']}")
+    click.echo(f"  etag: {created['etag']}")
+
+
+@caldav_cmd.command("delete-event")
+@click.option("--account", "account_id", required=True)
+@click.argument("event_url")
+def delete_event_cmd(account_id, event_url):
+    """Delete a VEVENT by its server URL (idempotent)."""
+    try:
+        caldav_svc.delete_event(account_id, event_url)
+    except caldav_svc.CalDavError as exc:
+        raise click.ClickException(str(exc))
+    click.echo("Deleted (or already gone).")
