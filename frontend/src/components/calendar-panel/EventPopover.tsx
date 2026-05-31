@@ -96,7 +96,7 @@ export function EventPopover({
               <Clock4 className="w-4 h-4" />
               {t("bookFromEvent")}
             </button>
-            <p className="text-[10px] text-fg-muted mt-1 text-center">
+            <p className="text-2xs text-fg-muted mt-1 text-center">
               {t("bookFromEventHint")}
             </p>
           </div>
@@ -115,7 +115,7 @@ function DetailRow({
 }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wide text-fg-muted">
+      <div className="text-2xs uppercase tracking-wide text-fg-muted">
         {label}
       </div>
       <div className="text-sm text-fg-strong">

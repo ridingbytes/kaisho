@@ -125,7 +125,7 @@ export function KanbanColumn({
         </h2>
         <span
           className={[
-            "ml-auto px-1.5 py-0.5 rounded text-[10px] font-semibold",
+            "ml-auto px-1.5 py-0.5 rounded text-2xs font-semibold",
             "bg-surface-raised text-fg-muted border border-border-subtle",
           ].join(" ")}
         >
@@ -148,7 +148,7 @@ export function KanbanColumn({
       {/* Drop zone */}
       <div
         className={[
-          "flex flex-col gap-2 min-h-32 p-2 rounded-xl flex-1 overflow-y-auto min-h-0",
+          "flex flex-col gap-2 min-h-32 p-2 rounded-lg flex-1 overflow-y-auto min-h-0",
           "border border-dashed transition-colors duration-150",
           isOver
             ? "border-cta bg-cta-muted"

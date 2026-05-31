@@ -257,7 +257,7 @@ export function ContractRow({
       <div className="flex items-center gap-1 mb-1">
         <span
           className={
-            "text-[10px] text-fg-muted tabular-nums"
+            "text-2xs text-fg-muted tabular-nums"
           }
         >
           {contract.used.toFixed(1)}h /{" "}
@@ -266,7 +266,7 @@ export function ContractRow({
         {!isActive && (
           <span
             className={
-              "text-[9px] px-1 py-0.5 rounded "
+              "text-2xs px-1 py-0.5 rounded "
               + "bg-surface-overlay text-fg-muted"
             }
           >
@@ -276,7 +276,7 @@ export function ContractRow({
         {contract.billable === false && (
           <span
             className={
-              "text-[9px] px-1 py-0.5 rounded "
+              "text-2xs px-1 py-0.5 rounded "
               + "bg-amber-500/10 text-amber-600"
             }
           >
@@ -286,7 +286,7 @@ export function ContractRow({
         {contract.invoiced && (
           <span
             className={
-              "text-[9px] px-1 py-0.5 rounded "
+              "text-2xs px-1 py-0.5 rounded "
               + "bg-emerald-500/10 text-emerald-600"
             }
           >
@@ -350,7 +350,7 @@ export function ContractRow({
       {contract.notes && (
         <p
           className={
-            "text-[10px] text-fg-muted "
+            "text-2xs text-fg-muted "
             + "mt-0.5 truncate"
           }
         >

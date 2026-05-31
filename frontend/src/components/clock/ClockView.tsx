@@ -120,7 +120,7 @@ function FilterInput({
             : tc("filterInvalid")
         }
         className={[
-          "w-full px-2 py-0.5 rounded text-[11px]",
+          "w-full px-2 py-0.5 rounded text-xs",
           "bg-surface-raised border",
           valid
             ? "border-border focus:border-cta"
@@ -369,7 +369,7 @@ export function ClockView() {
                 }
                 className={
                   "flex items-center gap-1 px-2 py-1 " +
-                  "rounded text-[11px] text-fg " +
+                  "rounded text-xs text-fg " +
                   "hover:text-cta hover:bg-cta-muted " +
                   "transition-colors"
                 }
@@ -388,7 +388,7 @@ export function ClockView() {
                 }
                 className={
                   "flex items-center gap-1 px-2 py-1 " +
-                  "rounded text-[11px] text-fg " +
+                  "rounded text-xs text-fg " +
                   "hover:text-cta hover:bg-cta-muted " +
                   "transition-colors"
                 }

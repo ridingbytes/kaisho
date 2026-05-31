@@ -131,7 +131,7 @@ export function CommandPalette({ onNavigate, onClose }: Props) {
         <div
           className={[
             "pointer-events-auto w-full max-w-md mx-4",
-            "bg-surface-card border border-border rounded-xl shadow-[var(--shadow-card-drag)]",
+            "bg-surface-card border border-border rounded-lg shadow-[var(--shadow-card-drag)]",
             "flex flex-col overflow-hidden",
           ].join(" ")}
           onClick={(e) => e.stopPropagation()}
@@ -151,7 +151,7 @@ export function CommandPalette({ onNavigate, onClose }: Props) {
                 "placeholder-fg-muted focus:outline-none",
               ].join(" ")}
             />
-            <kbd className="text-[10px] text-fg-muted border border-border rounded px-1 py-0.5 shrink-0">
+            <kbd className="text-2xs text-fg-muted border border-border rounded px-1 py-0.5 shrink-0">
               ESC
             </kbd>
           </div>
@@ -189,12 +189,12 @@ export function CommandPalette({ onNavigate, onClose }: Props) {
                     className="shrink-0"
                     strokeWidth={isActive ? 2 : 1.5}
                   />
-                  <span className="text-[10px] text-fg-muted w-10 shrink-0 text-right">
+                  <span className="text-2xs text-fg-muted w-10 shrink-0 text-right">
                     {cmd.hint}
                   </span>
                   <span className="flex-1 text-sm">{cmd.label}</span>
                   {shortcut && (
-                    <kbd className="text-[10px] text-fg-muted border border-border rounded px-1 py-0.5 shrink-0 font-mono">
+                    <kbd className="text-2xs text-fg-muted border border-border rounded px-1 py-0.5 shrink-0 font-mono">
                       {displayShortcut(shortcut)}
                     </kbd>
                   )}

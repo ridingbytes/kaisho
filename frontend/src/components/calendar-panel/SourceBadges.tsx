@@ -25,7 +25,7 @@ export function SourceBadges({ connected, statuses }: Props) {
     );
   }
   return (
-    <div className="flex items-center gap-3 px-4 py-1.5 text-[10px] bg-surface-card border-b border-border">
+    <div className="flex items-center gap-3 px-4 py-1.5 text-2xs bg-surface-card border-b border-border">
       {visible.map((src) => {
         const status = byId.get(src.id);
         const ok = !status || status.ok;

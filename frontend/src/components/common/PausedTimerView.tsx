@@ -49,7 +49,7 @@ export function PausedTimerView({
   const dot = customerColor || "#a1a1aa";
 
   return (
-    <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-card text-center">
+    <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 shadow-card text-center">
       <div className="flex items-center justify-center gap-3">
         <div className="text-3xl font-light font-mono text-fg tabular-nums tracking-wide">
           {formatPausedMinutes(entry.duration_minutes)}
@@ -92,7 +92,7 @@ export function PausedTimerView({
 
       <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
+        <span className="text-2xs font-bold uppercase tracking-wider text-amber-700">
           {t("paused") || "Paused"}
         </span>
       </div>
@@ -122,7 +122,7 @@ export function PausedTimerView({
       )}
 
       {showResumeHint && (
-        <p className="mt-2 text-[10px] text-fg-muted">
+        <p className="mt-2 text-2xs text-fg-muted">
           {t("startsAtZeroOnResume")}
         </p>
       )}

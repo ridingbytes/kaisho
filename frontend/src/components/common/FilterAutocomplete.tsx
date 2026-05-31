@@ -106,7 +106,7 @@ export function FilterAutocomplete({
           }}
           onMouseEnter={() => setActive(i)}
           className={[
-            "px-2 py-1 text-[11px] cursor-pointer",
+            "px-2 py-1 text-xs cursor-pointer",
             i === active
               ? "bg-cta-muted text-cta"
               : "text-fg hover:bg-surface-raised",

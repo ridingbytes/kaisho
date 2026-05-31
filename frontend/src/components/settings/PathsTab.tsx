@@ -57,12 +57,12 @@ function ImportDataSection() {
       <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("importData")}
       </h2>
-      <p className="text-[11px] text-fg-muted mb-3">
+      <p className="text-xs text-fg-muted mb-3">
         {t("importDataHint")}
       </p>
       <div className="flex items-end gap-2">
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-medium text-fg-muted">
+          <label className="text-2xs font-medium text-fg-muted">
             {t("format")}
           </label>
           <select
@@ -81,7 +81,7 @@ function ImportDataSection() {
           </select>
         </div>
         <div className="flex-1 flex flex-col gap-1">
-          <label className="text-[10px] font-medium text-fg-muted">
+          <label className="text-2xs font-medium text-fg-muted">
             {t("sourceDirectory")}
           </label>
           <input
@@ -100,7 +100,7 @@ function ImportDataSection() {
         </Button>
       </div>
       {result && (
-        <div className="mt-2 text-[11px] text-green-600">
+        <div className="mt-2 text-xs text-green-600">
           {t("imported")}:{" "}
           {Object.entries(result)
             .map(([k, v]) => `${v} ${k}`)
@@ -108,7 +108,7 @@ function ImportDataSection() {
         </div>
       )}
       {error && (
-        <div className="mt-2 text-[11px] text-red-500">
+        <div className="mt-2 text-xs text-red-500">
           {error}
         </div>
       )}
@@ -222,7 +222,7 @@ export function PathsSection(): JSX.Element {
         <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("storageBackend")}
         </h2>
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden mb-3">
           <div className="flex items-center gap-3 px-4 py-3">
             <span className="text-xs text-fg w-32 shrink-0">
               {t("backend")}
@@ -263,7 +263,7 @@ export function PathsSection(): JSX.Element {
             </Button>
           </div>
         </div>
-        <p className="text-[10px] text-fg-subtle mb-6">
+        <p className="text-2xs text-fg-subtle mb-6">
           {t("dataNotMigrated")}
         </p>
       </div>
@@ -273,7 +273,7 @@ export function PathsSection(): JSX.Element {
         <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("dataDirectories")}
         </h2>
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden mb-4">
           <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
             <span className="text-xs text-fg w-32 shrink-0">
               ORG_DIR
@@ -309,7 +309,7 @@ export function PathsSection(): JSX.Element {
             <span className="text-xs font-mono text-fg-muted truncate flex-1">
               {paths?.data_dir ?? "data"}
             </span>
-            <span className="text-[10px] text-fg-subtle">
+            <span className="text-2xs text-fg-subtle">
               {t("globalSetViaEnv")}
             </span>
           </div>
@@ -339,7 +339,7 @@ export function PathsSection(): JSX.Element {
         <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("knowledgeBaseSources")}
         </h2>
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden mb-3">
           {sources.map((src, idx) => (
             <div
               key={idx}
@@ -437,7 +437,7 @@ export function PathsSection(): JSX.Element {
         <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("info")}
         </h2>
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-2.5">
             <span className="text-xs text-fg-muted w-32 shrink-0">
               {t("settingsFile")}
@@ -447,7 +447,7 @@ export function PathsSection(): JSX.Element {
             </span>
           </div>
         </div>
-        <p className="mt-2 text-[10px] text-fg-subtle">
+        <p className="mt-2 text-2xs text-fg-subtle">
           {t("pathsHint")}
         </p>
       </div>

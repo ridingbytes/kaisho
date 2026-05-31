@@ -206,7 +206,7 @@ export function UserProfileSection() {
       <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("userProfile")}
       </h2>
-      <div className="bg-surface-card rounded-xl border border-border p-4 flex flex-col gap-4">
+      <div className="bg-surface-card rounded-lg border border-border p-4 flex flex-col gap-4">
         {/* Avatar + username. Clicking the avatar opens a
             compact style picker -- intentionally hidden by
             default to keep the form uncluttered. */}
@@ -223,7 +223,7 @@ export function UserProfileSection() {
             <button
               type="button"
               onClick={randomizeAvatar}
-              className="text-[10px] text-fg-muted hover:text-cta transition-colors text-left"
+              className="text-2xs text-fg-muted hover:text-cta transition-colors text-left"
             >
               {t("randomizeAvatar")}
             </button>
@@ -232,7 +232,7 @@ export function UserProfileSection() {
 
         {/* Full name */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+          <span className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
             {t("fullName")}
           </span>
           <input
@@ -246,7 +246,7 @@ export function UserProfileSection() {
 
         {/* Email */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+          <span className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
             {t("email")}
           </span>
           <input
@@ -260,10 +260,10 @@ export function UserProfileSection() {
 
         {/* Bio */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+          <span className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
             {t("bio")}
           </span>
-          <span className="text-[10px] text-fg-subtle">
+          <span className="text-2xs text-fg-subtle">
             {t("bioHelp")}
           </span>
           <textarea
@@ -277,10 +277,10 @@ export function UserProfileSection() {
 
         {/* Company */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+          <span className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
             {t("company")}
           </span>
-          <span className="text-[10px] text-fg-subtle">
+          <span className="text-2xs text-fg-subtle">
             {t("companyHelp")}
           </span>
           <input
@@ -294,10 +294,10 @@ export function UserProfileSection() {
 
         {/* Industry */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+          <span className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
             {t("industry")}
           </span>
-          <span className="text-[10px] text-fg-subtle">
+          <span className="text-2xs text-fg-subtle">
             {t("industryHelp")}
           </span>
           <textarea
@@ -311,10 +311,10 @@ export function UserProfileSection() {
 
         {/* Research targets */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+          <span className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
             {t("researchTargets")}
           </span>
-          <span className="text-[10px] text-fg-subtle">
+          <span className="text-2xs text-fg-subtle">
             {t("researchTargetsHelp")}
           </span>
           <textarea
@@ -442,11 +442,11 @@ export function ProfilesSection() {
         <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("profiles")}
         </h2>
-        <p className="text-[10px] text-fg-muted mb-3">
+        <p className="text-2xs text-fg-muted mb-3">
           {t("user")}: {userData.name || "kaisho"}
           {" "}&middot; {t("activeProfile")}: {userData.profile}
         </p>
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden mb-3">
           {(profileData.profiles ?? []).map(
             (p, i, arr) => {
               const isActive = p === profileData.active;
@@ -588,7 +588,7 @@ export function ProfilesSection() {
                       </span>
                       {isActive ? (
                         <div className="flex items-center gap-1">
-                          <span className="text-[10px] text-cta uppercase tracking-wider font-semibold">
+                          <span className="text-2xs text-cta uppercase tracking-wider font-semibold">
                             {t("activeProfile")}
                           </span>
                           <button
@@ -700,7 +700,7 @@ function ResetLocalStorageSection() {
       <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("localPreferences")}
       </h2>
-      <p className="text-[10px] text-fg-subtle mb-3">
+      <p className="text-2xs text-fg-subtle mb-3">
         {t("localPreferencesHint")}
       </p>
       <ConfirmPopover
@@ -758,7 +758,7 @@ function TraySection() {
     <section>
       <h3
         className={
-          "text-[10px] font-semibold uppercase "
+          "text-2xs font-semibold uppercase "
           + "tracking-wider text-fg-muted mb-3"
         }
       >
@@ -770,7 +770,7 @@ function TraySection() {
             {t("keepRunningInTray")
               || "Keep running in tray"}
           </p>
-          <p className="text-[10px] text-fg-muted mt-0.5">
+          <p className="text-2xs text-fg-muted mt-0.5">
             {t("keepRunningInTrayHint")
               || "When disabled, closing the window quits the app."}
           </p>
@@ -822,7 +822,7 @@ function LanguageSection() {
     <section>
       <h3
         className={
-          "text-[10px] font-semibold uppercase " +
+          "text-2xs font-semibold uppercase " +
           "tracking-wider text-fg-muted mb-3"
         }
       >
@@ -881,7 +881,7 @@ function ExternalEditorSection() {
       <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("externalEditor")}
       </h2>
-      <p className="text-[10px] text-fg-subtle mb-3">
+      <p className="text-2xs text-fg-subtle mb-3">
         {t("externalEditorHelp")}
       </p>
       <label className="flex items-center gap-3 cursor-pointer mb-4">
@@ -895,7 +895,7 @@ function ExternalEditorSection() {
       </label>
       {enabled && (
         <div className="flex flex-col gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+          <span className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
             {t("externalEditorCommand")}
           </span>
           <input
@@ -905,7 +905,7 @@ function ExternalEditorSection() {
             placeholder='alacritty -e vim "{file}"'
             className={inputCls}
           />
-          <p className="text-[10px] text-fg-subtle">
+          <p className="text-2xs text-fg-subtle">
             {t("externalEditorCommandHint")}
           </p>
           <div className="flex items-center gap-3 mt-1">
@@ -1036,7 +1036,7 @@ function ClockSection() {
           ))}
         </select>
       </label>
-      <p className="mt-2 text-[10px] text-fg-subtle">
+      <p className="mt-2 text-2xs text-fg-subtle">
         {t("roundOnStopHint")}
       </p>
     </section>

@@ -133,7 +133,7 @@ function StatusPill({ status }: { status: CronRun["status"] }) {
   return (
     <span
       className={[
-        "px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase",
+        "px-1.5 py-0.5 rounded text-2xs font-semibold uppercase",
         styles[status],
       ].join(" ")}
     >
@@ -262,7 +262,7 @@ function JobCard({
   }
 
   return (
-    <div className="bg-surface-card rounded-xl border border-border shadow-card flex flex-col">
+    <div className="bg-surface-card rounded-lg border border-border shadow-card flex flex-col">
       {/* Header row */}
       <div
         className="flex items-center gap-3 px-4 py-3 cursor-pointer"
@@ -275,7 +275,7 @@ function JobCard({
           <p className="text-sm font-semibold text-fg-strong truncate">
             {job.name}
           </p>
-          <p className="text-[10px] text-fg-muted font-mono">{job.id}</p>
+          <p className="text-2xs text-fg-muted font-mono">{job.id}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <EnableToggle
@@ -344,7 +344,7 @@ function JobCard({
 
       {/* Summary pills */}
       <div
-        className="flex gap-3 px-4 pb-3 text-[10px] text-fg-muted font-mono cursor-pointer"
+        className="flex gap-3 px-4 pb-3 text-2xs text-fg-muted font-mono cursor-pointer"
         onClick={handleExpand}
       >
         <span title={t("schedule")}>{job.schedule}</span>
@@ -373,7 +373,7 @@ function JobCard({
             <div className="flex flex-col gap-2">
               <div className="grid grid-cols-2 gap-2">
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] text-fg-muted uppercase tracking-wide">
+                  <span className="text-2xs text-fg-muted uppercase tracking-wide">
                     {t("schedule")}
                   </span>
                   <input
@@ -384,7 +384,7 @@ function JobCard({
                   />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] text-fg-muted uppercase tracking-wide">
+                  <span className="text-2xs text-fg-muted uppercase tracking-wide">
                     {t("model")}
                   </span>
                   <input
@@ -398,7 +398,7 @@ function JobCard({
                   />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] text-fg-muted uppercase tracking-wide">
+                  <span className="text-2xs text-fg-muted uppercase tracking-wide">
                     {t("output")}
                   </span>
                   <OutputSelect
@@ -407,7 +407,7 @@ function JobCard({
                   />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] text-fg-muted uppercase tracking-wide">
+                  <span className="text-2xs text-fg-muted uppercase tracking-wide">
                     {t("timeoutS")}
                   </span>
                   <input
@@ -454,11 +454,11 @@ function JobCard({
           {/* Prompt editor */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-fg-muted uppercase tracking-wide">
+              <span className="text-2xs text-fg-muted uppercase tracking-wide">
                 {t("prompt")}
               </span>
               {promptData?.path && (
-                <span className="text-[10px] text-fg-subtle font-mono">
+                <span className="text-2xs text-fg-subtle font-mono">
                   {promptData.path}
                 </span>
               )}
@@ -555,19 +555,19 @@ function TemplatePicker({
               <span className="text-sm font-medium text-fg-strong">
                 {tpl.name}
               </span>
-              <span className="text-[9px] uppercase tracking-wider text-fg-muted px-1.5 py-0.5 rounded bg-surface-overlay">
+              <span className="text-2xs uppercase tracking-wider text-fg-muted px-1.5 py-0.5 rounded bg-surface-overlay">
                 {tpl.category}
               </span>
               {tpl.requires_tools && (
-                <span className="text-[9px] uppercase tracking-wider text-amber-600 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                <span className="text-2xs uppercase tracking-wider text-amber-600 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
                   {t("toolsRequired")}
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-fg-muted leading-snug">
+            <p className="text-xs text-fg-muted leading-snug">
               {tpl.description}
             </p>
-            <div className="flex items-center gap-3 text-[10px] text-fg-muted font-mono">
+            <div className="flex items-center gap-3 text-2xs text-fg-muted font-mono">
               <span>{tpl.default_schedule}</span>
               <span>·</span>
               <span>{tpl.default_model}</span>
@@ -667,7 +667,7 @@ function AddJobForm({
 
       <div className="grid grid-cols-2 gap-2">
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-fg-muted uppercase tracking-wide">
+          <span className="text-2xs text-fg-muted uppercase tracking-wide">
             {t("id")}
           </span>
           <input
@@ -679,7 +679,7 @@ function AddJobForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-fg-muted uppercase tracking-wide">
+          <span className="text-2xs text-fg-muted uppercase tracking-wide">
             {t("name", { ns: "common" })}
           </span>
           <input
@@ -691,7 +691,7 @@ function AddJobForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-fg-muted uppercase tracking-wide">
+          <span className="text-2xs text-fg-muted uppercase tracking-wide">
             {t("schedule")}
           </span>
           <input
@@ -703,7 +703,7 @@ function AddJobForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-fg-muted uppercase tracking-wide">
+          <span className="text-2xs text-fg-muted uppercase tracking-wide">
             {t("model")}
           </span>
           <input
@@ -716,7 +716,7 @@ function AddJobForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-fg-muted uppercase tracking-wide">
+          <span className="text-2xs text-fg-muted uppercase tracking-wide">
             {t("output")}
           </span>
           <OutputSelect
@@ -725,7 +725,7 @@ function AddJobForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-fg-muted uppercase tracking-wide">
+          <span className="text-2xs text-fg-muted uppercase tracking-wide">
             {t("timeoutS")}
           </span>
           <input
@@ -750,7 +750,7 @@ function AddJobForm({
       )}
 
       <label className="flex flex-col gap-1">
-        <span className="text-[10px] text-fg-muted uppercase tracking-wide">
+        <span className="text-2xs text-fg-muted uppercase tracking-wide">
           {t("prompt")}
         </span>
         <PromptEditor
@@ -922,7 +922,7 @@ function HistoryTable({
                   </td>
                   <td className="py-2 pr-4 overflow-hidden">
                     {model && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-indigo-500/10 text-indigo-600 truncate inline-block max-w-full align-middle">
+                      <span className="px-1.5 py-0.5 rounded text-2xs font-mono bg-indigo-500/10 text-indigo-600 truncate inline-block max-w-full align-middle">
                         {model}
                       </span>
                     )}
@@ -994,7 +994,7 @@ function HistoryTable({
                       colSpan={9}
                       className="px-4 py-4"
                     >
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-red-500 mb-1">
+                      <p className="text-2xs font-semibold uppercase tracking-wider text-red-500 mb-1">
                         {tc("error")}
                       </p>
                       <pre className="text-xs text-red-500 whitespace-pre-wrap break-all font-mono">
@@ -1111,11 +1111,11 @@ export function CronView() {
 
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-8">
         {!onSyncAi && models.length === 0 && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
             <p className="text-xs font-medium text-fg mb-1">
               {ts("noAiProviderCron")}
             </p>
-            <p className="text-[11px] text-fg-muted leading-relaxed">
+            <p className="text-xs text-fg-muted leading-relaxed">
               {ts("noAiProviderCronHint")}
             </p>
           </div>

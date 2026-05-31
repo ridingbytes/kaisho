@@ -30,7 +30,7 @@ export function HelpButton({ title, doc, view }: Props) {
   return (
     <>
       {shortcut && (
-        <kbd className="text-[9px] font-mono text-fg-muted border border-border rounded px-1 py-0.5 leading-none">
+        <kbd className="text-2xs font-mono text-fg-muted border border-border rounded px-1 py-0.5 leading-none">
           {displayShortcut(shortcut)}
         </kbd>
       )}

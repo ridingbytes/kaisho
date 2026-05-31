@@ -151,7 +151,7 @@ export function CalendarWidget({
         >
           <ChevronLeft size={12} />
         </button>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+        <span className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
           {localeMonthName(year, month, i18n.language)}
         </span>
         <button
@@ -168,7 +168,7 @@ export function CalendarWidget({
           (label, i) => (
             <div
               key={i}
-              className="text-center text-[9px] font-semibold uppercase text-fg-subtle py-0.5"
+              className="text-center text-2xs font-semibold uppercase text-fg-subtle py-0.5"
             >
               {label}
             </div>
@@ -192,7 +192,7 @@ export function CalendarWidget({
               onClick={() => handleDayClick(date, isCurrentMonth)}
               className={[
                 "flex flex-col items-center justify-center h-8 cursor-pointer",
-                "text-[10px] leading-none transition-colors",
+                "text-2xs leading-none transition-colors",
                 isCurrentMonth ? "" : "opacity-25 pointer-events-none",
                 isSelected
                   ? "bg-surface-overlay text-cta font-semibold rounded"
@@ -205,7 +205,7 @@ export function CalendarWidget({
                 {date.getDate()}
               </span>
               {mins > 0 && (
-                <span className="text-[8px] text-fg-muted leading-none mt-0.5">
+                <span className="text-2xs text-fg-muted leading-none mt-0.5">
                   {formatHours(mins)}
                 </span>
               )}
@@ -217,7 +217,7 @@ export function CalendarWidget({
       {showTodayLink && (
         <button
           onClick={goToday}
-          className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors self-end"
+          className="text-2xs text-indigo-400 hover:text-indigo-300 transition-colors self-end"
         >
           {tc("today")}
         </button>

@@ -48,13 +48,13 @@ export function CalDavSection(): JSX.Element {
   const presets = presetsQ.data?.presets || [];
 
   return (
-    <div className="bg-surface-card rounded-xl border border-border p-4 flex flex-col gap-3">
+    <div className="bg-surface-card rounded-lg border border-border p-4 flex flex-col gap-3">
       <CalDavHeader count={accounts.length} />
       {accounts.length > 0 && (
         <AccountList accounts={accounts} />
       )}
       <AddAccountForm presets={presets} />
-      <p className="text-[10px] text-fg-subtle">
+      <p className="text-2xs text-fg-subtle">
         {t("integrations.caldav.note")}
       </p>
     </div>
@@ -70,7 +70,7 @@ function CalDavHeader({ count }: { count: number }) {
         <p className="font-semibold text-sm text-fg-strong">
           {t("integrations.caldav.label")}
         </p>
-        <p className="text-[10px] text-fg-muted mt-0.5">
+        <p className="text-2xs text-fg-muted mt-0.5">
           {t("integrations.caldav.hint")}
         </p>
       </div>
@@ -104,11 +104,11 @@ function AccountList({
               <p className="text-xs font-medium text-fg-strong truncate">
                 {acc.label}
               </p>
-              <p className="text-[10px] text-fg-muted truncate">
+              <p className="text-2xs text-fg-muted truncate">
                 {acc.preset} · {acc.username}
               </p>
               {acc.storage === "fallback" && (
-                <p className="text-[10px] text-amber-600 mt-0.5">
+                <p className="text-2xs text-amber-600 mt-0.5">
                   {t("integrations.caldav.fallbackWarning")}
                 </p>
               )}
@@ -273,7 +273,7 @@ function AddAccountForm({
         />
       </div>
       {preset?.auth_note && (
-        <p className="text-[10px] text-fg-muted mt-2">
+        <p className="text-2xs text-fg-muted mt-2">
           {preset.auth_note}{" "}
           {preset.hint_url && (
             <button
@@ -398,7 +398,7 @@ function PushConfigEditor({
           <p className="text-xs font-medium text-fg-strong">
             {t("integrations.caldav.push.label")}
           </p>
-          <p className="text-[10px] text-fg-muted">
+          <p className="text-2xs text-fg-muted">
             {t("integrations.caldav.push.hint")}
           </p>
         </div>
@@ -428,7 +428,7 @@ function PushConfigEditor({
       </div>
       {enabled && (
         <div className="mt-2">
-          <label className="text-[10px] uppercase tracking-wide text-fg-muted block mb-1">
+          <label className="text-2xs uppercase tracking-wide text-fg-muted block mb-1">
             {t("integrations.caldav.push.calendar")}
           </label>
           <select
@@ -478,7 +478,7 @@ function PushHealthBar({
 
   return (
     <div className="mt-2 flex items-center justify-between gap-2">
-      <div className="min-w-0 text-[10px] text-fg-muted">
+      <div className="min-w-0 text-2xs text-fg-muted">
         {lastSync ? (
           <span>
             {t("integrations.caldav.push.lastSynced", {
@@ -504,7 +504,7 @@ function PushHealthBar({
         onClick={onSync}
         disabled={busy}
         className={
-          "shrink-0 px-2 py-0.5 rounded-md text-[11px] "
+          "shrink-0 px-2 py-0.5 rounded-md text-xs "
           + "font-medium bg-surface-card border "
           + "border-border text-fg "
           + "hover:bg-surface-raised "

@@ -130,9 +130,9 @@ export function InvoiceExportSection(): JSX.Element {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Selected columns */}
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
           <div className="px-4 py-2 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+            <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
               {t("selectedColumns")}
             </p>
           </div>
@@ -160,7 +160,7 @@ export function InvoiceExportSection(): JSX.Element {
                       onChange={(e) =>
                         setFormat(idx, e.target.value)
                       }
-                      className="px-1 py-0.5 rounded text-[10px] bg-surface-raised border border-border text-fg focus:outline-none focus:border-cta"
+                      className="px-1 py-0.5 rounded text-2xs bg-surface-raised border border-border text-fg focus:outline-none focus:border-cta"
                     >
                       {def.formats.map((f) => (
                         <option
@@ -201,9 +201,9 @@ export function InvoiceExportSection(): JSX.Element {
         </div>
 
         {/* Available fields */}
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
           <div className="px-4 py-2 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+            <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
               {t("availableFields")}
             </p>
           </div>

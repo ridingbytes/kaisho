@@ -75,7 +75,7 @@ export function ActiveTimer({ timer }: Props) {
     : undefined;
 
   return (
-    <div className="rounded-xl border border-border bg-surface-card p-4 shadow-card text-center">
+    <div className="rounded-lg border border-border bg-surface-card p-4 shadow-card text-center">
       {/* Timer digits + stop button */}
       <div className="flex items-center justify-center gap-3">
         <div
@@ -128,7 +128,7 @@ export function ActiveTimer({ timer }: Props) {
       <div className="flex items-center justify-center mt-2">
         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-500/10">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-          <span className="text-[10px] font-semibold tracking-wider uppercase text-green-600">
+          <span className="text-2xs font-semibold tracking-wider uppercase text-green-600">
             {tc("active")}
           </span>
         </div>
@@ -186,7 +186,7 @@ export function ActiveTimer({ timer }: Props) {
               "focus:outline-none focus:border-cta",
             ].join(" ")}
           />
-          <p className="text-[9px] text-fg-subtle mt-1 text-right">
+          <p className="text-2xs text-fg-subtle mt-1 text-right">
             {tc("cmdSaveClose")}
           </p>
         </div>

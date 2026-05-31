@@ -37,7 +37,7 @@ export function MetaAutocomplete({
     <label className="flex flex-col gap-0.5">
       <span
         className={
-          "text-[9px] text-fg-muted uppercase " +
+          "text-2xs text-fg-muted uppercase " +
           "tracking-wider"
         }
       >
@@ -91,7 +91,7 @@ export function RichMetaAutocomplete({
     <label className="flex flex-col gap-0.5">
       <span
         className={
-          "text-[9px] text-fg-muted uppercase " +
+          "text-2xs text-fg-muted uppercase " +
           "tracking-wider"
         }
       >

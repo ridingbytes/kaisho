@@ -14,6 +14,7 @@ import {
   type BackupSettings,
 } from "../../api/client";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { StateMessage } from "../common/StateMessage";
 import {
   useBackups,
   useBackupSettings,
@@ -78,15 +79,15 @@ export function BackupSection(): JSX.Element {
 
   if (isLoading || !cfg) {
     return (
-      <p className="text-sm text-fg-muted">Loading...</p>
+      <StateMessage kind="loading">Loading...</StateMessage>
     );
   }
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
             {t("storage")}
           </p>
           <label className="flex items-center gap-3">
@@ -105,7 +106,7 @@ export function BackupSection(): JSX.Element {
               className={inputCls}
             />
           </label>
-          <p className="mt-2 text-[10px] text-fg-subtle">
+          <p className="mt-2 text-2xs text-fg-subtle">
             Leave empty to use the default:{" "}
             <span className="font-mono">
               {cfg.resolved_directory}
@@ -114,7 +115,7 @@ export function BackupSection(): JSX.Element {
         </div>
 
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
             {t("retention")}
           </p>
           <label className="flex items-center gap-3">
@@ -140,13 +141,13 @@ export function BackupSection(): JSX.Element {
               {t("mostRecentBackups")}
             </span>
           </label>
-          <p className="mt-2 text-[10px] text-fg-subtle">
+          <p className="mt-2 text-2xs text-fg-subtle">
             {t("retentionHint")}
           </p>
         </div>
 
         <div className="px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
             {t("schedule")}
           </p>
           <label className="flex items-center gap-3">
@@ -217,13 +218,13 @@ export function BackupSection(): JSX.Element {
         </button>
       </div>
 
-      <p className="text-[10px] text-fg-subtle leading-relaxed">
+      <p className="text-2xs text-fg-subtle leading-relaxed">
         {t("backupsHint")}
       </p>
 
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle flex items-center justify-between">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
             {t("existingBackups", {
               count: backups.length,
             })}

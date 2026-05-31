@@ -75,7 +75,7 @@ export function NewFileForm({
       <div className="flex flex-col gap-1">
         <label
           className={
-            "text-[10px] text-fg-muted " +
+            "text-2xs text-fg-muted " +
             "uppercase tracking-wider"
           }
         >
@@ -97,7 +97,7 @@ export function NewFileForm({
       <div className="flex flex-col gap-1 flex-1 min-w-40">
         <label
           className={
-            "text-[10px] text-fg-muted " +
+            "text-2xs text-fg-muted " +
             "uppercase tracking-wider"
           }
         >

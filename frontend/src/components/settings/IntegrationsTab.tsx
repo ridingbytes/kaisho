@@ -159,7 +159,7 @@ export function IntegrationsSection() {
           <div
             key={p.kind}
             className={
-              "bg-surface-card rounded-xl border border-border p-4"
+              "bg-surface-card rounded-lg border border-border p-4"
               + (locked ? " opacity-60" : "")
             }
           >
@@ -169,7 +169,7 @@ export function IntegrationsSection() {
                   {p.label}
                 </p>
                 {locked ? (
-                  <p className="text-[10px] text-fg-muted mt-0.5">
+                  <p className="text-2xs text-fg-muted mt-0.5">
                     {t("integrations.proOnly.short")}
                   </p>
                 ) : conn ? (
@@ -178,13 +178,13 @@ export function IntegrationsSection() {
                   </p>
                 ) : (
                   p.hintKey && (
-                    <p className="text-[10px] text-fg-muted mt-0.5">
+                    <p className="text-2xs text-fg-muted mt-0.5">
                       {t(p.hintKey)}
                     </p>
                   )
                 )}
                 {p.crossRefKey && (
-                  <p className="text-[10px] text-fg-subtle mt-0.5">
+                  <p className="text-2xs text-fg-subtle mt-0.5">
                     {t(p.crossRefKey)}
                   </p>
                 )}
@@ -247,7 +247,7 @@ export function IntegrationsSection() {
         );
       })}
       <CalDavSection />
-      <p className="text-[10px] text-fg-subtle">
+      <p className="text-2xs text-fg-subtle">
         {t("integrations.oauthNote")}
       </p>
     </div>

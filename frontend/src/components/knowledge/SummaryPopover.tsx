@@ -289,7 +289,7 @@ export function SummaryPopover({
           {isStale && (
             <span
               className={
-                "px-1.5 py-0.5 rounded text-[9px] " +
+                "px-1.5 py-0.5 rounded text-2xs " +
                 "font-semibold bg-amber-500/10 " +
                 "text-amber-600 uppercase " +
                 "tracking-wider"
@@ -301,7 +301,7 @@ export function SummaryPopover({
           )}
           {isCached && (
             <span
-              className={"text-[10px] text-fg-subtle"}
+              className={"text-2xs text-fg-subtle"}
               title={t("summaryCached")}
             >
               {t("summaryCached")}
@@ -310,7 +310,7 @@ export function SummaryPopover({
           {headerSubtitle && (
             <span
               className={
-                "text-[10px] text-fg-muted font-mono"
+                "text-2xs text-fg-muted font-mono"
               }
               title={t("summaryModel")}
             >
@@ -488,7 +488,7 @@ export function SummaryPopover({
             rows={1}
             disabled={summarizing && !hasBubbles}
             className={
-              "flex-1 min-h-[40px] px-3 py-2 rounded-xl " +
+              "flex-1 min-h-[40px] px-3 py-2 rounded-lg " +
               "resize-none bg-surface-raised " +
               "border border-border text-sm " +
               "text-fg-strong placeholder-fg-muted " +
@@ -508,7 +508,7 @@ export function SummaryPopover({
             title={t("chatSend") + " (↵)"}
             className={
               "flex items-center justify-center " +
-              "h-10 w-10 shrink-0 rounded-xl " +
+              "h-10 w-10 shrink-0 rounded-lg " +
               "bg-cta text-white hover:bg-cta-hover " +
               "transition-colors disabled:opacity-50"
             }

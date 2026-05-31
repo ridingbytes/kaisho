@@ -67,7 +67,7 @@ export function WhatsNewDialog() {
       onClick={() => setOpen(false)}
     >
       <div
-        className="bg-surface-card rounded-xl border border-border shadow-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col"
+        className="bg-surface-card rounded-lg border border-border shadow-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">

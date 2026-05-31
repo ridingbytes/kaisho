@@ -95,12 +95,12 @@ function AdvisorPersonalitySection() {
       <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("advisorPersonality")}
       </h2>
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-1">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-1">
             {t("soulMd")}
           </p>
-          <p className="text-[10px] text-fg-subtle mb-2">
+          <p className="text-2xs text-fg-subtle mb-2">
             {t("soulMdHint")}
           </p>
           <textarea
@@ -115,10 +115,10 @@ function AdvisorPersonalitySection() {
           />
         </div>
         <div className="px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-1">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-1">
             {t("userMd")}
           </p>
-          <p className="text-[10px] text-fg-subtle mb-2">
+          <p className="text-2xs text-fg-subtle mb-2">
             {t("userMdHint")}
           </p>
           <textarea
@@ -197,9 +197,9 @@ function UrlAllowlistSection() {
       <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("urlAllowlist")}
       </h2>
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         <div className="px-4 py-3">
-          <p className="text-[10px] text-fg-subtle mb-3">
+          <p className="text-2xs text-fg-subtle mb-3">
             {t("urlAllowlistHint")}
           </p>
           <div className="flex flex-wrap gap-1.5 mb-3">
@@ -444,9 +444,9 @@ function SkillsSection() {
           <Plus size={12} />
         </button>
       </div>
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] text-fg-subtle">
+          <p className="text-2xs text-fg-subtle">
             {t("skillsHint")}
           </p>
         </div>
@@ -564,21 +564,21 @@ export function AiSection(): JSX.Element {
       </datalist>
 
       {onSyncAi && (
-        <div className="mb-4 px-4 py-3 rounded-xl bg-cta/10 border border-cta/30">
+        <div className="mb-4 px-4 py-3 rounded-lg bg-cta/10 border border-cta/30">
           <p className="text-xs text-cta font-medium">
             {t("kaishoAiActive")}
           </p>
-          <p className="text-[10px] text-fg-muted mt-1">
+          <p className="text-2xs text-fg-muted mt-1">
             {t("kaishoAiActiveHint")}
           </p>
         </div>
       )}
 
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         {/* Local / subscription providers */}
         <div className="px-4 py-3 border-b border-border-subtle">
           <div className="flex items-center gap-2 mb-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+            <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
               {t("local")}
             </p>
             {probe && (
@@ -596,7 +596,7 @@ export function AiSection(): JSX.Element {
                       : t("ollamaNotRunning")
                   }
                 />
-                <span className="text-[9px] text-fg-subtle">
+                <span className="text-2xs text-fg-subtle">
                   {t("ollamaLabel")}
                 </span>
                 <span
@@ -612,13 +612,13 @@ export function AiSection(): JSX.Element {
                       : t("lmStudioNotRunning")
                   }
                 />
-                <span className="text-[9px] text-fg-subtle">
+                <span className="text-2xs text-fg-subtle">
                   LM Studio
                 </span>
               </div>
             )}
           </div>
-          <p className="text-[10px] text-fg-subtle mb-2">
+          <p className="text-2xs text-fg-subtle mb-2">
             {t("localHint")} Recommended model:{" "}
             <strong>gemma4</strong> (Google) — use{" "}
             <em>gemma4:e2b</em> for cron jobs and{" "}
@@ -662,7 +662,7 @@ export function AiSection(): JSX.Element {
         {/* Cloud API keys */}
         <div className="px-4 py-3 border-b border-border-subtle">
           <div className="flex items-center gap-2 mb-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+            <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
               {t("cloudApiKeys")}
             </p>
             {probe && (
@@ -690,7 +690,7 @@ export function AiSection(): JSX.Element {
                           : `${label} not configured`
                       }
                     />
-                    <span className="text-[9px] text-fg-subtle">
+                    <span className="text-2xs text-fg-subtle">
                       {label}
                     </span>
                   </span>
@@ -698,7 +698,7 @@ export function AiSection(): JSX.Element {
               </div>
             )}
           </div>
-          <p className="text-[10px] text-fg-subtle mb-2">
+          <p className="text-2xs text-fg-subtle mb-2">
             {t("cloudApiKeysHint")}
           </p>
           <div className="flex flex-col gap-2">
@@ -793,10 +793,10 @@ export function AiSection(): JSX.Element {
 
         {/* Web search API keys */}
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-1">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-1">
             {t("webSearch")}
           </p>
-          <p className="text-[10px] text-fg-subtle mb-2">
+          <p className="text-2xs text-fg-subtle mb-2">
             {t("webSearchHint")}
           </p>
           <div className="flex flex-col gap-2">
@@ -820,7 +820,7 @@ export function AiSection(): JSX.Element {
         </div>
 
         <div className="px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
             {t("defaultModels")}
           </p>
           <div className="flex flex-col gap-2">
@@ -854,7 +854,7 @@ export function AiSection(): JSX.Element {
             </label>
           </div>
           {models.length > 0 && (
-            <p className="text-[10px] text-fg-subtle mt-2">
+            <p className="text-2xs text-fg-subtle mt-2">
               {t("modelsAvailable", {
                 count: models.length,
               })}

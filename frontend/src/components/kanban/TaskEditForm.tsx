@@ -119,7 +119,7 @@ export function TaskEditForm({
         />
       </div>
       <div className="flex gap-1 justify-end items-center">
-        <span className="text-[10px] text-fg-subtle mr-auto">
+        <span className="text-2xs text-fg-subtle mr-auto">
           {tc("cmdSaveClose")}
         </span>
         <button

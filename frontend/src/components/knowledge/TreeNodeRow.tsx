@@ -81,7 +81,7 @@ function MovePicker({
         if (e.target.value) handleChange(e.target.value);
       }}
       className={
-        "w-12 text-[9px] bg-transparent "
+        "w-12 text-2xs bg-transparent "
         + "text-fg-subtle hover:text-fg "
         + "cursor-pointer"
       }

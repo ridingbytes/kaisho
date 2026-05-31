@@ -61,7 +61,7 @@ export function ContentPopup({
               "relative z-10 w-full max-w-2xl",
               "max-h-[80vh] flex flex-col",
               "bg-surface-card border border-border",
-              "rounded-xl shadow-xl",
+              "rounded-lg shadow-xl",
             ].join(" ")}
             onClick={(e) => e.stopPropagation()}
           >

@@ -129,7 +129,7 @@ export function EditorPanel({
         </button>
         <span
           className={[
-            "shrink-0 px-1.5 py-0.5 rounded text-[10px]",
+            "shrink-0 px-1.5 py-0.5 rounded text-2xs",
             "font-semibold uppercase tracking-wider",
             FILE_TYPE_COLORS[fileType],
           ].join(" ")}
@@ -139,7 +139,7 @@ export function EditorPanel({
         {dirty && (
           <span
             className={
-              "text-[10px] text-amber-500 shrink-0"
+              "text-2xs text-amber-500 shrink-0"
             }
           >
             {t("unsaved")}

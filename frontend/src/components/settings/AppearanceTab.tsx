@@ -56,7 +56,7 @@ function AppTitleSection() {
             "focus:outline-none focus:border-cta",
           ].join(" ")}
         />
-        <span className="text-[10px] text-fg-subtle">
+        <span className="text-2xs text-fg-subtle">
           {t("appTitleHint")}
         </span>
       </div>
@@ -199,7 +199,7 @@ function ThemeSection() {
           ))}
         </select>
       </div>
-      <p className="text-[10px] text-fg-subtle mt-3 max-w-md">
+      <p className="text-2xs text-fg-subtle mt-3 max-w-md">
         {t("themeHint")}
       </p>
     </section>

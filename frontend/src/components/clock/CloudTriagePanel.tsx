@@ -154,7 +154,7 @@ export function CloudTriagePanel() {
   return (
     <div className="border border-amber-200 bg-amber-50 rounded-lg overflow-hidden">
       <div className="px-3 py-2 border-b border-amber-200">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-700">
+        <p className="text-2xs font-semibold uppercase tracking-wider text-amber-700">
           {t("unassignedCloudEntries", {
             count: entries.length,
           })}

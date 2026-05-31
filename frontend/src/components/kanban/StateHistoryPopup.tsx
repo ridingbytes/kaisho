@@ -41,7 +41,7 @@ export function StateHistoryPopup({
     >
       <div className="absolute inset-0 bg-black/50" />
       <div
-        className="relative bg-surface-card rounded-xl shadow-lg border border-border p-5 w-80 max-h-[60vh] overflow-y-auto"
+        className="relative bg-surface-card rounded-lg shadow-lg border border-border p-5 w-80 max-h-[60vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-3">
@@ -59,7 +59,7 @@ export function StateHistoryPopup({
           {history.map((h, i) => (
             <div
               key={i}
-              className="flex items-center gap-2 text-[11px] py-1"
+              className="flex items-center gap-2 text-xs py-1"
             >
               <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-fg-subtle" />
               <span className="font-medium text-fg-strong">
@@ -70,7 +70,7 @@ export function StateHistoryPopup({
               </span>
               <RelDate
                 date={h.timestamp}
-                className="ml-auto text-fg-subtle text-[10px]"
+                className="ml-auto text-fg-subtle text-2xs"
               />
             </div>
           ))}

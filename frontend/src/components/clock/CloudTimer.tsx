@@ -54,7 +54,7 @@ export function CloudTimer({ timer, onStopped }: Props) {
   return (
     <div
       className={[
-        "rounded-xl border border-dashed",
+        "rounded-lg border border-dashed",
         "border-border bg-surface-card/60 p-4",
         "text-center",
       ].join(" ")}
@@ -104,7 +104,7 @@ export function CloudTimer({ timer, onStopped }: Props) {
           />
           <span
             className={
-              "text-[10px] font-semibold tracking-wider "
+              "text-2xs font-semibold tracking-wider "
               + "uppercase text-fg-muted"
             }
           >

@@ -23,7 +23,7 @@ export function EditFooter({
   return (
     <div className="flex gap-1 justify-end items-center mt-1">
       {showHint && (
-        <span className="text-[9px] text-fg-subtle mr-auto">
+        <span className="text-2xs text-fg-subtle mr-auto">
           {tc("cmdSave")}
         </span>
       )}

@@ -151,7 +151,7 @@ function DayCell({
       </div>
       {hasEntries && (
         <div className="mt-auto self-end">
-          <span className="text-[10px] font-mono text-fg bg-surface-raised rounded px-1 py-0.5">
+          <span className="text-2xs font-mono text-fg bg-surface-raised rounded px-1 py-0.5">
             {formatHours(totalMinutes)}
           </span>
         </div>
@@ -298,7 +298,7 @@ export function CalendarView() {
               (label, i) => (
                 <div
                   key={i}
-                  className="text-center text-[10px] font-semibold uppercase tracking-wider text-fg-muted py-1"
+                  className="text-center text-2xs font-semibold uppercase tracking-wider text-fg-muted py-1"
                 >
                   {label}
                 </div>
@@ -312,7 +312,7 @@ export function CalendarView() {
               {t("noEntriesFound")}
             </div>
           ) : (
-            <div className="grid grid-cols-7 bg-surface-card rounded-xl border border-border overflow-hidden">
+            <div className="grid grid-cols-7 bg-surface-card rounded-lg border border-border overflow-hidden">
               {calendarDays.map(({ date, isCurrentMonth }, idx) => {
                 const iso = toIsoDate(date);
                 const dayEntries = byDate.get(iso) ?? [];
@@ -338,13 +338,13 @@ export function CalendarView() {
 
           {/* Selected day entries */}
           {selectedDate && (
-            <div className="mt-4 bg-surface-card rounded-xl border border-border overflow-hidden">
+            <div className="mt-4 bg-surface-card rounded-lg border border-border overflow-hidden">
               <div className="px-4 py-2.5 border-b border-border-subtle">
                 <p className="text-xs font-semibold text-fg">
                   {selectedLabel}
                 </p>
                 {selectedEntries.length > 0 && (
-                  <p className="text-[10px] text-fg-muted mt-0.5">
+                  <p className="text-2xs text-fg-muted mt-0.5">
                     {formatHours(sumMinutes(selectedEntries))} total
                   </p>
                 )}

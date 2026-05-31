@@ -56,7 +56,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
       className="flex flex-wrap items-end gap-3 px-6 py-3 border-b border-border-subtle bg-surface-card/60"
     >
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-fg-muted uppercase tracking-wider">
+        <label className="text-2xs text-fg-muted uppercase tracking-wider">
           {tc("name")} *
         </label>
         <input
@@ -69,7 +69,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
       </div>
       {customerTypes.length > 0 && (
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] text-fg-muted uppercase tracking-wider">
+          <label className="text-2xs text-fg-muted uppercase tracking-wider">
             {tc("type")}
           </label>
           <select
@@ -87,7 +87,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
         </div>
       )}
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-fg-muted uppercase tracking-wider">
+        <label className="text-2xs text-fg-muted uppercase tracking-wider">
           {t("budgetH")}
         </label>
         <input
@@ -101,7 +101,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-fg-muted uppercase tracking-wider">
+        <label className="text-2xs text-fg-muted uppercase tracking-wider">
           {t("githubRepo")}
         </label>
         <input

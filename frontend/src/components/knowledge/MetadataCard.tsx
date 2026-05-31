@@ -364,7 +364,7 @@ export function MetadataCard({
         {!hasAnyMeta && (
           <span
             className={
-              "text-[10px] italic text-fg-subtle"
+              "text-2xs italic text-fg-subtle"
             }
           >
             {t("noTags")}
@@ -442,7 +442,7 @@ export function MetadataCard({
       ) : (
         <p
           className={
-            "text-[10px] text-fg-subtle mt-1 italic"
+            "text-2xs text-fg-subtle mt-1 italic"
           }
         >
           {t("noTags")}
@@ -452,7 +452,7 @@ export function MetadataCard({
         <dl
           className={
             "mt-2 grid grid-cols-[auto_1fr] gap-x-3 " +
-            "gap-y-0.5 text-[11px]"
+            "gap-y-0.5 text-xs"
           }
         >
           {optionalRows.map((r) => (
@@ -460,7 +460,7 @@ export function MetadataCard({
               <dt
                 className={
                   "text-fg-subtle uppercase " +
-                  "tracking-wider text-[9px] mt-0.5"
+                  "tracking-wider text-2xs mt-0.5"
                 }
               >
                 {r.label}
@@ -489,7 +489,7 @@ function MetaInput({
     <label className="flex flex-col gap-0.5">
       <span
         className={
-          "text-[9px] text-fg-muted uppercase " +
+          "text-2xs text-fg-muted uppercase " +
           "tracking-wider"
         }
       >
@@ -518,13 +518,13 @@ function InlinePill({
       title={`${label}: ${value}`}
       className={
         "inline-flex items-center gap-1 px-1.5 py-0.5 " +
-        "rounded text-[10px] bg-surface-overlay " +
+        "rounded text-2xs bg-surface-overlay " +
         "text-fg max-w-[12rem]"
       }
     >
       <span
         className={
-          "text-[9px] uppercase tracking-wider " +
+          "text-2xs uppercase tracking-wider " +
           "text-fg-subtle"
         }
       >
@@ -544,7 +544,7 @@ function TagChip({
   onClick?: (tag: string) => void;
 }) {
   const baseCls =
-    "px-1.5 py-0.5 rounded text-[10px] font-medium "
+    "px-1.5 py-0.5 rounded text-2xs font-medium "
     + "transition-shadow";
   const interactiveCls = onClick
     ? " cursor-pointer hover:shadow-sm"

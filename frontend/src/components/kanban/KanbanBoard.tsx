@@ -184,7 +184,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                 ))}
               </colgroup>
               <thead className="group/thead">
-                <tr className="text-[10px] uppercase tracking-wider text-fg-muted">
+                <tr className="text-2xs uppercase tracking-wider text-fg-muted">
                   <th className="relative text-left pb-1 pr-3 font-medium">
                     {t("archive")}
                     <ResizeHandle
@@ -226,7 +226,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                       <td className="pr-3 py-1 whitespace-nowrap overflow-hidden">
                         {task.customer && (
                           <span
-                            className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-cta-muted text-cta-hover max-w-full truncate inline-block align-middle"
+                            className="px-1.5 py-0.5 rounded text-2xs font-semibold uppercase tracking-wider bg-cta-muted text-cta-hover max-w-full truncate inline-block align-middle"
                             title={task.customer}
                           >
                             {task.customer}
@@ -239,7 +239,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                       <td className="pr-3 py-1 whitespace-nowrap overflow-hidden">
                         {state ? (
                           <span
-                            className="px-1.5 py-0.5 rounded text-[10px] font-medium text-white max-w-full truncate inline-block align-middle"
+                            className="px-1.5 py-0.5 rounded text-2xs font-medium text-white max-w-full truncate inline-block align-middle"
                             style={{ backgroundColor: state.color }}
                             title={task.archive_status}
                           >
@@ -592,7 +592,7 @@ export function KanbanBoard() {
                 }
                 className={[
                   "inline-flex items-center gap-1",
-                  "px-1.5 py-0.5 rounded text-[10px]",
+                  "px-1.5 py-0.5 rounded text-2xs",
                   "font-semibold transition-colors",
                   "bg-cta-muted text-cta-hover",
                   "hover:bg-red-100 hover:text-red-600",

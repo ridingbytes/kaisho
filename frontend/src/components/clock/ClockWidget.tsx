@@ -180,7 +180,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
                 ? <ChevronDown size={10} className="text-fg-muted group-hover:text-fg transition-colors" />
                 : <ChevronRight size={10} className="text-fg-muted group-hover:text-fg transition-colors" />
               }
-              <h3 className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted group-hover:text-fg transition-colors">
+              <h3 className="text-2xs font-semibold uppercase tracking-wider text-fg-muted group-hover:text-fg transition-colors">
                 {t("calendar")}
               </h3>
             </button>
@@ -211,7 +211,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
         {/* Entries for selected date */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted flex-1">
+            <h3 className="text-2xs font-semibold uppercase tracking-wider text-fg-muted flex-1">
               {!selectedDate || selectedDate === todayIso()
                 ? tc("today")
                 : formatDateHeading(selectedDate)}

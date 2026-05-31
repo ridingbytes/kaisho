@@ -185,7 +185,7 @@ const compactComponents = {
     </ol>
   ),
   pre: ({ children }: { children?: React.ReactNode }) => (
-    <pre className="bg-surface-overlay rounded p-2 mb-1.5 overflow-x-auto text-[11px] font-mono text-fg-strong leading-relaxed">
+    <pre className="bg-surface-overlay rounded p-2 mb-1.5 overflow-x-auto text-xs font-mono text-fg-strong leading-relaxed">
       {children}
     </pre>
   ),

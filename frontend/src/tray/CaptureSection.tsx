@@ -58,7 +58,7 @@ export function CaptureSection() {
       onSubmit={handleSubmit}
       className="px-4 py-3"
     >
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
+      <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
         {t("quickCapture")}
       </p>
 
@@ -70,7 +70,7 @@ export function CaptureSection() {
             type="button"
             onClick={() => setMode(m.key)}
             className={[
-              "px-2 py-0.5 rounded text-[10px]",
+              "px-2 py-0.5 rounded text-2xs",
               "font-medium transition-colors",
               mode === m.key
                 ? "bg-cta text-white"
@@ -107,7 +107,7 @@ export function CaptureSection() {
       </div>
 
       {msg && (
-        <p className="text-[10px] text-green-500 mt-1">
+        <p className="text-2xs text-green-500 mt-1">
           {msg}
         </p>
       )}

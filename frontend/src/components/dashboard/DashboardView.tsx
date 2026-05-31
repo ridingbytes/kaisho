@@ -74,7 +74,7 @@ function StatCard({
     <div
       onClick={onClick}
       className={[
-        "flex items-center gap-4 p-5 rounded-xl",
+        "flex items-center gap-4 p-5 rounded-lg",
         "bg-surface-card border border-border-subtle",
         onClick
           ? "cursor-pointer hover:bg-surface-raised " +
@@ -270,7 +270,7 @@ function ClockEntryRow({
       {entry.contract && (
         <span
           className={[
-            "text-[10px] px-1.5 py-0.5 rounded shrink-0",
+            "text-2xs px-1.5 py-0.5 rounded shrink-0",
             isInv
               ? "bg-emerald-500/10 text-emerald-600"
               : "bg-cta/10 text-cta",
@@ -478,11 +478,11 @@ function BudgetRow({
             return (
               <div key={c.name}>
                 <div className="flex items-baseline justify-between mb-0.5">
-                  <span className="text-[9px] text-fg-muted truncate">
+                  <span className="text-2xs text-fg-muted truncate">
                     {c.name}
                   </span>
                   <span
-                    className="text-[9px] tabular-nums shrink-0 ml-2"
+                    className="text-2xs tabular-nums shrink-0 ml-2"
                     style={{ color: cColor }}
                   >
                     {(c.used ?? 0).toFixed(1)}h used · {(c.rest ?? 0).toFixed(1)}h left · {pct}%
@@ -505,7 +505,7 @@ function BudgetRow({
         <div>
           <div className="flex justify-end mb-0.5">
             <span
-              className="text-[9px] tabular-nums"
+              className="text-2xs tabular-nums"
               style={{ color }}
             >
               {displayUsed.toFixed(1)}h used · {(displayBudget - displayUsed).toFixed(1)}h left · {usedPercent}%
@@ -598,7 +598,7 @@ export function DashboardView() {
         {timer?.active && timer.start && (
           <div
             className={
-              "flex items-center gap-4 p-4 rounded-xl " +
+              "flex items-center gap-4 p-4 rounded-lg " +
               "bg-cta-muted border border-cta/30"
             }
           >
@@ -710,7 +710,7 @@ export function DashboardView() {
         {data.budgets.length > 0 && (
           <div
             className={
-              "rounded-xl bg-surface-card " +
+              "rounded-lg bg-surface-card " +
               "border border-border-subtle p-5"
             }
           >

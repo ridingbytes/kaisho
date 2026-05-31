@@ -129,7 +129,7 @@ export function InvoicePanel({
       aria-modal="true"
     >
       <div
-        className="bg-surface-card rounded-xl border border-border overflow-hidden shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col"
+        className="bg-surface-card rounded-lg border border-border overflow-hidden shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle">
@@ -196,7 +196,7 @@ export function InvoicePanel({
           <button
             onClick={handleExportCsv}
             disabled={!entries.length}
-            className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-fg hover:text-cta hover:bg-cta-muted transition-colors disabled:opacity-40"
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs text-fg hover:text-cta hover:bg-cta-muted transition-colors disabled:opacity-40"
             title="Download CSV"
           >
             <Download size={11} /> CSV
@@ -204,7 +204,7 @@ export function InvoicePanel({
           <button
             onClick={handleExportExcel}
             disabled={!entries.length}
-            className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-fg hover:text-cta hover:bg-cta-muted transition-colors disabled:opacity-40"
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs text-fg hover:text-cta hover:bg-cta-muted transition-colors disabled:opacity-40"
             title="Download Excel"
           >
             <Download size={11} /> XLS
@@ -253,7 +253,7 @@ export function InvoicePanel({
               {e.description || tc("noDescription")}
             </span>
             {e.contract && (
-              <span className="text-[10px] text-fg-subtle shrink-0">
+              <span className="text-2xs text-fg-subtle shrink-0">
                 {e.contract}
               </span>
             )}

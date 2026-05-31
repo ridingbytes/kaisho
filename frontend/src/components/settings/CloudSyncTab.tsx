@@ -204,7 +204,7 @@ export function CloudSyncSection(): JSX.Element {
   return (
     <section>
       {!connected && (
-        <div className="mb-5 rounded-xl border border-cta/30 bg-cta/5 overflow-hidden">
+        <div className="mb-5 rounded-lg border border-cta/30 bg-cta/5 overflow-hidden">
           <div className="px-4 py-3">
             <p className="text-sm font-semibold text-fg-strong mb-1">
               {t("unlockCloudSync")}
@@ -227,9 +227,9 @@ export function CloudSyncSection(): JSX.Element {
       )}
 
       {connected ? (
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
+            <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
               {t("connection")}
             </p>
             <div className="flex items-center gap-2 mb-2">
@@ -238,7 +238,7 @@ export function CloudSyncSection(): JSX.Element {
                 {t("connected")}
               </span>
               {status?.plan && (
-                <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-raised text-fg-muted border border-border-subtle">
+                <span className="ml-2 px-2 py-0.5 rounded text-2xs font-semibold bg-surface-raised text-fg-muted border border-border-subtle">
                   {planLabel(status.plan)}
                 </span>
               )}
@@ -265,7 +265,7 @@ export function CloudSyncSection(): JSX.Element {
                 })}
               </p>
             )}
-            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-fg-muted">
+            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-fg-muted">
               <dt>{t("lastPull")}</dt>
               <dd className="text-fg">
                 {status?.last_pull_at
@@ -298,7 +298,7 @@ export function CloudSyncSection(): JSX.Element {
               <p className="text-xs font-medium text-fg">
                 {t("useKaishoAi")}
               </p>
-              <p className="text-[10px] text-fg-muted mt-1 leading-relaxed">
+              <p className="text-2xs text-fg-muted mt-1 leading-relaxed">
                 {t("useKaishoAiHint")}
               </p>
               <button
@@ -315,7 +315,7 @@ export function CloudSyncSection(): JSX.Element {
                   }, 100);
                 }}
                 className={[
-                  "mt-2 text-[10px] text-cta hover:underline",
+                  "mt-2 text-2xs text-cta hover:underline",
                 ].join(" ")}
               >
                 {t("runOnboard")}
@@ -326,7 +326,7 @@ export function CloudSyncSection(): JSX.Element {
           {/* AI token usage meter */}
           {planHasAi(status?.plan) && aiUsage && (
             <div className="px-4 py-3 border-b border-border-subtle">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
+              <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
                 {t("aiUsage")} ({aiUsage.month || "---"})
               </p>
               <div className="flex items-center gap-3">
@@ -351,7 +351,7 @@ export function CloudSyncSection(): JSX.Element {
                     }}
                   />
                 </div>
-                <span className="text-[10px] text-fg-muted tabular-nums whitespace-nowrap">
+                <span className="text-2xs text-fg-muted tabular-nums whitespace-nowrap">
                   {(
                     aiUsage.total_tokens / 1000
                   ).toFixed(1)}K
@@ -359,7 +359,7 @@ export function CloudSyncSection(): JSX.Element {
                   {(aiUsage.cap / 1000).toFixed(0)}K
                 </span>
               </div>
-              <p className="text-[10px] text-fg-subtle mt-1">
+              <p className="text-2xs text-fg-subtle mt-1">
                 {t("requestsThisMonth", {
                   count: aiUsage.request_count,
                 })}
@@ -368,10 +368,10 @@ export function CloudSyncSection(): JSX.Element {
           )}
 
           <div className="px-4 py-3 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-1">
+            <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-1">
               {t("applyKaishoModelsTitle")}
             </p>
-            <p className="text-[10px] text-fg-subtle mb-2">
+            <p className="text-2xs text-fg-subtle mb-2">
               {t("applyKaishoModelsHint")}
             </p>
             <ConfirmPopover
@@ -415,12 +415,12 @@ export function CloudSyncSection(): JSX.Element {
           </div>
         </div>
       ) : (
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-1">
+            <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-1">
               {t("connect")}
             </p>
-            <p className="text-[10px] text-fg-subtle mb-3">
+            <p className="text-2xs text-fg-subtle mb-3">
               {t("apiKeyHint")}
             </p>
             <div className="flex flex-col gap-2">
@@ -502,7 +502,7 @@ export function CloudSyncSection(): JSX.Element {
           {err}
         </p>
       )}
-      <p className="mt-2 text-[10px] text-fg-subtle">
+      <p className="mt-2 text-2xs text-fg-subtle">
         {t("cloudSyncOptionalHint")}
       </p>
     </section>

@@ -91,7 +91,7 @@ export function ConfirmPopover({
             "whitespace-nowrap",
           ].join(" ")}
         >
-          <span className="text-[10px] text-fg">
+          <span className="text-2xs text-fg">
             {resolvedLabel}
           </span>
           <button

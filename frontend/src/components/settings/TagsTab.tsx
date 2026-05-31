@@ -361,7 +361,7 @@ function TaskStateRow({
         }}
       />
       {state.done && (
-        <span className="text-[10px] font-semibold uppercase text-fg-muted bg-surface-raised px-1.5 py-0.5 rounded shrink-0">
+        <span className="text-2xs font-semibold uppercase text-fg-muted bg-surface-raised px-1.5 py-0.5 rounded shrink-0">
           done
         </span>
       )}
@@ -447,7 +447,7 @@ function AddTaskStateForm({
         placeholder="Label"
         className={inputCls + " flex-1 text-sm"}
       />
-      <label className="flex items-center gap-1 text-[11px] text-fg-muted shrink-0">
+      <label className="flex items-center gap-1 text-xs text-fg-muted shrink-0">
         <input
           type="checkbox"
           checked={done}
@@ -555,7 +555,7 @@ function TaskStatesSection({
           <Plus size={12} />
         </button>
       </div>
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         <SortableList
           items={states}
           getId={(s) => s.name}
@@ -605,7 +605,7 @@ function TagsSection({ tags }: { tags: ConfigTag[] }) {
           <Plus size={12} />
         </button>
       </div>
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         {tags.length === 0 && !adding && (
           <p className="px-4 py-3 text-xs text-fg-muted">
             {t("noTagsDefined")}
@@ -796,7 +796,7 @@ function StringListSection({
           <Plus size={12} />
         </button>
       </div>
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         {items.length === 0 && !adding && (
           <p className="px-4 py-3 text-xs text-fg-muted">
             {t("noEntriesDefined")}

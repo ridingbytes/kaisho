@@ -39,7 +39,7 @@ export function LinkOverlay({
       <div
         className={[
           "fixed z-50 inset-4 md:inset-12 lg:inset-16",
-          "flex flex-col rounded-xl overflow-hidden",
+          "flex flex-col rounded-lg overflow-hidden",
           "bg-surface-card border border-border",
           "shadow-[var(--shadow-card-drag)]",
         ].join(" ")}

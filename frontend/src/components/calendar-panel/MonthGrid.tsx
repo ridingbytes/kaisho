@@ -46,7 +46,7 @@ export function MonthGrid({ anchor, events, onSelect }: Props) {
                   "2.5rem repeat(7, minmax(0, 1fr))",
               }}
             >
-              <div className="flex items-start justify-center pt-1.5 text-[10px] text-fg-muted border-r border-border">
+              <div className="flex items-start justify-center pt-1.5 text-2xs text-fg-muted border-r border-border">
                 {t("weekShort")} {isoWeek(rowDays[0])}
               </div>
               {rowDays.map((d) => {
@@ -89,7 +89,7 @@ function WeekdayHeader() {
       {order.map((idx) => (
         <div
           key={idx}
-          className="py-1.5 text-[10px] text-fg-muted text-center uppercase tracking-wide"
+          className="py-1.5 text-2xs text-fg-muted text-center uppercase tracking-wide"
         >
           {t(`day.${idx}`)}
         </div>
@@ -120,7 +120,7 @@ function DayCell({
     >
       <div
         className={
-          "text-[11px] leading-none "
+          "text-xs leading-none "
           + (isToday
             ? "text-cta font-semibold"
             : inMonth
@@ -139,7 +139,7 @@ function DayCell({
         <button
           type="button"
           onClick={() => onSelect?.(events[visible.length])}
-          className="text-[10px] text-fg-muted hover:text-fg text-left truncate"
+          className="text-2xs text-fg-muted hover:text-fg text-left truncate"
         >
           +{overflow} more
         </button>
@@ -162,7 +162,7 @@ function MiniTile({
       onClick={onClick}
       title={event.title}
       className={
-        "px-1 py-0.5 rounded text-[10px] text-left "
+        "px-1 py-0.5 rounded text-2xs text-left "
         + "truncate cursor-pointer hover:brightness-95 "
         + `${color.bg} ${color.text}`
       }

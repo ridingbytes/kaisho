@@ -240,10 +240,10 @@ export function ShortcutsSection(): JSX.Element {
   ) {
     return (
       <>
-        <h3 className="text-[10px] font-semibold tracking-wider uppercase text-fg-muted mt-4 mb-1.5">
+        <h3 className="text-2xs font-semibold tracking-wider uppercase text-fg-muted mt-4 mb-1.5">
           {title}
         </h3>
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
           {rows.map((row, i) => {
             const current = currentFor(row.key);
             const isDefault =
@@ -270,7 +270,7 @@ export function ShortcutsSection(): JSX.Element {
                     onClick={() =>
                       resetOne(row.key)
                     }
-                    className="text-[10px] text-fg-subtle hover:text-fg transition-colors shrink-0"
+                    className="text-2xs text-fg-subtle hover:text-fg transition-colors shrink-0"
                     title={t("resetThisShortcut")}
                   >
                     reset
@@ -293,7 +293,7 @@ export function ShortcutsSection(): JSX.Element {
                     className="flex items-center gap-2 group/edit"
                     title={t("clickToReassign")}
                   >
-                    <kbd className="text-[10px] font-mono text-fg border border-border rounded px-1.5 py-0.5 group-hover/edit:border-cta group-hover/edit:text-cta transition-colors">
+                    <kbd className="text-2xs font-mono text-fg border border-border rounded px-1.5 py-0.5 group-hover/edit:border-cta group-hover/edit:text-cta transition-colors">
                       {current
                         ? displayShortcut(current)
                         : "\u2014"}
@@ -340,7 +340,7 @@ export function ShortcutsSection(): JSX.Element {
 
       {renderGroup(t("navigate"), SHORTCUT_ROWS)}
       {renderGroup(t("actions"), ACTION_ROWS)}
-      <p className="mt-2 text-[10px] text-fg-subtle">
+      <p className="mt-2 text-2xs text-fg-subtle">
         {t("shortcutsHint")}
       </p>
     </section>

@@ -247,7 +247,7 @@ export function TokenFilterInput({
             : undefined}
           className={[
             "flex-1 min-w-[80px] bg-transparent",
-            "text-[11px] text-fg",
+            "text-xs text-fg",
             "placeholder:text-fg-subtle",
             "focus:outline-none",
             inputClassName ?? "",
@@ -276,7 +276,7 @@ function ChipPill({
     <span
       className={[
         "inline-flex items-center gap-1 shrink-0",
-        "px-1.5 py-0.5 rounded text-[10px]",
+        "px-1.5 py-0.5 rounded text-2xs",
         "bg-cta-muted text-cta-hover",
         "font-medium",
       ].join(" ")}

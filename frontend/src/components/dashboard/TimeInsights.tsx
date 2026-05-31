@@ -158,7 +158,7 @@ function EntryRow({ entry }: { entry: TimeInsightsEntry }) {
             setView("customers", entry.customer)
           }
           className={[
-            "px-1.5 py-0.5 rounded text-[10px]",
+            "px-1.5 py-0.5 rounded text-2xs",
             "font-semibold uppercase tracking-wider",
             "bg-cta-muted text-cta-hover",
             "hover:bg-cta/20 transition-colors shrink-0",
@@ -167,7 +167,7 @@ function EntryRow({ entry }: { entry: TimeInsightsEntry }) {
           {entry.customer}
         </button>
       ) : (
-        <span className="px-1.5 py-0.5 text-[10px] text-fg-subtle italic shrink-0">
+        <span className="px-1.5 py-0.5 text-2xs text-fg-subtle italic shrink-0">
           {tc("noCustomer")}
         </span>
       )}
@@ -180,7 +180,7 @@ function EntryRow({ entry }: { entry: TimeInsightsEntry }) {
       {entry.contract && (
         <span
           className={[
-            "px-1 py-0.5 rounded text-[9px] shrink-0",
+            "px-1 py-0.5 rounded text-2xs shrink-0",
             isInv
               ? "bg-emerald-500/10 text-emerald-600"
               : "bg-surface-overlay text-fg-muted",
@@ -274,7 +274,7 @@ function CustomerBar({
           {formatHours(cust.total_min)}
         </span>
         {billPct > 0 && billPct < 100 && (
-          <span className="text-[9px] text-emerald-600 shrink-0">
+          <span className="text-2xs text-emerald-600 shrink-0">
             {billPct}%
           </span>
         )}
@@ -289,7 +289,7 @@ function CustomerBar({
               onClick={() =>
                 setLimit((l) => l + DRILLDOWN_PAGE)
               }
-              className="text-[10px] text-cta hover:underline py-1"
+              className="text-2xs text-cta hover:underline py-1"
             >
               {tc("showMore", {
                 count: Math.min(
@@ -345,7 +345,7 @@ function BillableSplit({
   return (
     <div>
       <div className="flex items-center gap-2 mb-1.5">
-        <span className="text-[10px] text-fg-muted uppercase tracking-wider w-16 shrink-0">
+        <span className="text-2xs text-fg-muted uppercase tracking-wider w-16 shrink-0">
           {tc("billable")}
         </span>
         <div
@@ -394,13 +394,13 @@ function BillableSplit({
           {formatHours(total)}
         </span>
       </div>
-      <div className="flex gap-3 text-[10px] text-fg-muted mb-2">
+      <div className="flex gap-3 text-2xs text-fg-muted mb-2">
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-sm bg-emerald-500" />
+          <span className="w-2 h-2 rounded bg-emerald-500" />
           {tc("billable")} {formatHours(billableMin)}
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-sm bg-amber-400" />
+          <span className="w-2 h-2 rounded bg-amber-400" />
           {tc("nonBillable")} {formatHours(nonBillableMin)}
         </span>
       </div>
@@ -461,7 +461,7 @@ export function TimeInsights() {
   return (
     <div
       className={[
-        "rounded-xl bg-surface-card",
+        "rounded-lg bg-surface-card",
         "border border-border-subtle p-5",
       ].join(" ")}
     >
@@ -489,7 +489,7 @@ export function TimeInsights() {
                 setSelectedDay(null);
               }}
               className={[
-                "px-2 py-0.5 text-[10px] font-medium",
+                "px-2 py-0.5 text-2xs font-medium",
                 "transition-colors",
                 period === p.value
                   ? "bg-cta text-white"
@@ -506,7 +506,7 @@ export function TimeInsights() {
       <div className="mb-4">
         <h3
           className={[
-            "text-[10px] font-semibold uppercase",
+            "text-2xs font-semibold uppercase",
             "tracking-wider text-fg-muted mb-2",
           ].join(" ")}
         >
@@ -529,7 +529,7 @@ export function TimeInsights() {
         />
         {selectedDay && dayEntries.length > 0 && (
           <div className="mt-2 p-2 rounded-lg bg-surface-overlay border border-border-subtle">
-            <p className="text-[10px] text-fg-muted mb-1">
+            <p className="text-2xs text-fg-muted mb-1">
               {formatDate(selectedDay)} —{" "}
               {formatHours(
                 dayEntries.reduce(
@@ -552,7 +552,7 @@ export function TimeInsights() {
       <div className="mb-4">
         <h3
           className={[
-            "text-[10px] font-semibold uppercase",
+            "text-2xs font-semibold uppercase",
             "tracking-wider text-fg-muted mb-2",
           ].join(" ")}
         >
@@ -569,7 +569,7 @@ export function TimeInsights() {
       <div>
         <h3
           className={[
-            "text-[10px] font-semibold uppercase",
+            "text-2xs font-semibold uppercase",
             "tracking-wider text-fg-muted mb-2",
           ].join(" ")}
         >

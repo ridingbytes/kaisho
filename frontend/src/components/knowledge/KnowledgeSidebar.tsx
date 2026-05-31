@@ -336,7 +336,7 @@ export function KnowledgeSidebar({
                       </span>
                       {dirOf(f.path) && (
                         <span
-                          className="shrink-0 max-w-[40%] truncate text-[10px] text-fg-subtle font-normal"
+                          className="shrink-0 max-w-[40%] truncate text-2xs text-fg-subtle font-normal"
                           dir="rtl"
                         >
                           {dirOf(f.path)}
@@ -348,7 +348,7 @@ export function KnowledgeSidebar({
                         date={new Date(
                           f.mtime * 1000,
                         ).toISOString()}
-                        className="shrink-0 text-[10px] text-fg-subtle tabular-nums"
+                        className="shrink-0 text-2xs text-fg-subtle tabular-nums"
                       />
                     )}
                   </div>
@@ -737,7 +737,7 @@ function SearchResultsList({
                 <p className="text-xs text-fg-strong truncate">
                   {g.label}/{g.path.split("/").pop()}
                 </p>
-                <p className="text-[10px] text-fg-muted mt-0.5">
+                <p className="text-2xs text-fg-muted mt-0.5">
                   {t("matches", { count: g.count })}
                 </p>
               </button>
@@ -758,7 +758,7 @@ function SearchResultsList({
                       "transition-colors"
                     }
                   >
-                    <p className="text-[10px] text-fg-muted">
+                    <p className="text-2xs text-fg-muted">
                       {t("line", { n: r.line_number })}
                     </p>
                     <p className="text-xs text-fg truncate mt-0.5">

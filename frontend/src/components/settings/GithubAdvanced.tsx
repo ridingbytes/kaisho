@@ -68,7 +68,7 @@ export function GithubAdvanced(): JSX.Element {
 
   return (
     <div className="mt-3 border-t border-border-subtle pt-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
+      <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
         {t("integrations.github.viewOptions")}
       </p>
       <label className="flex items-center gap-3 cursor-pointer mb-3">
@@ -77,7 +77,7 @@ export function GithubAdvanced(): JSX.Element {
           <span className="text-xs text-fg-strong">
             {t("hideGithubNav")}
           </span>
-          <span className="text-[10px] text-fg-subtle">
+          <span className="text-2xs text-fg-subtle">
             {t("hideGithubNavHint")}
           </span>
         </span>
@@ -86,13 +86,13 @@ export function GithubAdvanced(): JSX.Element {
         <button
           type="button"
           onClick={() => setShowEnterprise(true)}
-          className="text-[11px] text-fg-subtle hover:text-fg-muted underline"
+          className="text-xs text-fg-subtle hover:text-fg-muted underline"
         >
           {t("githubEnterprise")}
         </button>
       ) : (
         <div>
-          <p className="text-[10px] text-fg-subtle mb-1.5">
+          <p className="text-2xs text-fg-subtle mb-1.5">
             {t("githubEnterpriseHint")}
           </p>
           <div className="flex items-center gap-2">

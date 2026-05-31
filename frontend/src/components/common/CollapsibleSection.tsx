@@ -33,7 +33,7 @@ export function CollapsibleSection({
       <button
         onClick={() => setOpen((v) => !v)}
         className={[
-          "flex items-center gap-1 text-[10px]",
+          "flex items-center gap-1 text-2xs",
           "font-semibold uppercase tracking-wider",
           "text-fg-muted hover:text-fg",
           "transition-colors",

@@ -34,7 +34,7 @@ export function RecentSection({
   if (entries.length === 0) {
     return (
       <div className="px-4 py-3">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-1">
+        <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-1">
           {t("recentEntries")}
         </p>
         <p className="text-xs text-fg-subtle">
@@ -46,7 +46,7 @@ export function RecentSection({
 
   return (
     <div className="px-4 py-3 flex-1 overflow-y-auto min-h-0">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
+      <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
         {t("recentEntries")}
       </p>
       <div className="flex flex-col gap-1.5">

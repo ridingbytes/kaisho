@@ -188,7 +188,7 @@ export function CustomerEditForm({
         >
           <span
             className={
-              "text-[10px] text-fg-muted "
+              "text-2xs text-fg-muted "
               + "uppercase tracking-wider"
             }
           >
@@ -210,7 +210,7 @@ export function CustomerEditForm({
         >
           <span
             className={
-              "text-[10px] text-fg-muted "
+              "text-2xs text-fg-muted "
               + "uppercase tracking-wider"
             }
           >

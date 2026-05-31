@@ -79,7 +79,7 @@ export function BookForm({ onClose }: BookFormProps) {
       }
     >
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-fg-muted uppercase tracking-wider">
+        <label className="text-2xs text-fg-muted uppercase tracking-wider">
           {tc("duration")} *
         </label>
         <input
@@ -91,7 +91,7 @@ export function BookForm({ onClose }: BookFormProps) {
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-fg-muted uppercase tracking-wider">
+        <label className="text-2xs text-fg-muted uppercase tracking-wider">
           {tc("customer")}
         </label>
         <CustomerAutocomplete
@@ -106,7 +106,7 @@ export function BookForm({ onClose }: BookFormProps) {
       </div>
       {contracts.length > 0 && (
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] text-fg-muted uppercase tracking-wider">
+          <label className="text-2xs text-fg-muted uppercase tracking-wider">
             {tc("contract")}
           </label>
           <select
@@ -127,7 +127,7 @@ export function BookForm({ onClose }: BookFormProps) {
         </div>
       )}
       <div className="flex flex-col gap-1 flex-1 min-w-40">
-        <label className="text-[10px] text-fg-muted uppercase tracking-wider">
+        <label className="text-2xs text-fg-muted uppercase tracking-wider">
           {tc("description")}
         </label>
         <input
@@ -140,7 +140,7 @@ export function BookForm({ onClose }: BookFormProps) {
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-fg-muted uppercase tracking-wider">
+        <label className="text-2xs text-fg-muted uppercase tracking-wider">
           {tc("task")}
         </label>
         <TaskAutocomplete

@@ -198,7 +198,7 @@ function ActiveTimerWidget({
     <div
       className={[
         "flex flex-col items-center gap-3 p-6",
-        "rounded-xl bg-surface-raised",
+        "rounded-lg bg-surface-raised",
         "border border-border-subtle",
       ].join(" ")}
     >
@@ -444,7 +444,7 @@ function CloudNudgeBanner({
 
   return (
     <div className="flex items-center gap-3 px-4 py-1.5 bg-cta/10 border-b border-cta/20 shrink-0">
-      <p className="flex-1 text-[11px] text-fg">
+      <p className="flex-1 text-xs text-fg">
         Companion and Pro add hosted sync, the MCP gateway,
         mobile and scheduled AI runs.{" "}
         <button
@@ -586,7 +586,7 @@ function UpdateBanner() {
   return (
     <div className="flex items-center gap-3 px-4 py-1.5 bg-green-500/10 border-b border-green-500/20 shrink-0">
       {installing ? (
-        <p className="flex-1 flex items-center gap-2 text-[11px] text-fg">
+        <p className="flex-1 flex items-center gap-2 text-xs text-fg">
           <RefreshCw
             size={11}
             className="animate-spin text-green-600"
@@ -595,13 +595,13 @@ function UpdateBanner() {
         </p>
       ) : (
         <>
-          <p className="flex-1 text-[11px] text-fg">
+          <p className="flex-1 text-xs text-fg">
             Kaisho <strong>v{version}</strong> is
             available.
           </p>
           <button
             onClick={handleInstall}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium text-green-700 bg-green-500/20 hover:bg-green-500/30 transition-colors"
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium text-green-700 bg-green-500/20 hover:bg-green-500/30 transition-colors"
           >
             <Download size={11} />
             Install &amp; restart
@@ -935,7 +935,7 @@ function AppShell() {
           {appTitle}
         </button>
         {versionData?.version && (
-          <span className="text-[9px] text-fg-subtle font-mono hidden sm:block">
+          <span className="text-2xs text-fg-subtle font-mono hidden sm:block">
             v{versionData.version}
           </span>
         )}
@@ -959,7 +959,7 @@ function AppShell() {
                 }}
                 className={[
                   "hidden sm:flex items-center gap-1.5",
-                  "px-2 py-1 rounded-lg text-[10px]",
+                  "px-2 py-1 rounded-lg text-2xs",
                   "font-semibold tracking-wide uppercase",
                   "bg-cta/10 text-cta border border-cta/20",
                   "hover:bg-cta/20 transition-colors",
@@ -1036,7 +1036,7 @@ function AppShell() {
               onChange={(e) => setLanguage(e.target.value)}
               title="Language"
               className={
-                "text-[10px] font-semibold bg-transparent " +
+                "text-2xs font-semibold bg-transparent " +
                 "border-none outline-none cursor-pointer " +
                 "text-fg hover:text-fg-strong"
               }
@@ -1061,7 +1061,7 @@ function AppShell() {
                     {currentUser.name || "User"}
                   </span>
                   {currentUser.profile && (
-                    <span className="text-[10px] text-fg-muted font-mono">
+                    <span className="text-2xs text-fg-muted font-mono">
                       {currentUser.profile}
                     </span>
                   )}
@@ -1076,7 +1076,7 @@ function AppShell() {
               {userMenuOpen && (
                 <div className="absolute top-full right-0 mt-1 w-48 rounded-lg bg-surface-overlay border border-border shadow-lg p-2 flex flex-col gap-1 z-50">
                   {/* Profiles */}
-                  <p className="text-[9px] text-fg-muted px-1 uppercase tracking-wider">
+                  <p className="text-2xs text-fg-muted px-1 uppercase tracking-wider">
                     Profile
                   </p>
                   {(currentUser.profiles ?? []).map((p: string) => (

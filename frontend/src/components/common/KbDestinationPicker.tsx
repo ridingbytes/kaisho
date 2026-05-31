@@ -142,7 +142,7 @@ export function KbDestinationPicker({
                 </button>
               ))}
               {isNewFolder && (
-                <div className="block w-full text-left px-2 py-1 text-[11px] text-fg-muted border-t border-border italic">
+                <div className="block w-full text-left px-2 py-1 text-xs text-fg-muted border-t border-border italic">
                   Create new folder: {folder.trim()}
                 </div>
               )}

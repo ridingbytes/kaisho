@@ -68,7 +68,7 @@ export function CustomerCard({ customer: c }: Props) {
   return (
     <div
       className={[
-        "flex flex-col gap-3 p-5 rounded-xl",
+        "flex flex-col gap-3 p-5 rounded-lg",
         "border transition-colors",
         "bg-surface-card hover:bg-surface-raised",
         isArchived
@@ -124,7 +124,7 @@ export function CustomerCard({ customer: c }: Props) {
                   rel="noreferrer"
                   className={
                     "inline-flex items-center "
-                    + "gap-1 text-[10px] "
+                    + "gap-1 text-2xs "
                     + "text-fg-muted "
                     + "hover:text-cta mt-0.5 "
                     + "transition-colors"
@@ -147,7 +147,7 @@ export function CustomerCard({ customer: c }: Props) {
                 <span
                   className={
                     "px-1.5 py-0.5 rounded "
-                    + "text-[9px] font-bold "
+                    + "text-2xs font-bold "
                     + "uppercase tracking-wider "
                     + "bg-surface-overlay "
                     + "text-fg"
@@ -159,7 +159,7 @@ export function CustomerCard({ customer: c }: Props) {
               <span
                 className={[
                   "px-1.5 py-0.5 rounded",
-                  "text-[9px] font-bold uppercase",
+                  "text-2xs font-bold uppercase",
                   "tracking-wider",
                   isArchived
                     ? "bg-surface-raised text-fg-muted"

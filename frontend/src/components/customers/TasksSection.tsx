@@ -44,7 +44,7 @@ export function TasksSection({
         {tasks.length === 0 ? (
           <p
             className={
-              "text-[10px] text-fg-muted py-1"
+              "text-2xs text-fg-muted py-1"
             }
           >
             {t("noTasks")}
@@ -79,7 +79,7 @@ export function TasksSection({
               >
                 <span
                   className={[
-                    "px-1 py-0.5 rounded text-[9px]",
+                    "px-1 py-0.5 rounded text-2xs",
                     "font-bold uppercase",
                     "tracking-wider shrink-0",
                     t.status === "DONE"
@@ -116,7 +116,7 @@ export function TasksSection({
                 }
                 className={[
                   "w-full text-center py-1.5",
-                  "text-[10px] text-fg-muted",
+                  "text-2xs text-fg-muted",
                   "hover:text-cta transition-colors",
                 ].join(" ")}
               >

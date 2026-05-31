@@ -618,7 +618,7 @@ export function CommandBar({ open, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl bg-surface-card border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden"
+        className="w-full max-w-xl bg-surface-card border border-border rounded-lg shadow-2xl flex flex-col overflow-hidden"
         style={{ maxHeight: "50vh" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -634,7 +634,7 @@ export function CommandBar({ open, onClose }: Props) {
                   <span className="text-fg">
                     {h.input}
                   </span>
-                  <span className="text-[9px] text-fg-subtle ml-auto">
+                  <span className="text-2xs text-fg-subtle ml-auto">
                     {h.ts}
                   </span>
                 </div>
@@ -654,7 +654,7 @@ export function CommandBar({ open, onClose }: Props) {
             {loading && (
               <div className="flex items-center gap-2 pl-4 py-1 text-fg-subtle">
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-cta animate-pulse" />
-                <span className="text-[10px] italic">
+                <span className="text-2xs italic">
                   Thinking...
                 </span>
               </div>
@@ -704,7 +704,7 @@ export function CommandBar({ open, onClose }: Props) {
               className="flex-1 bg-transparent text-sm font-mono text-fg-strong placeholder-fg-subtle focus:outline-none"
               autoFocus
             />
-            <span className="text-[9px] text-fg-subtle whitespace-nowrap shrink-0">
+            <span className="text-2xs text-fg-subtle whitespace-nowrap shrink-0">
               Tab &#x21e5; &nbsp; ESC &#x2715;
             </span>
             <button

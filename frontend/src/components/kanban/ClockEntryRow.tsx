@@ -73,13 +73,13 @@ export function ClockEntryRow({
 
   if (editing) {
     return (
-      <li className="flex items-center gap-1 text-[10px]">
+      <li className="flex items-center gap-1 text-2xs">
         <input
           autoFocus
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-1 min-w-0 px-1 py-0.5 rounded text-[10px] bg-surface-raised border border-border text-fg-strong focus:outline-none focus:border-cta"
+          className="flex-1 min-w-0 px-1 py-0.5 rounded text-2xs bg-surface-raised border border-border text-fg-strong focus:outline-none focus:border-cta"
         />
         <input
           type="number"
@@ -88,7 +88,7 @@ export function ClockEntryRow({
           value={hours}
           onChange={(e) => setHours(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-14 px-1 py-0.5 rounded text-[10px] tabular-nums bg-surface-raised border border-border text-fg-strong focus:outline-none focus:border-cta"
+          className="w-14 px-1 py-0.5 rounded text-2xs tabular-nums bg-surface-raised border border-border text-fg-strong focus:outline-none focus:border-cta"
         />
         <button
           onClick={() => setEditing(false)}
@@ -108,7 +108,7 @@ export function ClockEntryRow({
   }
 
   return (
-    <li className="flex items-center gap-1.5 text-[10px] group/entry">
+    <li className="flex items-center gap-1.5 text-2xs group/entry">
       <span
         className="font-mono text-fg-muted cursor-pointer hover:text-cta"
         onClick={() =>

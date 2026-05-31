@@ -137,7 +137,7 @@ export function EntryRow({
             setView("customers", entry.customer)
           }
           className={
-            "px-1.5 py-0.5 rounded text-[10px] " +
+            "px-1.5 py-0.5 rounded text-2xs " +
             "font-semibold tracking-wider uppercase " +
             "bg-cta-muted text-cta-hover " +
             "hover:bg-cta/20 transition-colors " +
@@ -155,7 +155,7 @@ export function EntryRow({
         {entry.contract && (
           <span
             className={[
-              "px-1.5 py-0.5 rounded text-[10px]",
+              "px-1.5 py-0.5 rounded text-2xs",
               "max-w-full truncate inline-block",
               "align-middle",
               isInv
@@ -179,7 +179,7 @@ export function EntryRow({
               setView("board", taskTitle ?? "")
             }
             className={
-              "px-1.5 py-0.5 rounded text-[10px] " +
+              "px-1.5 py-0.5 rounded text-2xs " +
               "font-medium bg-cta-muted text-cta " +
               "hover:bg-cta/20 transition-colors " +
               "max-w-full truncate inline-block " +
@@ -226,7 +226,7 @@ export function EntryRow({
             className={
               "inline-flex items-center gap-0.5 " +
               "mr-1.5 px-1 py-0.5 rounded " +
-              "text-[9px] font-semibold " +
+              "text-2xs font-semibold " +
               "bg-emerald-500/10 text-emerald-600"
             }
             title={tc("invoiced")}

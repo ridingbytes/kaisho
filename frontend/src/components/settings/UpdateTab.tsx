@@ -41,12 +41,12 @@ function VersionHistory(
   }
 
   return (
-    <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
+    <div className="bg-surface-card rounded-lg border border-border overflow-hidden mb-4">
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full px-4 py-3 flex items-center justify-between hover:bg-surface-raised transition-colors"
       >
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+        <span className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
           {t("versionHistory")}
           <span className="ml-2 text-fg-subtle normal-case font-normal">
             {t("versionHistoryCount", {
@@ -87,7 +87,7 @@ function VersionHistory(
                   <span className="text-xs font-mono font-semibold text-fg">
                     v{entry.version}
                   </span>
-                  <span className="text-[11px] text-fg-subtle">
+                  <span className="text-xs text-fg-subtle">
                     {t("more", {
                       count: entry.items.length,
                     })}
@@ -267,9 +267,9 @@ export function UpdateSection(): JSX.Element {
   return (
     <section>
       {/* Current version */}
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden mb-4">
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
             {t("version")}
           </p>
           <div className="flex items-center gap-3">
@@ -278,7 +278,7 @@ export function UpdateSection(): JSX.Element {
             </span>
             <button
               onClick={openWhatsNew}
-              className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] text-cta hover:bg-surface-raised border border-border-subtle transition-colors"
+              className="flex items-center gap-1 px-2 py-0.5 rounded text-xs text-cta hover:bg-surface-raised border border-border-subtle transition-colors"
             >
               <Sparkles size={11} />
               {t("whatsNew")}
@@ -289,7 +289,7 @@ export function UpdateSection(): JSX.Element {
         {/* Changelog preview */}
         {entries.length > 0 && (
           <div className="px-4 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
+            <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
               {t("latestChanges")}
             </p>
             <ul className="space-y-1">
@@ -319,7 +319,7 @@ export function UpdateSection(): JSX.Element {
 
       {/* Update controls (Tauri only) */}
       {inTauri && (
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden mb-4">
           <div className="px-4 py-3 flex items-center gap-3 flex-wrap">
             <button
               onClick={handleCheckUpdate}
@@ -399,7 +399,7 @@ export function UpdateSection(): JSX.Element {
 
       {/* Non-Tauri: link to GitHub */}
       {!inTauri && (
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden mb-4">
           <div className="px-4 py-3">
             <p className="text-xs text-fg-muted mb-2">
               {t("browserModeHint")}

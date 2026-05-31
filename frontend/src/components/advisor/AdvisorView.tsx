@@ -97,7 +97,7 @@ export interface AdvisorMessage {
 function UserBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <div className="max-w-[70%] px-4 py-2.5 rounded-2xl rounded-tr-sm bg-cta text-white text-sm">
+      <div className="max-w-[70%] px-4 py-2.5 rounded-lg rounded-tr-sm bg-cta text-white text-sm">
         {text}
       </div>
     </div>
@@ -157,14 +157,14 @@ function AssistantBubble({
     <div className="flex justify-start mb-3">
       <div
         className={[
-          "max-w-[80%] px-4 py-2.5 rounded-2xl rounded-tl-sm",
+          "max-w-[80%] px-4 py-2.5 rounded-lg rounded-tl-sm",
           "bg-surface-card border border-border",
           thinking ? "text-sm text-fg-muted italic" : "",
         ].join(" ")}
       >
         {!thinking && meta && (
           <div className="flex items-center justify-between gap-2 mb-1">
-            <span className="text-[10px] text-fg-subtle font-mono">
+            <span className="text-2xs text-fg-subtle font-mono">
               {meta}
             </span>
             <CopyToInboxBtn text={text} />
@@ -560,7 +560,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
               const grp = INTEGRATION_PROMPTS[kind];
               return (
                 <div key={kind} className="space-y-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-subtle text-center">
+                  <p className="text-2xs font-semibold uppercase tracking-wider text-fg-subtle text-center">
                     {grp.label}
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center">
@@ -600,7 +600,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             <div
               className={[
                 "max-w-[80%] px-4 py-2.5",
-                "rounded-2xl rounded-tl-sm",
+                "rounded-lg rounded-tl-sm",
                 "bg-surface-card border border-border",
               ].join(" ")}
             >
@@ -680,7 +680,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
           onKeyDown={handleKeyDown}
           placeholder={t("askAnything")}
           className={[
-            "flex-1 px-3 py-2 rounded-xl resize-none",
+            "flex-1 px-3 py-2 rounded-lg resize-none",
             "bg-surface-raised border border-border text-sm text-fg-strong",
             "placeholder-fg-muted focus:outline-none focus:border-border-strong",
           ].join(" ")}
@@ -691,7 +691,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             onClick={stopRequest}
             className={[
               "flex items-center gap-1.5 px-4 py-2",
-              "rounded-xl bg-red-500 text-white",
+              "rounded-lg bg-red-500 text-white",
               "text-sm hover:bg-red-600",
               "transition-colors shrink-0",
             ].join(" ")}
@@ -705,7 +705,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             disabled={!input.trim()}
             className={[
               "flex items-center gap-1.5 px-4 py-2",
-              "rounded-xl bg-cta text-white text-sm",
+              "rounded-lg bg-cta text-white text-sm",
               "hover:bg-cta-hover transition-colors",
               "disabled:opacity-50 shrink-0",
             ].join(" ")}

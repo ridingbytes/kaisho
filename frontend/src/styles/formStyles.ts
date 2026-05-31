@@ -43,7 +43,7 @@ export const smallInputCls = [
 /** Bordered action button (e.g. "Add contract"). */
 export const actionBtnCls = [
   "inline-flex items-center gap-1",
-  "px-2.5 py-1 rounded text-[10px]",
+  "px-2.5 py-1 rounded text-2xs",
   "font-medium border border-border",
   "text-fg-muted",
   "hover:border-cta hover:text-cta",

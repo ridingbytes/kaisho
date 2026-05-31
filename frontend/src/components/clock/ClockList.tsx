@@ -320,13 +320,13 @@ function SlotRow({
 
   return (
     <div className="group/slot flex items-center gap-2 pl-3 py-0.5">
-      <span className="text-[10px] font-mono text-fg-muted tabular-nums">
+      <span className="text-2xs font-mono text-fg-muted tabular-nums">
         {timeLabel(entry.start)}–{timeLabel(entry.end)}
       </span>
       {entry.contract && (
         <span
           className={[
-            "text-[9px] px-1 py-0.5 rounded truncate max-w-[80px]",
+            "text-2xs px-1 py-0.5 rounded truncate max-w-[80px]",
             isInvoiced(invoicedSet, entry.customer, entry.contract)
               ? "bg-emerald-500/10 text-emerald-600"
               : "bg-surface-overlay text-fg-muted",
@@ -342,7 +342,7 @@ function SlotRow({
             "board",
             taskTitleById(tasks, entry.task_id) || ""
           )}
-          className="text-[9px] px-1 py-0.5 rounded bg-cta-muted text-cta/70 truncate max-w-[80px] hover:bg-cta/20 transition-colors"
+          className="text-2xs px-1 py-0.5 rounded bg-cta-muted text-cta/70 truncate max-w-[80px] hover:bg-cta/20 transition-colors"
           title={taskTitleById(tasks, entry.task_id) || entry.task_id}
         >
           {taskTitleById(tasks, entry.task_id) || entry.task_id}
@@ -354,7 +354,7 @@ function SlotRow({
           title={tc("invoiced")}
         />
       )}
-      <span className={`text-[10px] text-fg-muted tabular-nums ${entry.invoiced ? "" : "ml-auto"}`}>
+      <span className={`text-2xs text-fg-muted tabular-nums ${entry.invoiced ? "" : "ml-auto"}`}>
         {entry.duration_minutes !== null
           ? formatDuration(entry.duration_minutes)
           : "…"}
@@ -470,12 +470,12 @@ function TaskGroupRow({
             {isActive && (
               <span className="inline-flex items-center gap-1 px-1.5 py-px rounded-full bg-green-500/10">
                 <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[9px] font-semibold tracking-wider uppercase text-green-600">
+                <span className="text-2xs font-semibold tracking-wider uppercase text-green-600">
                   {tc("active")}
                 </span>
               </span>
             )}
-            <p className="text-[11px] text-fg-muted truncate">
+            <p className="text-xs text-fg-muted truncate">
               {group.description}
             </p>
           </div>
@@ -502,7 +502,7 @@ function TaskGroupRow({
               <RotateCw size={10} />
             </button>
           )}
-          <span className="text-[11px] font-semibold text-fg-muted tabular-nums ml-1">
+          <span className="text-xs font-semibold text-fg-muted tabular-nums ml-1">
             {formatDuration(group.totalMinutes)}
           </span>
         </div>
@@ -589,10 +589,10 @@ export function ClockList({
         />
       ))}
       <div className="flex justify-between pt-2 mt-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+        <span className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
           {t("totalToday")}
         </span>
-        <span className="text-[11px] font-semibold text-fg tabular-nums">
+        <span className="text-xs font-semibold text-fg tabular-nums">
           {totalH}h {totalM}m
         </span>
       </div>

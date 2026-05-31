@@ -266,7 +266,7 @@ function NoteRow({
             className={[
               "inline-flex items-center",
               "px-1.5 py-0.5 rounded",
-              "text-[10px] font-semibold",
+              "text-2xs font-semibold",
               "tracking-wider uppercase",
               "bg-cta-muted text-cta-hover",
               "cursor-pointer hover:bg-cta/20",
@@ -289,7 +289,7 @@ function NoteRow({
               className={[
                 "inline-flex items-center",
                 "px-1.5 py-0.5 rounded",
-                "text-[10px] font-medium",
+                "text-2xs font-medium",
                 "bg-cta-muted text-cta",
                 "cursor-pointer hover:bg-cta/20",
                 "shrink-0 max-w-[10rem] truncate",
@@ -299,7 +299,7 @@ function NoteRow({
               {task.title}
             </span>
           ) : (
-            <span className="text-[10px] text-fg-muted italic shrink-0">
+            <span className="text-2xs text-fg-muted italic shrink-0">
               {t("deleted")}
             </span>
           );
@@ -325,7 +325,7 @@ function NoteRow({
                 e.stopPropagation();
                 onTagClick(tagName);
               }}
-              className="px-1.5 py-0.5 rounded text-[10px] font-semibold shrink-0 hover:opacity-80 transition-opacity"
+              className="px-1.5 py-0.5 rounded text-2xs font-semibold shrink-0 hover:opacity-80 transition-opacity"
               style={tagBadgeStyle(def?.color)}
               title={`Filter by ${tagName}`}
             >
@@ -373,7 +373,7 @@ function NoteRow({
                   e.stopPropagation();
                   setMoving(false);
                 }}
-                className="w-full text-left px-2 py-1 rounded text-[10px] text-fg-muted hover:text-fg-strong"
+                className="w-full text-left px-2 py-1 rounded text-2xs text-fg-muted hover:text-fg-strong"
               >
                 Cancel
               </button>
@@ -449,7 +449,7 @@ function NoteRow({
                 className={`${smallFieldCls} w-full resize-y`}
               />
               <div className="flex items-center gap-2">
-                <span className="text-[9px] text-fg-subtle">
+                <span className="text-2xs text-fg-subtle">
                   ⌘↵ save
                 </span>
                 <TagDropdown
@@ -548,7 +548,7 @@ function NoteRow({
           onClick={(e) => e.stopPropagation()}
           onMouseLeave={() => setCtxMenu(null)}
         >
-          <p className="text-[9px] text-fg-muted px-2 uppercase tracking-wider">
+          <p className="text-2xs text-fg-muted px-2 uppercase tracking-wider">
             Tags
           </p>
           {allTags.map((t) => {
@@ -671,7 +671,7 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
         className={`${fieldCls} resize-none`}
       />
       <div className="flex items-center gap-2">
-        <span className="text-[9px] text-fg-subtle">
+        <span className="text-2xs text-fg-subtle">
           ⌘↵ save
         </span>
         <TagDropdown
@@ -792,7 +792,7 @@ export function NotesView() {
               onClick={() => setTagFilter("")}
               className={[
                 "flex items-center gap-1 px-2 py-0.5",
-                "rounded text-[10px] font-semibold",
+                "rounded text-2xs font-semibold",
                 "hover:opacity-80",
               ].join(" ")}
               style={tagBadgeStyle(

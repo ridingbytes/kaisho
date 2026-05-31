@@ -82,7 +82,7 @@ export function SecretKeyField(props: Props): JSX.Element {
           className={[
             "inline-flex items-center justify-center gap-1",
             "self-stretch px-2",
-            "text-[10px] font-mono text-green-700",
+            "text-2xs font-mono text-green-700",
             "bg-green-100 border border-green-200",
             "rounded shrink-0",
           ].join(" ")}

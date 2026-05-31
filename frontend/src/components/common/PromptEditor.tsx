@@ -106,7 +106,7 @@ function PlaceholderHint({
 }) {
   const { t } = useTranslation("cron");
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-fg-muted">
+    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-2xs text-fg-muted">
       <span className="text-fg-subtle">
         {t("placeholderHint")}
       </span>

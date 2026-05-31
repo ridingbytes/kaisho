@@ -178,7 +178,7 @@ export function TimeEntryRow({
     >
       <span
         className={
-          "text-[10px] text-fg-muted tabular-nums "
+          "text-2xs text-fg-muted tabular-nums "
           + "shrink-0 cursor-pointer hover:text-cta"
         }
         onClick={() =>
@@ -207,7 +207,7 @@ export function TimeEntryRow({
       {entry.contract && (
         <span
           className={[
-            "text-[9px] px-1 py-0.5 rounded shrink-0",
+            "text-2xs px-1 py-0.5 rounded shrink-0",
             "max-w-[6rem] truncate",
             isInv
               ? "bg-emerald-500/10 text-emerald-600"
@@ -220,7 +220,7 @@ export function TimeEntryRow({
       )}
       <span
         className={
-          "text-[10px] text-fg-muted "
+          "text-2xs text-fg-muted "
           + "tabular-nums shrink-0"
         }
       >

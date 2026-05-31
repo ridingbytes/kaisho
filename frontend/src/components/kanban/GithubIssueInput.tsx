@@ -175,7 +175,7 @@ export function GithubIssueInput({
                     setOpen(false);
                     setFilter("");
                   }}
-                  className="w-full text-left px-3 py-1 text-[10px] text-fg-muted hover:text-fg"
+                  className="w-full text-left px-3 py-1 text-2xs text-fg-muted hover:text-fg"
                 >
                   {tc("close")}
                 </button>

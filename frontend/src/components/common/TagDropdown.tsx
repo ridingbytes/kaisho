@@ -57,7 +57,7 @@ export function TagDropdown({
         return (
           <span
             key={tagName}
-            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-2xs font-semibold"
             style={tagBadgeStyle(def?.color)}
           >
             {tagName}
@@ -104,7 +104,7 @@ export function TagDropdown({
                 ].join(" ")}
               >
                 <span
-                  className="w-2.5 h-2.5 rounded-sm shrink-0"
+                  className="w-2.5 h-2.5 rounded shrink-0"
                   style={{ backgroundColor: tag.color }}
                 />
                 {tag.name}

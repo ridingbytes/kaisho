@@ -175,7 +175,7 @@ export function TimerSection({
           </div>
           <div className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/40">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-green-700">
+            <span className="text-2xs font-bold uppercase tracking-wider text-green-700">
               {tc("active")}
             </span>
           </div>
@@ -248,7 +248,7 @@ export function TimerSection({
                 "focus:outline-none",
               ].join(" ")}
             />
-            <p className="text-[10px] text-fg-subtle mt-0.5 text-right">
+            <p className="text-2xs text-fg-subtle mt-0.5 text-right">
               {tc("cmdEnterToSave")}
             </p>
           </div>
@@ -287,7 +287,7 @@ export function TimerSection({
   return (
     <div className="px-4 py-4">
       <form onSubmit={handleSubmit}>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
+        <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
           {t("quickStart")}
         </p>
       <div className="flex flex-col gap-2">

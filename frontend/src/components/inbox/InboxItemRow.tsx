@@ -68,7 +68,7 @@ const fieldCls = [
 ].join(" ");
 
 const badgeCls =
-  "shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider";
+  "shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-2xs font-bold uppercase tracking-wider";
 
 type MoveDestination = "todo" | "note" | "kb" | "archive";
 
@@ -252,7 +252,7 @@ export function InboxItemRow({ item }: Props) {
                   e.stopPropagation();
                   setView("customers", item.customer ?? "");
                 }}
-                className="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-cta-muted text-cta-hover cursor-pointer hover:bg-cta/20"
+                className="px-1.5 py-0.5 rounded text-2xs font-semibold tracking-wider uppercase bg-cta-muted text-cta-hover cursor-pointer hover:bg-cta/20"
               >
                 {item.customer}
               </span>
@@ -270,7 +270,7 @@ export function InboxItemRow({ item }: Props) {
           </div>
           <RelDate
             date={item.created}
-            className="text-[10px] text-fg-muted mt-0.5 block"
+            className="text-2xs text-fg-muted mt-0.5 block"
           />
         </div>
 
@@ -318,7 +318,7 @@ export function InboxItemRow({ item }: Props) {
                     e.stopPropagation();
                     setMoving(false);
                   }}
-                  className="w-full text-left px-2 py-1 rounded text-[10px] text-fg-muted hover:text-fg-strong"
+                  className="w-full text-left px-2 py-1 rounded text-2xs text-fg-muted hover:text-fg-strong"
                 >
                   {tc("cancel")}
                 </button>
@@ -343,7 +343,7 @@ export function InboxItemRow({ item }: Props) {
                 ref={delRef}
                 className="absolute right-0 top-full mt-1 z-50 flex items-center gap-1 px-2 py-1 rounded bg-surface-overlay border border-border shadow-lg whitespace-nowrap"
               >
-                <span className="text-[10px] text-fg">
+                <span className="text-2xs text-fg">
                   {tc("deleteConfirm")}
                 </span>
                 <button
