@@ -22,6 +22,7 @@
   "contractName": "Vertragsname",
   "endDate": "Enddatum",
   "budgetHLabel": "Budget Std.",
+  "budgetFromContractsHint": "Das Budget ergibt sich aus der Summe der Verträge dieses Kunden – bearbeite das Budget eines Vertrags unten, um es zu ändern.",
   "usedOffset": "Verbrauchsoffset (Stunden)",
   "tasks": "Aufgaben",
   "noTasks": "Keine Aufgaben",

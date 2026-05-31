@@ -66,6 +66,13 @@ export function CustomerEditForm({
   const update = useUpdateCustomer();
   const { data: settings } = useSettings();
   const customerTypes = settings?.customer_types ?? [];
+  // The backend's get_budget_summary uses sum-of-contracts
+  // whenever contracts exist (see backends/markdown
+  // __init__.py:get_budget_summary). Editing the customer-
+  // level BUDGET / OFFSET has no effect in that case, so
+  // hide the fields and tell the user where the budget
+  // actually lives.
+  const hasContracts = (c.contracts ?? []).length > 0;
 
   function set(key: keyof EditState) {
     return (
@@ -87,11 +94,16 @@ export function CustomerEditForm({
       status: form.status,
       type: form.type,
       color: form.color,
-      budget: parseFloat(form.budget) || 0,
       repo: form.repo.trim() || null,
     };
-    updates.used_offset =
-      parseFloat(form.used_offset) || 0;
+    // Skip budget + offset entirely when contracts exist;
+    // the backend ignores customer-level values in that
+    // case and writing them would just be noise on disk.
+    if (!hasContracts) {
+      updates.budget = parseFloat(form.budget) || 0;
+      updates.used_offset =
+        parseFloat(form.used_offset) || 0;
+    }
     update.mutate(
       { name: c.name, updates },
       { onSuccess: () => onClose() },
@@ -175,57 +187,62 @@ export function CustomerEditForm({
         </select>
       </div>
 
-      {/* Budget + offset are the lifetime customer-level
-          cap and the invoiced-hours marker; both stay
-          editable even when contracts exist, since they
-          drive the "MAXED" indicator in the dashboard
-          regardless of per-contract budgets. */}
-      <div className="flex gap-2">
-        <label
-          className={
-            "flex flex-col gap-0.5 flex-1"
-          }
-        >
-          <span
+      {hasContracts ? (
+        // Customer-level BUDGET/OFFSET are ignored by the
+        // backend when contracts exist (sum-of-contracts
+        // wins). Point the user at where the budget
+        // actually lives instead of showing dead inputs.
+        <p className="text-2xs text-fg-muted">
+          {t("budgetFromContractsHint")}
+        </p>
+      ) : (
+        <div className="flex gap-2">
+          <label
             className={
-              "text-2xs text-fg-muted "
-              + "uppercase tracking-wider"
+              "flex flex-col gap-0.5 flex-1"
             }
           >
-            {t("budgetHLabel")}
-          </span>
-          <input
-            type="number"
-            min="0"
-            step="0.5"
-            className={fieldClass("tabular-nums")}
-            value={form.budget}
-            onChange={set("budget")}
-          />
-        </label>
-        <label
-          className={
-            "flex flex-col gap-0.5 flex-1"
-          }
-        >
-          <span
+            <span
+              className={
+                "text-2xs text-fg-muted "
+                + "uppercase tracking-wider"
+              }
+            >
+              {t("budgetHLabel")}
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              className={fieldClass("tabular-nums")}
+              value={form.budget}
+              onChange={set("budget")}
+            />
+          </label>
+          <label
             className={
-              "text-2xs text-fg-muted "
-              + "uppercase tracking-wider"
+              "flex flex-col gap-0.5 flex-1"
             }
           >
-            {t("offsetH")}
-          </span>
-          <input
-            type="number"
-            min="0"
-            step="0.5"
-            className={fieldClass("tabular-nums")}
-            value={form.used_offset}
-            onChange={set("used_offset")}
-          />
-        </label>
-      </div>
+            <span
+              className={
+                "text-2xs text-fg-muted "
+                + "uppercase tracking-wider"
+              }
+            >
+              {t("offsetH")}
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              className={fieldClass("tabular-nums")}
+              value={form.used_offset}
+              onChange={set("used_offset")}
+            />
+          </label>
+        </div>
+      )}
 
       <input
         className={fieldClass()}

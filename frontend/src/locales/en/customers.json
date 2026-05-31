@@ -22,6 +22,7 @@
   "contractName": "Contract name",
   "endDate": "End date",
   "budgetHLabel": "Budget h",
+  "budgetFromContractsHint": "Budget is the sum of this customer's contracts -- edit a contract's budget below to change it.",
   "usedOffset": "Used offset (hours)",
   "tasks": "Tasks",
   "noTasks": "No tasks",

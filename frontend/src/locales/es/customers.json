@@ -22,6 +22,7 @@
   "contractName": "Nombre del contrato",
   "endDate": "Fecha de fin",
   "budgetHLabel": "Presupuesto h",
+  "budgetFromContractsHint": "El presupuesto es la suma de los contratos de este cliente — edita el presupuesto de un contrato debajo para cambiarlo.",
   "usedOffset": "Compensación usada (horas)",
   "tasks": "Tareas",
   "noTasks": "Sin tareas",
