@@ -123,8 +123,43 @@ def _clock_hours_for_customer(
 
 
 def _enrich_customer(customer: dict, clocks_file: Path) -> dict:
-    """Add clock-derived hours to a customer's used and rest."""
-    clock_h = _clock_hours_for_customer(clocks_file, customer["name"])
+    """Add clock-derived hours to a customer's used and rest.
+
+    Scope of clock-hours:
+
+      * No contracts -> sum of every clock entry for the
+        customer (all time). The customer-level budget /
+        USED properties are the source.
+      * Contracts present -> only clock entries explicitly
+        attributed to the **active** contract (the one
+        without an end_date).  Otherwise the active
+        contract would inherit hours booked against
+        previously-invoiced contracts and look MAXED the
+        moment it starts.
+
+    Reported by user 2026-05-31: ISC's new SO/2026/0010
+    contract started showing 40/40 MAXED with only 3.5 h
+    booked because the previous (invoiced) contract had
+    36.5 h of historical entries that the all-time sum
+    pulled in.
+    """
+    contracts = customer.get("contracts", [])
+    if contracts:
+        active = next(
+            (c for c in contracts if not c.get("end_date")),
+            None,
+        )
+        if active:
+            hours_map = _clock_hours_by_contract(
+                clocks_file, customer["name"],
+            )
+            clock_h = hours_map.get(active["name"], 0.0)
+        else:
+            clock_h = 0.0
+    else:
+        clock_h = _clock_hours_for_customer(
+            clocks_file, customer["name"],
+        )
     used = round(customer["used"] + clock_h, 2)
     rest = round(customer["budget"] - used, 2)
     return {**customer, "used": used, "rest": rest}
