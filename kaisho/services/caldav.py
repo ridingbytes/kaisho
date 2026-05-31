@@ -382,6 +382,14 @@ def set_push_config(
                 calendar_id = kaisho["id"]
             acc["push_enabled"] = True
             acc["push_calendar_id"] = calendar_id
+            # Sync engine reads this to skip historical
+            # entries on first enable -- only entries
+            # created or modified after this timestamp
+            # are pushed. Avoids surprising users by
+            # back-flooding their calendar with 6 months
+            # of past work when they first toggle on.
+            if not acc.get("push_enabled_since"):
+                acc["push_enabled_since"] = _utc_now_iso()
         else:
             # On disable we preserve the previously-
             # selected calendar so a toggle-off-then-on
@@ -411,9 +419,14 @@ def set_push_config(
 
 
 def push_enabled_accounts() -> list[dict]:
-    """Helper for the upcoming sync engine (Phase 1.5
-    PR 3): which accounts opted into push, and which
-    calendar to write into per-account."""
+    """Accounts opted into clock-entry push.
+
+    Returns one dict per account: ``account_id``,
+    ``calendar_id`` (already resolved to the URL the
+    sync engine writes into), and ``enabled_since``
+    (ISO timestamp -- entries older than this are
+    skipped on first push to avoid back-flooding).
+    """
     out = []
     for acc in list_accounts():
         if not acc.get("push_enabled"):
@@ -421,6 +434,9 @@ def push_enabled_accounts() -> list[dict]:
         out.append({
             "account_id": acc["id"],
             "calendar_id": acc.get("push_calendar_id") or "",
+            "enabled_since": acc.get(
+                "push_enabled_since",
+            ) or "",
         })
     return out
 

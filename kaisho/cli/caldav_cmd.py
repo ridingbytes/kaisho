@@ -227,3 +227,38 @@ def delete_event_cmd(account_id, event_url):
     except caldav_svc.CalDavError as exc:
         raise click.ClickException(str(exc))
     click.echo("Deleted (or already gone).")
+
+
+@caldav_cmd.command("push-sync")
+def push_sync():
+    """Run one CalDAV push cycle synchronously.
+
+    Useful for manual smoke without waiting for the next
+    clock-entry mutation to trigger the background push.
+    Prints the per-cycle summary.
+    """
+    from ..services import caldav_sync
+    summary = caldav_sync.sync_now()
+    for k, v in summary.items():
+        click.echo(f"  {k:8} {v}")
+
+
+@caldav_cmd.command("push-state")
+def push_state():
+    """Dump the current per-account sync health for
+    troubleshooting (last error, failure count, last
+    success timestamp)."""
+    import json
+    from ..services import caldav_sync
+    state = caldav_sync._load_state()
+    accounts = caldav_svc.list_accounts()
+    if not accounts:
+        click.echo("No accounts configured.")
+        return
+    for acc in accounts:
+        health = state["per_account"].get(acc["id"], {})
+        click.echo(f"\n{acc['id']} ({acc['label']})")
+        if not health:
+            click.echo("  no sync activity yet")
+            continue
+        click.echo(json.dumps(health, indent=2))
