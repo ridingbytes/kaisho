@@ -296,6 +296,23 @@ def _update_one(
                 if k != "uid"
             },
         )
+    except caldav_svc.EventGoneError:
+        # The event we previously created is no longer on
+        # the server -- user deleted it in Calendar.app,
+        # or iCloud's eventually-consistent calendar
+        # collection still 404s a just-PUT event. Either
+        # way, drop the stale mapping and re-create so
+        # the next reconciliation hands us a fresh URL.
+        log.info(
+            "caldav update -> recreate: account=%s "
+            "sync_id=%s (server lost the event)",
+            account["account_id"], entry.get("sync_id"),
+        )
+        per_entry.pop(account["account_id"], None)
+        _create_one(
+            account, entry, per_entry, state, summary,
+        )
+        return
     except caldav_svc.CalDavError as exc:
         log.warning(
             "caldav update failed: account=%s sync_id=%s %s",
@@ -341,23 +358,41 @@ def _should_push(entry: dict, account: dict) -> bool:
     """Whether this entry is in scope for a push.
 
     Skip rules:
-      * Entries with no end_at (running timers) -- we push
+      * Entries with no end (running timers) -- we push
         when the timer stops.
       * Entries last touched before the account's
         push_enabled_since (no historical back-flood).
+
+    Field naming differs between backends: org emits
+    ``start`` / ``end``, SQL emits ``start_at`` /
+    ``end_at``. Accept either via :func:`_entry_end`
+    so the sync engine works against every backend.
     """
-    if not entry.get("end_at"):
+    if not _entry_end(entry):
         return False
     enabled_since = account.get("enabled_since") or ""
     if not enabled_since:
         return True
-    updated_at = entry.get("updated_at") or ""
-    if not updated_at:
-        # Heuristic: an entry without an updated_at field
-        # is the legacy / org-backend case. Use end_at as
-        # the cut-off proxy.
-        updated_at = entry.get("end_at") or ""
+    updated_at = (
+        entry.get("updated_at")
+        or _entry_end(entry)
+        or ""
+    )
     return updated_at >= enabled_since
+
+
+def _entry_start(entry: dict) -> str:
+    """Return the entry's start in whatever field the
+    backend chose. SQL uses ``start_at``; org uses
+    ``start``. Falls back to ``""`` (None-safe)."""
+    return entry.get("start_at") or entry.get("start") or ""
+
+
+def _entry_end(entry: dict) -> str:
+    """Same as :func:`_entry_start` for the end column.
+    Returning the empty string for a running timer keeps
+    the gate's truthy check simple."""
+    return entry.get("end_at") or entry.get("end") or ""
 
 
 def _entry_to_event_args(entry: dict) -> dict | None:
@@ -370,8 +405,8 @@ def _entry_to_event_args(entry: dict) -> dict | None:
     re-pushes find the same event server-side.
     """
     sync_id = entry.get("sync_id") or ""
-    start_iso = entry.get("start_at")
-    end_iso = entry.get("end_at")
+    start_iso = _entry_start(entry)
+    end_iso = _entry_end(entry)
     if not (sync_id and start_iso and end_iso):
         return None
     try:
