@@ -316,6 +316,27 @@ def test_delete_event_is_idempotent(
     svc.delete_event(aid, created["event_url"])
 
 
+def test_to_utc_treats_naive_as_local():
+    """Clock entries arrive as naive local wall-clock from
+    the backend (datetime.now().isoformat()); pushing them
+    as DTSTART must convert from local to UTC, not stamp Z
+    on the local hour. Without this, every clock entry shows
+    up offset by the user's UTC offset in their calendar.
+    """
+    from datetime import datetime, timezone
+    from kaisho.services.caldav import _to_utc
+
+    naive = datetime(2026, 5, 31, 12, 0)
+    out = _to_utc(naive)
+    assert out.tzinfo is timezone.utc
+
+    expected = naive.astimezone().astimezone(timezone.utc)
+    assert out == expected
+
+    aware = datetime(2026, 5, 31, 12, 0, tzinfo=timezone.utc)
+    assert _to_utc(aware) == aware
+
+
 def test_delete_translates_server_error(
     isolated_profile, fake_keyring, fake_calendars,
 ):
