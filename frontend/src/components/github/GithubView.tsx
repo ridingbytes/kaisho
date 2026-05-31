@@ -3,6 +3,7 @@ import { RefreshCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useGithubIssues, useGithubProjects } from "../../hooks/useGithub";
 import { useQueryClient } from "@tanstack/react-query";
+import { StateMessage } from "../common/StateMessage";
 import type {
   GithubIssue,
   GithubProject,
@@ -25,7 +26,7 @@ function LabelPill({
 }) {
   return (
     <span
-      className="px-1.5 py-0.5 rounded text-[10px] font-medium"
+      className="px-1.5 py-0.5 rounded text-2xs font-medium"
       style={{
         backgroundColor: `#${label.color}33`,
         color: `#${label.color}`,
@@ -43,14 +44,14 @@ function LabelPill({
 function IssueRow({ issue }: { issue: GithubIssue }) {
   return (
     <div className="flex items-center gap-3 px-4 py-2 border-b border-border-subtle hover:bg-surface-raised transition-colors">
-      <span className="text-xs text-stone-500 w-10 shrink-0">
+      <span className="text-xs text-fg-muted w-10 shrink-0">
         #{issue.number}
       </span>
       <a
         href={issue.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-sm text-stone-900 hover:text-cta transition-colors flex-1 min-w-0 truncate"
+        className="text-sm text-fg-strong hover:text-cta transition-colors flex-1 min-w-0 truncate"
         onClick={(e) => e.stopPropagation()}
       >
         {issue.title}
@@ -60,7 +61,7 @@ function IssueRow({ issue }: { issue: GithubIssue }) {
           <LabelPill key={l.name} label={l} />
         ))}
       </div>
-      <span className="text-xs text-stone-500 shrink-0 w-24 text-right">
+      <span className="text-xs text-fg-muted shrink-0 w-24 text-right">
         {issue.createdAt.slice(0, 10)}
       </span>
     </div>
@@ -77,7 +78,7 @@ function IssuesPane({ customerFilter }: { customerFilter: string }) {
   const totalIssues = filtered.reduce((s, g) => s + g.issues.length, 0);
 
   if (isLoading) {
-    return <p className="text-sm text-stone-500">{tc("loading")}</p>;
+    return <StateMessage kind="loading">{tc("loading")}</StateMessage>;
   }
   if (error) {
     return (
@@ -88,7 +89,7 @@ function IssuesPane({ customerFilter }: { customerFilter: string }) {
   }
   if (totalIssues === 0) {
     return (
-      <p className="text-sm text-stone-500">
+      <p className="text-sm text-fg-muted">
         {t("noOpenIssues")}
       </p>
     );
@@ -97,13 +98,13 @@ function IssuesPane({ customerFilter }: { customerFilter: string }) {
     <>
       {filtered.map((group) => (
         <section key={`${group.customer}/${group.repo}`} className="mb-6">
-          <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-2">
+          <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-2">
             {group.customer}{" "}
-            <span className="text-stone-400 normal-case font-normal">
+            <span className="text-fg-subtle normal-case font-normal">
               — {group.repo}
             </span>
           </h2>
-          <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+          <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
             {group.issues.map((issue) => (
               <IssueRow key={issue.number} issue={issue} />
             ))}
@@ -128,7 +129,7 @@ function ProjectItemRow({ item }: { item: GithubProjectItem }) {
 
   return (
     <div className="flex items-center gap-3 px-4 py-2 border-b border-border-subtle hover:bg-surface-raised transition-colors">
-      <span className="text-[10px] text-stone-400 w-14 shrink-0">
+      <span className="text-2xs text-fg-subtle w-14 shrink-0">
         {typeLabel}
         {item.number != null && (
           <span className="ml-0.5">#{item.number}</span>
@@ -139,13 +140,13 @@ function ProjectItemRow({ item }: { item: GithubProjectItem }) {
           href={item.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sm text-stone-900 hover:text-cta transition-colors flex-1 min-w-0 truncate"
+          className="text-sm text-fg-strong hover:text-cta transition-colors flex-1 min-w-0 truncate"
           onClick={(e) => e.stopPropagation()}
         >
           {item.title}
         </a>
       ) : (
-        <span className="text-sm text-stone-700 flex-1 min-w-0 truncate">
+        <span className="text-sm text-fg flex-1 min-w-0 truncate">
           {item.title}
         </span>
       )}
@@ -192,13 +193,13 @@ function StatusGroup({
         className="w-full flex items-center gap-2 px-4 py-1.5 bg-surface-raised border-b border-border-subtle text-left hover:bg-surface-overlay transition-colors"
         onClick={() => setOpen((o) => !o)}
       >
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 flex-1">
+        <span className="text-2xs font-semibold uppercase tracking-wider text-fg-muted flex-1">
           {status}
-          <span className="ml-1.5 font-normal text-stone-400">
+          <span className="ml-1.5 font-normal text-fg-subtle">
             ({items.length})
           </span>
         </span>
-        <span className="text-stone-400 text-[10px]">
+        <span className="text-fg-subtle text-2xs">
           {open ? "▴" : "▾"}
         </span>
       </button>
@@ -215,12 +216,12 @@ function ProjectCard({ project }: { project: GithubProject }) {
   const groups = groupByStatus(project.items, project.status_order);
 
   return (
-    <div className="mb-3 bg-surface-card rounded-xl border border-border overflow-hidden">
+    <div className="mb-3 bg-surface-card rounded-lg border border-border overflow-hidden">
       <button
         className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-surface-raised transition-colors"
         onClick={() => setOpen((o) => !o)}
       >
-        <span className="text-xs font-semibold text-stone-800 flex-1">
+        <span className="text-xs font-semibold text-fg-strong flex-1">
           <a
             href={project.url}
             target="_blank"
@@ -232,14 +233,14 @@ function ProjectCard({ project }: { project: GithubProject }) {
           </a>
         </span>
         {project.closed && (
-          <span className="text-[10px] text-stone-400 border border-border rounded px-1.5 py-0.5">
+          <span className="text-2xs text-fg-subtle border border-border rounded px-1.5 py-0.5">
             closed
           </span>
         )}
-        <span className="text-[10px] text-stone-400">
+        <span className="text-2xs text-fg-subtle">
           {project.items.length} items
         </span>
-        <span className="text-stone-400 text-xs ml-1">
+        <span className="text-fg-subtle text-xs ml-1">
           {open ? "▴" : "▾"}
         </span>
       </button>
@@ -251,7 +252,7 @@ function ProjectCard({ project }: { project: GithubProject }) {
         </div>
       )}
       {open && project.items.length === 0 && (
-        <p className="px-4 py-2 text-xs text-stone-400">No items.</p>
+        <p className="px-4 py-2 text-xs text-fg-subtle">No items.</p>
       )}
     </div>
   );
@@ -272,7 +273,7 @@ function ProjectsPane({
     : groups;
 
   if (isLoading) {
-    return <p className="text-sm text-stone-500">{tc("loading")}</p>;
+    return <StateMessage kind="loading">{tc("loading")}</StateMessage>;
   }
   if (error) {
     return (
@@ -287,7 +288,7 @@ function ProjectsPane({
   );
   if (!hasAny) {
     return (
-      <p className="text-sm text-stone-500">
+      <p className="text-sm text-fg-muted">
         {t("noProjects")}
       </p>
     );
@@ -305,9 +306,9 @@ function ProjectsPane({
             key={`${group.customer}/${group.repo}`}
             className="mb-6"
           >
-            <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-2">
+            <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-2">
               {group.customer}{" "}
-              <span className="text-stone-400 normal-case font-normal">
+              <span className="text-fg-subtle normal-case font-normal">
                 — {group.repo}
               </span>
             </h2>
@@ -354,7 +355,7 @@ export function GithubView() {
       "text-xs px-3 py-1 rounded-full transition-colors",
       tab === t
         ? "bg-cta text-white font-semibold"
-        : "text-stone-500 hover:text-stone-900 hover:bg-surface-overlay",
+        : "text-fg-muted hover:text-fg-strong hover:bg-surface-overlay",
     ].join(" ");
   }
 
@@ -394,7 +395,7 @@ export function GithubView() {
           {tab === "projects" && (
             <label className={[
               "flex items-center gap-2 text-xs",
-              "text-stone-600 cursor-pointer select-none",
+              "text-fg-muted cursor-pointer select-none",
             ].join(" ")}>
               <input
                 type="checkbox"
@@ -417,8 +418,8 @@ export function GithubView() {
             }
             title="Refresh"
             className={[
-              "p-1 rounded text-stone-500",
-              "hover:text-stone-900",
+              "p-1 rounded text-fg-muted",
+              "hover:text-fg-strong",
               "hover:bg-surface-overlay transition-colors",
             ].join(" ")}
           >
@@ -435,10 +436,10 @@ export function GithubView() {
       <div className="flex-1 overflow-y-auto p-5">
         {!hasToken && (
           <div className="max-w-md mx-auto mt-12 text-center space-y-3">
-            <p className="text-sm font-medium text-stone-700">
+            <p className="text-sm font-medium text-fg">
               {t("noGithubToken")}
             </p>
-            <p className="text-xs text-stone-500 leading-relaxed">
+            <p className="text-xs text-fg-muted leading-relaxed">
               {t("noGithubTokenHint")}
             </p>
           </div>

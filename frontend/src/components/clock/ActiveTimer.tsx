@@ -75,12 +75,12 @@ export function ActiveTimer({ timer }: Props) {
     : undefined;
 
   return (
-    <div className="rounded-xl border border-border bg-surface-card p-4 shadow-card text-center">
+    <div className="rounded-lg border border-border bg-surface-card p-4 shadow-card text-center">
       {/* Timer digits + stop button */}
       <div className="flex items-center justify-center gap-3">
         <div
           key={tick}
-          className="text-3xl font-light font-mono text-stone-900 tabular-nums tracking-wide"
+          className="text-3xl font-light font-mono text-fg-strong tabular-nums tracking-wide"
         >
           {elapsed(timer.start)}
         </div>
@@ -128,7 +128,7 @@ export function ActiveTimer({ timer }: Props) {
       <div className="flex items-center justify-center mt-2">
         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-500/10">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-          <span className="text-[10px] font-semibold tracking-wider uppercase text-green-600">
+          <span className="text-2xs font-semibold tracking-wider uppercase text-green-600">
             {tc("active")}
           </span>
         </div>
@@ -136,19 +136,19 @@ export function ActiveTimer({ timer }: Props) {
 
       {/* Customer · description + edit pen */}
       <div className="flex items-center justify-center gap-1 mt-2">
-        <p className="text-xs text-stone-500 truncate flex items-center gap-1">
+        <p className="text-xs text-fg-muted truncate flex items-center gap-1">
           <span
             className="w-1.5 h-1.5 rounded-full shrink-0"
             style={{
               background: custColor || "#a1a1aa",
             }}
           />
-          <span className="text-stone-700">
+          <span className="text-fg">
             {timer.customer}
           </span>
           {timer.description && (
             <>
-              <span className="font-bold text-stone-400">
+              <span className="font-bold text-fg-subtle">
                 &middot;
               </span>
               <span className="truncate">
@@ -164,7 +164,7 @@ export function ActiveTimer({ timer }: Props) {
             "p-1 rounded transition-colors shrink-0",
             notesOpen
               ? "text-cta"
-              : "text-stone-400 hover:text-stone-700",
+              : "text-fg-subtle hover:text-fg",
           ].join(" ")}
         >
           <Pencil size={10} />
@@ -182,11 +182,11 @@ export function ActiveTimer({ timer }: Props) {
             className={[
               "w-full px-2 py-1.5 rounded-lg text-xs resize-none",
               "bg-surface-raised border border-border",
-              "text-stone-800 placeholder-stone-500",
+              "text-fg-strong placeholder-fg-muted",
               "focus:outline-none focus:border-cta",
             ].join(" ")}
           />
-          <p className="text-[9px] text-stone-400 mt-1 text-right">
+          <p className="text-2xs text-fg-subtle mt-1 text-right">
             {tc("cmdSaveClose")}
           </p>
         </div>

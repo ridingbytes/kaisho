@@ -265,7 +265,7 @@ export function TrayPanel() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-surface-base text-stone-800 overflow-hidden select-none">
+    <div className="flex flex-col h-screen bg-surface-base text-fg-strong overflow-hidden select-none">
       {/* Timer or start form */}
       <TimerSection
         timer={timer}
@@ -301,13 +301,13 @@ export function TrayPanel() {
       {/* Footer */}
       <div className="mt-auto border-t border-border-subtle px-4 py-2.5">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] text-stone-500">
+          <span className="text-xs text-fg-muted">
             {tc("today")}: {formatTotal(todayTotal)}
           </span>
           <div className="flex items-center gap-3">
             <button
               onClick={openMainWindow}
-              className="text-[11px] text-cta hover:underline"
+              className="text-xs text-cta hover:underline"
             >
               {t("openKaisho")}
             </button>

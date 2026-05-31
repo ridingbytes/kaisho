@@ -176,7 +176,7 @@ function Header({
     // edge groups around when the date label changes length.
     <div className="relative flex items-center justify-between px-4 py-2 border-b border-border bg-surface-card">
       <div className="flex items-center gap-2 min-w-0">
-        <h1 className="text-sm font-semibold text-stone-900">
+        <h1 className="text-sm font-semibold text-fg-strong">
           {t("title")}
         </h1>
         <DateJumper
@@ -188,7 +188,7 @@ function Header({
         <button
           type="button"
           onClick={onPrev}
-          className="p-1 rounded hover:bg-surface-raised text-stone-600"
+          className="p-1 rounded hover:bg-surface-raised text-fg-muted"
           aria-label={t("prev")}
         >
           <ChevronLeft className="w-4 h-4" />
@@ -196,14 +196,14 @@ function Header({
         <button
           type="button"
           onClick={onToday}
-          className="px-2 py-1 text-xs rounded hover:bg-surface-raised text-stone-700"
+          className="px-2 py-1 text-xs rounded hover:bg-surface-raised text-fg"
         >
           {t("today")}
         </button>
         <button
           type="button"
           onClick={onNext}
-          className="p-1 rounded hover:bg-surface-raised text-stone-600"
+          className="p-1 rounded hover:bg-surface-raised text-fg-muted"
           aria-label={t("next")}
         >
           <ChevronRight className="w-4 h-4" />
@@ -211,7 +211,7 @@ function Header({
         <button
           type="button"
           onClick={onRefresh}
-          className="p-1 rounded hover:bg-surface-raised text-stone-600"
+          className="p-1 rounded hover:bg-surface-raised text-fg-muted"
           aria-label={t("refresh")}
         >
           <RefreshCw
@@ -276,7 +276,7 @@ function DateJumper({
       <button
         type="button"
         onClick={openPicker}
-        className="text-xs text-stone-500 hover:text-stone-700 underline-offset-2 hover:underline cursor-pointer"
+        className="text-xs text-fg-muted hover:text-fg underline-offset-2 hover:underline cursor-pointer"
         title="Jump to date"
       >
         {label}
@@ -329,7 +329,7 @@ function ViewToggle({
         "px-2 py-1 text-xs rounded "
         + (mode === m
           ? "bg-cta text-white"
-          : "text-stone-600 hover:bg-surface-raised")
+          : "text-fg-muted hover:bg-surface-raised")
       }
     >
       {label}

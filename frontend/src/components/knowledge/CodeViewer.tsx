@@ -14,7 +14,8 @@
 
 import hljs from "highlight.js";
 import { useMemo } from "react";
-import "highlight.js/styles/github.min.css";
+// Token colours come from the per-theme .hljs-* palette
+// defined in index.css.
 
 export interface CodeViewerProps {
   content: string;
@@ -44,7 +45,7 @@ export function CodeViewer({
       className={
         "bg-surface-overlay rounded-lg p-4 " +
         "overflow-x-auto text-sm font-mono " +
-        "text-stone-800 leading-relaxed"
+        "text-fg-strong leading-relaxed"
       }
     >
       <code

@@ -57,7 +57,7 @@ export function TagDropdown({
         return (
           <span
             key={tagName}
-            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-2xs font-semibold"
             style={tagBadgeStyle(def?.color)}
           >
             {tagName}
@@ -80,7 +80,7 @@ export function TagDropdown({
           "p-1 rounded transition-colors",
           open
             ? "text-cta bg-cta-muted"
-            : "text-stone-500 hover:text-stone-700",
+            : "text-fg-muted hover:text-fg",
         ].join(" ")}
         title="Tags"
       >
@@ -99,12 +99,12 @@ export function TagDropdown({
                   "w-full flex items-center gap-2 px-3 py-1.5 text-left",
                   "text-xs transition-colors",
                   active
-                    ? "text-stone-900 bg-surface-raised"
-                    : "text-stone-600 hover:text-stone-900 hover:bg-surface-raised",
+                    ? "text-fg-strong bg-surface-raised"
+                    : "text-fg-muted hover:text-fg-strong hover:bg-surface-raised",
                 ].join(" ")}
               >
                 <span
-                  className="w-2.5 h-2.5 rounded-sm shrink-0"
+                  className="w-2.5 h-2.5 rounded shrink-0"
                   style={{ backgroundColor: tag.color }}
                 />
                 {tag.name}

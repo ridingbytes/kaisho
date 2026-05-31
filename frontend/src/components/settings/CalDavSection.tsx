@@ -19,6 +19,7 @@ import {
   useTestCalDavConnection,
 } from "../../hooks/useCalDav";
 import { openExternal } from "../../utils/tauri";
+import { Toggle } from "../common/Toggle";
 
 const btn =
   "px-3 py-1 rounded-lg text-xs font-medium "
@@ -26,8 +27,8 @@ const btn =
 
 const inputCls =
   "flex-1 px-2 py-1 rounded-lg text-xs bg-surface-raised "
-  + "border border-border text-stone-900 "
-  + "placeholder-stone-500 focus:outline-none "
+  + "border border-border text-fg-strong "
+  + "placeholder-fg-muted focus:outline-none "
   + "focus:border-cta";
 
 /**
@@ -48,13 +49,13 @@ export function CalDavSection(): JSX.Element {
   const presets = presetsQ.data?.presets || [];
 
   return (
-    <div className="bg-surface-card rounded-xl border border-border p-4 flex flex-col gap-3">
+    <div className="bg-surface-card rounded-lg border border-border p-4 flex flex-col gap-3">
       <CalDavHeader count={accounts.length} />
       {accounts.length > 0 && (
         <AccountList accounts={accounts} />
       )}
       <AddAccountForm presets={presets} />
-      <p className="text-[10px] text-stone-400">
+      <p className="text-2xs text-fg-subtle">
         {t("integrations.caldav.note")}
       </p>
     </div>
@@ -67,10 +68,10 @@ function CalDavHeader({ count }: { count: number }) {
   return (
     <div className="flex items-center justify-between">
       <div>
-        <p className="font-semibold text-sm text-stone-900">
+        <p className="font-semibold text-sm text-fg-strong">
           {t("integrations.caldav.label")}
         </p>
-        <p className="text-[10px] text-stone-500 mt-0.5">
+        <p className="text-2xs text-fg-muted mt-0.5">
           {t("integrations.caldav.hint")}
         </p>
       </div>
@@ -101,14 +102,14 @@ function AccountList({
         >
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-medium text-stone-900 truncate">
+              <p className="text-xs font-medium text-fg-strong truncate">
                 {acc.label}
               </p>
-              <p className="text-[10px] text-stone-500 truncate">
+              <p className="text-2xs text-fg-muted truncate">
                 {acc.preset} · {acc.username}
               </p>
               {acc.storage === "fallback" && (
-                <p className="text-[10px] text-amber-600 mt-0.5">
+                <p className="text-2xs text-amber-600 mt-0.5">
                   {t("integrations.caldav.fallbackWarning")}
                 </p>
               )}
@@ -117,7 +118,7 @@ function AccountList({
               type="button"
               onClick={() => remove.mutate(acc.id)}
               disabled={remove.isPending}
-              className={`${btn} bg-surface-card border border-border text-stone-700 hover:bg-surface-raised`}
+              className={`${btn} bg-surface-card border border-border text-fg hover:bg-surface-raised`}
             >
               {t("integrations.disconnect")}
             </button>
@@ -207,7 +208,7 @@ function AddAccountForm({
 
   return (
     <div className="border-t border-border pt-3">
-      <p className="text-xs font-medium text-stone-700 mb-2">
+      <p className="text-xs font-medium text-fg mb-2">
         {t("integrations.caldav.addAccount")}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -273,7 +274,7 @@ function AddAccountForm({
         />
       </div>
       {preset?.auth_note && (
-        <p className="text-[10px] text-stone-500 mt-2">
+        <p className="text-2xs text-fg-muted mt-2">
           {preset.auth_note}{" "}
           {preset.hint_url && (
             <button
@@ -297,7 +298,7 @@ function AddAccountForm({
           type="button"
           onClick={handleTest}
           disabled={busy || !ready}
-          className={`${btn} bg-surface-raised border border-border text-stone-700 hover:bg-surface-card`}
+          className={`${btn} bg-surface-raised border border-border text-fg hover:bg-surface-card`}
         >
           {t("integrations.caldav.test")}
         </button>
@@ -395,40 +396,22 @@ function PushConfigEditor({
     <div className="border-t border-border pt-2">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-stone-800">
+          <p className="text-xs font-medium text-fg-strong">
             {t("integrations.caldav.push.label")}
           </p>
-          <p className="text-[10px] text-stone-500">
+          <p className="text-2xs text-fg-muted">
             {t("integrations.caldav.push.hint")}
           </p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          aria-label={t("integrations.caldav.push.toggle")}
-          onClick={toggle}
+        <Toggle
+          checked={enabled}
+          onChange={() => toggle()}
           disabled={busy}
-          className={
-            "shrink-0 w-10 h-5 rounded-full transition-colors "
-            + (enabled ? "bg-cta" : "bg-stone-300")
-            + (busy ? " opacity-50" : "")
-          }
-        >
-          <span
-            className={
-              "block w-4 h-4 bg-white rounded-full shadow "
-              + "transform transition-transform "
-              + (enabled
-                ? "translate-x-5"
-                : "translate-x-0.5")
-            }
-          />
-        </button>
+        />
       </div>
       {enabled && (
         <div className="mt-2">
-          <label className="text-[10px] uppercase tracking-wide text-stone-500 block mb-1">
+          <label className="text-2xs uppercase tracking-wide text-fg-muted block mb-1">
             {t("integrations.caldav.push.calendar")}
           </label>
           <select
@@ -478,7 +461,7 @@ function PushHealthBar({
 
   return (
     <div className="mt-2 flex items-center justify-between gap-2">
-      <div className="min-w-0 text-[10px] text-stone-500">
+      <div className="min-w-0 text-2xs text-fg-muted">
         {lastSync ? (
           <span>
             {t("integrations.caldav.push.lastSynced", {
@@ -504,9 +487,9 @@ function PushHealthBar({
         onClick={onSync}
         disabled={busy}
         className={
-          "shrink-0 px-2 py-0.5 rounded-md text-[11px] "
+          "shrink-0 px-2 py-0.5 rounded-md text-xs "
           + "font-medium bg-surface-card border "
-          + "border-border text-stone-700 "
+          + "border-border text-fg "
           + "hover:bg-surface-raised "
           + "disabled:opacity-50"
         }

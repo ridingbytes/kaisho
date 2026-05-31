@@ -67,7 +67,7 @@ export function SecretKeyField(props: Props): JSX.Element {
 
   return (
     <label className="flex items-center gap-3">
-      <span className="text-xs text-stone-700 w-32 shrink-0">
+      <span className="text-xs text-fg w-32 shrink-0">
         {label}
       </span>
       <input
@@ -82,7 +82,7 @@ export function SecretKeyField(props: Props): JSX.Element {
           className={[
             "inline-flex items-center justify-center gap-1",
             "self-stretch px-2",
-            "text-[10px] font-mono text-green-700",
+            "text-2xs font-mono text-green-700",
             "bg-green-100 border border-green-200",
             "rounded shrink-0",
           ].join(" ")}
@@ -100,8 +100,8 @@ export function SecretKeyField(props: Props): JSX.Element {
           title={t("keyClearTitle")}
           className={[
             "p-1 rounded shrink-0",
-            "text-stone-400 hover:text-red-500",
-            "hover:bg-stone-100 transition-colors",
+            "text-fg-subtle hover:text-red-500",
+            "hover:bg-surface-raised transition-colors",
           ].join(" ")}
         >
           <X size={14} />

@@ -234,13 +234,27 @@ def connected_kinds() -> list[str]:
     return [r.get("kind") for r in rows if r.get("kind")]
 
 
-# GitHub is excluded from the advisor's cloud integration
-# tools on the desktop: the desktop already has local
-# GitHub tools (issues/PRs + projects), so exposing the
-# cloud github_* tools too would give the model two
-# overlapping GitHub surfaces. The cloud github_* tools
-# stay for cloud-only consumers (PWA, external MCP).
-_DESKTOP_EXCLUDED_KINDS = {"github"}
+# Integrations whose cloud tools are hidden from the
+# advisor on the desktop:
+#
+#   - ``github``  the desktop already has local GitHub
+#                 tools (issues / PRs / projects); exposing
+#                 the cloud ``github_*`` tools too would
+#                 give the model two overlapping GitHub
+#                 surfaces.
+#   - ``google``  ``list_calendar_events`` already covers
+#                 BOTH CalDAV and Google (it fans out via
+#                 calendar_aggregator). Without this
+#                 exclusion the model picks the more
+#                 narrowly-named ``google_list_events`` and
+#                 reports "no events" for users whose
+#                 calendar lives in iCloud / Fastmail /
+#                 Nextcloud CalDAV. Reported by user
+#                 2026-05-31.
+#
+# The cloud google_* / github_* tools stay registered for
+# cloud-only consumers (PWA, external MCP).
+_DESKTOP_EXCLUDED_KINDS = {"github", "google"}
 
 
 def advisor_integration_defs() -> list[dict]:

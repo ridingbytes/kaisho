@@ -14,6 +14,7 @@ import {
   type BackupSettings,
 } from "../../api/client";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { StateMessage } from "../common/StateMessage";
 import {
   useBackups,
   useBackupSettings,
@@ -78,19 +79,19 @@ export function BackupSection(): JSX.Element {
 
   if (isLoading || !cfg) {
     return (
-      <p className="text-sm text-stone-500">Loading...</p>
+      <StateMessage kind="loading">Loading...</StateMessage>
     );
   }
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
             {t("storage")}
           </p>
           <label className="flex items-center gap-3">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
+            <span className="text-xs text-fg w-32 shrink-0">
               {t("backupFolder")}
             </span>
             <input
@@ -105,7 +106,7 @@ export function BackupSection(): JSX.Element {
               className={inputCls}
             />
           </label>
-          <p className="mt-2 text-[10px] text-stone-400">
+          <p className="mt-2 text-2xs text-fg-subtle">
             Leave empty to use the default:{" "}
             <span className="font-mono">
               {cfg.resolved_directory}
@@ -114,11 +115,11 @@ export function BackupSection(): JSX.Element {
         </div>
 
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
             {t("retention")}
           </p>
           <label className="flex items-center gap-3">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
+            <span className="text-xs text-fg w-32 shrink-0">
               {t("keep")}
             </span>
             <input
@@ -136,21 +137,21 @@ export function BackupSection(): JSX.Element {
               }
               className={`${inputCls} !w-32 !flex-none`}
             />
-            <span className="text-xs text-stone-500">
+            <span className="text-xs text-fg-muted">
               {t("mostRecentBackups")}
             </span>
           </label>
-          <p className="mt-2 text-[10px] text-stone-400">
+          <p className="mt-2 text-2xs text-fg-subtle">
             {t("retentionHint")}
           </p>
         </div>
 
         <div className="px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
             {t("schedule")}
           </p>
           <label className="flex items-center gap-3">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
+            <span className="text-xs text-fg w-32 shrink-0">
               {t("interval")}
             </span>
             <input
@@ -168,7 +169,7 @@ export function BackupSection(): JSX.Element {
               }
               className={`${inputCls} !w-32 !flex-none`}
             />
-            <span className="text-xs text-stone-500">
+            <span className="text-xs text-fg-muted">
               {t("hoursDisabled")}
             </span>
           </label>
@@ -207,7 +208,7 @@ export function BackupSection(): JSX.Element {
           disabled={prune.isPending}
           className={[
             "flex items-center gap-1.5 px-3 py-1.5",
-            "rounded text-sm text-stone-600",
+            "rounded text-sm text-fg-muted",
             "hover:text-red-400 transition-colors",
             "disabled:opacity-50",
           ].join(" ")}
@@ -217,26 +218,26 @@ export function BackupSection(): JSX.Element {
         </button>
       </div>
 
-      <p className="text-[10px] text-stone-400 leading-relaxed">
+      <p className="text-2xs text-fg-subtle leading-relaxed">
         {t("backupsHint")}
       </p>
 
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle flex items-center justify-between">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
             {t("existingBackups", {
               count: backups.length,
             })}
           </p>
         </div>
         {backups.length === 0 ? (
-          <p className="px-4 py-4 text-xs text-stone-500">
+          <p className="px-4 py-4 text-xs text-fg-muted">
             {t("noBackupsYet")}
           </p>
         ) : (
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border-subtle text-stone-500">
+              <tr className="border-b border-border-subtle text-fg-muted">
                 <th className="text-left px-4 py-2 font-medium">
                   {t("filename")}
                 </th>
@@ -255,13 +256,13 @@ export function BackupSection(): JSX.Element {
                   key={b.filename}
                   className="border-b border-border-subtle last:border-0"
                 >
-                  <td className="px-4 py-2 font-mono text-stone-700 truncate">
+                  <td className="px-4 py-2 font-mono text-fg truncate">
                     {b.filename}
                   </td>
-                  <td className="px-4 py-2 text-stone-500">
+                  <td className="px-4 py-2 text-fg-muted">
                     {formatDate(b.created_at)}
                   </td>
-                  <td className="px-4 py-2 text-right text-stone-500 tabular-nums">
+                  <td className="px-4 py-2 text-right text-fg-muted tabular-nums">
                     {humanSize(b.size_bytes)}
                   </td>
                   <td className="px-4 py-2 text-right flex items-center justify-end gap-2">
@@ -275,7 +276,7 @@ export function BackupSection(): JSX.Element {
                       }}
                     >
                       <button
-                        className="text-stone-500 hover:text-cta transition-colors"
+                        className="text-fg-muted hover:text-cta transition-colors"
                         title={t("restore")}
                       >
                         <RotateCcw size={12} />
@@ -283,7 +284,7 @@ export function BackupSection(): JSX.Element {
                     </ConfirmPopover>
                     <a
                       href={backupDownloadUrl(b.filename)}
-                      className="text-stone-600 hover:text-cta transition-colors"
+                      className="text-fg-muted hover:text-cta transition-colors"
                       title="Download"
                     >
                       <Download size={12} />

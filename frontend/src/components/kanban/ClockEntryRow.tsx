@@ -73,13 +73,13 @@ export function ClockEntryRow({
 
   if (editing) {
     return (
-      <li className="flex items-center gap-1 text-[10px]">
+      <li className="flex items-center gap-1 text-2xs">
         <input
           autoFocus
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-1 min-w-0 px-1 py-0.5 rounded text-[10px] bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
+          className="flex-1 min-w-0 px-1 py-0.5 rounded text-2xs bg-surface-raised border border-border text-fg-strong focus:outline-none focus:border-cta"
         />
         <input
           type="number"
@@ -88,11 +88,11 @@ export function ClockEntryRow({
           value={hours}
           onChange={(e) => setHours(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-14 px-1 py-0.5 rounded text-[10px] tabular-nums bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
+          className="w-14 px-1 py-0.5 rounded text-2xs tabular-nums bg-surface-raised border border-border text-fg-strong focus:outline-none focus:border-cta"
         />
         <button
           onClick={() => setEditing(false)}
-          className="p-0.5 rounded text-stone-500 hover:text-stone-900"
+          className="p-0.5 rounded text-fg-muted hover:text-fg-strong"
         >
           <X size={9} />
         </button>
@@ -108,16 +108,16 @@ export function ClockEntryRow({
   }
 
   return (
-    <li className="flex items-center gap-1.5 text-[10px] group/entry">
+    <li className="flex items-center gap-1.5 text-2xs group/entry">
       <span
-        className="font-mono text-stone-500 cursor-pointer hover:text-cta"
+        className="font-mono text-fg-muted cursor-pointer hover:text-cta"
         onClick={() =>
           navigateToClockDate(entry.start.slice(0, 10))
         }
       >
         {fmtDate(entry.start)}
       </span>
-      <span className="flex-1 min-w-0 text-stone-600 flex items-center gap-1 overflow-hidden">
+      <span className="flex-1 min-w-0 text-fg-muted flex items-center gap-1 overflow-hidden">
         <span className="truncate min-w-0">
           {entry.description}
         </span>
@@ -129,13 +129,13 @@ export function ClockEntryRow({
           />
         )}
       </span>
-      <span className="tabular-nums text-stone-700">
+      <span className="tabular-nums text-fg">
         {formatHours(entry.duration_minutes)}
       </span>
       <button
         onClick={startEdit}
         title={t("editEntry")}
-        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-stone-900"
+        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-fg-muted hover:text-fg-strong"
       >
         <Pencil size={9} />
       </button>
@@ -148,7 +148,7 @@ export function ClockEntryRow({
         }
         disabled={updateEntry.isPending}
         title={t("detachFromTask")}
-        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-stone-900 disabled:opacity-40"
+        className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-fg-muted hover:text-fg-strong disabled:opacity-40"
       >
         <X size={9} />
       </button>
@@ -159,7 +159,7 @@ export function ClockEntryRow({
         <button
           disabled={deleteEntry.isPending}
           title={t("deleteEntry")}
-          className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-stone-500 hover:text-red-400 disabled:opacity-40"
+          className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-fg-muted hover:text-red-400 disabled:opacity-40"
         >
           <Trash2 size={9} />
         </button>

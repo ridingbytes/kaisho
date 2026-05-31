@@ -52,7 +52,7 @@ function ToastItem({
       className={[
         "flex items-center gap-2 px-4 py-2.5",
         "rounded-lg shadow-lg border border-border",
-        "bg-surface-card text-sm text-stone-800",
+        "bg-surface-card text-sm text-fg-strong",
         "animate-[slideIn_0.2s_ease-out]",
       ].join(" ")}
     >
@@ -61,8 +61,8 @@ function ToastItem({
       <button
         onClick={onDismiss}
         className={[
-          "p-0.5 rounded text-stone-400",
-          "hover:text-stone-700 transition-colors",
+          "p-0.5 rounded text-fg-subtle",
+          "hover:text-fg transition-colors",
         ].join(" ")}
       >
         <X size={12} />

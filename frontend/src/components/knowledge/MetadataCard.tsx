@@ -257,7 +257,7 @@ export function MetadataCard({
             disabled={patchMutation.isPending}
             className={
               "px-2.5 py-1 rounded text-xs " +
-              "text-stone-700 hover:bg-surface-overlay"
+              "text-fg hover:bg-surface-overlay"
             }
           >
             {t("cancelMetadata")}
@@ -325,8 +325,8 @@ export function MetadataCard({
           aria-label={t("expandMetadata")}
           aria-expanded={false}
           className={
-            "shrink-0 p-0.5 rounded text-stone-400 " +
-            "hover:text-stone-800"
+            "shrink-0 p-0.5 rounded text-fg-subtle " +
+            "hover:text-fg-strong"
           }
         >
           <ChevronRight size={12} />
@@ -364,7 +364,7 @@ export function MetadataCard({
         {!hasAnyMeta && (
           <span
             className={
-              "text-[10px] italic text-stone-400"
+              "text-2xs italic text-fg-subtle"
             }
           >
             {t("noTags")}
@@ -376,7 +376,7 @@ export function MetadataCard({
           aria-label={t("editMetadata")}
           className={
             "ml-auto shrink-0 p-0.5 rounded " +
-            "text-stone-400 hover:text-cta " +
+            "text-fg-subtle hover:text-cta " +
             "opacity-0 group-hover/meta:opacity-100 " +
             "focus-visible:opacity-100 transition-opacity"
           }
@@ -401,8 +401,8 @@ export function MetadataCard({
           aria-label={t("collapseMetadata")}
           aria-expanded={true}
           className={
-            "p-1 rounded text-stone-400 " +
-            "hover:text-stone-700 transition-colors " +
+            "p-1 rounded text-fg-subtle " +
+            "hover:text-fg transition-colors " +
             "shrink-0 -ml-1 mt-0.5"
           }
         >
@@ -410,7 +410,7 @@ export function MetadataCard({
         </button>
         <h2
           className={
-            "flex-1 text-base font-semibold text-stone-800"
+            "flex-1 text-base font-semibold text-fg-strong"
           }
         >
           {fm.title || fallbackTitle}
@@ -420,7 +420,7 @@ export function MetadataCard({
           title={t("editMetadata")}
           aria-label={t("editMetadata")}
           className={
-            "p-1 rounded text-stone-400 hover:text-cta " +
+            "p-1 rounded text-fg-subtle hover:text-cta " +
             "opacity-0 group-hover:opacity-100 " +
             "focus-visible:opacity-100 transition-opacity"
           }
@@ -442,7 +442,7 @@ export function MetadataCard({
       ) : (
         <p
           className={
-            "text-[10px] text-stone-400 mt-1 italic"
+            "text-2xs text-fg-subtle mt-1 italic"
           }
         >
           {t("noTags")}
@@ -452,20 +452,20 @@ export function MetadataCard({
         <dl
           className={
             "mt-2 grid grid-cols-[auto_1fr] gap-x-3 " +
-            "gap-y-0.5 text-[11px]"
+            "gap-y-0.5 text-xs"
           }
         >
           {optionalRows.map((r) => (
             <div key={r.label} className="contents">
               <dt
                 className={
-                  "text-stone-400 uppercase " +
-                  "tracking-wider text-[9px] mt-0.5"
+                  "text-fg-subtle uppercase " +
+                  "tracking-wider text-2xs mt-0.5"
                 }
               >
                 {r.label}
               </dt>
-              <dd className="text-stone-700">
+              <dd className="text-fg">
                 {r.value}
               </dd>
             </div>
@@ -489,7 +489,7 @@ function MetaInput({
     <label className="flex flex-col gap-0.5">
       <span
         className={
-          "text-[9px] text-stone-500 uppercase " +
+          "text-2xs text-fg-muted uppercase " +
           "tracking-wider"
         }
       >
@@ -518,14 +518,14 @@ function InlinePill({
       title={`${label}: ${value}`}
       className={
         "inline-flex items-center gap-1 px-1.5 py-0.5 " +
-        "rounded text-[10px] bg-surface-overlay " +
-        "text-stone-700 max-w-[12rem]"
+        "rounded text-2xs bg-surface-overlay " +
+        "text-fg max-w-[12rem]"
       }
     >
       <span
         className={
-          "text-[9px] uppercase tracking-wider " +
-          "text-stone-400"
+          "text-2xs uppercase tracking-wider " +
+          "text-fg-subtle"
         }
       >
         {label}
@@ -544,7 +544,7 @@ function TagChip({
   onClick?: (tag: string) => void;
 }) {
   const baseCls =
-    "px-1.5 py-0.5 rounded text-[10px] font-medium "
+    "px-1.5 py-0.5 rounded text-2xs font-medium "
     + "transition-shadow";
   const interactiveCls = onClick
     ? " cursor-pointer hover:shadow-sm"

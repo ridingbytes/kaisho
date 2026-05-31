@@ -68,13 +68,13 @@ function TriageRow({ entry }: { entry: ClockEntry }) {
   return (
     <div className="flex flex-col gap-1.5 px-3 py-2 border-b border-border-subtle">
       <div className="flex items-center gap-3 text-xs">
-        <span className="text-stone-400 tabular-nums">
+        <span className="text-fg-subtle tabular-nums">
           {formatTime(entry.start)}
         </span>
-        <span className="flex-1 text-stone-700 truncate">
+        <span className="flex-1 text-fg truncate">
           {entry.description || tc("noDescription")}
         </span>
-        <span className="text-stone-500 tabular-nums font-medium">
+        <span className="text-fg-muted tabular-nums font-medium">
           {formatDuration(entry.duration_minutes)}
         </span>
       </div>
@@ -143,7 +143,7 @@ export function CloudTriagePanel() {
 
   if (isLoading) {
     return (
-      <p className="text-xs text-stone-500 text-center py-4">
+      <p className="text-xs text-fg-muted text-center py-4">
         {tc("loading")}
       </p>
     );
@@ -154,7 +154,7 @@ export function CloudTriagePanel() {
   return (
     <div className="border border-amber-200 bg-amber-50 rounded-lg overflow-hidden">
       <div className="px-3 py-2 border-b border-amber-200">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-700">
+        <p className="text-2xs font-semibold uppercase tracking-wider text-amber-700">
           {t("unassignedCloudEntries", {
             count: entries.length,
           })}

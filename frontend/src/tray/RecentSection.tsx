@@ -34,10 +34,10 @@ export function RecentSection({
   if (entries.length === 0) {
     return (
       <div className="px-4 py-3">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
+        <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-1">
           {t("recentEntries")}
         </p>
-        <p className="text-xs text-stone-400">
+        <p className="text-xs text-fg-subtle">
           {t("noEntriesToday")}
         </p>
       </div>
@@ -46,7 +46,7 @@ export function RecentSection({
 
   return (
     <div className="px-4 py-3 flex-1 overflow-y-auto min-h-0">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+      <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
         {t("recentEntries")}
       </p>
       <div className="flex flex-col gap-1.5">
@@ -56,7 +56,7 @@ export function RecentSection({
             className="flex items-center gap-2 text-xs group"
           >
             {/* Time range */}
-            <span className="text-stone-400 tabular-nums whitespace-nowrap">
+            <span className="text-fg-subtle tabular-nums whitespace-nowrap">
               {timeStr(entry.start)}
               {entry.end
                 ? `–${timeStr(entry.end)}`
@@ -64,12 +64,12 @@ export function RecentSection({
             </span>
 
             {/* Customer */}
-            <span className="text-stone-700 truncate flex-1">
+            <span className="text-fg truncate flex-1">
               {entry.customer}
             </span>
 
             {/* Duration */}
-            <span className="text-stone-400 tabular-nums whitespace-nowrap">
+            <span className="text-fg-subtle tabular-nums whitespace-nowrap">
               {entry.duration_minutes
                 ? fmtDuration(entry.duration_minutes)
                 : "—"}

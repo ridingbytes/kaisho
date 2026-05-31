@@ -36,6 +36,7 @@ import { useReorderStates, useSettings } from "../../hooks/useSettings";
 import type { ArchivedTask, Task } from "../../types";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { Toggle } from "../common/Toggle";
+import { Button } from "../common/Button";
 import { HelpButton } from "../common/HelpButton";
 import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import {
@@ -153,7 +154,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
   return (
     <div className="border-t border-border-subtle bg-surface shrink-0">
       <button
-        className="flex items-center gap-2 w-full px-6 py-2.5 text-xs text-stone-600 hover:text-stone-900 transition-colors"
+        className="flex items-center gap-2 w-full px-6 py-2.5 text-xs text-fg-muted hover:text-fg-strong transition-colors"
         onClick={() => setOpen((v) => !v)}
       >
         {open ? (
@@ -164,16 +165,16 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
         <span className="font-semibold uppercase tracking-wide">
           {t("archive")}
         </span>
-        <span className="ml-1 text-stone-500">({archived.length})</span>
+        <span className="ml-1 text-fg-muted">({archived.length})</span>
       </button>
       {open && (
         <div className="px-6 pb-4 max-h-64 overflow-y-auto">
           {archived.length === 0 ? (
-            <p className="text-xs text-stone-500 py-2">{t("noArchivedTasks")}</p>
+            <p className="text-xs text-fg-muted py-2">{t("noArchivedTasks")}</p>
           ) : (
             <table
               ref={tableRef}
-              className="w-full text-xs text-stone-700 table-fixed border-separate border-spacing-y-0.5"
+              className="w-full text-xs text-fg table-fixed border-separate border-spacing-y-0.5"
             >
               <colgroup>
                 {widths.map((w, i) => (
@@ -184,7 +185,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                 ))}
               </colgroup>
               <thead className="group/thead">
-                <tr className="text-[10px] uppercase tracking-wider text-stone-500">
+                <tr className="text-2xs uppercase tracking-wider text-fg-muted">
                   <th className="relative text-left pb-1 pr-3 font-medium">
                     {t("archive")}
                     <ResizeHandle
@@ -220,33 +221,33 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                       key={task.id}
                       className="group/row hover:bg-surface-overlay rounded"
                     >
-                      <td className="pr-3 py-1 font-mono text-stone-500 whitespace-nowrap overflow-hidden">
+                      <td className="pr-3 py-1 font-mono text-fg-muted whitespace-nowrap overflow-hidden">
                         {fmtArchiveDate(task.archived_at)}
                       </td>
                       <td className="pr-3 py-1 whitespace-nowrap overflow-hidden">
                         {task.customer && (
                           <span
-                            className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-cta-muted text-cta-hover max-w-full truncate inline-block align-middle"
+                            className="px-1.5 py-0.5 rounded text-2xs font-semibold uppercase tracking-wider bg-cta-muted text-cta-hover max-w-full truncate inline-block align-middle"
                             title={task.customer}
                           >
                             {task.customer}
                           </span>
                         )}
                       </td>
-                      <td className="pr-3 py-1 text-stone-800 truncate">
+                      <td className="pr-3 py-1 text-fg-strong truncate">
                         {stripCustomerPrefix(task.title)}
                       </td>
                       <td className="pr-3 py-1 whitespace-nowrap overflow-hidden">
                         {state ? (
                           <span
-                            className="px-1.5 py-0.5 rounded text-[10px] font-medium text-white max-w-full truncate inline-block align-middle"
+                            className="px-1.5 py-0.5 rounded text-2xs font-medium text-white max-w-full truncate inline-block align-middle"
                             style={{ backgroundColor: state.color }}
                             title={task.archive_status}
                           >
                             {task.archive_status}
                           </span>
                         ) : (
-                          <span className="text-stone-500 truncate inline-block max-w-full align-middle">
+                          <span className="text-fg-muted truncate inline-block max-w-full align-middle">
                             {task.archive_status}
                           </span>
                         )}
@@ -257,7 +258,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                             onClick={() => unarchive.mutate(task.id)}
                             disabled={unarchive.isPending}
                             title={tc("unarchive")}
-                            className="p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-all disabled:opacity-40"
+                            className="p-1 rounded text-fg-muted hover:text-cta hover:bg-cta-muted transition-all disabled:opacity-40"
                           >
                             <ArchiveRestore size={11} />
                           </button>
@@ -276,7 +277,7 @@ function ArchiveDrawer({ stateMap }: ArchiveDrawerProps) {
                           >
                             <button
                               title={t("deletePermanently")}
-                              className="p-1 rounded text-stone-500 hover:text-red-400 transition-all"
+                              className="p-1 rounded text-fg-muted hover:text-red-400 transition-all"
                             >
                               <Trash2 size={11} />
                             </button>
@@ -545,7 +546,7 @@ export function KanbanBoard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-stone-500 text-sm">{t("loadingTasks")}</div>
+        <div className="text-fg-muted text-sm">{t("loadingTasks")}</div>
       </div>
     );
   }
@@ -592,7 +593,7 @@ export function KanbanBoard() {
                 }
                 className={[
                   "inline-flex items-center gap-1",
-                  "px-1.5 py-0.5 rounded text-[10px]",
+                  "px-1.5 py-0.5 rounded text-2xs",
                   "font-semibold transition-colors",
                   "bg-cta-muted text-cta-hover",
                   "hover:bg-red-100 hover:text-red-600",
@@ -619,8 +620,8 @@ export function KanbanBoard() {
               <button
                 onClick={() => setSearch("")}
                 className={[
-                  "p-1 rounded text-stone-400",
-                  "hover:text-stone-700 hover:bg-stone-100",
+                  "p-1 rounded text-fg-subtle",
+                  "hover:text-fg hover:bg-surface-raised",
                   "transition-colors",
                 ].join(" ")}
                 title={tc("clearAllFilters")}
@@ -632,7 +633,7 @@ export function KanbanBoard() {
         </>}
         right={<>
           <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-xs text-stone-600">
+            <span className="text-xs text-fg-muted">
               {t("showDone")}
             </span>
             <Toggle
@@ -645,19 +646,15 @@ export function KanbanBoard() {
               }}
             />
           </label>
-          <button
+          <Button
+            variant="tonal"
+            size="sm"
+            icon={<Plus size={12} />}
             onClick={() => setOpenAddInFirst(true)}
-            className={[
-              "flex items-center gap-1 px-2 py-1",
-              "rounded text-xs text-stone-600",
-              "hover:text-cta hover:bg-cta-muted",
-              "transition-colors",
-            ].join(" ")}
             title={t("newTask")}
           >
-            <Plus size={12} />
             {tc("new")}
-          </button>
+          </Button>
           <OpenInEditorButton kind="tasks" />
           <HelpButton title="Board" doc={DOCS.board} view="board" />
         </>}

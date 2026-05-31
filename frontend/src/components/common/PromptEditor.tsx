@@ -106,8 +106,8 @@ function PlaceholderHint({
 }) {
   const { t } = useTranslation("cron");
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-stone-500">
-      <span className="text-stone-400">
+    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-2xs text-fg-muted">
+      <span className="text-fg-subtle">
         {t("placeholderHint")}
       </span>
       {userFields.map((f) => (
@@ -121,7 +121,7 @@ function PlaceholderHint({
       {systemFields.map((f) => (
         <code
           key={f}
-          className="kp-known px-1.5 py-0.5 rounded bg-stone-200/50"
+          className="kp-known px-1.5 py-0.5 rounded bg-surface-raised"
         >
           {`\${${f}}`}
         </code>

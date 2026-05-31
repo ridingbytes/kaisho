@@ -111,7 +111,7 @@ export function EditorPanel({
       >
         <span
           className={
-            "text-xs text-stone-600 font-mono truncate"
+            "text-xs text-fg-muted font-mono truncate"
           }
         >
           {file.label}/{file.path}
@@ -121,7 +121,7 @@ export function EditorPanel({
           aria-label={t("copyPath")}
           title={t("copyPath")}
           className={
-            "shrink-0 p-0.5 rounded text-stone-400 " +
+            "shrink-0 p-0.5 rounded text-fg-subtle " +
             "hover:text-cta transition-colors"
           }
         >
@@ -129,7 +129,7 @@ export function EditorPanel({
         </button>
         <span
           className={[
-            "shrink-0 px-1.5 py-0.5 rounded text-[10px]",
+            "shrink-0 px-1.5 py-0.5 rounded text-2xs",
             "font-semibold uppercase tracking-wider",
             FILE_TYPE_COLORS[fileType],
           ].join(" ")}
@@ -139,7 +139,7 @@ export function EditorPanel({
         {dirty && (
           <span
             className={
-              "text-[10px] text-amber-500 shrink-0"
+              "text-2xs text-amber-500 shrink-0"
             }
           >
             {t("unsaved")}
@@ -152,7 +152,7 @@ export function EditorPanel({
               "px-2 py-0.5 rounded text-xs",
               preview
                 ? "bg-cta-muted text-cta"
-                : "text-stone-600 hover:text-stone-900",
+                : "text-fg-muted hover:text-fg-strong",
             ].join(" ")}
           >
             {preview ? t("editMode") : t("preview")}
@@ -163,7 +163,7 @@ export function EditorPanel({
           >
             <button
               className={
-                "p-1 rounded text-stone-500 " +
+                "p-1 rounded text-fg-muted " +
                 "hover:text-red-400"
               }
               title={t("deleteFile")}
@@ -174,8 +174,8 @@ export function EditorPanel({
           <button
             onClick={onClose}
             className={
-              "p-1 rounded text-stone-500 " +
-              "hover:text-stone-900"
+              "p-1 rounded text-fg-muted " +
+              "hover:text-fg-strong"
             }
             title={t("discardChanges")}
           >
@@ -251,8 +251,8 @@ export function EditorPanel({
                   }}
                   className={
                     "px-2 py-0.5 rounded text-xs " +
-                    "font-mono text-stone-700 " +
-                    "hover:text-stone-900 " +
+                    "font-mono text-fg " +
+                    "hover:text-fg-strong " +
                     "hover:bg-surface-raised " +
                     "transition-colors"
                   }
@@ -269,8 +269,8 @@ export function EditorPanel({
             className={[
               "flex-1 resize-none p-4 font-mono",
               "text-sm leading-relaxed",
-              "bg-surface-card text-stone-900",
-              "placeholder-stone-500",
+              "bg-surface-card text-fg-strong",
+              "placeholder-fg-muted",
               "focus:outline-none",
             ].join(" ")}
             placeholder={t("writeHere")}

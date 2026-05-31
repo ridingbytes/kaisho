@@ -121,7 +121,7 @@ export function Sidebar({
         className={[
           "hidden md:flex items-center rounded-lg",
           "transition-colors",
-          "text-stone-500 hover:text-stone-900",
+          "text-fg-muted hover:text-fg-strong",
           "hover:bg-surface-raised",
           open
             ? "px-3 h-7 justify-end"
@@ -153,11 +153,11 @@ export function Sidebar({
               "px-3 gap-2.5 h-8",
               !expanded && "md:flex-col md:justify-center md:mx-2 md:h-10 md:gap-1 md:px-0",
               "rounded-lg transition-colors",
-              "text-[11px] font-semibold tracking-wider",
+              "text-xs font-semibold tracking-wider",
               "uppercase",
               isActive
                 ? "bg-cta-muted text-cta"
-                : "text-stone-700 hover:text-stone-900 hover:bg-surface-raised",
+                : "text-fg hover:text-fg-strong hover:bg-surface-raised",
             ]
               .filter(Boolean)
               .join(" ")}
@@ -173,7 +173,7 @@ export function Sidebar({
                   className={[
                     "absolute -top-1.5 -right-2 min-w-[14px] h-3.5 px-0.5",
                     "flex items-center justify-center rounded-full",
-                    "text-[9px] font-bold bg-cta text-white",
+                    "text-2xs font-bold bg-cta text-white",
                   ].join(" ")}
                 >
                   {badge > 99 ? "99+" : badge}
@@ -212,11 +212,11 @@ export function Sidebar({
               "px-3 gap-2.5 h-8",
               !expanded && "md:flex-col md:justify-center md:mx-2 md:h-10 md:gap-1 md:px-0",
               "rounded-lg transition-colors",
-              "text-[11px] font-semibold tracking-wider",
+              "text-xs font-semibold tracking-wider",
               "uppercase",
               isActive
                 ? "bg-cta-muted text-cta"
-                : "text-stone-700 hover:text-stone-900 hover:bg-surface-raised",
+                : "text-fg hover:text-fg-strong hover:bg-surface-raised",
             ]
               .filter(Boolean)
               .join(" ")}

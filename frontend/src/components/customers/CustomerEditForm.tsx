@@ -66,6 +66,12 @@ export function CustomerEditForm({
   const update = useUpdateCustomer();
   const { data: settings } = useSettings();
   const customerTypes = settings?.customer_types ?? [];
+  // The backend's get_budget_summary uses sum-of-contracts
+  // whenever contracts exist (see backends/markdown
+  // __init__.py:get_budget_summary). Editing the customer-
+  // level BUDGET / OFFSET has no effect in that case, so
+  // hide the fields and tell the user where the budget
+  // actually lives.
   const hasContracts = (c.contracts ?? []).length > 0;
 
   function set(key: keyof EditState) {
@@ -88,10 +94,13 @@ export function CustomerEditForm({
       status: form.status,
       type: form.type,
       color: form.color,
-      budget: parseFloat(form.budget) || 0,
       repo: form.repo.trim() || null,
     };
+    // Skip budget + offset entirely when contracts exist;
+    // the backend ignores customer-level values in that
+    // case and writing them would just be noise on disk.
     if (!hasContracts) {
+      updates.budget = parseFloat(form.budget) || 0;
       updates.used_offset =
         parseFloat(form.used_offset) || 0;
     }
@@ -178,7 +187,15 @@ export function CustomerEditForm({
         </select>
       </div>
 
-      {!hasContracts && (
+      {hasContracts ? (
+        // Customer-level BUDGET/OFFSET are ignored by the
+        // backend when contracts exist (sum-of-contracts
+        // wins). Point the user at where the budget
+        // actually lives instead of showing dead inputs.
+        <p className="text-2xs text-fg-muted">
+          {t("budgetFromContractsHint")}
+        </p>
+      ) : (
         <div className="flex gap-2">
           <label
             className={
@@ -187,7 +204,7 @@ export function CustomerEditForm({
           >
             <span
               className={
-                "text-[10px] text-stone-500 "
+                "text-2xs text-fg-muted "
                 + "uppercase tracking-wider"
               }
             >
@@ -209,7 +226,7 @@ export function CustomerEditForm({
           >
             <span
               className={
-                "text-[10px] text-stone-500 "
+                "text-2xs text-fg-muted "
                 + "uppercase tracking-wider"
               }
             >
@@ -238,8 +255,8 @@ export function CustomerEditForm({
         <button
           onClick={onClose}
           className={
-            "p-1.5 rounded-md text-stone-500 "
-            + "hover:text-stone-900 transition-colors"
+            "p-1.5 rounded-md text-fg-muted "
+            + "hover:text-fg-strong transition-colors"
           }
           title={tc("cancel")}
         >

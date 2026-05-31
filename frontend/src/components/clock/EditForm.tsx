@@ -249,8 +249,8 @@ export function EditForm({
             <button
               onClick={onClose}
               className={
-                "p-1 rounded text-stone-600 " +
-                "hover:text-stone-900"
+                "p-1 rounded text-fg-muted " +
+                "hover:text-fg-strong"
               }
             >
               <X size={13} />
@@ -299,7 +299,7 @@ export function EditForm({
           />
           <label className={
             "flex items-center gap-1.5 mt-1.5 " +
-            "text-xs text-stone-600 cursor-pointer"
+            "text-xs text-fg-muted cursor-pointer"
           }>
             <input
               type="checkbox"

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Clock4, X } from "lucide-react";
 
 import type { CalendarEvent } from "../../api/client";
+import { Button } from "../common/Button";
 import { colorFor } from "./calendarColors";
 import { hhmm, parseIso, sameDay } from "./dateUtils";
 
@@ -43,14 +44,14 @@ export function EventPopover({
             <span
               className={`w-2 h-6 rounded ${color.bar}`}
             />
-            <h2 className="text-sm font-semibold text-stone-900 truncate">
+            <h2 className="text-sm font-semibold text-fg-strong truncate">
               {event.title || "(no title)"}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded hover:bg-surface-raised text-stone-500"
+            className="p-1 rounded hover:bg-surface-raised text-fg-muted"
             aria-label={t("close")}
           >
             <X className="w-4 h-4" />
@@ -88,15 +89,14 @@ export function EventPopover({
         )}
         {onBook && (
           <div className="mt-auto pt-3 border-t border-border">
-            <button
-              type="button"
+            <Button
               onClick={() => onBook(event)}
-              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-cta text-white text-sm font-medium hover:bg-cta-hover"
+              icon={<Clock4 className="w-4 h-4" />}
+              className="w-full"
             >
-              <Clock4 className="w-4 h-4" />
               {t("bookFromEvent")}
-            </button>
-            <p className="text-[10px] text-stone-500 mt-1 text-center">
+            </Button>
+            <p className="text-2xs text-fg-muted mt-1 text-center">
               {t("bookFromEventHint")}
             </p>
           </div>
@@ -115,10 +115,10 @@ function DetailRow({
 }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wide text-stone-500">
+      <div className="text-2xs uppercase tracking-wide text-fg-muted">
         {label}
       </div>
-      <div className="text-sm text-stone-800">
+      <div className="text-sm text-fg-strong">
         {value}
       </div>
     </div>

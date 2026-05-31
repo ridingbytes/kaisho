@@ -17,6 +17,7 @@ import {
 import { useEffect, useState } from "react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
+import { HoverActions } from "../common/HoverActions";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
 import {
   useInvoicedContracts,
@@ -73,7 +74,7 @@ function StatCard({
     <div
       onClick={onClick}
       className={[
-        "flex items-center gap-4 p-5 rounded-xl",
+        "flex items-center gap-4 p-5 rounded-lg",
         "bg-surface-card border border-border-subtle",
         onClick
           ? "cursor-pointer hover:bg-surface-raised " +
@@ -101,12 +102,12 @@ function StatCard({
       <div>
         <p
           className={
-            "text-2xl font-bold text-stone-900 tabular-nums"
+            "text-2xl font-bold text-fg-strong tabular-nums"
           }
         >
           {value}
         </p>
-        <p className="text-xs text-stone-600 mt-0.5">
+        <p className="text-xs text-fg-muted mt-0.5">
           {label}
         </p>
       </div>
@@ -172,8 +173,8 @@ function ClockEntryRow({
       >
         <span
           className={
-            "text-xs text-stone-500 tabular-nums shrink-0 " +
-            "w-10"
+            "text-xs text-fg-muted tabular-nums shrink-0 " +
+            "w-16"
           }
         >
           {formatDate(entry.start)}
@@ -218,8 +219,8 @@ function ClockEntryRow({
         <button
           onClick={() => setEditing(false)}
           className={
-            "p-0.5 rounded text-stone-600 " +
-            "hover:text-stone-900 transition-colors"
+            "p-0.5 rounded text-fg-muted " +
+            "hover:text-fg-strong transition-colors"
           }
           title={tc("cancel")}
         >
@@ -238,7 +239,7 @@ function ClockEntryRow({
     >
       <span
         className={
-          "text-xs text-stone-500 tabular-nums shrink-0 " +
+          "text-xs text-fg-muted tabular-nums shrink-0 " +
           "w-16 cursor-pointer hover:text-cta"
         }
         onClick={() =>
@@ -249,13 +250,13 @@ function ClockEntryRow({
       </span>
       <span
         className={
-          "text-xs text-stone-700 overflow-hidden " +
+          "text-xs text-fg overflow-hidden " +
           "min-w-0 flex-1 flex items-center gap-1"
         }
       >
         <span className="truncate min-w-0">
           {entry.description || (
-            <em className="text-stone-500">{tc("noDescription")}</em>
+            <em className="text-fg-muted">{tc("noDescription")}</em>
           )}
         </span>
         {entry.notes && (
@@ -269,7 +270,7 @@ function ClockEntryRow({
       {entry.contract && (
         <span
           className={[
-            "text-[10px] px-1.5 py-0.5 rounded shrink-0",
+            "text-2xs px-1.5 py-0.5 rounded shrink-0",
             isInv
               ? "bg-emerald-500/10 text-emerald-600"
               : "bg-cta/10 text-cta",
@@ -281,22 +282,17 @@ function ClockEntryRow({
       )}
       <span
         className={
-          "text-xs text-stone-600 tabular-nums shrink-0"
+          "text-xs text-fg-muted tabular-nums shrink-0"
         }
       >
         {formatHours(minutes)}
       </span>
-      <div
-        className={
-          "hidden group-hover:flex items-center " +
-          "gap-0.5 shrink-0"
-        }
-      >
+      <HoverActions className="gap-0.5">
         <button
           onClick={() => setEditing(true)}
           className={
-            "p-0.5 rounded text-stone-500 " +
-            "hover:text-stone-900 transition-colors"
+            "p-0.5 rounded text-fg-muted " +
+            "hover:text-fg-strong transition-colors"
           }
           title={tc("edit")}
         >
@@ -309,7 +305,7 @@ function ClockEntryRow({
           <button
             disabled={deleteEntry.isPending}
             className={
-              "p-0.5 rounded text-stone-500 " +
+              "p-0.5 rounded text-fg-muted " +
               "hover:text-red-400 transition-colors"
             }
             title={tc("delete")}
@@ -317,7 +313,7 @@ function ClockEntryRow({
             <Trash2 size={12} strokeWidth={2} />
           </button>
         </ConfirmPopover>
-      </div>
+      </HoverActions>
     </div>
   );
 }
@@ -336,7 +332,7 @@ function CustomerClockEntries({
 
   if (isLoading) {
     return (
-      <p className="text-xs text-stone-500 py-2 pl-1">
+      <p className="text-xs text-fg-muted py-2 pl-1">
         {tCommon("loading")}
       </p>
     );
@@ -350,7 +346,7 @@ function CustomerClockEntries({
 
   if (completed.length === 0) {
     return (
-      <p className="text-xs text-stone-500 py-2 pl-1">
+      <p className="text-xs text-fg-muted py-2 pl-1">
         {tClocks("noClockEntries")}
       </p>
     );
@@ -422,8 +418,8 @@ function BudgetRow({
           <button
             onClick={onToggle}
             className={
-              "p-0.5 rounded text-stone-600 " +
-              "hover:text-stone-900 transition-colors"
+              "p-0.5 rounded text-fg-muted " +
+              "hover:text-fg-strong transition-colors"
             }
             aria-label={
               expanded ? tc("collapse") : tc("expand")
@@ -434,7 +430,7 @@ function BudgetRow({
           <button
             onClick={onNameClick}
             className={
-              "text-sm font-medium text-stone-800 " +
+              "text-sm font-medium text-fg-strong " +
               "hover:text-cta transition-colors " +
               "text-left inline-flex items-center " +
               "gap-1.5"
@@ -459,7 +455,7 @@ function BudgetRow({
           )}
           <span
             className={
-              "text-xs text-stone-600 tabular-nums"
+              "text-xs text-fg-muted tabular-nums"
             }
           >
             {displayUsed.toFixed(1)}h / {displayBudget.toFixed(0)}h
@@ -482,11 +478,11 @@ function BudgetRow({
             return (
               <div key={c.name}>
                 <div className="flex items-baseline justify-between mb-0.5">
-                  <span className="text-[9px] text-stone-500 truncate">
+                  <span className="text-2xs text-fg-muted truncate">
                     {c.name}
                   </span>
                   <span
-                    className="text-[9px] tabular-nums shrink-0 ml-2"
+                    className="text-2xs tabular-nums shrink-0 ml-2"
                     style={{ color: cColor }}
                   >
                     {(c.used ?? 0).toFixed(1)}h used · {(c.rest ?? 0).toFixed(1)}h left · {pct}%
@@ -509,7 +505,7 @@ function BudgetRow({
         <div>
           <div className="flex justify-end mb-0.5">
             <span
-              className="text-[9px] tabular-nums"
+              className="text-2xs tabular-nums"
               style={{ color }}
             >
               {displayUsed.toFixed(1)}h used · {(displayBudget - displayUsed).toFixed(1)}h left · {usedPercent}%
@@ -575,7 +571,7 @@ export function DashboardView() {
           "flex items-center justify-center h-full"
         }
       >
-        <p className="text-sm text-stone-500">
+        <p className="text-sm text-fg-muted">
           {tc("loading")}
         </p>
       </div>
@@ -602,7 +598,7 @@ export function DashboardView() {
         {timer?.active && timer.start && (
           <div
             className={
-              "flex items-center gap-4 p-4 rounded-xl " +
+              "flex items-center gap-4 p-4 rounded-lg " +
               "bg-cta-muted border border-cta/30"
             }
           >
@@ -614,7 +610,7 @@ export function DashboardView() {
             <div className="min-w-0 flex-1">
               <p
                 className={
-                  "text-sm font-semibold text-stone-900"
+                  "text-sm font-semibold text-fg-strong"
                 }
               >
                 {timer.customer || timer.description || tc("active")}
@@ -622,7 +618,7 @@ export function DashboardView() {
               {timer.description && (
                 <p
                   className={
-                    "text-xs text-stone-700 truncate"
+                    "text-xs text-fg truncate"
                   }
                 >
                   {timer.description}
@@ -632,7 +628,7 @@ export function DashboardView() {
             <span
               className={
                 "text-lg font-mono font-semibold " +
-                "text-stone-900 tabular-nums shrink-0"
+                "text-fg-strong tabular-nums shrink-0"
               }
             >
               {elapsed(timer.start)}
@@ -714,14 +710,14 @@ export function DashboardView() {
         {data.budgets.length > 0 && (
           <div
             className={
-              "rounded-xl bg-surface-card " +
+              "rounded-lg bg-surface-card " +
               "border border-border-subtle p-5"
             }
           >
             <h2
               className={
                 "text-xs font-semibold tracking-wider " +
-                "uppercase text-stone-600 mb-4"
+                "uppercase text-fg-muted mb-4"
               }
             >
               {t("budgetStatus")}

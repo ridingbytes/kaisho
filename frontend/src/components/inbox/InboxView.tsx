@@ -15,7 +15,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Plus } from "lucide-react";
+import { Button } from "../common/Button";
 import { useInboxItems } from "../../hooks/useInbox";
 import { reorderInboxItems } from "../../api/client";
 import { AddInboxForm } from "./AddInboxForm";
@@ -62,7 +63,7 @@ function SortableInboxRow({
           className={[
             "cursor-grab shrink-0",
             "pl-3 pr-1 pt-4",
-            "text-stone-300 hover:text-stone-500",
+            "text-fg-disabled hover:text-fg-muted",
             "touch-none",
           ].join(" ")}
         >
@@ -156,16 +157,14 @@ export function InboxView() {
           />
         </>}
         right={<>
-          <button
+          <Button
+            variant="tonal"
+            size="sm"
+            icon={<Plus size={12} />}
             onClick={() => setShowForm((v) => !v)}
-            className={[
-              "px-3 py-1 rounded-lg text-xs bg-cta",
-              "text-white hover:bg-cta-hover",
-              "transition-colors",
-            ].join(" ")}
           >
             {t("addItem")}
-          </button>
+          </Button>
           <OpenInEditorButton kind="inbox" />
           <HelpButton
             title="Inbox"
@@ -182,7 +181,7 @@ export function InboxView() {
 
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
-          <p className="text-sm text-stone-500 text-center py-8">
+          <p className="text-sm text-fg-muted text-center py-8">
             {tc("loading")}
           </p>
         )}
@@ -190,10 +189,10 @@ export function InboxView() {
           && active.length === 0
           && archived.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-2">
-            <p className="text-stone-500 text-sm">
+            <p className="text-fg-muted text-sm">
               {t("inboxEmpty")}
             </p>
-            <p className="text-stone-400 text-xs">
+            <p className="text-fg-subtle text-xs">
               {t("inboxEmptyHint")}
             </p>
           </div>

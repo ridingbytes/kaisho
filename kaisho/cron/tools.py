@@ -368,15 +368,66 @@ def _book_time(args: dict) -> dict:
 
 
 def _list_customers(args: dict) -> dict:
-    return {
-        "customers": _backend().customers.list_customers(),
-    }
+    """List customers with explicit, pre-computed budget
+    fields so the advisor model can't invert ``used`` and
+    ``rest`` (reported by user 2026-05-31: model labelled
+    ``rest=36h`` as '91% used' for ISC, etc.).
+
+    Each customer row carries:
+      budget_hours / used_hours / rest_hours / pct_used
+    """
+    customers = _backend().customers.list_customers()
+    for c in customers:
+        budget = float(c.get("budget") or 0)
+        used = float(c.get("used") or 0)
+        rest = float(c.get("rest") or 0)
+        pct = (
+            round((used / budget) * 100)
+            if budget > 0 else 0
+        )
+        c["budget_hours"] = budget
+        c["used_hours"] = used
+        c["rest_hours"] = rest
+        c["pct_used"] = pct
+    return {"customers": customers}
 
 
 def _list_contracts(args: dict) -> dict:
+    """List a customer's contracts with an explicit ``state``
+    field so the advisor model can't confuse historical
+    invoiced contracts with the active budget.
+
+    State values:
+      ``active``    no end_date, not invoiced -> live budget
+      ``invoiced``  already invoiced -> historical, ignore
+                    for 'remaining capacity' reasoning
+      ``ended``     end_date in past, not invoiced -> closed
+    """
+    from datetime import date
     contracts = _backend().customers.list_contracts(
         args["customer"],
     )
+    today = date.today().isoformat()
+    for c in contracts:
+        end = c.get("end_date") or ""
+        if c.get("invoiced"):
+            c["state"] = "invoiced"
+        elif end and end < today:
+            c["state"] = "ended"
+        else:
+            c["state"] = "active"
+        # Pre-compute pct_used so the model doesn't invert
+        # used / rest. Same fix as _list_customers.
+        budget = float(c.get("budget") or 0)
+        used = float(c.get("used") or 0)
+        rest = float(c.get("rest") or 0)
+        c["budget_hours"] = budget
+        c["used_hours"] = used
+        c["rest_hours"] = rest
+        c["pct_used"] = (
+            round((used / budget) * 100)
+            if budget > 0 else 0
+        )
     return {"contracts": contracts}
 
 

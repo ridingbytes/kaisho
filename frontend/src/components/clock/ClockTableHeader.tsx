@@ -24,9 +24,9 @@ export type SortState = { col: SortCol; dir: SortDir };
 // -----------------------------------------------------------------
 
 const thCls = [
-  "relative px-3 py-2 text-[10px] font-semibold uppercase",
-  "tracking-wider text-stone-600 select-none",
-  "cursor-pointer hover:text-stone-900 transition-colors",
+  "relative px-3 py-2 text-2xs font-semibold uppercase",
+  "tracking-wider text-fg-muted select-none",
+  "cursor-pointer hover:text-fg-strong transition-colors",
 ].join(" ");
 
 /** Props for the {@link SortTh} component. */

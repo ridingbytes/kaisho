@@ -9,6 +9,7 @@ import {
 import { useContracts } from "../../hooks/useContracts";
 import { useToast } from "../../context/ToastContext";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { Button } from "../common/Button";
 import {
   exportClocksCsv,
   exportClocksExcel,
@@ -129,16 +130,16 @@ export function InvoicePanel({
       aria-modal="true"
     >
       <div
-        className="bg-surface-card rounded-xl border border-border overflow-hidden shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col"
+        className="bg-surface-card rounded-lg border border-border overflow-hidden shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-600 flex-1">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-muted flex-1">
           {t("invoiceTitle", { customer })}
         </h3>
         <button
           onClick={onClose}
-          className="p-1 rounded text-stone-400 hover:text-stone-700"
+          className="p-1 rounded text-fg-subtle hover:text-fg"
         >
           <X size={14} />
         </button>
@@ -152,7 +153,7 @@ export function InvoicePanel({
             onChange={(e) =>
               setContract(e.target.value)
             }
-            className="px-2 py-1 rounded text-xs bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
+            className="px-2 py-1 rounded text-xs bg-surface-raised border border-border text-fg-strong focus:outline-none focus:border-cta"
           >
             <option value="">{t("allContracts")}</option>
             {contracts.map((c) => (
@@ -168,35 +169,35 @@ export function InvoicePanel({
           onChange={(e) =>
             setFromDate(e.target.value)
           }
-          className="px-2 py-1 rounded text-xs bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
+          className="px-2 py-1 rounded text-xs bg-surface-raised border border-border text-fg-strong focus:outline-none focus:border-cta"
         />
-        <span className="text-xs text-stone-400">{t("to")}</span>
+        <span className="text-xs text-fg-subtle">{t("to")}</span>
         <input
           type="date"
           value={toDate}
           onChange={(e) =>
             setToDate(e.target.value)
           }
-          className="px-2 py-1 rounded text-xs bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
+          className="px-2 py-1 rounded text-xs bg-surface-raised border border-border text-fg-strong focus:outline-none focus:border-cta"
         />
       </div>
 
       {/* Summary */}
       {preview && (
         <div className="flex items-center gap-4 px-4 py-2 border-b border-border-subtle">
-          <span className="text-xs text-stone-600">
+          <span className="text-xs text-fg-muted">
             {t("unbilledEntries", {
               count: preview.entry_count,
             })}
           </span>
-          <span className="text-xs font-semibold text-stone-900">
+          <span className="text-xs font-semibold text-fg-strong">
             {preview.total_hours}h
           </span>
           <div className="flex-1" />
           <button
             onClick={handleExportCsv}
             disabled={!entries.length}
-            className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-stone-700 hover:text-cta hover:bg-cta-muted transition-colors disabled:opacity-40"
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs text-fg hover:text-cta hover:bg-cta-muted transition-colors disabled:opacity-40"
             title="Download CSV"
           >
             <Download size={11} /> CSV
@@ -204,7 +205,7 @@ export function InvoicePanel({
           <button
             onClick={handleExportExcel}
             disabled={!entries.length}
-            className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-stone-700 hover:text-cta hover:bg-cta-muted transition-colors disabled:opacity-40"
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs text-fg hover:text-cta hover:bg-cta-muted transition-colors disabled:opacity-40"
             title="Download Excel"
           >
             <Download size={11} /> XLS
@@ -216,15 +217,13 @@ export function InvoicePanel({
             onConfirm={handleBookAll}
             disabled={booking || !entries.length}
           >
-            <button
+            <Button
+              size="sm"
               disabled={booking || !entries.length}
-              className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-40"
+              icon={<Check size={12} />}
             >
-              <Check size={12} />
-              {booking
-                ? tc("saving")
-                : t("markAsInvoiced")}
-            </button>
+              {booking ? tc("saving") : t("markAsInvoiced")}
+            </Button>
           </ConfirmPopover>
         </div>
       )}
@@ -232,12 +231,12 @@ export function InvoicePanel({
       {/* Entry list — fills the rest of the modal */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         {isLoading && (
-          <p className="text-xs text-stone-500 text-center py-4">
+          <p className="text-xs text-fg-muted text-center py-4">
             {tc("loading")}
           </p>
         )}
         {!isLoading && entries.length === 0 && (
-          <p className="text-xs text-stone-500 text-center py-4">
+          <p className="text-xs text-fg-muted text-center py-4">
             {t("noUnbilledEntries")}
           </p>
         )}
@@ -246,18 +245,18 @@ export function InvoicePanel({
             key={e.start}
             className="flex items-start gap-3 px-4 py-1.5 text-xs border-b border-border-subtle last:border-b-0"
           >
-            <span className="text-stone-400 tabular-nums w-20 shrink-0">
+            <span className="text-fg-subtle tabular-nums w-20 shrink-0">
               {formatDate(e.start)}
             </span>
-            <span className="flex-1 text-stone-700 break-words min-w-0">
+            <span className="flex-1 text-fg break-words min-w-0">
               {e.description || tc("noDescription")}
             </span>
             {e.contract && (
-              <span className="text-[10px] text-stone-400 shrink-0">
+              <span className="text-2xs text-fg-subtle shrink-0">
                 {e.contract}
               </span>
             )}
-            <span className="font-medium tabular-nums text-stone-900 shrink-0">
+            <span className="font-medium tabular-nums text-fg-strong shrink-0">
               {formatHours(e.duration_minutes)}
             </span>
           </div>

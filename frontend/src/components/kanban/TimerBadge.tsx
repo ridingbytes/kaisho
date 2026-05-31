@@ -41,7 +41,7 @@ export function TimerBadge({
     <button
       onPointerDown={(e) => e.stopPropagation()}
       onClick={onStop}
-      className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-600 text-[10px] font-mono font-semibold hover:bg-red-500/10 hover:text-red-500 transition-colors"
+      className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-600 text-2xs font-mono font-semibold hover:bg-red-500/10 hover:text-red-500 transition-colors"
       title={t("stopTimer")}
     >
       <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />

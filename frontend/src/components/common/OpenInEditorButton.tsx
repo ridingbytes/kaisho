@@ -83,8 +83,8 @@ export function OpenInEditorButton(
       onClick={open}
       title={t("openInEditor")}
       className={
-        "p-1 rounded text-stone-500 " +
-        "hover:text-cta hover:bg-stone-100 " +
+        "p-1 rounded text-fg-muted " +
+        "hover:text-cta hover:bg-surface-raised " +
         "transition-colors"
       }
     >

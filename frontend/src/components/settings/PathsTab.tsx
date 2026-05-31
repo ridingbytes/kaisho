@@ -9,11 +9,8 @@ import {
   useKbSources,
   useUpdateKbSources,
 } from "../../hooks/useSettings";
-import {
-  fieldCls,
-  inputCls,
-  saveBtnCls,
-} from "./styles";
+import { inputCls } from "./styles";
+import { Button } from "../common/Button";
 
 // -----------------------------------------------------------------
 // Import data
@@ -54,15 +51,15 @@ function ImportDataSection() {
 
   return (
     <div className="mb-6">
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("importData")}
       </h2>
-      <p className="text-[11px] text-stone-500 mb-3">
+      <p className="text-xs text-fg-muted mb-3">
         {t("importDataHint")}
       </p>
       <div className="flex items-end gap-2">
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-medium text-stone-500">
+          <label className="text-2xs font-medium text-fg-muted">
             {t("format")}
           </label>
           <select
@@ -70,7 +67,7 @@ function ImportDataSection() {
             onChange={(e) =>
               setFormat(e.target.value)
             }
-            className="px-2 h-[30px] rounded-lg text-xs bg-surface-card border border-border text-stone-800"
+            className={inputCls}
           >
             <option value="org">
               {t("orgMode")}
@@ -81,7 +78,7 @@ function ImportDataSection() {
           </select>
         </div>
         <div className="flex-1 flex flex-col gap-1">
-          <label className="text-[10px] font-medium text-stone-500">
+          <label className="text-2xs font-medium text-fg-muted">
             {t("sourceDirectory")}
           </label>
           <input
@@ -89,19 +86,18 @@ function ImportDataSection() {
             value={path}
             onChange={(e) => setPath(e.target.value)}
             placeholder="/path/to/data"
-            className="px-2 h-[30px] rounded-lg text-xs bg-surface-card border border-border text-stone-800 placeholder-stone-400"
+            className={inputCls + " w-full"}
           />
         </div>
-        <button
+        <Button
           onClick={handleImport}
           disabled={importing || !path.trim()}
-          className={saveBtnCls}
         >
           {importing ? tc("importing") : tc("import")}
-        </button>
+        </Button>
       </div>
       {result && (
-        <div className="mt-2 text-[11px] text-green-600">
+        <div className="mt-2 text-xs text-green-600">
           {t("imported")}:{" "}
           {Object.entries(result)
             .map(([k, v]) => `${v} ${k}`)
@@ -109,7 +105,7 @@ function ImportDataSection() {
         </div>
       )}
       {error && (
-        <div className="mt-2 text-[11px] text-red-500">
+        <div className="mt-2 text-xs text-red-500">
           {error}
         </div>
       )}
@@ -220,12 +216,12 @@ export function PathsSection(): JSX.Element {
     <section className="space-y-8">
       {/* Backend selector */}
       <div>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("storageBackend")}
         </h2>
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden mb-3">
           <div className="flex items-center gap-3 px-4 py-3">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
+            <span className="text-xs text-fg w-32 shrink-0">
               {t("backend")}
             </span>
             <select
@@ -233,10 +229,7 @@ export function PathsSection(): JSX.Element {
               onChange={(e) =>
                 setBackend(e.target.value)
               }
-              className={[
-                fieldCls,
-                "flex-1 h-[34px]",
-              ].join(" ")}
+              className={inputCls + " flex-1"}
             >
               <option value="org">
                 {t("orgMode")}
@@ -251,33 +244,32 @@ export function PathsSection(): JSX.Element {
                 {t("sql")}
               </option>
             </select>
-            <button
+            <Button
               onClick={handleSwitchBackend}
               disabled={
                 switchBe.isPending ||
                 backend === paths?.backend
               }
-              className={saveBtnCls}
             >
               {switchBe.isPending
                 ? "Switching..."
                 : tc("switch")}
-            </button>
+            </Button>
           </div>
         </div>
-        <p className="text-[10px] text-stone-400 mb-6">
+        <p className="text-2xs text-fg-subtle mb-6">
           {t("dataNotMigrated")}
         </p>
       </div>
 
       {/* Data directories */}
       <div>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("dataDirectories")}
         </h2>
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden mb-4">
           <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
+            <span className="text-xs text-fg w-32 shrink-0">
               ORG_DIR
             </span>
             <input
@@ -291,7 +283,7 @@ export function PathsSection(): JSX.Element {
             />
           </label>
           <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
+            <span className="text-xs text-fg w-32 shrink-0">
               MARKDOWN_DIR
             </span>
             <input
@@ -305,27 +297,26 @@ export function PathsSection(): JSX.Element {
             />
           </label>
           <div className="flex items-center gap-3 px-4 py-2.5">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
+            <span className="text-xs text-fg w-32 shrink-0">
               DATA_DIR
             </span>
-            <span className="text-xs font-mono text-stone-600 truncate flex-1">
+            <span className="text-xs font-mono text-fg-muted truncate flex-1">
               {paths?.data_dir ?? "data"}
             </span>
-            <span className="text-[10px] text-stone-400">
+            <span className="text-2xs text-fg-subtle">
               {t("globalSetViaEnv")}
             </span>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button
+          <Button
             onClick={handleSavePaths}
             disabled={update.isPending}
-            className={saveBtnCls}
           >
             {update.isPending
               ? tc("saving")
               : t("savePaths")}
-          </button>
+          </Button>
           {saved && (
             <span className="text-xs text-green-400">
               Saved.
@@ -339,10 +330,10 @@ export function PathsSection(): JSX.Element {
 
       {/* KB sources */}
       <div>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("knowledgeBaseSources")}
         </h2>
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden mb-3">
           {sources.map((src, idx) => (
             <div
               key={idx}
@@ -383,75 +374,82 @@ export function PathsSection(): JSX.Element {
                 className={inputCls}
               />
               <div className="flex items-center shrink-0">
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  icon={<ArrowUp size={14} />}
                   onClick={() => moveSource(idx, -1)}
                   disabled={idx === 0}
                   title={t("moveUp")}
-                  aria-label={t("moveUp")}
-                  className="p-1 rounded text-stone-500 hover:text-stone-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <ArrowUp size={14} />
-                </button>
-                <button
+                  {t("moveUp")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  icon={<ArrowDown size={14} />}
                   onClick={() => moveSource(idx, 1)}
                   disabled={idx === sources.length - 1}
                   title={t("moveDown")}
-                  aria-label={t("moveDown")}
-                  className="p-1 rounded text-stone-500 hover:text-stone-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <ArrowDown size={14} />
-                </button>
+                  {t("moveDown")}
+                </Button>
               </div>
-              <button
+              <Button
+                variant="danger"
+                size="sm"
+                iconOnly
+                icon={<X size={14} />}
                 onClick={() => removeSource(idx)}
-                className="p-1 rounded text-stone-500 hover:text-red-400 transition-colors shrink-0"
+                title={tc("remove")}
               >
-                <X size={14} />
-              </button>
+                {tc("remove")}
+              </Button>
             </div>
           ))}
           {sources.length === 0 && (
-            <p className="px-4 py-3 text-xs text-stone-500">
+            <p className="px-4 py-3 text-xs text-fg-muted">
               {t("noKbSources")}
             </p>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="secondary"
             onClick={addSource}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-stone-700 bg-surface-raised border border-border hover:text-cta hover:border-cta/40 transition-colors"
+            icon={<Plus size={12} />}
           >
-            <Plus size={12} />
             {t("addSource")}
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSaveKb}
             disabled={updateKb.isPending}
-            className={saveBtnCls}
           >
             {updateKb.isPending
               ? tc("saving")
               : t("saveKbSources")}
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Read-only info */}
       <div>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("info")}
         </h2>
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-2.5">
-            <span className="text-xs text-stone-600 w-32 shrink-0">
+            <span className="text-xs text-fg-muted w-32 shrink-0">
               {t("settingsFile")}
             </span>
-            <span className="text-xs font-mono text-stone-700 truncate flex-1">
+            <span className="text-xs font-mono text-fg truncate flex-1">
               {paths?.settings_file}
             </span>
           </div>
         </div>
-        <p className="mt-2 text-[10px] text-stone-400">
+        <p className="mt-2 text-2xs text-fg-subtle">
           {t("pathsHint")}
         </p>
       </div>

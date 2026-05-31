@@ -247,8 +247,8 @@ export function TokenFilterInput({
             : undefined}
           className={[
             "flex-1 min-w-[80px] bg-transparent",
-            "text-[11px] text-stone-700",
-            "placeholder:text-stone-400",
+            "text-xs text-fg",
+            "placeholder:text-fg-subtle",
             "focus:outline-none",
             inputClassName ?? "",
           ].join(" ")}
@@ -276,12 +276,12 @@ function ChipPill({
     <span
       className={[
         "inline-flex items-center gap-1 shrink-0",
-        "px-1.5 py-0.5 rounded text-[10px]",
+        "px-1.5 py-0.5 rounded text-2xs",
         "bg-cta-muted text-cta-hover",
         "font-medium",
       ].join(" ")}
     >
-      <span className="text-stone-500">{chip.key}:</span>
+      <span className="text-fg-muted">{chip.key}:</span>
       <span className="truncate max-w-[10rem]">
         {chip.value}
       </span>
@@ -292,7 +292,7 @@ function ChipPill({
           e.stopPropagation();
           onRemove();
         }}
-        className="text-stone-500 hover:text-stone-900"
+        className="text-fg-muted hover:text-fg-strong"
         title="Remove"
         aria-label="Remove filter"
       >

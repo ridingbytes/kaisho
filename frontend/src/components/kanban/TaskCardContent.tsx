@@ -88,7 +88,7 @@ export function TaskCardContent({
             }
             className={[
               "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded",
-              "text-[10px] font-semibold tracking-wider uppercase",
+              "text-2xs font-semibold tracking-wider uppercase",
               "bg-cta-muted text-cta-hover",
               "hover:bg-cta/10 transition-colors cursor-pointer",
             ].join(" ")}
@@ -111,7 +111,7 @@ export function TaskCardContent({
           )}
         </div>
       )}
-      <p className="text-sm font-medium text-stone-900 leading-snug mb-1">
+      <p className="text-sm font-medium text-fg-strong leading-snug mb-1">
         {stripCustomerPrefix(task.title)}
       </p>
       {task.body && (
@@ -124,7 +124,7 @@ export function TaskCardContent({
               onClick={() =>
                 setBodyExpanded((v) => !v)
               }
-              className="flex items-center gap-1 text-[10px] text-stone-500 hover:text-stone-700 transition-colors"
+              className="flex items-center gap-1 text-2xs text-fg-muted hover:text-fg transition-colors"
             >
               {bodyExpanded ? (
                 <ChevronDown size={10} />
@@ -156,7 +156,7 @@ export function TaskCardContent({
               }
             >
               <Markdown
-                className="text-xs text-stone-700 [&_p]:mb-1 [&_p]:leading-relaxed break-words [&_a]:break-all"
+                className="text-xs text-fg [&_p]:mb-1 [&_p]:leading-relaxed break-words [&_a]:break-all"
                 onLinkClick={openOverlay}
               >
                 {task.body}
@@ -177,7 +177,7 @@ export function TaskCardContent({
             onClick={(e) =>
               handleLinkClick(e, openOverlay)
             }
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-overlay border border-border-subtle text-stone-700 hover:text-cta hover:border-cta transition-colors"
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-2xs font-medium bg-surface-overlay border border-border-subtle text-fg hover:text-cta hover:border-cta transition-colors"
             title={task.github_url}
           >
             <GitBranch size={10} />
@@ -218,7 +218,7 @@ export function TaskCardContent({
                   onClick={() =>
                     onTagClick?.(tagName)
                   }
-                  className="px-1.5 py-0.5 rounded text-[10px] font-semibold hover:opacity-80 transition-opacity"
+                  className="px-1.5 py-0.5 rounded text-2xs font-semibold hover:opacity-80 transition-opacity"
                   style={tagBadgeStyle(def.color)}
                 >
                   {tagName}
@@ -232,7 +232,7 @@ export function TaskCardContent({
                   onClick={() =>
                     onTagClick?.(tagName)
                   }
-                  className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-overlay text-stone-700 border border-border-subtle hover:border-cta hover:text-cta transition-colors"
+                  className="px-1.5 py-0.5 rounded text-2xs font-medium bg-surface-overlay text-fg border border-border-subtle hover:border-cta hover:text-cta transition-colors"
                 >
                   {tagName}
                 </button>
@@ -243,7 +243,7 @@ export function TaskCardContent({
                 e.stopPropagation()
               }
               onClick={() => setTagging(true)}
-              className="p-0.5 rounded text-stone-400 hover:text-cta transition-colors"
+              className="p-0.5 rounded text-fg-subtle hover:text-cta transition-colors"
               title={t("editTags")}
             >
               <Tag size={10} />
@@ -253,7 +253,7 @@ export function TaskCardContent({
         <span className="ml-auto flex items-center gap-1 shrink-0">
           <RelDate
             date={task.created}
-            className="text-[10px] text-stone-500"
+            className="text-2xs text-fg-muted"
           />
           {task.state_history &&
             task.state_history.length > 0 && (
@@ -262,7 +262,7 @@ export function TaskCardContent({
                   e.stopPropagation()
                 }
                 onClick={onHistoryOpen}
-                className="p-0.5 rounded text-stone-400 hover:text-cta transition-colors"
+                className="p-0.5 rounded text-fg-subtle hover:text-cta transition-colors"
                 title={t("stateHistory")}
               >
                 <ListRestart size={9} />

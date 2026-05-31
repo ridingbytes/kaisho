@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { DOCS } from "../../docs/panelDocs";
+import { AppearanceTab } from "./AppearanceTab";
 import { GeneralTab } from "./GeneralTab";
 import { ProfileTab } from "./ProfileTab";
 import { TagsAndTypesTab } from "./TagsTab";
@@ -18,6 +19,7 @@ import { UpdateSection } from "./UpdateTab";
 type TabId =
   | "profile"
   | "general"
+  | "appearance"
   | "tags"
   | "ai"
   | "cloud"
@@ -31,6 +33,7 @@ type TabId =
 const TABS: { id: TabId; labelKey: string }[] = [
   { id: "profile", labelKey: "profile" },
   { id: "general", labelKey: "general" },
+  { id: "appearance", labelKey: "appearance" },
   { id: "tags", labelKey: "tagsAndTypes" },
   { id: "ai", labelKey: "ai" },
   { id: "cloud", labelKey: "cloudSync" },
@@ -60,7 +63,7 @@ function TabBar({ active, onChange }: TabBarProps) {
             "transition-colors",
             active === tab.id
               ? "text-cta border-b-2 border-cta -mb-px"
-              : "text-stone-600 hover:text-stone-900",
+              : "text-fg-muted hover:text-fg-strong",
           ].join(" ")}
         >
           {t(tab.labelKey)}
@@ -117,6 +120,7 @@ export function SettingsView(): JSX.Element {
           />
           {activeTab === "profile" && <ProfileTab />}
           {activeTab === "general" && <GeneralTab />}
+          {activeTab === "appearance" && <AppearanceTab />}
           {activeTab === "tags" && <TagsAndTypesTab />}
           {activeTab === "ai" && <AiSection />}
           {activeTab === "cloud" && <CloudSyncSection />}

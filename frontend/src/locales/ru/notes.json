@@ -2,7 +2,7 @@
   "notes": "Заметки",
   "titlePlaceholder": "Заголовок",
   "bodyOptional": "Текст (необязательно)",
-  "addNote": "+ Добавить",
+  "addNote": "Добавить",
   "noNotesYet": "Заметок пока нет.",
   "noMatchingNotes": "Нет подходящих заметок.",
   "deleted": "[удалено]"

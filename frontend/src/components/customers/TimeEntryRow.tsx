@@ -7,6 +7,7 @@ import { Check, Pencil, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
+import { HoverActions } from "../common/HoverActions";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import {
   useDeleteClockEntry,
@@ -146,8 +147,8 @@ export function TimeEntryRow({
           <button
             onClick={() => setEditing(false)}
             className={
-              "p-0.5 text-stone-500 "
-              + "hover:text-stone-900 rounded"
+              "p-0.5 text-fg-muted "
+              + "hover:text-fg-strong rounded"
             }
           >
             <X size={10} />
@@ -177,7 +178,7 @@ export function TimeEntryRow({
     >
       <span
         className={
-          "text-[10px] text-stone-500 tabular-nums "
+          "text-2xs text-fg-muted tabular-nums "
           + "shrink-0 cursor-pointer hover:text-cta"
         }
         onClick={() =>
@@ -188,7 +189,7 @@ export function TimeEntryRow({
       </span>
       <span
         className={
-          "text-xs text-stone-800 min-w-0 flex-1 "
+          "text-xs text-fg-strong min-w-0 flex-1 "
           + "flex items-center gap-1 overflow-hidden"
         }
       >
@@ -206,11 +207,11 @@ export function TimeEntryRow({
       {entry.contract && (
         <span
           className={[
-            "text-[9px] px-1 py-0.5 rounded shrink-0",
+            "text-2xs px-1 py-0.5 rounded shrink-0",
             "max-w-[6rem] truncate",
             isInv
               ? "bg-emerald-500/10 text-emerald-600"
-              : "bg-surface-overlay text-stone-600",
+              : "bg-surface-overlay text-fg-muted",
           ].join(" ")}
         >
           {entry.contract}
@@ -219,17 +220,13 @@ export function TimeEntryRow({
       )}
       <span
         className={
-          "text-[10px] text-stone-600 "
+          "text-2xs text-fg-muted "
           + "tabular-nums shrink-0"
         }
       >
         {formatHours(entry.duration_minutes)}
       </span>
-      <div
-        className={
-          "hidden group-hover:flex gap-0.5 shrink-0"
-        }
-      >
+      <HoverActions className="gap-0.5">
         <button
           onClick={() => {
             setDesc(entry.description);
@@ -242,7 +239,7 @@ export function TimeEntryRow({
             setEditing(true);
           }}
           className={
-            "p-0.5 rounded text-stone-400 "
+            "p-0.5 rounded text-fg-subtle "
             + "hover:text-cta hover:bg-cta-muted "
             + "transition-colors"
           }
@@ -257,7 +254,7 @@ export function TimeEntryRow({
           <button
             disabled={deleteEntry.isPending}
             className={
-              "p-0.5 rounded text-stone-400 "
+              "p-0.5 rounded text-fg-subtle "
               + "hover:text-red-400 "
               + "hover:bg-red-500/10 "
               + "transition-colors"
@@ -267,7 +264,7 @@ export function TimeEntryRow({
             <Trash2 size={10} />
           </button>
         </ConfirmPopover>
-      </div>
+      </HoverActions>
     </div>
   );
 }

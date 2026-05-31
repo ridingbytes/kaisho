@@ -34,22 +34,22 @@ export function BookFromEventDialog({
       onClick={onClose}
     >
       <div
-        className="bg-surface-card rounded-2xl border border-border shadow-2xl w-full max-w-lg p-4 flex flex-col gap-3"
+        className="bg-surface-card rounded-lg border border-border shadow-2xl w-full max-w-lg p-4 flex flex-col gap-3"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-stone-900">
+            <h2 className="text-sm font-semibold text-fg-strong">
               {t("bookFromEvent")}
             </h2>
-            <p className="text-[10px] text-stone-500 mt-0.5 truncate">
+            <p className="text-2xs text-fg-muted mt-0.5 truncate">
               {event.title || "(no title)"}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded hover:bg-surface-raised text-stone-500"
+            className="p-1 rounded hover:bg-surface-raised text-fg-muted"
             aria-label={t("close")}
           >
             <X className="w-4 h-4" />

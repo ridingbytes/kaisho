@@ -37,7 +37,7 @@ const DIRECTION_KEYS = [
 ] as const;
 
 const TYPE_STYLES: Record<string, string> = {
-  NOTE: "bg-stone-500/15 text-stone-700",
+  NOTE: "bg-surface-raised text-fg",
   EMAIL: "bg-sky-500/15 text-sky-400",
   LEAD: "bg-emerald-500/15 text-emerald-400",
   IDEA: "bg-violet-500/15 text-violet-400",
@@ -63,12 +63,12 @@ function slugify(text: string): string {
 const fieldCls = [
   "px-2 py-1 rounded-md text-xs",
   "bg-surface-overlay border border-border",
-  "text-stone-900 placeholder-stone-500",
+  "text-fg-strong placeholder-fg-muted",
   "focus:outline-none focus:border-cta",
 ].join(" ");
 
 const badgeCls =
-  "shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider";
+  "shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-2xs font-bold uppercase tracking-wider";
 
 type MoveDestination = "todo" | "note" | "kb" | "archive";
 
@@ -252,12 +252,12 @@ export function InboxItemRow({ item }: Props) {
                   e.stopPropagation();
                   setView("customers", item.customer ?? "");
                 }}
-                className="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-cta-muted text-cta-hover cursor-pointer hover:bg-cta/20"
+                className="px-1.5 py-0.5 rounded text-2xs font-semibold tracking-wider uppercase bg-cta-muted text-cta-hover cursor-pointer hover:bg-cta/20"
               >
                 {item.customer}
               </span>
             )}
-            <span className="text-sm text-stone-800 break-words">
+            <span className="text-sm text-fg-strong break-words">
               {cleanTitle(item.title)}
             </span>
             {item.body && (
@@ -270,7 +270,7 @@ export function InboxItemRow({ item }: Props) {
           </div>
           <RelDate
             date={item.created}
-            className="text-[10px] text-stone-500 mt-0.5 block"
+            className="text-2xs text-fg-muted mt-0.5 block"
           />
         </div>
 
@@ -279,7 +279,7 @@ export function InboxItemRow({ item }: Props) {
           <button
             title={tc("edit")}
             onClick={startEdit}
-            className="p-1.5 rounded-md text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
+            className="p-1.5 rounded-md text-fg-muted hover:text-cta hover:bg-cta-muted transition-colors"
           >
             <Pencil size={13} strokeWidth={2} />
           </button>
@@ -291,7 +291,7 @@ export function InboxItemRow({ item }: Props) {
                 "p-1.5 rounded-md transition-colors",
                 moving
                   ? "text-cta bg-cta-muted"
-                  : "text-stone-500 hover:text-cta hover:bg-cta-muted",
+                  : "text-fg-muted hover:text-cta hover:bg-cta-muted",
               ].join(" ")}
             >
               <ArrowRightLeft size={14} strokeWidth={2} />
@@ -308,7 +308,7 @@ export function InboxItemRow({ item }: Props) {
                     key={d}
                     onClick={() => selectDest(d)}
                     disabled={move.isPending}
-                    className="w-full text-left px-2 py-1 rounded text-xs text-stone-800 hover:bg-surface-raised transition-colors capitalize disabled:opacity-40"
+                    className="w-full text-left px-2 py-1 rounded text-xs text-fg-strong hover:bg-surface-raised transition-colors capitalize disabled:opacity-40"
                   >
                     {d === "kb" ? tc("knowledge") : d === "todo" ? tc("todo") : d === "archive" ? tc("archive") : d}
                   </button>
@@ -318,7 +318,7 @@ export function InboxItemRow({ item }: Props) {
                     e.stopPropagation();
                     setMoving(false);
                   }}
-                  className="w-full text-left px-2 py-1 rounded text-[10px] text-stone-500 hover:text-stone-900"
+                  className="w-full text-left px-2 py-1 rounded text-2xs text-fg-muted hover:text-fg-strong"
                 >
                   {tc("cancel")}
                 </button>
@@ -334,7 +334,7 @@ export function InboxItemRow({ item }: Props) {
                   setConfirmDel(true);
                 }}
                 disabled={del.isPending}
-                className="p-1.5 rounded-md text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+                className="p-1.5 rounded-md text-fg-muted hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
               >
                 <Trash2 size={14} strokeWidth={2} />
               </button>
@@ -343,7 +343,7 @@ export function InboxItemRow({ item }: Props) {
                 ref={delRef}
                 className="absolute right-0 top-full mt-1 z-50 flex items-center gap-1 px-2 py-1 rounded bg-surface-overlay border border-border shadow-lg whitespace-nowrap"
               >
-                <span className="text-[10px] text-stone-700">
+                <span className="text-2xs text-fg">
                   {tc("deleteConfirm")}
                 </span>
                 <button
@@ -361,7 +361,7 @@ export function InboxItemRow({ item }: Props) {
                     e.stopPropagation();
                     setConfirmDel(false);
                   }}
-                  className="p-0.5 rounded text-stone-600 hover:text-stone-900"
+                  className="p-0.5 rounded text-fg-muted hover:text-fg-strong"
                 >
                   <X size={10} />
                 </button>
@@ -446,7 +446,7 @@ export function InboxItemRow({ item }: Props) {
                 </button>
                 <button
                   onClick={cancelEdit}
-                  className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
+                  className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-fg-muted hover:text-fg-strong"
                 >
                   <X size={11} />
                   {tc("cancel")}
@@ -456,7 +456,7 @@ export function InboxItemRow({ item }: Props) {
           ) : (
             <>
               {item.body && (
-                <Markdown className="text-sm text-stone-700">
+                <Markdown className="text-sm text-fg">
                   {item.body}
                 </Markdown>
               )}
@@ -491,7 +491,7 @@ export function InboxItemRow({ item }: Props) {
                 </button>
                 <button
                   onClick={() => { setMoveDest(null); setMoving(false); }}
-                  className="px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
+                  className="px-2 py-1 rounded-md text-xs text-fg-muted hover:text-fg-strong"
                 >
                   <X size={11} />
                 </button>

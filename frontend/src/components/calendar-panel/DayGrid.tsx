@@ -52,7 +52,7 @@ export function DayGrid({ anchor, events, onSelect }: Props) {
               <div
                 key={h}
                 style={{ height: HOUR_HEIGHT_PX }}
-                className="text-xs text-stone-400 text-right pr-2 border-b border-border"
+                className="text-xs text-fg-subtle text-right pr-2 border-b border-border"
               >
                 {String(h).padStart(2, "0")}:00
               </div>
@@ -94,7 +94,7 @@ export function DayGrid({ anchor, events, onSelect }: Props) {
         </div>
       </div>
       {dayEvents.length === 0 && allDay.length === 0 && (
-        <p className="text-xs text-stone-400 text-center py-2">
+        <p className="text-xs text-fg-subtle text-center py-2">
           {t("empty")}
         </p>
       )}

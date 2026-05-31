@@ -75,7 +75,7 @@ export function NewFileForm({
       <div className="flex flex-col gap-1">
         <label
           className={
-            "text-[10px] text-stone-600 " +
+            "text-2xs text-fg-muted " +
             "uppercase tracking-wider"
           }
         >
@@ -97,7 +97,7 @@ export function NewFileForm({
       <div className="flex flex-col gap-1 flex-1 min-w-40">
         <label
           className={
-            "text-[10px] text-stone-600 " +
+            "text-2xs text-fg-muted " +
             "uppercase tracking-wider"
           }
         >
@@ -127,7 +127,7 @@ export function NewFileForm({
           onClick={onClose}
           className={
             "px-3 py-1.5 rounded bg-surface-raised " +
-            "text-stone-700 text-xs"
+            "text-fg text-xs"
           }
         >
           {tc("cancel")}

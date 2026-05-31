@@ -23,7 +23,7 @@ export function EditFooter({
   return (
     <div className="flex gap-1 justify-end items-center mt-1">
       {showHint && (
-        <span className="text-[9px] text-stone-400 mr-auto">
+        <span className="text-2xs text-fg-subtle mr-auto">
           {tc("cmdSave")}
         </span>
       )}
@@ -31,8 +31,8 @@ export function EditFooter({
         type="button"
         onClick={onCancel}
         className={[
-          "p-1 rounded text-stone-500",
-          "hover:text-stone-900",
+          "p-1 rounded text-fg-muted",
+          "hover:text-fg-strong",
         ].join(" ")}
       >
         <X size={11} />

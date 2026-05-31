@@ -41,16 +41,16 @@ export function StateHistoryPopup({
     >
       <div className="absolute inset-0 bg-black/50" />
       <div
-        className="relative bg-surface-card rounded-xl shadow-lg border border-border p-5 w-80 max-h-[60vh] overflow-y-auto"
+        className="relative bg-surface-card rounded-lg shadow-lg border border-border p-5 w-80 max-h-[60vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
+          <h3 className="text-xs font-semibold tracking-wider uppercase text-fg-muted">
             {t("stateHistory")}
           </h3>
           <button
             onClick={onClose}
-            className="p-1 rounded text-stone-400 hover:text-stone-900"
+            className="p-1 rounded text-fg-subtle hover:text-fg-strong"
           >
             <X size={14} />
           </button>
@@ -59,18 +59,18 @@ export function StateHistoryPopup({
           {history.map((h, i) => (
             <div
               key={i}
-              className="flex items-center gap-2 text-[11px] py-1"
+              className="flex items-center gap-2 text-xs py-1"
             >
-              <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-stone-400" />
-              <span className="font-medium text-stone-800">
+              <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-fg-subtle" />
+              <span className="font-medium text-fg-strong">
                 {h.to}
               </span>
-              <span className="text-stone-500">
+              <span className="text-fg-muted">
                 {t("from")} {h.from}
               </span>
               <RelDate
                 date={h.timestamp}
-                className="ml-auto text-stone-400 text-[10px]"
+                className="ml-auto text-fg-subtle text-2xs"
               />
             </div>
           ))}

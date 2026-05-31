@@ -55,7 +55,7 @@ export function WeekGrid({ anchor, events, onSelect }: Props) {
         </div>
       </div>
       {events.length === 0 && (
-        <p className="text-xs text-stone-400 text-center py-2">
+        <p className="text-xs text-fg-subtle text-center py-2">
           {t("empty")}
         </p>
       )}
@@ -70,7 +70,7 @@ function DayHeader({ days }: { days: Date[] }) {
   const wk = days.length ? isoWeek(days[0]) : null;
   return (
     <div className="flex border-b border-border bg-surface-card">
-      <div className="w-12 shrink-0 flex items-end justify-center pb-1 text-[10px] text-stone-500">
+      <div className="w-12 shrink-0 flex items-end justify-center pb-1 text-2xs text-fg-muted">
         {wk !== null && (
           <span title={t("week")}>
             {t("weekShort")} {wk}
@@ -92,10 +92,10 @@ function DayHeader({ days }: { days: Date[] }) {
                 "py-2 px-2 text-xs text-center "
                 + (isToday
                   ? "text-cta font-semibold"
-                  : "text-stone-600")
+                  : "text-fg-muted")
               }
             >
-              <div className="uppercase text-[10px] tracking-wide">
+              <div className="uppercase text-2xs tracking-wide">
                 {t(`day.${d.getDay()}`)}
               </div>
               <div className="text-base">
@@ -121,7 +121,7 @@ function AllDayStrip({
   if (allDay.length === 0) return null;
   return (
     <div className="flex border-b border-border bg-surface-card">
-      <div className="w-12 shrink-0 py-1 text-[10px] text-stone-400 text-right pr-1">
+      <div className="w-12 shrink-0 py-1 text-2xs text-fg-subtle text-right pr-1">
         all-day
       </div>
       <div
@@ -162,7 +162,7 @@ function HourGutter() {
         <div
           key={h}
           style={{ height: HOUR_HEIGHT_PX }}
-          className="text-[10px] text-stone-400 text-right pr-1 border-b border-border"
+          className="text-2xs text-fg-subtle text-right pr-1 border-b border-border"
         >
           {String(h).padStart(2, "0")}:00
         </div>

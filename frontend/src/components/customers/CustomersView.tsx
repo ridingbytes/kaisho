@@ -4,7 +4,9 @@ import { useCreateCustomer, useCustomers } from "../../hooks/useCustomers";
 import { useSettings } from "../../hooks/useSettings";
 import { matchesAny } from "../../utils/filterMatch";
 import { registerPanelAction } from "../../utils/panelActions";
+import { Plus } from "lucide-react";
 import { Toggle } from "../common/Toggle";
+import { Button } from "../common/Button";
 import { HelpButton } from "../common/HelpButton";
 import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { PanelToolbar } from "../common/PanelToolbar";
@@ -17,7 +19,7 @@ import type { Customer } from "../../types";
 
 const inputCls =
   "bg-surface-raised border border-border rounded px-2 py-1 text-sm " +
-  "text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta";
+  "text-fg-strong placeholder-fg-muted focus:outline-none focus:border-cta";
 
 function AddCustomerForm({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation("customers");
@@ -56,7 +58,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
       className="flex flex-wrap items-end gap-3 px-6 py-3 border-b border-border-subtle bg-surface-card/60"
     >
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-stone-600 uppercase tracking-wider">
+        <label className="text-2xs text-fg-muted uppercase tracking-wider">
           {tc("name")} *
         </label>
         <input
@@ -69,7 +71,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
       </div>
       {customerTypes.length > 0 && (
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] text-stone-600 uppercase tracking-wider">
+          <label className="text-2xs text-fg-muted uppercase tracking-wider">
             {tc("type")}
           </label>
           <select
@@ -87,7 +89,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
         </div>
       )}
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-stone-600 uppercase tracking-wider">
+        <label className="text-2xs text-fg-muted uppercase tracking-wider">
           {t("budgetH")}
         </label>
         <input
@@ -101,7 +103,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-stone-600 uppercase tracking-wider">
+        <label className="text-2xs text-fg-muted uppercase tracking-wider">
           {t("githubRepo")}
         </label>
         <input
@@ -122,7 +124,7 @@ function AddCustomerForm({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           onClick={onClose}
-          className="px-3 py-1.5 rounded bg-surface-raised text-stone-700 text-xs"
+          className="px-3 py-1.5 rounded bg-surface-raised text-fg text-xs"
         >
           {tc("cancel")}
         </button>
@@ -200,7 +202,7 @@ export function CustomersView() {
         </>}
         right={<>
           <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-xs text-stone-600">
+            <span className="text-xs text-fg-muted">
               {t("showInactive")}
             </span>
             <Toggle
@@ -208,16 +210,14 @@ export function CustomersView() {
               onChange={setShowInactive}
             />
           </label>
-          <button
+          <Button
+            variant="tonal"
+            size="sm"
+            icon={<Plus size={12} />}
             onClick={() => setAdding((v) => !v)}
-            className={[
-              "px-2.5 py-1 rounded bg-cta-muted",
-              "text-cta text-xs font-semibold",
-              "hover:bg-cta hover:text-white transition-colors",
-            ].join(" ")}
           >
             {t("addCustomer")}
-          </button>
+          </Button>
           <OpenInEditorButton kind="customers" />
           <HelpButton
             title="Customers"
@@ -233,12 +233,12 @@ export function CustomersView() {
       {/* Grid */}
       <div className="flex-1 overflow-y-auto p-5">
         {isLoading && (
-          <p className="text-sm text-stone-500 text-center py-8">
+          <p className="text-sm text-fg-muted text-center py-8">
             {tc("loading")}
           </p>
         )}
         {!isLoading && visible.length === 0 && (
-          <p className="text-sm text-stone-500 text-center py-8">
+          <p className="text-sm text-fg-muted text-center py-8">
             {t("noCustomersFound")}
           </p>
         )}

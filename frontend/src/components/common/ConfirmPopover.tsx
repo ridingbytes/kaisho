@@ -91,7 +91,7 @@ export function ConfirmPopover({
             "whitespace-nowrap",
           ].join(" ")}
         >
-          <span className="text-[10px] text-stone-700">
+          <span className="text-2xs text-fg">
             {resolvedLabel}
           </span>
           <button
@@ -113,8 +113,8 @@ export function ConfirmPopover({
               setOpen(false);
             }}
             className={[
-              "p-0.5 rounded text-stone-600",
-              "hover:text-stone-900",
+              "p-0.5 rounded text-fg-muted",
+              "hover:text-fg-strong",
             ].join(" ")}
           >
             <X size={10} />

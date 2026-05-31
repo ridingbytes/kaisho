@@ -65,10 +65,10 @@ const INTEGRATION_PROMPTS: Record<
   github: {
     label: "GitHub",
     chip:
-      "border-stone-400 text-stone-800 bg-stone-100 "
-      + "hover:border-stone-500 "
-      + "dark:border-stone-600 dark:text-stone-100 "
-      + "dark:bg-stone-800/60 dark:hover:border-stone-400",
+      "border-strong text-fg-strong bg-surface-raised "
+      + "hover:border-strong "
+      + "dark:border-strong dark:text-fg-strong "
+      + "dark:bg-surface-overlay dark:hover:border-strong",
     keys: ["intGithubItems", "intGithubDraft"],
   },
   slack: {
@@ -97,7 +97,7 @@ export interface AdvisorMessage {
 function UserBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <div className="max-w-[70%] px-4 py-2.5 rounded-2xl rounded-tr-sm bg-cta text-white text-sm">
+      <div className="max-w-[70%] px-4 py-2.5 rounded-lg rounded-tr-sm bg-cta text-white text-sm">
         {text}
       </div>
     </div>
@@ -130,7 +130,7 @@ function CopyToInboxBtn({ text }: { text: string }) {
         "p-1 rounded transition-colors",
         done
           ? "text-green-400"
-          : "text-stone-400 hover:text-cta hover:bg-cta-muted",
+          : "text-fg-subtle hover:text-cta hover:bg-cta-muted",
         "disabled:opacity-60",
       ].join(" ")}
       title={t("copyToInbox")}
@@ -157,14 +157,14 @@ function AssistantBubble({
     <div className="flex justify-start mb-3">
       <div
         className={[
-          "max-w-[80%] px-4 py-2.5 rounded-2xl rounded-tl-sm",
+          "max-w-[80%] px-4 py-2.5 rounded-lg rounded-tl-sm",
           "bg-surface-card border border-border",
-          thinking ? "text-sm text-stone-500 italic" : "",
+          thinking ? "text-sm text-fg-muted italic" : "",
         ].join(" ")}
       >
         {!thinking && meta && (
           <div className="flex items-center justify-between gap-2 mb-1">
-            <span className="text-[10px] text-stone-400 font-mono">
+            <span className="text-2xs text-fg-subtle font-mono">
               {meta}
             </span>
             <CopyToInboxBtn text={text} />
@@ -437,7 +437,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
               className={[
                 "flex items-center gap-1.5",
                 "px-3 py-1 rounded-lg text-xs",
-                "text-stone-500 border border-border",
+                "text-fg-muted border border-border",
                 "hover:text-red-500",
                 "hover:border-red-300",
                 "transition-colors",
@@ -486,10 +486,10 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
       <div className="flex-1 overflow-y-auto px-5 py-4">
         {messages.length === 0 && !loading && !model && models.length === 0 && (
           <div className="max-w-md mx-auto mt-12 text-center space-y-3">
-            <p className="text-sm font-medium text-stone-700">
+            <p className="text-sm font-medium text-fg">
               {t("noAiProvider")}
             </p>
-            <p className="text-xs text-stone-500 leading-relaxed">
+            <p className="text-xs text-fg-muted leading-relaxed">
               {t("noAiProviderHint")}
             </p>
             <button
@@ -512,7 +512,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
                 "bg-cta/5 border border-cta/30",
                 "flex items-start gap-3",
               ].join(" ")}>
-                <div className="flex-1 text-xs text-stone-700 leading-relaxed">
+                <div className="flex-1 text-xs text-fg leading-relaxed">
                   {t("onboardHint")}{" "}
                   <button
                     type="button"
@@ -527,14 +527,14 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
                 <button
                   type="button"
                   onClick={dismissOnboardHint}
-                  className="text-stone-400 hover:text-stone-600 text-xs"
+                  className="text-fg-subtle hover:text-fg-muted text-xs"
                   title={tc("dismiss")}
                 >
                   ×
                 </button>
               </div>
             )}
-            <p className="text-sm text-stone-500 text-center">
+            <p className="text-sm text-fg-muted text-center">
               {t("askOrPick")}
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
@@ -545,7 +545,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
                   className={[
                     "px-3 py-1.5 rounded-lg text-xs",
                     "bg-surface-raised border border-border",
-                    "text-stone-700 hover:text-cta",
+                    "text-fg hover:text-cta",
                     "hover:border-cta/40 transition-colors",
                     "text-left",
                   ].join(" ")}
@@ -560,7 +560,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
               const grp = INTEGRATION_PROMPTS[kind];
               return (
                 <div key={kind} className="space-y-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 text-center">
+                  <p className="text-2xs font-semibold uppercase tracking-wider text-fg-subtle text-center">
                     {grp.label}
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center">
@@ -600,7 +600,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             <div
               className={[
                 "max-w-[80%] px-4 py-2.5",
-                "rounded-2xl rounded-tl-sm",
+                "rounded-lg rounded-tl-sm",
                 "bg-surface-card border border-border",
               ].join(" ")}
             >
@@ -613,7 +613,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
                         "text-xs font-mono",
                         i === steps.length - 1
                           ? "text-cta"
-                          : "text-stone-400",
+                          : "text-fg-subtle",
                       ].join(" ")}
                     >
                       {s}
@@ -623,7 +623,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
               ) : (
                 <span
                   className={
-                    "text-sm text-stone-500 italic"
+                    "text-sm text-fg-muted italic"
                   }
                 >
                   {t("thinking")}
@@ -664,7 +664,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
                   <span className="font-mono text-cta">
                     {cmd}
                   </span>
-                  <span className="text-stone-500">
+                  <span className="text-fg-muted">
                     {desc}
                   </span>
                 </button>
@@ -680,9 +680,9 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
           onKeyDown={handleKeyDown}
           placeholder={t("askAnything")}
           className={[
-            "flex-1 px-3 py-2 rounded-xl resize-none",
-            "bg-surface-raised border border-border text-sm text-stone-900",
-            "placeholder-stone-500 focus:outline-none focus:border-border-strong",
+            "flex-1 px-3 py-2 rounded-lg resize-none",
+            "bg-surface-raised border border-border text-sm text-fg-strong",
+            "placeholder-fg-muted focus:outline-none focus:border-border-strong",
           ].join(" ")}
         />
         {loading ? (
@@ -691,7 +691,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             onClick={stopRequest}
             className={[
               "flex items-center gap-1.5 px-4 py-2",
-              "rounded-xl bg-red-500 text-white",
+              "rounded-lg bg-red-500 text-white",
               "text-sm hover:bg-red-600",
               "transition-colors shrink-0",
             ].join(" ")}
@@ -705,7 +705,7 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
             disabled={!input.trim()}
             className={[
               "flex items-center gap-1.5 px-4 py-2",
-              "rounded-xl bg-cta text-white text-sm",
+              "rounded-lg bg-cta text-white text-sm",
               "hover:bg-cta-hover transition-colors",
               "disabled:opacity-50 shrink-0",
             ].join(" ")}

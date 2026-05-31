@@ -81,7 +81,7 @@ export function TagPicker({
           style={freeTagBadgeStyle(tag)}
           className={
             "inline-flex items-center gap-0.5 " +
-            "px-1.5 py-0.5 rounded text-[10px] " +
+            "px-1.5 py-0.5 rounded text-2xs " +
             "font-medium"
           }
         >
@@ -140,7 +140,7 @@ export function TagPicker({
                   style={freeTagBadgeStyle(tag)}
                   className={
                     "px-1.5 py-0.5 rounded " +
-                    "text-[10px]"
+                    "text-2xs"
                   }
                 >
                   {tag}

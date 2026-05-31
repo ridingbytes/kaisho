@@ -111,7 +111,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
       <aside className="flex flex-col items-center shrink-0 border-l border-border-subtle bg-surface-card w-6">
         <button
           onClick={onToggle}
-          className="py-3 text-stone-500 hover:text-stone-900 transition-colors"
+          className="py-3 text-fg-muted hover:text-fg-strong transition-colors"
           title={t("expandTimeTracking")}
         >
           <ChevronLeft size={14} />
@@ -124,13 +124,13 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
     <aside className="flex flex-col shrink-0 md:border-l border-border-subtle bg-surface-card w-full md:w-80">
       {/* Header (hidden on mobile -- modal provides its own) */}
       <div className="hidden md:flex items-center px-4 py-3 border-b border-border-subtle shrink-0">
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-700 flex-1">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg flex-1">
           {t("timeTracking")}
         </h2>
         <HelpButton title="Time Tracking" doc={DOCS.clock} />
         <button
           onClick={onToggle}
-          className="ml-1 p-0.5 rounded text-stone-500 hover:text-stone-900 transition-colors"
+          className="ml-1 p-0.5 rounded text-fg-muted hover:text-fg-strong transition-colors"
           title={tc("collapse")}
         >
           <ChevronRight size={14} />
@@ -177,10 +177,10 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
               className="flex items-center gap-1 group flex-1"
             >
               {calendarOpen
-                ? <ChevronDown size={10} className="text-stone-500 group-hover:text-stone-700 transition-colors" />
-                : <ChevronRight size={10} className="text-stone-500 group-hover:text-stone-700 transition-colors" />
+                ? <ChevronDown size={10} className="text-fg-muted group-hover:text-fg transition-colors" />
+                : <ChevronRight size={10} className="text-fg-muted group-hover:text-fg transition-colors" />
               }
-              <h3 className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 group-hover:text-stone-700 transition-colors">
+              <h3 className="text-2xs font-semibold uppercase tracking-wider text-fg-muted group-hover:text-fg transition-colors">
                 {t("calendar")}
               </h3>
             </button>
@@ -193,7 +193,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
                 window.open(url);
               }}
               title={t("icalFeed")}
-              className="p-0.5 rounded text-stone-400 hover:text-cta transition-colors"
+              className="p-0.5 rounded text-fg-subtle hover:text-cta transition-colors"
             >
               <Rss size={10} />
             </button>
@@ -211,7 +211,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
         {/* Entries for selected date */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 flex-1">
+            <h3 className="text-2xs font-semibold uppercase tracking-wider text-fg-muted flex-1">
               {!selectedDate || selectedDate === todayIso()
                 ? tc("today")
                 : formatDateHeading(selectedDate)}
@@ -222,7 +222,7 @@ export function ClockWidget({ open, onToggle }: ClockWidgetProps) {
                 "p-0.5 rounded transition-colors",
                 booking
                   ? "text-cta bg-cta-muted"
-                  : "text-stone-500 hover:text-cta",
+                  : "text-fg-muted hover:text-cta",
               ].join(" ")}
               title={t("addTimeEntry")}
             >

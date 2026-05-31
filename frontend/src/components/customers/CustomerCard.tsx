@@ -68,7 +68,7 @@ export function CustomerCard({ customer: c }: Props) {
   return (
     <div
       className={[
-        "flex flex-col gap-3 p-5 rounded-xl",
+        "flex flex-col gap-3 p-5 rounded-lg",
         "border transition-colors",
         "bg-surface-card hover:bg-surface-raised",
         isArchived
@@ -101,7 +101,7 @@ export function CustomerCard({ customer: c }: Props) {
               <h3
                 className={
                   "text-sm font-semibold "
-                  + "text-stone-900 truncate flex "
+                  + "text-fg-strong truncate flex "
                   + "items-center gap-1.5"
                 }
               >
@@ -124,8 +124,8 @@ export function CustomerCard({ customer: c }: Props) {
                   rel="noreferrer"
                   className={
                     "inline-flex items-center "
-                    + "gap-1 text-[10px] "
-                    + "text-stone-500 "
+                    + "gap-1 text-2xs "
+                    + "text-fg-muted "
                     + "hover:text-cta mt-0.5 "
                     + "transition-colors"
                   }
@@ -147,10 +147,10 @@ export function CustomerCard({ customer: c }: Props) {
                 <span
                   className={
                     "px-1.5 py-0.5 rounded "
-                    + "text-[9px] font-bold "
+                    + "text-2xs font-bold "
                     + "uppercase tracking-wider "
                     + "bg-surface-overlay "
-                    + "text-stone-700"
+                    + "text-fg"
                   }
                 >
                   {c.type}
@@ -159,10 +159,10 @@ export function CustomerCard({ customer: c }: Props) {
               <span
                 className={[
                   "px-1.5 py-0.5 rounded",
-                  "text-[9px] font-bold uppercase",
+                  "text-2xs font-bold uppercase",
                   "tracking-wider",
                   isArchived
-                    ? "bg-stone-500/10 text-stone-500"
+                    ? "bg-surface-raised text-fg-muted"
                     : "bg-emerald-500/15"
                       + " text-emerald-400",
                 ].join(" ")}
@@ -172,7 +172,7 @@ export function CustomerCard({ customer: c }: Props) {
               <button
                 onClick={startEdit}
                 className={
-                  "p-1 rounded-md text-stone-400 "
+                  "p-1 rounded-md text-fg-subtle "
                   + "hover:text-cta "
                   + "hover:bg-cta-muted "
                   + "transition-colors"
@@ -191,7 +191,7 @@ export function CustomerCard({ customer: c }: Props) {
                 <button
                   disabled={remove.isPending}
                   className={
-                    "p-1 rounded-md text-stone-400 "
+                    "p-1 rounded-md text-fg-subtle "
                     + "hover:text-red-400 "
                     + "hover:bg-red-500/10 "
                     + "transition-colors "

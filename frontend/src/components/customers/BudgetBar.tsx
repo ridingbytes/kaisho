@@ -48,15 +48,15 @@ export function BudgetBar({
         {label !== undefined && (
           <span
             className={[
-              "text-[10px] leading-none",
+              "text-2xs leading-none",
               closed
-                ? "text-stone-400"
-                : "text-stone-600",
+                ? "text-fg-subtle"
+                : "text-fg-muted",
             ].join(" ")}
           >
             {label}
             {closed && (
-              <span className="ml-1 text-stone-400">
+              <span className="ml-1 text-fg-subtle">
                 ({tc("closed")})
               </span>
             )}
@@ -84,14 +84,14 @@ export function BudgetBar({
           "flex items-center justify-between mt-0.5"
         }
       >
-        <span className="text-[10px] text-stone-600">
+        <span className="text-2xs text-fg-muted">
           {used.toFixed(1)}{t("hUsed")}
           {" · "}
           {rest.toFixed(1)}{t("hLeft")}
         </span>
         <span
           className={
-            "text-[10px] font-semibold tabular-nums"
+            "text-2xs font-semibold tabular-nums"
           }
           style={{ color }}
         >

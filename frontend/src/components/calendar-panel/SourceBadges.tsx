@@ -19,13 +19,13 @@ export function SourceBadges({ connected, statuses }: Props) {
   const visible = connected.filter((c) => c.connected);
   if (visible.length === 0) {
     return (
-      <div className="px-4 py-2 text-xs text-stone-500 bg-surface-card border-b border-border">
+      <div className="px-4 py-2 text-xs text-fg-muted bg-surface-card border-b border-border">
         {t("noSources")}
       </div>
     );
   }
   return (
-    <div className="flex items-center gap-3 px-4 py-1.5 text-[10px] bg-surface-card border-b border-border">
+    <div className="flex items-center gap-3 px-4 py-1.5 text-2xs bg-surface-card border-b border-border">
       {visible.map((src) => {
         const status = byId.get(src.id);
         const ok = !status || status.ok;
@@ -34,7 +34,7 @@ export function SourceBadges({ connected, statuses }: Props) {
             key={src.id}
             className={
               "inline-flex items-center gap-1 "
-              + (ok ? "text-stone-600" : "text-red-600")
+              + (ok ? "text-fg-muted" : "text-red-600")
             }
             title={status?.error}
           >

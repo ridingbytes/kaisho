@@ -42,7 +42,7 @@ export function EventTile({ event, style, onClick }: Props) {
       style={style}
       className={
         "absolute left-0.5 right-0.5 px-1.5 py-1 rounded "
-        + "border-l-4 text-left text-[11px] overflow-hidden "
+        + "border-l-4 text-left text-xs overflow-hidden "
         + "cursor-pointer hover:brightness-95 "
         + `${color.bg} ${color.text}`
       }
@@ -54,12 +54,12 @@ export function EventTile({ event, style, onClick }: Props) {
         {event.title || "(no title)"}
       </div>
       {showTime && (
-        <div className="text-[10px] opacity-75 truncate">
+        <div className="text-2xs opacity-75 truncate">
           {hhmm(start)} - {hhmm(end)}
         </div>
       )}
       {showLocation && (
-        <div className="text-[10px] opacity-60 truncate">
+        <div className="text-2xs opacity-60 truncate">
           {event.location}
         </div>
       )}

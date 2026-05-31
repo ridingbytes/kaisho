@@ -125,8 +125,8 @@ function DayCell({
     "relative h-16 p-1 border border-transparent cursor-pointer",
     "flex flex-col transition-colors",
     isCurrentMonth
-      ? "text-stone-900"
-      : "text-stone-400",
+      ? "text-fg-strong"
+      : "text-fg-subtle",
     isSelected
       ? "bg-cta-muted border-cta"
       : "hover:bg-surface-raised",
@@ -151,7 +151,7 @@ function DayCell({
       </div>
       {hasEntries && (
         <div className="mt-auto self-end">
-          <span className="text-[10px] font-mono text-stone-700 bg-surface-raised rounded px-1 py-0.5">
+          <span className="text-2xs font-mono text-fg bg-surface-raised rounded px-1 py-0.5">
             {formatHours(totalMinutes)}
           </span>
         </div>
@@ -169,7 +169,7 @@ function EntryList({ entries, dateLabel }: EntryListProps) {
   const { t } = useTranslation("clocks");
   if (entries.length === 0) {
     return (
-      <div className="px-4 py-3 text-xs text-stone-500">
+      <div className="px-4 py-3 text-xs text-fg-muted">
         {t("noEntriesFound")} {dateLabel}
       </div>
     );
@@ -184,13 +184,13 @@ function EntryList({ entries, dateLabel }: EntryListProps) {
             key={`${entry.start}-${i}`}
             className="flex items-center gap-3 px-4 py-2.5"
           >
-            <span className="text-xs font-medium text-stone-800 w-28 shrink-0 truncate">
+            <span className="text-xs font-medium text-fg-strong w-28 shrink-0 truncate">
               {entry.customer}
             </span>
-            <span className="text-xs text-stone-700 flex-1 truncate">
+            <span className="text-xs text-fg flex-1 truncate">
               {entry.description}
             </span>
-            <span className="text-xs font-mono text-stone-600 shrink-0">
+            <span className="text-xs font-mono text-fg-muted shrink-0">
               {formatHours(mins)}
             </span>
           </div>
@@ -264,7 +264,7 @@ export function CalendarView() {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-4 px-6 py-3 border-b border-border-subtle shrink-0">
-        <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
+        <h1 className="text-xs font-semibold tracking-wider uppercase text-fg">
           {t("calendar")}
         </h1>
       </div>
@@ -275,17 +275,17 @@ export function CalendarView() {
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={prevMonth}
-              className="p-1.5 rounded text-stone-600 hover:text-stone-900 hover:bg-surface-raised transition-colors"
+              className="p-1.5 rounded text-fg-muted hover:text-fg-strong hover:bg-surface-raised transition-colors"
               aria-label="Previous month"
             >
               <ChevronLeft size={16} />
             </button>
-            <h2 className="text-sm font-semibold text-stone-900">
+            <h2 className="text-sm font-semibold text-fg-strong">
               {localeMonthName(year, month, i18n.language)}
             </h2>
             <button
               onClick={nextMonth}
-              className="p-1.5 rounded text-stone-600 hover:text-stone-900 hover:bg-surface-raised transition-colors"
+              className="p-1.5 rounded text-fg-muted hover:text-fg-strong hover:bg-surface-raised transition-colors"
               aria-label="Next month"
             >
               <ChevronRight size={16} />
@@ -298,7 +298,7 @@ export function CalendarView() {
               (label, i) => (
                 <div
                   key={i}
-                  className="text-center text-[10px] font-semibold uppercase tracking-wider text-stone-500 py-1"
+                  className="text-center text-2xs font-semibold uppercase tracking-wider text-fg-muted py-1"
                 >
                   {label}
                 </div>
@@ -308,11 +308,11 @@ export function CalendarView() {
 
           {/* Calendar grid */}
           {isLoading ? (
-            <div className="flex items-center justify-center h-48 text-sm text-stone-500">
+            <div className="flex items-center justify-center h-48 text-sm text-fg-muted">
               {t("noEntriesFound")}
             </div>
           ) : (
-            <div className="grid grid-cols-7 bg-surface-card rounded-xl border border-border overflow-hidden">
+            <div className="grid grid-cols-7 bg-surface-card rounded-lg border border-border overflow-hidden">
               {calendarDays.map(({ date, isCurrentMonth }, idx) => {
                 const iso = toIsoDate(date);
                 const dayEntries = byDate.get(iso) ?? [];
@@ -338,13 +338,13 @@ export function CalendarView() {
 
           {/* Selected day entries */}
           {selectedDate && (
-            <div className="mt-4 bg-surface-card rounded-xl border border-border overflow-hidden">
+            <div className="mt-4 bg-surface-card rounded-lg border border-border overflow-hidden">
               <div className="px-4 py-2.5 border-b border-border-subtle">
-                <p className="text-xs font-semibold text-stone-700">
+                <p className="text-xs font-semibold text-fg">
                   {selectedLabel}
                 </p>
                 {selectedEntries.length > 0 && (
-                  <p className="text-[10px] text-stone-500 mt-0.5">
+                  <p className="text-2xs text-fg-muted mt-0.5">
                     {formatHours(sumMinutes(selectedEntries))} total
                   </p>
                 )}

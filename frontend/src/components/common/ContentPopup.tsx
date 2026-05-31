@@ -39,7 +39,7 @@ export function ContentPopup({
         onClick={() => setOpen(true)}
         className={[
           "p-0.5 rounded",
-          "text-stone-500 hover:text-stone-900",
+          "text-fg-muted hover:text-fg-strong",
           "transition-colors",
         ].join(" ")}
         title="View full content"
@@ -61,7 +61,7 @@ export function ContentPopup({
               "relative z-10 w-full max-w-2xl",
               "max-h-[80vh] flex flex-col",
               "bg-surface-card border border-border",
-              "rounded-xl shadow-xl",
+              "rounded-lg shadow-xl",
             ].join(" ")}
             onClick={(e) => e.stopPropagation()}
           >
@@ -74,7 +74,7 @@ export function ContentPopup({
               ].join(" ")}
             >
               {title ? (
-                <h2 className="text-sm font-semibold text-stone-900 truncate">
+                <h2 className="text-sm font-semibold text-fg-strong truncate">
                   {title}
                 </h2>
               ) : (
@@ -84,7 +84,7 @@ export function ContentPopup({
                 onClick={() => setOpen(false)}
                 className={[
                   "p-1 rounded",
-                  "text-stone-600 hover:text-stone-900",
+                  "text-fg-muted hover:text-fg-strong",
                   "transition-colors",
                 ].join(" ")}
               >
@@ -95,11 +95,11 @@ export function ContentPopup({
             {/* Content */}
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {markdown ? (
-                <Markdown className="text-sm text-stone-800">
+                <Markdown className="text-sm text-fg-strong">
                   {content}
                 </Markdown>
               ) : (
-                <pre className="whitespace-pre-wrap text-sm text-stone-800">
+                <pre className="whitespace-pre-wrap text-sm text-fg-strong">
                   {content}
                 </pre>
               )}

@@ -51,7 +51,7 @@ function ModelInput({
       className={[
         "w-full px-3 py-1.5 rounded-lg text-sm font-mono",
         "bg-surface-raised border border-border",
-        "text-stone-900 placeholder-stone-500",
+        "text-fg-strong placeholder-fg-muted",
         "focus:outline-none focus:border-cta",
       ].join(" ")}
     />
@@ -92,15 +92,15 @@ function AdvisorPersonalitySection() {
 
   return (
     <div className="mt-6">
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("advisorPersonality")}
       </h2>
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-1">
             {t("soulMd")}
           </p>
-          <p className="text-[10px] text-stone-400 mb-2">
+          <p className="text-2xs text-fg-subtle mb-2">
             {t("soulMdHint")}
           </p>
           <textarea
@@ -115,10 +115,10 @@ function AdvisorPersonalitySection() {
           />
         </div>
         <div className="px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-1">
             {t("userMd")}
           </p>
-          <p className="text-[10px] text-stone-400 mb-2">
+          <p className="text-2xs text-fg-subtle mb-2">
             {t("userMdHint")}
           </p>
           <textarea
@@ -194,29 +194,29 @@ function UrlAllowlistSection() {
 
   return (
     <div className="mt-6">
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("urlAllowlist")}
       </h2>
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         <div className="px-4 py-3">
-          <p className="text-[10px] text-stone-400 mb-3">
+          <p className="text-2xs text-fg-subtle mb-3">
             {t("urlAllowlistHint")}
           </p>
           <div className="flex flex-wrap gap-1.5 mb-3">
             {domains.length === 0 && (
-              <span className="text-xs text-stone-500">
+              <span className="text-xs text-fg-muted">
                 {t("noDomainsAllowed")}
               </span>
             )}
             {domains.map((d) => (
               <span
                 key={d}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-surface-raised border border-border text-stone-800"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-surface-raised border border-border text-fg-strong"
               >
                 {d}
                 <button
                   onClick={() => handleRemove(d)}
-                  className="text-stone-500 hover:text-red-400 transition-colors"
+                  className="text-fg-muted hover:text-red-400 transition-colors"
                 >
                   <X size={10} />
                 </button>
@@ -292,15 +292,15 @@ function SkillCard({
         {open ? (
           <ChevronDown
             size={12}
-            className="text-stone-600"
+            className="text-fg-muted"
           />
         ) : (
           <ChevronRight
             size={12}
-            className="text-stone-600"
+            className="text-fg-muted"
           />
         )}
-        <span className="text-sm text-stone-900 font-mono">
+        <span className="text-sm text-fg-strong font-mono">
           {skill.name}
         </span>
       </button>
@@ -330,7 +330,7 @@ function SkillCard({
                 deleteMut.mutate(skill.name)
               }
               disabled={deleteMut.isPending}
-              className="p-1.5 rounded text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              className="p-1.5 rounded text-fg-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
               title={t("deleteSkill")}
             >
               <Trash2 size={13} />
@@ -393,7 +393,7 @@ function AddSkillForm({
         <button
           type="button"
           onClick={onDone}
-          className="p-1 text-stone-500 hover:text-stone-900 rounded"
+          className="p-1 text-fg-muted hover:text-fg-strong rounded"
         >
           <X size={12} />
         </button>
@@ -433,25 +433,25 @@ function SkillsSection() {
   return (
     <div className="mt-6">
       <div className="flex items-center gap-3 mb-3">
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted">
           {t("skills")}
         </h2>
         <button
           onClick={() => setAdding((v) => !v)}
-          className="ml-auto p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
+          className="ml-auto p-1 rounded text-fg-muted hover:text-cta hover:bg-cta-muted transition-colors"
           title={t("addSkill")}
         >
           <Plus size={12} />
         </button>
       </div>
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] text-stone-400">
+          <p className="text-2xs text-fg-subtle">
             {t("skillsHint")}
           </p>
         </div>
         {skills.length === 0 && !adding && (
-          <p className="px-4 py-3 text-xs text-stone-500">
+          <p className="px-4 py-3 text-xs text-fg-muted">
             {t("noSkillsDefined")}
           </p>
         )}
@@ -543,7 +543,7 @@ export function AiSection(): JSX.Element {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-stone-500">
+      <p className="text-sm text-fg-muted">
         Loading...
       </p>
     );
@@ -564,21 +564,21 @@ export function AiSection(): JSX.Element {
       </datalist>
 
       {onSyncAi && (
-        <div className="mb-4 px-4 py-3 rounded-xl bg-cta/10 border border-cta/30">
+        <div className="mb-4 px-4 py-3 rounded-lg bg-cta/10 border border-cta/30">
           <p className="text-xs text-cta font-medium">
             {t("kaishoAiActive")}
           </p>
-          <p className="text-[10px] text-stone-600 mt-1">
+          <p className="text-2xs text-fg-muted mt-1">
             {t("kaishoAiActiveHint")}
           </p>
         </div>
       )}
 
-      <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         {/* Local / subscription providers */}
         <div className="px-4 py-3 border-b border-border-subtle">
           <div className="flex items-center gap-2 mb-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+            <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
               {t("local")}
             </p>
             {probe && (
@@ -588,7 +588,7 @@ export function AiSection(): JSX.Element {
                     "w-1.5 h-1.5 rounded-full",
                     probe.ollama
                       ? "bg-green-400"
-                      : "bg-stone-300",
+                      : "bg-surface-overlay",
                   ].join(" ")}
                   title={
                     probe.ollama
@@ -596,7 +596,7 @@ export function AiSection(): JSX.Element {
                       : t("ollamaNotRunning")
                   }
                 />
-                <span className="text-[9px] text-stone-400">
+                <span className="text-2xs text-fg-subtle">
                   {t("ollamaLabel")}
                 </span>
                 <span
@@ -604,7 +604,7 @@ export function AiSection(): JSX.Element {
                     "w-1.5 h-1.5 rounded-full ml-1",
                     probe.lm_studio
                       ? "bg-green-400"
-                      : "bg-stone-300",
+                      : "bg-surface-overlay",
                   ].join(" ")}
                   title={
                     probe.lm_studio
@@ -612,13 +612,13 @@ export function AiSection(): JSX.Element {
                       : t("lmStudioNotRunning")
                   }
                 />
-                <span className="text-[9px] text-stone-400">
+                <span className="text-2xs text-fg-subtle">
                   LM Studio
                 </span>
               </div>
             )}
           </div>
-          <p className="text-[10px] text-stone-400 mb-2">
+          <p className="text-2xs text-fg-subtle mb-2">
             {t("localHint")} Recommended model:{" "}
             <strong>gemma4</strong> (Google) — use{" "}
             <em>gemma4:e2b</em> for cron jobs and{" "}
@@ -626,7 +626,7 @@ export function AiSection(): JSX.Element {
           </p>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
-              <span className="text-xs text-stone-700 w-32 shrink-0">
+              <span className="text-xs text-fg w-32 shrink-0">
                 {t("ollamaLabel")}
               </span>
               <input
@@ -640,7 +640,7 @@ export function AiSection(): JSX.Element {
               />
             </label>
             <label className="flex items-center gap-3">
-              <span className="text-xs text-stone-700 w-32 shrink-0">
+              <span className="text-xs text-fg w-32 shrink-0">
                 {t("lmStudioUrl")}
               </span>
               <input
@@ -662,7 +662,7 @@ export function AiSection(): JSX.Element {
         {/* Cloud API keys */}
         <div className="px-4 py-3 border-b border-border-subtle">
           <div className="flex items-center gap-2 mb-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+            <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
               {t("cloudApiKeys")}
             </p>
             {probe && (
@@ -682,7 +682,7 @@ export function AiSection(): JSX.Element {
                         "w-1.5 h-1.5 rounded-full",
                         probe[key]
                           ? "bg-green-400"
-                          : "bg-stone-300",
+                          : "bg-surface-overlay",
                       ].join(" ")}
                       title={
                         probe[key]
@@ -690,7 +690,7 @@ export function AiSection(): JSX.Element {
                           : `${label} not configured`
                       }
                     />
-                    <span className="text-[9px] text-stone-400">
+                    <span className="text-2xs text-fg-subtle">
                       {label}
                     </span>
                   </span>
@@ -698,12 +698,12 @@ export function AiSection(): JSX.Element {
               </div>
             )}
           </div>
-          <p className="text-[10px] text-stone-400 mb-2">
+          <p className="text-2xs text-fg-subtle mb-2">
             {t("cloudApiKeysHint")}
           </p>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
-              <span className="text-xs text-stone-700 w-32 shrink-0">
+              <span className="text-xs text-fg w-32 shrink-0">
                 {t("ollamaCloudUrl")}
               </span>
               <input
@@ -740,7 +740,7 @@ export function AiSection(): JSX.Element {
               onChange={(v) => set("claude_api_key", v)}
             />
             <label className="flex items-center gap-3">
-              <span className="text-xs text-stone-700 w-32 shrink-0">
+              <span className="text-xs text-fg w-32 shrink-0">
                 {t("openrouterUrl")}
               </span>
               <input
@@ -767,7 +767,7 @@ export function AiSection(): JSX.Element {
               }
             />
             <label className="flex items-center gap-3">
-              <span className="text-xs text-stone-700 w-32 shrink-0">
+              <span className="text-xs text-fg w-32 shrink-0">
                 {t("openaiUrl")}
               </span>
               <input
@@ -793,10 +793,10 @@ export function AiSection(): JSX.Element {
 
         {/* Web search API keys */}
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-1">
             {t("webSearch")}
           </p>
-          <p className="text-[10px] text-stone-400 mb-2">
+          <p className="text-2xs text-fg-subtle mb-2">
             {t("webSearchHint")}
           </p>
           <div className="flex flex-col gap-2">
@@ -820,12 +820,12 @@ export function AiSection(): JSX.Element {
         </div>
 
         <div className="px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+          <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
             {t("defaultModels")}
           </p>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-3">
-              <span className="text-xs text-stone-700 w-32 shrink-0">
+              <span className="text-xs text-fg w-32 shrink-0">
                 {t("advisorModel")}
               </span>
               <div className="flex-1">
@@ -839,7 +839,7 @@ export function AiSection(): JSX.Element {
               </div>
             </label>
             <label className="flex items-center gap-3">
-              <span className="text-xs text-stone-700 w-32 shrink-0">
+              <span className="text-xs text-fg w-32 shrink-0">
                 {t("cronModel")}
               </span>
               <div className="flex-1">
@@ -854,7 +854,7 @@ export function AiSection(): JSX.Element {
             </label>
           </div>
           {models.length > 0 && (
-            <p className="text-[10px] text-stone-400 mt-2">
+            <p className="text-2xs text-fg-subtle mt-2">
               {t("modelsAvailable", {
                 count: models.length,
               })}

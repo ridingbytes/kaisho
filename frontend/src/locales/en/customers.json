@@ -4,7 +4,7 @@
   "sortBudget": "Sort: Budget",
   "sortName": "Sort: Name",
   "showInactive": "Show inactive",
-  "addCustomer": "+ New",
+  "addCustomer": "New",
   "customerName": "Customer name",
   "budgetH": "Budget (h)",
   "offsetH": "Offset h",
@@ -22,6 +22,7 @@
   "contractName": "Contract name",
   "endDate": "End date",
   "budgetHLabel": "Budget h",
+  "budgetFromContractsHint": "Budget and 'used' hours are tracked on the contracts below. To free up the cap, edit a contract's Budget H or reset its Offset H (the invoiced-hours marker).",
   "usedOffset": "Used offset (hours)",
   "tasks": "Tasks",
   "noTasks": "No tasks",
@@ -41,5 +42,6 @@
   "markAsInvoiced": "Mark as invoiced",
   "entriesMarkedInvoiced": "{{count}} entries marked as invoiced",
   "hUsed": "h used",
-  "hLeft": "h left"
+  "hLeft": "h left",
+  "startDate": "Start date"
 }

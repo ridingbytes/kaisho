@@ -144,7 +144,7 @@ export function AddInboxForm({
 const inputCls = [
   "px-3 py-2 rounded-lg text-sm",
   "bg-surface-raised border border-border",
-  "text-stone-900 placeholder-stone-500",
+  "text-fg-strong placeholder-fg-muted",
   "focus:outline-none focus:border-cta",
   "transition-colors",
 ].join(" ");

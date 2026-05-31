@@ -11,7 +11,7 @@ import { GithubIssueInput } from "./GithubIssueInput";
 const editInputCls = [
   "w-full px-2 py-1 rounded text-xs",
   "bg-surface-raised border border-border",
-  "text-stone-900 placeholder-stone-500",
+  "text-fg-strong placeholder-fg-muted",
   "focus:outline-none focus:border-cta",
 ].join(" ");
 
@@ -119,13 +119,13 @@ export function TaskEditForm({
         />
       </div>
       <div className="flex gap-1 justify-end items-center">
-        <span className="text-[10px] text-stone-400 mr-auto">
+        <span className="text-2xs text-fg-subtle mr-auto">
           {tc("cmdSaveClose")}
         </span>
         <button
           onPointerDown={(e) => e.stopPropagation()}
           onClick={onCancel}
-          className="p-1 text-stone-500 hover:text-stone-900 rounded"
+          className="p-1 text-fg-muted hover:text-fg-strong rounded"
         >
           <X size={12} />
         </button>

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
+import { Button } from "../components/common/Button";
 import {
   addNote,
   captureInboxItem,
@@ -58,27 +59,21 @@ export function CaptureSection() {
       onSubmit={handleSubmit}
       className="px-4 py-3"
     >
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+      <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
         {t("quickCapture")}
       </p>
 
       {/* Mode toggle */}
       <div className="flex gap-1 mb-2">
         {modes.map((m) => (
-          <button
+          <Button
             key={m.key}
-            type="button"
+            size="xs"
+            variant={mode === m.key ? "primary" : "ghost"}
             onClick={() => setMode(m.key)}
-            className={[
-              "px-2 py-0.5 rounded text-[10px]",
-              "font-medium transition-colors",
-              mode === m.key
-                ? "bg-cta text-white"
-                : "text-stone-500 hover:text-stone-700",
-            ].join(" ")}
           >
             {m.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -92,22 +87,23 @@ export function CaptureSection() {
           className={[
             "flex-1 px-2.5 py-1.5 rounded-lg text-xs",
             "bg-surface-raised border border-border",
-            "text-stone-900 placeholder-stone-500",
+            "text-fg-strong placeholder-fg-muted",
             "focus:outline-none focus:border-cta",
             "transition-colors",
           ].join(" ")}
         />
-        <button
+        <Button
           type="submit"
           disabled={!text.trim()}
-          className="px-2 py-1.5 rounded-lg bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-40"
+          iconOnly
+          icon={<Plus size={14} />}
         >
-          <Plus size={14} />
-        </button>
+          {t("capture")}
+        </Button>
       </div>
 
       {msg && (
-        <p className="text-[10px] text-green-500 mt-1">
+        <p className="text-2xs text-green-500 mt-1">
           {msg}
         </p>
       )}

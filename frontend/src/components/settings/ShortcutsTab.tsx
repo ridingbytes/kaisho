@@ -95,7 +95,7 @@ function KeyCapture({
     <span
       ref={ref}
       tabIndex={-1}
-      className="text-xs text-stone-600 italic focus:outline-none"
+      className="text-xs text-fg-muted italic focus:outline-none"
     >
       {tc("pressKey")}
     </span>
@@ -240,10 +240,10 @@ export function ShortcutsSection(): JSX.Element {
   ) {
     return (
       <>
-        <h3 className="text-[10px] font-semibold tracking-wider uppercase text-stone-500 mt-4 mb-1.5">
+        <h3 className="text-2xs font-semibold tracking-wider uppercase text-fg-muted mt-4 mb-1.5">
           {title}
         </h3>
-        <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
+        <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
           {rows.map((row, i) => {
             const current = currentFor(row.key);
             const isDefault =
@@ -262,7 +262,7 @@ export function ShortcutsSection(): JSX.Element {
                     : "",
                 ].join(" ")}
               >
-                <span className="text-sm text-stone-800 flex-1">
+                <span className="text-sm text-fg-strong flex-1">
                   {row.label}
                 </span>
                 {!isDefault && (
@@ -270,7 +270,7 @@ export function ShortcutsSection(): JSX.Element {
                     onClick={() =>
                       resetOne(row.key)
                     }
-                    className="text-[10px] text-stone-400 hover:text-stone-700 transition-colors shrink-0"
+                    className="text-2xs text-fg-subtle hover:text-fg transition-colors shrink-0"
                     title={t("resetThisShortcut")}
                   >
                     reset
@@ -293,14 +293,14 @@ export function ShortcutsSection(): JSX.Element {
                     className="flex items-center gap-2 group/edit"
                     title={t("clickToReassign")}
                   >
-                    <kbd className="text-[10px] font-mono text-stone-700 border border-border rounded px-1.5 py-0.5 group-hover/edit:border-cta group-hover/edit:text-cta transition-colors">
+                    <kbd className="text-2xs font-mono text-fg border border-border rounded px-1.5 py-0.5 group-hover/edit:border-cta group-hover/edit:text-cta transition-colors">
                       {current
                         ? displayShortcut(current)
                         : "\u2014"}
                     </kbd>
                     <Pencil
                       size={10}
-                      className="text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="text-fg-subtle opacity-0 group-hover:opacity-100 transition-opacity"
                     />
                   </button>
                 )}
@@ -315,12 +315,12 @@ export function ShortcutsSection(): JSX.Element {
   return (
     <section>
       <div className="flex items-center gap-3 mb-3">
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted">
           {t("keyboardShortcuts")}
         </h2>
         <button
           onClick={resetToDefaults}
-          className="ml-auto flex items-center gap-1 text-xs text-stone-500 hover:text-stone-900 transition-colors"
+          className="ml-auto flex items-center gap-1 text-xs text-fg-muted hover:text-fg-strong transition-colors"
           title={t("resetToDefaults")}
         >
           <RotateCcw size={11} />
@@ -340,7 +340,7 @@ export function ShortcutsSection(): JSX.Element {
 
       {renderGroup(t("navigate"), SHORTCUT_ROWS)}
       {renderGroup(t("actions"), ACTION_ROWS)}
-      <p className="mt-2 text-[10px] text-stone-400">
+      <p className="mt-2 text-2xs text-fg-subtle">
         {t("shortcutsHint")}
       </p>
     </section>

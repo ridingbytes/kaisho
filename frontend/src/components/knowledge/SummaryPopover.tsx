@@ -280,7 +280,7 @@ export function SummaryPopover({
           <h3
             className={
               "flex-1 text-xs font-semibold " +
-              "text-stone-800 truncate"
+              "text-fg-strong truncate"
             }
             title={path}
           >
@@ -289,7 +289,7 @@ export function SummaryPopover({
           {isStale && (
             <span
               className={
-                "px-1.5 py-0.5 rounded text-[9px] " +
+                "px-1.5 py-0.5 rounded text-2xs " +
                 "font-semibold bg-amber-500/10 " +
                 "text-amber-600 uppercase " +
                 "tracking-wider"
@@ -301,7 +301,7 @@ export function SummaryPopover({
           )}
           {isCached && (
             <span
-              className={"text-[10px] text-stone-400"}
+              className={"text-2xs text-fg-subtle"}
               title={t("summaryCached")}
             >
               {t("summaryCached")}
@@ -310,7 +310,7 @@ export function SummaryPopover({
           {headerSubtitle && (
             <span
               className={
-                "text-[10px] text-stone-500 font-mono"
+                "text-2xs text-fg-muted font-mono"
               }
               title={t("summaryModel")}
             >
@@ -323,7 +323,7 @@ export function SummaryPopover({
               aria-label={t("handoverToAdvisor")}
               title={t("handoverToAdvisor")}
               className={
-                "p-0.5 rounded text-stone-500 " +
+                "p-0.5 rounded text-fg-muted " +
                 "hover:text-cta transition-colors"
               }
             >
@@ -361,7 +361,7 @@ export function SummaryPopover({
               aria-label={t("summaryRegenerate")}
               title={t("summaryRegenerate")}
               className={
-                "p-0.5 rounded text-stone-500 " +
+                "p-0.5 rounded text-fg-muted " +
                 "hover:text-cta transition-colors " +
                 "disabled:opacity-40"
               }
@@ -392,7 +392,7 @@ export function SummaryPopover({
               aria-label={t("summaryDelete")}
               title={t("summaryDelete")}
               className={
-                "p-0.5 rounded text-stone-500 " +
+                "p-0.5 rounded text-fg-muted " +
                 "hover:text-red-500 transition-colors " +
                 "disabled:opacity-40"
               }
@@ -405,8 +405,8 @@ export function SummaryPopover({
             aria-label={tc("close")}
             title={tc("close")}
             className={
-              "p-0.5 rounded text-stone-500 " +
-              "hover:text-stone-900"
+              "p-0.5 rounded text-fg-muted " +
+              "hover:text-fg-strong"
             }
           >
             <X size={14} />
@@ -424,7 +424,7 @@ export function SummaryPopover({
             <div
               className={
                 "flex items-center gap-2 text-xs " +
-                "text-stone-500"
+                "text-fg-muted"
               }
             >
               <Loader2
@@ -451,7 +451,7 @@ export function SummaryPopover({
                 className={
                   "rounded-lg bg-surface-raised " +
                   "px-3 py-2 text-xs " +
-                  "text-stone-500 inline-flex " +
+                  "text-fg-muted inline-flex " +
                   "items-center gap-2"
                 }
               >
@@ -488,10 +488,10 @@ export function SummaryPopover({
             rows={1}
             disabled={summarizing && !hasBubbles}
             className={
-              "flex-1 min-h-[40px] px-3 py-2 rounded-xl " +
+              "flex-1 min-h-[40px] px-3 py-2 rounded-lg " +
               "resize-none bg-surface-raised " +
               "border border-border text-sm " +
-              "text-stone-900 placeholder-stone-500 " +
+              "text-fg-strong placeholder-fg-muted " +
               "focus:outline-none " +
               "focus:border-border-strong " +
               "disabled:opacity-50"
@@ -508,7 +508,7 @@ export function SummaryPopover({
             title={t("chatSend") + " (↵)"}
             className={
               "flex items-center justify-center " +
-              "h-10 w-10 shrink-0 rounded-xl " +
+              "h-10 w-10 shrink-0 rounded-lg " +
               "bg-cta text-white hover:bg-cta-hover " +
               "transition-colors disabled:opacity-50"
             }
@@ -542,7 +542,7 @@ function Bubble({
           "group relative max-w-[85%] rounded-lg px-3 py-2 "
           + (isUser
             ? "bg-cta text-white"
-            : "bg-surface-raised text-stone-800")
+            : "bg-surface-raised text-fg-strong")
         }
       >
         {isUser ? (
@@ -563,7 +563,7 @@ function Bubble({
             className={
               "absolute -top-2 -right-2 p-1 rounded " +
               "bg-surface-overlay border border-border " +
-              "text-stone-500 hover:text-cta " +
+              "text-fg-muted hover:text-cta " +
               "shadow-sm opacity-0 " +
               "group-hover:opacity-100 " +
               "focus-visible:opacity-100 " +

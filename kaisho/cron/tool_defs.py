@@ -201,15 +201,36 @@ TOOL_DEFS: list[dict] = [
     {
         "name": "list_customers",
         "tier": "read",
-        "description": "List all customers with budget and consumption info.",
+        "description": (
+            "List all customers with budget + consumption "
+            "info. Each customer carries pre-computed "
+            "``budget_hours`` / ``used_hours`` / "
+            "``rest_hours`` / ``pct_used``. ALWAYS use "
+            "those exact fields when reporting numbers -- "
+            "do NOT invert used vs rest, do NOT compute "
+            "your own percentages."
+        ),
         "input_schema": {"type": "object", "properties": {}},
     },
     {
         "name": "list_contracts",
         "tier": "read",
         "description": (
-            "List contracts for a customer with budget and "
-            "consumption info."
+            "List contracts for a customer with budget + "
+            "consumption info. Each contract carries a "
+            "``state`` field: ``active`` (live, has remaining "
+            "budget you can reason over), ``invoiced`` "
+            "(historical, already billed -- IGNORE for "
+            "'remaining capacity' / 'over budget' reasoning), "
+            "``ended`` (closed, end_date in past -- also "
+            "historical). When answering 'how much budget is "
+            "left' or 'should I do X for customer Y', look "
+            "ONLY at ``state == 'active'`` contracts. "
+            "Pre-computed numeric fields: ``budget_hours`` / "
+            "``used_hours`` / ``rest_hours`` / ``pct_used``. "
+            "ALWAYS use those exact fields verbatim -- do NOT "
+            "invert used vs rest, do NOT compute your own "
+            "percentages."
         ),
         "input_schema": {
             "type": "object",
@@ -1209,11 +1230,23 @@ TOOL_DEFS: list[dict] = [
         "name": "list_calendar_events",
         "tier": "read",
         "description": (
-            "List calendar events from connected CalDAV "
-            "accounts (Apple iCloud, Fastmail, Nextcloud, "
-            "custom). Local-only -- credentials stay on the "
-            "user's machine. Pass ``from`` / ``to`` as "
-            "ISO-8601 datetimes; window capped at 42 days."
+            "Read the user's calendar. THE calendar tool "
+            "for Kaisho -- aggregates events across every "
+            "connected source: local CalDAV (Apple iCloud, "
+            "Fastmail, Nextcloud, custom self-hosted) AND "
+            "Google Calendar when the user has Pro and has "
+            "connected it. ALWAYS use this when the user "
+            "asks 'what's on my calendar', 'what meetings', "
+            "'what's next week', or anything time-related "
+            "that isn't a clock entry. Returns "
+            "{events: [...], sources: [{id, ok, count}]} "
+            "so you can tell the user which sources "
+            "contributed. Pass ``from`` / ``to`` as "
+            "ISO-8601 datetimes (defaults: today 00:00 "
+            "local through +7 days); window capped at 42 "
+            "days. NEVER claim Kaisho has no calendar "
+            "integration -- call this tool first and "
+            "report what it returns."
         ),
         "input_schema": {
             "type": "object",

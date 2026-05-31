@@ -7,6 +7,7 @@ import { Pencil, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { EditFooter } from "../common/EditFooter";
+import { HoverActions } from "../common/HoverActions";
 import {
   useUpdateContract,
   useDeleteContract,
@@ -115,85 +116,116 @@ export function ContractRow({
   }
 
   if (editing) {
+    // Label cell — small uppercase eyebrow above the
+    // input. Without labels the form is impossible to
+    // read once the user has typed (the placeholder
+    // disappears and '40' on its own gives no context).
+    const labelCls =
+      "text-2xs text-fg-muted uppercase tracking-wider";
     return (
       <div
         className={
-          "flex flex-col gap-1 py-2 border-b "
+          "flex flex-col gap-2 py-2 border-b "
           + "border-border-subtle last:border-0"
         }
       >
-        <div
-          className="grid gap-1"
-          style={{
-            gridTemplateColumns: "1fr 1fr 1fr",
-          }}
-        >
+        <div className="grid grid-cols-3 gap-2">
+          <label className="flex flex-col gap-0.5 min-w-0">
+            <span className={labelCls}>{tc("name")}</span>
+            <input
+              autoFocus
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={tc("name")}
+              className={smallInputCls + " w-full"}
+            />
+          </label>
+          <label className="flex flex-col gap-0.5 min-w-0">
+            <span className={labelCls}>
+              {t("budgetHLabel")}
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t("budgetHLabel")}
+              className={
+                smallInputCls + " w-full tabular-nums"
+              }
+            />
+          </label>
+          <label className="flex flex-col gap-0.5 min-w-0">
+            <span
+              className={labelCls}
+              title={t("usedOffset")}
+            >
+              {t("offsetH")}
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={offset}
+              onChange={(e) => setOffset(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t("offsetH")}
+              title={t("usedOffset")}
+              className={
+                smallInputCls + " w-full tabular-nums"
+              }
+            />
+          </label>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="flex flex-col gap-0.5 min-w-0">
+            <span className={labelCls}>
+              {tc("startDate")}
+            </span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) =>
+                setStartDate(e.target.value)
+              }
+              onKeyDown={handleKeyDown}
+              className={smallInputCls + " w-full"}
+            />
+          </label>
+          <label className="flex flex-col gap-0.5 min-w-0">
+            <span className={labelCls}>
+              {t("endDate")}
+            </span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t("endDate")}
+              className={smallInputCls + " w-full"}
+            />
+          </label>
+        </div>
+        <label className="flex flex-col gap-0.5">
+          <span className={labelCls}>{tc("notes")}</span>
           <input
-            autoFocus
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={tc("name")}
-            className={smallInputCls}
+            placeholder={tc("notes")}
+            className={smallInputCls + " w-full"}
           />
-          <input
-            type="number"
-            min="0"
-            step="1"
-            value={hours}
-            onChange={(e) => setHours(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t("budgetHLabel")}
-            className={`${smallInputCls} tabular-nums`}
-          />
-          <input
-            type="number"
-            min="0"
-            step="0.5"
-            value={offset}
-            onChange={(e) => setOffset(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t("offsetH")}
-            title={t("usedOffset")}
-            className={`${smallInputCls} tabular-nums`}
-          />
-        </div>
-        <div
-          className="grid gap-1"
-          style={{ gridTemplateColumns: "1fr 1fr" }}
-        >
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) =>
-              setStartDate(e.target.value)
-            }
-            onKeyDown={handleKeyDown}
-            className={smallInputCls}
-          />
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t("endDate")}
-            className={smallInputCls}
-          />
-        </div>
-        <input
-          type="text"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={tc("notes")}
-          className={smallInputCls}
-        />
+        </label>
         <div className="flex items-center gap-4">
           <label
             className={
               "flex items-center gap-1.5 text-xs "
-              + "text-stone-700 cursor-pointer"
+              + "text-fg cursor-pointer"
             }
           >
             <input
@@ -212,7 +244,7 @@ export function ContractRow({
           <label
             className={
               "flex items-center gap-1.5 text-xs "
-              + "text-stone-700 cursor-pointer"
+              + "text-fg cursor-pointer"
             }
           >
             <input
@@ -246,8 +278,8 @@ export function ContractRow({
         className={[
           "text-xs font-medium truncate mb-1",
           isActive
-            ? "text-stone-800"
-            : "text-stone-600",
+            ? "text-fg-strong"
+            : "text-fg-muted",
         ].join(" ")}
       >
         {contract.name}
@@ -256,7 +288,7 @@ export function ContractRow({
       <div className="flex items-center gap-1 mb-1">
         <span
           className={
-            "text-[10px] text-stone-600 tabular-nums"
+            "text-2xs text-fg-muted tabular-nums"
           }
         >
           {contract.used.toFixed(1)}h /{" "}
@@ -265,8 +297,8 @@ export function ContractRow({
         {!isActive && (
           <span
             className={
-              "text-[9px] px-1 py-0.5 rounded "
-              + "bg-surface-overlay text-stone-500"
+              "text-2xs px-1 py-0.5 rounded "
+              + "bg-surface-overlay text-fg-muted"
             }
           >
             {tc("closed")}
@@ -275,7 +307,7 @@ export function ContractRow({
         {contract.billable === false && (
           <span
             className={
-              "text-[9px] px-1 py-0.5 rounded "
+              "text-2xs px-1 py-0.5 rounded "
               + "bg-amber-500/10 text-amber-600"
             }
           >
@@ -285,22 +317,18 @@ export function ContractRow({
         {contract.invoiced && (
           <span
             className={
-              "text-[9px] px-1 py-0.5 rounded "
+              "text-2xs px-1 py-0.5 rounded "
               + "bg-emerald-500/10 text-emerald-600"
             }
           >
             {tc("invoiced")}
           </span>
         )}
-        <div
-          className={
-            "hidden group-hover:flex gap-0.5 ml-auto"
-          }
-        >
+        <HoverActions className="gap-0.5 ml-auto">
           <button
             onClick={startEdit}
             className={
-              "p-0.5 rounded text-stone-400 "
+              "p-0.5 rounded text-fg-subtle "
               + "hover:text-cta hover:bg-cta-muted "
               + "transition-colors"
             }
@@ -320,7 +348,7 @@ export function ContractRow({
             <button
               disabled={deleteContract.isPending}
               className={
-                "p-0.5 rounded text-stone-400 "
+                "p-0.5 rounded text-fg-subtle "
                 + "hover:text-red-400 "
                 + "hover:bg-red-500/10 "
                 + "transition-colors"
@@ -330,7 +358,7 @@ export function ContractRow({
               <X size={10} />
             </button>
           </ConfirmPopover>
-        </div>
+        </HoverActions>
       </div>
       {contract.budget > 0 && (
         <div
@@ -353,7 +381,7 @@ export function ContractRow({
       {contract.notes && (
         <p
           className={
-            "text-[10px] text-stone-500 "
+            "text-2xs text-fg-muted "
             + "mt-0.5 truncate"
           }
         >

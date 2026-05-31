@@ -33,6 +33,7 @@ import {
 import { useCustomers } from "../../hooks/useCustomers";
 import { useKbSources } from "../../hooks/useSettings";
 import { useTasks } from "../../hooks/useTasks";
+import { Button } from "../common/Button";
 import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { Markdown } from "../common/Markdown";
@@ -111,10 +112,26 @@ function migrateLegacyFilter(): string {
 export function KnowledgeView() {
   const { t } = useTranslation("knowledge");
   const { t: tc } = useTranslation("common");
+  // Persist the open file across navigations so going to
+  // another panel and back doesn't drop the user's context.
+  // Stored per-profile to keep notes / research scoping
+  // clean.
+  const SELECTED_PATH_KEY = "kaisho_kb_selected_path";
+  const SELECTED_LABEL_KEY = "kaisho_kb_selected_label";
   const [selectedPath, setSelectedPath] =
-    useState<string | null>(null);
+    useState<string | null>(() =>
+      profileGet(SELECTED_PATH_KEY) || null,
+    );
   const [selectedLabel, setSelectedLabel] =
-    useState<string>("knowledge");
+    useState<string>(() =>
+      profileGet(SELECTED_LABEL_KEY) || "knowledge",
+    );
+  useEffect(() => {
+    profileSet(SELECTED_PATH_KEY, selectedPath ?? "");
+  }, [selectedPath]);
+  useEffect(() => {
+    profileSet(SELECTED_LABEL_KEY, selectedLabel);
+  }, [selectedLabel]);
   // Unified filter: scoped chips narrow the tree, the
   // trailing free text drives the content-search backend.
   const FILTER_QUERY_KEY = "kaisho_kb_filter_query";
@@ -340,6 +357,25 @@ export function KnowledgeView() {
     });
   }, [isSearching, searchResults]);
 
+  // Reveal the open file: every time selectedPath changes
+  // (including the restore-from-localStorage case on mount),
+  // expand its parent folders so the leaf is actually
+  // rendered in the tree. The leaf itself scroll-intos-view
+  // from TreeNodeRow.
+  useEffect(() => {
+    if (!selectedPath) return;
+    setTreeNodes((prev) => {
+      const target = new Set([selectedPath]);
+      const next: Record<string, TreeNode[]> = {};
+      for (const label of Object.keys(prev)) {
+        next[label] = expandMatchingFolders(
+          prev[label], target,
+        );
+      }
+      return next;
+    });
+  }, [selectedPath]);
+
   // Persist sidebar state
   useEffect(() => {
     storeOpen(sidebarOpen);
@@ -510,7 +546,7 @@ export function KnowledgeView() {
           >
             <Filter
               size={11}
-              className="text-stone-400 shrink-0"
+              className="text-fg-subtle shrink-0"
             />
             <TokenFilterInput
               value={filterValue}
@@ -523,8 +559,8 @@ export function KnowledgeView() {
               <button
                 onClick={() => setFilterValue("")}
                 className={[
-                  "p-0.5 rounded text-stone-400",
-                  "hover:text-stone-900 transition-colors",
+                  "p-0.5 rounded text-fg-subtle",
+                  "hover:text-fg-strong transition-colors",
                 ].join(" ")}
                 title={tc("clear")}
                 aria-label={tc("clear")}
@@ -545,7 +581,7 @@ export function KnowledgeView() {
               "p-1.5 rounded transition-colors",
               showHidden
                 ? "text-cta bg-cta-muted"
-                : "text-stone-400 hover:text-cta",
+                : "text-fg-subtle hover:text-cta",
             ].join(" ")}
             title={
               showHidden
@@ -566,7 +602,7 @@ export function KnowledgeView() {
               "p-1.5 rounded transition-colors",
               showStarredOnly
                 ? "text-amber-400 bg-amber-400/10"
-                : "text-stone-400 hover:text-amber-400",
+                : "text-fg-subtle hover:text-amber-400",
             ].join(" ")}
             title={t("starredFilter")}
           >
@@ -589,7 +625,7 @@ export function KnowledgeView() {
               "p-1.5 rounded transition-colors",
               showRecentOnly
                 ? "text-cta bg-cta-muted"
-                : "text-stone-400 hover:text-cta",
+                : "text-fg-subtle hover:text-cta",
             ].join(" ")}
             title={t("recentFilter")}
             aria-label={t("recentFilter")}
@@ -599,18 +635,14 @@ export function KnowledgeView() {
         </>) : undefined}
         right={<>
           {!editing && (
-            <button
+            <Button
+              variant="tonal"
+              size="sm"
+              icon={<FilePlus size={12} />}
               onClick={() => setCreating((v) => !v)}
-              className={[
-                "flex items-center gap-1 px-2.5 py-1",
-                "rounded bg-cta-muted text-cta text-xs",
-                "font-semibold hover:bg-cta",
-                "hover:text-white transition-colors",
-              ].join(" ")}
             >
-              <FilePlus size={12} />
               {t("newFile")}
-            </button>
+            </Button>
           )}
           {/* Summarize / copy / external editor work for
               PDFs too -- the server reads them and runs
@@ -626,7 +658,7 @@ export function KnowledgeView() {
                 aria-label={t("summaryButton")}
                 className={[
                   "flex items-center gap-1 px-2.5",
-                  "py-1 rounded text-stone-700",
+                  "py-1 rounded text-fg",
                   "text-xs hover:text-cta",
                   "hover:bg-cta-muted",
                   "transition-colors",
@@ -650,8 +682,8 @@ export function KnowledgeView() {
                   onClick={() => setEditing(true)}
                   className={[
                     "flex items-center gap-1 px-2.5",
-                    "py-1 rounded text-stone-700",
-                    "text-xs hover:text-stone-900",
+                    "py-1 rounded text-fg",
+                    "text-xs hover:text-fg-strong",
                     "hover:bg-surface-raised",
                     "transition-colors",
                   ].join(" ")}
@@ -759,14 +791,14 @@ export function KnowledgeView() {
           ) : (
           <div className="flex-1 overflow-y-auto p-5">
             {fileLoading && (
-              <p className="text-sm text-stone-500">
+              <p className="text-sm text-fg-muted">
                 {tc("loading")}
               </p>
             )}
             {!fileLoading &&
               !fileData &&
               !selectedPath && (
-                <p className="text-sm text-stone-500">
+                <p className="text-sm text-fg-muted">
                   {t("selectFile")}
                 </p>
               )}

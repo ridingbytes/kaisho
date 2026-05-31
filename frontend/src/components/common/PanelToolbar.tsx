@@ -23,14 +23,16 @@ export function PanelToolbar({
   return (
     <div
       className={[
-        "flex flex-wrap items-center",
-        "gap-x-3 gap-y-2 px-5 py-2.5",
+        "flex flex-wrap items-center justify-between",
+        "gap-3 px-5 py-2.5",
         "border-b border-border-subtle shrink-0",
       ].join(" ")}
     >
-      {left}
-      {children}
-      <div className="ml-auto flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        {left}
+        {children}
+      </div>
+      <div className="flex items-center gap-3">
         {right}
       </div>
     </div>

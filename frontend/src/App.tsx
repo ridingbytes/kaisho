@@ -11,6 +11,7 @@ import {
   Download,
   Globe,
   Menu,
+  Monitor,
   Moon,
   RefreshCw,
   Settings,
@@ -120,7 +121,7 @@ function MobileTimerModal({
         <h2
           className={[
             "text-xs font-semibold tracking-wider",
-            "uppercase text-stone-700 flex-1",
+            "uppercase text-fg flex-1",
           ].join(" ")}
         >
           {tClocks("timeTracking")}
@@ -128,8 +129,8 @@ function MobileTimerModal({
         <button
           onClick={onClose}
           className={[
-            "p-1 rounded text-stone-500",
-            "hover:text-stone-900",
+            "p-1 rounded text-fg-muted",
+            "hover:text-fg-strong",
           ].join(" ")}
         >
           <X size={18} />
@@ -197,22 +198,22 @@ function ActiveTimerWidget({
     <div
       className={[
         "flex flex-col items-center gap-3 p-6",
-        "rounded-xl bg-surface-raised",
+        "rounded-lg bg-surface-raised",
         "border border-border-subtle",
       ].join(" ")}
     >
-      <span className="text-4xl font-mono font-bold tabular-nums text-stone-900">
+      <span className="text-4xl font-mono font-bold tabular-nums text-fg-strong">
         {h}:{m}:{s}
       </span>
       <span className="text-xs text-emerald-500 font-semibold uppercase">
         {tc("active")}
       </span>
-      <p className="text-sm text-stone-700 text-center">
+      <p className="text-sm text-fg text-center">
         <span className="font-semibold">
           {timer.customer}
         </span>
         {timer.description && (
-          <span className="text-stone-500">
+          <span className="text-fg-muted">
             {" "}&middot; {timer.description}
           </span>
         )}
@@ -244,7 +245,176 @@ const queryClient = new QueryClient({
   },
 });
 
-type Theme = "dark" | "light";
+type Theme = "dark" | "light" | "system";
+export type ThemeMode = Theme;
+
+// Cycle order for the header toggle: each click steps to
+// the next entry. Keeping "system" last means the chain
+// reads "I want light → no, dark → no, let the OS pick".
+const THEME_CYCLE: Theme[] = ["light", "dark", "system"];
+
+const PREFERS_DARK = "(prefers-color-scheme: dark)";
+
+// ---------------------------------------------------------
+// Theme presets
+// ---------------------------------------------------------
+// The active appearance is the product of:
+//   mode   ∈ {"light", "dark", "system"}    ← localStorage.theme
+//   light preset ∈ THEME_PRESETS.light.id   ← localStorage.themeLight
+//   dark  preset ∈ THEME_PRESETS.dark.id    ← localStorage.themeDark
+//
+// Each preset id maps onto the data-theme attribute (with
+// one quirk: the default light preset uses the bare :root
+// block, so the attribute is removed instead of set).
+export type LightPresetId =
+  | "zinc"
+  | "sepia"
+  | "solarized-light"
+  | "github"
+  | "gruvbox-light"
+  | "latte";
+export type DarkPresetId =
+  | "zinc"
+  | "solarized"
+  | "dracula"
+  | "nord"
+  | "tokyo-night"
+  | "mocha";
+
+export const THEME_PRESETS = {
+  light: [
+    { id: "zinc" as LightPresetId, labelKey: "presetZinc" },
+    { id: "sepia" as LightPresetId, labelKey: "presetSepia" },
+    { id: "solarized-light" as LightPresetId,
+      labelKey: "presetSolarizedLight" },
+    { id: "github" as LightPresetId,
+      labelKey: "presetGithub" },
+    { id: "gruvbox-light" as LightPresetId,
+      labelKey: "presetGruvboxLight" },
+    { id: "latte" as LightPresetId,
+      labelKey: "presetLatte" },
+  ],
+  dark: [
+    { id: "zinc" as DarkPresetId, labelKey: "presetZinc" },
+    { id: "solarized" as DarkPresetId,
+      labelKey: "presetSolarized" },
+    { id: "dracula" as DarkPresetId,
+      labelKey: "presetDracula" },
+    { id: "nord" as DarkPresetId, labelKey: "presetNord" },
+    { id: "tokyo-night" as DarkPresetId,
+      labelKey: "presetTokyoNight" },
+    { id: "mocha" as DarkPresetId,
+      labelKey: "presetMocha" },
+  ],
+};
+
+const LIGHT_PRESET_IDS = new Set<LightPresetId>(
+  THEME_PRESETS.light.map((p) => p.id),
+);
+const DARK_PRESET_IDS = new Set<DarkPresetId>(
+  THEME_PRESETS.dark.map((p) => p.id),
+);
+
+// Font presets — id is the dropdown value; ``family`` is the
+// resolved CSS font-family string. ``system`` picks the OS
+// system font stack so the app blends in with the native
+// look on each platform.
+export type FontPresetId =
+  | "inter"
+  | "system"
+  | "sans"
+  | "serif"
+  | "mono";
+
+export interface FontPreset {
+  id: FontPresetId;
+  labelKey: string;
+  family: string;
+}
+
+export const FONT_PRESETS: FontPreset[] = [
+  { id: "inter", labelKey: "fontInter",
+    family: '"Inter", system-ui, sans-serif' },
+  { id: "system", labelKey: "fontSystem",
+    family:
+      'system-ui, -apple-system, "Segoe UI", Roboto, '
+      + '"Helvetica Neue", Arial, sans-serif' },
+  { id: "sans", labelKey: "fontSans",
+    family:
+      '"Helvetica Neue", Helvetica, Arial, sans-serif' },
+  { id: "serif", labelKey: "fontSerif",
+    family: 'Georgia, "Times New Roman", Times, serif' },
+  { id: "mono", labelKey: "fontMono",
+    family:
+      '"JetBrains Mono", "Fira Code", Menlo, '
+      + 'Consolas, monospace' },
+];
+
+const FONT_PRESET_IDS = new Set<FontPresetId>(
+  FONT_PRESETS.map((p) => p.id),
+);
+
+/** Project a stored Theme onto the concrete value applied
+ *  to `data-theme`. ``"system"`` resolves to the OS
+ *  preference at call time. */
+function resolveTheme(theme: Theme): "dark" | "light" {
+  if (theme !== "system") return theme;
+  return window.matchMedia(PREFERS_DARK).matches
+    ? "dark" : "light";
+}
+
+/** Pick the `data-theme` attribute value for a (mode,
+ *  preset) pair. Empty string means "remove the attribute"
+ *  so the `:root` defaults apply. */
+function attrForPreset(
+  mode: "light" | "dark",
+  lightPreset: LightPresetId,
+  darkPreset: DarkPresetId,
+): string {
+  if (mode === "light") {
+    return lightPreset === "zinc" ? "" : lightPreset;
+  }
+  return darkPreset === "zinc" ? "dark" : darkPreset;
+}
+
+function applyTheme(
+  mode: "light" | "dark",
+  lightPreset: LightPresetId,
+  darkPreset: DarkPresetId,
+) {
+  const attr = attrForPreset(mode, lightPreset, darkPreset);
+  if (attr) {
+    document.documentElement.dataset.theme = attr;
+  } else {
+    delete document.documentElement.dataset.theme;
+  }
+}
+
+function loadLightPreset(): LightPresetId {
+  const v = localStorage.getItem("themeLight") as
+    LightPresetId | null;
+  return v && LIGHT_PRESET_IDS.has(v) ? v : "zinc";
+}
+
+function loadDarkPreset(): DarkPresetId {
+  const v = localStorage.getItem("themeDark") as
+    DarkPresetId | null;
+  return v && DARK_PRESET_IDS.has(v) ? v : "zinc";
+}
+
+function loadFont(): FontPresetId {
+  const v = localStorage.getItem("themeFont");
+  return v && FONT_PRESET_IDS.has(v as FontPresetId)
+    ? (v as FontPresetId) : "inter";
+}
+
+function applyFont(id: FontPresetId) {
+  const preset = FONT_PRESETS.find((p) => p.id === id)
+    ?? FONT_PRESETS[0];
+  document.documentElement.style.setProperty(
+    "--app-font", preset.family,
+  );
+}
 
 const NUDGE_DISMISS_KEY = "kaisho_cloud_nudge_dismissed";
 const NUDGE_DISMISS_DAYS = 14;
@@ -274,7 +444,7 @@ function CloudNudgeBanner({
 
   return (
     <div className="flex items-center gap-3 px-4 py-1.5 bg-cta/10 border-b border-cta/20 shrink-0">
-      <p className="flex-1 text-[11px] text-stone-700">
+      <p className="flex-1 text-xs text-fg">
         Companion and Pro add hosted sync, the MCP gateway,
         mobile and scheduled AI runs.{" "}
         <button
@@ -297,7 +467,7 @@ function CloudNudgeBanner({
       </p>
       <button
         onClick={handleDismiss}
-        className="text-stone-400 hover:text-stone-700 transition-colors shrink-0"
+        className="text-fg-subtle hover:text-fg transition-colors shrink-0"
         title="Dismiss for 14 days"
       >
         <X size={12} />
@@ -416,7 +586,7 @@ function UpdateBanner() {
   return (
     <div className="flex items-center gap-3 px-4 py-1.5 bg-green-500/10 border-b border-green-500/20 shrink-0">
       {installing ? (
-        <p className="flex-1 flex items-center gap-2 text-[11px] text-stone-700">
+        <p className="flex-1 flex items-center gap-2 text-xs text-fg">
           <RefreshCw
             size={11}
             className="animate-spin text-green-600"
@@ -425,20 +595,20 @@ function UpdateBanner() {
         </p>
       ) : (
         <>
-          <p className="flex-1 text-[11px] text-stone-700">
+          <p className="flex-1 text-xs text-fg">
             Kaisho <strong>v{version}</strong> is
             available.
           </p>
           <button
             onClick={handleInstall}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium text-green-700 bg-green-500/20 hover:bg-green-500/30 transition-colors"
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium text-green-700 bg-green-500/20 hover:bg-green-500/30 transition-colors"
           >
             <Download size={11} />
             Install &amp; restart
           </button>
           <button
             onClick={() => setDismissed(true)}
-            className="text-stone-400 hover:text-stone-700 transition-colors shrink-0"
+            className="text-fg-subtle hover:text-fg transition-colors shrink-0"
             title="Dismiss"
           >
             <X size={12} />
@@ -463,8 +633,26 @@ function AppShell() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [newProfInput, setNewProfInput] = useState("");
 
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem("theme") as Theme) ?? "light"
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark" || saved === "light" || saved === "system") {
+      return saved;
+    }
+    return "system";
+  });
+  const [lightPreset, setLightPreset] = (
+    useState<LightPresetId>(loadLightPreset)
+  );
+  const [darkPreset, setDarkPreset] = (
+    useState<DarkPresetId>(loadDarkPreset)
+  );
+  const [font, setFont] = useState<FontPresetId>(loadFont);
+  // Concrete "dark" | "light" the app currently renders as.
+  // Differs from ``theme`` only when ``theme === "system"`` --
+  // components that need to branch on appearance (e.g. logo
+  // colour) should read this, not ``theme``.
+  const [resolvedTheme, setResolvedTheme] = (
+    useState<"dark" | "light">(() => resolveTheme(theme))
   );
   const [sidebarOpen, setSidebarOpen] = useState(
     () => localStorage.getItem("sidebar_open") !== "false"
@@ -527,13 +715,62 @@ function AppShell() {
   const prevMsgCountRef = useRef(advisorMessages.length);
 
   useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.dataset.theme = "dark";
-    } else {
-      delete document.documentElement.dataset.theme;
-    }
+    const initial = resolveTheme(theme);
+    setResolvedTheme(initial);
+    applyTheme(initial, lightPreset, darkPreset);
     localStorage.setItem("theme", theme);
-  }, [theme]);
+    localStorage.setItem("themeLight", lightPreset);
+    localStorage.setItem("themeDark", darkPreset);
+
+    // When the user opted into "system", follow OS theme
+    // flips at runtime; otherwise the explicit choice is
+    // sticky and the OS preference is irrelevant.
+    if (theme !== "system") return;
+    const mq = window.matchMedia(PREFERS_DARK);
+    function onChange() {
+      const next = mq.matches ? "dark" : "light";
+      setResolvedTheme(next);
+      applyTheme(next, lightPreset, darkPreset);
+    }
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [theme, lightPreset, darkPreset]);
+
+  useEffect(() => {
+    applyFont(font);
+    localStorage.setItem("themeFont", font);
+  }, [font]);
+
+  // Cross-tab + same-tab theme/font sync: the Appearance
+  // settings page writes to localStorage and dispatches
+  // ``kaisho-theme-changed``; pick those up here so the
+  // running app reflows without a reload.
+  useEffect(() => {
+    function refresh() {
+      const saved = localStorage.getItem("theme");
+      if (saved === "dark" || saved === "light"
+          || saved === "system") {
+        setTheme(saved);
+      }
+      setLightPreset(loadLightPreset());
+      setDarkPreset(loadDarkPreset());
+      setFont(loadFont());
+    }
+    function onStorage(e: StorageEvent) {
+      if (e.key === "theme" || e.key === "themeLight"
+          || e.key === "themeDark" || e.key === "themeFont") {
+        refresh();
+      }
+    }
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("kaisho-theme-changed", refresh);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(
+        "kaisho-theme-changed", refresh,
+      );
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("sidebar_open", String(sidebarOpen));
@@ -673,7 +910,7 @@ function AppShell() {
         {/* Hamburger (mobile only) */}
         <button
           onClick={() => setMobileNavOpen((v) => !v)}
-          className="md:hidden p-1 rounded text-stone-600 hover:text-stone-900"
+          className="md:hidden p-1 rounded text-fg-muted hover:text-fg-strong"
         >
           {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
@@ -683,7 +920,7 @@ function AppShell() {
         >
           <img
             src={
-              theme === "dark"
+              resolvedTheme === "dark"
                 ? "/kaisho-logo-light.svg"
                 : "/kaisho-logo.svg"
             }
@@ -693,12 +930,12 @@ function AppShell() {
         </button>
         <button
           onClick={() => setView("dashboard")}
-          className="text-sm font-bold tracking-[0.06em] uppercase text-stone-700 hover:text-cta transition-colors hidden sm:block"
+          className="text-sm font-bold tracking-[0.06em] uppercase text-fg hover:text-cta transition-colors hidden sm:block"
         >
           {appTitle}
         </button>
         {versionData?.version && (
-          <span className="text-[9px] text-stone-400 font-mono hidden sm:block">
+          <span className="text-2xs text-fg-subtle font-mono hidden sm:block">
             v{versionData.version}
           </span>
         )}
@@ -722,7 +959,7 @@ function AppShell() {
                 }}
                 className={[
                   "hidden sm:flex items-center gap-1.5",
-                  "px-2 py-1 rounded-lg text-[10px]",
+                  "px-2 py-1 rounded-lg text-2xs",
                   "font-semibold tracking-wide uppercase",
                   "bg-cta/10 text-cta border border-cta/20",
                   "hover:bg-cta/20 transition-colors",
@@ -746,7 +983,7 @@ function AppShell() {
                 }
                 className={[
                   "hidden sm:flex items-center",
-                  "p-1 rounded text-stone-500",
+                  "p-1 rounded text-fg-muted",
                   "hover:text-cta hover:bg-cta-muted",
                   "transition-colors",
                 ].join(" ")}
@@ -763,7 +1000,7 @@ function AppShell() {
               "md:hidden p-1 rounded transition-colors",
               timerActive
                 ? "text-cta animate-pulse"
-                : "text-stone-500 hover:text-stone-900",
+                : "text-fg-muted hover:text-fg-strong",
             ].join(" ")}
             title="Time tracking"
           >
@@ -777,22 +1014,31 @@ function AppShell() {
             <Terminal size={14} />
           </button>
           <button
-            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            onClick={() => setTheme((t) => {
+              const i = THEME_CYCLE.indexOf(t);
+              return THEME_CYCLE[(i + 1) % THEME_CYCLE.length];
+            })}
+            title={
+              theme === "light" ? "Theme: light (click for dark)"
+                : theme === "dark" ? "Theme: dark (click for system)"
+                  : "Theme: system (click for light)"
+            }
             className={headerBtn}
           >
-            {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+            {theme === "light" && <Sun size={14} />}
+            {theme === "dark" && <Moon size={14} />}
+            {theme === "system" && <Monitor size={14} />}
           </button>
           <div className="flex items-center gap-1 px-1.5 py-1">
-            <Globe size={14} className="text-stone-500 shrink-0" />
+            <Globe size={14} className="text-fg-muted shrink-0" />
             <select
               value={i18n.language}
               onChange={(e) => setLanguage(e.target.value)}
               title="Language"
               className={
-                "text-[10px] font-semibold bg-transparent " +
+                "text-2xs font-semibold bg-transparent " +
                 "border-none outline-none cursor-pointer " +
-                "text-stone-700 hover:text-stone-900"
+                "text-fg hover:text-fg-strong"
               }
             >
               {LANGUAGES.map((l) => (
@@ -811,11 +1057,11 @@ function AppShell() {
                 className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-surface-raised transition-colors"
               >
                 <span className="hidden sm:flex flex-col items-end leading-tight">
-                  <span className="text-sm font-semibold text-stone-900">
+                  <span className="text-sm font-semibold text-fg-strong">
                     {currentUser.name || "User"}
                   </span>
                   {currentUser.profile && (
-                    <span className="text-[10px] text-stone-500 font-mono">
+                    <span className="text-2xs text-fg-muted font-mono">
                       {currentUser.profile}
                     </span>
                   )}
@@ -830,7 +1076,7 @@ function AppShell() {
               {userMenuOpen && (
                 <div className="absolute top-full right-0 mt-1 w-48 rounded-lg bg-surface-overlay border border-border shadow-lg p-2 flex flex-col gap-1 z-50">
                   {/* Profiles */}
-                  <p className="text-[9px] text-stone-500 px-1 uppercase tracking-wider">
+                  <p className="text-2xs text-fg-muted px-1 uppercase tracking-wider">
                     Profile
                   </p>
                   {(currentUser.profiles ?? []).map((p: string) => (
@@ -848,7 +1094,7 @@ function AppShell() {
                         "w-full text-left px-2 py-1 rounded text-xs transition-colors",
                         p === currentUser.profile
                           ? "text-cta bg-cta-muted"
-                          : "text-stone-800 hover:bg-surface-raised",
+                          : "text-fg-strong hover:bg-surface-raised",
                       ].join(" ")}
                     >
                       {p}
@@ -879,12 +1125,12 @@ function AppShell() {
                         if (e.key === "Escape") setNewProfInput("");
                       }}
                       placeholder={tc("name")}
-                      className="w-full px-2 py-1 rounded text-xs bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
+                      className="w-full px-2 py-1 rounded text-xs bg-surface-raised border border-border text-fg-strong focus:outline-none focus:border-cta"
                     />
                   ) : (
                     <button
                       onClick={() => setNewProfInput(" ")}
-                      className="w-full text-left px-2 py-1 rounded text-xs text-stone-500 hover:text-stone-900 hover:bg-surface-raised"
+                      className="w-full text-left px-2 py-1 rounded text-xs text-fg-muted hover:text-fg-strong hover:bg-surface-raised"
                     >
                       + New profile
                     </button>
@@ -897,7 +1143,7 @@ function AppShell() {
                       setView("settings");
                       setUserMenuOpen(false);
                     }}
-                    className="w-full text-left px-2 py-1 rounded text-xs text-stone-800 hover:bg-surface-raised flex items-center gap-2"
+                    className="w-full text-left px-2 py-1 rounded text-xs text-fg-strong hover:bg-surface-raised flex items-center gap-2"
                   >
                     <Settings size={12} />
                     Settings
@@ -1019,7 +1265,7 @@ export function App() {
 }
 
 const headerBtn = [
-  "p-1.5 rounded-md text-stone-600",
-  "hover:text-stone-900 hover:bg-surface-raised",
+  "p-1.5 rounded-md text-fg-muted",
+  "hover:text-fg-strong hover:bg-surface-raised",
   "transition-colors",
 ].join(" ");
