@@ -42,5 +42,6 @@
   "markAsInvoiced": "Marcar como facturado",
   "entriesMarkedInvoiced": "{{count}} entradas marcadas como facturadas",
   "hUsed": "h usadas",
-  "hLeft": "h restantes"
+  "hLeft": "h restantes",
+  "startDate": "Fecha de inicio"
 }

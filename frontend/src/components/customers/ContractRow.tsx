@@ -116,80 +116,111 @@ export function ContractRow({
   }
 
   if (editing) {
+    // Label cell — small uppercase eyebrow above the
+    // input. Without labels the form is impossible to
+    // read once the user has typed (the placeholder
+    // disappears and '40' on its own gives no context).
+    const labelCls =
+      "text-2xs text-fg-muted uppercase tracking-wider";
     return (
       <div
         className={
-          "flex flex-col gap-1 py-2 border-b "
+          "flex flex-col gap-2 py-2 border-b "
           + "border-border-subtle last:border-0"
         }
       >
-        <div
-          className="grid gap-1"
-          style={{
-            gridTemplateColumns: "1fr 1fr 1fr",
-          }}
-        >
+        <div className="grid grid-cols-3 gap-2">
+          <label className="flex flex-col gap-0.5 min-w-0">
+            <span className={labelCls}>{tc("name")}</span>
+            <input
+              autoFocus
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={tc("name")}
+              className={smallInputCls + " w-full"}
+            />
+          </label>
+          <label className="flex flex-col gap-0.5 min-w-0">
+            <span className={labelCls}>
+              {t("budgetHLabel")}
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t("budgetHLabel")}
+              className={
+                smallInputCls + " w-full tabular-nums"
+              }
+            />
+          </label>
+          <label className="flex flex-col gap-0.5 min-w-0">
+            <span
+              className={labelCls}
+              title={t("usedOffset")}
+            >
+              {t("offsetH")}
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={offset}
+              onChange={(e) => setOffset(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t("offsetH")}
+              title={t("usedOffset")}
+              className={
+                smallInputCls + " w-full tabular-nums"
+              }
+            />
+          </label>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="flex flex-col gap-0.5 min-w-0">
+            <span className={labelCls}>
+              {tc("startDate")}
+            </span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) =>
+                setStartDate(e.target.value)
+              }
+              onKeyDown={handleKeyDown}
+              className={smallInputCls + " w-full"}
+            />
+          </label>
+          <label className="flex flex-col gap-0.5 min-w-0">
+            <span className={labelCls}>
+              {t("endDate")}
+            </span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t("endDate")}
+              className={smallInputCls + " w-full"}
+            />
+          </label>
+        </div>
+        <label className="flex flex-col gap-0.5">
+          <span className={labelCls}>{tc("notes")}</span>
           <input
-            autoFocus
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={tc("name")}
-            className={smallInputCls}
+            placeholder={tc("notes")}
+            className={smallInputCls + " w-full"}
           />
-          <input
-            type="number"
-            min="0"
-            step="1"
-            value={hours}
-            onChange={(e) => setHours(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t("budgetHLabel")}
-            className={`${smallInputCls} tabular-nums`}
-          />
-          <input
-            type="number"
-            min="0"
-            step="0.5"
-            value={offset}
-            onChange={(e) => setOffset(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t("offsetH")}
-            title={t("usedOffset")}
-            className={`${smallInputCls} tabular-nums`}
-          />
-        </div>
-        <div
-          className="grid gap-1"
-          style={{ gridTemplateColumns: "1fr 1fr" }}
-        >
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) =>
-              setStartDate(e.target.value)
-            }
-            onKeyDown={handleKeyDown}
-            className={smallInputCls}
-          />
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t("endDate")}
-            className={smallInputCls}
-          />
-        </div>
-        <input
-          type="text"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={tc("notes")}
-          className={smallInputCls}
-        />
+        </label>
         <div className="flex items-center gap-4">
           <label
             className={

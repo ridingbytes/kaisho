@@ -42,5 +42,6 @@
   "markAsInvoiced": "Mark as invoiced",
   "entriesMarkedInvoiced": "{{count}} entries marked as invoiced",
   "hUsed": "h used",
-  "hLeft": "h left"
+  "hLeft": "h left",
+  "startDate": "Start date"
 }

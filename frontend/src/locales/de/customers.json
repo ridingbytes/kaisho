@@ -42,5 +42,6 @@
   "markAsInvoiced": "Als abgerechnet markieren",
   "entriesMarkedInvoiced": "{{count}} Einträge als abgerechnet markiert",
   "hUsed": "h verbraucht",
-  "hLeft": "h übrig"
+  "hLeft": "h übrig",
+  "startDate": "Startdatum"
 }
