@@ -9,10 +9,7 @@ import {
   useKbSources,
   useUpdateKbSources,
 } from "../../hooks/useSettings";
-import {
-  fieldCls,
-  inputCls,
-} from "./styles";
+import { inputCls } from "./styles";
 import { Button } from "../common/Button";
 
 // -----------------------------------------------------------------
@@ -232,10 +229,7 @@ export function PathsSection(): JSX.Element {
               onChange={(e) =>
                 setBackend(e.target.value)
               }
-              className={[
-                fieldCls,
-                "flex-1 h-[34px]",
-              ].join(" ")}
+              className={inputCls + " flex-1"}
             >
               <option value="org">
                 {t("orgMode")}
@@ -380,31 +374,39 @@ export function PathsSection(): JSX.Element {
                 className={inputCls}
               />
               <div className="flex items-center shrink-0">
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  icon={<ArrowUp size={14} />}
                   onClick={() => moveSource(idx, -1)}
                   disabled={idx === 0}
                   title={t("moveUp")}
-                  aria-label={t("moveUp")}
-                  className="p-1 rounded text-fg-muted hover:text-fg-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <ArrowUp size={14} />
-                </button>
-                <button
+                  {t("moveUp")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  icon={<ArrowDown size={14} />}
                   onClick={() => moveSource(idx, 1)}
                   disabled={idx === sources.length - 1}
                   title={t("moveDown")}
-                  aria-label={t("moveDown")}
-                  className="p-1 rounded text-fg-muted hover:text-fg-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <ArrowDown size={14} />
-                </button>
+                  {t("moveDown")}
+                </Button>
               </div>
-              <button
+              <Button
+                variant="danger"
+                size="sm"
+                iconOnly
+                icon={<X size={14} />}
                 onClick={() => removeSource(idx)}
-                className="p-1 rounded text-fg-muted hover:text-red-400 transition-colors shrink-0"
+                title={tc("remove")}
               >
-                <X size={14} />
-              </button>
+                {tc("remove")}
+              </Button>
             </div>
           ))}
           {sources.length === 0 && (
@@ -414,13 +416,13 @@ export function PathsSection(): JSX.Element {
           )}
         </div>
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="secondary"
             onClick={addSource}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-fg bg-surface-raised border border-border hover:text-cta hover:border-cta/40 transition-colors"
+            icon={<Plus size={12} />}
           >
-            <Plus size={12} />
             {t("addSource")}
-          </button>
+          </Button>
           <Button
             onClick={handleSaveKb}
             disabled={updateKb.isPending}
