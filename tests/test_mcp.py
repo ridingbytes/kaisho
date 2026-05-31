@@ -1,8 +1,31 @@
 """Tests for the MCP server module."""
+import inspect
 import json
+from pathlib import Path
 
+from kaisho.mcp.server import _build_handler
 from kaisho.mcp.tiers import filter_tools, parse_tiers
 from kaisho.mcp.audit import log_call
+
+
+def test_build_handler_renames_python_keyword_params():
+    """Schema params named after Python keywords (e.g. ``from``)
+    must not blow up the generated handler signature.
+    """
+    schema = {
+        "type": "object",
+        "properties": {
+            "from": {"type": "string"},
+            "to": {"type": "string"},
+        },
+    }
+    fn = _build_handler(
+        "list_calendar_events", schema, Path("/tmp/x.log"),
+    )
+    sig = inspect.signature(fn)
+    assert "from_" in sig.parameters
+    assert "to" in sig.parameters
+    assert "from" not in sig.parameters
 
 
 def test_parse_tiers_read():
