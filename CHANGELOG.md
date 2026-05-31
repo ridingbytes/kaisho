@@ -1,5 +1,51 @@
 # Changelog
 
+## 2.1.1
+
+Hotfix release. The clock-entry push half of the calendar
+feature shipped in 2.1.0 was broken end-to-end against
+the most common configuration (Apple iCloud + the
+default org backend). 2.1.0 was held as a draft and
+never reached users; 2.1.1 is the first 2.1.x available
+via the auto-updater.
+
+### Fixes
+
+- Push sync now recognises the org backend's `start` /
+  `end` field names. The earlier release only checked
+  the SQL backend's `start_at` / `end_at`, so the gate's
+  first check silently filtered every org entry as if it
+  were a running timer. Sync now created 0 events for
+  the entire org-on-iCloud audience.
+- DAVClient now uses the target URL's own scheme + host
+  when opening a calendar or event. iCloud redirects per
+  user to a per-shard host (e.g. `p49-caldav.icloud.com`)
+  that differs from the discovery host
+  (`caldav.icloud.com`); the `caldav` library refuses to
+  URL-join across hosts. The earlier release blew up the
+  first time it tried to actually PUT an event with
+  ``can't be joined with...``. Fastmail and Nextcloud
+  keep the same host end-to-end so the change is a
+  no-op there.
+- A 404 from CalDAV when fetching a previously-pushed
+  event now triggers a re-create rather than recording
+  a permanent failure. Handles the user deleting the
+  event in Calendar.app (kaisho re-pushes since it is
+  the source of truth) and iCloud's eventually-
+  consistent PROPFIND lag immediately after a PUT.
+
+### Behaviour to know about
+
+Deleting a clock entry's mirrored event in Apple
+Calendar (or any CalDAV client) does **not** opt that
+entry out of push. The entry will reappear on the next
+sync. To genuinely stop a particular booking from
+appearing on the calendar, either delete the clock
+entry in kaisho (propagates immediately) or toggle
+push off on the account (existing events stay, new
+ones stop). A per-entry "do not push" toggle is a
+candidate for a future release if the need surfaces.
+
 ## 2.1.0
 
 The calendar release. A new top-level Calendar panel
