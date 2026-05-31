@@ -47,6 +47,12 @@ CACHE_TTL_SECONDS = 60
 # Hard cap a single events query to avoid runaway recurrence
 # expansion against a year-long EXDATE chain.
 MAX_WINDOW_DAYS = 42
+# Memoize DAVClient instances for at most this long, so a
+# rotated password eventually re-auths instead of failing
+# forever against the stale connection. The 10-minute
+# window is comfortably longer than a typical bulk push
+# (#125, F10).
+CLIENT_TTL_SECONDS = 600
 
 
 class CalDavError(RuntimeError):
@@ -281,6 +287,10 @@ def add_account(
 
     account_id = f"ac_{uuid.uuid4().hex}"
     storage = _set_password(account_id, password)
+    # If _save_settings raises after the password landed,
+    # roll the keychain back so we never leave an orphan
+    # secret that the next runtime cannot reference. See
+    # review C7.
     record = {
         "id": account_id,
         "label": label or spec["label"],
@@ -298,9 +308,13 @@ def add_account(
         "push_calendar_id": "",
     }
 
-    data = _load_settings()
-    data["accounts"].append(record)
-    _save_settings(data)
+    try:
+        data = _load_settings()
+        data["accounts"].append(record)
+        _save_settings(data)
+    except Exception:
+        _delete_password(account_id)
+        raise
 
     log.info(
         "caldav account added: id=%s preset=%s storage=%s",
@@ -625,6 +639,12 @@ def _list_events_for_account(
     if cached is not None:
         return cached
 
+    # Snapshot the per-account generation BEFORE the
+    # fetch so a concurrent invalidate can drop our
+    # write-back (review C6). _cache_put compares and
+    # silently discards stale results.
+    generation = _current_generation(acc["id"])
+
     password = _get_password(acc["id"])
     if password is None:
         log.warning(
@@ -651,7 +671,7 @@ def _list_events_for_account(
             )
         )
 
-    _cache_put(cache_key, events)
+    _cache_put(cache_key, acc["id"], generation, events)
     return events
 
 
@@ -1028,23 +1048,14 @@ def _open_calendar(account_id: str, calendar_id: str):
     refuses to ``join()`` URLs across hosts. Other
     providers (Fastmail, Nextcloud) keep the same host
     end-to-end so the override is a no-op there.
-    """
-    acc = get_account(account_id)
-    if acc is None:
-        raise CalDavError(
-            f"unknown account: {account_id}"
-        )
-    password = _get_password(account_id)
-    if password is None:
-        raise CalDavError(
-            f"no password stored for: {account_id}"
-        )
 
-    import caldav
-    client = caldav.DAVClient(
-        url=_base_url_for(calendar_id),
-        username=acc["username"],
-        password=password,
+    The DAVClient itself is memoised per (account,
+    base_url) for ``CLIENT_TTL_SECONDS`` so a bulk push
+    pays one TCP+TLS+auth handshake instead of one per
+    event (review F10).
+    """
+    client = _get_client(
+        account_id, _base_url_for(calendar_id),
     )
     return client.calendar(url=calendar_id)
 
@@ -1064,23 +1075,10 @@ def _fetch_event_object(account_id: str, event_url: str):
     CalDavError. See ``_open_calendar`` for why the
     client uses the URL's host rather than the
     account's discovery host."""
-    acc = get_account(account_id)
-    if acc is None:
-        raise CalDavError(
-            f"unknown account: {account_id}"
-        )
-    password = _get_password(account_id)
-    if password is None:
-        raise CalDavError(
-            f"no password stored for: {account_id}"
-        )
-
-    import caldav
-    client = caldav.DAVClient(
-        url=_base_url_for(event_url),
-        username=acc["username"],
-        password=password,
+    client = _get_client(
+        account_id, _base_url_for(event_url),
     )
+    import caldav
     try:
         # We need the calendar URL to call .event_by_url;
         # CalDAV URLs are ``.../calendar/.../event.ics`` so
@@ -1171,8 +1169,22 @@ def refresh_account(account_id: str) -> int:
 
 
 # -- Cache -----------------------------------------------------------
+#
+# Two pieces of in-memory state share the same lock:
+#
+#   _cache         (account_id|...) -> (generation, ts, value)
+#   _account_gen   account_id       -> int
+#
+# The generation counter (review C6) closes a TOCTOU
+# race: a long-running fetch that started before an
+# invalidate must not write its stale result back into
+# the cache once the invalidate has run. _cache_get
+# snapshots the generation it saw; _cache_put refuses to
+# overwrite a fresher generation. _invalidate_cache_for_
+# account bumps the generation under the lock.
 
-_cache: dict[str, tuple[float, list[dict]]] = {}
+_cache: dict[str, tuple[int, float, list[dict]]] = {}
+_account_gen: dict[str, int] = {}
 _cache_lock = threading.Lock()
 
 
@@ -1180,20 +1192,33 @@ def _cache_key(*parts: str) -> str:
     return "|".join(parts)
 
 
+def _current_generation(account_id: str) -> int:
+    with _cache_lock:
+        return _account_gen.get(account_id, 0)
+
+
 def _cache_get(key: str) -> list[dict] | None:
     with _cache_lock:
         entry = _cache.get(key)
     if entry is None:
         return None
-    ts, value = entry
+    _gen, ts, value = entry
     if time.time() - ts > CACHE_TTL_SECONDS:
         return None
     return value
 
 
-def _cache_put(key: str, value: list[dict]) -> None:
+def _cache_put(
+    key: str, account_id: str, generation: int,
+    value: list[dict],
+) -> None:
+    """Write the cache entry only if the per-account
+    generation we saw at fetch start still matches the
+    current one. Drops stale writes silently."""
     with _cache_lock:
-        _cache[key] = (time.time(), value)
+        if _account_gen.get(account_id, 0) != generation:
+            return
+        _cache[key] = (generation, time.time(), value)
 
 
 def _invalidate_cache_for_account(account_id: str) -> int:
@@ -1204,7 +1229,70 @@ def _invalidate_cache_for_account(account_id: str) -> int:
         ]
         for k in keys:
             _cache.pop(k, None)
+        _account_gen[account_id] = (
+            _account_gen.get(account_id, 0) + 1
+        )
+    _invalidate_client_for_account(account_id)
     return len(keys)
+
+
+# -- DAVClient memoisation (review F10) ----------------
+#
+# Every CalDAV operation used to instantiate a fresh
+# caldav.DAVClient, paying a TCP+TLS+auth handshake per
+# call (~200-600 ms against iCloud). With the bulk-push
+# sync engine (Phase 1.5) that became the dominant cost
+# of a multi-event reconciliation. Cache one client per
+# (account_id, base_url) so consecutive ops on the same
+# calendar reuse the connection. TTL ensures a rotated
+# password eventually re-auths.
+
+_client_cache: dict[tuple[str, str], tuple[float, object]] = {}
+
+
+def _get_client(account_id: str, base_url: str):
+    """Return a memoised caldav.DAVClient for an account
+    against ``base_url`` (scheme://host[:port]/), or
+    instantiate one. Lazy-imports the caldav library."""
+    key = (account_id, base_url)
+    now = time.time()
+    with _cache_lock:
+        entry = _client_cache.get(key)
+        if entry is not None:
+            created_at, client = entry
+            if now - created_at <= CLIENT_TTL_SECONDS:
+                return client
+            _client_cache.pop(key, None)
+
+    acc = get_account(account_id)
+    if acc is None:
+        raise CalDavError(
+            f"unknown account: {account_id}"
+        )
+    password = _get_password(account_id)
+    if password is None:
+        raise CalDavError(
+            f"no password stored for: {account_id}"
+        )
+    import caldav
+    client = caldav.DAVClient(
+        url=base_url,
+        username=acc["username"],
+        password=password,
+    )
+    with _cache_lock:
+        _client_cache[key] = (now, client)
+    return client
+
+
+def _invalidate_client_for_account(account_id: str) -> None:
+    """Drop every memoised client for an account.
+    Called from _invalidate_cache_for_account and from
+    the password-mutation helpers."""
+    with _cache_lock:
+        for key in list(_client_cache.keys()):
+            if key[0] == account_id:
+                _client_cache.pop(key, None)
 
 
 def _utc_now_iso() -> str:
