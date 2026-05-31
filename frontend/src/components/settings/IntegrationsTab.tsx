@@ -98,8 +98,8 @@ export function IntegrationsSection() {
       setKeys((k) => ({ ...k, [kind]: "" }));
       refresh();
       syncGithubNav(kind);
-    } catch (e) {
-      fail(e);
+    } catch (err) {
+      fail(err);
     } finally {
       setBusy(null);
     }
@@ -111,8 +111,8 @@ export function IntegrationsSection() {
     try {
       const { url } = await getIntegrationConnectUrl(kind);
       if (url) await openExternal(url);
-    } catch (e) {
-      fail(e);
+    } catch (err) {
+      fail(err);
     } finally {
       setBusy(null);
     }
@@ -125,8 +125,8 @@ export function IntegrationsSection() {
       await disconnectIntegration(kind);
       refresh();
       syncGithubNav(kind);
-    } catch (e) {
-      fail(e);
+    } catch (err) {
+      fail(err);
     } finally {
       setBusy(null);
     }

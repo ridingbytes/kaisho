@@ -64,7 +64,11 @@ import {
   useShortcutsContext,
 } from "./context/ShortcutsContext";
 import { ViewContext } from "./context/ViewContext";
-import { isTauri, openExternal } from "./utils/tauri";
+import {
+  isTauri,
+  openExternal,
+  type DownloadProgressEvent,
+} from "./utils/tauri";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { useTrayIconSync } from "./hooks/useTrayIconSync";
 import { schedulePanelAction } from "./utils/panelActions";
@@ -378,8 +382,7 @@ function UpdateBanner() {
       setProgress(`Downloading v${update.version}...`);
       let downloaded = 0;
       let total = 0;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await update.downloadAndInstall((e: any) => {
+      await update.downloadAndInstall((e: DownloadProgressEvent) => {
         if (e.event === "Started") {
           total = e.data?.contentLength ?? 0;
         } else if (e.event === "Progress") {

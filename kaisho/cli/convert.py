@@ -1,4 +1,5 @@
 """CLI command for converting between backends."""
+import os
 import sys
 
 import click
@@ -64,7 +65,18 @@ def convert_cmd(from_fmt, to_fmt, source, target):
         tgt = make_backend_from_spec(to_fmt, target)
         summary = convert_backend(src, tgt)
     except Exception as e:  # noqa: BLE001
-        click.echo(f"Error: {e}", err=True)
+        # Preserve the exception class so a misconfigured
+        # DSN does not collapse into a one-line message
+        # with no hint of where it came from. Full
+        # traceback available under KAISHO_LOG=DEBUG so
+        # the friendly path stays single-line.
+        click.echo(
+            f"Error ({type(e).__name__}): {e}", err=True,
+        )
+        log_level = os.environ.get("KAISHO_LOG", "").upper()
+        if log_level == "DEBUG":
+            import traceback
+            traceback.print_exc()
         sys.exit(1)
 
     click.echo("Done:")

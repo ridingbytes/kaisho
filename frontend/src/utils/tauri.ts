@@ -4,6 +4,23 @@ export function isTauri(): boolean {
 }
 
 /**
+ * Tauri updater download-progress events.
+ *
+ * The `@tauri-apps/plugin-updater` doesn't ship a
+ * typed callback for `downloadAndInstall`, so callers
+ * used to retype the parameter as `any` (with an
+ * eslint-disable). This is the shared declaration used
+ * by `App.tsx` and `settings/UpdateTab.tsx`. The exact
+ * payload shape follows the plugin's TS types as of
+ * v2.x; if those drift the failure shows up as a
+ * compile-time mismatch instead of a runtime undefined.
+ */
+export type DownloadProgressEvent =
+  | { event: "Started"; data?: { contentLength?: number } }
+  | { event: "Progress"; data?: { chunkLength?: number } }
+  | { event: "Finished" };
+
+/**
  * Open a URL in the system browser.
  *
  * In Tauri, uses the shell plugin to open the URL

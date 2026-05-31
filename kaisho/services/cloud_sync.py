@@ -1596,62 +1596,12 @@ def pull_and_apply_tasks(
             incoming = wire_to_task(wire_item)
             pulled_ids.append(wire_item["id"])
             all_sync_ids.add(incoming["sync_id"])
-            existing = by_sync.get(
-                incoming["sync_id"],
+            existing = by_sync.get(incoming["sync_id"])
+            up, deleted = _apply_pulled_task(
+                backend, incoming, existing,
             )
-            if incoming.get("deleted_at"):
-                if existing:
-                    backend.tasks.archive_task(
-                        existing["id"],
-                    )
-                    total_del += 1
-            elif existing:
-                local_ts = existing.get(
-                    "updated_at", "",
-                )
-                remote_ts = incoming.get(
-                    "updated_at", "",
-                )
-                if remote_ts > local_ts:
-                    backend.tasks.update_task(
-                        existing["id"],
-                        title=incoming["title"],
-                        customer=incoming["customer"],
-                        body=incoming["body"],
-                        github_url=(
-                            incoming["github_url"]
-                        ),
-                    )
-                    if incoming.get(
-                        "tags",
-                    ) != existing.get("tags"):
-                        backend.tasks.set_tags(
-                            existing["id"],
-                            incoming.get("tags") or [],
-                        )
-                    if (
-                        incoming["status"]
-                        != existing.get("status")
-                    ):
-                        backend.tasks.move_task(
-                            existing["id"],
-                            incoming["status"],
-                        )
-                    total_up += 1
-            else:
-                backend.customers.ensure_customer(
-                    incoming.get("customer") or "",
-                )
-                backend.tasks.add_task(
-                    customer=incoming["customer"],
-                    title=incoming["title"],
-                    status=incoming["status"],
-                    body=incoming["body"],
-                    github_url=incoming["github_url"],
-                    tags=incoming.get("tags"),
-                    sync_id=incoming["sync_id"],
-                )
-                total_up += 1
+            total_up += up
+            total_del += deleted
 
         try:
             ack_task_items(
@@ -1664,6 +1614,94 @@ def pull_and_apply_tasks(
             break
 
     return cursor, total_up, total_del, all_sync_ids
+
+
+def _apply_pulled_task(
+    backend, incoming: dict, existing: dict | None,
+) -> tuple[int, int]:
+    """Reconcile one pulled task against local state.
+
+    Three cases:
+      * Incoming is a tombstone -> archive local if it
+        exists; no-op if it never made it down.
+      * Incoming matches an existing local task -> if the
+        remote is newer (lexicographic ISO compare on
+        ``updated_at``), apply the field-by-field
+        update via :func:`_apply_task_update`.
+      * Incoming is new -> ensure the customer exists,
+        then create the task with the same sync_id so
+        future pulls find it as existing.
+
+    Returns ``(upserts, deletes)`` so the caller can
+    aggregate across the pull window.
+    """
+    if incoming.get("deleted_at"):
+        if existing:
+            backend.tasks.archive_task(existing["id"])
+            return 0, 1
+        return 0, 0
+
+    if existing:
+        if _is_remote_newer(incoming, existing):
+            _apply_task_update(backend, incoming, existing)
+            return 1, 0
+        return 0, 0
+
+    backend.customers.ensure_customer(
+        incoming.get("customer") or "",
+    )
+    backend.tasks.add_task(
+        customer=incoming["customer"],
+        title=incoming["title"],
+        status=incoming["status"],
+        body=incoming["body"],
+        github_url=incoming["github_url"],
+        tags=incoming.get("tags"),
+        sync_id=incoming["sync_id"],
+    )
+    return 1, 0
+
+
+def _is_remote_newer(incoming: dict, existing: dict) -> bool:
+    """Last-writer-wins on the wire-format ``updated_at``.
+    The cloud emits an ISO-8601 UTC timestamp and the
+    local store mirrors that, so lexicographic compare
+    agrees with chronological order."""
+    return (
+        incoming.get("updated_at", "")
+        > existing.get("updated_at", "")
+    )
+
+
+def _apply_task_update(
+    backend, incoming: dict, existing: dict,
+) -> None:
+    """Apply a field-by-field update to a local task.
+
+    Split out so the surrounding reconciliation reads as
+    'dispatch by case' rather than the four-level nest
+    the inline version had. Three groups of fields:
+    base attributes (always written), tags (only when
+    changed -- the backend repaints the file), and
+    status (only when changed, since move_task is the
+    write that moves between sections in the org file).
+    """
+    backend.tasks.update_task(
+        existing["id"],
+        title=incoming["title"],
+        customer=incoming["customer"],
+        body=incoming["body"],
+        github_url=incoming["github_url"],
+    )
+    if incoming.get("tags") != existing.get("tags"):
+        backend.tasks.set_tags(
+            existing["id"],
+            incoming.get("tags") or [],
+        )
+    if incoming["status"] != existing.get("status"):
+        backend.tasks.move_task(
+            existing["id"], incoming["status"],
+        )
 
 
 def collect_task_changes(
