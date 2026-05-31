@@ -107,8 +107,15 @@ app = FastAPI(title="Kaisho", lifespan=lifespan)
 # server origins are added only when running from source
 # (``sys.frozen`` is False), so production builds don't
 # ship them.
+#
+# Previously this list also included
+# ``http://localhost:3000``. That entry let any local
+# page served from :3000 (a stray dev server, an
+# unrelated app) POST credentials to the sidecar API
+# from the user's browser. The Tauri webview never uses
+# :3000 in any deployment we ship, so the only
+# beneficiaries were third parties. Removed per #124.
 _PROD_ORIGINS = [
-    "http://localhost:3000",
     "http://localhost:8765",
 ]
 _DEV_ORIGINS = [

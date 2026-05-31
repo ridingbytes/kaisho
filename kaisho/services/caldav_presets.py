@@ -113,7 +113,11 @@ def resolve_url(preset_id: str, host: str = "",
 
     For non-custom presets, the URL is templated from the
     preset; for ``custom`` the caller-supplied ``url`` is
-    returned as-is.
+    validated (https + non-internal host) before being
+    returned. Internal-host validation blocks the SSRF
+    surface where a malicious page could ask the sidecar
+    to probe a corporate VPN or local services via
+    ``/api/caldav/test-connection`` (see #124).
 
     :param preset_id: One of ``PRESETS``.
     :param host: Server host (Nextcloud / custom).
@@ -121,7 +125,8 @@ def resolve_url(preset_id: str, host: str = "",
         Nextcloud URL templates).
     :param url: Raw URL (custom preset only).
     :returns: Fully-resolved URL.
-    :raises ValueError: On unknown preset / missing field.
+    :raises ValueError: On unknown preset / missing field
+        / rejected custom URL.
     """
     spec = PRESETS.get(preset_id)
     if spec is None:
@@ -132,6 +137,7 @@ def resolve_url(preset_id: str, host: str = "",
             raise ValueError(
                 "custom preset requires a url"
             )
+        _validate_custom_url(url)
         return url
 
     if spec["needs_host"] and not host:
@@ -146,3 +152,57 @@ def resolve_url(preset_id: str, host: str = "",
     return spec["url_template"].format(
         host=host, user=username,
     )
+
+
+def _validate_custom_url(url: str) -> None:
+    """Reject a custom CalDAV URL that points at a private
+    network or is non-https.
+
+    Blocks:
+      * non-https (CalDAV credentials in plain http would
+        leak on any shared network)
+      * RFC1918, loopback, link-local IP literals
+      * hostnames that resolve to the above
+      * IPv6 ULA + link-local
+
+    Cleaner than letting the request through and hoping
+    the corp firewall says no. See #124.
+    """
+    import ipaddress
+    import socket
+    from urllib.parse import urlsplit
+
+    parts = urlsplit(url)
+    if parts.scheme != "https":
+        raise ValueError(
+            "custom CalDAV URL must use https",
+        )
+    if not parts.hostname:
+        raise ValueError(
+            "custom CalDAV URL has no host",
+        )
+
+    try:
+        addrinfo = socket.getaddrinfo(
+            parts.hostname, None,
+        )
+    except OSError as exc:
+        raise ValueError(
+            f"could not resolve host: {parts.hostname}",
+        ) from exc
+
+    for entry in addrinfo:
+        ip = ipaddress.ip_address(entry[4][0])
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_unspecified
+            or ip.is_reserved
+            or ip.is_multicast
+        ):
+            raise ValueError(
+                f"custom CalDAV URL refused: "
+                f"{parts.hostname} resolves to an "
+                f"internal address ({ip})",
+            )

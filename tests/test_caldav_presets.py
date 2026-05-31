@@ -62,7 +62,18 @@ def test_resolve_nextcloud_missing_user_raises():
         resolve_url("nextcloud", host="cloud.example.com")
 
 
-def test_resolve_custom_with_url():
+def test_resolve_custom_with_url(monkeypatch):
+    # Custom-preset URLs now go through an SSRF guard
+    # (#124). Stub DNS to a public address so the test
+    # validates the happy path without hitting the
+    # network.
+    import socket
+    monkeypatch.setattr(
+        "socket.getaddrinfo",
+        lambda host, port: [
+            (socket.AF_INET, 0, 0, "", ("8.8.8.8", 0)),
+        ],
+    )
     url = resolve_url(
         "custom", url="https://my.dav/calendars/",
     )
