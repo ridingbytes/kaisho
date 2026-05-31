@@ -6,6 +6,8 @@
   "refresh": "Actualizar",
   "day": "Día",
   "week": "Semana",
+  "weekShort": "S",
+  "month": "Mes",
   "empty": "Sin eventos en este intervalo.",
   "loadFailed": "No se pudieron cargar los eventos.",
   "noSources": "Sin fuentes de calendario conectadas. Añade una cuenta en Ajustes > Integraciones.",

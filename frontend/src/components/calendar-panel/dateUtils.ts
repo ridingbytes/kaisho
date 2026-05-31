@@ -71,6 +71,47 @@ export function weekBounds(date: Date): {
   };
 }
 
+/** Inclusive ISO bounds covering the full visible month
+ *  grid: from the Monday on/before the 1st through the
+ *  Sunday on/after the last day. Returns 6 weeks worth so
+ *  the grid stays a constant 6x7. */
+export function monthBounds(date: Date): {
+  from: string; to: string;
+} {
+  const first = new Date(
+    date.getFullYear(), date.getMonth(), 1,
+  );
+  const start = startOfWeek(first);
+  const end = addDays(start, 7 * 6);
+  end.setMilliseconds(-1);
+  return {
+    from: start.toISOString(),
+    to: end.toISOString(),
+  };
+}
+
+/** 42 dates (6 weeks) covering the month containing
+ *  ``anchor``; Monday-first; spills into previous/next
+ *  months at the edges. */
+export function monthGridDays(anchor: Date): Date[] {
+  const first = new Date(
+    anchor.getFullYear(), anchor.getMonth(), 1,
+  );
+  const start = startOfWeek(first);
+  return Array.from({ length: 42 }, (_, i) =>
+    addDays(start, i),
+  );
+}
+
+/** Same date with ``months`` added (clamped if the target
+ *  month is shorter, matching how Date does it). */
+export function addMonths(date: Date, months: number): Date {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
+
+
 /** Bare YYYY-MM-DD without a time component. */
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -110,6 +151,31 @@ export function sameDay(a: Date, b: Date): boolean {
     && a.getDate() === b.getDate()
   );
 }
+
+/** ISO-8601 week number (1-53) for ``date``.
+ *
+ *  Monday-first weeks; the week containing the year's
+ *  first Thursday is week 1. Matches ``%V`` in ``date(1)``
+ *  and ``Intl.DateTimeFormat`` week behaviour in browsers
+ *  that support it.
+ */
+export function isoWeek(date: Date): number {
+  // Anchor on Thursday of the same ISO week to avoid the
+  // Jan 1 / Dec 31 boundary cases.
+  const d = new Date(Date.UTC(
+    date.getFullYear(), date.getMonth(), date.getDate(),
+  ));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(
+    d.getUTCFullYear(), 0, 1,
+  ));
+  return Math.ceil(
+    (((d.getTime() - yearStart.getTime()) / MS_PER_DAY) + 1)
+    / 7,
+  );
+}
+
 
 /** Format a Date as "HH:mm" (24h, local). */
 export function hhmm(date: Date): string {

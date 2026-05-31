@@ -4,6 +4,7 @@ import type { CalendarEvent } from "../../api/client";
 import {
   DAY_HOURS,
   hoursFromMidnight,
+  isoWeek,
   parseIso,
   sameDay,
   weekDays,
@@ -66,9 +67,16 @@ export function WeekGrid({ anchor, events, onSelect }: Props) {
 function DayHeader({ days }: { days: Date[] }) {
   const { t } = useTranslation("calendar");
   const today = new Date();
+  const wk = days.length ? isoWeek(days[0]) : null;
   return (
     <div className="flex border-b border-border bg-surface-card">
-      <div className="w-12 shrink-0" />
+      <div className="w-12 shrink-0 flex items-end justify-center pb-1 text-[10px] text-stone-500">
+        {wk !== null && (
+          <span title={t("week")}>
+            {t("weekShort")} {wk}
+          </span>
+        )}
+      </div>
       <div
         className="flex-1 grid"
         style={{

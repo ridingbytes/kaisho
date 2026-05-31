@@ -13,10 +13,26 @@ interface Props {
 /** A single event pill rendered in the time grid or the
  *  all-day row. Stays read-only in PR 4; the drag wiring
  *  arrives in PR 5. */
+// Per-line vertical budget at the current font sizes.
+// Title ~16px, secondary lines ~14px, plus py-1 (8px total).
+// Used to gate which lines render so a too-short tile never
+// shows a half-clipped line; full details live in the popover.
+const LINE_TITLE_PX = 16;
+const LINE_SECONDARY_PX = 14;
+const PADDING_Y_PX = 8;
+
 export function EventTile({ event, style, onClick }: Props) {
   const color = colorFor(event);
   const start = parseIso(event.start);
   const end = parseIso(event.end);
+
+  const heightPx = typeof style?.height === "number"
+    ? style.height
+    : Number.POSITIVE_INFINITY;
+  const budget = heightPx - PADDING_Y_PX - LINE_TITLE_PX;
+  const showTime = !event.all_day && budget >= LINE_SECONDARY_PX;
+  const showLocation = Boolean(event.location)
+    && budget >= LINE_SECONDARY_PX * (showTime ? 2 : 1);
 
   return (
     <button
@@ -37,12 +53,12 @@ export function EventTile({ event, style, onClick }: Props) {
       <div className="font-medium truncate">
         {event.title || "(no title)"}
       </div>
-      {!event.all_day && (
+      {showTime && (
         <div className="text-[10px] opacity-75 truncate">
           {hhmm(start)} - {hhmm(end)}
         </div>
       )}
-      {event.location && (
+      {showLocation && (
         <div className="text-[10px] opacity-60 truncate">
           {event.location}
         </div>

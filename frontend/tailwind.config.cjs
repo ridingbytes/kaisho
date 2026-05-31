@@ -1,6 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  // App toggles dark via `data-theme="dark"` on <html>, not the
+  // default `.dark` class. Map Tailwind's `dark:` prefix onto
+  // that attribute so dark-variant utilities (e.g.
+  // `dark:text-violet-100`) actually fire.
+  darkMode: ["selector", '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
