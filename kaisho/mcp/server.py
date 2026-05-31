@@ -5,6 +5,7 @@ Reuses the same ``execute_tool()`` dispatcher as the cron
 executor and advisor, so tool behavior is identical.
 """
 import json
+import keyword
 import os
 import re
 import threading
@@ -88,7 +89,7 @@ def _build_handler(
         key=lambda item: item[0] not in required,
     )
     param_parts = []
-    param_names = []
+    name_pairs = []  # (schema_name, python_local_name)
     for pname, pdef in sorted_props:
         # Guard against code injection via crafted
         # parameter names — only valid Python identifiers.
@@ -96,20 +97,25 @@ def _build_handler(
             raise ValueError(
                 f"Invalid parameter name: {pname!r}"
             )
+        # Reserved keywords (e.g. "from") are legal in a
+        # JSON schema but not as Python parameter names —
+        # rename the local while keeping the original key
+        # in the args dict so the MCP contract is preserved.
+        local = f"{pname}_" if keyword.iskeyword(pname) else pname
         py_type = _TYPE_MAP.get(
             pdef.get("type", "string"), "str",
         )
         if pname in required:
-            param_parts.append(f"{pname}: {py_type}")
+            param_parts.append(f"{local}: {py_type}")
         else:
             param_parts.append(
-                f"{pname}: {py_type} | None = None",
+                f"{local}: {py_type} | None = None",
             )
-        param_names.append(pname)
+        name_pairs.append((pname, local))
 
     params_str = ", ".join(param_parts)
     names_str = ", ".join(
-        f'"{n}": {n}' for n in param_names
+        f'"{schema}": {local}' for schema, local in name_pairs
     )
 
     # The handler collects non-None args and dispatches.
