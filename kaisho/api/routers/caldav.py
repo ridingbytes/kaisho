@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from ...services import caldav as caldav_svc
+from ...services import caldav_sync as caldav_sync_svc
 from ...services.caldav_presets import list_presets
 
 log = logging.getLogger(__name__)
@@ -161,6 +162,65 @@ def set_push_config(account_id: str, body: PushConfigBody):
         account_id, body.enabled, body.calendar_id,
     )
     return cfg
+
+
+@router.get("/accounts/{account_id}/push-health")
+def get_push_health(account_id: str):
+    """Per-account sync health for the Settings indicator.
+
+    Returns the per_account state map: ``failure_count``,
+    ``last_error``, ``last_success_at``, ``degraded``.
+    An account that has never been pushed reports zeros
+    so the UI does not have to special-case None.
+    """
+    if caldav_svc.get_account(account_id) is None:
+        raise HTTPException(
+            status_code=404, detail="unknown account",
+        )
+    health = caldav_sync_svc.get_account_health(
+        account_id,
+    )
+    if health is None:
+        return {
+            "failure_count": 0,
+            "last_error": None,
+            "last_success_at": None,
+            "degraded": False,
+        }
+    return {
+        "failure_count": int(
+            health.get("failure_count") or 0,
+        ),
+        "last_error": health.get("last_error"),
+        "last_success_at": health.get(
+            "last_success_at",
+        ),
+        "degraded": bool(health.get("degraded")),
+    }
+
+
+@router.post("/accounts/{account_id}/push-sync")
+def push_sync(account_id: str):
+    """Run one reconciliation pass synchronously.
+
+    Powers the 'Sync now' button. Returns the summary
+    counter so the UI can show a 'pushed N events' toast
+    and the refreshed health in one round-trip.
+    """
+    if caldav_svc.get_account(account_id) is None:
+        raise HTTPException(
+            status_code=404, detail="unknown account",
+        )
+    summary = caldav_sync_svc.sync_now()
+    return {
+        "summary": summary,
+        "health": caldav_sync_svc.get_account_health(
+            account_id,
+        ) or {
+            "failure_count": 0, "last_error": None,
+            "last_success_at": None, "degraded": False,
+        },
+    }
 
 
 @router.post("/test-connection")

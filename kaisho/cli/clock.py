@@ -20,6 +20,43 @@ def _format_entry(entry: dict) -> str:
     return f"{start}  {customer}  {duration}  {desc}"
 
 
+def _schedule_pushes() -> None:
+    """Trigger cloud-sync + CalDAV-sync pushes after a
+    CLI mutation. Best-effort: both modules ignore the
+    call when disabled, and a sync failure here must
+    never block the CLI command from completing.
+
+    CalDAV runs synchronously (``sync_now``) instead of
+    going through ``schedule_push``: ``schedule_push``
+    spawns a daemon thread, and the CLI process exits
+    immediately after this call, killing the thread
+    before the HTTP push to the provider completes.
+    The trade-off is up to ~1-2 s of latency per CLI
+    write against iCloud, which is acceptable for a
+    terminal command. Cloud sync stays fire-and-forget
+    because the desktop sidecar (the long-running
+    process that owns its threads) is usually also
+    running in parallel; if not, the 5-minute cron
+    safety net catches up.
+    """
+    try:
+        from ..services import cloud_sync as sync_svc
+        sync_svc.schedule_push()
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        from ..services import caldav_sync
+        # No-op when no account has push enabled.
+        if not caldav_sync.caldav_svc.push_enabled_accounts():
+            return
+        caldav_sync.sync_now()
+    except Exception:  # noqa: BLE001
+        # Same rule: a sync hiccup must not block the
+        # CLI command. The in-Settings 'Sync now' button
+        # is the recovery surface.
+        pass
+
+
 @click.group()
 def clock():
     """Manage time tracking."""
@@ -39,6 +76,7 @@ def clock_book(duration, customer_name, description, as_json):
         customer=customer_name,
         description=" ".join(description),
     )
+    _schedule_pushes()
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
@@ -56,6 +94,7 @@ def clock_start(customer_name, description, as_json):
         customer=customer_name,
         description=desc,
     )
+    _schedule_pushes()
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
@@ -101,6 +140,7 @@ def clock_stop(desc, notes, customer, as_json):
         rounding_minutes=minutes,
         rounding_mode=mode,
     )
+    _schedule_pushes()
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
@@ -127,6 +167,7 @@ def clock_desc(description, as_json):
     if result is None:
         click.echo("Entry not found.", err=True)
         sys.exit(1)
+    _schedule_pushes()
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
@@ -157,6 +198,7 @@ def clock_note(text, as_json):
     if result is None:
         click.echo("Entry not found.", err=True)
         sys.exit(1)
+    _schedule_pushes()
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
@@ -269,6 +311,7 @@ def clock_update(
     if entry is None:
         click.echo("Entry not found.", err=True)
         sys.exit(1)
+    _schedule_pushes()
     if as_json:
         click.echo(json.dumps(entry, default=str))
     else:

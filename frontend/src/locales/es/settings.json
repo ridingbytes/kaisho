@@ -285,5 +285,16 @@
   "integrations.caldav.push.label": "Enviar entradas de tiempo a este calendario",
   "integrations.caldav.push.hint": "El tiempo registrado en kaisho aparece como eventos en el calendario elegido. Unidireccional: las ediciones en Calendario se ignoran.",
   "integrations.caldav.push.toggle": "Conmutar envío de entradas de tiempo",
-  "integrations.caldav.push.calendar": "Calendario"
+  "integrations.caldav.push.calendar": "Calendario",
+  "integrations.caldav.push.syncNow": "Sincronizar ahora",
+  "integrations.caldav.push.syncing": "Sincronizando…",
+  "integrations.caldav.push.syncOk": "Se enviaron {{count}} evento(s).",
+  "integrations.caldav.push.syncErrors": "Sincronización terminó con {{count}} error(es).",
+  "integrations.caldav.push.lastSynced": "Última sincronización {{when}}",
+  "integrations.caldav.push.neverSynced": "Sin actividad de sincronización todavía.",
+  "integrations.caldav.push.degraded": "La sincronización falla repetidamente",
+  "integrations.caldav.push.justNow": "ahora mismo",
+  "integrations.caldav.push.minutesAgo": "hace {{count}} min",
+  "integrations.caldav.push.hoursAgo": "hace {{count}} h",
+  "integrations.caldav.push.daysAgo": "hace {{count}} d"
 }

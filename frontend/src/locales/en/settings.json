@@ -285,5 +285,16 @@
   "integrations.caldav.push.label": "Push clock entries to this calendar",
   "integrations.caldav.push.hint": "Time you book in kaisho appears as events on the chosen calendar. One-way: edits in the Calendar app are ignored.",
   "integrations.caldav.push.toggle": "Toggle clock-entry push",
-  "integrations.caldav.push.calendar": "Calendar"
+  "integrations.caldav.push.calendar": "Calendar",
+  "integrations.caldav.push.syncNow": "Sync now",
+  "integrations.caldav.push.syncing": "Syncing…",
+  "integrations.caldav.push.syncOk": "Pushed {{count}} event(s).",
+  "integrations.caldav.push.syncErrors": "Sync finished with {{count}} error(s).",
+  "integrations.caldav.push.lastSynced": "Last synced {{when}}",
+  "integrations.caldav.push.neverSynced": "No sync activity yet.",
+  "integrations.caldav.push.degraded": "Sync is failing repeatedly",
+  "integrations.caldav.push.justNow": "just now",
+  "integrations.caldav.push.minutesAgo": "{{count}} min ago",
+  "integrations.caldav.push.hoursAgo": "{{count}} h ago",
+  "integrations.caldav.push.daysAgo": "{{count}} d ago"
 }

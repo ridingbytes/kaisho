@@ -12,6 +12,8 @@ import {
   useCalDavCalendars,
   useCalDavPresets,
   useCalDavPushConfig,
+  useCalDavPushHealth,
+  usePushSyncCalDavAccount,
   useRemoveCalDavAccount,
   useSetCalDavPushConfig,
   useTestCalDavConnection,
@@ -331,13 +333,19 @@ function PushConfigEditor({
   const cfgQ = useCalDavPushConfig(accountId);
   const cals = useCalDavCalendars(accountId);
   const setCfg = useSetCalDavPushConfig(accountId);
+  const healthQ = useCalDavPushHealth(
+    cfgQ.data?.enabled ? accountId : null,
+  );
+  const syncNow = usePushSyncCalDavAccount(accountId);
   const [err, setErr] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const enabled = !!cfgQ.data?.enabled;
   const selected = cfgQ.data?.calendar_id ?? "";
 
   async function toggle() {
     setErr(null);
+    setToast(null);
     try {
       await setCfg.mutateAsync({
         enabled: !enabled,
@@ -350,10 +358,32 @@ function PushConfigEditor({
 
   async function pickCalendar(calendarId: string) {
     setErr(null);
+    setToast(null);
     try {
       await setCfg.mutateAsync({
         enabled, calendar_id: calendarId,
       });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  async function handleSyncNow() {
+    setErr(null);
+    setToast(null);
+    try {
+      const out = await syncNow.mutateAsync();
+      const s = out.summary;
+      const written = s.created + s.updated + s.deleted;
+      setToast(
+        s.errors > 0
+          ? t("integrations.caldav.push.syncErrors", {
+              count: s.errors,
+            })
+          : t("integrations.caldav.push.syncOk", {
+              count: written,
+            }),
+      );
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     }
@@ -414,11 +444,104 @@ function PushConfigEditor({
               </option>
             ))}
           </select>
+          <PushHealthBar
+            health={healthQ.data ?? null}
+            onSync={handleSyncNow}
+            busy={syncNow.isPending}
+          />
         </div>
+      )}
+      {toast && (
+        <p className="text-xs text-emerald-600 mt-1">
+          {toast}
+        </p>
       )}
       {err && (
         <p className="text-xs text-red-500 mt-1">{err}</p>
       )}
     </div>
   );
+}
+
+
+function PushHealthBar({
+  health, onSync, busy,
+}: {
+  health: import("../../api/client").CalDavPushHealth | null;
+  onSync: () => void;
+  busy: boolean;
+}) {
+  const { t } = useTranslation("settings");
+  const lastSync = health?.last_success_at;
+  const degraded = !!health?.degraded;
+  const lastError = health?.last_error;
+
+  return (
+    <div className="mt-2 flex items-center justify-between gap-2">
+      <div className="min-w-0 text-[10px] text-stone-500">
+        {lastSync ? (
+          <span>
+            {t("integrations.caldav.push.lastSynced", {
+              when: relativeAgo(lastSync, t),
+            })}
+          </span>
+        ) : (
+          <span>
+            {t("integrations.caldav.push.neverSynced")}
+          </span>
+        )}
+        {degraded && (
+          <span className="ml-2 text-red-500">
+            {t(
+              "integrations.caldav.push.degraded",
+            )}
+            {lastError && `: ${lastError}`}
+          </span>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onSync}
+        disabled={busy}
+        className={
+          "shrink-0 px-2 py-0.5 rounded-md text-[11px] "
+          + "font-medium bg-surface-card border "
+          + "border-border text-stone-700 "
+          + "hover:bg-surface-raised "
+          + "disabled:opacity-50"
+        }
+      >
+        {busy
+          ? t("integrations.caldav.push.syncing")
+          : t("integrations.caldav.push.syncNow")}
+      </button>
+    </div>
+  );
+}
+
+
+function relativeAgo(
+  iso: string,
+  t: (key: string, opts?: Record<string, unknown>) => string,
+): string {
+  const then = new Date(iso).getTime();
+  const sec = Math.max(0, Math.round(
+    (Date.now() - then) / 1000,
+  ));
+  if (sec < 60) {
+    return t("integrations.caldav.push.justNow");
+  }
+  if (sec < 3600) {
+    return t("integrations.caldav.push.minutesAgo", {
+      count: Math.round(sec / 60),
+    });
+  }
+  if (sec < 86400) {
+    return t("integrations.caldav.push.hoursAgo", {
+      count: Math.round(sec / 3600),
+    });
+  }
+  return t("integrations.caldav.push.daysAgo", {
+    count: Math.round(sec / 86400),
+  });
 }
