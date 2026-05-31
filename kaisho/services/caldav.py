@@ -1141,8 +1141,17 @@ def _build_vevent(
 
 
 def _to_utc(value: datetime) -> datetime:
+    """Convert a datetime to UTC for VEVENT DTSTART/DTEND.
+
+    Naive datetimes are treated as **local wall-clock** —
+    kaisho's clock entries come from the SQL/org backend as
+    ``datetime.now().isoformat()`` (no tzinfo) and the user
+    means "12:00 my time", not "12:00 UTC". ``astimezone()``
+    without args attaches the system local zone, then we
+    project onto UTC.
+    """
     if value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
+        value = value.astimezone()
     return value.astimezone(timezone.utc)
 
 
