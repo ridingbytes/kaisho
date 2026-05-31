@@ -1,5 +1,190 @@
 # Changelog
 
+## 2.2.0
+
+A theme + design-system release. Rewrites the appearance
+layer onto a single token catalog, adds 12 selectable
+themes (6 light + 6 dark) and a font picker, ships a set
+of shared UI primitives, and fixes a chain of advisor /
+customer-budget reporting bugs surfaced during the
+overhaul.
+
+### Theme system
+
+- Semantic colour tokens (`surface-*`, `border-*`,
+  `cta-*`, `fg-*`, `success` / `warning` / `danger` /
+  `info`) replace every raw `text-stone-*` / `bg-stone-*`
+  in components -- one codemod pass rewrote 1,181
+  occurrences across 107 files.
+- **12 theme presets** selectable via Settings >
+  Appearance:
+  - Light: Zinc (default), Sepia, Solarized Light,
+    GitHub, Gruvbox Light, Catppuccin Latte.
+  - Dark: Zinc, Solarized, Dracula, Nord, Tokyo Night,
+    Catppuccin Mocha.
+- New **system mode** that follows the OS
+  `prefers-color-scheme` and flips live when macOS /
+  GNOME / Windows toggle Light/Dark.
+- Mode + light-preset + dark-preset stored separately, so
+  choosing Sepia for light and Mocha for dark works.
+- Per-theme syntax highlighting via CSS-var-driven
+  `.hljs-*` palette; removed the static
+  `highlight.js/styles/github.min.css` import that made
+  code blocks unreadable on every dark preset.
+- Tailwind `dark:` variant now fires on every dark
+  preset (zinc, solarized, dracula, nord, tokyo-night,
+  mocha) -- not just the literal `zinc-dark`.
+
+### Font picker
+
+- 5 font presets (Inter default / System UI / Helvetica
+  / Georgia serif / JetBrains Mono) selectable in
+  Settings > Appearance. Body font reads from
+  `--app-font` CSS var so swaps are instant.
+
+### Design-system primitives (new)
+
+| Component | Purpose |
+|---|---|
+| `common/Button.tsx` | Variants primary / secondary / tonal / ghost / danger; sizes xs / sm / md / lg; shapes rounded / pill; `iconOnly` |
+| `common/Badge.tsx` | Tag / status / count chip; 18-colour tag palette |
+| `common/Heading.tsx` | Levels eyebrow / panel / section / sub |
+| `common/StateMessage.tsx` | Empty / loading / error with default icon + optional CTA |
+| `common/HoverActions.tsx` | Reveal-on-hover cluster that doesn't reflow the row (supports named-group variants) |
+| `common/ToggleField.tsx` | Label + description + Toggle row for settings tabs |
+| `common/Dialog.tsx` | Modal shell with backdrop + focus + scroll lock |
+| `common/Popover.tsx` | Anchored non-modal overlay with outside-click + Escape |
+
+### Mechanical sweeps
+
+- Font-size policy: 329 arbitrary `text-[Npx]` usages
+  collapsed onto a named scale
+  (`text-2xs` / `text-xs` / `text-sm` / `text-base`).
+- Border-radius policy: 63 `rounded-sm` /
+  `rounded-xl` / `rounded-2xl` collapsed onto the
+  three-radius set (`rounded` / `rounded-lg` /
+  `rounded-full`).
+- Form-input recipe drops `w-full` from the shared
+  `inputCls` / `smallInputCls` (was overriding caller-
+  supplied `w-14` / `w-24` and exploding hours / select
+  inputs to full width).
+- Form-input contrast switches to
+  `bg-surface-overlay + border-strong` so inputs read
+  as inputs on every preset (the previous
+  `bg-surface-raised + border-border` washed out on
+  warm sepia / gruvbox / solarized surfaces).
+
+### Settings
+
+- **Appearance tab** added (mode + light preset + dark
+  preset + font + app title). App title moved here from
+  General.
+- All 7 panel toolbars (Customers, Notes, Inbox, Clock,
+  Kanban, Cron, Knowledge) share the same tonal `+ Add`
+  button.
+- PathsTab: select height matches input height,
+  buttons use the shared component, KB-source row
+  controls (move up / move down / remove) all use
+  `<Button>` with the right variant + size.
+
+### Knowledge base
+
+- Open file persists across navigations and app
+  reloads (per-profile localStorage), reveals itself in
+  the tree on restore (parent folders auto-expand,
+  selected leaf scrolls into view).
+- Tree font bumped (`text-xs -> text-sm`) for
+  readability; section heading (`KNOWLEDGE` /
+  `RESEARCH` / ...) strengthened from `text-[10px]` to
+  `text-xs font-semibold`.
+- Recent-files list shows dimmed parent folder next to
+  the title plus a full corpus/path tooltip.
+
+### Advisor
+
+- Drop the duplicate cloud `google_list_events` tool;
+  `list_calendar_events` already aggregates CalDAV +
+  Google. The standalone Google tool was distracting
+  the model into picking the wrong calendar source for
+  iCloud / Fastmail / Nextcloud users.
+- New system-prompt rule 5a: explicit INTENT -> TOOL
+  mapping (calendar -> `list_calendar_events`,
+  KB -> `search_knowledge`, etc.) plus the hard rule
+  "NEVER claim a feature is missing without first
+  trying the dedicated tool". Stops the model from
+  reaching for `execute_cli` (and falsely concluding
+  "no calendar integration") for queries that have a
+  dedicated handler.
+- New system-prompt rule 5z: `list_contracts` now
+  returns an explicit `state` field (`active` /
+  `invoiced` / `ended`); the model is told to IGNORE
+  invoiced / ended contracts for budget / capacity
+  reasoning.
+- `list_customers` and `list_contracts` pre-compute
+  `budget_hours` / `used_hours` / `rest_hours` /
+  `pct_used` so the model can't invert "used" and
+  "rest" (which was happening: 79h left mis-reported
+  as "79% used").
+- Calendar tool trigger phrases expanded to cover
+  "what should I focus on" / "plan my week" planning
+  questions.
+
+### Customer / budget fixes
+
+- ContractRow edit form: per-input labels added
+  (`NAME`, `BUDGET H`, `OFFSET H`, `START DATE`,
+  `END DATE`, `NOTES`); third-column overflow fixed
+  via explicit `w-full` + `min-w-0` on grid cells.
+- CustomerEditForm: budget + offset fields hide
+  themselves when contracts exist (they are silently
+  ignored by the backend in that case) and the hint
+  points the user at where the actual budget lives.
+- `_enrich_customer`: when contracts exist, the
+  active contract's "used" hours now count only clock
+  entries attributed to that contract, not all-time
+  customer hours. Previously a new contract showed
+  MAXED the moment any historical entries existed on
+  prior invoiced contracts.
+
+### Behaviour fixes around the row-hover pattern
+
+- 6 row patterns (ContractRow, TimeEntryRow,
+  DashboardView budget row, KB TreeNodeRow leaf,
+  TreeNodeRow folder, KnowledgeSidebar label) now use
+  the shared `HoverActions` wrapper so action clusters
+  appear without changing the row's height.
+- 28-file sweep replaced raw
+  `bg-surface-raised + border-border` with the
+  corrected `bg-surface-overlay + border-strong` so
+  inputs read across warm themes.
+
+### MCP server + CalDAV
+
+- MCP server no longer crashes at startup when a tool
+  schema names a Python keyword (the
+  `list_calendar_events` `from` field killed the
+  server with `SyntaxError`; the handler builder now
+  renames Python keywords to a trailing-underscore
+  local while preserving the original key in the args
+  dict).
+- CalDAV push: naive datetimes are treated as local
+  wall-clock (was UTC), so pushed clock entries no
+  longer show up offset by the user's UTC offset in
+  Apple Calendar / iCloud.
+- CalDAV: new `sync_entry(sync_id)` and
+  `backfill_range(from_date, to_date)` services with
+  matching CLI + API surfaces for per-entry sync and
+  historical backfill that bypass the
+  `enabled_since` gate.
+
+### Documentation
+
+- `docs/ui-design-system-plan.md` -- the 5-phase
+  consolidation plan that drove this release.
+- `docs/ui-primitives.md` -- one-screen cheat sheet
+  for every primitive and the colour / typography /
+  spacing policies authors should follow.
+
 ## 2.1.3
 
 A focused hotfix + UX polish release. Two server-side
