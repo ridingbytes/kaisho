@@ -16,21 +16,35 @@ import { ButtonHTMLAttributes, forwardRef, ReactNode } from "react";
  */
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 
-/** Three sizes aligned to the shared input heights:
+/** Four sizes aligned to the shared input heights and the
+ *  dense table/tray pill aesthetic:
  *
+ *  - ``xs`` (h-6) pairs with ``text-2xs`` dense rows
+ *    (kanban cards, tray pills, table affordances).
  *  - ``sm`` (h-7) pairs with ``smallInputCls``.
  *  - ``md`` (h-8) pairs with ``inputCls`` — the default
  *    and the right pick for most settings forms.
  *  - ``lg`` (h-10) is for prominent landing-page or
  *    dialog primary actions.
  */
-type Size = "sm" | "md" | "lg";
+type Size = "xs" | "sm" | "md" | "lg";
+
+/** Outer shape. Default ``rounded`` rectangular pill;
+ *  ``pill`` is the fully-rounded chip used in tray /
+ *  kanban / clock surfaces. */
+type Shape = "rounded" | "pill";
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
+  shape?: Shape;
   /** Optional leading icon (e.g. lucide ``<Plus size={14} />``). */
   icon?: ReactNode;
+  /** Square button (equal padding on both axes). Use for
+   *  toolbar icon buttons. Implies ``icon`` provides the
+   *  whole visual; ``children`` becomes accessible label
+   *  only. */
+  iconOnly?: boolean;
   /** Extra utility classes. Use sparingly — most styling
    *  should come from variant + size to keep the look
    *  consistent across the app. */
@@ -52,9 +66,24 @@ const VARIANT_CLASSES: Record<Variant, string> = {
 };
 
 const SIZE_CLASSES: Record<Size, string> = {
+  xs: "h-6 px-2 text-2xs gap-1",
   sm: "h-7 px-2.5 text-xs gap-1",
   md: "h-8 px-3 text-sm gap-1.5",
   lg: "h-10 px-4 text-sm gap-2",
+};
+
+/** Icon-only buttons square off — equal padding on both
+ *  axes so they read as a glyph, not a label cluster. */
+const ICON_ONLY_CLASSES: Record<Size, string> = {
+  xs: "h-6 w-6 px-0",
+  sm: "h-7 w-7 px-0",
+  md: "h-8 w-8 px-0",
+  lg: "h-10 w-10 px-0",
+};
+
+const SHAPE_CLASSES: Record<Shape, string> = {
+  rounded: "rounded-md",
+  pill: "rounded-full",
 };
 
 /**
@@ -80,7 +109,9 @@ const SIZE_CLASSES: Record<Size, string> = {
 export const Button = forwardRef<HTMLButtonElement, Props>(({
   variant = "primary",
   size = "md",
+  shape = "rounded",
   icon,
+  iconOnly = false,
   className = "",
   children,
   type = "button",
@@ -89,20 +120,26 @@ export const Button = forwardRef<HTMLButtonElement, Props>(({
   <button
     ref={ref}
     type={type}
+    aria-label={
+      iconOnly && typeof children === "string"
+        ? children
+        : rest["aria-label"]
+    }
     className={[
       "inline-flex items-center justify-center",
-      "rounded-md font-medium",
+      "font-medium",
       "transition-colors",
       "disabled:opacity-50 disabled:cursor-not-allowed",
       "focus:outline-none focus:ring-2 focus:ring-cta/40",
+      SHAPE_CLASSES[shape],
+      iconOnly ? ICON_ONLY_CLASSES[size] : SIZE_CLASSES[size],
       VARIANT_CLASSES[variant],
-      SIZE_CLASSES[size],
       className,
     ].filter(Boolean).join(" ")}
     {...rest}
   >
     {icon}
-    {children}
+    {iconOnly ? null : children}
   </button>
 ));
 Button.displayName = "Button";

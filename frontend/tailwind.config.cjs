@@ -49,6 +49,13 @@ module.exports = {
         danger:  { DEFAULT: "var(--status-danger)" },
         info:    { DEFAULT: "var(--status-info)" },
       },
+      fontSize: {
+        // 10px / 14px line-height -- the "data-dense"
+        // size used for table cells, eyebrows, dense
+        // badges. Adding this kills 294 arbitrary
+        // ``text-[10px]`` / ``text-[9px]`` usages.
+        "2xs": ["0.625rem", { lineHeight: "0.875rem" }],
+      },
       fontFamily: {
         // Resolves at runtime to whatever the active theme
         // / user has set via --app-font. Components using
