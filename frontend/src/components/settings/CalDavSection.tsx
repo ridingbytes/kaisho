@@ -19,6 +19,7 @@ import {
   useTestCalDavConnection,
 } from "../../hooks/useCalDav";
 import { openExternal } from "../../utils/tauri";
+import { Toggle } from "../common/Toggle";
 
 const btn =
   "px-3 py-1 rounded-lg text-xs font-medium "
@@ -402,29 +403,11 @@ function PushConfigEditor({
             {t("integrations.caldav.push.hint")}
           </p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          aria-label={t("integrations.caldav.push.toggle")}
-          onClick={toggle}
+        <Toggle
+          checked={enabled}
+          onChange={() => toggle()}
           disabled={busy}
-          className={
-            "shrink-0 w-10 h-5 rounded-full transition-colors "
-            + (enabled ? "bg-cta" : "bg-surface-overlay")
-            + (busy ? " opacity-50" : "")
-          }
-        >
-          <span
-            className={
-              "block w-4 h-4 bg-white rounded-full shadow "
-              + "transform transition-transform "
-              + (enabled
-                ? "translate-x-5"
-                : "translate-x-0.5")
-            }
-          />
-        </button>
+        />
       </div>
       {enabled && (
         <div className="mt-2">
