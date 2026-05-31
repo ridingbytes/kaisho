@@ -22,7 +22,7 @@
   "contractName": "Contract name",
   "endDate": "End date",
   "budgetHLabel": "Budget h",
-  "budgetFromContractsHint": "Budget is the sum of this customer's contracts -- edit a contract's budget below to change it.",
+  "budgetFromContractsHint": "Budget and 'used' hours are tracked on the contracts below. To free up the cap, edit a contract's Budget H or reset its Offset H (the invoiced-hours marker).",
   "usedOffset": "Used offset (hours)",
   "tasks": "Tasks",
   "noTasks": "No tasks",
