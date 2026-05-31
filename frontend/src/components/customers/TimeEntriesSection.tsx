@@ -44,7 +44,7 @@ export function TimeEntriesSection({
         {entries.length === 0 ? (
           <p
             className={
-              "text-[10px] text-stone-500 py-1"
+              "text-[10px] text-fg-muted py-1"
             }
           >
             {t("noEntries")}
@@ -65,7 +65,7 @@ export function TimeEntriesSection({
                 }
                 className={[
                   "w-full text-center py-1.5",
-                  "text-[10px] text-stone-500",
+                  "text-[10px] text-fg-muted",
                   "hover:text-cta transition-colors",
                 ].join(" ")}
               >

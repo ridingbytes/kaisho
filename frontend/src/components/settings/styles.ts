@@ -3,14 +3,14 @@ export const DATALIST_ID = "ai-model-list";
 export const fieldCls = [
   "px-2 py-1 rounded text-xs",
   "bg-surface-raised border border-border",
-  "text-stone-900 placeholder-stone-500",
+  "text-fg-strong placeholder-fg-muted",
   "focus:outline-none focus:border-cta",
 ].join(" ");
 
 export const inputCls = [
   "flex-1 px-3 py-1.5 rounded text-sm font-mono",
   "bg-surface-raised border border-border",
-  "text-stone-900 placeholder-stone-500",
+  "text-fg-strong placeholder-fg-muted",
   "focus:outline-none focus:border-cta",
 ].join(" ");
 

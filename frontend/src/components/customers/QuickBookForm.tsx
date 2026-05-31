@@ -45,7 +45,7 @@ export function QuickBookForm({
   const cls =
     "px-2 py-1 rounded-md text-xs "
     + "bg-surface-raised border border-border "
-    + "text-stone-900 placeholder-stone-500 "
+    + "text-fg-strong placeholder-fg-muted "
     + "focus:outline-none focus:border-cta";
 
   function handleSubmit(e: React.FormEvent) {
@@ -140,8 +140,8 @@ export function QuickBookForm({
           type="button"
           onClick={onDone}
           className={
-            "p-1 text-stone-500 "
-            + "hover:text-stone-900 rounded"
+            "p-1 text-fg-muted "
+            + "hover:text-fg-strong rounded"
           }
         >
           <X size={11} />

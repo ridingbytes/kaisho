@@ -62,7 +62,7 @@ export function TaskCardActions({
             }
             onClick={onMarkDone}
             disabled={isMarkDonePending}
-            className="p-1 rounded text-stone-400 hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
+            className="p-1 rounded text-fg-subtle hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
             title={t("markAsDone")}
           >
             <Check size={11} />
@@ -77,7 +77,7 @@ export function TaskCardActions({
           disabled={
             isStartClockPending || isStopClockPending
           }
-          className="p-1 rounded text-stone-400 hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
+          className="p-1 rounded text-fg-subtle hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
           title={tClocks("startTimer")}
         >
           <Clock size={11} />
@@ -86,7 +86,7 @@ export function TaskCardActions({
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={onEdit}
-        className="p-1 rounded text-stone-400 hover:text-cta hover:bg-cta-muted transition-colors"
+        className="p-1 rounded text-fg-subtle hover:text-cta hover:bg-cta-muted transition-colors"
         title={tc("edit")}
       >
         <Pencil size={11} />
@@ -98,7 +98,7 @@ export function TaskCardActions({
       >
         <button
           disabled={isArchivePending}
-          className="p-1 rounded text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+          className="p-1 rounded text-fg-subtle hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
           title={tc("archive")}
         >
           <Trash2 size={11} />

@@ -64,7 +64,7 @@ export function CloudTimer({ timer, onStopped }: Props) {
           key={tick}
           className={
             "text-3xl font-light font-mono "
-            + "text-stone-600 tabular-nums tracking-wide"
+            + "text-fg-muted tabular-nums tracking-wide"
           }
         >
           {elapsed(timer.start)}
@@ -95,17 +95,17 @@ export function CloudTimer({ timer, onStopped }: Props) {
         <div
           className={
             "inline-flex items-center gap-1.5 px-2.5 "
-            + "py-0.5 rounded-full bg-stone-500/10"
+            + "py-0.5 rounded-full bg-surface-raised"
           }
         >
           <Smartphone
             size={10}
-            className="text-stone-500"
+            className="text-fg-muted"
           />
           <span
             className={
               "text-[10px] font-semibold tracking-wider "
-              + "uppercase text-stone-500"
+              + "uppercase text-fg-muted"
             }
           >
             {t("runningOnMobile")}
@@ -121,7 +121,7 @@ export function CloudTimer({ timer, onStopped }: Props) {
         >
           <p
             className={
-              "text-xs text-stone-500 truncate "
+              "text-xs text-fg-muted truncate "
               + "flex items-center gap-1"
             }
           >
@@ -133,7 +133,7 @@ export function CloudTimer({ timer, onStopped }: Props) {
                     background: custColor || "#a1a1aa",
                   }}
                 />
-                <span className="text-stone-700">
+                <span className="text-fg">
                   {timer.customer}
                 </span>
               </>
@@ -141,7 +141,7 @@ export function CloudTimer({ timer, onStopped }: Props) {
             {timer.description && (
               <>
                 {timer.customer && (
-                  <span className="font-bold text-stone-400">
+                  <span className="font-bold text-fg-subtle">
                     &middot;
                   </span>
                 )}

@@ -320,7 +320,7 @@ function SlotRow({
 
   return (
     <div className="group/slot flex items-center gap-2 pl-3 py-0.5">
-      <span className="text-[10px] font-mono text-stone-500 tabular-nums">
+      <span className="text-[10px] font-mono text-fg-muted tabular-nums">
         {timeLabel(entry.start)}–{timeLabel(entry.end)}
       </span>
       {entry.contract && (
@@ -329,7 +329,7 @@ function SlotRow({
             "text-[9px] px-1 py-0.5 rounded truncate max-w-[80px]",
             isInvoiced(invoicedSet, entry.customer, entry.contract)
               ? "bg-emerald-500/10 text-emerald-600"
-              : "bg-surface-overlay text-stone-500",
+              : "bg-surface-overlay text-fg-muted",
           ].join(" ")}
         >
           {entry.contract}
@@ -354,7 +354,7 @@ function SlotRow({
           title={tc("invoiced")}
         />
       )}
-      <span className={`text-[10px] text-stone-500 tabular-nums ${entry.invoiced ? "" : "ml-auto"}`}>
+      <span className={`text-[10px] text-fg-muted tabular-nums ${entry.invoiced ? "" : "ml-auto"}`}>
         {entry.duration_minutes !== null
           ? formatDuration(entry.duration_minutes)
           : "…"}
@@ -449,7 +449,7 @@ function TaskGroupRow({
           {group.customer ? (
             <button
               onClick={() => setView("customers", group.customer)}
-              className="text-xs font-medium text-stone-800 truncate max-w-full hover:text-cta transition-colors text-left inline-flex items-center gap-1.5"
+              className="text-xs font-medium text-fg-strong truncate max-w-full hover:text-cta transition-colors text-left inline-flex items-center gap-1.5"
             >
               <span
                 className="w-1.5 h-1.5 rounded-full shrink-0"
@@ -462,7 +462,7 @@ function TaskGroupRow({
               {group.customer}
             </button>
           ) : (
-            <span className="text-xs text-stone-400 italic">
+            <span className="text-xs text-fg-subtle italic">
               {tc("noCustomer")}
             </span>
           )}
@@ -475,7 +475,7 @@ function TaskGroupRow({
                 </span>
               </span>
             )}
-            <p className="text-[11px] text-stone-500 truncate">
+            <p className="text-[11px] text-fg-muted truncate">
               {group.description}
             </p>
           </div>
@@ -502,7 +502,7 @@ function TaskGroupRow({
               <RotateCw size={10} />
             </button>
           )}
-          <span className="text-[11px] font-semibold text-stone-600 tabular-nums ml-1">
+          <span className="text-[11px] font-semibold text-fg-muted tabular-nums ml-1">
             {formatDuration(group.totalMinutes)}
           </span>
         </div>
@@ -563,13 +563,13 @@ export function ClockList({
 
   if (isLoading) {
     return (
-      <p className="text-xs text-stone-400 text-center py-4">{tc("loading")}</p>
+      <p className="text-xs text-fg-subtle text-center py-4">{tc("loading")}</p>
     );
   }
 
   if (groups.length === 0) {
     return (
-      <p className="text-xs text-stone-400 text-center py-4">
+      <p className="text-xs text-fg-subtle text-center py-4">
         {tc("noEntries")}
       </p>
     );
@@ -589,10 +589,10 @@ export function ClockList({
         />
       ))}
       <div className="flex justify-between pt-2 mt-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
           {t("totalToday")}
         </span>
-        <span className="text-[11px] font-semibold text-stone-700 tabular-nums">
+        <span className="text-[11px] font-semibold text-fg tabular-nums">
           {totalH}h {totalM}m
         </span>
       </div>
@@ -601,7 +601,7 @@ export function ClockList({
 }
 
 const actionBtn = [
-  "p-0.5 rounded text-stone-400",
+  "p-0.5 rounded text-fg-subtle",
   "hover:text-cta hover:bg-cta-muted",
   "transition-colors",
 ].join(" ");

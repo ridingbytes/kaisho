@@ -136,8 +136,8 @@ export function Autocomplete<T>({
     "w-full text-left px-2 py-1.5 text-xs",
     "transition-colors truncate",
     highlighted
-      ? "bg-surface-overlay text-stone-900 font-medium"
-      : "text-stone-800 hover:bg-surface-overlay/50",
+      ? "bg-surface-overlay text-fg-strong font-medium"
+      : "text-fg-strong hover:bg-surface-overlay/50",
   ].join(" ");
 
   const createCls = (highlighted: boolean) => [

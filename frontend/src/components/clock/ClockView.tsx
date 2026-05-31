@@ -125,7 +125,7 @@ function FilterInput({
           valid
             ? "border-border focus:border-cta"
             : "border-red-400 focus:border-red-500",
-          "text-stone-900 placeholder-stone-400",
+          "text-fg-strong placeholder-fg-subtle",
           "focus:outline-none",
           value ? "pr-5" : "",
         ].join(" ")}
@@ -136,7 +136,7 @@ function FilterInput({
           onClick={() => onChange("")}
           className={[
             "absolute right-1 top-1/2 -translate-y-1/2",
-            "text-stone-400 hover:text-stone-700",
+            "text-fg-subtle hover:text-fg",
             "text-xs leading-none",
           ].join(" ")}
           title="Clear filter"
@@ -333,7 +333,7 @@ export function ClockView() {
             }
           />
           {!isLoading && invoiceFiltered.length > 0 && (
-            <span className="text-xs text-stone-600">
+            <span className="text-xs text-fg-muted">
               {t("entriesCount", {
                 count: invoiceFiltered.length,
               })} ·{" "}
@@ -343,7 +343,7 @@ export function ClockView() {
         </>}
         right={<>
           <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-xs text-stone-600">
+            <span className="text-xs text-fg-muted">
               {t("hideInvoiced")}
             </span>
             <Toggle
@@ -369,7 +369,7 @@ export function ClockView() {
                 }
                 className={
                   "flex items-center gap-1 px-2 py-1 " +
-                  "rounded text-[11px] text-stone-700 " +
+                  "rounded text-[11px] text-fg " +
                   "hover:text-cta hover:bg-cta-muted " +
                   "transition-colors"
                 }
@@ -388,7 +388,7 @@ export function ClockView() {
                 }
                 className={
                   "flex items-center gap-1 px-2 py-1 " +
-                  "rounded text-[11px] text-stone-700 " +
+                  "rounded text-[11px] text-fg " +
                   "hover:text-cta hover:bg-cta-muted " +
                   "transition-colors"
                 }
@@ -435,7 +435,7 @@ export function ClockView() {
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
           <p className={
-            "text-sm text-stone-500 " +
+            "text-sm text-fg-muted " +
             "text-center py-8"
           }>
             {tc("loading")}
@@ -443,7 +443,7 @@ export function ClockView() {
         )}
         {!isLoading && entries.length === 0 && (
           <p className={
-            "text-sm text-stone-500 " +
+            "text-sm text-fg-muted " +
             "text-center py-8"
           }>
             {t("noEntriesFound")}
@@ -565,7 +565,7 @@ export function ClockView() {
                     colSpan={7}
                     className={
                       "text-center py-8 " +
-                      "text-sm text-stone-500"
+                      "text-sm text-fg-muted"
                     }
                   >
                     {t("noEntriesMatchFilter")}

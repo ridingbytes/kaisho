@@ -43,14 +43,14 @@ export function EventPopover({
             <span
               className={`w-2 h-6 rounded ${color.bar}`}
             />
-            <h2 className="text-sm font-semibold text-stone-900 truncate">
+            <h2 className="text-sm font-semibold text-fg-strong truncate">
               {event.title || "(no title)"}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded hover:bg-surface-raised text-stone-500"
+            className="p-1 rounded hover:bg-surface-raised text-fg-muted"
             aria-label={t("close")}
           >
             <X className="w-4 h-4" />
@@ -96,7 +96,7 @@ export function EventPopover({
               <Clock4 className="w-4 h-4" />
               {t("bookFromEvent")}
             </button>
-            <p className="text-[10px] text-stone-500 mt-1 text-center">
+            <p className="text-[10px] text-fg-muted mt-1 text-center">
               {t("bookFromEventHint")}
             </p>
           </div>
@@ -115,10 +115,10 @@ function DetailRow({
 }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wide text-stone-500">
+      <div className="text-[10px] uppercase tracking-wide text-fg-muted">
         {label}
       </div>
-      <div className="text-sm text-stone-800">
+      <div className="text-sm text-fg-strong">
         {value}
       </div>
     </div>

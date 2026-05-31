@@ -31,7 +31,7 @@ export function ViewHeader({
 }: Props) {
   return (
     <div className={headerCls}>
-      <h1 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
+      <h1 className="text-xs font-semibold tracking-wider uppercase text-fg">
         {title}
       </h1>
       {search}

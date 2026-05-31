@@ -193,7 +193,7 @@ export function CloudSyncSection(): JSX.Element {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-stone-500">
+      <p className="text-sm text-fg-muted">
         Loading...
       </p>
     );
@@ -206,10 +206,10 @@ export function CloudSyncSection(): JSX.Element {
       {!connected && (
         <div className="mb-5 rounded-xl border border-cta/30 bg-cta/5 overflow-hidden">
           <div className="px-4 py-3">
-            <p className="text-sm font-semibold text-stone-900 mb-1">
+            <p className="text-sm font-semibold text-fg-strong mb-1">
               {t("unlockCloudSync")}
             </p>
-            <p className="text-xs text-stone-600 leading-relaxed mb-3">
+            <p className="text-xs text-fg-muted leading-relaxed mb-3">
               {t("unlockCloudSyncHint")}
             </p>
             <button
@@ -229,7 +229,7 @@ export function CloudSyncSection(): JSX.Element {
       {connected ? (
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
               {t("connection")}
             </p>
             <div className="flex items-center gap-2 mb-2">
@@ -238,16 +238,16 @@ export function CloudSyncSection(): JSX.Element {
                 {t("connected")}
               </span>
               {status?.plan && (
-                <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-raised text-stone-600 border border-border-subtle">
+                <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-raised text-fg-muted border border-border-subtle">
                   {planLabel(status.plan)}
                 </span>
               )}
             </div>
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-fg-muted">
               {status?.url}
             </p>
             {status?.email && (
-              <p className="text-xs text-stone-500 mt-0.5">
+              <p className="text-xs text-fg-muted mt-0.5">
                 {status.email}
               </p>
             )}
@@ -265,16 +265,16 @@ export function CloudSyncSection(): JSX.Element {
                 })}
               </p>
             )}
-            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-stone-500">
+            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-fg-muted">
               <dt>{t("lastPull")}</dt>
-              <dd className="text-stone-700">
+              <dd className="text-fg">
                 {status?.last_pull_at
                   ? new Date(status.last_pull_at)
                       .toLocaleString()
                   : t("never")}
               </dd>
               <dt>{t("lastPush")}</dt>
-              <dd className="text-stone-700">
+              <dd className="text-fg">
                 {status?.last_push_at
                   ? new Date(status.last_push_at)
                       .toLocaleString()
@@ -284,7 +284,7 @@ export function CloudSyncSection(): JSX.Element {
                 undefined && (
                 <>
                   <dt>{t("cloudEntries")}</dt>
-                  <dd className="text-stone-700 tabular-nums">
+                  <dd className="text-fg tabular-nums">
                     {status.cloud_entry_count}
                   </dd>
                 </>
@@ -295,10 +295,10 @@ export function CloudSyncSection(): JSX.Element {
           {/* Kaisho AI info — any paid plan */}
           {planHasAi(status?.plan) && (
             <div className="px-4 py-3 border-b border-border-subtle">
-              <p className="text-xs font-medium text-stone-700">
+              <p className="text-xs font-medium text-fg">
                 {t("useKaishoAi")}
               </p>
-              <p className="text-[10px] text-stone-600 mt-1 leading-relaxed">
+              <p className="text-[10px] text-fg-muted mt-1 leading-relaxed">
                 {t("useKaishoAiHint")}
               </p>
               <button
@@ -326,11 +326,11 @@ export function CloudSyncSection(): JSX.Element {
           {/* AI token usage meter */}
           {planHasAi(status?.plan) && aiUsage && (
             <div className="px-4 py-3 border-b border-border-subtle">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
                 {t("aiUsage")} ({aiUsage.month || "---"})
               </p>
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-2 rounded-full bg-stone-200 overflow-hidden">
+                <div className="flex-1 h-2 rounded-full bg-surface-overlay overflow-hidden">
                   <div
                     className={[
                       "h-full rounded-full transition-all",
@@ -351,7 +351,7 @@ export function CloudSyncSection(): JSX.Element {
                     }}
                   />
                 </div>
-                <span className="text-[10px] text-stone-600 tabular-nums whitespace-nowrap">
+                <span className="text-[10px] text-fg-muted tabular-nums whitespace-nowrap">
                   {(
                     aiUsage.total_tokens / 1000
                   ).toFixed(1)}K
@@ -359,7 +359,7 @@ export function CloudSyncSection(): JSX.Element {
                   {(aiUsage.cap / 1000).toFixed(0)}K
                 </span>
               </div>
-              <p className="text-[10px] text-stone-400 mt-1">
+              <p className="text-[10px] text-fg-subtle mt-1">
                 {t("requestsThisMonth", {
                   count: aiUsage.request_count,
                 })}
@@ -368,10 +368,10 @@ export function CloudSyncSection(): JSX.Element {
           )}
 
           <div className="px-4 py-3 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-1">
               {t("applyKaishoModelsTitle")}
             </p>
-            <p className="text-[10px] text-stone-400 mb-2">
+            <p className="text-[10px] text-fg-subtle mb-2">
               {t("applyKaishoModelsHint")}
             </p>
             <ConfirmPopover
@@ -405,7 +405,7 @@ export function CloudSyncSection(): JSX.Element {
             >
               <button
                 disabled={disconnecting}
-                className="px-4 py-1.5 rounded text-sm text-stone-600 hover:text-red-600 border border-border hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-wait"
+                className="px-4 py-1.5 rounded text-sm text-fg-muted hover:text-red-600 border border-border hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-wait"
               >
                 {disconnecting
                   ? t("disconnecting")
@@ -417,16 +417,16 @@ export function CloudSyncSection(): JSX.Element {
       ) : (
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-1">
               {t("connect")}
             </p>
-            <p className="text-[10px] text-stone-400 mb-3">
+            <p className="text-[10px] text-fg-subtle mb-3">
               {t("apiKeyHint")}
             </p>
             <div className="flex flex-col gap-2">
               {isDev && (
                 <label className="flex items-center gap-3">
-                  <span className="text-xs text-stone-700 w-24 shrink-0">
+                  <span className="text-xs text-fg w-24 shrink-0">
                     URL
                   </span>
                   <input
@@ -441,7 +441,7 @@ export function CloudSyncSection(): JSX.Element {
                 </label>
               )}
               <label className="flex items-center gap-3">
-                <span className="text-xs text-stone-700 w-24 shrink-0">
+                <span className="text-xs text-fg w-24 shrink-0">
                   {t("apiKey")}
                 </span>
                 <div className="flex-1 flex items-center gap-1">
@@ -459,7 +459,7 @@ export function CloudSyncSection(): JSX.Element {
                     onClick={() =>
                       setShowKey((v) => !v)
                     }
-                    className="p-1 rounded text-stone-400 hover:text-stone-700 transition-colors shrink-0"
+                    className="p-1 rounded text-fg-subtle hover:text-fg transition-colors shrink-0"
                     title={
                       showKey
                         ? t("hideKey")
@@ -502,7 +502,7 @@ export function CloudSyncSection(): JSX.Element {
           {err}
         </p>
       )}
-      <p className="mt-2 text-[10px] text-stone-400">
+      <p className="mt-2 text-[10px] text-fg-subtle">
         {t("cloudSyncOptionalHint")}
       </p>
     </section>

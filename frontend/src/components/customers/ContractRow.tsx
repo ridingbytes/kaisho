@@ -193,7 +193,7 @@ export function ContractRow({
           <label
             className={
               "flex items-center gap-1.5 text-xs "
-              + "text-stone-700 cursor-pointer"
+              + "text-fg cursor-pointer"
             }
           >
             <input
@@ -212,7 +212,7 @@ export function ContractRow({
           <label
             className={
               "flex items-center gap-1.5 text-xs "
-              + "text-stone-700 cursor-pointer"
+              + "text-fg cursor-pointer"
             }
           >
             <input
@@ -246,8 +246,8 @@ export function ContractRow({
         className={[
           "text-xs font-medium truncate mb-1",
           isActive
-            ? "text-stone-800"
-            : "text-stone-600",
+            ? "text-fg-strong"
+            : "text-fg-muted",
         ].join(" ")}
       >
         {contract.name}
@@ -256,7 +256,7 @@ export function ContractRow({
       <div className="flex items-center gap-1 mb-1">
         <span
           className={
-            "text-[10px] text-stone-600 tabular-nums"
+            "text-[10px] text-fg-muted tabular-nums"
           }
         >
           {contract.used.toFixed(1)}h /{" "}
@@ -266,7 +266,7 @@ export function ContractRow({
           <span
             className={
               "text-[9px] px-1 py-0.5 rounded "
-              + "bg-surface-overlay text-stone-500"
+              + "bg-surface-overlay text-fg-muted"
             }
           >
             {tc("closed")}
@@ -300,7 +300,7 @@ export function ContractRow({
           <button
             onClick={startEdit}
             className={
-              "p-0.5 rounded text-stone-400 "
+              "p-0.5 rounded text-fg-subtle "
               + "hover:text-cta hover:bg-cta-muted "
               + "transition-colors"
             }
@@ -320,7 +320,7 @@ export function ContractRow({
             <button
               disabled={deleteContract.isPending}
               className={
-                "p-0.5 rounded text-stone-400 "
+                "p-0.5 rounded text-fg-subtle "
                 + "hover:text-red-400 "
                 + "hover:bg-red-500/10 "
                 + "transition-colors"
@@ -353,7 +353,7 @@ export function ContractRow({
       {contract.notes && (
         <p
           className={
-            "text-[10px] text-stone-500 "
+            "text-[10px] text-fg-muted "
             + "mt-0.5 truncate"
           }
         >

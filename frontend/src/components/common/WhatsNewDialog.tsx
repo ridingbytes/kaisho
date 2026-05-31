@@ -76,13 +76,13 @@ export function WhatsNewDialog() {
               size={16}
               className="text-cta"
             />
-            <h2 className="text-sm font-semibold text-stone-800">
+            <h2 className="text-sm font-semibold text-fg-strong">
               {t("whatsNew")} {latest.version}
             </h2>
           </div>
           <button
             onClick={() => setOpen(false)}
-            className="p-1 rounded hover:bg-surface-raised text-stone-500 hover:text-stone-700 transition-colors"
+            className="p-1 rounded hover:bg-surface-raised text-fg-muted hover:text-fg transition-colors"
           >
             <X size={16} />
           </button>
@@ -93,7 +93,7 @@ export function WhatsNewDialog() {
             {latest.items.map((item, i) => (
               <li
                 key={i}
-                className="flex items-start gap-2 text-xs text-stone-700 leading-relaxed"
+                className="flex items-start gap-2 text-xs text-fg leading-relaxed"
               >
                 <span className="mt-1.5 w-1 h-1 rounded-full bg-cta shrink-0" />
                 <Markdown compact>{item}</Markdown>

@@ -50,7 +50,7 @@ function AppTitleSection() {
 
   return (
     <section>
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("appTitle")}
       </h2>
       <div className="flex items-center gap-3">
@@ -66,11 +66,11 @@ function AppTitleSection() {
           className={[
             "px-3 py-1.5 rounded text-sm w-48",
             "bg-surface-raised border border-border",
-            "text-stone-900 placeholder-stone-400",
+            "text-fg-strong placeholder-fg-subtle",
             "focus:outline-none focus:border-cta",
           ].join(" ")}
         />
-        <span className="text-[10px] text-stone-400">
+        <span className="text-[10px] text-fg-subtle">
           {t("appTitleHint")}
         </span>
       </div>
@@ -253,7 +253,7 @@ export function UserProfileSection() {
 
   return (
     <section>
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("userProfile")}
       </h2>
       <div className="bg-surface-card rounded-xl border border-border p-4 flex flex-col gap-4">
@@ -267,13 +267,13 @@ export function UserProfileSection() {
             onSelect={selectStyle}
           />
           <div className="flex flex-col gap-1">
-            <span className="text-sm text-stone-600 font-mono">
+            <span className="text-sm text-fg-muted font-mono">
               {userData.name || "kaisho"}
             </span>
             <button
               type="button"
               onClick={randomizeAvatar}
-              className="text-[10px] text-stone-500 hover:text-cta transition-colors text-left"
+              className="text-[10px] text-fg-muted hover:text-cta transition-colors text-left"
             >
               {t("randomizeAvatar")}
             </button>
@@ -282,7 +282,7 @@ export function UserProfileSection() {
 
         {/* Full name */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
             {t("fullName")}
           </span>
           <input
@@ -296,7 +296,7 @@ export function UserProfileSection() {
 
         {/* Email */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
             {t("email")}
           </span>
           <input
@@ -310,10 +310,10 @@ export function UserProfileSection() {
 
         {/* Bio */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
             {t("bio")}
           </span>
-          <span className="text-[10px] text-stone-400">
+          <span className="text-[10px] text-fg-subtle">
             {t("bioHelp")}
           </span>
           <textarea
@@ -327,10 +327,10 @@ export function UserProfileSection() {
 
         {/* Company */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
             {t("company")}
           </span>
-          <span className="text-[10px] text-stone-400">
+          <span className="text-[10px] text-fg-subtle">
             {t("companyHelp")}
           </span>
           <input
@@ -344,10 +344,10 @@ export function UserProfileSection() {
 
         {/* Industry */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
             {t("industry")}
           </span>
-          <span className="text-[10px] text-stone-400">
+          <span className="text-[10px] text-fg-subtle">
             {t("industryHelp")}
           </span>
           <textarea
@@ -361,10 +361,10 @@ export function UserProfileSection() {
 
         {/* Research targets */}
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
             {t("researchTargets")}
           </span>
-          <span className="text-[10px] text-stone-400">
+          <span className="text-[10px] text-fg-subtle">
             {t("researchTargetsHelp")}
           </span>
           <textarea
@@ -489,10 +489,10 @@ export function ProfilesSection() {
   return (
     <div className="flex flex-col gap-8">
       <section>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("profiles")}
         </h2>
-        <p className="text-[10px] text-stone-500 mb-3">
+        <p className="text-[10px] text-fg-muted mb-3">
           {t("user")}: {userData.name || "kaisho"}
           {" "}&middot; {t("activeProfile")}: {userData.profile}
         </p>
@@ -549,7 +549,7 @@ export function ProfilesSection() {
                         onClick={() =>
                           setRenamingProfile(null)
                         }
-                        className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
+                        className="p-1 rounded text-fg-muted hover:text-fg transition-colors"
                         title="Cancel"
                       >
                         <X size={13} strokeWidth={2} />
@@ -557,7 +557,7 @@ export function ProfilesSection() {
                     </>
                   ) : isCopying ? (
                     <>
-                      <span className="text-xs text-stone-500 shrink-0">
+                      <span className="text-xs text-fg-muted shrink-0">
                         {t("copyTo", { name: p })}
                       </span>
                       <input
@@ -593,7 +593,7 @@ export function ProfilesSection() {
                         onClick={() =>
                           setCopyingProfile(null)
                         }
-                        className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
+                        className="p-1 rounded text-fg-muted hover:text-fg transition-colors"
                         title="Cancel"
                       >
                         <X size={13} strokeWidth={2} />
@@ -601,7 +601,7 @@ export function ProfilesSection() {
                     </>
                   ) : isConfirmingDelete ? (
                     <>
-                      <span className="text-xs text-stone-600 flex-1">
+                      <span className="text-xs text-fg-muted flex-1">
                         {t("deleteProfileConfirm", {
                           name: p,
                         })}
@@ -619,7 +619,7 @@ export function ProfilesSection() {
                         onClick={() =>
                           setConfirmDelete(null)
                         }
-                        className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
+                        className="p-1 rounded text-fg-muted hover:text-fg transition-colors"
                       >
                         <X size={13} strokeWidth={2} />
                       </button>
@@ -631,7 +631,7 @@ export function ProfilesSection() {
                           "text-sm flex-1",
                           isActive
                             ? "text-cta font-semibold"
-                            : "text-stone-800",
+                            : "text-fg-strong",
                         ].join(" ")}
                       >
                         {p}
@@ -645,7 +645,7 @@ export function ProfilesSection() {
                             onClick={() =>
                               startCopy(p)
                             }
-                            className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
+                            className="p-1 rounded text-fg-muted hover:text-fg transition-colors"
                             title={tc("copyProfile")}
                           >
                             <Copy
@@ -666,7 +666,7 @@ export function ProfilesSection() {
                             disabled={
                               switchProfile.isPending
                             }
-                            className="px-2 py-1 rounded text-xs text-stone-600 hover:text-cta hover:bg-cta-muted transition-colors"
+                            className="px-2 py-1 rounded text-xs text-fg-muted hover:text-cta hover:bg-cta-muted transition-colors"
                           >
                             {tc("switch")}
                           </button>
@@ -674,7 +674,7 @@ export function ProfilesSection() {
                             onClick={() =>
                               startCopy(p)
                             }
-                            className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
+                            className="p-1 rounded text-fg-muted hover:text-fg transition-colors"
                             title={tc("copyProfile")}
                           >
                             <Copy
@@ -686,7 +686,7 @@ export function ProfilesSection() {
                             onClick={() =>
                               startRename(p)
                             }
-                            className="p-1 rounded text-stone-500 hover:text-stone-700 transition-colors"
+                            className="p-1 rounded text-fg-muted hover:text-fg transition-colors"
                             title={tc("renameProfile")}
                           >
                             <Pencil
@@ -698,7 +698,7 @@ export function ProfilesSection() {
                             onClick={() =>
                               setConfirmDelete(p)
                             }
-                            className="p-1 rounded text-stone-500 hover:text-red-500 transition-colors"
+                            className="p-1 rounded text-fg-muted hover:text-red-500 transition-colors"
                             title={tc("deleteProfile")}
                           >
                             <Trash2
@@ -747,10 +747,10 @@ function ResetLocalStorageSection() {
   const { t } = useTranslation("settings");
   return (
     <section>
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("localPreferences")}
       </h2>
-      <p className="text-[10px] text-stone-400 mb-3">
+      <p className="text-[10px] text-fg-subtle mb-3">
         {t("localPreferencesHint")}
       </p>
       <ConfirmPopover
@@ -761,7 +761,7 @@ function ResetLocalStorageSection() {
         }}
       >
         <button
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs text-stone-600 border border-border hover:text-red-600 hover:border-red-300 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs text-fg-muted border border-border hover:text-red-600 hover:border-red-300 transition-colors"
         >
           <RotateCcw size={12} />
           {t("resetLocalPreferences")}
@@ -809,18 +809,18 @@ function TraySection() {
       <h3
         className={
           "text-[10px] font-semibold uppercase "
-          + "tracking-wider text-stone-500 mb-3"
+          + "tracking-wider text-fg-muted mb-3"
         }
       >
         {t("tray") || "System Tray"}
       </h3>
       <label className="flex items-center justify-between cursor-pointer">
         <div>
-          <p className="text-xs font-medium text-stone-700">
+          <p className="text-xs font-medium text-fg">
             {t("keepRunningInTray")
               || "Keep running in tray"}
           </p>
-          <p className="text-[10px] text-stone-500 mt-0.5">
+          <p className="text-[10px] text-fg-muted mt-0.5">
             {t("keepRunningInTrayHint")
               || "When disabled, closing the window quits the app."}
           </p>
@@ -830,7 +830,7 @@ function TraySection() {
           className={[
             "relative w-9 h-5 rounded-full",
             "transition-colors shrink-0 ml-4",
-            enabled ? "bg-cta" : "bg-stone-300",
+            enabled ? "bg-cta" : "bg-surface-overlay",
           ].join(" ")}
         >
           <span
@@ -873,7 +873,7 @@ function LanguageSection() {
       <h3
         className={
           "text-[10px] font-semibold uppercase " +
-          "tracking-wider text-stone-500 mb-3"
+          "tracking-wider text-fg-muted mb-3"
         }
       >
         {t("language") || "Language"}
@@ -928,10 +928,10 @@ function ExternalEditorSection() {
 
   return (
     <section>
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("externalEditor")}
       </h2>
-      <p className="text-[10px] text-stone-400 mb-3">
+      <p className="text-[10px] text-fg-subtle mb-3">
         {t("externalEditorHelp")}
       </p>
       <label className="flex items-center gap-3 cursor-pointer mb-4">
@@ -939,13 +939,13 @@ function ExternalEditorSection() {
           checked={enabled}
           onChange={handleToggle}
         />
-        <span className="text-sm text-stone-800">
+        <span className="text-sm text-fg-strong">
           {t("externalEditorEnable")}
         </span>
       </label>
       {enabled && (
         <div className="flex flex-col gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
             {t("externalEditorCommand")}
           </span>
           <input
@@ -955,7 +955,7 @@ function ExternalEditorSection() {
             placeholder='alacritty -e vim "{file}"'
             className={inputCls}
           />
-          <p className="text-[10px] text-stone-400">
+          <p className="text-[10px] text-fg-subtle">
             {t("externalEditorCommandHint")}
           </p>
           <div className="flex items-center gap-3 mt-1">
@@ -1034,11 +1034,11 @@ function ClockSection() {
 
   return (
     <section>
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("clockEntries")}
       </h2>
       <label className="flex items-center gap-3">
-        <span className="text-xs text-stone-700 w-40 shrink-0">
+        <span className="text-xs text-fg w-40 shrink-0">
           {t("roundOnStop")}
         </span>
         <select
@@ -1065,7 +1065,7 @@ function ClockSection() {
           minutes === 0 ? "opacity-50" : ""
         }`}
       >
-        <span className="text-xs text-stone-700 w-40 shrink-0">
+        <span className="text-xs text-fg w-40 shrink-0">
           {t("roundingDirection")}
         </span>
         <select
@@ -1086,7 +1086,7 @@ function ClockSection() {
           ))}
         </select>
       </label>
-      <p className="mt-2 text-[10px] text-stone-400">
+      <p className="mt-2 text-[10px] text-fg-subtle">
         {t("roundOnStopHint")}
       </p>
     </section>

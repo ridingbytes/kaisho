@@ -135,13 +135,13 @@ export function IntegrationsSection() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-stone-500">
+        <p className="text-xs text-fg-muted">
           {t("integrations.hint")}
         </p>
         <button
           type="button"
           onClick={refresh}
-          className={`${btn} text-stone-500 hover:text-stone-700`}
+          className={`${btn} text-fg-muted hover:text-fg`}
         >
           {t("integrations.refresh")}
         </button>
@@ -165,11 +165,11 @@ export function IntegrationsSection() {
           >
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-semibold text-sm text-stone-900">
+                <p className="font-semibold text-sm text-fg-strong">
                   {p.label}
                 </p>
                 {locked ? (
-                  <p className="text-[10px] text-stone-500 mt-0.5">
+                  <p className="text-[10px] text-fg-muted mt-0.5">
                     {t("integrations.proOnly.short")}
                   </p>
                 ) : conn ? (
@@ -178,13 +178,13 @@ export function IntegrationsSection() {
                   </p>
                 ) : (
                   p.hintKey && (
-                    <p className="text-[10px] text-stone-500 mt-0.5">
+                    <p className="text-[10px] text-fg-muted mt-0.5">
                       {t(p.hintKey)}
                     </p>
                   )
                 )}
                 {p.crossRefKey && (
-                  <p className="text-[10px] text-stone-400 mt-0.5">
+                  <p className="text-[10px] text-fg-subtle mt-0.5">
                     {t(p.crossRefKey)}
                   </p>
                 )}
@@ -194,7 +194,7 @@ export function IntegrationsSection() {
                   type="button"
                   onClick={() => handleDisconnect(p.kind)}
                   disabled={isBusy}
-                  className={`${btn} bg-surface-raised border border-border text-stone-700 hover:bg-surface-card`}
+                  className={`${btn} bg-surface-raised border border-border text-fg hover:bg-surface-card`}
                 >
                   {t("integrations.disconnect")}
                 </button>
@@ -226,7 +226,7 @@ export function IntegrationsSection() {
                   placeholder={t(
                     "integrations.apiKeyPlaceholder"
                   )}
-                  className="flex-1 px-2 py-1 rounded-lg text-xs bg-surface-raised border border-border text-stone-900 placeholder-stone-500 focus:outline-none focus:border-cta"
+                  className="flex-1 px-2 py-1 rounded-lg text-xs bg-surface-raised border border-border text-fg-strong placeholder-fg-muted focus:outline-none focus:border-cta"
                 />
                 <button
                   type="button"
@@ -247,7 +247,7 @@ export function IntegrationsSection() {
         );
       })}
       <CalDavSection />
-      <p className="text-[10px] text-stone-400">
+      <p className="text-[10px] text-fg-subtle">
         {t("integrations.oauthNote")}
       </p>
     </div>

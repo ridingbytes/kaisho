@@ -74,8 +74,8 @@ export function StatusPicker({
             "px-3 py-1.5 text-xs text-left",
             "transition-colors",
             s.name === current
-              ? "text-stone-400 cursor-default"
-              : "text-stone-800 hover:bg-surface-raised",
+              ? "text-fg-subtle cursor-default"
+              : "text-fg-strong hover:bg-surface-raised",
           ].join(" ")}
         >
           <span

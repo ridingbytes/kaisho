@@ -18,32 +18,32 @@ interface MarkdownProps {
 
 const components = {
   h1: ({ children }: { children?: React.ReactNode }) => (
-    <h1 className="text-lg font-bold text-stone-900 mt-5 mb-2 first:mt-0">
+    <h1 className="text-lg font-bold text-fg-strong mt-5 mb-2 first:mt-0">
       {children}
     </h1>
   ),
   h2: ({ children }: { children?: React.ReactNode }) => (
-    <h2 className="text-base font-semibold text-stone-900 mt-4 mb-1.5 first:mt-0">
+    <h2 className="text-base font-semibold text-fg-strong mt-4 mb-1.5 first:mt-0">
       {children}
     </h2>
   ),
   h3: ({ children }: { children?: React.ReactNode }) => (
-    <h3 className="text-sm font-semibold text-stone-800 mt-3 mb-1 first:mt-0">
+    <h3 className="text-sm font-semibold text-fg-strong mt-3 mb-1 first:mt-0">
       {children}
     </h3>
   ),
   p: ({ children }: { children?: React.ReactNode }) => (
-    <p className="text-sm text-stone-800 leading-relaxed mb-3 last:mb-0">
+    <p className="text-sm text-fg-strong leading-relaxed mb-3 last:mb-0">
       {children}
     </p>
   ),
   ul: ({ children }: { children?: React.ReactNode }) => (
-    <ul className="list-disc list-outside pl-5 mb-3 space-y-1 text-sm text-stone-800">
+    <ul className="list-disc list-outside pl-5 mb-3 space-y-1 text-sm text-fg-strong">
       {children}
     </ul>
   ),
   ol: ({ children }: { children?: React.ReactNode }) => (
-    <ol className="list-decimal list-outside pl-5 mb-3 space-y-1 text-sm text-stone-800">
+    <ol className="list-decimal list-outside pl-5 mb-3 space-y-1 text-sm text-fg-strong">
       {children}
     </ol>
   ),
@@ -65,12 +65,12 @@ const components = {
       <code>{children}</code>
     ),
   pre: ({ children }: { children?: React.ReactNode }) => (
-    <pre className="bg-surface-overlay rounded-lg p-3 mb-3 overflow-x-auto text-sm font-mono text-stone-800 leading-relaxed">
+    <pre className="bg-surface-overlay rounded-lg p-3 mb-3 overflow-x-auto text-sm font-mono text-fg-strong leading-relaxed">
       {children}
     </pre>
   ),
   blockquote: ({ children }: { children?: React.ReactNode }) => (
-    <blockquote className="border-l-2 border-cta pl-3 mb-3 text-stone-700 italic">
+    <blockquote className="border-l-2 border-cta pl-3 mb-3 text-fg italic">
       {children}
     </blockquote>
   ),
@@ -92,10 +92,10 @@ const components = {
   ),
   hr: () => <hr className="border-border my-4" />,
   strong: ({ children }: { children?: React.ReactNode }) => (
-    <strong className="font-semibold text-stone-900">{children}</strong>
+    <strong className="font-semibold text-fg-strong">{children}</strong>
   ),
   em: ({ children }: { children?: React.ReactNode }) => (
-    <em className="italic text-stone-800">{children}</em>
+    <em className="italic text-fg-strong">{children}</em>
   ),
   table: ({ children }: { children?: React.ReactNode }) => (
     <div className="overflow-x-auto mb-3">
@@ -103,12 +103,12 @@ const components = {
     </div>
   ),
   th: ({ children }: { children?: React.ReactNode }) => (
-    <th className="text-left px-3 py-1.5 border-b border-border text-stone-800 font-semibold">
+    <th className="text-left px-3 py-1.5 border-b border-border text-fg-strong font-semibold">
       {children}
     </th>
   ),
   td: ({ children }: { children?: React.ReactNode }) => (
-    <td className="px-3 py-1.5 border-b border-border-subtle text-stone-700">
+    <td className="px-3 py-1.5 border-b border-border-subtle text-fg">
       {children}
     </td>
   ),
@@ -152,42 +152,42 @@ function makeLink(
 const compactComponents = {
   ...components,
   h1: ({ children }: { children?: React.ReactNode }) => (
-    <h2 className="text-sm font-bold text-stone-900 mt-2 mb-1 first:mt-0">
+    <h2 className="text-sm font-bold text-fg-strong mt-2 mb-1 first:mt-0">
       {children}
     </h2>
   ),
   h2: ({ children }: { children?: React.ReactNode }) => (
-    <h3 className="text-xs font-semibold text-stone-900 mt-2 mb-1 first:mt-0">
+    <h3 className="text-xs font-semibold text-fg-strong mt-2 mb-1 first:mt-0">
       {children}
     </h3>
   ),
   h3: ({ children }: { children?: React.ReactNode }) => (
-    <h4 className="text-xs font-semibold text-stone-800 mt-1.5 mb-0.5 first:mt-0">
+    <h4 className="text-xs font-semibold text-fg-strong mt-1.5 mb-0.5 first:mt-0">
       {children}
     </h4>
   ),
   p: ({ children }: { children?: React.ReactNode }) => (
-    <p className="text-xs text-stone-700 leading-relaxed mb-1.5 last:mb-0">
+    <p className="text-xs text-fg leading-relaxed mb-1.5 last:mb-0">
       {children}
     </p>
   ),
   ul: ({ children }: { children?: React.ReactNode }) => (
-    <ul className="list-disc list-outside pl-4 mb-1.5 space-y-0.5 text-xs text-stone-700">
+    <ul className="list-disc list-outside pl-4 mb-1.5 space-y-0.5 text-xs text-fg">
       {children}
     </ul>
   ),
   ol: ({ children }: { children?: React.ReactNode }) => (
-    <ol className="list-decimal list-outside pl-4 mb-1.5 space-y-0.5 text-xs text-stone-700">
+    <ol className="list-decimal list-outside pl-4 mb-1.5 space-y-0.5 text-xs text-fg">
       {children}
     </ol>
   ),
   pre: ({ children }: { children?: React.ReactNode }) => (
-    <pre className="bg-surface-overlay rounded p-2 mb-1.5 overflow-x-auto text-[11px] font-mono text-stone-800 leading-relaxed">
+    <pre className="bg-surface-overlay rounded p-2 mb-1.5 overflow-x-auto text-[11px] font-mono text-fg-strong leading-relaxed">
       {children}
     </pre>
   ),
   blockquote: ({ children }: { children?: React.ReactNode }) => (
-    <blockquote className="border-l-2 border-cta pl-2 mb-1.5 text-stone-700 italic text-xs">
+    <blockquote className="border-l-2 border-cta pl-2 mb-1.5 text-fg italic text-xs">
       {children}
     </blockquote>
   ),

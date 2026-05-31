@@ -106,7 +106,7 @@ export function GithubIssueInput({
             onClick={fetchIssues}
             disabled={loading}
             title={t("pickGithubIssue")}
-            className="px-2 rounded bg-surface-raised border border-border text-stone-600 hover:text-cta hover:border-cta transition-colors disabled:opacity-40"
+            className="px-2 rounded bg-surface-raised border border-border text-fg-muted hover:text-cta hover:border-cta transition-colors disabled:opacity-40"
           >
             <GitBranch size={11} />
           </button>
@@ -145,7 +145,7 @@ export function GithubIssueInput({
               }}
               placeholder={t("filterIssues")}
               autoFocus
-              className="w-full px-3 py-1.5 text-xs border-b border-border bg-transparent text-stone-800 placeholder-stone-400 outline-none"
+              className="w-full px-3 py-1.5 text-xs border-b border-border bg-transparent text-fg-strong placeholder-fg-subtle outline-none"
             />
             <ul className="max-h-48 overflow-y-auto">
               {filtered.map((issue) => (
@@ -157,9 +157,9 @@ export function GithubIssueInput({
                       setOpen(false);
                       setFilter("");
                     }}
-                    className="w-full text-left px-3 py-1.5 text-xs text-stone-800 hover:bg-cta-muted transition-colors flex items-start gap-2"
+                    className="w-full text-left px-3 py-1.5 text-xs text-fg-strong hover:bg-cta-muted transition-colors flex items-start gap-2"
                   >
-                    <span className="text-stone-500 font-mono shrink-0 mt-px">
+                    <span className="text-fg-muted font-mono shrink-0 mt-px">
                       #{issue.number}
                     </span>
                     <span className="leading-snug">
@@ -175,7 +175,7 @@ export function GithubIssueInput({
                     setOpen(false);
                     setFilter("");
                   }}
-                  className="w-full text-left px-3 py-1 text-[10px] text-stone-500 hover:text-stone-700"
+                  className="w-full text-left px-3 py-1 text-[10px] text-fg-muted hover:text-fg"
                 >
                   {tc("close")}
                 </button>

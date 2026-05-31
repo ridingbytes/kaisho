@@ -187,7 +187,7 @@ export function CustomerEditForm({
           >
             <span
               className={
-                "text-[10px] text-stone-500 "
+                "text-[10px] text-fg-muted "
                 + "uppercase tracking-wider"
               }
             >
@@ -209,7 +209,7 @@ export function CustomerEditForm({
           >
             <span
               className={
-                "text-[10px] text-stone-500 "
+                "text-[10px] text-fg-muted "
                 + "uppercase tracking-wider"
               }
             >
@@ -238,8 +238,8 @@ export function CustomerEditForm({
         <button
           onClick={onClose}
           className={
-            "p-1.5 rounded-md text-stone-500 "
-            + "hover:text-stone-900 transition-colors"
+            "p-1.5 rounded-md text-fg-muted "
+            + "hover:text-fg-strong transition-colors"
           }
           title={tc("cancel")}
         >

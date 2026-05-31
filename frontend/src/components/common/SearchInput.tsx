@@ -52,7 +52,7 @@ export function SearchInput({
         size={11}
         className={[
           "absolute left-2 pointer-events-none",
-          "text-stone-400",
+          "text-fg-subtle",
         ].join(" ")}
       />
       <input
@@ -85,7 +85,7 @@ export function SearchInput({
           tabIndex={-1}
           className={[
             "absolute right-1.5",
-            "text-stone-400 hover:text-stone-700",
+            "text-fg-subtle hover:text-fg",
             "transition-colors",
           ].join(" ")}
           aria-label="Clear search"

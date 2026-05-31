@@ -120,7 +120,7 @@ function MobileTimerModal({
         <h2
           className={[
             "text-xs font-semibold tracking-wider",
-            "uppercase text-stone-700 flex-1",
+            "uppercase text-fg flex-1",
           ].join(" ")}
         >
           {tClocks("timeTracking")}
@@ -128,8 +128,8 @@ function MobileTimerModal({
         <button
           onClick={onClose}
           className={[
-            "p-1 rounded text-stone-500",
-            "hover:text-stone-900",
+            "p-1 rounded text-fg-muted",
+            "hover:text-fg-strong",
           ].join(" ")}
         >
           <X size={18} />
@@ -201,18 +201,18 @@ function ActiveTimerWidget({
         "border border-border-subtle",
       ].join(" ")}
     >
-      <span className="text-4xl font-mono font-bold tabular-nums text-stone-900">
+      <span className="text-4xl font-mono font-bold tabular-nums text-fg-strong">
         {h}:{m}:{s}
       </span>
       <span className="text-xs text-emerald-500 font-semibold uppercase">
         {tc("active")}
       </span>
-      <p className="text-sm text-stone-700 text-center">
+      <p className="text-sm text-fg text-center">
         <span className="font-semibold">
           {timer.customer}
         </span>
         {timer.description && (
-          <span className="text-stone-500">
+          <span className="text-fg-muted">
             {" "}&middot; {timer.description}
           </span>
         )}
@@ -274,7 +274,7 @@ function CloudNudgeBanner({
 
   return (
     <div className="flex items-center gap-3 px-4 py-1.5 bg-cta/10 border-b border-cta/20 shrink-0">
-      <p className="flex-1 text-[11px] text-stone-700">
+      <p className="flex-1 text-[11px] text-fg">
         Companion and Pro add hosted sync, the MCP gateway,
         mobile and scheduled AI runs.{" "}
         <button
@@ -297,7 +297,7 @@ function CloudNudgeBanner({
       </p>
       <button
         onClick={handleDismiss}
-        className="text-stone-400 hover:text-stone-700 transition-colors shrink-0"
+        className="text-fg-subtle hover:text-fg transition-colors shrink-0"
         title="Dismiss for 14 days"
       >
         <X size={12} />
@@ -416,7 +416,7 @@ function UpdateBanner() {
   return (
     <div className="flex items-center gap-3 px-4 py-1.5 bg-green-500/10 border-b border-green-500/20 shrink-0">
       {installing ? (
-        <p className="flex-1 flex items-center gap-2 text-[11px] text-stone-700">
+        <p className="flex-1 flex items-center gap-2 text-[11px] text-fg">
           <RefreshCw
             size={11}
             className="animate-spin text-green-600"
@@ -425,7 +425,7 @@ function UpdateBanner() {
         </p>
       ) : (
         <>
-          <p className="flex-1 text-[11px] text-stone-700">
+          <p className="flex-1 text-[11px] text-fg">
             Kaisho <strong>v{version}</strong> is
             available.
           </p>
@@ -438,7 +438,7 @@ function UpdateBanner() {
           </button>
           <button
             onClick={() => setDismissed(true)}
-            className="text-stone-400 hover:text-stone-700 transition-colors shrink-0"
+            className="text-fg-subtle hover:text-fg transition-colors shrink-0"
             title="Dismiss"
           >
             <X size={12} />
@@ -673,7 +673,7 @@ function AppShell() {
         {/* Hamburger (mobile only) */}
         <button
           onClick={() => setMobileNavOpen((v) => !v)}
-          className="md:hidden p-1 rounded text-stone-600 hover:text-stone-900"
+          className="md:hidden p-1 rounded text-fg-muted hover:text-fg-strong"
         >
           {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
@@ -693,12 +693,12 @@ function AppShell() {
         </button>
         <button
           onClick={() => setView("dashboard")}
-          className="text-sm font-bold tracking-[0.06em] uppercase text-stone-700 hover:text-cta transition-colors hidden sm:block"
+          className="text-sm font-bold tracking-[0.06em] uppercase text-fg hover:text-cta transition-colors hidden sm:block"
         >
           {appTitle}
         </button>
         {versionData?.version && (
-          <span className="text-[9px] text-stone-400 font-mono hidden sm:block">
+          <span className="text-[9px] text-fg-subtle font-mono hidden sm:block">
             v{versionData.version}
           </span>
         )}
@@ -746,7 +746,7 @@ function AppShell() {
                 }
                 className={[
                   "hidden sm:flex items-center",
-                  "p-1 rounded text-stone-500",
+                  "p-1 rounded text-fg-muted",
                   "hover:text-cta hover:bg-cta-muted",
                   "transition-colors",
                 ].join(" ")}
@@ -763,7 +763,7 @@ function AppShell() {
               "md:hidden p-1 rounded transition-colors",
               timerActive
                 ? "text-cta animate-pulse"
-                : "text-stone-500 hover:text-stone-900",
+                : "text-fg-muted hover:text-fg-strong",
             ].join(" ")}
             title="Time tracking"
           >
@@ -784,7 +784,7 @@ function AppShell() {
             {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
           </button>
           <div className="flex items-center gap-1 px-1.5 py-1">
-            <Globe size={14} className="text-stone-500 shrink-0" />
+            <Globe size={14} className="text-fg-muted shrink-0" />
             <select
               value={i18n.language}
               onChange={(e) => setLanguage(e.target.value)}
@@ -792,7 +792,7 @@ function AppShell() {
               className={
                 "text-[10px] font-semibold bg-transparent " +
                 "border-none outline-none cursor-pointer " +
-                "text-stone-700 hover:text-stone-900"
+                "text-fg hover:text-fg-strong"
               }
             >
               {LANGUAGES.map((l) => (
@@ -811,11 +811,11 @@ function AppShell() {
                 className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-surface-raised transition-colors"
               >
                 <span className="hidden sm:flex flex-col items-end leading-tight">
-                  <span className="text-sm font-semibold text-stone-900">
+                  <span className="text-sm font-semibold text-fg-strong">
                     {currentUser.name || "User"}
                   </span>
                   {currentUser.profile && (
-                    <span className="text-[10px] text-stone-500 font-mono">
+                    <span className="text-[10px] text-fg-muted font-mono">
                       {currentUser.profile}
                     </span>
                   )}
@@ -830,7 +830,7 @@ function AppShell() {
               {userMenuOpen && (
                 <div className="absolute top-full right-0 mt-1 w-48 rounded-lg bg-surface-overlay border border-border shadow-lg p-2 flex flex-col gap-1 z-50">
                   {/* Profiles */}
-                  <p className="text-[9px] text-stone-500 px-1 uppercase tracking-wider">
+                  <p className="text-[9px] text-fg-muted px-1 uppercase tracking-wider">
                     Profile
                   </p>
                   {(currentUser.profiles ?? []).map((p: string) => (
@@ -848,7 +848,7 @@ function AppShell() {
                         "w-full text-left px-2 py-1 rounded text-xs transition-colors",
                         p === currentUser.profile
                           ? "text-cta bg-cta-muted"
-                          : "text-stone-800 hover:bg-surface-raised",
+                          : "text-fg-strong hover:bg-surface-raised",
                       ].join(" ")}
                     >
                       {p}
@@ -879,12 +879,12 @@ function AppShell() {
                         if (e.key === "Escape") setNewProfInput("");
                       }}
                       placeholder={tc("name")}
-                      className="w-full px-2 py-1 rounded text-xs bg-surface-raised border border-border text-stone-900 focus:outline-none focus:border-cta"
+                      className="w-full px-2 py-1 rounded text-xs bg-surface-raised border border-border text-fg-strong focus:outline-none focus:border-cta"
                     />
                   ) : (
                     <button
                       onClick={() => setNewProfInput(" ")}
-                      className="w-full text-left px-2 py-1 rounded text-xs text-stone-500 hover:text-stone-900 hover:bg-surface-raised"
+                      className="w-full text-left px-2 py-1 rounded text-xs text-fg-muted hover:text-fg-strong hover:bg-surface-raised"
                     >
                       + New profile
                     </button>
@@ -897,7 +897,7 @@ function AppShell() {
                       setView("settings");
                       setUserMenuOpen(false);
                     }}
-                    className="w-full text-left px-2 py-1 rounded text-xs text-stone-800 hover:bg-surface-raised flex items-center gap-2"
+                    className="w-full text-left px-2 py-1 rounded text-xs text-fg-strong hover:bg-surface-raised flex items-center gap-2"
                   >
                     <Settings size={12} />
                     Settings
@@ -1019,7 +1019,7 @@ export function App() {
 }
 
 const headerBtn = [
-  "p-1.5 rounded-md text-stone-600",
-  "hover:text-stone-900 hover:bg-surface-raised",
+  "p-1.5 rounded-md text-fg-muted",
+  "hover:text-fg-strong hover:bg-surface-raised",
   "transition-colors",
 ].join(" ");

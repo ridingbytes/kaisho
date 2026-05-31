@@ -62,7 +62,7 @@ const CRON_HISTORY_COLUMNS = [
 
 const fieldCls =
   "px-2 py-1 rounded text-xs bg-surface-raised border border-border " +
-  "text-stone-900 placeholder-stone-500 focus:outline-none " +
+  "text-fg-strong placeholder-fg-muted focus:outline-none " +
   "focus:border-border-strong font-mono";
 
 function CopyToInboxBtn({ runId }: { runId: number }) {
@@ -88,7 +88,7 @@ function CopyToInboxBtn({ runId }: { runId: number }) {
         "p-1 rounded transition-colors",
         done
           ? "text-green-400"
-          : "text-stone-500 hover:text-cta hover:bg-cta-muted",
+          : "text-fg-muted hover:text-cta hover:bg-cta-muted",
         "disabled:opacity-60",
       ].join(" ")}
       title={t("copyToInbox")}
@@ -268,14 +268,14 @@ function JobCard({
         className="flex items-center gap-3 px-4 py-3 cursor-pointer"
         onClick={handleExpand}
       >
-        <span className="text-stone-500 shrink-0">
+        <span className="text-fg-muted shrink-0">
           {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-stone-900 truncate">
+          <p className="text-sm font-semibold text-fg-strong truncate">
             {job.name}
           </p>
-          <p className="text-[10px] text-stone-500 font-mono">{job.id}</p>
+          <p className="text-[10px] text-fg-muted font-mono">{job.id}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <EnableToggle
@@ -284,7 +284,7 @@ function JobCard({
           />
           <button
             onClick={startEdit}
-            className="text-stone-500 hover:text-cta transition-colors"
+            className="text-fg-muted hover:text-cta transition-colors"
             title={t("editFields")}
           >
             <Pencil size={12} />
@@ -310,7 +310,7 @@ function JobCard({
             className={[
               "flex items-center gap-1 px-2 py-1 rounded-lg",
               "text-xs bg-surface-raised border border-border",
-              "text-stone-800 hover:bg-surface-overlay transition-colors",
+              "text-fg-strong hover:bg-surface-overlay transition-colors",
               "disabled:opacity-50 disabled:cursor-not-allowed",
             ].join(" ")}
             title={
@@ -333,7 +333,7 @@ function JobCard({
                 click to bubble to ConfirmPopover so it
                 opens the confirmation. */}
             <button
-              className="text-stone-500 hover:text-red-400 transition-colors"
+              className="text-fg-muted hover:text-red-400 transition-colors"
               title="Delete job"
             >
               <Trash2 size={12} />
@@ -344,11 +344,11 @@ function JobCard({
 
       {/* Summary pills */}
       <div
-        className="flex gap-3 px-4 pb-3 text-[10px] text-stone-600 font-mono cursor-pointer"
+        className="flex gap-3 px-4 pb-3 text-[10px] text-fg-muted font-mono cursor-pointer"
         onClick={handleExpand}
       >
         <span title={t("schedule")}>{job.schedule}</span>
-        <span className="text-stone-400">|</span>
+        <span className="text-fg-subtle">|</span>
         <span title={t("model")}>
           {job.model ? (
             job.model
@@ -358,7 +358,7 @@ function JobCard({
             </span>
           )}
         </span>
-        <span className="text-stone-400">|</span>
+        <span className="text-fg-subtle">|</span>
         <span title={t("output")}>{job.output}</span>
       </div>
 
@@ -373,7 +373,7 @@ function JobCard({
             <div className="flex flex-col gap-2">
               <div className="grid grid-cols-2 gap-2">
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] text-stone-500 uppercase tracking-wide">
+                  <span className="text-[10px] text-fg-muted uppercase tracking-wide">
                     {t("schedule")}
                   </span>
                   <input
@@ -384,7 +384,7 @@ function JobCard({
                   />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] text-stone-500 uppercase tracking-wide">
+                  <span className="text-[10px] text-fg-muted uppercase tracking-wide">
                     {t("model")}
                   </span>
                   <input
@@ -398,7 +398,7 @@ function JobCard({
                   />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] text-stone-500 uppercase tracking-wide">
+                  <span className="text-[10px] text-fg-muted uppercase tracking-wide">
                     {t("output")}
                   </span>
                   <OutputSelect
@@ -407,7 +407,7 @@ function JobCard({
                   />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] text-stone-500 uppercase tracking-wide">
+                  <span className="text-[10px] text-fg-muted uppercase tracking-wide">
                     {t("timeoutS")}
                   </span>
                   <input
@@ -420,7 +420,7 @@ function JobCard({
                 </label>
               </div>
               {canCloud && (
-                <label className="flex items-center gap-2 text-xs text-stone-600">
+                <label className="flex items-center gap-2 text-xs text-fg-muted">
                   <input
                     type="checkbox"
                     checked={editCloud}
@@ -443,7 +443,7 @@ function JobCard({
                 </button>
                 <button
                   onClick={() => setEditing(false)}
-                  className="px-3 py-1 rounded-lg text-xs text-stone-700 hover:text-stone-900 transition-colors"
+                  className="px-3 py-1 rounded-lg text-xs text-fg hover:text-fg-strong transition-colors"
                 >
                   {t("cancel", { ns: "common" })}
                 </button>
@@ -454,11 +454,11 @@ function JobCard({
           {/* Prompt editor */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-stone-500 uppercase tracking-wide">
+              <span className="text-[10px] text-fg-muted uppercase tracking-wide">
                 {t("prompt")}
               </span>
               {promptData?.path && (
-                <span className="text-[10px] text-stone-400 font-mono">
+                <span className="text-[10px] text-fg-subtle font-mono">
                   {promptData.path}
                 </span>
               )}
@@ -526,20 +526,20 @@ function TemplatePicker({
   return (
     <div className="border-b border-border-subtle bg-surface-card px-4 py-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-stone-700 uppercase tracking-wide">
+        <span className="text-xs font-semibold text-fg uppercase tracking-wide">
           {t("pickTemplate")}
         </span>
         <button
           type="button"
           onClick={onClose}
-          className="text-stone-500 hover:text-stone-900 transition-colors"
+          className="text-fg-muted hover:text-fg-strong transition-colors"
           aria-label={tc("close")}
         >
           <X size={14} />
         </button>
       </div>
       {isLoading && (
-        <p className="text-xs text-stone-500">
+        <p className="text-xs text-fg-muted">
           {tc("loading")}
         </p>
       )}
@@ -552,10 +552,10 @@ function TemplatePicker({
             className="text-left p-3 rounded-lg border border-border bg-surface-raised hover:border-cta hover:bg-cta/5 transition-colors flex flex-col gap-1.5"
           >
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-stone-900">
+              <span className="text-sm font-medium text-fg-strong">
                 {tpl.name}
               </span>
-              <span className="text-[9px] uppercase tracking-wider text-stone-500 px-1.5 py-0.5 rounded bg-surface-overlay">
+              <span className="text-[9px] uppercase tracking-wider text-fg-muted px-1.5 py-0.5 rounded bg-surface-overlay">
                 {tpl.category}
               </span>
               {tpl.requires_tools && (
@@ -564,10 +564,10 @@ function TemplatePicker({
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-stone-600 leading-snug">
+            <p className="text-[11px] text-fg-muted leading-snug">
               {tpl.description}
             </p>
-            <div className="flex items-center gap-3 text-[10px] text-stone-500 font-mono">
+            <div className="flex items-center gap-3 text-[10px] text-fg-muted font-mono">
               <span>{tpl.default_schedule}</span>
               <span>·</span>
               <span>{tpl.default_model}</span>
@@ -653,13 +653,13 @@ function AddJobForm({
       className="border-b border-border-subtle bg-surface-card px-4 py-4 flex flex-col gap-3"
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-stone-700 uppercase tracking-wide">
+        <span className="text-xs font-semibold text-fg uppercase tracking-wide">
           {t("newCronJob")}
         </span>
         <button
           type="button"
           onClick={onClose}
-          className="text-stone-500 hover:text-stone-900 transition-colors"
+          className="text-fg-muted hover:text-fg-strong transition-colors"
         >
           <X size={14} />
         </button>
@@ -667,7 +667,7 @@ function AddJobForm({
 
       <div className="grid grid-cols-2 gap-2">
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-stone-500 uppercase tracking-wide">
+          <span className="text-[10px] text-fg-muted uppercase tracking-wide">
             {t("id")}
           </span>
           <input
@@ -679,7 +679,7 @@ function AddJobForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-stone-500 uppercase tracking-wide">
+          <span className="text-[10px] text-fg-muted uppercase tracking-wide">
             {t("name", { ns: "common" })}
           </span>
           <input
@@ -691,7 +691,7 @@ function AddJobForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-stone-500 uppercase tracking-wide">
+          <span className="text-[10px] text-fg-muted uppercase tracking-wide">
             {t("schedule")}
           </span>
           <input
@@ -703,7 +703,7 @@ function AddJobForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-stone-500 uppercase tracking-wide">
+          <span className="text-[10px] text-fg-muted uppercase tracking-wide">
             {t("model")}
           </span>
           <input
@@ -716,7 +716,7 @@ function AddJobForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-stone-500 uppercase tracking-wide">
+          <span className="text-[10px] text-fg-muted uppercase tracking-wide">
             {t("output")}
           </span>
           <OutputSelect
@@ -725,7 +725,7 @@ function AddJobForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] text-stone-500 uppercase tracking-wide">
+          <span className="text-[10px] text-fg-muted uppercase tracking-wide">
             {t("timeoutS")}
           </span>
           <input
@@ -739,7 +739,7 @@ function AddJobForm({
       </div>
 
       {canCloud && (
-        <label className="flex items-center gap-2 text-xs text-stone-600">
+        <label className="flex items-center gap-2 text-xs text-fg-muted">
           <input
             type="checkbox"
             checked={cloud}
@@ -750,7 +750,7 @@ function AddJobForm({
       )}
 
       <label className="flex flex-col gap-1">
-        <span className="text-[10px] text-stone-500 uppercase tracking-wide">
+        <span className="text-[10px] text-fg-muted uppercase tracking-wide">
           {t("prompt")}
         </span>
         <PromptEditor
@@ -765,7 +765,7 @@ function AddJobForm({
         <button
           type="button"
           onClick={onClose}
-          className="px-3 py-1.5 rounded-lg text-sm text-stone-700 hover:text-stone-900 transition-colors"
+          className="px-3 py-1.5 rounded-lg text-sm text-fg hover:text-fg-strong transition-colors"
         >
           {t("cancel", { ns: "common" })}
         </button>
@@ -804,7 +804,7 @@ function HistoryTable({
 
   if (runs.length === 0) {
     return (
-      <p className="text-sm text-stone-500 py-4">
+      <p className="text-sm text-fg-muted py-4">
         {t("noHistoryYet")}
       </p>
     );
@@ -827,7 +827,7 @@ function HistoryTable({
           ))}
         </colgroup>
         <thead className="group/thead">
-          <tr className="text-stone-500 border-b border-border-subtle">
+          <tr className="text-fg-muted border-b border-border-subtle">
             <th className={resizable}>
               <ResizeHandle
                 onMouseDown={(e) => startResize(0, e)}
@@ -905,7 +905,7 @@ function HistoryTable({
                     isOpen ? "bg-surface-raised" : "",
                   ].join(" ")}
                 >
-                  <td className="py-2 pr-2 text-stone-500 overflow-hidden">
+                  <td className="py-2 pr-2 text-fg-muted overflow-hidden">
                     {isExpandable ? (
                       isOpen ? (
                         <ChevronDown size={10} />
@@ -914,10 +914,10 @@ function HistoryTable({
                       )
                     ) : null}
                   </td>
-                  <td className="py-2 pr-4 text-stone-500 overflow-hidden">
+                  <td className="py-2 pr-4 text-fg-muted overflow-hidden">
                     {run.id}
                   </td>
-                  <td className="py-2 pr-4 font-mono text-stone-700 truncate">
+                  <td className="py-2 pr-4 font-mono text-fg truncate">
                     {run.job_id}
                   </td>
                   <td className="py-2 pr-4 overflow-hidden">
@@ -927,12 +927,12 @@ function HistoryTable({
                       </span>
                     )}
                   </td>
-                  <td className="py-2 pr-4 text-stone-700 truncate">
+                  <td className="py-2 pr-4 text-fg truncate">
                     {run.started_at
                       .slice(0, 19)
                       .replace("T", " ")}
                   </td>
-                  <td className="py-2 pr-4 text-stone-700 truncate">
+                  <td className="py-2 pr-4 text-fg truncate">
                     {run.finished_at
                       ? run.finished_at
                           .slice(0, 19)
@@ -960,7 +960,7 @@ function HistoryTable({
                         e.stopPropagation();
                         onDelete(run.id);
                       }}
-                      className="text-stone-400 hover:text-red-400 transition-colors"
+                      className="text-fg-subtle hover:text-red-400 transition-colors"
                       title={t("deleteRun")}
                     >
                       <Trash2 size={11} />
@@ -1061,7 +1061,7 @@ export function CronView() {
             className={[
               "flex items-center gap-1.5 px-3 py-1",
               "rounded-lg text-xs",
-              "border border-border text-stone-700",
+              "border border-border text-fg",
               "hover:bg-surface-raised transition-colors",
             ].join(" ")}
           >
@@ -1112,26 +1112,26 @@ export function CronView() {
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-8">
         {!onSyncAi && models.length === 0 && (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
-            <p className="text-xs font-medium text-stone-700 mb-1">
+            <p className="text-xs font-medium text-fg mb-1">
               {ts("noAiProviderCron")}
             </p>
-            <p className="text-[11px] text-stone-500 leading-relaxed">
+            <p className="text-[11px] text-fg-muted leading-relaxed">
               {ts("noAiProviderCronHint")}
             </p>
           </div>
         )}
         {/* Jobs section */}
         <section>
-          <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+          <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
             {t("jobs")}
           </h2>
           {jobsLoading && (
-            <p className="text-sm text-stone-500">
+            <p className="text-sm text-fg-muted">
               {tc("loading")}
             </p>
           )}
           {!jobsLoading && jobs.length === 0 && (
-            <p className="text-sm text-stone-500">
+            <p className="text-sm text-fg-muted">
               {t("noJobsConfigured")}
             </p>
           )}
@@ -1147,11 +1147,11 @@ export function CronView() {
 
         {/* History section */}
         <section>
-          <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+          <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
             {t("history")}
           </h2>
           {historyLoading ? (
-            <p className="text-sm text-stone-500">
+            <p className="text-sm text-fg-muted">
               {tc("loading")}
             </p>
           ) : (

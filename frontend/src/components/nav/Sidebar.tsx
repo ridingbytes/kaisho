@@ -121,7 +121,7 @@ export function Sidebar({
         className={[
           "hidden md:flex items-center rounded-lg",
           "transition-colors",
-          "text-stone-500 hover:text-stone-900",
+          "text-fg-muted hover:text-fg-strong",
           "hover:bg-surface-raised",
           open
             ? "px-3 h-7 justify-end"
@@ -157,7 +157,7 @@ export function Sidebar({
               "uppercase",
               isActive
                 ? "bg-cta-muted text-cta"
-                : "text-stone-700 hover:text-stone-900 hover:bg-surface-raised",
+                : "text-fg hover:text-fg-strong hover:bg-surface-raised",
             ]
               .filter(Boolean)
               .join(" ")}
@@ -216,7 +216,7 @@ export function Sidebar({
               "uppercase",
               isActive
                 ? "bg-cta-muted text-cta"
-                : "text-stone-700 hover:text-stone-900 hover:bg-surface-raised",
+                : "text-fg hover:text-fg-strong hover:bg-surface-raised",
             ]
               .filter(Boolean)
               .join(" ")}

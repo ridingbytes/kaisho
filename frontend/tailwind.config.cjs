@@ -25,6 +25,29 @@ module.exports = {
           hover: "var(--cta-hover)",
           muted: "var(--cta-muted)",
         },
+        // Semantic foreground (text) tokens. Pick by intent,
+        // not by stone shade. To re-theme the app, edit the
+        // matching CSS vars in index.css — every utility
+        // below re-resolves at runtime.
+        //   text-fg          → body default
+        //   text-fg-strong   → titles / emphasis
+        //   text-fg-muted    → secondary / captions
+        //   text-fg-subtle   → placeholders / metadata
+        //   text-fg-disabled → ghosted / read-only
+        fg: {
+          DEFAULT: "var(--text-secondary)",
+          strong: "var(--text-primary)",
+          muted: "var(--text-tertiary)",
+          subtle: "var(--text-muted)",
+          disabled: "var(--text-disabled)",
+        },
+        // Status (theme-aware): use these instead of raw
+        // green-500 / red-500 so dark mode can re-balance
+        // luminance without per-occurrence dark: variants.
+        success: { DEFAULT: "var(--status-success)" },
+        warning: { DEFAULT: "var(--status-warning)" },
+        danger:  { DEFAULT: "var(--status-danger)" },
+        info:    { DEFAULT: "var(--status-info)" },
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

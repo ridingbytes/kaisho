@@ -101,12 +101,12 @@ function StatCard({
       <div>
         <p
           className={
-            "text-2xl font-bold text-stone-900 tabular-nums"
+            "text-2xl font-bold text-fg-strong tabular-nums"
           }
         >
           {value}
         </p>
-        <p className="text-xs text-stone-600 mt-0.5">
+        <p className="text-xs text-fg-muted mt-0.5">
           {label}
         </p>
       </div>
@@ -172,7 +172,7 @@ function ClockEntryRow({
       >
         <span
           className={
-            "text-xs text-stone-500 tabular-nums shrink-0 " +
+            "text-xs text-fg-muted tabular-nums shrink-0 " +
             "w-10"
           }
         >
@@ -218,8 +218,8 @@ function ClockEntryRow({
         <button
           onClick={() => setEditing(false)}
           className={
-            "p-0.5 rounded text-stone-600 " +
-            "hover:text-stone-900 transition-colors"
+            "p-0.5 rounded text-fg-muted " +
+            "hover:text-fg-strong transition-colors"
           }
           title={tc("cancel")}
         >
@@ -238,7 +238,7 @@ function ClockEntryRow({
     >
       <span
         className={
-          "text-xs text-stone-500 tabular-nums shrink-0 " +
+          "text-xs text-fg-muted tabular-nums shrink-0 " +
           "w-16 cursor-pointer hover:text-cta"
         }
         onClick={() =>
@@ -249,13 +249,13 @@ function ClockEntryRow({
       </span>
       <span
         className={
-          "text-xs text-stone-700 overflow-hidden " +
+          "text-xs text-fg overflow-hidden " +
           "min-w-0 flex-1 flex items-center gap-1"
         }
       >
         <span className="truncate min-w-0">
           {entry.description || (
-            <em className="text-stone-500">{tc("noDescription")}</em>
+            <em className="text-fg-muted">{tc("noDescription")}</em>
           )}
         </span>
         {entry.notes && (
@@ -281,7 +281,7 @@ function ClockEntryRow({
       )}
       <span
         className={
-          "text-xs text-stone-600 tabular-nums shrink-0"
+          "text-xs text-fg-muted tabular-nums shrink-0"
         }
       >
         {formatHours(minutes)}
@@ -295,8 +295,8 @@ function ClockEntryRow({
         <button
           onClick={() => setEditing(true)}
           className={
-            "p-0.5 rounded text-stone-500 " +
-            "hover:text-stone-900 transition-colors"
+            "p-0.5 rounded text-fg-muted " +
+            "hover:text-fg-strong transition-colors"
           }
           title={tc("edit")}
         >
@@ -309,7 +309,7 @@ function ClockEntryRow({
           <button
             disabled={deleteEntry.isPending}
             className={
-              "p-0.5 rounded text-stone-500 " +
+              "p-0.5 rounded text-fg-muted " +
               "hover:text-red-400 transition-colors"
             }
             title={tc("delete")}
@@ -336,7 +336,7 @@ function CustomerClockEntries({
 
   if (isLoading) {
     return (
-      <p className="text-xs text-stone-500 py-2 pl-1">
+      <p className="text-xs text-fg-muted py-2 pl-1">
         {tCommon("loading")}
       </p>
     );
@@ -350,7 +350,7 @@ function CustomerClockEntries({
 
   if (completed.length === 0) {
     return (
-      <p className="text-xs text-stone-500 py-2 pl-1">
+      <p className="text-xs text-fg-muted py-2 pl-1">
         {tClocks("noClockEntries")}
       </p>
     );
@@ -422,8 +422,8 @@ function BudgetRow({
           <button
             onClick={onToggle}
             className={
-              "p-0.5 rounded text-stone-600 " +
-              "hover:text-stone-900 transition-colors"
+              "p-0.5 rounded text-fg-muted " +
+              "hover:text-fg-strong transition-colors"
             }
             aria-label={
               expanded ? tc("collapse") : tc("expand")
@@ -434,7 +434,7 @@ function BudgetRow({
           <button
             onClick={onNameClick}
             className={
-              "text-sm font-medium text-stone-800 " +
+              "text-sm font-medium text-fg-strong " +
               "hover:text-cta transition-colors " +
               "text-left inline-flex items-center " +
               "gap-1.5"
@@ -459,7 +459,7 @@ function BudgetRow({
           )}
           <span
             className={
-              "text-xs text-stone-600 tabular-nums"
+              "text-xs text-fg-muted tabular-nums"
             }
           >
             {displayUsed.toFixed(1)}h / {displayBudget.toFixed(0)}h
@@ -482,7 +482,7 @@ function BudgetRow({
             return (
               <div key={c.name}>
                 <div className="flex items-baseline justify-between mb-0.5">
-                  <span className="text-[9px] text-stone-500 truncate">
+                  <span className="text-[9px] text-fg-muted truncate">
                     {c.name}
                   </span>
                   <span
@@ -575,7 +575,7 @@ export function DashboardView() {
           "flex items-center justify-center h-full"
         }
       >
-        <p className="text-sm text-stone-500">
+        <p className="text-sm text-fg-muted">
           {tc("loading")}
         </p>
       </div>
@@ -614,7 +614,7 @@ export function DashboardView() {
             <div className="min-w-0 flex-1">
               <p
                 className={
-                  "text-sm font-semibold text-stone-900"
+                  "text-sm font-semibold text-fg-strong"
                 }
               >
                 {timer.customer || timer.description || tc("active")}
@@ -622,7 +622,7 @@ export function DashboardView() {
               {timer.description && (
                 <p
                   className={
-                    "text-xs text-stone-700 truncate"
+                    "text-xs text-fg truncate"
                   }
                 >
                   {timer.description}
@@ -632,7 +632,7 @@ export function DashboardView() {
             <span
               className={
                 "text-lg font-mono font-semibold " +
-                "text-stone-900 tabular-nums shrink-0"
+                "text-fg-strong tabular-nums shrink-0"
               }
             >
               {elapsed(timer.start)}
@@ -721,7 +721,7 @@ export function DashboardView() {
             <h2
               className={
                 "text-xs font-semibold tracking-wider " +
-                "uppercase text-stone-600 mb-4"
+                "uppercase text-fg-muted mb-4"
               }
             >
               {t("budgetStatus")}

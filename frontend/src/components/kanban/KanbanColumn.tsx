@@ -111,7 +111,7 @@ export function KanbanColumn({
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-stone-400 hover:text-stone-600 shrink-0 touch-none"
+          className="cursor-grab active:cursor-grabbing text-fg-subtle hover:text-fg-muted shrink-0 touch-none"
           title={t("dragToReorder")}
         >
           <GripVertical size={12} />
@@ -120,13 +120,13 @@ export function KanbanColumn({
           className="w-2 h-2 rounded-full shrink-0"
           style={{ backgroundColor: state.color }}
         />
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-700">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg">
           {state.label || state.name}
         </h2>
         <span
           className={[
             "ml-auto px-1.5 py-0.5 rounded text-[10px] font-semibold",
-            "bg-surface-raised text-stone-600 border border-border-subtle",
+            "bg-surface-raised text-fg-muted border border-border-subtle",
           ].join(" ")}
         >
           {tasks.length}
@@ -137,7 +137,7 @@ export function KanbanColumn({
             "p-1 rounded-md transition-colors",
             adding
               ? "text-cta bg-cta-muted"
-              : "text-stone-500 hover:text-cta hover:bg-cta-muted",
+              : "text-fg-muted hover:text-cta hover:bg-cta-muted",
           ].join(" ")}
           title={t("addTask")}
         >
@@ -172,7 +172,7 @@ export function KanbanColumn({
 
         {tasks.length === 0 && !adding && (
           <div className="flex items-center justify-center h-16">
-            <span className="text-xs text-stone-400">{t("empty")}</span>
+            <span className="text-xs text-fg-subtle">{t("empty")}</span>
           </div>
         )}
 
@@ -207,7 +207,7 @@ export function KanbanColumn({
             <div className="flex gap-1 justify-end">
               <button
                 onClick={() => setAdding(false)}
-                className="p-1 text-stone-500 hover:text-stone-900 rounded"
+                className="p-1 text-fg-muted hover:text-fg-strong rounded"
               >
                 <X size={13} />
               </button>
@@ -232,6 +232,6 @@ export function KanbanColumn({
 const inputCls = [
   "w-full px-2 py-1 rounded-md text-xs",
   "bg-surface-raised border border-border",
-  "text-stone-900 placeholder-stone-500",
+  "text-fg-strong placeholder-fg-muted",
   "focus:outline-none focus:border-cta",
 ].join(" ");

@@ -60,7 +60,7 @@ function DragHandle({
     <button
       {...attributes}
       {...(listeners ?? {})}
-      className="cursor-grab text-stone-300 hover:text-stone-500 shrink-0 touch-none"
+      className="cursor-grab text-fg-disabled hover:text-fg-muted shrink-0 touch-none"
       onClick={(e) => e.stopPropagation()}
       title="Drag to reorder"
     >
@@ -74,10 +74,10 @@ function DragHandle({
 // pattern, which left icons stuck visible when popovers
 // or color pickers stole focus.
 const actionBtnCls =
-  "p-1 rounded text-stone-400 hover:text-cta " +
+  "p-1 rounded text-fg-subtle hover:text-cta " +
   "hover:bg-cta-muted transition-colors disabled:opacity-40";
 const dangerBtnCls =
-  "p-1 rounded text-stone-400 hover:text-red-500 " +
+  "p-1 rounded text-fg-subtle hover:text-red-500 " +
   "hover:bg-red-500/10 transition-colors disabled:opacity-40";
 
 // -----------------------------------------------------------------
@@ -125,7 +125,7 @@ function TagRow({ tag }: { tag: ConfigTag }) {
           onChange={(e) => setColor(e.target.value)}
           className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent shrink-0"
         />
-        <span className="text-xs text-stone-700 w-24 shrink-0">
+        <span className="text-xs text-fg w-24 shrink-0">
           {tag.name}
         </span>
         <input
@@ -142,7 +142,7 @@ function TagRow({ tag }: { tag: ConfigTag }) {
         />
         <button
           onClick={() => setEditing(false)}
-          className="p-1 text-stone-500 hover:text-stone-900 rounded"
+          className="p-1 text-fg-muted hover:text-fg-strong rounded"
         >
           <X size={12} />
         </button>
@@ -171,10 +171,10 @@ function TagRow({ tag }: { tag: ConfigTag }) {
         className="w-3 h-3 rounded-full shrink-0"
         style={{ backgroundColor: tag.color }}
       />
-      <span className="text-sm text-stone-900 w-32 shrink-0">
+      <span className="text-sm text-fg-strong w-32 shrink-0">
         {tag.name}
       </span>
-      <span className="text-xs text-stone-600 flex-1">
+      <span className="text-xs text-fg-muted flex-1">
         {tag.description}
       </span>
       <div className="flex items-center gap-0.5">
@@ -263,7 +263,7 @@ function AddTagForm({
       <button
         type="button"
         onClick={onDone}
-        className="p-1 text-stone-500 hover:text-stone-900 rounded"
+        className="p-1 text-fg-muted hover:text-fg-strong rounded"
       >
         <X size={12} />
       </button>
@@ -347,7 +347,7 @@ function TaskStateRow({
         className="w-5 h-5 rounded-full border-0 p-0 cursor-pointer bg-transparent shrink-0"
         title="Color"
       />
-      <span className="text-xs font-mono text-stone-600 w-28 shrink-0">
+      <span className="text-xs font-mono text-fg-muted w-28 shrink-0">
         {state.name}
       </span>
       <input
@@ -361,7 +361,7 @@ function TaskStateRow({
         }}
       />
       {state.done && (
-        <span className="text-[10px] font-semibold uppercase text-stone-500 bg-surface-raised px-1.5 py-0.5 rounded shrink-0">
+        <span className="text-[10px] font-semibold uppercase text-fg-muted bg-surface-raised px-1.5 py-0.5 rounded shrink-0">
           done
         </span>
       )}
@@ -447,7 +447,7 @@ function AddTaskStateForm({
         placeholder="Label"
         className={inputCls + " flex-1 text-sm"}
       />
-      <label className="flex items-center gap-1 text-[11px] text-stone-600 shrink-0">
+      <label className="flex items-center gap-1 text-[11px] text-fg-muted shrink-0">
         <input
           type="checkbox"
           checked={done}
@@ -458,7 +458,7 @@ function AddTaskStateForm({
       <button
         type="button"
         onClick={onDone}
-        className="p-1 text-stone-500 hover:text-stone-900 rounded"
+        className="p-1 text-fg-muted hover:text-fg-strong rounded"
       >
         <X size={13} />
       </button>
@@ -544,12 +544,12 @@ function TaskStatesSection({
   return (
     <section>
       <div className="flex items-center gap-3 mb-3">
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted">
           {t("taskStates")}
         </h2>
         <button
           onClick={() => setAdding((v) => !v)}
-          className="ml-auto p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
+          className="ml-auto p-1 rounded text-fg-muted hover:text-cta hover:bg-cta-muted transition-colors"
           title="Add task state"
         >
           <Plus size={12} />
@@ -594,12 +594,12 @@ function TagsSection({ tags }: { tags: ConfigTag[] }) {
   return (
     <section>
       <div className="flex items-center gap-3 mb-3">
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted">
           {t("tags")}
         </h2>
         <button
           onClick={() => setAdding((v) => !v)}
-          className="ml-auto p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
+          className="ml-auto p-1 rounded text-fg-muted hover:text-cta hover:bg-cta-muted transition-colors"
           title={t("addTag")}
         >
           <Plus size={12} />
@@ -607,7 +607,7 @@ function TagsSection({ tags }: { tags: ConfigTag[] }) {
       </div>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         {tags.length === 0 && !adding && (
-          <p className="px-4 py-3 text-xs text-stone-500">
+          <p className="px-4 py-3 text-xs text-fg-muted">
             {t("noTagsDefined")}
           </p>
         )}
@@ -710,7 +710,7 @@ function StringListRow({
         />
       ) : (
         <span
-          className="text-xs font-mono text-stone-900 flex-1 cursor-text"
+          className="text-xs font-mono text-fg-strong flex-1 cursor-text"
           onClick={() => setEditing(true)}
         >
           {value}
@@ -785,12 +785,12 @@ function StringListSection({
   return (
     <section>
       <div className="flex items-center gap-3 mb-3">
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted">
           {title}
         </h2>
         <button
           onClick={() => setAdding((v) => !v)}
-          className="ml-auto p-1 rounded text-stone-500 hover:text-cta hover:bg-cta-muted transition-colors"
+          className="ml-auto p-1 rounded text-fg-muted hover:text-cta hover:bg-cta-muted transition-colors"
           title={`Add ${title.toLowerCase()}`}
         >
           <Plus size={12} />
@@ -798,7 +798,7 @@ function StringListSection({
       </div>
       <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
         {items.length === 0 && !adding && (
-          <p className="px-4 py-3 text-xs text-stone-500">
+          <p className="px-4 py-3 text-xs text-fg-muted">
             {t("noEntriesDefined")}
           </p>
         )}
@@ -836,7 +836,7 @@ function StringListSection({
             <button
               type="button"
               onClick={() => setAdding(false)}
-              className="p-1 text-stone-500 hover:text-stone-900 rounded"
+              className="p-1 text-fg-muted hover:text-fg-strong rounded"
             >
               <X size={12} />
             </button>
@@ -878,7 +878,7 @@ export function TagsAndTypesTab(): JSX.Element {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-stone-500">
+      <p className="text-sm text-fg-muted">
         Loading...
       </p>
     );

@@ -55,12 +55,12 @@ import type { NoteItem } from "../../types";
 
 const fieldCls =
   "px-3 py-1.5 rounded-lg bg-surface-raised border border-border " +
-  "text-sm text-stone-900 placeholder-stone-500 " +
+  "text-sm text-fg-strong placeholder-fg-muted " +
   "focus:outline-none focus:border-border-strong";
 
 const smallFieldCls =
   "px-2 py-1 rounded-md bg-surface-overlay border border-border " +
-  "text-xs text-stone-900 placeholder-stone-500 " +
+  "text-xs text-fg-strong placeholder-fg-muted " +
   "focus:outline-none focus:border-border-strong";
 
 type MoveDest = "task" | "kb" | "archive";
@@ -248,14 +248,14 @@ function NoteRow({
         <button
           {...attributes}
           {...listeners}
-          className="cursor-grab text-stone-300 hover:text-stone-500 shrink-0 touch-none"
+          className="cursor-grab text-fg-disabled hover:text-fg-muted shrink-0 touch-none"
           onClick={(e) => e.stopPropagation()}
         >
           <GripVertical size={12} />
         </button>
         <RelDate
           date={note.created}
-          className="text-xs text-stone-600 w-20 shrink-0"
+          className="text-xs text-fg-muted w-20 shrink-0"
         />
         {note.customer && (
           <span
@@ -299,12 +299,12 @@ function NoteRow({
               {task.title}
             </span>
           ) : (
-            <span className="text-[10px] text-stone-500 italic shrink-0">
+            <span className="text-[10px] text-fg-muted italic shrink-0">
               {t("deleted")}
             </span>
           );
         })()}
-        <span className="text-sm text-stone-900 flex-1 truncate">
+        <span className="text-sm text-fg-strong flex-1 truncate">
           {note.title}
         </span>
         {note.body && (
@@ -335,7 +335,7 @@ function NoteRow({
         })}
         <button
           onClick={startEdit}
-          className="text-stone-400 hover:text-cta transition-colors shrink-0"
+          className="text-fg-subtle hover:text-cta transition-colors shrink-0"
           title="Edit"
         >
           <Pencil size={12} />
@@ -348,7 +348,7 @@ function NoteRow({
               "transition-colors",
               moving
                 ? "text-cta"
-                : "text-stone-400 hover:text-cta",
+                : "text-fg-subtle hover:text-cta",
             ].join(" ")}
           >
             <ArrowRightLeft size={13} strokeWidth={2} />
@@ -363,7 +363,7 @@ function NoteRow({
                   key={d}
                   onClick={() => selectDest(d)}
                   disabled={move.isPending}
-                  className="w-full text-left px-2 py-1 rounded text-xs text-stone-800 hover:bg-surface-raised transition-colors capitalize disabled:opacity-40"
+                  className="w-full text-left px-2 py-1 rounded text-xs text-fg-strong hover:bg-surface-raised transition-colors capitalize disabled:opacity-40"
                 >
                   {d === "kb" ? "Knowledge" : d}
                 </button>
@@ -373,7 +373,7 @@ function NoteRow({
                   e.stopPropagation();
                   setMoving(false);
                 }}
-                className="w-full text-left px-2 py-1 rounded text-[10px] text-stone-500 hover:text-stone-900"
+                className="w-full text-left px-2 py-1 rounded text-[10px] text-fg-muted hover:text-fg-strong"
               >
                 Cancel
               </button>
@@ -382,7 +382,7 @@ function NoteRow({
         </div>
         <ConfirmPopover onConfirm={onDelete}>
           <button
-            className="text-stone-500 hover:text-red-400 transition-colors shrink-0"
+            className="text-fg-muted hover:text-red-400 transition-colors shrink-0"
             title="Delete"
           >
             <Trash2 size={13} />
@@ -449,7 +449,7 @@ function NoteRow({
                 className={`${smallFieldCls} w-full resize-y`}
               />
               <div className="flex items-center gap-2">
-                <span className="text-[9px] text-stone-400">
+                <span className="text-[9px] text-fg-subtle">
                   ⌘↵ save
                 </span>
                 <TagDropdown
@@ -460,7 +460,7 @@ function NoteRow({
                 <div className="ml-auto flex gap-2">
                   <button
                     onClick={cancelEdit}
-                    className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
+                    className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-fg-muted hover:text-fg-strong"
                   >
                     <X size={11} /> {tc("cancel")}
                   </button>
@@ -479,7 +479,7 @@ function NoteRow({
             </div>
           ) : (
             note.body && (
-              <Markdown className="text-sm text-stone-800">
+              <Markdown className="text-sm text-fg-strong">
                 {note.body}
               </Markdown>
             )
@@ -513,7 +513,7 @@ function NoteRow({
                 </button>
                 <button
                   onClick={() => { setMoveDest(null); setMoving(false); }}
-                  className="px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
+                  className="px-2 py-1 rounded-md text-xs text-fg-muted hover:text-fg-strong"
                 >
                   <X size={11} />
                 </button>
@@ -548,7 +548,7 @@ function NoteRow({
           onClick={(e) => e.stopPropagation()}
           onMouseLeave={() => setCtxMenu(null)}
         >
-          <p className="text-[9px] text-stone-500 px-2 uppercase tracking-wider">
+          <p className="text-[9px] text-fg-muted px-2 uppercase tracking-wider">
             Tags
           </p>
           {allTags.map((t) => {
@@ -562,7 +562,7 @@ function NoteRow({
                   "flex items-center gap-2 transition-colors",
                   active
                     ? "text-white"
-                    : "text-stone-700 hover:bg-surface-raised",
+                    : "text-fg hover:bg-surface-raised",
                 ].join(" ")}
               >
                 <span
@@ -671,7 +671,7 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
         className={`${fieldCls} resize-none`}
       />
       <div className="flex items-center gap-2">
-        <span className="text-[9px] text-stone-400">
+        <span className="text-[9px] text-fg-subtle">
           ⌘↵ save
         </span>
         <TagDropdown
@@ -683,7 +683,7 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 rounded-lg text-sm text-stone-700 hover:text-stone-900 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-sm text-fg hover:text-fg-strong transition-colors"
           >
             {tc("cancel")}
           </button>
@@ -830,12 +830,12 @@ export function NotesView() {
 
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
-          <p className="text-sm text-stone-500 text-center py-8">
+          <p className="text-sm text-fg-muted text-center py-8">
             {tc("loading")}
           </p>
         )}
         {!isLoading && filtered.length === 0 && (
-          <p className="text-sm text-stone-500 text-center py-8">
+          <p className="text-sm text-fg-muted text-center py-8">
             {notes.length === 0
               ? t("noNotesYet")
               : t("noMatchingNotes")}

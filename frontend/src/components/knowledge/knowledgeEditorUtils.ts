@@ -17,7 +17,7 @@ import {
 
 export const inputCls =
   "bg-surface-raised border border-border rounded " +
-  "px-2 py-1 text-sm text-stone-900 placeholder-stone-500 " +
+  "px-2 py-1 text-sm text-fg-strong placeholder-fg-muted " +
   "focus:outline-none focus:border-cta";
 
 // -----------------------------------------------------------------
@@ -169,7 +169,7 @@ export const FILE_TYPE_COLORS: Record<FileType, string> = {
   md: "bg-blue-900/40 text-blue-300",
   org: "bg-emerald-900/40 text-emerald-300",
   rst: "bg-amber-900/40 text-amber-300",
-  txt: "bg-stone-700/40 text-stone-700",
+  txt: "bg-stone-700/40 text-stone-300",
   pdf: "bg-red-900/40 text-red-300",
   code: "bg-violet-900/40 text-violet-300",
 };

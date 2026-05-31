@@ -223,7 +223,7 @@ export function KnowledgeSidebar({
             }
             disabled={reindex.isPending}
             className={
-              "p-0.5 rounded text-stone-500 " +
+              "p-0.5 rounded text-fg-muted " +
               "hover:text-cta transition-colors " +
               "disabled:opacity-40"
             }
@@ -240,8 +240,8 @@ export function KnowledgeSidebar({
           <button
             onClick={() => onSetSidebarOpen(false)}
             className={
-              "p-0.5 rounded text-stone-500 " +
-              "hover:text-stone-900 transition-colors"
+              "p-0.5 rounded text-fg-muted " +
+              "hover:text-fg-strong transition-colors"
             }
             title={tc("collapse")}
             aria-label={tc("collapse")}
@@ -264,7 +264,7 @@ export function KnowledgeSidebar({
           ) : treeLoading ? (
             <p
               className={
-                "text-xs text-stone-500 px-4 py-2"
+                "text-xs text-fg-muted px-4 py-2"
               }
             >
               {tc("loading")}
@@ -272,7 +272,7 @@ export function KnowledgeSidebar({
           ) : showRecentOnly ? (
             /* Flat list of recently-modified files */
             (recentFiles ?? []).length === 0 ? (
-              <p className="text-xs text-stone-400 px-4 py-3">
+              <p className="text-xs text-fg-subtle px-4 py-3">
                 No matching files
               </p>
             ) : (
@@ -289,7 +289,7 @@ export function KnowledgeSidebar({
                       "transition-colors",
                       isSel
                         ? "text-cta bg-cta-muted"
-                        : "text-stone-800",
+                        : "text-fg-strong",
                     ].join(" ")}
                   >
                     <button
@@ -304,7 +304,7 @@ export function KnowledgeSidebar({
                         "transition-colors",
                         isStarred
                           ? "text-amber-400 hover:text-amber-500"
-                          : "text-stone-400 hover:text-amber-400",
+                          : "text-fg-subtle hover:text-amber-400",
                       ].join(" ")}
                     >
                       <Star
@@ -328,7 +328,7 @@ export function KnowledgeSidebar({
                         date={new Date(
                           f.mtime * 1000,
                         ).toISOString()}
-                        className="shrink-0 text-[10px] text-stone-400 tabular-nums"
+                        className="shrink-0 text-[10px] text-fg-subtle tabular-nums"
                       />
                     )}
                   </div>
@@ -338,7 +338,7 @@ export function KnowledgeSidebar({
           ) : showStarredOnly ? (
             /* Flat list of starred files */
             [...starred].length === 0 ? (
-              <p className="text-xs text-stone-400 px-4 py-3">
+              <p className="text-xs text-fg-subtle px-4 py-3">
                 No starred files
               </p>
             ) : (
@@ -357,7 +357,7 @@ export function KnowledgeSidebar({
                       "transition-colors",
                       isSel
                         ? "text-cta bg-cta-muted"
-                        : "text-stone-800",
+                        : "text-fg-strong",
                     ].join(" ")}
                   >
                     <button
@@ -428,8 +428,8 @@ export function KnowledgeSidebar({
               "absolute top-2 left-0 w-4 h-6 " +
               "flex items-center justify-center " +
               "rounded-r bg-surface-raised " +
-              "text-stone-600 " +
-              "hover:text-stone-900 " +
+              "text-fg-muted " +
+              "hover:text-fg-strong " +
               "transition-colors"
             }
             title={tc("expand")}
@@ -514,17 +514,17 @@ function LabelSection({
           {collapsed ? (
             <ChevronRight
               size={10}
-              className="shrink-0 text-stone-600"
+              className="shrink-0 text-fg-muted"
             />
           ) : (
             <ChevronDown
               size={10}
-              className="shrink-0 text-stone-600"
+              className="shrink-0 text-fg-muted"
             />
           )}
           <span
             className={
-              "text-[10px] text-stone-600 "
+              "text-[10px] text-fg-muted "
               + "uppercase tracking-wider"
             }
           >
@@ -539,7 +539,7 @@ function LabelSection({
           }}
           className={
             "hidden group-hover/label:block "
-            + "p-0.5 mr-2 rounded text-stone-400 "
+            + "p-0.5 mr-2 rounded text-fg-subtle "
             + "hover:text-cta hover:bg-cta-muted "
             + "transition-colors shrink-0"
           }
@@ -568,7 +568,7 @@ function LabelSection({
             className={
               "flex-1 min-w-0 px-1 py-0.5 text-xs "
               + "rounded bg-surface-raised border "
-              + "border-border text-stone-900 "
+              + "border-border text-fg-strong "
               + "focus:outline-none focus:border-cta"
             }
           />
@@ -586,8 +586,8 @@ function LabelSection({
           <button
             onClick={() => setAdding(false)}
             className={
-              "p-0.5 text-stone-500 "
-              + "hover:text-stone-900 rounded"
+              "p-0.5 text-fg-muted "
+              + "hover:text-fg-strong rounded"
             }
           >
             <X size={10} />
@@ -653,14 +653,14 @@ function SearchResultsList({
 
   if (loading) {
     return (
-      <p className="text-xs text-stone-500 px-4 py-2">
+      <p className="text-xs text-fg-muted px-4 py-2">
         {tc("loading")}
       </p>
     );
   }
   if (results.length === 0) {
     return (
-      <p className="text-xs text-stone-500 px-4 py-2">
+      <p className="text-xs text-fg-muted px-4 py-2">
         {t("noResults")}
       </p>
     );
@@ -690,8 +690,8 @@ function SearchResultsList({
                 }}
                 className={
                   "shrink-0 p-0.5 rounded " +
-                  "text-stone-500 " +
-                  "hover:text-stone-900 " +
+                  "text-fg-muted " +
+                  "hover:text-fg-strong " +
                   "transition-colors mt-0.5"
                 }
                 title={
@@ -710,10 +710,10 @@ function SearchResultsList({
                 }
                 className="flex-1 min-w-0 text-left"
               >
-                <p className="text-xs text-stone-800 truncate">
+                <p className="text-xs text-fg-strong truncate">
                   {g.label}/{g.path.split("/").pop()}
                 </p>
-                <p className="text-[10px] text-stone-500 mt-0.5">
+                <p className="text-[10px] text-fg-muted mt-0.5">
                   {t("matches", { count: g.count })}
                 </p>
               </button>
@@ -734,10 +734,10 @@ function SearchResultsList({
                       "transition-colors"
                     }
                   >
-                    <p className="text-[10px] text-stone-500">
+                    <p className="text-[10px] text-fg-muted">
                       {t("line", { n: r.line_number })}
                     </p>
-                    <p className="text-xs text-stone-700 truncate mt-0.5">
+                    <p className="text-xs text-fg truncate mt-0.5">
                       {r.snippet}
                     </p>
                   </button>

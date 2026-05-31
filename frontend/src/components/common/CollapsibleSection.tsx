@@ -35,7 +35,7 @@ export function CollapsibleSection({
         className={[
           "flex items-center gap-1 text-[10px]",
           "font-semibold uppercase tracking-wider",
-          "text-stone-500 hover:text-stone-700",
+          "text-fg-muted hover:text-fg",
           "transition-colors",
         ].join(" ")}
       >

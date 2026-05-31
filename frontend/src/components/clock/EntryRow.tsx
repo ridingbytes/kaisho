@@ -112,7 +112,7 @@ export function EntryRow({
             )
           }
           className={
-            "text-stone-600 hover:text-cta " +
+            "text-fg-muted hover:text-cta " +
             "transition-colors"
           }
         >
@@ -121,7 +121,7 @@ export function EntryRow({
       </td>
       <td
         className={
-          "px-3 py-1.5 text-xs text-stone-600 " +
+          "px-3 py-1.5 text-xs text-fg-muted " +
           "whitespace-nowrap overflow-hidden"
         }
       >
@@ -160,7 +160,7 @@ export function EntryRow({
               "align-middle",
               isInv
                 ? "bg-emerald-500/10 text-emerald-600"
-                : "bg-surface-overlay text-stone-700",
+                : "bg-surface-overlay text-fg",
             ].join(" ")}
             title={entry.contract}
           >
@@ -192,7 +192,7 @@ export function EntryRow({
         )}
       </td>
       <td className={
-        "px-3 py-1.5 text-xs text-stone-700 " +
+        "px-3 py-1.5 text-xs text-fg " +
         "overflow-hidden"
       }>
         <span className={
@@ -217,7 +217,7 @@ export function EntryRow({
         </span>
       </td>
       <td className={
-        "px-3 py-1.5 text-xs text-stone-700 " +
+        "px-3 py-1.5 text-xs text-fg " +
         "tabular-nums whitespace-nowrap text-right " +
         "overflow-hidden"
       }>
@@ -255,8 +255,8 @@ export function EntryRow({
               "p-0.5 rounded transition-colors",
               entry.invoiced
                 ? "text-emerald-500 " +
-                  "hover:text-stone-600"
-                : "text-stone-400 " +
+                  "hover:text-fg-muted"
+                : "text-fg-subtle " +
                   "hover:text-emerald-500",
             ].join(" ")}
             title={
@@ -270,8 +270,8 @@ export function EntryRow({
           <button
             onClick={() => setMode("edit")}
             className={
-              "p-0.5 rounded text-stone-600 " +
-              "hover:text-stone-900"
+              "p-0.5 rounded text-fg-muted " +
+              "hover:text-fg-strong"
             }
             title={tc("edit")}
           >
@@ -281,7 +281,7 @@ export function EntryRow({
             onClick={handleDuplicate}
             disabled={duplicate.isPending}
             className={
-              "p-0.5 rounded text-stone-600 " +
+              "p-0.5 rounded text-fg-muted " +
               "hover:text-cta disabled:opacity-40"
             }
             title={t("duplicateForToday")}
@@ -295,7 +295,7 @@ export function EntryRow({
             <button
               disabled={remove.isPending}
               className={
-                "p-0.5 rounded text-stone-600 " +
+                "p-0.5 rounded text-fg-muted " +
                 "hover:text-red-400 " +
                 "disabled:opacity-40"
               }

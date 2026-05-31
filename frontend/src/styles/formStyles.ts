@@ -11,7 +11,7 @@
 export const inputCls = [
   "w-full px-3 py-1.5 rounded text-sm h-8",
   "bg-surface-raised border border-border",
-  "text-stone-900 placeholder-stone-500",
+  "text-fg-strong placeholder-fg-muted",
   "focus:outline-none focus:border-cta",
   "transition-colors",
 ].join(" ");
@@ -22,7 +22,7 @@ export const inputCls = [
 export const smallInputCls = [
   "w-full px-2 py-1 rounded text-xs h-7",
   "bg-surface-raised border border-border",
-  "text-stone-900 placeholder-stone-500",
+  "text-fg-strong placeholder-fg-muted",
   "focus:outline-none focus:border-cta",
 ].join(" ");
 
@@ -31,7 +31,7 @@ export const actionBtnCls = [
   "inline-flex items-center gap-1",
   "px-2.5 py-1 rounded text-[10px]",
   "font-medium border border-border",
-  "text-stone-600",
+  "text-fg-muted",
   "hover:border-cta hover:text-cta",
   "transition-colors",
 ].join(" ");

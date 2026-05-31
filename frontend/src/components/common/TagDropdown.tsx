@@ -80,7 +80,7 @@ export function TagDropdown({
           "p-1 rounded transition-colors",
           open
             ? "text-cta bg-cta-muted"
-            : "text-stone-500 hover:text-stone-700",
+            : "text-fg-muted hover:text-fg",
         ].join(" ")}
         title="Tags"
       >
@@ -99,8 +99,8 @@ export function TagDropdown({
                   "w-full flex items-center gap-2 px-3 py-1.5 text-left",
                   "text-xs transition-colors",
                   active
-                    ? "text-stone-900 bg-surface-raised"
-                    : "text-stone-600 hover:text-stone-900 hover:bg-surface-raised",
+                    ? "text-fg-strong bg-surface-raised"
+                    : "text-fg-muted hover:text-fg-strong hover:bg-surface-raised",
                 ].join(" ")}
               >
                 <span

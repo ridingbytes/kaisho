@@ -46,7 +46,7 @@ export function MonthGrid({ anchor, events, onSelect }: Props) {
                   "2.5rem repeat(7, minmax(0, 1fr))",
               }}
             >
-              <div className="flex items-start justify-center pt-1.5 text-[10px] text-stone-500 border-r border-border">
+              <div className="flex items-start justify-center pt-1.5 text-[10px] text-fg-muted border-r border-border">
                 {t("weekShort")} {isoWeek(rowDays[0])}
               </div>
               {rowDays.map((d) => {
@@ -89,7 +89,7 @@ function WeekdayHeader() {
       {order.map((idx) => (
         <div
           key={idx}
-          className="py-1.5 text-[10px] text-stone-500 text-center uppercase tracking-wide"
+          className="py-1.5 text-[10px] text-fg-muted text-center uppercase tracking-wide"
         >
           {t(`day.${idx}`)}
         </div>
@@ -124,8 +124,8 @@ function DayCell({
           + (isToday
             ? "text-cta font-semibold"
             : inMonth
-              ? "text-stone-700"
-              : "text-stone-400")
+              ? "text-fg"
+              : "text-fg-subtle")
         }
       >
         {day.getDate()}
@@ -139,7 +139,7 @@ function DayCell({
         <button
           type="button"
           onClick={() => onSelect?.(events[visible.length])}
-          className="text-[10px] text-stone-500 hover:text-stone-700 text-left truncate"
+          className="text-[10px] text-fg-muted hover:text-fg text-left truncate"
         >
           +{overflow} more
         </button>

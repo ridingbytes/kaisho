@@ -54,7 +54,7 @@ export function LinkOverlay({
         >
           <span
             className={[
-              "flex-1 text-xs text-stone-600",
+              "flex-1 text-xs text-fg-muted",
               "font-mono truncate",
             ].join(" ")}
           >
@@ -65,7 +65,7 @@ export function LinkOverlay({
             target="_blank"
             rel="noopener noreferrer"
             className={[
-              "p-1 rounded text-stone-500",
+              "p-1 rounded text-fg-muted",
               "hover:text-cta transition-colors",
             ].join(" ")}
             title="Open in new tab"
@@ -75,8 +75,8 @@ export function LinkOverlay({
           <button
             onClick={onClose}
             className={[
-              "p-1 rounded text-stone-500",
-              "hover:text-stone-900 transition-colors",
+              "p-1 rounded text-fg-muted",
+              "hover:text-fg-strong transition-colors",
             ].join(" ")}
             title="Close (ESC)"
           >
@@ -92,7 +92,7 @@ export function LinkOverlay({
               "justify-center gap-4 p-8",
             ].join(" ")}
           >
-            <p className="text-sm text-stone-600">
+            <p className="text-sm text-fg-muted">
               This site does not allow embedding.
             </p>
             <a

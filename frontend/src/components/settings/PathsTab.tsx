@@ -54,15 +54,15 @@ function ImportDataSection() {
 
   return (
     <div className="mb-6">
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+      <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
         {t("importData")}
       </h2>
-      <p className="text-[11px] text-stone-500 mb-3">
+      <p className="text-[11px] text-fg-muted mb-3">
         {t("importDataHint")}
       </p>
       <div className="flex items-end gap-2">
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-medium text-stone-500">
+          <label className="text-[10px] font-medium text-fg-muted">
             {t("format")}
           </label>
           <select
@@ -70,7 +70,7 @@ function ImportDataSection() {
             onChange={(e) =>
               setFormat(e.target.value)
             }
-            className="px-2 h-[30px] rounded-lg text-xs bg-surface-card border border-border text-stone-800"
+            className="px-2 h-[30px] rounded-lg text-xs bg-surface-card border border-border text-fg-strong"
           >
             <option value="org">
               {t("orgMode")}
@@ -81,7 +81,7 @@ function ImportDataSection() {
           </select>
         </div>
         <div className="flex-1 flex flex-col gap-1">
-          <label className="text-[10px] font-medium text-stone-500">
+          <label className="text-[10px] font-medium text-fg-muted">
             {t("sourceDirectory")}
           </label>
           <input
@@ -89,7 +89,7 @@ function ImportDataSection() {
             value={path}
             onChange={(e) => setPath(e.target.value)}
             placeholder="/path/to/data"
-            className="px-2 h-[30px] rounded-lg text-xs bg-surface-card border border-border text-stone-800 placeholder-stone-400"
+            className="px-2 h-[30px] rounded-lg text-xs bg-surface-card border border-border text-fg-strong placeholder-fg-subtle"
           />
         </div>
         <button
@@ -220,12 +220,12 @@ export function PathsSection(): JSX.Element {
     <section className="space-y-8">
       {/* Backend selector */}
       <div>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("storageBackend")}
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
           <div className="flex items-center gap-3 px-4 py-3">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
+            <span className="text-xs text-fg w-32 shrink-0">
               {t("backend")}
             </span>
             <select
@@ -265,19 +265,19 @@ export function PathsSection(): JSX.Element {
             </button>
           </div>
         </div>
-        <p className="text-[10px] text-stone-400 mb-6">
+        <p className="text-[10px] text-fg-subtle mb-6">
           {t("dataNotMigrated")}
         </p>
       </div>
 
       {/* Data directories */}
       <div>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("dataDirectories")}
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-4">
           <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
+            <span className="text-xs text-fg w-32 shrink-0">
               ORG_DIR
             </span>
             <input
@@ -291,7 +291,7 @@ export function PathsSection(): JSX.Element {
             />
           </label>
           <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
+            <span className="text-xs text-fg w-32 shrink-0">
               MARKDOWN_DIR
             </span>
             <input
@@ -305,13 +305,13 @@ export function PathsSection(): JSX.Element {
             />
           </label>
           <div className="flex items-center gap-3 px-4 py-2.5">
-            <span className="text-xs text-stone-700 w-32 shrink-0">
+            <span className="text-xs text-fg w-32 shrink-0">
               DATA_DIR
             </span>
-            <span className="text-xs font-mono text-stone-600 truncate flex-1">
+            <span className="text-xs font-mono text-fg-muted truncate flex-1">
               {paths?.data_dir ?? "data"}
             </span>
-            <span className="text-[10px] text-stone-400">
+            <span className="text-[10px] text-fg-subtle">
               {t("globalSetViaEnv")}
             </span>
           </div>
@@ -339,7 +339,7 @@ export function PathsSection(): JSX.Element {
 
       {/* KB sources */}
       <div>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("knowledgeBaseSources")}
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden mb-3">
@@ -388,7 +388,7 @@ export function PathsSection(): JSX.Element {
                   disabled={idx === 0}
                   title={t("moveUp")}
                   aria-label={t("moveUp")}
-                  className="p-1 rounded text-stone-500 hover:text-stone-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-1 rounded text-fg-muted hover:text-fg-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <ArrowUp size={14} />
                 </button>
@@ -397,21 +397,21 @@ export function PathsSection(): JSX.Element {
                   disabled={idx === sources.length - 1}
                   title={t("moveDown")}
                   aria-label={t("moveDown")}
-                  className="p-1 rounded text-stone-500 hover:text-stone-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-1 rounded text-fg-muted hover:text-fg-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <ArrowDown size={14} />
                 </button>
               </div>
               <button
                 onClick={() => removeSource(idx)}
-                className="p-1 rounded text-stone-500 hover:text-red-400 transition-colors shrink-0"
+                className="p-1 rounded text-fg-muted hover:text-red-400 transition-colors shrink-0"
               >
                 <X size={14} />
               </button>
             </div>
           ))}
           {sources.length === 0 && (
-            <p className="px-4 py-3 text-xs text-stone-500">
+            <p className="px-4 py-3 text-xs text-fg-muted">
               {t("noKbSources")}
             </p>
           )}
@@ -419,7 +419,7 @@ export function PathsSection(): JSX.Element {
         <div className="flex items-center gap-3">
           <button
             onClick={addSource}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-stone-700 bg-surface-raised border border-border hover:text-cta hover:border-cta/40 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-fg bg-surface-raised border border-border hover:text-cta hover:border-cta/40 transition-colors"
           >
             <Plus size={12} />
             {t("addSource")}
@@ -438,20 +438,20 @@ export function PathsSection(): JSX.Element {
 
       {/* Read-only info */}
       <div>
-        <h2 className="text-xs font-semibold tracking-wider uppercase text-stone-600 mb-3">
+        <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
           {t("info")}
         </h2>
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-2.5">
-            <span className="text-xs text-stone-600 w-32 shrink-0">
+            <span className="text-xs text-fg-muted w-32 shrink-0">
               {t("settingsFile")}
             </span>
-            <span className="text-xs font-mono text-stone-700 truncate flex-1">
+            <span className="text-xs font-mono text-fg truncate flex-1">
               {paths?.settings_file}
             </span>
           </div>
         </div>
-        <p className="mt-2 text-[10px] text-stone-400">
+        <p className="mt-2 text-[10px] text-fg-subtle">
           {t("pathsHint")}
         </p>
       </div>

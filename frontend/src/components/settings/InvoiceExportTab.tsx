@@ -116,7 +116,7 @@ export function InvoiceExportSection(): JSX.Element {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-stone-500">
+      <p className="text-sm text-fg-muted">
         Loading...
       </p>
     );
@@ -124,7 +124,7 @@ export function InvoiceExportSection(): JSX.Element {
 
   return (
     <section>
-      <p className="text-xs text-stone-500 leading-relaxed mb-4">
+      <p className="text-xs text-fg-muted leading-relaxed mb-4">
         {t("exportHint")}
       </p>
 
@@ -132,13 +132,13 @@ export function InvoiceExportSection(): JSX.Element {
         {/* Selected columns */}
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
           <div className="px-4 py-2 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
               {t("selectedColumns")}
             </p>
           </div>
           <div className="p-2">
             {columns.length === 0 && (
-              <p className="text-xs text-stone-400 text-center py-4">
+              <p className="text-xs text-fg-subtle text-center py-4">
                 {t("noColumnsSelected")}
               </p>
             )}
@@ -151,7 +151,7 @@ export function InvoiceExportSection(): JSX.Element {
                   key={col.field}
                   className="flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-surface-raised transition-colors"
                 >
-                  <span className="text-xs text-stone-700 flex-1">
+                  <span className="text-xs text-fg flex-1">
                     {def?.label ?? col.field}
                   </span>
                   {def?.formats && (
@@ -160,7 +160,7 @@ export function InvoiceExportSection(): JSX.Element {
                       onChange={(e) =>
                         setFormat(idx, e.target.value)
                       }
-                      className="px-1 py-0.5 rounded text-[10px] bg-surface-raised border border-border text-stone-700 focus:outline-none focus:border-cta"
+                      className="px-1 py-0.5 rounded text-[10px] bg-surface-raised border border-border text-fg focus:outline-none focus:border-cta"
                     >
                       {def.formats.map((f) => (
                         <option
@@ -175,7 +175,7 @@ export function InvoiceExportSection(): JSX.Element {
                   <button
                     onClick={() => moveUp(idx)}
                     disabled={idx === 0}
-                    className="p-0.5 rounded text-stone-400 hover:text-stone-700 disabled:opacity-20"
+                    className="p-0.5 rounded text-fg-subtle hover:text-fg disabled:opacity-20"
                   >
                     <ArrowUp size={10} />
                   </button>
@@ -184,13 +184,13 @@ export function InvoiceExportSection(): JSX.Element {
                     disabled={
                       idx >= columns.length - 1
                     }
-                    className="p-0.5 rounded text-stone-400 hover:text-stone-700 disabled:opacity-20"
+                    className="p-0.5 rounded text-fg-subtle hover:text-fg disabled:opacity-20"
                   >
                     <ArrowDown size={10} />
                   </button>
                   <button
                     onClick={() => removeField(idx)}
-                    className="p-0.5 rounded text-stone-400 hover:text-red-500"
+                    className="p-0.5 rounded text-fg-subtle hover:text-red-500"
                   >
                     <Trash2 size={10} />
                   </button>
@@ -203,13 +203,13 @@ export function InvoiceExportSection(): JSX.Element {
         {/* Available fields */}
         <div className="bg-surface-card rounded-xl border border-border overflow-hidden">
           <div className="px-4 py-2 border-b border-border-subtle">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
               {t("availableFields")}
             </p>
           </div>
           <div className="p-2">
             {available.length === 0 && (
-              <p className="text-xs text-stone-400 text-center py-4">
+              <p className="text-xs text-fg-subtle text-center py-4">
                 {t("allFieldsSelected")}
               </p>
             )}
@@ -217,9 +217,9 @@ export function InvoiceExportSection(): JSX.Element {
               <button
                 key={f.field}
                 onClick={() => addField(f.field)}
-                className="flex items-center gap-1.5 w-full px-2 py-1.5 rounded text-xs text-stone-600 hover:bg-surface-raised hover:text-stone-900 transition-colors"
+                className="flex items-center gap-1.5 w-full px-2 py-1.5 rounded text-xs text-fg-muted hover:bg-surface-raised hover:text-fg-strong transition-colors"
               >
-                <Plus size={10} className="text-stone-400" />
+                <Plus size={10} className="text-fg-subtle" />
                 {f.label}
               </button>
             ))}
@@ -237,7 +237,7 @@ export function InvoiceExportSection(): JSX.Element {
         </button>
         <button
           onClick={handleReset}
-          className="px-4 py-1.5 rounded text-sm text-stone-600 hover:text-stone-900 border border-border hover:border-stone-400 transition-colors"
+          className="px-4 py-1.5 rounded text-sm text-fg-muted hover:text-fg-strong border border-border hover:border-strong transition-colors"
         >
           {tc("resetToDefault")}
         </button>

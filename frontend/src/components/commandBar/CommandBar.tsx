@@ -631,10 +631,10 @@ export function CommandBar({ open, onClose }: Props) {
                   <span className="text-cta">
                     $
                   </span>
-                  <span className="text-stone-700">
+                  <span className="text-fg">
                     {h.input}
                   </span>
-                  <span className="text-[9px] text-stone-400 ml-auto">
+                  <span className="text-[9px] text-fg-subtle ml-auto">
                     {h.ts}
                   </span>
                 </div>
@@ -644,7 +644,7 @@ export function CommandBar({ open, onClose }: Props) {
                     "leading-relaxed",
                     h.error
                       ? "text-red-400"
-                      : "text-stone-500",
+                      : "text-fg-muted",
                   ].join(" ")}
                 >
                   {h.output}
@@ -652,7 +652,7 @@ export function CommandBar({ open, onClose }: Props) {
               </div>
             ))}
             {loading && (
-              <div className="flex items-center gap-2 pl-4 py-1 text-stone-400">
+              <div className="flex items-center gap-2 pl-4 py-1 text-fg-subtle">
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-cta animate-pulse" />
                 <span className="text-[10px] italic">
                   Thinking...
@@ -677,7 +677,7 @@ export function CommandBar({ open, onClose }: Props) {
                     "text-xs font-mono",
                     i === compIdx
                       ? "bg-cta/10 text-cta"
-                      : "text-stone-600",
+                      : "text-fg-muted",
                     "hover:bg-cta/10",
                   ].join(" ")}
                 >
@@ -701,15 +701,15 @@ export function CommandBar({ open, onClose }: Props) {
               }
               onKeyDown={handleKeyDown}
               placeholder={'Type a command... (try "help")'}
-              className="flex-1 bg-transparent text-sm font-mono text-stone-900 placeholder-stone-400 focus:outline-none"
+              className="flex-1 bg-transparent text-sm font-mono text-fg-strong placeholder-fg-subtle focus:outline-none"
               autoFocus
             />
-            <span className="text-[9px] text-stone-400 whitespace-nowrap shrink-0">
+            <span className="text-[9px] text-fg-subtle whitespace-nowrap shrink-0">
               Tab &#x21e5; &nbsp; ESC &#x2715;
             </span>
             <button
               onClick={onClose}
-              className="p-1 rounded text-stone-400 hover:text-stone-700 transition-colors"
+              className="p-1 rounded text-fg-subtle hover:text-fg transition-colors"
             >
               <X size={14} />
             </button>

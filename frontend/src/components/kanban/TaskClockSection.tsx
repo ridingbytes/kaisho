@@ -52,10 +52,10 @@ export function TaskClockSection({
       className="mt-2 border-t border-border-subtle pt-1.5"
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <div className="flex items-center gap-1 text-[10px] text-stone-600 w-full">
+      <div className="flex items-center gap-1 text-[10px] text-fg-muted w-full">
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1 hover:text-stone-900 flex-1 min-w-0"
+          className="flex items-center gap-1 hover:text-fg-strong flex-1 min-w-0"
         >
           {open ? (
             <ChevronDown size={10} />

@@ -174,7 +174,7 @@ export function TaskCard({
         <div className="flex flex-col items-center shrink-0 relative">
           <div
             {...listeners}
-            className="flex-1 flex items-center pl-3 pr-1 cursor-grab active:cursor-grabbing text-stone-400 hover:text-stone-600"
+            className="flex-1 flex items-center pl-3 pr-1 cursor-grab active:cursor-grabbing text-fg-subtle hover:text-fg-muted"
           >
             <GripVertical
               size={12}

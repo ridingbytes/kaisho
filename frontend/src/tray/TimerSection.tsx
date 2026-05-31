@@ -151,7 +151,7 @@ export function TimerSection({
             the same affordance. */}
         <div className="text-center">
           <div className="flex items-center justify-center gap-2.5">
-            <div className="text-3xl font-light font-mono text-stone-900 tabular-nums tracking-wide">
+            <div className="text-3xl font-light font-mono text-fg-strong tabular-nums tracking-wide">
               {elapsed}
             </div>
             <button
@@ -183,7 +183,7 @@ export function TimerSection({
 
         {/* Customer */}
         {timer.customer && (
-          <p className="text-xs text-stone-500 text-center mt-1.5">
+          <p className="text-xs text-fg-muted text-center mt-1.5">
             {timer.customer}
           </p>
         )}
@@ -203,7 +203,7 @@ export function TimerSection({
             className={[
               "mt-1.5 w-full px-2 py-1 rounded text-xs text-center",
               "bg-surface-raised border border-cta",
-              "text-stone-900 placeholder-stone-400",
+              "text-fg-strong placeholder-fg-subtle",
               "focus:outline-none",
             ].join(" ")}
           />
@@ -212,11 +212,11 @@ export function TimerSection({
             type="button"
             onClick={startEditingDesc}
             title={t("editDescriptionNotes")}
-            className="group mt-1.5 w-full flex items-center justify-center gap-1 text-xs text-stone-500 hover:text-stone-800 transition-colors"
+            className="group mt-1.5 w-full flex items-center justify-center gap-1 text-xs text-fg-muted hover:text-fg-strong transition-colors"
           >
             <span className="truncate max-w-[200px]">
               {timer.description || (
-                <span className="italic text-stone-400">
+                <span className="italic text-fg-subtle">
                   {tc("descriptionOptional")}
                 </span>
               )}
@@ -244,11 +244,11 @@ export function TimerSection({
               className={[
                 "w-full px-2 py-1.5 rounded text-xs resize-none",
                 "bg-surface-raised border border-cta",
-                "text-stone-900 placeholder-stone-400",
+                "text-fg-strong placeholder-fg-subtle",
                 "focus:outline-none",
               ].join(" ")}
             />
-            <p className="text-[10px] text-stone-400 mt-0.5 text-right">
+            <p className="text-[10px] text-fg-subtle mt-0.5 text-right">
               {tc("cmdEnterToSave")}
             </p>
           </div>
@@ -256,7 +256,7 @@ export function TimerSection({
           <button
             type="button"
             onClick={startEditingNotes}
-            className="group mt-2 w-full text-left px-2 py-1.5 rounded text-xs bg-surface-raised border border-border hover:border-stone-300 transition-colors"
+            className="group mt-2 w-full text-left px-2 py-1.5 rounded text-xs bg-surface-raised border border-border hover:border-strong transition-colors"
           >
             {timer.notes ? (
               <Markdown
@@ -269,7 +269,7 @@ export function TimerSection({
                 {timer.notes}
               </Markdown>
             ) : (
-              <span className="flex items-center gap-1 text-stone-400 italic">
+              <span className="flex items-center gap-1 text-fg-subtle italic">
                 <Pencil size={9} className="shrink-0" />
                 {t("notesPlaceholder")}
               </span>
@@ -287,7 +287,7 @@ export function TimerSection({
   return (
     <div className="px-4 py-4">
       <form onSubmit={handleSubmit}>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
           {t("quickStart")}
         </p>
       <div className="flex flex-col gap-2">
@@ -333,7 +333,7 @@ export function TimerSection({
 const inputCls = [
   "w-full px-3 py-1.5 rounded-lg text-xs",
   "bg-surface-raised border border-border",
-  "text-stone-900 placeholder-stone-500",
+  "text-fg-strong placeholder-fg-muted",
   "focus:outline-none focus:border-cta",
   "transition-colors",
 ].join(" ");

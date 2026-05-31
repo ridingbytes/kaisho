@@ -142,7 +142,7 @@ export function KbDestinationPicker({
                 </button>
               ))}
               {isNewFolder && (
-                <div className="block w-full text-left px-2 py-1 text-[11px] text-stone-500 border-t border-border italic">
+                <div className="block w-full text-left px-2 py-1 text-[11px] text-fg-muted border-t border-border italic">
                   Create new folder: {folder.trim()}
                 </div>
               )}
@@ -169,7 +169,7 @@ export function KbDestinationPicker({
         </button>
         <button
           onClick={onCancel}
-          className="px-2 py-1 rounded-md text-xs text-stone-600 hover:text-stone-900"
+          className="px-2 py-1 rounded-md text-xs text-fg-muted hover:text-fg-strong"
         >
           ✕
         </button>

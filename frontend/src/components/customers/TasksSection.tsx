@@ -44,7 +44,7 @@ export function TasksSection({
         {tasks.length === 0 ? (
           <p
             className={
-              "text-[10px] text-stone-500 py-1"
+              "text-[10px] text-fg-muted py-1"
             }
           >
             {t("noTasks")}
@@ -92,14 +92,14 @@ export function TasksSection({
                           ? "bg-amber-500/10"
                             + " text-amber-600"
                           : "bg-surface-overlay"
-                            + " text-stone-600",
+                            + " text-fg-muted",
                   ].join(" ")}
                 >
                   {t.status}
                 </span>
                 <span
                   className={
-                    "truncate text-stone-800"
+                    "truncate text-fg-strong"
                   }
                 >
                   {t.title.replace(
@@ -116,7 +116,7 @@ export function TasksSection({
                 }
                 className={[
                   "w-full text-center py-1.5",
-                  "text-[10px] text-stone-500",
+                  "text-[10px] text-fg-muted",
                   "hover:text-cta transition-colors",
                 ].join(" ")}
               >

@@ -43,6 +43,12 @@
   --body-bg:    #fafafa;
   --body-color: #18181b;
 
+  /* Status — tuned for light surface (legible on white) */
+  --status-success: #16a34a;
+  --status-warning: #ca8a04;
+  --status-danger:  #dc2626;
+  --status-info:    #2563eb;
+
   /* Scrollbar */
   --scrollbar-thumb:       rgba(0, 0, 0, 0.10);
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.22);
@@ -83,6 +89,12 @@
   /* Body */
   --body-bg:    #09090b;
   --body-color: #fafafa;
+
+  /* Status — brighter for dark surface */
+  --status-success: #4ade80;
+  --status-warning: #fbbf24;
+  --status-danger:  #f87171;
+  --status-info:    #60a5fa;
 
   /* Scrollbar */
   --scrollbar-thumb:       rgba(255, 255, 255, 0.12);
@@ -133,71 +145,22 @@
   }
 }
 
-/* Light theme — remap Tailwind stone-* to Zinc values.
-   Tailwind stone bakes in warm brown hex values; we
-   override them with true neutral Zinc equivalents. */
+/* Per-theme element overrides that cannot be expressed
+   as a Tailwind utility (the rule has to know about an
+   ARIA state or a globally-themed CTA inversion). */
 
-.text-stone-900,
-.text-stone-800 { color: #18181b; }
-.text-stone-700  { color: #3f3f46; }
-.text-stone-600  { color: #52525b; }
-.text-stone-500  { color: #71717a; }
-.text-stone-400  { color: #a1a1aa; }
-
-.hover\:text-stone-900:hover,
-.hover\:text-stone-800:hover { color: #18181b; }
-.hover\:text-stone-700:hover  { color: #3f3f46; }
-
-.placeholder-stone-500::placeholder { color: #71717a; }
-
-/* Dark theme — bg-cta is light (#fafafa) so text on CTA
-   buttons must be dark. Non-layered beats Tailwind's
-   text-white from @layer utilities. */
-
+/* CTA buttons in dark mode flip the background to light
+   zinc, so the foreground text needs to be dark even
+   when the component author wrote `text-white`. */
 [data-theme="dark"] .bg-cta { color: #18181b; }
 [data-theme="dark"] .hover\:bg-cta-hover:hover {
   color: #18181b;
 }
 
-/* Toggle switch: use a mid-zinc track so the white knob
-   stays visible and the active state reads as "on". */
+/* Toggle switch: a mid-zinc track keeps the white knob
+   visible in the active state. */
 [data-theme="dark"] [role="switch"][aria-checked="true"] {
   background-color: #71717a;
-}
-
-/* Dark theme — remap stone-* to light Zinc equivalents */
-
-[data-theme="dark"] .text-stone-900,
-[data-theme="dark"] .text-stone-800 { color: #fafafa; }
-[data-theme="dark"] .text-stone-700  { color: #d4d4d8; }
-[data-theme="dark"] .text-stone-600  { color: #a1a1aa; }
-[data-theme="dark"] .text-stone-500  { color: #71717a; }
-[data-theme="dark"] .text-stone-400  { color: #52525b; }
-
-[data-theme="dark"] .hover\:text-stone-900:hover,
-[data-theme="dark"] .hover\:text-stone-800:hover {
-  color: #ffffff;
-}
-[data-theme="dark"] .hover\:text-stone-700:hover {
-  color: #fafafa;
-}
-
-[data-theme="dark"] .placeholder-stone-500::placeholder {
-  color: #52525b;
-}
-
-/* Status colours — brighter for dark bg */
-[data-theme="dark"] .text-green-400  { color: #4ade80; }
-[data-theme="dark"] .text-yellow-400 { color: #fbbf24; }
-[data-theme="dark"] .text-red-400    { color: #f87171; }
-[data-theme="dark"] .bg-green-900\/40 {
-  background-color: rgba(22, 163, 74, 0.15);
-}
-[data-theme="dark"] .bg-yellow-900\/40 {
-  background-color: rgba(217, 119, 6, 0.15);
-}
-[data-theme="dark"] .bg-red-900\/40 {
-  background-color: rgba(220, 38, 38, 0.15);
 }
 
 /* ============================================================

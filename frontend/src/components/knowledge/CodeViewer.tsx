@@ -44,7 +44,7 @@ export function CodeViewer({
       className={
         "bg-surface-overlay rounded-lg p-4 " +
         "overflow-x-auto text-sm font-mono " +
-        "text-stone-800 leading-relaxed"
+        "text-fg-strong leading-relaxed"
       }
     >
       <code

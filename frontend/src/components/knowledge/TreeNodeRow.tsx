@@ -81,7 +81,7 @@ function MovePicker({
       }}
       className={
         "w-12 text-[9px] bg-transparent "
-        + "text-stone-400 hover:text-stone-700 "
+        + "text-fg-subtle hover:text-fg "
         + "cursor-pointer"
       }
       title={t("moveTo")}
@@ -207,7 +207,7 @@ export function TreeNodeRow({
             className={
               "flex-1 min-w-0 px-1 py-0.5 text-xs " +
               "rounded bg-surface-raised border " +
-              "border-border text-stone-900 " +
+              "border-border text-fg-strong " +
               "focus:outline-none focus:border-cta"
             }
           />
@@ -230,8 +230,8 @@ export function TreeNodeRow({
           <button
             onClick={() => setRenaming(false)}
             className={
-              "p-0.5 text-stone-500 " +
-              "hover:text-stone-900 rounded"
+              "p-0.5 text-fg-muted " +
+              "hover:text-fg-strong rounded"
             }
           >
             <X size={10} />
@@ -247,7 +247,7 @@ export function TreeNodeRow({
           "hover:bg-surface-raised transition-colors",
           isSelected
             ? "text-cta bg-cta-muted"
-            : "text-stone-800",
+            : "text-fg-strong",
         ].join(" ")}
         style={{ paddingLeft: indent + 6 }}
       >
@@ -262,7 +262,7 @@ export function TreeNodeRow({
             isStarred
               ? "text-amber-400"
               : "text-transparent " +
-                "group-hover/leaf:text-stone-300 " +
+                "group-hover/leaf:text-fg-disabled " +
                 "hover:!text-amber-400",
           ].join(" ")}
         >
@@ -287,7 +287,7 @@ export function TreeNodeRow({
               "shrink-0 " + (
                 isSelected
                   ? "text-cta"
-                  : "text-stone-400"
+                  : "text-fg-subtle"
               )
             }
           />
@@ -306,7 +306,7 @@ export function TreeNodeRow({
               setRenaming(true);
             }}
             className={
-              "p-0.5 rounded text-stone-400 " +
+              "p-0.5 rounded text-fg-subtle " +
               "hover:text-cta transition-colors"
             }
             title={t("editFile")}
@@ -326,7 +326,7 @@ export function TreeNodeRow({
           >
             <button
               className={
-                "p-0.5 rounded text-stone-400 " +
+                "p-0.5 rounded text-fg-subtle " +
                 "hover:text-red-400 transition-colors"
               }
               title={t("deleteFile")}
@@ -364,7 +364,7 @@ export function TreeNodeRow({
           onClick={() => onToggle(node.path)}
           className={
             "flex-1 text-left py-1 pr-2 text-xs "
-            + "font-semibold text-stone-700 "
+            + "font-semibold text-fg "
             + "flex items-center gap-1"
           }
           style={{ paddingLeft: indent }}
@@ -372,12 +372,12 @@ export function TreeNodeRow({
           {node.expanded ? (
             <ChevronDown
               size={10}
-              className="shrink-0 text-stone-500"
+              className="shrink-0 text-fg-muted"
             />
           ) : (
             <ChevronRight
               size={10}
-              className="shrink-0 text-stone-500"
+              className="shrink-0 text-fg-muted"
             />
           )}
           {node.expanded ? (
@@ -404,7 +404,7 @@ export function TreeNodeRow({
           }}
           className={
             "hidden group-hover/folder:block "
-            + "p-0.5 mr-1 rounded text-stone-400 "
+            + "p-0.5 mr-1 rounded text-fg-subtle "
             + "hover:text-cta hover:bg-cta-muted "
             + "transition-colors shrink-0"
           }
@@ -435,7 +435,7 @@ export function TreeNodeRow({
             className={
               "flex-1 min-w-0 px-1 py-0.5 text-xs "
               + "rounded bg-surface-raised border "
-              + "border-border text-stone-900 "
+              + "border-border text-fg-strong "
               + "focus:outline-none focus:border-cta"
             }
           />
@@ -453,8 +453,8 @@ export function TreeNodeRow({
           <button
             onClick={() => setAddingFolder(false)}
             className={
-              "p-0.5 text-stone-500 "
-              + "hover:text-stone-900 rounded"
+              "p-0.5 text-fg-muted "
+              + "hover:text-fg-strong rounded"
             }
           >
             <X size={10} />

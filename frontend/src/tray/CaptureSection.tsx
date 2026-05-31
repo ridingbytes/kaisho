@@ -58,7 +58,7 @@ export function CaptureSection() {
       onSubmit={handleSubmit}
       className="px-4 py-3"
     >
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
         {t("quickCapture")}
       </p>
 
@@ -74,7 +74,7 @@ export function CaptureSection() {
               "font-medium transition-colors",
               mode === m.key
                 ? "bg-cta text-white"
-                : "text-stone-500 hover:text-stone-700",
+                : "text-fg-muted hover:text-fg",
             ].join(" ")}
           >
             {m.label}
@@ -92,7 +92,7 @@ export function CaptureSection() {
           className={[
             "flex-1 px-2.5 py-1.5 rounded-lg text-xs",
             "bg-surface-raised border border-border",
-            "text-stone-900 placeholder-stone-500",
+            "text-fg-strong placeholder-fg-muted",
             "focus:outline-none focus:border-cta",
             "transition-colors",
           ].join(" ")}

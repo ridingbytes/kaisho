@@ -42,7 +42,7 @@ export function CopyKbFilePathButton(
       aria-label={t("copyPath")}
       className={
         "flex items-center gap-1 px-2.5 py-1 rounded "
-        + "text-stone-700 text-xs hover:text-stone-900 "
+        + "text-fg text-xs hover:text-fg-strong "
         + "hover:bg-surface-raised transition-colors"
       }
     >

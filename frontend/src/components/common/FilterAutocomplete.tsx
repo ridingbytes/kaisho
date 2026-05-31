@@ -109,7 +109,7 @@ export function FilterAutocomplete({
             "px-2 py-1 text-[11px] cursor-pointer",
             i === active
               ? "bg-cta-muted text-cta"
-              : "text-stone-700 hover:bg-surface-raised",
+              : "text-fg hover:bg-surface-raised",
           ].join(" ")}
         >
           {item}

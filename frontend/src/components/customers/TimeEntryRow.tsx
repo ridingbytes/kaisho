@@ -146,8 +146,8 @@ export function TimeEntryRow({
           <button
             onClick={() => setEditing(false)}
             className={
-              "p-0.5 text-stone-500 "
-              + "hover:text-stone-900 rounded"
+              "p-0.5 text-fg-muted "
+              + "hover:text-fg-strong rounded"
             }
           >
             <X size={10} />
@@ -177,7 +177,7 @@ export function TimeEntryRow({
     >
       <span
         className={
-          "text-[10px] text-stone-500 tabular-nums "
+          "text-[10px] text-fg-muted tabular-nums "
           + "shrink-0 cursor-pointer hover:text-cta"
         }
         onClick={() =>
@@ -188,7 +188,7 @@ export function TimeEntryRow({
       </span>
       <span
         className={
-          "text-xs text-stone-800 min-w-0 flex-1 "
+          "text-xs text-fg-strong min-w-0 flex-1 "
           + "flex items-center gap-1 overflow-hidden"
         }
       >
@@ -210,7 +210,7 @@ export function TimeEntryRow({
             "max-w-[6rem] truncate",
             isInv
               ? "bg-emerald-500/10 text-emerald-600"
-              : "bg-surface-overlay text-stone-600",
+              : "bg-surface-overlay text-fg-muted",
           ].join(" ")}
         >
           {entry.contract}
@@ -219,7 +219,7 @@ export function TimeEntryRow({
       )}
       <span
         className={
-          "text-[10px] text-stone-600 "
+          "text-[10px] text-fg-muted "
           + "tabular-nums shrink-0"
         }
       >
@@ -242,7 +242,7 @@ export function TimeEntryRow({
             setEditing(true);
           }}
           className={
-            "p-0.5 rounded text-stone-400 "
+            "p-0.5 rounded text-fg-subtle "
             + "hover:text-cta hover:bg-cta-muted "
             + "transition-colors"
           }
@@ -257,7 +257,7 @@ export function TimeEntryRow({
           <button
             disabled={deleteEntry.isPending}
             className={
-              "p-0.5 rounded text-stone-400 "
+              "p-0.5 rounded text-fg-subtle "
               + "hover:text-red-400 "
               + "hover:bg-red-500/10 "
               + "transition-colors"

@@ -51,7 +51,7 @@ export function PausedTimerView({
   return (
     <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-card text-center">
       <div className="flex items-center justify-center gap-3">
-        <div className="text-3xl font-light font-mono text-stone-700 tabular-nums tracking-wide">
+        <div className="text-3xl font-light font-mono text-fg tabular-nums tracking-wide">
           {formatPausedMinutes(entry.duration_minutes)}
         </div>
         <button
@@ -99,17 +99,17 @@ export function PausedTimerView({
 
       {entry.customer && (
         <div className="flex items-center justify-center gap-1 mt-2">
-          <p className="text-xs text-stone-500 truncate flex items-center gap-1">
+          <p className="text-xs text-fg-muted truncate flex items-center gap-1">
             <span
               className="w-1.5 h-1.5 rounded-full shrink-0"
               style={{ background: dot }}
             />
-            <span className="text-stone-700">
+            <span className="text-fg">
               {entry.customer}
             </span>
             {entry.description && (
               <>
-                <span className="font-bold text-stone-400">
+                <span className="font-bold text-fg-subtle">
                   &middot;
                 </span>
                 <span className="truncate">
@@ -122,7 +122,7 @@ export function PausedTimerView({
       )}
 
       {showResumeHint && (
-        <p className="mt-2 text-[10px] text-stone-500">
+        <p className="mt-2 text-[10px] text-fg-muted">
           {t("startsAtZeroOnResume")}
         </p>
       )}

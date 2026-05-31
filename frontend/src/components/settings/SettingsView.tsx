@@ -60,7 +60,7 @@ function TabBar({ active, onChange }: TabBarProps) {
             "transition-colors",
             active === tab.id
               ? "text-cta border-b-2 border-cta -mb-px"
-              : "text-stone-600 hover:text-stone-900",
+              : "text-fg-muted hover:text-fg-strong",
           ].join(" ")}
         >
           {t(tab.labelKey)}

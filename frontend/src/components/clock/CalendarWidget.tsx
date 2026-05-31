@@ -147,16 +147,16 @@ export function CalendarWidget({
       <div className="flex items-center justify-between">
         <button
           onClick={prevMonth}
-          className="p-1 rounded text-stone-500 hover:text-stone-900 transition-colors"
+          className="p-1 rounded text-fg-muted hover:text-fg-strong transition-colors"
         >
           <ChevronLeft size={12} />
         </button>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-600">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
           {localeMonthName(year, month, i18n.language)}
         </span>
         <button
           onClick={nextMonth}
-          className="p-1 rounded text-stone-500 hover:text-stone-900 transition-colors"
+          className="p-1 rounded text-fg-muted hover:text-fg-strong transition-colors"
         >
           <ChevronRight size={12} />
         </button>
@@ -168,7 +168,7 @@ export function CalendarWidget({
           (label, i) => (
             <div
               key={i}
-              className="text-center text-[9px] font-semibold uppercase text-stone-400 py-0.5"
+              className="text-center text-[9px] font-semibold uppercase text-fg-subtle py-0.5"
             >
               {label}
             </div>
@@ -198,14 +198,14 @@ export function CalendarWidget({
                   ? "bg-surface-overlay text-cta font-semibold rounded"
                   : isToday
                     ? "bg-cta/10 text-cta font-semibold rounded"
-                    : "bg-surface-card text-stone-700 hover:bg-surface-raised",
+                    : "bg-surface-card text-fg hover:bg-surface-raised",
               ].join(" ")}
             >
               <span className={isToday ? "font-bold" : "font-medium"}>
                 {date.getDate()}
               </span>
               {mins > 0 && (
-                <span className="text-[8px] text-stone-500 leading-none mt-0.5">
+                <span className="text-[8px] text-fg-muted leading-none mt-0.5">
                   {formatHours(mins)}
                 </span>
               )}
