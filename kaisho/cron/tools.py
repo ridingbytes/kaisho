@@ -374,9 +374,29 @@ def _list_customers(args: dict) -> dict:
 
 
 def _list_contracts(args: dict) -> dict:
+    """List a customer's contracts with an explicit ``state``
+    field so the advisor model can't confuse historical
+    invoiced contracts with the active budget.
+
+    State values:
+      ``active``    no end_date, not invoiced -> live budget
+      ``invoiced``  already invoiced -> historical, ignore
+                    for 'remaining capacity' reasoning
+      ``ended``     end_date in past, not invoiced -> closed
+    """
+    from datetime import date
     contracts = _backend().customers.list_contracts(
         args["customer"],
     )
+    today = date.today().isoformat()
+    for c in contracts:
+        end = c.get("end_date") or ""
+        if c.get("invoiced"):
+            c["state"] = "invoiced"
+        elif end and end < today:
+            c["state"] = "ended"
+        else:
+            c["state"] = "active"
     return {"contracts": contracts}
 
 

@@ -208,8 +208,16 @@ TOOL_DEFS: list[dict] = [
         "name": "list_contracts",
         "tier": "read",
         "description": (
-            "List contracts for a customer with budget and "
-            "consumption info."
+            "List contracts for a customer with budget + "
+            "consumption info. Each contract carries a "
+            "``state`` field: ``active`` (live, has remaining "
+            "budget you can reason over), ``invoiced`` "
+            "(historical, already billed -- IGNORE for "
+            "'remaining capacity' / 'over budget' reasoning), "
+            "``ended`` (closed, end_date in past -- also "
+            "historical). When answering 'how much budget is "
+            "left' or 'should I do X for customer Y', look "
+            "ONLY at ``state == 'active'`` contracts."
         ),
         "input_schema": {
             "type": "object",
