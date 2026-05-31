@@ -23,22 +23,37 @@ def _format_entry(entry: dict) -> str:
 def _schedule_pushes() -> None:
     """Trigger cloud-sync + CalDAV-sync pushes after a
     CLI mutation. Best-effort: both modules ignore the
-    call when disabled, and a startup failure here must
+    call when disabled, and a sync failure here must
     never block the CLI command from completing.
 
-    Keeps CLI clock writes in parity with router writes:
-    ``kai clock book`` now reaches both sync targets the
-    same way ``POST /clocks/book`` does.
+    CalDAV runs synchronously (``sync_now``) instead of
+    going through ``schedule_push``: ``schedule_push``
+    spawns a daemon thread, and the CLI process exits
+    immediately after this call, killing the thread
+    before the HTTP push to the provider completes.
+    The trade-off is up to ~1-2 s of latency per CLI
+    write against iCloud, which is acceptable for a
+    terminal command. Cloud sync stays fire-and-forget
+    because the desktop sidecar (the long-running
+    process that owns its threads) is usually also
+    running in parallel; if not, the 5-minute cron
+    safety net catches up.
     """
     try:
         from ..services import cloud_sync as sync_svc
-        from ..services import caldav_sync
         sync_svc.schedule_push()
-        caldav_sync.schedule_push()
     except Exception:  # noqa: BLE001
-        # Sync hooks must never break a successful clock
-        # operation. The 5-minute cron safety net + the
-        # in-Settings 'Sync now' button cover any miss.
+        pass
+    try:
+        from ..services import caldav_sync
+        # No-op when no account has push enabled.
+        if not caldav_sync.caldav_svc.push_enabled_accounts():
+            return
+        caldav_sync.sync_now()
+    except Exception:  # noqa: BLE001
+        # Same rule: a sync hiccup must not block the
+        # CLI command. The in-Settings 'Sync now' button
+        # is the recovery surface.
         pass
 
 
