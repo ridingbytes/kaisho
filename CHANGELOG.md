@@ -1,5 +1,86 @@
 # Changelog
 
+## 2.1.2
+
+CalDAV hardening + cleanup release. Rolls up the
+security, robustness, performance, and polish work the
+2026-05-30 in-depth review surfaced after the
+calendar feature shipped in 2.1.x.
+
+### CalDAV security [#132]
+
+- CORS allowlist no longer includes
+  `http://localhost:3000`. The Tauri webview never uses
+  that origin in any shipped configuration; its only
+  beneficiaries were third-party local pages that
+  could POST to `/api/caldav/test-connection` from the
+  user's browser and phish CalDAV credentials.
+- Custom-preset CalDAV URL now goes through an SSRF
+  guard before any HTTP request is opened. Rejects
+  non-https URLs and any host that resolves to an
+  RFC1918, loopback, link-local, or otherwise
+  internal address. Blocks the case where a malicious
+  page could ask the sidecar to probe a corporate VPN
+  via the test-connection endpoint.
+- CalDAV error messages now scrub the literal
+  password and its basic-auth base64 form before
+  surfacing to the UI or logs. Defence-in-depth
+  against urllib / proxy error formatters that
+  occasionally include the request line.
+- The encrypted-file fallback warning across all 4
+  locales now spells out the threat model
+  explicitly ("anyone with read access to your
+  profile directory can decrypt"; "prefer fixing
+  your keyring backend"). The earlier "no system
+  keychain available" line under-communicated the
+  trade-off.
+
+### CalDAV robustness + performance [#133]
+
+- Cache TOCTOU closed. Each cached events entry is
+  stamped with a per-account generation counter that
+  the invalidator bumps under the lock; a fetch
+  racing with an invalidate can no longer overwrite
+  the invalidate with its stale result. Previously
+  the next reader could serve stale data for up to
+  60 seconds.
+- `add_account` now rolls the keychain back when the
+  settings save fails. Previously a disk-full or
+  read-only profile would orphan a credential in the
+  OS keychain that the next runtime had no
+  reference to.
+- DAVClient instances are now memoised per
+  `(account, base_url)` for 10 minutes. Every CalDAV
+  operation used to pay a fresh TCP+TLS+auth
+  handshake (~200-600 ms against iCloud); bulk
+  pushes from the Phase 1.5 sync engine now pay it
+  once per window instead of once per event. A
+  rotated password eventually re-auths via the TTL.
+
+### Backend polish [#131]
+
+- `kaisho/cli/convert.py` error reporting includes
+  the exception class and falls back to a full
+  traceback under `KAISHO_LOG=DEBUG`. The earlier
+  collapsed-to-one-line message left misconfigured
+  DSNs unhelpful to debug.
+- `kaisho/services/cloud_sync.py`
+  `pull_and_apply_tasks` refactored: the depth-6
+  if/elif/else conflict-resolution ladder is now
+  three small dispatch helpers
+  (`_apply_pulled_task`, `_apply_task_update`,
+  `_is_remote_newer`). Top-level function drops to
+  depth-3. No behaviour change.
+- `frontend/src/utils/tauri.ts` exports a shared
+  `DownloadProgressEvent` union type used by both
+  `App.tsx` and `settings/UpdateTab.tsx`. Drops the
+  two duplicate `(e: any)` annotations + their
+  eslint-disables.
+- `IntegrationsTab.tsx` catch-binding renamed to
+  match the codebase's `err` convention.
+- `kaisho/backends/markdown/__init__.py` imports
+  re-ordered stdlib -> third-party -> relative.
+
 ## 2.1.1
 
 Hotfix release. The clock-entry push half of the calendar
