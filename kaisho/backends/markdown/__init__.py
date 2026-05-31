@@ -10,14 +10,13 @@ import hashlib
 import re
 import tempfile
 import uuid
-from ...constants import TASK_STATUSES as _TASK_STATUSES
-from ...services.customers import INACTIVE_STATUSES
 from collections import Counter
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from ...time_utils import local_now_naive as _local_now  # noqa: E402
-
+from ...constants import TASK_STATUSES as _TASK_STATUSES
+from ...services.customers import INACTIVE_STATUSES
+from ...time_utils import local_now_naive as _local_now
 from ..base import (
     ClockBackend,
     CustomerBackend,

@@ -10,7 +10,10 @@ import {
 } from "lucide-react";
 import { useVersionInfo } from "../../hooks/useSettings";
 import { openWhatsNew } from "../common/WhatsNewDialog";
-import { isTauri } from "../../utils/tauri";
+import {
+  isTauri,
+  type DownloadProgressEvent,
+} from "../../utils/tauri";
 import { parseChangelog } from "../../utils/changelog";
 import { Markdown } from "../common/Markdown";
 import { saveBtnCls } from "./styles";
@@ -211,8 +214,7 @@ export function UpdateSection(): JSX.Element {
       let total = 0;
 
       await update.downloadAndInstall(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (event: any) => {
+        (event: DownloadProgressEvent) => {
           if (event.event === "Started") {
             total =
               event.data?.contentLength ?? 0;
