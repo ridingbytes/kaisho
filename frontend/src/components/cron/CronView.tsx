@@ -16,6 +16,7 @@ import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { PromptEditor } from "../common/PromptEditor";
+import { Button } from "../common/Button";
 import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { ResizeHandle } from "../common/ResizeHandle";
@@ -1053,36 +1054,29 @@ export function CronView() {
       {/* Toolbar */}
       <PanelToolbar
         right={<>
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<FileText size={12} />}
             onClick={() => {
               setShowPicker((v) => !v);
               setShowForm(false);
             }}
-            className={[
-              "flex items-center gap-1.5 px-3 py-1",
-              "rounded-lg text-xs",
-              "border border-border text-fg",
-              "hover:bg-surface-raised transition-colors",
-            ].join(" ")}
           >
-            <FileText size={12} />
             {t("fromTemplate")}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="tonal"
+            size="sm"
+            icon={<Plus size={12} />}
             onClick={() => {
               setShowForm((v) => !v);
               setShowPicker(false);
               setPickedTemplate(null);
             }}
-            className={[
-              "flex items-center gap-1.5 px-3 py-1",
-              "rounded-lg text-xs bg-cta text-white",
-              "hover:bg-cta-hover transition-colors",
-            ].join(" ")}
           >
-            <Plus size={12} />
             {t("addJob")}
-          </button>
+          </Button>
           <HelpButton title="Cron" doc={DOCS.cron} view="cron" />
         </>}
       />

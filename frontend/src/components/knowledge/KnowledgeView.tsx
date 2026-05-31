@@ -33,6 +33,7 @@ import {
 import { useCustomers } from "../../hooks/useCustomers";
 import { useKbSources } from "../../hooks/useSettings";
 import { useTasks } from "../../hooks/useTasks";
+import { Button } from "../common/Button";
 import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { Markdown } from "../common/Markdown";
@@ -634,18 +635,14 @@ export function KnowledgeView() {
         </>) : undefined}
         right={<>
           {!editing && (
-            <button
+            <Button
+              variant="tonal"
+              size="sm"
+              icon={<FilePlus size={12} />}
               onClick={() => setCreating((v) => !v)}
-              className={[
-                "flex items-center gap-1 px-2.5 py-1",
-                "rounded bg-cta-muted text-cta text-xs",
-                "font-semibold hover:bg-cta",
-                "hover:text-white transition-colors",
-              ].join(" ")}
             >
-              <FilePlus size={12} />
               {t("newFile")}
-            </button>
+            </Button>
           )}
           {/* Summarize / copy / external editor work for
               PDFs too -- the server reads them and runs
