@@ -66,7 +66,6 @@ export function CustomerEditForm({
   const update = useUpdateCustomer();
   const { data: settings } = useSettings();
   const customerTypes = settings?.customer_types ?? [];
-  const hasContracts = (c.contracts ?? []).length > 0;
 
   function set(key: keyof EditState) {
     return (
@@ -91,10 +90,8 @@ export function CustomerEditForm({
       budget: parseFloat(form.budget) || 0,
       repo: form.repo.trim() || null,
     };
-    if (!hasContracts) {
-      updates.used_offset =
-        parseFloat(form.used_offset) || 0;
-    }
+    updates.used_offset =
+      parseFloat(form.used_offset) || 0;
     update.mutate(
       { name: c.name, updates },
       { onSuccess: () => onClose() },
@@ -178,54 +175,57 @@ export function CustomerEditForm({
         </select>
       </div>
 
-      {!hasContracts && (
-        <div className="flex gap-2">
-          <label
+      {/* Budget + offset are the lifetime customer-level
+          cap and the invoiced-hours marker; both stay
+          editable even when contracts exist, since they
+          drive the "MAXED" indicator in the dashboard
+          regardless of per-contract budgets. */}
+      <div className="flex gap-2">
+        <label
+          className={
+            "flex flex-col gap-0.5 flex-1"
+          }
+        >
+          <span
             className={
-              "flex flex-col gap-0.5 flex-1"
+              "text-[10px] text-fg-muted "
+              + "uppercase tracking-wider"
             }
           >
-            <span
-              className={
-                "text-[10px] text-fg-muted "
-                + "uppercase tracking-wider"
-              }
-            >
-              {t("budgetHLabel")}
-            </span>
-            <input
-              type="number"
-              min="0"
-              step="0.5"
-              className={fieldClass("tabular-nums")}
-              value={form.budget}
-              onChange={set("budget")}
-            />
-          </label>
-          <label
+            {t("budgetHLabel")}
+          </span>
+          <input
+            type="number"
+            min="0"
+            step="0.5"
+            className={fieldClass("tabular-nums")}
+            value={form.budget}
+            onChange={set("budget")}
+          />
+        </label>
+        <label
+          className={
+            "flex flex-col gap-0.5 flex-1"
+          }
+        >
+          <span
             className={
-              "flex flex-col gap-0.5 flex-1"
+              "text-[10px] text-fg-muted "
+              + "uppercase tracking-wider"
             }
           >
-            <span
-              className={
-                "text-[10px] text-fg-muted "
-                + "uppercase tracking-wider"
-              }
-            >
-              {t("offsetH")}
-            </span>
-            <input
-              type="number"
-              min="0"
-              step="0.5"
-              className={fieldClass("tabular-nums")}
-              value={form.used_offset}
-              onChange={set("used_offset")}
-            />
-          </label>
-        </div>
-      )}
+            {t("offsetH")}
+          </span>
+          <input
+            type="number"
+            min="0"
+            step="0.5"
+            className={fieldClass("tabular-nums")}
+            value={form.used_offset}
+            onChange={set("used_offset")}
+          />
+        </label>
+      </div>
 
       <input
         className={fieldClass()}

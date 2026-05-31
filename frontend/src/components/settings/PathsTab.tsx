@@ -12,8 +12,8 @@ import {
 import {
   fieldCls,
   inputCls,
-  saveBtnCls,
 } from "./styles";
+import { Button } from "../common/Button";
 
 // -----------------------------------------------------------------
 // Import data
@@ -70,7 +70,7 @@ function ImportDataSection() {
             onChange={(e) =>
               setFormat(e.target.value)
             }
-            className="px-2 h-[30px] rounded-lg text-xs bg-surface-card border border-border text-fg-strong"
+            className={inputCls}
           >
             <option value="org">
               {t("orgMode")}
@@ -89,16 +89,15 @@ function ImportDataSection() {
             value={path}
             onChange={(e) => setPath(e.target.value)}
             placeholder="/path/to/data"
-            className="px-2 h-[30px] rounded-lg text-xs bg-surface-card border border-border text-fg-strong placeholder-fg-subtle"
+            className={inputCls + " w-full"}
           />
         </div>
-        <button
+        <Button
           onClick={handleImport}
           disabled={importing || !path.trim()}
-          className={saveBtnCls}
         >
           {importing ? tc("importing") : tc("import")}
-        </button>
+        </Button>
       </div>
       {result && (
         <div className="mt-2 text-[11px] text-green-600">
@@ -251,18 +250,17 @@ export function PathsSection(): JSX.Element {
                 {t("sql")}
               </option>
             </select>
-            <button
+            <Button
               onClick={handleSwitchBackend}
               disabled={
                 switchBe.isPending ||
                 backend === paths?.backend
               }
-              className={saveBtnCls}
             >
               {switchBe.isPending
                 ? "Switching..."
                 : tc("switch")}
-            </button>
+            </Button>
           </div>
         </div>
         <p className="text-[10px] text-fg-subtle mb-6">
@@ -317,15 +315,14 @@ export function PathsSection(): JSX.Element {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button
+          <Button
             onClick={handleSavePaths}
             disabled={update.isPending}
-            className={saveBtnCls}
           >
             {update.isPending
               ? tc("saving")
               : t("savePaths")}
-          </button>
+          </Button>
           {saved && (
             <span className="text-xs text-green-400">
               Saved.
@@ -424,15 +421,14 @@ export function PathsSection(): JSX.Element {
             <Plus size={12} />
             {t("addSource")}
           </button>
-          <button
+          <Button
             onClick={handleSaveKb}
             disabled={updateKb.isPending}
-            className={saveBtnCls}
           >
             {updateKb.isPending
               ? tc("saving")
               : t("saveKbSources")}
-          </button>
+          </Button>
         </div>
       </div>
 

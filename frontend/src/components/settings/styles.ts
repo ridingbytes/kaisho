@@ -19,8 +19,14 @@ export const inputCls = [
   "focus:outline-none focus:border-cta",
 ].join(" ");
 
+// ``h-8`` matches the shared ``inputCls`` height so buttons
+// inline-grouped with inputs (e.g. Format select + Source
+// directory + Import) sit on the same baseline. Use
+// ``inline-flex`` so the label + any optional icon centre
+// vertically inside the fixed height.
 export const saveBtnCls = [
-  "px-4 py-1.5 rounded text-sm",
+  "inline-flex items-center justify-center",
+  "px-4 h-8 rounded text-sm",
   "bg-cta text-white hover:bg-cta-hover",
   "transition-colors disabled:opacity-50",
 ].join(" ");
