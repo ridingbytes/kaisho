@@ -285,5 +285,16 @@
   "integrations.caldav.push.label": "Zeiteinträge in diesen Kalender pushen",
   "integrations.caldav.push.hint": "Buchungen aus kaisho erscheinen als Termine im gewählten Kalender. Einseitig: Änderungen in der Kalender-App werden ignoriert.",
   "integrations.caldav.push.toggle": "Zeiteintrags-Push umschalten",
-  "integrations.caldav.push.calendar": "Kalender"
+  "integrations.caldav.push.calendar": "Kalender",
+  "integrations.caldav.push.syncNow": "Jetzt syncen",
+  "integrations.caldav.push.syncing": "Synchron…",
+  "integrations.caldav.push.syncOk": "{{count}} Termin(e) übertragen.",
+  "integrations.caldav.push.syncErrors": "Sync abgeschlossen mit {{count}} Fehler(n).",
+  "integrations.caldav.push.lastSynced": "Zuletzt synchronisiert {{when}}",
+  "integrations.caldav.push.neverSynced": "Noch keine Sync-Aktivität.",
+  "integrations.caldav.push.degraded": "Sync schlägt wiederholt fehl",
+  "integrations.caldav.push.justNow": "gerade eben",
+  "integrations.caldav.push.minutesAgo": "vor {{count}} Min.",
+  "integrations.caldav.push.hoursAgo": "vor {{count}} Std.",
+  "integrations.caldav.push.daysAgo": "vor {{count}} T."
 }

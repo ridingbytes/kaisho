@@ -1593,6 +1593,50 @@ export function setCalDavPushConfig(
   );
 }
 
+/** Per-account sync health for the Settings indicator. */
+export interface CalDavPushHealth {
+  failure_count: number;
+  last_error: string | null;
+  last_success_at: string | null;
+  degraded: boolean;
+}
+
+export function getCalDavPushHealth(
+  accountId: string,
+): Promise<CalDavPushHealth> {
+  return get(
+    `/caldav/accounts/${
+      encodeURIComponent(accountId)
+    }/push-health`,
+  );
+}
+
+export interface CalDavPushSummary {
+  created: number;
+  updated: number;
+  deleted: number;
+  skipped: number;
+  errors: number;
+}
+
+/** Trigger an immediate reconciliation pass. Returns the
+ *  cycle summary + the refreshed health in one call so
+ *  the UI can show a 'pushed N events' toast next to
+ *  'last synced just now'. */
+export function pushSyncCalDavAccount(
+  accountId: string,
+): Promise<{
+  summary: CalDavPushSummary;
+  health: CalDavPushHealth;
+}> {
+  return post(
+    `/caldav/accounts/${
+      encodeURIComponent(accountId)
+    }/push-sync`,
+    {},
+  );
+}
+
 // ── Calendar aggregator ─────────────────────────────────
 
 /** A normalized calendar event from any source. */

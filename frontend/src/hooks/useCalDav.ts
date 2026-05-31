@@ -6,9 +6,11 @@ import {
 import {
   addCalDavAccount,
   getCalDavPushConfig,
+  getCalDavPushHealth,
   listCalDavAccounts,
   listCalDavCalendars,
   listCalDavPresets,
+  pushSyncCalDavAccount,
   refreshCalDavAccount,
   removeCalDavAccount,
   setCalDavPushConfig,
@@ -133,6 +135,44 @@ export function useSetCalDavPushConfig(
       });
       void qc.invalidateQueries({
         queryKey: ["caldav", "accounts"],
+      });
+    },
+  });
+}
+
+
+/** Per-account sync health (last error, last success,
+ *  degraded flag) for the Settings indicator. Polled
+ *  every 30s so a stuck account becomes visible without
+ *  the user clicking Sync. */
+export function useCalDavPushHealth(
+  accountId: string | null,
+) {
+  return useQuery({
+    queryKey: ["caldav", "push-health", accountId],
+    queryFn: () =>
+      getCalDavPushHealth(accountId as string),
+    enabled: !!accountId,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
+}
+
+/** Trigger one CalDAV push cycle. Invalidates the
+ *  health + calendar queries so the panel and Settings
+ *  badge update right after. */
+export function usePushSyncCalDavAccount(
+  accountId: string,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => pushSyncCalDavAccount(accountId),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["caldav", "push-health", accountId],
+      });
+      void qc.invalidateQueries({
+        queryKey: ["calendar", "events"],
       });
     },
   });

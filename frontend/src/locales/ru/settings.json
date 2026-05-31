@@ -285,5 +285,16 @@
   "integrations.caldav.push.label": "Отправлять записи времени в этот календарь",
   "integrations.caldav.push.hint": "Время, записанное в kaisho, появится событиями в выбранном календаре. В одну сторону: правки в приложении «Календарь» игнорируются.",
   "integrations.caldav.push.toggle": "Переключить отправку записей",
-  "integrations.caldav.push.calendar": "Календарь"
+  "integrations.caldav.push.calendar": "Календарь",
+  "integrations.caldav.push.syncNow": "Синхрон. сейчас",
+  "integrations.caldav.push.syncing": "Синхрон…",
+  "integrations.caldav.push.syncOk": "Отправлено {{count}} событий(я).",
+  "integrations.caldav.push.syncErrors": "Синхронизация завершена с {{count}} ошибкой(ами).",
+  "integrations.caldav.push.lastSynced": "Последняя синхрон. {{when}}",
+  "integrations.caldav.push.neverSynced": "Синхронизация ещё не выполнялась.",
+  "integrations.caldav.push.degraded": "Синхронизация повторно завершается ошибкой",
+  "integrations.caldav.push.justNow": "только что",
+  "integrations.caldav.push.minutesAgo": "{{count}} мин назад",
+  "integrations.caldav.push.hoursAgo": "{{count}} ч назад",
+  "integrations.caldav.push.daysAgo": "{{count}} д назад"
 }
