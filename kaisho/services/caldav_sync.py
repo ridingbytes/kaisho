@@ -194,11 +194,111 @@ def sync_now() -> dict:
     return summary
 
 
+def sync_entry(sync_id: str) -> dict:
+    """Force-push one clock entry to every push-enabled
+    account, bypassing the ``enabled_since`` cutoff.
+
+    Powers ``kai caldav push-entry <id>`` and the per-row
+    "Sync to calendar" button. Useful when the user wants
+    a single historical entry in their calendar without
+    back-flooding the whole window.
+
+    Returns the standard summary counter so the caller can
+    surface created/updated counts.
+    """
+    accounts = caldav_svc.push_enabled_accounts()
+    if not accounts:
+        return _empty_summary()
+
+    from ..backends import get_backend
+    backend = get_backend()
+    entry = _find_entry_by_sync_id(backend, sync_id)
+    if entry is None:
+        summary = _empty_summary()
+        summary["skipped"] += 1
+        return summary
+
+    state = _load_state()
+    summary = _empty_summary()
+    for account in accounts:
+        _sync_one(account, entry, state, summary, force=True)
+    _save_state(state)
+    log.info(
+        "caldav sync_entry %s: created=%d updated=%d "
+        "skipped=%d errors=%d",
+        sync_id, summary["created"], summary["updated"],
+        summary["skipped"], summary["errors"],
+    )
+    return summary
+
+
+def backfill_range(from_date, to_date) -> dict:
+    """Reconcile every entry in ``[from_date, to_date]``
+    against every push-enabled account, bypassing the
+    ``enabled_since`` cutoff.
+
+    Powers ``kai caldav backfill --from <date> [--to <date>]``
+    and the Settings backfill control. Use with intent --
+    a wide window will create one VEVENT per entry per
+    account.
+
+    :param from_date: ``datetime.date`` (inclusive).
+    :param to_date: ``datetime.date`` (inclusive).
+    """
+    accounts = caldav_svc.push_enabled_accounts()
+    if not accounts:
+        return _empty_summary()
+    if to_date < from_date:
+        raise ValueError("backfill: to_date < from_date")
+
+    from ..backends import get_backend
+    backend = get_backend()
+    entries = backend.clocks.list_entries(
+        from_date=from_date, to_date=to_date,
+    )
+
+    state = _load_state()
+    summary = _empty_summary()
+    for account in accounts:
+        for entry in entries:
+            _sync_one(
+                account, entry, state, summary, force=True,
+            )
+    _save_state(state)
+    log.info(
+        "caldav backfill %s..%s: created=%d updated=%d "
+        "skipped=%d errors=%d",
+        from_date, to_date,
+        summary["created"], summary["updated"],
+        summary["skipped"], summary["errors"],
+    )
+    return summary
+
+
+def _find_entry_by_sync_id(backend, sync_id: str) -> dict | None:
+    """Locate one clock entry by its stable sync_id.
+
+    Walks a wide window because the entry might be old --
+    that's the whole point of the per-entry sync surface.
+    Returns None when no match exists.
+    """
+    from datetime import date, timedelta
+    entries = backend.clocks.list_entries(
+        from_date=date(2000, 1, 1),
+        to_date=date.today() + timedelta(days=1),
+    )
+    for entry in entries:
+        if entry.get("sync_id") == sync_id:
+            return entry
+    return None
+
+
 # -- Per-entry reconciliation ---------------------------------------
 
 
 def _sync_one(
     account: dict, entry: dict, state: dict, summary: dict,
+    force: bool = False,
 ) -> None:
     sync_id = entry.get("sync_id")
     if not sync_id:
@@ -227,7 +327,17 @@ def _sync_one(
             summary["skipped"] += 1
         return
 
-    if not _should_push(entry, account):
+    # ``force=True`` bypasses the enabled_since cutoff so
+    # the user can push historical entries on demand (per-
+    # entry button / backfill command). The completed/end
+    # gate inside ``_should_push`` still applies even under
+    # force: running timers without an end timestamp are
+    # never pushable.
+    if force:
+        if not _entry_end(entry):
+            summary["skipped"] += 1
+            return
+    elif not _should_push(entry, account):
         summary["skipped"] += 1
         return
 

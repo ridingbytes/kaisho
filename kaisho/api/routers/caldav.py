@@ -51,6 +51,11 @@ class PushConfigBody(BaseModel):
     calendar_id: str = ""
 
 
+class BackfillBody(BaseModel):
+    from_date: str
+    to_date: str = ""
+
+
 # -- Helpers ---------------------------------------------------------
 
 
@@ -221,6 +226,49 @@ def push_sync(account_id: str):
             "last_success_at": None, "degraded": False,
         },
     }
+
+
+@router.post("/entries/{sync_id}/push-sync")
+def push_entry(sync_id: str):
+    """Force-push one clock entry to every push-enabled
+    account, bypassing the enabled_since cutoff.
+
+    Powers the per-row 'Sync to calendar' button. The
+    sync_id is the entry's stable identifier from the
+    active backend.
+    """
+    summary = caldav_sync_svc.sync_entry(sync_id)
+    return {"summary": summary}
+
+
+@router.post("/backfill")
+def backfill(body: BackfillBody):
+    """Reconcile every entry in the given date range against
+    every push-enabled account, bypassing the enabled_since
+    cutoff.
+
+    Powers the Settings backfill control. The window is
+    inclusive on both ends; ``to_date`` defaults to today
+    when empty.
+    """
+    from datetime import date
+    try:
+        frm = date.fromisoformat(body.from_date)
+        to = (
+            date.fromisoformat(body.to_date)
+            if body.to_date else date.today()
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400, detail=str(exc),
+        )
+    try:
+        summary = caldav_sync_svc.backfill_range(frm, to)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400, detail=str(exc),
+        )
+    return {"summary": summary}
 
 
 @router.post("/test-connection")

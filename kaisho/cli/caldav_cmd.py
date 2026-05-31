@@ -243,6 +243,49 @@ def push_sync():
         click.echo(f"  {k:8} {v}")
 
 
+@caldav_cmd.command("push-entry")
+@click.argument("sync_id")
+def push_entry(sync_id):
+    """Force-push one clock entry to every push-enabled
+    account, bypassing the enabled_since cutoff.
+
+    Useful when you want a historical entry in your
+    calendar without back-flooding the whole window. The
+    entry is looked up by sync_id from the active backend.
+    """
+    from ..services import caldav_sync
+    summary = caldav_sync.sync_entry(sync_id)
+    for k, v in summary.items():
+        click.echo(f"  {k:8} {v}")
+
+
+@caldav_cmd.command("backfill")
+@click.option(
+    "--from", "frm", required=True,
+    help="Window start (YYYY-MM-DD, inclusive).",
+)
+@click.option(
+    "--to", "to", default=None,
+    help="Window end (YYYY-MM-DD, inclusive). "
+         "Defaults to today.",
+)
+def backfill(frm, to):
+    """Reconcile every entry in the given date range
+    against every push-enabled account, bypassing the
+    enabled_since cutoff.
+
+    Use deliberately -- a wide window creates one VEVENT
+    per entry per account.
+    """
+    from datetime import date
+    from ..services import caldav_sync
+    frm_d = date.fromisoformat(frm)
+    to_d = date.fromisoformat(to) if to else date.today()
+    summary = caldav_sync.backfill_range(frm_d, to_d)
+    for k, v in summary.items():
+        click.echo(f"  {k:8} {v}")
+
+
 @caldav_cmd.command("push-state")
 def push_state():
     """Dump the current per-account sync health for
