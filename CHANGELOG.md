@@ -1,5 +1,121 @@
 # Changelog
 
+## 2.1.0
+
+The calendar release. A new top-level Calendar panel
+aggregates events from your CalDAV server (Apple iCloud,
+Fastmail, Nextcloud, or any standards-compliant CalDAV
+provider) and your existing Google Calendar integration
+into one view. Time you book in kaisho can optionally push
+back to a chosen calendar so your day appears in
+Calendar.app alongside your meetings.
+
+Local-first by design: CalDAV credentials never leave the
+machine. The OS keychain holds the password; an encrypted
+file fallback covers headless Linux systems without a
+keyring backend. No Pro plan required for either direction.
+
+### Calendar panel (new)
+
+- Top-level Calendar view between Clocks and Cron.
+  Day + week layouts, all-day strip, per-calendar colour
+  coding via a stable FNV-1a hash of source + calendar id.
+- Event tiles open a side popover with full details
+  (when / where / source / external link). The popover's
+  Book as time entry button opens the QuickBook form
+  prefilled with the event's title and rounded duration
+  (1h / 90m / 1h30m), so you can turn a calendar event
+  into a clock entry in two clicks [#121, #122].
+- Source badges show which providers contributed events
+  and surface per-source errors so a stuck source is
+  visible instead of silently dimming the view [#119].
+
+### CalDAV integration
+
+- Connect Apple iCloud, Fastmail, Nextcloud, or a custom
+  CalDAV server in Settings -> Integrations [#118, #120].
+- Provider presets prefill URLs, fields, and app-password
+  documentation links. Test connection preflight before
+  saving so you never persist an account that cannot
+  authenticate.
+- Multiple accounts per kind supported (e.g. work iCloud
+  + personal Fastmail).
+
+### Push clock entries to calendar (Phase 1.5)
+
+- Per-account "Push clock entries to this calendar"
+  toggle with a calendar picker [#127]. The default option
+  auto-creates and reuses a dedicated "Kaisho" calendar so
+  writes are sandboxed; pick any other writable calendar
+  via the dropdown.
+- One-way push: edits in Calendar.app are ignored. The
+  kaisho entry is the source of truth.
+- VEVENTs carry SUMMARY = '[customer] description',
+  UID = 'kaisho-<sync_id>' so re-pushes hit the same
+  event in place rather than duplicating, and a
+  CATEGORIES line with the customer name.
+- Sync now button in Settings + live "Last synced N min
+  ago" indicator + degraded badge after repeated failures
+  [#129]. Per-account sync health polled every 30 s.
+- kai clock book / start / stop / update now trigger the
+  same sync the API does (CLI parity).
+
+### Advisor integration
+
+- New tools list_calendar_events and get_calendar_event
+  let the advisor read your week. The tools fan out
+  through the same aggregator as the panel, so the
+  advisor sees Google + CalDAV in one call.
+- The default 'from' window snaps to today 00:00 local
+  (was 'now') so 'what is on my calendar this week?'
+  includes events earlier today [#126].
+
+### Backend correctness fixes (from the in-depth review)
+
+- Frontend: all-day events no longer shift one day west
+  of UTC. parseIso now detects bare YYYY-MM-DD and
+  constructs a local-midnight Date instead of relying on
+  the browser's UTC default [#126].
+- Backend: calendar aggregator sort now parses
+  timestamps to real instants instead of doing
+  lexicographic ISO comparison, so events from sources
+  with different timezone offsets order chronologically.
+- VEVENTs with DURATION but no DTEND now render at
+  their true duration instead of a 0-minute pill.
+- get_event uses the same fetch helper as the write path
+  (update_event, delete_event), fixing iCloud 404s on
+  the event-by-id flow.
+
+### Pro gate
+
+- None of the calendar features require Pro. CalDAV is
+  local-first; Google Calendar reuses the existing Pro
+  integration when connected. The user's plan does not
+  gate any calendar surface.
+
+### Backend cleanup carried over from 2.0.x
+
+- Backend cleanup work merged earlier: dedup task-status
+  keywords, tombstone helpers, dead re-exports [#113].
+- Sidecar runtime auto-prune on launch removes stale
+  PyInstaller extractions from previous versions [#112].
+
+### Deferred (tracked elsewhere)
+
+- CalDAV security hardening (CORS allowlist tightening,
+  SSRF guard on test-connection, password-leak scrub in
+  errors): #124.
+- CalDAV robustness + performance (cache TOCTOU,
+  keychain atomicity on partial write, per-account
+  DAVClient memoization): #125. Becomes important when
+  the next release stops opening a fresh HTTP connection
+  per write.
+- Phase 2 (cloud-hosted CalDAV credentials for the
+  hosted advisor + MCP gateway + cron-AI consumption):
+  not yet filed; deliberately deferred until a real
+  "AI sees my calendar when laptop is closed" customer
+  ask materialises.
+
 ## 2.0.2
 
 Patch release with a desktop disk-hygiene fix and a backend
