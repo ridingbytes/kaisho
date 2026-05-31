@@ -468,6 +468,31 @@ def _verify_writable(
 # -- Connection / event reads ----------------------------------------
 
 
+def _scrub_password(message: str, password: str) -> str:
+    """Remove the literal password and its base64-encoded
+    basic-auth header form from a string. The caldav
+    library + urllib chain has occasionally surfaced the
+    request line in error messages (e.g. on certain
+    proxy auth failures), which would leak the
+    credential. Cheap defence-in-depth -- ``str.replace``
+    is bounded by message length."""
+    import base64
+    if not password:
+        return message
+    scrubbed = message.replace(password, "<redacted>")
+    if ":" in message:
+        # Strip basic-auth blobs of the form
+        # ``Basic <base64(user:password)>``.
+        for candidate_user in ("", "user", "username"):
+            blob = base64.b64encode(
+                f"{candidate_user}:{password}".encode(
+                    "utf-8",
+                ),
+            ).decode("ascii")
+            scrubbed = scrubbed.replace(blob, "<redacted>")
+    return scrubbed
+
+
 def _principal(url: str, username: str, password: str):
     """Open a CalDAV principal. Lazy-imports the library."""
     import caldav
@@ -482,8 +507,15 @@ def _principal(url: str, username: str, password: str):
             "app-specific password."
         ) from exc
     except Exception as exc:  # noqa: BLE001
+        # Scrub the password before surfacing the error
+        # text. Some urllib / proxy paths include the
+        # request line in the message; never leak it
+        # back to the UI or logs. See #124 / S4.
         raise CalDavError(
-            f"Could not reach CalDAV server: {exc}"
+            _scrub_password(
+                f"Could not reach CalDAV server: {exc}",
+                password,
+            )
         ) from exc
 
 
