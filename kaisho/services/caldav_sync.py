@@ -205,7 +205,11 @@ def _sync_one(
         summary["skipped"] += 1
         return
     account_id = account["account_id"]
-    per_entry = state["entries"].setdefault(sync_id, {})
+    # Look up without setdefault so a skipped entry does
+    # not pollute the state map with an empty record.
+    # We only create the per-entry dict when we're about
+    # to actually write event metadata into it.
+    per_entry = state["entries"].get(sync_id) or {}
     existing = per_entry.get(account_id)
 
     if entry.get("deleted_at"):
@@ -215,7 +219,9 @@ def _sync_one(
                 state, summary,
             )
             per_entry.pop(account_id, None)
-            if not per_entry:
+            if per_entry:
+                state["entries"][sync_id] = per_entry
+            else:
                 state["entries"].pop(sync_id, None)
         else:
             summary["skipped"] += 1
@@ -225,6 +231,10 @@ def _sync_one(
         summary["skipped"] += 1
         return
 
+    # We are about to write -- materialise the per-entry
+    # dict in state so the helpers below can store the
+    # event_url / etag they get back from the provider.
+    state["entries"].setdefault(sync_id, per_entry)
     if existing and existing.get("event_url"):
         _update_one(
             account, entry, existing, per_entry,

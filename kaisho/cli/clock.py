@@ -20,6 +20,28 @@ def _format_entry(entry: dict) -> str:
     return f"{start}  {customer}  {duration}  {desc}"
 
 
+def _schedule_pushes() -> None:
+    """Trigger cloud-sync + CalDAV-sync pushes after a
+    CLI mutation. Best-effort: both modules ignore the
+    call when disabled, and a startup failure here must
+    never block the CLI command from completing.
+
+    Keeps CLI clock writes in parity with router writes:
+    ``kai clock book`` now reaches both sync targets the
+    same way ``POST /clocks/book`` does.
+    """
+    try:
+        from ..services import cloud_sync as sync_svc
+        from ..services import caldav_sync
+        sync_svc.schedule_push()
+        caldav_sync.schedule_push()
+    except Exception:  # noqa: BLE001
+        # Sync hooks must never break a successful clock
+        # operation. The 5-minute cron safety net + the
+        # in-Settings 'Sync now' button cover any miss.
+        pass
+
+
 @click.group()
 def clock():
     """Manage time tracking."""
@@ -39,6 +61,7 @@ def clock_book(duration, customer_name, description, as_json):
         customer=customer_name,
         description=" ".join(description),
     )
+    _schedule_pushes()
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
@@ -56,6 +79,7 @@ def clock_start(customer_name, description, as_json):
         customer=customer_name,
         description=desc,
     )
+    _schedule_pushes()
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
@@ -101,6 +125,7 @@ def clock_stop(desc, notes, customer, as_json):
         rounding_minutes=minutes,
         rounding_mode=mode,
     )
+    _schedule_pushes()
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
@@ -127,6 +152,7 @@ def clock_desc(description, as_json):
     if result is None:
         click.echo("Entry not found.", err=True)
         sys.exit(1)
+    _schedule_pushes()
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
@@ -157,6 +183,7 @@ def clock_note(text, as_json):
     if result is None:
         click.echo("Entry not found.", err=True)
         sys.exit(1)
+    _schedule_pushes()
     if as_json:
         click.echo(json.dumps(result, default=str))
     else:
@@ -269,6 +296,7 @@ def clock_update(
     if entry is None:
         click.echo("Entry not found.", err=True)
         sys.exit(1)
+    _schedule_pushes()
     if as_json:
         click.echo(json.dumps(entry, default=str))
     else:
