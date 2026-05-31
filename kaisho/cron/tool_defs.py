@@ -201,7 +201,15 @@ TOOL_DEFS: list[dict] = [
     {
         "name": "list_customers",
         "tier": "read",
-        "description": "List all customers with budget and consumption info.",
+        "description": (
+            "List all customers with budget + consumption "
+            "info. Each customer carries pre-computed "
+            "``budget_hours`` / ``used_hours`` / "
+            "``rest_hours`` / ``pct_used``. ALWAYS use "
+            "those exact fields when reporting numbers -- "
+            "do NOT invert used vs rest, do NOT compute "
+            "your own percentages."
+        ),
         "input_schema": {"type": "object", "properties": {}},
     },
     {
@@ -217,7 +225,12 @@ TOOL_DEFS: list[dict] = [
             "``ended`` (closed, end_date in past -- also "
             "historical). When answering 'how much budget is "
             "left' or 'should I do X for customer Y', look "
-            "ONLY at ``state == 'active'`` contracts."
+            "ONLY at ``state == 'active'`` contracts. "
+            "Pre-computed numeric fields: ``budget_hours`` / "
+            "``used_hours`` / ``rest_hours`` / ``pct_used``. "
+            "ALWAYS use those exact fields verbatim -- do NOT "
+            "invert used vs rest, do NOT compute your own "
+            "percentages."
         ),
         "input_schema": {
             "type": "object",
