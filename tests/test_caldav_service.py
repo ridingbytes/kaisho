@@ -20,8 +20,12 @@ def isolated_profile(tmp_path, monkeypatch):
     config.reset_config()
     from kaisho.services import caldav as svc
     svc._cache.clear()
+    svc._account_gen.clear()
+    svc._client_cache.clear()
     yield tmp_path
     svc._cache.clear()
+    svc._account_gen.clear()
+    svc._client_cache.clear()
     config.reset_config()
 
 
