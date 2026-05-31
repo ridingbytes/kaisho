@@ -196,6 +196,7 @@ def get_active():
 def quick_book(body: QuickBookRequest):
     """Book a clock entry with a fixed duration."""
     from ...services import cloud_sync as sync_svc
+    from ...services import caldav_sync
     try:
         from datetime import date as date_cls
         target_date = (
@@ -215,6 +216,7 @@ def quick_book(body: QuickBookRequest):
             notes=body.notes,
         )
         sync_svc.schedule_push()
+        caldav_sync.schedule_push()
         return entry
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -224,6 +226,7 @@ def quick_book(body: QuickBookRequest):
 def start_timer(body: TimerStart):
     """Start a new running timer."""
     from ...services import cloud_sync as sync_svc
+    from ...services import caldav_sync
 
     try:
         backend = get_backend()
@@ -235,6 +238,11 @@ def start_timer(body: TimerStart):
             contract=body.contract,
         )
         sync_svc.schedule_push()
+        # Running timers are skipped by the CalDAV push
+        # (no end_at), but call schedule_push anyway so
+        # the call sites stay symmetric and the gate
+        # logic lives in one place.
+        caldav_sync.schedule_push()
         return entry
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
@@ -257,6 +265,7 @@ def stop_timer(
     """
     from ...config import get_config
     from ...services import cloud_sync as sync_svc
+    from ...services import caldav_sync
     from ...services import settings as settings_svc
     cfg = get_config()
     if apply_rounding:
@@ -271,6 +280,7 @@ def stop_timer(
             paused=paused,
         )
         sync_svc.schedule_push()
+        caldav_sync.schedule_push()
         return entry
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -298,8 +308,10 @@ def clear_paused():
     goes away.
     """
     from ...services import cloud_sync as sync_svc
+    from ...services import caldav_sync
     get_backend().clocks.clear_paused()
     sync_svc.schedule_push()
+    caldav_sync.schedule_push()
 
 
 class MergeRequest(BaseModel):
@@ -316,12 +328,20 @@ def merge_entries(body: MergeRequest):
     customer.
     """
     from ...services import cloud_sync as sync_svc
+    from ...services import caldav_sync
     try:
         result = get_backend().clocks.merge_entries(
             into_sync_id=body.into_sync_id,
             from_sync_id=body.from_sync_id,
         )
         sync_svc.schedule_push()
+        # Drop the merged-away event from CalDAV before
+        # the push cycle so we do not race against an
+        # update that would resurrect it.
+        deleted = (result or {}).get("deleted")
+        if deleted:
+            caldav_sync.on_local_delete(deleted)
+        caldav_sync.schedule_push()
         return result
     except ValueError as e:
         raise HTTPException(
@@ -348,6 +368,7 @@ def update_entry(
     is kept for backward compatibility.
     """
     from ...services import cloud_sync as sync_svc
+    from ...services import caldav_sync
     if not sync_id and not start:
         raise HTTPException(
             status_code=400,
@@ -372,6 +393,7 @@ def update_entry(
     if result is None:
         raise HTTPException(status_code=404, detail="Entry not found")
     sync_svc.schedule_push()
+    caldav_sync.schedule_push()
     return result
 
 
@@ -387,6 +409,7 @@ def delete_entry(
     propagates to the cloud on the next push cycle.
     """
     from ...services import cloud_sync as sync_svc
+    from ...services import caldav_sync
     if not sync_id and not start:
         raise HTTPException(
             status_code=400,
@@ -400,6 +423,7 @@ def delete_entry(
             status_code=404, detail="Entry not found",
         )
     sync_svc.on_local_delete(entry)
+    caldav_sync.on_local_delete(entry)
 
 
 # ── Invoice preparation ──────────────────────────────
