@@ -1,6 +1,6 @@
 {
   "inbox": "Posteingang",
-  "addItem": "+ Neu",
+  "addItem": "Neu",
   "captureSomething": "Etwas erfassen...",
   "inboxEmpty": "Posteingang ist leer",
   "inboxEmptyHint": "Klicke auf \"+ Neu\" um etwas zu erfassen",
@@ -9,7 +9,7 @@
   "anyDirection": "Beliebige Richtung",
   "bodyOptional": "Inhalt (optional)",
   "inboxItemCaptured": "Posteingangseintrag erfasst",
-  "inboxItemDeleted": "Posteingangseintrag gel\u00f6scht",
+  "inboxItemDeleted": "Posteingangseintrag gelöscht",
   "inboxItemUpdated": "Posteingangseintrag aktualisiert",
   "movedTo": "Verschoben nach {{destination}}",
   "promotedToTask": "Als Aufgabe erstellt",

@@ -1,6 +1,6 @@
 {
   "inbox": "Inbox",
-  "addItem": "+ Add",
+  "addItem": "Add",
   "captureSomething": "Capture something...",
   "inboxEmpty": "Inbox is empty",
   "inboxEmptyHint": "Click \"+ Add\" to capture something",
