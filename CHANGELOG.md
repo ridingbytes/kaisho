@@ -1,5 +1,89 @@
 # Changelog
 
+## 2.1.3
+
+A focused hotfix + UX polish release. Two server-side
+bugs surfaced after 2.1.2 went live with the CalDAV
+push feature, alongside a bundle of calendar-panel
+improvements.
+
+### Fix MCP SyntaxError when tool param is a Python keyword [#134]
+
+`list_calendar_events` declares a `from` property in its
+input schema. The MCP handler builder fed that name
+verbatim into `exec`'d function source, which made
+`kai mcp-server` die at startup with `SyntaxError:
+invalid syntax`. Python keywords now get a trailing-
+underscore local in the generated signature while the
+schema name and dispatcher key stay unchanged, so the
+MCP contract is preserved.
+
+### Fix CalDAV push: treat naive datetimes as local wall-clock [#135]
+
+Clock entries land in the backend as
+`datetime.now().isoformat()` -- naive, no `tzinfo`.
+`_to_utc` stamped them as if they were already UTC, so
+a 12:00 local entry was written to the calendar as
+`DTSTART:120000Z` and rendered at 14:00 in CEST. Now
+naive datetimes are projected onto the system local
+zone via `astimezone()` before being converted to UTC.
+The sync engine pushes an update for every known UID
+on the next reconciliation, so existing pushed events
+self-heal after one `kai caldav push-sync`.
+
+### CalDAV: per-entry sync and date-range backfill [#136]
+
+The sync engine's `enabled_since` gate prevents back-
+flooding the calendar with years of history when push
+is first enabled, but offers no escape hatch for the
+legitimate cases ("push this one entry I booked
+yesterday" / "I want all of last month in iCloud").
+Adds two service entry points, both with CLI and API
+surfaces, that bypass the gate while still skipping
+running timers:
+
+- `kai caldav push-entry <sync_id>` +
+  `POST /api/caldav/entries/{sync_id}/push-sync`
+- `kai caldav backfill --from <date> [--to <date>]` +
+  `POST /api/caldav/backfill`
+
+### Calendar panel UX polish + dark-mode foundation [#137]
+
+- New Month view (6x7 grid with an ISO week column,
+  per-day 3-tile cap with `+N more` overflow into the
+  popover).
+- ISO week number shown in the corner cell of the Week
+  view (`KW NN` / `W NN` per locale).
+- Toolbar (view toggle + prev/today/next/refresh)
+  centred in the header so the edges stop drifting
+  when the date label changes width.
+- Date label is now a clickable button that opens the
+  native date picker via `showPicker()` -- jump to any
+  date without click-spamming Prev/Next.
+- Calendar panel gains a Help button + `DOCS.calendar`
+  entry (it was the only main panel missing one).
+- `EventTile` time/location lines gated by tile
+  duration so a 60-minute slot stops slicing the third
+  line in half.
+- Dark-mode foundation: Tailwind config maps `dark:`
+  prefix onto `[data-theme="dark"]` so dark variants
+  actually fire (was a silent no-op since the app
+  toggles theme via a data attribute, not Tailwind's
+  default class strategy). Calendar palette + advisor
+  integration chips get dark variants so they read on
+  the dark surface.
+- `DEFAULT_SHORTCUTS.views` adds `calendar: "l"`;
+  Settings > Shortcuts row exposes it. Sidebar already
+  rendered the hint automatically.
+- i18n: `weekShort` + `month` keys added across
+  en/de/es/ru.
+
+### Auto-update
+
+The desktop client auto-update pings GitHub Releases on
+launch and every few hours after that, so 2.1.x clients
+will pick up 2.1.3 without action.
+
 ## 2.1.2
 
 CalDAV hardening + cleanup release. Rolls up the
