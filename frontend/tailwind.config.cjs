@@ -1,11 +1,37 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
-  // App toggles dark via `data-theme="dark"` on <html>, not the
-  // default `.dark` class. Map Tailwind's `dark:` prefix onto
-  // that attribute so dark-variant utilities (e.g.
-  // `dark:text-violet-100`) actually fire.
-  darkMode: ["selector", '[data-theme="dark"]'],
+  // The app picks one of 12 theme presets via
+  // ``data-theme="<id>"`` on <html>. Six of those presets
+  // are dark (zinc-dark / solarized / dracula / nord /
+  // tokyo-night / mocha). The Tailwind ``dark:`` prefix
+  // needs to fire for ALL of them -- the previous setup
+  // only matched ``[data-theme="dark"]`` so dark-variant
+  // utilities silently disappeared in dracula / nord /
+  // etc. and the calendar tile text rendered as dark
+  // purple on dark purple.
+  //
+  // Listing every dark id explicitly is required because
+  // Tailwind needs a literal selector here, not a regex
+  // or attribute-value match. New dark presets must be
+  // added to this list.
+  darkMode: [
+    "variant",
+    [
+      '&:where([data-theme="dark"] *)',
+      '&:where([data-theme="solarized"] *)',
+      '&:where([data-theme="dracula"] *)',
+      '&:where([data-theme="nord"] *)',
+      '&:where([data-theme="tokyo-night"] *)',
+      '&:where([data-theme="mocha"] *)',
+      '&[data-theme="dark"]',
+      '&[data-theme="solarized"]',
+      '&[data-theme="dracula"]',
+      '&[data-theme="nord"]',
+      '&[data-theme="tokyo-night"]',
+      '&[data-theme="mocha"]',
+    ],
+  ],
   theme: {
     extend: {
       colors: {
