@@ -9,8 +9,11 @@ import type {
 import {
   useAddCalDavAccount,
   useCalDavAccounts,
+  useCalDavCalendars,
   useCalDavPresets,
+  useCalDavPushConfig,
   useRemoveCalDavAccount,
+  useSetCalDavPushConfig,
   useTestCalDavConnection,
 } from "../../hooks/useCalDav";
 import { openExternal } from "../../utils/tauri";
@@ -92,29 +95,32 @@ function AccountList({
       {accounts.map((acc) => (
         <div
           key={acc.id}
-          className="flex items-center justify-between gap-3 bg-surface-raised rounded-lg border border-border p-2"
+          className="bg-surface-raised rounded-lg border border-border p-2 flex flex-col gap-2"
         >
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-stone-900 truncate">
-              {acc.label}
-            </p>
-            <p className="text-[10px] text-stone-500 truncate">
-              {acc.preset} · {acc.username}
-            </p>
-            {acc.storage === "fallback" && (
-              <p className="text-[10px] text-amber-600 mt-0.5">
-                {t("integrations.caldav.fallbackWarning")}
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-stone-900 truncate">
+                {acc.label}
               </p>
-            )}
+              <p className="text-[10px] text-stone-500 truncate">
+                {acc.preset} · {acc.username}
+              </p>
+              {acc.storage === "fallback" && (
+                <p className="text-[10px] text-amber-600 mt-0.5">
+                  {t("integrations.caldav.fallbackWarning")}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => remove.mutate(acc.id)}
+              disabled={remove.isPending}
+              className={`${btn} bg-surface-card border border-border text-stone-700 hover:bg-surface-raised`}
+            >
+              {t("integrations.disconnect")}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => remove.mutate(acc.id)}
-            disabled={remove.isPending}
-            className={`${btn} bg-surface-card border border-border text-stone-700 hover:bg-surface-raised`}
-          >
-            {t("integrations.disconnect")}
-          </button>
+          <PushConfigEditor accountId={acc.id} />
         </div>
       ))}
     </div>
@@ -302,6 +308,117 @@ function AddAccountForm({
           {t("integrations.connect")}
         </button>
       </div>
+    </div>
+  );
+}
+
+
+// -- Push-config editor -----------------------------------
+
+const PUSH_DEFAULT_LABEL = "Kaisho (auto)";
+
+/** Per-account "push clock entries to a calendar" toggle
+ *  + calendar picker. Lives inside each account row in
+ *  the CalDAV card so the user always sees the push
+ *  state next to its account context.
+ */
+function PushConfigEditor({
+  accountId,
+}: {
+  accountId: string;
+}) {
+  const { t } = useTranslation("settings");
+  const cfgQ = useCalDavPushConfig(accountId);
+  const cals = useCalDavCalendars(accountId);
+  const setCfg = useSetCalDavPushConfig(accountId);
+  const [err, setErr] = useState<string | null>(null);
+
+  const enabled = !!cfgQ.data?.enabled;
+  const selected = cfgQ.data?.calendar_id ?? "";
+
+  async function toggle() {
+    setErr(null);
+    try {
+      await setCfg.mutateAsync({
+        enabled: !enabled,
+        calendar_id: selected,
+      });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  async function pickCalendar(calendarId: string) {
+    setErr(null);
+    try {
+      await setCfg.mutateAsync({
+        enabled, calendar_id: calendarId,
+      });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  const busy = setCfg.isPending || cfgQ.isLoading;
+
+  return (
+    <div className="border-t border-border pt-2">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-stone-800">
+            {t("integrations.caldav.push.label")}
+          </p>
+          <p className="text-[10px] text-stone-500">
+            {t("integrations.caldav.push.hint")}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          aria-label={t("integrations.caldav.push.toggle")}
+          onClick={toggle}
+          disabled={busy}
+          className={
+            "shrink-0 w-10 h-5 rounded-full transition-colors "
+            + (enabled ? "bg-cta" : "bg-stone-300")
+            + (busy ? " opacity-50" : "")
+          }
+        >
+          <span
+            className={
+              "block w-4 h-4 bg-white rounded-full shadow "
+              + "transform transition-transform "
+              + (enabled
+                ? "translate-x-5"
+                : "translate-x-0.5")
+            }
+          />
+        </button>
+      </div>
+      {enabled && (
+        <div className="mt-2">
+          <label className="text-[10px] uppercase tracking-wide text-stone-500 block mb-1">
+            {t("integrations.caldav.push.calendar")}
+          </label>
+          <select
+            value={selected}
+            onChange={(e) => pickCalendar(e.target.value)}
+            disabled={busy || cals.isLoading}
+            className={inputCls}
+          >
+            <option value="">{PUSH_DEFAULT_LABEL}</option>
+            {(cals.data?.calendars ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {err && (
+        <p className="text-xs text-red-500 mt-1">{err}</p>
+      )}
     </div>
   );
 }

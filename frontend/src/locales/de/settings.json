@@ -281,5 +281,9 @@
   "integrations.caldav.testOk": "OK - {{count}} Kalender gefunden",
   "integrations.caldav.docs": "App-Passwort erstellen",
   "integrations.caldav.fallbackWarning": "In einer verschlüsselten Datei gespeichert (kein System-Schlüsselbund verfügbar)",
-  "integrations.caldav.note": "Einmal verbinden; Termine erscheinen im Kalender-Bereich und stehen dem Advisor zur Verfügung."
+  "integrations.caldav.note": "Einmal verbinden; Termine erscheinen im Kalender-Bereich und stehen dem Advisor zur Verfügung.",
+  "integrations.caldav.push.label": "Zeiteinträge in diesen Kalender pushen",
+  "integrations.caldav.push.hint": "Buchungen aus kaisho erscheinen als Termine im gewählten Kalender. Einseitig: Änderungen in der Kalender-App werden ignoriert.",
+  "integrations.caldav.push.toggle": "Zeiteintrags-Push umschalten",
+  "integrations.caldav.push.calendar": "Kalender"
 }

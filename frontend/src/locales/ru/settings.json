@@ -281,5 +281,9 @@
   "integrations.caldav.testOk": "OK - найдено календарей: {{count}}",
   "integrations.caldav.docs": "Как создать пароль приложения",
   "integrations.caldav.fallbackWarning": "Сохранено в зашифрованном файле (системное хранилище недоступно)",
-  "integrations.caldav.note": "Подключитесь один раз; события появятся в панели «Календарь» и будут доступны для advisor."
+  "integrations.caldav.note": "Подключитесь один раз; события появятся в панели «Календарь» и будут доступны для advisor.",
+  "integrations.caldav.push.label": "Отправлять записи времени в этот календарь",
+  "integrations.caldav.push.hint": "Время, записанное в kaisho, появится событиями в выбранном календаре. В одну сторону: правки в приложении «Календарь» игнорируются.",
+  "integrations.caldav.push.toggle": "Переключить отправку записей",
+  "integrations.caldav.push.calendar": "Календарь"
 }

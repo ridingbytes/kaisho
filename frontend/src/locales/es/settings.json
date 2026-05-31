@@ -281,5 +281,9 @@
   "integrations.caldav.testOk": "OK - {{count}} calendario(s) detectado(s)",
   "integrations.caldav.docs": "Cómo crear una contraseña de aplicación",
   "integrations.caldav.fallbackWarning": "Guardado en un archivo cifrado (sin llavero del sistema disponible)",
-  "integrations.caldav.note": "Conéctate una vez; los eventos aparecerán en el panel Calendario y estarán disponibles para el advisor."
+  "integrations.caldav.note": "Conéctate una vez; los eventos aparecerán en el panel Calendario y estarán disponibles para el advisor.",
+  "integrations.caldav.push.label": "Enviar entradas de tiempo a este calendario",
+  "integrations.caldav.push.hint": "El tiempo registrado en kaisho aparece como eventos en el calendario elegido. Unidireccional: las ediciones en Calendario se ignoran.",
+  "integrations.caldav.push.toggle": "Conmutar envío de entradas de tiempo",
+  "integrations.caldav.push.calendar": "Calendario"
 }
