@@ -4,7 +4,9 @@ import { useCreateCustomer, useCustomers } from "../../hooks/useCustomers";
 import { useSettings } from "../../hooks/useSettings";
 import { matchesAny } from "../../utils/filterMatch";
 import { registerPanelAction } from "../../utils/panelActions";
+import { Plus } from "lucide-react";
 import { Toggle } from "../common/Toggle";
+import { Button } from "../common/Button";
 import { HelpButton } from "../common/HelpButton";
 import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { PanelToolbar } from "../common/PanelToolbar";
@@ -208,16 +210,14 @@ export function CustomersView() {
               onChange={setShowInactive}
             />
           </label>
-          <button
+          <Button
+            variant="tonal"
+            size="sm"
+            icon={<Plus size={12} />}
             onClick={() => setAdding((v) => !v)}
-            className={[
-              "px-2.5 py-1 rounded bg-cta-muted",
-              "text-cta text-xs font-semibold",
-              "hover:bg-cta hover:text-white transition-colors",
-            ].join(" ")}
           >
             {t("addCustomer")}
-          </button>
+          </Button>
           <OpenInEditorButton kind="customers" />
           <HelpButton
             title="Customers"

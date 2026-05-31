@@ -17,6 +17,7 @@ import {
   sortValue,
 } from "./ClockTableHeader";
 import { EntryRow } from "./EntryRow";
+import { Button } from "../common/Button";
 import { HelpButton } from "../common/HelpButton";
 import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { PanelToolbar } from "../common/PanelToolbar";
@@ -399,19 +400,14 @@ export function ClockView() {
               </button>
             </>
           )}
-          <button
+          <Button
+            variant="tonal"
+            size="sm"
+            icon={<Plus size={12} />}
             onClick={() => setBooking((v) => !v)}
-            className={
-              "flex items-center gap-1 " +
-              "px-2.5 py-1 rounded bg-cta-muted " +
-              "text-cta text-xs font-semibold " +
-              "hover:bg-cta hover:text-white " +
-              "transition-colors"
-            }
           >
-            <Plus size={11} />
             {t("book")}
-          </button>
+          </Button>
           <OpenInEditorButton kind="clocks" />
           <HelpButton
             title="Clock Entries"

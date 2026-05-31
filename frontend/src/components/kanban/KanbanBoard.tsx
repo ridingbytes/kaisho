@@ -36,6 +36,7 @@ import { useReorderStates, useSettings } from "../../hooks/useSettings";
 import type { ArchivedTask, Task } from "../../types";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { Toggle } from "../common/Toggle";
+import { Button } from "../common/Button";
 import { HelpButton } from "../common/HelpButton";
 import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import {
@@ -645,19 +646,15 @@ export function KanbanBoard() {
               }}
             />
           </label>
-          <button
+          <Button
+            variant="tonal"
+            size="sm"
+            icon={<Plus size={12} />}
             onClick={() => setOpenAddInFirst(true)}
-            className={[
-              "flex items-center gap-1 px-2 py-1",
-              "rounded text-xs text-fg-muted",
-              "hover:text-cta hover:bg-cta-muted",
-              "transition-colors",
-            ].join(" ")}
             title={t("newTask")}
           >
-            <Plus size={12} />
             {tc("new")}
-          </button>
+          </Button>
           <OpenInEditorButton kind="tasks" />
           <HelpButton title="Board" doc={DOCS.board} view="board" />
         </>}

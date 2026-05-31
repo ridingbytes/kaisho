@@ -15,7 +15,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Plus } from "lucide-react";
+import { Button } from "../common/Button";
 import { useInboxItems } from "../../hooks/useInbox";
 import { reorderInboxItems } from "../../api/client";
 import { AddInboxForm } from "./AddInboxForm";
@@ -156,16 +157,14 @@ export function InboxView() {
           />
         </>}
         right={<>
-          <button
+          <Button
+            variant="tonal"
+            size="sm"
+            icon={<Plus size={12} />}
             onClick={() => setShowForm((v) => !v)}
-            className={[
-              "px-3 py-1 rounded-lg text-xs bg-cta",
-              "text-white hover:bg-cta-hover",
-              "transition-colors",
-            ].join(" ")}
           >
             {t("addItem")}
-          </button>
+          </Button>
           <OpenInEditorButton kind="inbox" />
           <HelpButton
             title="Inbox"

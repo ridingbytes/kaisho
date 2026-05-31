@@ -14,7 +14,12 @@ import { ButtonHTMLAttributes, forwardRef, ReactNode } from "react";
  *  - ``danger``    — destructive. Reserved for delete /
  *                    destroy actions.
  */
-type Variant = "primary" | "secondary" | "ghost" | "danger";
+type Variant =
+  | "primary"
+  | "secondary"
+  | "tonal"
+  | "ghost"
+  | "danger";
 
 /** Four sizes aligned to the shared input heights and the
  *  dense table/tray pill aesthetic:
@@ -58,6 +63,14 @@ const VARIANT_CLASSES: Record<Variant, string> = {
   secondary:
     "bg-surface-overlay border border-strong "
     + "text-fg-strong hover:border-cta hover:text-cta",
+  // Soft CTA. Sits between primary (loud) and ghost
+  // (silent). The right pick for in-panel "add"
+  // affordances that should read as the primary action
+  // for that panel without dominating the toolbar.
+  tonal:
+    "bg-cta-muted text-cta "
+    + "hover:bg-cta hover:text-white "
+    + "disabled:hover:bg-cta-muted disabled:hover:text-cta",
   ghost:
     "text-fg-muted "
     + "hover:text-cta hover:bg-cta-muted",

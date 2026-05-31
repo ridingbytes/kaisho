@@ -23,12 +23,14 @@ import {
   Check,
   GripVertical,
   Pencil,
+  Plus,
   Trash2,
   X,
 } from "lucide-react";
 import { CollapsibleSection } from "../common/CollapsibleSection";
 import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
+import { Button } from "../common/Button";
 import { HelpButton } from "../common/HelpButton";
 import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { PanelToolbar } from "../common/PanelToolbar";
@@ -806,15 +808,14 @@ export function NotesView() {
           )}
         </>}
         right={<>
-          <button
+          <Button
+            variant="tonal"
+            size="sm"
+            icon={<Plus size={12} />}
             onClick={() => setShowForm((v) => !v)}
-            className={[
-              "px-3 py-1 rounded-lg text-xs bg-cta",
-              "text-white hover:bg-cta-hover transition-colors",
-            ].join(" ")}
           >
             {t("addNote")}
-          </button>
+          </Button>
           <OpenInEditorButton kind="notes" />
           <HelpButton
             title={t("notes")}
