@@ -46,6 +46,26 @@ Three layers, no others:
   timestamps.
 - `text-fg-disabled` — read-only / ghosted controls.
 
+## Theme selection
+
+Three modes, stored under `localStorage.theme`:
+
+- `"light"` — force light.
+- `"dark"` — force dark.
+- `"system"` — follow the OS preference via
+  `matchMedia("(prefers-color-scheme: dark)")`. The app
+  subscribes to media-query change events while in this
+  mode, so flipping macOS Light/Dark from System Settings
+  re-themes the app live without a reload.
+
+The header sun/moon/monitor button cycles
+`light → dark → system → light`. Defaults to `"system"`
+on first launch.
+
+In components, branch on `resolvedTheme` (concrete
+`"dark" | "light"`) rather than the stored `theme`
+(which may be `"system"`).
+
 ## Adding a new theme
 
 Add one block to `index.css`:

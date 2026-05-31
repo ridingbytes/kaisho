@@ -11,6 +11,7 @@ import {
   Download,
   Globe,
   Menu,
+  Monitor,
   Moon,
   RefreshCw,
   Settings,
@@ -244,7 +245,31 @@ const queryClient = new QueryClient({
   },
 });
 
-type Theme = "dark" | "light";
+type Theme = "dark" | "light" | "system";
+
+// Cycle order for the header toggle: each click steps to
+// the next entry. Keeping "system" last means the chain
+// reads "I want light → no, dark → no, let the OS pick".
+const THEME_CYCLE: Theme[] = ["light", "dark", "system"];
+
+const PREFERS_DARK = "(prefers-color-scheme: dark)";
+
+/** Project a stored Theme onto the concrete value applied
+ *  to `data-theme`. ``"system"`` resolves to the OS
+ *  preference at call time. */
+function resolveTheme(theme: Theme): "dark" | "light" {
+  if (theme !== "system") return theme;
+  return window.matchMedia(PREFERS_DARK).matches
+    ? "dark" : "light";
+}
+
+function applyResolvedTheme(resolved: "dark" | "light") {
+  if (resolved === "dark") {
+    document.documentElement.dataset.theme = "dark";
+  } else {
+    delete document.documentElement.dataset.theme;
+  }
+}
 
 const NUDGE_DISMISS_KEY = "kaisho_cloud_nudge_dismissed";
 const NUDGE_DISMISS_DAYS = 14;
@@ -463,8 +488,19 @@ function AppShell() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [newProfInput, setNewProfInput] = useState("");
 
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem("theme") as Theme) ?? "light"
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark" || saved === "light" || saved === "system") {
+      return saved;
+    }
+    return "system";
+  });
+  // Concrete "dark" | "light" the app currently renders as.
+  // Differs from ``theme`` only when ``theme === "system"`` --
+  // components that need to branch on appearance (e.g. logo
+  // colour) should read this, not ``theme``.
+  const [resolvedTheme, setResolvedTheme] = (
+    useState<"dark" | "light">(() => resolveTheme(theme))
   );
   const [sidebarOpen, setSidebarOpen] = useState(
     () => localStorage.getItem("sidebar_open") !== "false"
@@ -527,12 +563,23 @@ function AppShell() {
   const prevMsgCountRef = useRef(advisorMessages.length);
 
   useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.dataset.theme = "dark";
-    } else {
-      delete document.documentElement.dataset.theme;
-    }
+    const initial = resolveTheme(theme);
+    setResolvedTheme(initial);
+    applyResolvedTheme(initial);
     localStorage.setItem("theme", theme);
+
+    // When the user opted into "system", follow OS theme
+    // flips at runtime; otherwise the explicit choice is
+    // sticky and the OS preference is irrelevant.
+    if (theme !== "system") return;
+    const mq = window.matchMedia(PREFERS_DARK);
+    function onChange() {
+      const next = mq.matches ? "dark" : "light";
+      setResolvedTheme(next);
+      applyResolvedTheme(next);
+    }
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
   }, [theme]);
 
   useEffect(() => {
@@ -683,7 +730,7 @@ function AppShell() {
         >
           <img
             src={
-              theme === "dark"
+              resolvedTheme === "dark"
                 ? "/kaisho-logo-light.svg"
                 : "/kaisho-logo.svg"
             }
@@ -777,11 +824,20 @@ function AppShell() {
             <Terminal size={14} />
           </button>
           <button
-            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            onClick={() => setTheme((t) => {
+              const i = THEME_CYCLE.indexOf(t);
+              return THEME_CYCLE[(i + 1) % THEME_CYCLE.length];
+            })}
+            title={
+              theme === "light" ? "Theme: light (click for dark)"
+                : theme === "dark" ? "Theme: dark (click for system)"
+                  : "Theme: system (click for light)"
+            }
             className={headerBtn}
           >
-            {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+            {theme === "light" && <Sun size={14} />}
+            {theme === "dark" && <Moon size={14} />}
+            {theme === "system" && <Monitor size={14} />}
           </button>
           <div className="flex items-center gap-1 px-1.5 py-1">
             <Globe size={14} className="text-fg-muted shrink-0" />
