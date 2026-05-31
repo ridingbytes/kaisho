@@ -303,6 +303,122 @@ class TestSyncNow:
         assert health["degraded"] is True
 
 
+class TestSyncEntry:
+    def test_no_accounts_is_noop(
+        self, isolated_profile, fake_caldav,
+        fake_backend,
+    ):
+        from kaisho.services import caldav_sync
+        fake_caldav["accounts"] = []
+        summary = caldav_sync.sync_entry("anything")
+        assert summary["created"] == 0
+        assert fake_caldav["creates"] == []
+
+    def test_missing_entry_is_skipped(
+        self, isolated_profile, fake_caldav,
+        fake_backend,
+    ):
+        from kaisho.services import caldav_sync
+        fake_caldav["accounts"] = [_account()]
+        fake_backend["entries"] = []
+        summary = caldav_sync.sync_entry("nope")
+        assert summary["created"] == 0
+        assert summary["skipped"] == 1
+
+    def test_bypasses_enabled_since(
+        self, isolated_profile, fake_caldav,
+        fake_backend,
+    ):
+        """Entry predates enabled_since; sync_now would skip
+        it, but sync_entry forces the push."""
+        from kaisho.services import caldav_sync
+        fake_caldav["accounts"] = [_account(
+            enabled_since="2026-05-31T00:00:00+00:00",
+        )]
+        old = _entry(
+            "ancient",
+            "2026-04-01T10:00:00+00:00",
+            "2026-04-01T11:00:00+00:00",
+            updated_at="2026-04-01T11:00:00+00:00",
+        )
+        fake_backend["entries"] = [old]
+        summary = caldav_sync.sync_entry("ancient")
+        assert summary["created"] == 1
+        assert len(fake_caldav["creates"]) == 1
+
+    def test_running_timer_still_skipped(
+        self, isolated_profile, fake_caldav,
+        fake_backend,
+    ):
+        """Force must not override the no-end-time gate --
+        running timers still cannot be pushed."""
+        from kaisho.services import caldav_sync
+        fake_caldav["accounts"] = [_account()]
+        running = _entry(
+            "live",
+            "2026-05-31T10:00:00+00:00",
+            "",
+        )
+        fake_backend["entries"] = [running]
+        summary = caldav_sync.sync_entry("live")
+        assert summary["created"] == 0
+        assert summary["skipped"] >= 1
+
+
+class TestBackfillRange:
+    def test_no_accounts_is_noop(
+        self, isolated_profile, fake_caldav,
+        fake_backend,
+    ):
+        from datetime import date
+        from kaisho.services import caldav_sync
+        fake_caldav["accounts"] = []
+        summary = caldav_sync.backfill_range(
+            date(2026, 4, 1), date(2026, 5, 1),
+        )
+        assert summary["created"] == 0
+
+    def test_inverted_window_raises(
+        self, isolated_profile, fake_caldav,
+        fake_backend,
+    ):
+        from datetime import date
+        from kaisho.services import caldav_sync
+        fake_caldav["accounts"] = [_account()]
+        with pytest.raises(ValueError):
+            caldav_sync.backfill_range(
+                date(2026, 5, 1), date(2026, 4, 1),
+            )
+
+    def test_pushes_entries_before_enabled_since(
+        self, isolated_profile, fake_caldav,
+        fake_backend,
+    ):
+        from datetime import date
+        from kaisho.services import caldav_sync
+        fake_caldav["accounts"] = [_account(
+            enabled_since="2026-05-31T00:00:00+00:00",
+        )]
+        fake_backend["entries"] = [
+            _entry(
+                "a",
+                "2026-04-10T10:00:00+00:00",
+                "2026-04-10T11:00:00+00:00",
+                updated_at="2026-04-10T11:00:00+00:00",
+            ),
+            _entry(
+                "b",
+                "2026-04-20T10:00:00+00:00",
+                "2026-04-20T11:00:00+00:00",
+                updated_at="2026-04-20T11:00:00+00:00",
+            ),
+        ]
+        summary = caldav_sync.backfill_range(
+            date(2026, 4, 1), date(2026, 4, 30),
+        )
+        assert summary["created"] == 2
+
+
 class TestOnLocalDelete:
     def test_unknown_entry_noop(
         self, isolated_profile, fake_caldav,
