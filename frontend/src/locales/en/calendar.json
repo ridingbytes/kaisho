@@ -6,6 +6,8 @@
   "refresh": "Refresh",
   "day": "Day",
   "week": "Week",
+  "weekShort": "W",
+  "month": "Month",
   "empty": "No events in this window.",
   "loadFailed": "Could not load events.",
   "noSources": "No calendar sources connected. Add an account in Settings > Integrations.",

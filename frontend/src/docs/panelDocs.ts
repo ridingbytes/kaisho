@@ -508,4 +508,40 @@ kai clock summary --week
 
 Clock data is stored in \`clocks.org\` in \`ORG_DIR\`.
 `,
+
+  calendar: `
+# Calendar
+
+Read-only week/day view aggregating events from every connected
+CalDAV account (Apple iCloud, Fastmail, Nextcloud, custom) plus
+Google Calendar. Credentials stay on this machine; the sidecar
+talks directly to each provider.
+
+**Navigate** — \`←\` / \`→\` step a day (day view) or a week (week
+view). **Today** snaps back to the current period. The refresh
+button forces an immediate re-fetch (the cache TTL is 60s).
+
+**Event tile** — click for a popover with full title, time,
+description, and a one-click "book time" action that drafts a
+clock entry from the event range.
+
+**Per-calendar colours** — assigned deterministically from the
+calendar id so the same calendar always renders with the same
+tint. CalDAV-supplied colours win when the server provides one.
+
+## Pushing clock entries to a calendar
+
+Settings → CalDAV → per-account toggle creates a dedicated
+"Kaisho" calendar and pushes every new clock entry there. Two
+on-demand surfaces handle history:
+
+\`\`\`bash
+kai caldav push-entry <sync_id>          # one entry, force
+kai caldav backfill --from 2026-04-01    # date range, force
+\`\`\`
+
+Both bypass the per-account \`enabled_since\` cutoff so historical
+entries can be selectively pushed without back-flooding the
+calendar.
+`,
 };

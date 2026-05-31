@@ -47,28 +47,38 @@ const INTEGRATION_PROMPTS: Record<
     label: "Google Calendar",
     chip:
       "border-blue-300 text-blue-700 bg-blue-50 "
-      + "hover:border-blue-400",
+      + "hover:border-blue-400 "
+      + "dark:border-blue-700 dark:text-blue-200 "
+      + "dark:bg-blue-950/40 dark:hover:border-blue-500",
     keys: ["intCalToday", "intCalFree", "intCalBook"],
   },
   linear: {
     label: "Linear",
     chip:
       "border-indigo-300 text-indigo-700 bg-indigo-50 "
-      + "hover:border-indigo-400",
+      + "hover:border-indigo-400 "
+      + "dark:border-indigo-700 dark:text-indigo-200 "
+      + "dark:bg-indigo-950/40 "
+      + "dark:hover:border-indigo-500",
     keys: ["intLinearMine", "intLinearCreate"],
   },
   github: {
     label: "GitHub",
     chip:
       "border-stone-400 text-stone-800 bg-stone-100 "
-      + "hover:border-stone-500",
+      + "hover:border-stone-500 "
+      + "dark:border-stone-600 dark:text-stone-100 "
+      + "dark:bg-stone-800/60 dark:hover:border-stone-400",
     keys: ["intGithubItems", "intGithubDraft"],
   },
   slack: {
     label: "Slack",
     chip:
       "border-purple-300 text-purple-800 bg-purple-50 "
-      + "hover:border-purple-400",
+      + "hover:border-purple-400 "
+      + "dark:border-purple-700 dark:text-purple-200 "
+      + "dark:bg-purple-950/40 "
+      + "dark:hover:border-purple-500",
     keys: ["intSlackSearch", "intSlackPost"],
   },
 };

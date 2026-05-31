@@ -6,6 +6,8 @@
   "refresh": "Aktualisieren",
   "day": "Tag",
   "week": "Woche",
+  "weekShort": "KW",
+  "month": "Monat",
   "empty": "Keine Termine in diesem Zeitraum.",
   "loadFailed": "Termine konnten nicht geladen werden.",
   "noSources": "Keine Kalenderquellen verbunden. Konto unter Einstellungen > Integrationen hinzufügen.",
