@@ -978,7 +978,16 @@ def delete_event(account_id: str, event_url: str) -> None:
 
 
 def _open_calendar(account_id: str, calendar_id: str):
-    """Return a caldav Calendar object handle."""
+    """Return a caldav Calendar object handle.
+
+    Uses the calendar URL's own host as the DAVClient
+    base URL, not the account's discovery URL. iCloud
+    redirects per user to a per-shard host (e.g.
+    ``p49-caldav.icloud.com``), and the caldav library
+    refuses to ``join()`` URLs across hosts. Other
+    providers (Fastmail, Nextcloud) keep the same host
+    end-to-end so the override is a no-op there.
+    """
     acc = get_account(account_id)
     if acc is None:
         raise CalDavError(
@@ -992,17 +1001,28 @@ def _open_calendar(account_id: str, calendar_id: str):
 
     import caldav
     client = caldav.DAVClient(
-        url=acc["url"],
+        url=_base_url_for(calendar_id),
         username=acc["username"],
         password=password,
     )
     return client.calendar(url=calendar_id)
 
 
+def _base_url_for(any_url: str) -> str:
+    """Return ``scheme://host[:port]/`` from any URL.
+    Used to instantiate a DAVClient whose base agrees
+    with the URL we are about to GET/PUT/DELETE."""
+    from urllib.parse import urlsplit
+    parts = urlsplit(any_url)
+    return f"{parts.scheme}://{parts.netloc}/"
+
+
 def _fetch_event_object(account_id: str, event_url: str):
     """Return the caldav Event object for a stored
     event_url. Translates 404 / network errors into
-    CalDavError."""
+    CalDavError. See ``_open_calendar`` for why the
+    client uses the URL's host rather than the
+    account's discovery host."""
     acc = get_account(account_id)
     if acc is None:
         raise CalDavError(
@@ -1016,7 +1036,7 @@ def _fetch_event_object(account_id: str, event_url: str):
 
     import caldav
     client = caldav.DAVClient(
-        url=acc["url"],
+        url=_base_url_for(event_url),
         username=acc["username"],
         password=password,
     )

@@ -337,6 +337,48 @@ class TestOnLocalDelete:
         assert len(fake_caldav["deletes"]) == 1
 
 
+class TestOrgBackendFieldNames:
+    """Regression for the field-name mismatch that
+    silently filtered every org-backend entry: org emits
+    ``start`` / ``end``, SQL emits ``start_at`` /
+    ``end_at``. The sync engine must accept both."""
+
+    def test_org_shape_passes_gate(self):
+        from kaisho.services.caldav_sync import (
+            _should_push,
+        )
+        entry = {
+            "sync_id": "abc",
+            "start": "2026-05-31T12:00:00",
+            "end": "2026-05-31T14:00:00",
+            "customer": "KAISHO",
+            "description": "test",
+            "updated_at": "2026-05-31T09:25:08.304817",
+        }
+        account = {
+            "enabled_since": (
+                "2026-05-31T07:43:48+00:00"
+            ),
+        }
+        assert _should_push(entry, account) is True
+
+    def test_org_shape_builds_event_args(self):
+        from kaisho.services.caldav_sync import (
+            _entry_to_event_args,
+        )
+        entry = {
+            "sync_id": "abc",
+            "start": "2026-05-31T12:00:00",
+            "end": "2026-05-31T14:00:00",
+            "customer": "KAISHO",
+            "description": "test",
+        }
+        args = _entry_to_event_args(entry)
+        assert args is not None
+        assert args["summary"] == "[KAISHO] test"
+        assert args["uid"] == "kaisho-abc"
+
+
 class TestEntryArgsBuilder:
     def test_no_customer_uses_description(self):
         from kaisho.services.caldav_sync import (
