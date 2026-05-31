@@ -14,7 +14,8 @@
 
 import hljs from "highlight.js";
 import { useMemo } from "react";
-import "highlight.js/styles/github.min.css";
+// Token colours come from the per-theme .hljs-* palette
+// defined in index.css.
 
 export interface CodeViewerProps {
   content: string;

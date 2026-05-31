@@ -29,56 +29,6 @@ import { inputCls, saveBtnCls } from "./styles";
 import { LANGUAGES } from "../../i18n";
 
 // -----------------------------------------------------------------
-// App title
-// -----------------------------------------------------------------
-
-function AppTitleSection() {
-  const { t } = useTranslation("settings");
-  const [title, setTitle] = useState(
-    () => localStorage.getItem("kaisho_app_title") || "",
-  );
-
-  function commit() {
-    const val = title.trim();
-    if (val) {
-      localStorage.setItem("kaisho_app_title", val);
-    } else {
-      localStorage.removeItem("kaisho_app_title");
-    }
-    window.dispatchEvent(new Event("app-title-changed"));
-  }
-
-  return (
-    <section>
-      <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted mb-3">
-        {t("appTitle")}
-      </h2>
-      <div className="flex items-center gap-3">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") commit();
-          }}
-          placeholder="KAISHO"
-          className={[
-            "px-3 py-1.5 rounded text-sm w-48",
-            "bg-surface-raised border border-border",
-            "text-fg-strong placeholder-fg-subtle",
-            "focus:outline-none focus:border-cta",
-          ].join(" ")}
-        />
-        <span className="text-[10px] text-fg-subtle">
-          {t("appTitleHint")}
-        </span>
-      </div>
-    </section>
-  );
-}
-
-// -----------------------------------------------------------------
 // User profile
 // -----------------------------------------------------------------
 
@@ -1097,7 +1047,6 @@ function ClockSection() {
 export function GeneralTab(): JSX.Element {
   return (
     <div className="flex flex-col gap-8">
-      <AppTitleSection />
       <LanguageSection />
       <TraySection />
       <ClockSection />

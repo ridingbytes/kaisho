@@ -1,7 +1,10 @@
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
-import "highlight.js/styles/github.min.css";
+// Syntax-highlighting palette lives in index.css as
+// .hljs-* rules driven by CSS variables (one set per
+// theme). The old static github.min.css import was light-
+// only and made strings unreadable on every dark preset.
 
 interface MarkdownProps {
   children: string;

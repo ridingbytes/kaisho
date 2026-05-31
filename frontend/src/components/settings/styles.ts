@@ -1,15 +1,20 @@
 export const DATALIST_ID = "ai-model-list";
 
+// Same token recipe as ``styles/formStyles.ts`` -- the
+// surface-overlay + border-strong combination is the only
+// pairing that reads as a real input across every theme
+// preset.
+
 export const fieldCls = [
   "px-2 py-1 rounded text-xs",
-  "bg-surface-raised border border-border",
+  "bg-surface-overlay border border-strong",
   "text-fg-strong placeholder-fg-muted",
   "focus:outline-none focus:border-cta",
 ].join(" ");
 
 export const inputCls = [
   "flex-1 px-3 py-1.5 rounded text-sm font-mono",
-  "bg-surface-raised border border-border",
+  "bg-surface-overlay border border-strong",
   "text-fg-strong placeholder-fg-muted",
   "focus:outline-none focus:border-cta",
 ].join(" ");

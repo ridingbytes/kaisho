@@ -30,6 +30,15 @@ import {
 import type { KnowledgeFile } from "../../types";
 import { RelDate } from "../common/RelDate";
 
+
+/** Parent folder of a file path; empty string if at root.
+ *  Used as the dimmed location hint next to the title in
+ *  the recent-files list. */
+function dirOf(path: string): string {
+  const i = path.lastIndexOf("/");
+  return i < 0 ? "" : path.slice(0, i);
+}
+
 /** A single search hit returned by the knowledge API. */
 interface SearchResult {
   path: string;
@@ -284,7 +293,7 @@ export function KnowledgeSidebar({
                     key={`${f.label}/${f.path}`}
                     className={[
                       "flex items-center gap-2 w-full",
-                      "px-4 py-1.5 text-xs",
+                      "px-4 py-1.5 text-sm",
                       "hover:bg-surface-raised",
                       "transition-colors",
                       isSel
@@ -319,9 +328,20 @@ export function KnowledgeSidebar({
                       onClick={() =>
                         onSelectFile(f.path, f.label)
                       }
-                      className="flex-1 min-w-0 text-left truncate"
+                      title={`${f.label} / ${f.path}`}
+                      className="flex-1 min-w-0 text-left flex items-baseline gap-1.5 overflow-hidden"
                     >
-                      {f.title || f.name}
+                      <span className="truncate">
+                        {f.title || f.name}
+                      </span>
+                      {dirOf(f.path) && (
+                        <span
+                          className="shrink-0 max-w-[40%] truncate text-[10px] text-fg-subtle font-normal"
+                          dir="rtl"
+                        >
+                          {dirOf(f.path)}
+                        </span>
+                      )}
                     </button>
                     {f.mtime !== undefined && (
                       <RelDate
@@ -353,7 +373,7 @@ export function KnowledgeSidebar({
                     className={[
                       "flex items-center gap-2",
                       "w-full px-4 py-1.5",
-                      "text-xs hover:bg-surface-raised",
+                      "text-sm hover:bg-surface-raised",
                       "transition-colors",
                       isSel
                         ? "text-cta bg-cta-muted"
@@ -524,7 +544,7 @@ function LabelSection({
           )}
           <span
             className={
-              "text-[10px] text-fg-muted "
+              "text-xs font-semibold text-fg-muted "
               + "uppercase tracking-wider"
             }
           >
@@ -538,7 +558,11 @@ function LabelSection({
             setName("");
           }}
           className={
-            "hidden group-hover/label:block "
+            // ``invisible`` keeps the label header height
+            // stable while the add-folder button fades in.
+            "block invisible pointer-events-none "
+            + "group-hover/label:visible "
+            + "group-hover/label:pointer-events-auto "
             + "p-0.5 mr-2 rounded text-fg-subtle "
             + "hover:text-cta hover:bg-cta-muted "
             + "transition-colors shrink-0"

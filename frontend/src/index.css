@@ -52,6 +52,9 @@
   /* Scrollbar */
   --scrollbar-thumb:       rgba(0, 0, 0, 0.10);
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.22);
+
+  /* Typography — overridable per-user via Settings */
+  --app-font: "Inter", system-ui, sans-serif;
 }
 
 [data-theme="dark"] {
@@ -121,7 +124,7 @@
   body {
     background-color: var(--body-bg);
     color: var(--body-color);
-    font-family: "Inter", system-ui, sans-serif;
+    font-family: var(--app-font);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -145,21 +148,682 @@
   }
 }
 
+/* ============================================================
+   PRESET — Sepia (warm paper, light)
+   ============================================================ */
+
+[data-theme="sepia"] {
+  --surface-base:    #f4ecd8;
+  --surface-card:    #faf3df;
+  --surface-raised:  #ede1c4;
+  --surface-overlay: #d9c89a;
+
+  --border-subtle:  rgba(96, 64, 22, 0.06);
+  --border-default: rgba(96, 64, 22, 0.12);
+  --border-strong:  rgba(96, 64, 22, 0.22);
+
+  --text-primary:   #3a2a14;
+  --text-secondary: #5a4226;
+  --text-tertiary:  #7a5b3a;
+  --text-muted:     #a3845d;
+  --text-disabled:  #c4ab85;
+
+  --status-success: #2e7d32;
+  --status-warning: #b8860b;
+  --status-danger:  #b22222;
+  --status-info:    #1565c0;
+
+  --cta:       #3a2a14;
+  --cta-hover: #5a4226;
+  --cta-muted: #ede1c4;
+
+  --shadow-card:      0 1px 3px rgba(96, 64, 22, 0.08),
+                      0 1px 2px rgba(96, 64, 22, 0.05);
+  --shadow-card-hover:0 4px 12px rgba(96, 64, 22, 0.10),
+                      0 2px 4px rgba(96, 64, 22, 0.06);
+  --shadow-card-drag: 0 20px 40px rgba(96, 64, 22, 0.14),
+                      0 8px 16px rgba(96, 64, 22, 0.08);
+
+  --body-bg:    #f4ecd8;
+  --body-color: #3a2a14;
+
+  --scrollbar-thumb:       rgba(96, 64, 22, 0.18);
+  --scrollbar-thumb-hover: rgba(96, 64, 22, 0.32);
+}
+
+/* ============================================================
+   PRESET — Solarized Light (Ethan Schoonover)
+   ============================================================ */
+
+[data-theme="solarized-light"] {
+  --surface-base:    #fdf6e3;
+  --surface-card:    #eee8d5;
+  --surface-raised:  #e7e0c4;
+  --surface-overlay: #d3c8a3;
+
+  --border-subtle:  rgba(7, 54, 66, 0.06);
+  --border-default: rgba(7, 54, 66, 0.12);
+  --border-strong:  rgba(7, 54, 66, 0.20);
+
+  --text-primary:   #073642;
+  --text-secondary: #586e75;
+  --text-tertiary:  #657b83;
+  --text-muted:     #839496;
+  --text-disabled:  #93a1a1;
+
+  --status-success: #859900;
+  --status-warning: #b58900;
+  --status-danger:  #dc322f;
+  --status-info:    #268bd2;
+
+  --cta:       #268bd2;
+  --cta-hover: #1f6fa8;
+  --cta-muted: #e7e0c4;
+
+  --shadow-card:      0 1px 3px rgba(7, 54, 66, 0.06),
+                      0 1px 2px rgba(7, 54, 66, 0.04);
+  --shadow-card-hover:0 4px 12px rgba(7, 54, 66, 0.08),
+                      0 2px 4px rgba(7, 54, 66, 0.05);
+  --shadow-card-drag: 0 20px 40px rgba(7, 54, 66, 0.12),
+                      0 8px 16px rgba(7, 54, 66, 0.06);
+
+  --body-bg:    #fdf6e3;
+  --body-color: #073642;
+
+  --scrollbar-thumb:       rgba(7, 54, 66, 0.18);
+  --scrollbar-thumb-hover: rgba(7, 54, 66, 0.32);
+}
+
+/* ============================================================
+   PRESET — GitHub Light
+   ============================================================ */
+
+[data-theme="github"] {
+  --surface-base:    #ffffff;
+  --surface-card:    #f6f8fa;
+  --surface-raised:  #eaeef2;
+  --surface-overlay: #d0d7de;
+
+  --border-subtle:  rgba(31, 35, 40, 0.06);
+  --border-default: rgba(31, 35, 40, 0.12);
+  --border-strong:  rgba(31, 35, 40, 0.20);
+
+  --text-primary:   #1f2328;
+  --text-secondary: #424a53;
+  --text-tertiary:  #57606a;
+  --text-muted:     #6e7781;
+  --text-disabled:  #afb8c1;
+
+  --status-success: #1a7f37;
+  --status-warning: #9a6700;
+  --status-danger:  #cf222e;
+  --status-info:    #0969da;
+
+  --cta:       #1f883d;
+  --cta-hover: #1a7f37;
+  --cta-muted: #eaeef2;
+
+  --shadow-card:      0 1px 3px rgba(31, 35, 40, 0.06),
+                      0 1px 2px rgba(31, 35, 40, 0.04);
+  --shadow-card-hover:0 4px 12px rgba(31, 35, 40, 0.08),
+                      0 2px 4px rgba(31, 35, 40, 0.05);
+  --shadow-card-drag: 0 20px 40px rgba(31, 35, 40, 0.12),
+                      0 8px 16px rgba(31, 35, 40, 0.06);
+
+  --body-bg:    #ffffff;
+  --body-color: #1f2328;
+
+  --scrollbar-thumb:       rgba(31, 35, 40, 0.16);
+  --scrollbar-thumb-hover: rgba(31, 35, 40, 0.30);
+}
+
+/* ============================================================
+   PRESET — Gruvbox Light
+   ============================================================ */
+
+[data-theme="gruvbox-light"] {
+  --surface-base:    #fbf1c7;
+  --surface-card:    #f9f5d7;
+  --surface-raised:  #ebdbb2;
+  --surface-overlay: #d5c4a1;
+
+  --border-subtle:  rgba(60, 56, 54, 0.06);
+  --border-default: rgba(60, 56, 54, 0.12);
+  --border-strong:  rgba(60, 56, 54, 0.22);
+
+  --text-primary:   #3c3836;
+  --text-secondary: #504945;
+  --text-tertiary:  #665c54;
+  --text-muted:     #7c6f64;
+  --text-disabled:  #928374;
+
+  --status-success: #79740e;
+  --status-warning: #b57614;
+  --status-danger:  #9d0006;
+  --status-info:    #076678;
+
+  --cta:       #af3a03;
+  --cta-hover: #862c00;
+  --cta-muted: #ebdbb2;
+
+  --shadow-card:      0 1px 3px rgba(60, 56, 54, 0.08),
+                      0 1px 2px rgba(60, 56, 54, 0.05);
+  --shadow-card-hover:0 4px 12px rgba(60, 56, 54, 0.10),
+                      0 2px 4px rgba(60, 56, 54, 0.06);
+  --shadow-card-drag: 0 20px 40px rgba(60, 56, 54, 0.14),
+                      0 8px 16px rgba(60, 56, 54, 0.08);
+
+  --body-bg:    #fbf1c7;
+  --body-color: #3c3836;
+
+  --scrollbar-thumb:       rgba(60, 56, 54, 0.18);
+  --scrollbar-thumb-hover: rgba(60, 56, 54, 0.32);
+}
+
+/* ============================================================
+   PRESET — Catppuccin Latte
+   ============================================================
+   Cool grey-blue surfaces with pastel/mauve accents.
+   Deliberately distinct from the warm-cream sepia /
+   solarized-light pair so the user actually has a
+   different aesthetic to pick.
+*/
+
+[data-theme="latte"] {
+  --surface-base:    #eff1f5;
+  --surface-card:    #e6e9ef;
+  --surface-raised:  #dce0e8;
+  --surface-overlay: #ccd0da;
+
+  --border-subtle:  rgba(76, 79, 105, 0.06);
+  --border-default: rgba(76, 79, 105, 0.12);
+  --border-strong:  rgba(76, 79, 105, 0.22);
+
+  --text-primary:   #4c4f69;
+  --text-secondary: #5c5f77;
+  --text-tertiary:  #6c6f85;
+  --text-muted:     #8c8fa1;
+  --text-disabled:  #acb0be;
+
+  --status-success: #40a02b;
+  --status-warning: #df8e1d;
+  --status-danger:  #d20f39;
+  --status-info:    #1e66f5;
+
+  /* Lavender CTA -- a Catppuccin signature accent. */
+  --cta:       #7287fd;
+  --cta-hover: #5b71f0;
+  --cta-muted: rgba(114, 135, 253, 0.14);
+
+  --shadow-card:      0 1px 3px rgba(76, 79, 105, 0.06),
+                      0 1px 2px rgba(76, 79, 105, 0.04);
+  --shadow-card-hover:0 4px 12px rgba(76, 79, 105, 0.08),
+                      0 2px 4px rgba(76, 79, 105, 0.05);
+  --shadow-card-drag: 0 20px 40px rgba(76, 79, 105, 0.12),
+                      0 8px 16px rgba(76, 79, 105, 0.06);
+
+  --body-bg:    #eff1f5;
+  --body-color: #4c4f69;
+
+  --scrollbar-thumb:       rgba(76, 79, 105, 0.18);
+  --scrollbar-thumb-hover: rgba(76, 79, 105, 0.32);
+}
+
+/* ============================================================
+   PRESET — Solarized Dark
+   ============================================================ */
+
+[data-theme="solarized"] {
+  --surface-base:    #002b36;
+  --surface-card:    #073642;
+  --surface-raised:  #0e4250;
+  --surface-overlay: #134c5c;
+
+  --border-subtle:  rgba(147, 161, 161, 0.08);
+  --border-default: rgba(147, 161, 161, 0.14);
+  --border-strong:  rgba(147, 161, 161, 0.24);
+
+  --text-primary:   #fdf6e3;
+  --text-secondary: #eee8d5;
+  --text-tertiary:  #93a1a1;
+  --text-muted:     #657b83;
+  --text-disabled:  #586e75;
+
+  --status-success: #859900;
+  --status-warning: #b58900;
+  --status-danger:  #dc322f;
+  --status-info:    #268bd2;
+
+  --cta:       #2aa198;
+  --cta-hover: #1a7f78;
+  --cta-muted: rgba(42, 161, 152, 0.12);
+
+  --shadow-card:      0 1px 3px rgba(0, 0, 0, 0.4),
+                      0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover:0 4px 12px rgba(0, 0, 0, 0.5),
+                      0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-card-drag: 0 20px 40px rgba(0, 0, 0, 0.6),
+                      0 8px 16px rgba(0, 0, 0, 0.4);
+
+  --body-bg:    #002b36;
+  --body-color: #fdf6e3;
+
+  --scrollbar-thumb:       rgba(147, 161, 161, 0.18);
+  --scrollbar-thumb-hover: rgba(147, 161, 161, 0.32);
+}
+
+/* ============================================================
+   PRESET — Catppuccin Mocha
+   ============================================================
+   Dark sibling of Latte: deep blue-black surfaces with the
+   same peach/mauve/lavender accent palette. Distinct from
+   the existing dark presets (zinc neutral, solarized teal,
+   dracula vivid purple/pink, nord cool blue,
+   tokyo-night deep blue).
+*/
+
+[data-theme="mocha"] {
+  --surface-base:    #1e1e2e;
+  --surface-card:    #181825;
+  --surface-raised:  #313244;
+  --surface-overlay: #45475a;
+
+  --border-subtle:  rgba(205, 214, 244, 0.06);
+  --border-default: rgba(205, 214, 244, 0.12);
+  --border-strong:  rgba(205, 214, 244, 0.22);
+
+  --text-primary:   #cdd6f4;
+  --text-secondary: #bac2de;
+  --text-tertiary:  #a6adc8;
+  --text-muted:     #7f849c;
+  --text-disabled:  #585b70;
+
+  --status-success: #a6e3a1;
+  --status-warning: #f9e2af;
+  --status-danger:  #f38ba8;
+  --status-info:    #89b4fa;
+
+  /* Lavender CTA -- pairs with Latte's identical accent. */
+  --cta:       #b4befe;
+  --cta-hover: #9aa5fc;
+  --cta-muted: rgba(180, 190, 254, 0.16);
+
+  --shadow-card:      0 1px 3px rgba(0, 0, 0, 0.45),
+                      0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-card-hover:0 4px 12px rgba(0, 0, 0, 0.55),
+                      0 2px 4px rgba(0, 0, 0, 0.35);
+  --shadow-card-drag: 0 20px 40px rgba(0, 0, 0, 0.65),
+                      0 8px 16px rgba(0, 0, 0, 0.40);
+
+  --body-bg:    #1e1e2e;
+  --body-color: #cdd6f4;
+
+  --scrollbar-thumb:       rgba(205, 214, 244, 0.16);
+  --scrollbar-thumb-hover: rgba(205, 214, 244, 0.30);
+}
+
+/* ============================================================
+   PRESET — Dracula
+   ============================================================ */
+
+[data-theme="dracula"] {
+  --surface-base:    #282a36;
+  --surface-card:    #2e303e;
+  --surface-raised:  #44475a;
+  --surface-overlay: #565973;
+
+  --border-subtle:  rgba(248, 248, 242, 0.06);
+  --border-default: rgba(248, 248, 242, 0.12);
+  --border-strong:  rgba(248, 248, 242, 0.22);
+
+  --text-primary:   #f8f8f2;
+  --text-secondary: #e6e6e0;
+  --text-tertiary:  #bbbbb2;
+  --text-muted:     #6272a4;
+  --text-disabled:  #44475a;
+
+  --status-success: #50fa7b;
+  --status-warning: #f1fa8c;
+  --status-danger:  #ff5555;
+  --status-info:    #8be9fd;
+
+  --cta:       #bd93f9;
+  --cta-hover: #a374f1;
+  --cta-muted: rgba(189, 147, 249, 0.16);
+
+  --shadow-card:      0 1px 3px rgba(0, 0, 0, 0.45),
+                      0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-card-hover:0 4px 12px rgba(0, 0, 0, 0.55),
+                      0 2px 4px rgba(0, 0, 0, 0.35);
+  --shadow-card-drag: 0 20px 40px rgba(0, 0, 0, 0.65),
+                      0 8px 16px rgba(0, 0, 0, 0.40);
+
+  --body-bg:    #282a36;
+  --body-color: #f8f8f2;
+
+  --scrollbar-thumb:       rgba(248, 248, 242, 0.18);
+  --scrollbar-thumb-hover: rgba(248, 248, 242, 0.32);
+}
+
+/* ============================================================
+   PRESET — Nord (Arctic Ice Studio)
+   ============================================================ */
+
+[data-theme="nord"] {
+  --surface-base:    #2e3440;
+  --surface-card:    #3b4252;
+  --surface-raised:  #434c5e;
+  --surface-overlay: #4c566a;
+
+  --border-subtle:  rgba(216, 222, 233, 0.06);
+  --border-default: rgba(216, 222, 233, 0.12);
+  --border-strong:  rgba(216, 222, 233, 0.22);
+
+  --text-primary:   #eceff4;
+  --text-secondary: #e5e9f0;
+  --text-tertiary:  #d8dee9;
+  --text-muted:     #81a1c1;
+  --text-disabled:  #4c566a;
+
+  --status-success: #a3be8c;
+  --status-warning: #ebcb8b;
+  --status-danger:  #bf616a;
+  --status-info:    #88c0d0;
+
+  --cta:       #88c0d0;
+  --cta-hover: #6da4b8;
+  --cta-muted: rgba(136, 192, 208, 0.16);
+
+  --shadow-card:      0 1px 3px rgba(0, 0, 0, 0.40),
+                      0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-card-hover:0 4px 12px rgba(0, 0, 0, 0.50),
+                      0 2px 4px rgba(0, 0, 0, 0.30);
+  --shadow-card-drag: 0 20px 40px rgba(0, 0, 0, 0.60),
+                      0 8px 16px rgba(0, 0, 0, 0.38);
+
+  --body-bg:    #2e3440;
+  --body-color: #eceff4;
+
+  --scrollbar-thumb:       rgba(216, 222, 233, 0.16);
+  --scrollbar-thumb-hover: rgba(216, 222, 233, 0.30);
+}
+
+/* ============================================================
+   PRESET — Tokyo Night (folke)
+   ============================================================ */
+
+[data-theme="tokyo-night"] {
+  --surface-base:    #1a1b26;
+  --surface-card:    #24283b;
+  --surface-raised:  #292e42;
+  --surface-overlay: #414868;
+
+  --border-subtle:  rgba(192, 202, 245, 0.06);
+  --border-default: rgba(192, 202, 245, 0.12);
+  --border-strong:  rgba(192, 202, 245, 0.22);
+
+  --text-primary:   #c0caf5;
+  --text-secondary: #a9b1d6;
+  --text-tertiary:  #9aa5ce;
+  --text-muted:     #565f89;
+  --text-disabled:  #414868;
+
+  --status-success: #9ece6a;
+  --status-warning: #e0af68;
+  --status-danger:  #f7768e;
+  --status-info:    #7dcfff;
+
+  --cta:       #7aa2f7;
+  --cta-hover: #5d89e8;
+  --cta-muted: rgba(122, 162, 247, 0.16);
+
+  --shadow-card:      0 1px 3px rgba(0, 0, 0, 0.45),
+                      0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-card-hover:0 4px 12px rgba(0, 0, 0, 0.55),
+                      0 2px 4px rgba(0, 0, 0, 0.35);
+  --shadow-card-drag: 0 20px 40px rgba(0, 0, 0, 0.65),
+                      0 8px 16px rgba(0, 0, 0, 0.40);
+
+  --body-bg:    #1a1b26;
+  --body-color: #c0caf5;
+
+  --scrollbar-thumb:       rgba(192, 202, 245, 0.16);
+  --scrollbar-thumb-hover: rgba(192, 202, 245, 0.30);
+}
+
+/* ============================================================
+   SYNTAX HIGHLIGHTING (highlight.js, theme-aware)
+   ============================================================
+   .hljs-* tokens read from CSS variables so each theme can
+   paint its own palette without bundling a per-theme
+   highlight.js stylesheet. Defaults below are GitHub-Light
+   for :root (light zinc) and GitHub-Dark for [data-theme=
+   "dark"]. Other presets override only what they want to
+   brand.
+*/
+
+:root {
+  --code-keyword:    #cf222e;
+  --code-string:     #0a3069;
+  --code-number:     #0550ae;
+  --code-comment:    #6e7781;
+  --code-function:   #8250df;
+  --code-attr:       #0550ae;
+  --code-literal:    #0550ae;
+  --code-tag:        #116329;
+  --code-punctuation:#24292f;
+  --code-built-in:   #953800;
+}
+
+[data-theme="dark"] {
+  --code-keyword:    #ff7b72;
+  --code-string:     #a5d6ff;
+  --code-number:     #79c0ff;
+  --code-comment:    #8b949e;
+  --code-function:   #d2a8ff;
+  --code-attr:       #79c0ff;
+  --code-literal:    #79c0ff;
+  --code-tag:        #7ee787;
+  --code-punctuation:#c9d1d9;
+  --code-built-in:   #ffa657;
+}
+
+[data-theme="sepia"] {
+  --code-keyword:    #9d0006;
+  --code-string:     #79740e;
+  --code-number:     #b57614;
+  --code-comment:    #928374;
+  --code-function:   #8f3f71;
+  --code-attr:       #076678;
+  --code-literal:    #af3a03;
+  --code-tag:        #427b58;
+  --code-punctuation:#3a2a14;
+  --code-built-in:   #b57614;
+}
+
+[data-theme="solarized-light"] {
+  --code-keyword:    #859900;
+  --code-string:     #2aa198;
+  --code-number:     #d33682;
+  --code-comment:    #93a1a1;
+  --code-function:   #268bd2;
+  --code-attr:       #b58900;
+  --code-literal:    #cb4b16;
+  --code-tag:        #268bd2;
+  --code-punctuation:#586e75;
+  --code-built-in:   #cb4b16;
+}
+
+[data-theme="solarized"] {
+  --code-keyword:    #859900;
+  --code-string:     #2aa198;
+  --code-number:     #d33682;
+  --code-comment:    #586e75;
+  --code-function:   #268bd2;
+  --code-attr:       #b58900;
+  --code-literal:    #cb4b16;
+  --code-tag:        #268bd2;
+  --code-punctuation:#93a1a1;
+  --code-built-in:   #cb4b16;
+}
+
+[data-theme="github"] {
+  --code-keyword:    #cf222e;
+  --code-string:     #0a3069;
+  --code-number:     #0550ae;
+  --code-comment:    #6e7781;
+  --code-function:   #8250df;
+  --code-attr:       #0550ae;
+  --code-literal:    #0550ae;
+  --code-tag:        #116329;
+  --code-punctuation:#1f2328;
+  --code-built-in:   #953800;
+}
+
+[data-theme="gruvbox-light"] {
+  --code-keyword:    #9d0006;
+  --code-string:     #79740e;
+  --code-number:     #b57614;
+  --code-comment:    #928374;
+  --code-function:   #b57614;
+  --code-attr:       #076678;
+  --code-literal:    #af3a03;
+  --code-tag:        #427b58;
+  --code-punctuation:#3c3836;
+  --code-built-in:   #af3a03;
+}
+
+[data-theme="latte"] {
+  --code-keyword:    #8839ef;
+  --code-string:     #40a02b;
+  --code-number:     #fe640b;
+  --code-comment:    #8c8fa1;
+  --code-function:   #1e66f5;
+  --code-attr:       #04a5e5;
+  --code-literal:    #fe640b;
+  --code-tag:        #d20f39;
+  --code-punctuation:#4c4f69;
+  --code-built-in:   #df8e1d;
+}
+
+[data-theme="mocha"] {
+  --code-keyword:    #cba6f7;
+  --code-string:     #a6e3a1;
+  --code-number:     #fab387;
+  --code-comment:    #7f849c;
+  --code-function:   #89b4fa;
+  --code-attr:       #89dceb;
+  --code-literal:    #fab387;
+  --code-tag:        #f38ba8;
+  --code-punctuation:#cdd6f4;
+  --code-built-in:   #f9e2af;
+}
+
+[data-theme="dracula"] {
+  --code-keyword:    #ff79c6;
+  --code-string:     #f1fa8c;
+  --code-number:     #bd93f9;
+  --code-comment:    #6272a4;
+  --code-function:   #50fa7b;
+  --code-attr:       #50fa7b;
+  --code-literal:    #bd93f9;
+  --code-tag:        #ff79c6;
+  --code-punctuation:#f8f8f2;
+  --code-built-in:   #8be9fd;
+}
+
+[data-theme="nord"] {
+  --code-keyword:    #81a1c1;
+  --code-string:     #a3be8c;
+  --code-number:     #b48ead;
+  --code-comment:    #4c566a;
+  --code-function:   #88c0d0;
+  --code-attr:       #8fbcbb;
+  --code-literal:    #b48ead;
+  --code-tag:        #81a1c1;
+  --code-punctuation:#d8dee9;
+  --code-built-in:   #d08770;
+}
+
+[data-theme="tokyo-night"] {
+  --code-keyword:    #bb9af7;
+  --code-string:     #9ece6a;
+  --code-number:     #ff9e64;
+  --code-comment:    #565f89;
+  --code-function:   #7aa2f7;
+  --code-attr:       #7dcfff;
+  --code-literal:    #ff9e64;
+  --code-tag:        #f7768e;
+  --code-punctuation:#c0caf5;
+  --code-built-in:   #e0af68;
+}
+
+.hljs                          { color: var(--text-primary); }
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst                    { color: var(--code-keyword); }
+.hljs-string,
+.hljs-doctag,
+.hljs-template-variable        { color: var(--code-string); }
+.hljs-number,
+.hljs-quote                    { color: var(--code-number); }
+.hljs-comment                  { color: var(--code-comment);
+                                  font-style: italic; }
+.hljs-title,
+.hljs-section,
+.hljs-title.function_,
+.hljs-title.class_             { color: var(--code-function); }
+.hljs-attr,
+.hljs-attribute,
+.hljs-property                 { color: var(--code-attr); }
+.hljs-literal,
+.hljs-symbol,
+.hljs-bullet                   { color: var(--code-literal); }
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class           { color: var(--code-tag); }
+.hljs-punctuation              { color: var(--code-punctuation); }
+.hljs-built_in,
+.hljs-type                     { color: var(--code-built-in); }
+.hljs-meta,
+.hljs-meta .hljs-keyword,
+.hljs-meta .hljs-string        { color: var(--code-comment); }
+.hljs-emphasis                 { font-style: italic; }
+.hljs-strong                   { font-weight: bold; }
+
+
 /* Per-theme element overrides that cannot be expressed
    as a Tailwind utility (the rule has to know about an
    ARIA state or a globally-themed CTA inversion). */
 
-/* CTA buttons in dark mode flip the background to light
-   zinc, so the foreground text needs to be dark even
-   when the component author wrote `text-white`. */
-[data-theme="dark"] .bg-cta { color: #18181b; }
-[data-theme="dark"] .hover\:bg-cta-hover:hover {
+/* CTA buttons in dark-zinc flip the background to light
+   zinc, so the foreground text needs to be dark even when
+   the component author wrote `text-white`. Dracula + Nord
+   use light accent CTAs (purple / cyan) where dark text
+   also reads better than white. */
+[data-theme="dark"] .bg-cta,
+[data-theme="dracula"] .bg-cta,
+[data-theme="nord"] .bg-cta,
+[data-theme="mocha"] .bg-cta {
+  color: #18181b;
+}
+[data-theme="dark"] .hover\:bg-cta-hover:hover,
+[data-theme="dracula"] .hover\:bg-cta-hover:hover,
+[data-theme="nord"] .hover\:bg-cta-hover:hover,
+[data-theme="mocha"] .hover\:bg-cta-hover:hover {
   color: #18181b;
 }
 
 /* Toggle switch: a mid-zinc track keeps the white knob
-   visible in the active state. */
-[data-theme="dark"] [role="switch"][aria-checked="true"] {
+   visible in the active state across all dark presets. */
+[data-theme="dark"] [role="switch"][aria-checked="true"],
+[data-theme="solarized"] [role="switch"][aria-checked="true"],
+[data-theme="dracula"] [role="switch"][aria-checked="true"],
+[data-theme="nord"] [role="switch"][aria-checked="true"],
+[data-theme="tokyo-night"]
+  [role="switch"][aria-checked="true"],
+[data-theme="mocha"] [role="switch"][aria-checked="true"] {
   background-color: #71717a;
 }
 

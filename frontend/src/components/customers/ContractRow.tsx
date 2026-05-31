@@ -7,6 +7,7 @@ import { Pencil, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { EditFooter } from "../common/EditFooter";
+import { HoverActions } from "../common/HoverActions";
 import {
   useUpdateContract,
   useDeleteContract,
@@ -292,11 +293,7 @@ export function ContractRow({
             {tc("invoiced")}
           </span>
         )}
-        <div
-          className={
-            "hidden group-hover:flex gap-0.5 ml-auto"
-          }
-        >
+        <HoverActions className="gap-0.5 ml-auto">
           <button
             onClick={startEdit}
             className={
@@ -330,7 +327,7 @@ export function ContractRow({
               <X size={10} />
             </button>
           </ConfirmPopover>
-        </div>
+        </HoverActions>
       </div>
       {contract.budget > 0 && (
         <div

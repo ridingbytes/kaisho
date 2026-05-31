@@ -7,6 +7,7 @@ import { Check, Pencil, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
+import { HoverActions } from "../common/HoverActions";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import {
   useDeleteClockEntry,
@@ -225,11 +226,7 @@ export function TimeEntryRow({
       >
         {formatHours(entry.duration_minutes)}
       </span>
-      <div
-        className={
-          "hidden group-hover:flex gap-0.5 shrink-0"
-        }
-      >
+      <HoverActions className="gap-0.5">
         <button
           onClick={() => {
             setDesc(entry.description);
@@ -267,7 +264,7 @@ export function TimeEntryRow({
             <Trash2 size={10} />
           </button>
         </ConfirmPopover>
-      </div>
+      </HoverActions>
     </div>
   );
 }

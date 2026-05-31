@@ -246,6 +246,7 @@ const queryClient = new QueryClient({
 });
 
 type Theme = "dark" | "light" | "system";
+export type ThemeMode = Theme;
 
 // Cycle order for the header toggle: each click steps to
 // the next entry. Keeping "system" last means the chain
@@ -253,6 +254,105 @@ type Theme = "dark" | "light" | "system";
 const THEME_CYCLE: Theme[] = ["light", "dark", "system"];
 
 const PREFERS_DARK = "(prefers-color-scheme: dark)";
+
+// ---------------------------------------------------------
+// Theme presets
+// ---------------------------------------------------------
+// The active appearance is the product of:
+//   mode   ∈ {"light", "dark", "system"}    ← localStorage.theme
+//   light preset ∈ THEME_PRESETS.light.id   ← localStorage.themeLight
+//   dark  preset ∈ THEME_PRESETS.dark.id    ← localStorage.themeDark
+//
+// Each preset id maps onto the data-theme attribute (with
+// one quirk: the default light preset uses the bare :root
+// block, so the attribute is removed instead of set).
+export type LightPresetId =
+  | "zinc"
+  | "sepia"
+  | "solarized-light"
+  | "github"
+  | "gruvbox-light"
+  | "latte";
+export type DarkPresetId =
+  | "zinc"
+  | "solarized"
+  | "dracula"
+  | "nord"
+  | "tokyo-night"
+  | "mocha";
+
+export const THEME_PRESETS = {
+  light: [
+    { id: "zinc" as LightPresetId, labelKey: "presetZinc" },
+    { id: "sepia" as LightPresetId, labelKey: "presetSepia" },
+    { id: "solarized-light" as LightPresetId,
+      labelKey: "presetSolarizedLight" },
+    { id: "github" as LightPresetId,
+      labelKey: "presetGithub" },
+    { id: "gruvbox-light" as LightPresetId,
+      labelKey: "presetGruvboxLight" },
+    { id: "latte" as LightPresetId,
+      labelKey: "presetLatte" },
+  ],
+  dark: [
+    { id: "zinc" as DarkPresetId, labelKey: "presetZinc" },
+    { id: "solarized" as DarkPresetId,
+      labelKey: "presetSolarized" },
+    { id: "dracula" as DarkPresetId,
+      labelKey: "presetDracula" },
+    { id: "nord" as DarkPresetId, labelKey: "presetNord" },
+    { id: "tokyo-night" as DarkPresetId,
+      labelKey: "presetTokyoNight" },
+    { id: "mocha" as DarkPresetId,
+      labelKey: "presetMocha" },
+  ],
+};
+
+const LIGHT_PRESET_IDS = new Set<LightPresetId>(
+  THEME_PRESETS.light.map((p) => p.id),
+);
+const DARK_PRESET_IDS = new Set<DarkPresetId>(
+  THEME_PRESETS.dark.map((p) => p.id),
+);
+
+// Font presets — id is the dropdown value; ``family`` is the
+// resolved CSS font-family string. ``system`` picks the OS
+// system font stack so the app blends in with the native
+// look on each platform.
+export type FontPresetId =
+  | "inter"
+  | "system"
+  | "sans"
+  | "serif"
+  | "mono";
+
+export interface FontPreset {
+  id: FontPresetId;
+  labelKey: string;
+  family: string;
+}
+
+export const FONT_PRESETS: FontPreset[] = [
+  { id: "inter", labelKey: "fontInter",
+    family: '"Inter", system-ui, sans-serif' },
+  { id: "system", labelKey: "fontSystem",
+    family:
+      'system-ui, -apple-system, "Segoe UI", Roboto, '
+      + '"Helvetica Neue", Arial, sans-serif' },
+  { id: "sans", labelKey: "fontSans",
+    family:
+      '"Helvetica Neue", Helvetica, Arial, sans-serif' },
+  { id: "serif", labelKey: "fontSerif",
+    family: 'Georgia, "Times New Roman", Times, serif' },
+  { id: "mono", labelKey: "fontMono",
+    family:
+      '"JetBrains Mono", "Fira Code", Menlo, '
+      + 'Consolas, monospace' },
+];
+
+const FONT_PRESET_IDS = new Set<FontPresetId>(
+  FONT_PRESETS.map((p) => p.id),
+);
 
 /** Project a stored Theme onto the concrete value applied
  *  to `data-theme`. ``"system"`` resolves to the OS
@@ -263,12 +363,57 @@ function resolveTheme(theme: Theme): "dark" | "light" {
     ? "dark" : "light";
 }
 
-function applyResolvedTheme(resolved: "dark" | "light") {
-  if (resolved === "dark") {
-    document.documentElement.dataset.theme = "dark";
+/** Pick the `data-theme` attribute value for a (mode,
+ *  preset) pair. Empty string means "remove the attribute"
+ *  so the `:root` defaults apply. */
+function attrForPreset(
+  mode: "light" | "dark",
+  lightPreset: LightPresetId,
+  darkPreset: DarkPresetId,
+): string {
+  if (mode === "light") {
+    return lightPreset === "zinc" ? "" : lightPreset;
+  }
+  return darkPreset === "zinc" ? "dark" : darkPreset;
+}
+
+function applyTheme(
+  mode: "light" | "dark",
+  lightPreset: LightPresetId,
+  darkPreset: DarkPresetId,
+) {
+  const attr = attrForPreset(mode, lightPreset, darkPreset);
+  if (attr) {
+    document.documentElement.dataset.theme = attr;
   } else {
     delete document.documentElement.dataset.theme;
   }
+}
+
+function loadLightPreset(): LightPresetId {
+  const v = localStorage.getItem("themeLight") as
+    LightPresetId | null;
+  return v && LIGHT_PRESET_IDS.has(v) ? v : "zinc";
+}
+
+function loadDarkPreset(): DarkPresetId {
+  const v = localStorage.getItem("themeDark") as
+    DarkPresetId | null;
+  return v && DARK_PRESET_IDS.has(v) ? v : "zinc";
+}
+
+function loadFont(): FontPresetId {
+  const v = localStorage.getItem("themeFont");
+  return v && FONT_PRESET_IDS.has(v as FontPresetId)
+    ? (v as FontPresetId) : "inter";
+}
+
+function applyFont(id: FontPresetId) {
+  const preset = FONT_PRESETS.find((p) => p.id === id)
+    ?? FONT_PRESETS[0];
+  document.documentElement.style.setProperty(
+    "--app-font", preset.family,
+  );
 }
 
 const NUDGE_DISMISS_KEY = "kaisho_cloud_nudge_dismissed";
@@ -495,6 +640,13 @@ function AppShell() {
     }
     return "system";
   });
+  const [lightPreset, setLightPreset] = (
+    useState<LightPresetId>(loadLightPreset)
+  );
+  const [darkPreset, setDarkPreset] = (
+    useState<DarkPresetId>(loadDarkPreset)
+  );
+  const [font, setFont] = useState<FontPresetId>(loadFont);
   // Concrete "dark" | "light" the app currently renders as.
   // Differs from ``theme`` only when ``theme === "system"`` --
   // components that need to branch on appearance (e.g. logo
@@ -565,8 +717,10 @@ function AppShell() {
   useEffect(() => {
     const initial = resolveTheme(theme);
     setResolvedTheme(initial);
-    applyResolvedTheme(initial);
+    applyTheme(initial, lightPreset, darkPreset);
     localStorage.setItem("theme", theme);
+    localStorage.setItem("themeLight", lightPreset);
+    localStorage.setItem("themeDark", darkPreset);
 
     // When the user opted into "system", follow OS theme
     // flips at runtime; otherwise the explicit choice is
@@ -576,11 +730,47 @@ function AppShell() {
     function onChange() {
       const next = mq.matches ? "dark" : "light";
       setResolvedTheme(next);
-      applyResolvedTheme(next);
+      applyTheme(next, lightPreset, darkPreset);
     }
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
-  }, [theme]);
+  }, [theme, lightPreset, darkPreset]);
+
+  useEffect(() => {
+    applyFont(font);
+    localStorage.setItem("themeFont", font);
+  }, [font]);
+
+  // Cross-tab + same-tab theme/font sync: the Appearance
+  // settings page writes to localStorage and dispatches
+  // ``kaisho-theme-changed``; pick those up here so the
+  // running app reflows without a reload.
+  useEffect(() => {
+    function refresh() {
+      const saved = localStorage.getItem("theme");
+      if (saved === "dark" || saved === "light"
+          || saved === "system") {
+        setTheme(saved);
+      }
+      setLightPreset(loadLightPreset());
+      setDarkPreset(loadDarkPreset());
+      setFont(loadFont());
+    }
+    function onStorage(e: StorageEvent) {
+      if (e.key === "theme" || e.key === "themeLight"
+          || e.key === "themeDark" || e.key === "themeFont") {
+        refresh();
+      }
+    }
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("kaisho-theme-changed", refresh);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(
+        "kaisho-theme-changed", refresh,
+      );
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("sidebar_open", String(sidebarOpen));

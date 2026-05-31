@@ -17,6 +17,7 @@ import {
 import { useEffect, useState } from "react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
+import { HoverActions } from "../common/HoverActions";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
 import {
   useInvoicedContracts,
@@ -173,7 +174,7 @@ function ClockEntryRow({
         <span
           className={
             "text-xs text-fg-muted tabular-nums shrink-0 " +
-            "w-10"
+            "w-16"
           }
         >
           {formatDate(entry.start)}
@@ -286,12 +287,7 @@ function ClockEntryRow({
       >
         {formatHours(minutes)}
       </span>
-      <div
-        className={
-          "hidden group-hover:flex items-center " +
-          "gap-0.5 shrink-0"
-        }
-      >
+      <HoverActions className="gap-0.5">
         <button
           onClick={() => setEditing(true)}
           className={
@@ -317,7 +313,7 @@ function ClockEntryRow({
             <Trash2 size={12} strokeWidth={2} />
           </button>
         </ConfirmPopover>
-      </div>
+      </HoverActions>
     </div>
   );
 }

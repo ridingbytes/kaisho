@@ -50,7 +50,11 @@ module.exports = {
         info:    { DEFAULT: "var(--status-info)" },
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        // Resolves at runtime to whatever the active theme
+        // / user has set via --app-font. Components using
+        // `font-sans` (or no font utility) pick this up
+        // automatically.
+        sans: "var(--app-font)",
       },
       boxShadow: {
         card: "var(--shadow-card)",

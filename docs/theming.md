@@ -46,6 +46,28 @@ Three layers, no others:
   timestamps.
 - `text-fg-disabled` — read-only / ghosted controls.
 
+## Built-in presets
+
+| Preset | Mode | Description |
+|---|---|---|
+| `zinc` | light | True-neutral grey (default). |
+| `sepia` | light | Warm cream paper, sepia ink. |
+| `zinc` | dark | True-neutral dark (default). |
+| `solarized` | dark | Ethan Schoonover's Solarized Dark. |
+
+The active preset is picked from `localStorage`:
+
+- `themeLight` → which light preset to use
+  (`"zinc"` or `"sepia"`)
+- `themeDark` → which dark preset to use
+  (`"zinc"` or `"solarized"`)
+
+Settings → General → Appearance exposes both as dropdowns
+alongside the mode picker. Changing a value writes to
+`localStorage` and dispatches a `kaisho-theme-changed`
+custom event so the running app re-themes without a
+reload.
+
 ## Theme selection
 
 Three modes, stored under `localStorage.theme`:

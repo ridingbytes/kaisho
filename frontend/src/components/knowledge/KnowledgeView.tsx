@@ -111,10 +111,26 @@ function migrateLegacyFilter(): string {
 export function KnowledgeView() {
   const { t } = useTranslation("knowledge");
   const { t: tc } = useTranslation("common");
+  // Persist the open file across navigations so going to
+  // another panel and back doesn't drop the user's context.
+  // Stored per-profile to keep notes / research scoping
+  // clean.
+  const SELECTED_PATH_KEY = "kaisho_kb_selected_path";
+  const SELECTED_LABEL_KEY = "kaisho_kb_selected_label";
   const [selectedPath, setSelectedPath] =
-    useState<string | null>(null);
+    useState<string | null>(() =>
+      profileGet(SELECTED_PATH_KEY) || null,
+    );
   const [selectedLabel, setSelectedLabel] =
-    useState<string>("knowledge");
+    useState<string>(() =>
+      profileGet(SELECTED_LABEL_KEY) || "knowledge",
+    );
+  useEffect(() => {
+    profileSet(SELECTED_PATH_KEY, selectedPath ?? "");
+  }, [selectedPath]);
+  useEffect(() => {
+    profileSet(SELECTED_LABEL_KEY, selectedLabel);
+  }, [selectedLabel]);
   // Unified filter: scoped chips narrow the tree, the
   // trailing free text drives the content-search backend.
   const FILTER_QUERY_KEY = "kaisho_kb_filter_query";
@@ -339,6 +355,25 @@ export function KnowledgeView() {
       return next;
     });
   }, [isSearching, searchResults]);
+
+  // Reveal the open file: every time selectedPath changes
+  // (including the restore-from-localStorage case on mount),
+  // expand its parent folders so the leaf is actually
+  // rendered in the tree. The leaf itself scroll-intos-view
+  // from TreeNodeRow.
+  useEffect(() => {
+    if (!selectedPath) return;
+    setTreeNodes((prev) => {
+      const target = new Set([selectedPath]);
+      const next: Record<string, TreeNode[]> = {};
+      for (const label of Object.keys(prev)) {
+        next[label] = expandMatchingFolders(
+          prev[label], target,
+        );
+      }
+      return next;
+    });
+  }, [selectedPath]);
 
   // Persist sidebar state
   useEffect(() => {

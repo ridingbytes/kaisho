@@ -20,9 +20,10 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { HoverActions } from "../common/HoverActions";
 import type { TreeNode } from "./knowledgeTree";
 
 /** Combined dropdown: move to folder or another label. */
@@ -176,6 +177,17 @@ export function TreeNodeRow({
   if (node.kind === "leaf") {
     const isSelected = selectedPath === node.path;
     const isStarred = starred.has(node.path);
+    // Reveal the selected file when the tree first renders
+    // it (e.g. on app reload after we restore selectedPath
+    // from localStorage, or when the user navigates back
+    // to the KB panel). ``block: "nearest"`` avoids
+    // snapping mid-list when the leaf is already in view.
+    const rowRef = useRef<HTMLDivElement | null>(null);
+    useEffect(() => {
+      if (isSelected) {
+        rowRef.current?.scrollIntoView({ block: "nearest" });
+      }
+    }, [isSelected]);
 
     if (renaming) {
       return (
@@ -242,6 +254,7 @@ export function TreeNodeRow({
 
     return (
       <div
+        ref={rowRef}
         className={[
           "group/leaf flex items-center py-1 pr-1",
           "hover:bg-surface-raised transition-colors",
@@ -277,7 +290,7 @@ export function TreeNodeRow({
           }
           className={
             "flex-1 min-w-0 text-left " +
-            "text-xs truncate flex items-center gap-1.5"
+            "text-sm truncate flex items-center gap-1.5"
           }
           title={node.path}
         >
@@ -293,12 +306,7 @@ export function TreeNodeRow({
           />
           <span className="truncate">{node.name}</span>
         </button>
-        <div
-          className={
-            "hidden group-hover/leaf:flex " +
-            "items-center gap-0.5 shrink-0"
-          }
-        >
+        <HoverActions group="leaf" className="gap-0.5">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -334,7 +342,7 @@ export function TreeNodeRow({
               <Trash2 size={9} />
             </button>
           </ConfirmPopover>
-        </div>
+        </HoverActions>
       </div>
     );
   }
@@ -363,7 +371,7 @@ export function TreeNodeRow({
         <button
           onClick={() => onToggle(node.path)}
           className={
-            "flex-1 text-left py-1 pr-2 text-xs "
+            "flex-1 text-left py-1 pr-2 text-sm "
             + "font-semibold text-fg "
             + "flex items-center gap-1"
           }
@@ -403,7 +411,12 @@ export function TreeNodeRow({
             if (!node.expanded) onToggle(node.path);
           }}
           className={
-            "hidden group-hover/folder:block "
+            // Single-button reveal: ``invisible`` keeps the
+            // slot occupied so the folder row height stays
+            // steady across hover.
+            "block invisible pointer-events-none "
+            + "group-hover/folder:visible "
+            + "group-hover/folder:pointer-events-auto "
             + "p-0.5 mr-1 rounded text-fg-subtle "
             + "hover:text-cta hover:bg-cta-muted "
             + "transition-colors shrink-0"
