@@ -337,6 +337,51 @@ class TestOnLocalDelete:
         assert len(fake_caldav["deletes"]) == 1
 
 
+class TestEventGoneRecreate:
+    """If a previously-pushed event is no longer on the
+    server (user deleted it in Calendar.app, iCloud
+    eventual-consistency), the next sync recreates it
+    instead of recording a permanent failure."""
+
+    def test_404_on_update_falls_back_to_create(
+        self, isolated_profile, fake_caldav,
+        fake_backend, monkeypatch,
+    ):
+        from kaisho.services import caldav as cv
+        from kaisho.services import caldav_sync
+
+        fake_caldav["accounts"] = [_account()]
+        fake_backend["entries"] = [
+            _entry(
+                "abc",
+                "2026-05-31T10:00:00+00:00",
+                "2026-05-31T11:00:00+00:00",
+                description="standup",
+            ),
+        ]
+        # First sync creates the event normally.
+        caldav_sync.sync_now()
+        assert len(fake_caldav["creates"]) == 1
+
+        # Simulate iCloud returning 404 on the next
+        # update (event deleted in Calendar.app).
+        def boom_update(**_kw):
+            raise cv.EventGoneError("gone")
+        monkeypatch.setattr(
+            cv, "update_event", boom_update,
+        )
+        # Touch the entry so the gate still passes.
+        fake_backend["entries"][0]["updated_at"] = (
+            "2026-05-31T12:00:00+00:00"
+        )
+
+        summary = caldav_sync.sync_now()
+        # Should recreate, not error.
+        assert summary["created"] == 1
+        assert summary["errors"] == 0
+        assert len(fake_caldav["creates"]) == 2
+
+
 class TestOrgBackendFieldNames:
     """Regression for the field-name mismatch that
     silently filtered every org-backend entry: org emits

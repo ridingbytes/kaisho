@@ -296,6 +296,23 @@ def _update_one(
                 if k != "uid"
             },
         )
+    except caldav_svc.EventGoneError:
+        # The event we previously created is no longer on
+        # the server -- user deleted it in Calendar.app,
+        # or iCloud's eventually-consistent calendar
+        # collection still 404s a just-PUT event. Either
+        # way, drop the stale mapping and re-create so
+        # the next reconciliation hands us a fresh URL.
+        log.info(
+            "caldav update -> recreate: account=%s "
+            "sync_id=%s (server lost the event)",
+            account["account_id"], entry.get("sync_id"),
+        )
+        per_entry.pop(account["account_id"], None)
+        _create_one(
+            account, entry, per_entry, state, summary,
+        )
+        return
     except caldav_svc.CalDavError as exc:
         log.warning(
             "caldav update failed: account=%s sync_id=%s %s",

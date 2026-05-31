@@ -54,6 +54,15 @@ class CalDavError(RuntimeError):
     provider error, configuration)."""
 
 
+class EventGoneError(CalDavError):
+    """Raised when fetching or updating an event returns
+    404 from the server. The sync engine catches this
+    distinctly and recreates the event so a manual
+    delete in Calendar.app (or iCloud propagation lag)
+    self-heals on the next push instead of leaving a
+    permanent error."""
+
+
 # -- Settings file ---------------------------------------------------
 
 
@@ -1048,6 +1057,17 @@ def _fetch_event_object(account_id: str, event_url: str):
         return client.calendar(url=cal_url).event_by_url(
             event_url,
         )
+    except caldav.lib.error.NotFoundError as exc:
+        # Distinct from CalDavError so the sync engine
+        # can recreate the event instead of recording a
+        # permanent failure. iCloud is known to 404 on
+        # PROPFIND for events that were just PUT (the
+        # principal's calendar collection is eventually
+        # consistent); same path also handles "user
+        # deleted the event in Calendar.app".
+        raise EventGoneError(
+            f"event not found on server: {event_url}"
+        ) from exc
     except Exception as exc:  # noqa: BLE001
         raise CalDavError(
             f"could not fetch event: {exc}"
