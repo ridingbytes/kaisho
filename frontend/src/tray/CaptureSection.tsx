@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
+import { Button } from "../components/common/Button";
 import {
   addNote,
   captureInboxItem,
@@ -65,20 +66,14 @@ export function CaptureSection() {
       {/* Mode toggle */}
       <div className="flex gap-1 mb-2">
         {modes.map((m) => (
-          <button
+          <Button
             key={m.key}
-            type="button"
+            size="xs"
+            variant={mode === m.key ? "primary" : "ghost"}
             onClick={() => setMode(m.key)}
-            className={[
-              "px-2 py-0.5 rounded text-2xs",
-              "font-medium transition-colors",
-              mode === m.key
-                ? "bg-cta text-white"
-                : "text-fg-muted hover:text-fg",
-            ].join(" ")}
           >
             {m.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -97,13 +92,14 @@ export function CaptureSection() {
             "transition-colors",
           ].join(" ")}
         />
-        <button
+        <Button
           type="submit"
           disabled={!text.trim()}
-          className="px-2 py-1.5 rounded-lg bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-40"
+          iconOnly
+          icon={<Plus size={14} />}
         >
-          <Plus size={14} />
-        </button>
+          {t("capture")}
+        </Button>
       </div>
 
       {msg && (

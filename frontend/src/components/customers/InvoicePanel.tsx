@@ -9,6 +9,7 @@ import {
 import { useContracts } from "../../hooks/useContracts";
 import { useToast } from "../../context/ToastContext";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { Button } from "../common/Button";
 import {
   exportClocksCsv,
   exportClocksExcel,
@@ -216,15 +217,13 @@ export function InvoicePanel({
             onConfirm={handleBookAll}
             disabled={booking || !entries.length}
           >
-            <button
+            <Button
+              size="sm"
               disabled={booking || !entries.length}
-              className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-40"
+              icon={<Check size={12} />}
             >
-              <Check size={12} />
-              {booking
-                ? tc("saving")
-                : t("markAsInvoiced")}
-            </button>
+              {booking ? tc("saving") : t("markAsInvoiced")}
+            </Button>
           </ConfirmPopover>
         </div>
       )}

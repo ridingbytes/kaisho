@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Clock4, X } from "lucide-react";
 
 import type { CalendarEvent } from "../../api/client";
+import { Button } from "../common/Button";
 import { colorFor } from "./calendarColors";
 import { hhmm, parseIso, sameDay } from "./dateUtils";
 
@@ -88,14 +89,13 @@ export function EventPopover({
         )}
         {onBook && (
           <div className="mt-auto pt-3 border-t border-border">
-            <button
-              type="button"
+            <Button
               onClick={() => onBook(event)}
-              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-cta text-white text-sm font-medium hover:bg-cta-hover"
+              icon={<Clock4 className="w-4 h-4" />}
+              className="w-full"
             >
-              <Clock4 className="w-4 h-4" />
               {t("bookFromEvent")}
-            </button>
+            </Button>
             <p className="text-2xs text-fg-muted mt-1 text-center">
               {t("bookFromEventHint")}
             </p>
