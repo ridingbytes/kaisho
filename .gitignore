@@ -21,3 +21,4 @@ site/
 # (and bin/dev); never commit (they go stale and pin the app to
 # an old version). The dir is kept via .gitkeep.
 desktop/src-tauri/binaries/kai-server-*
+~/
