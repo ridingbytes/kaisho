@@ -587,12 +587,13 @@ class MarkdownTaskBackend(TaskBackend):
         body=None,
         github_url=None,
         sync_id=None,
+        task_id=None,
     ) -> dict:
         """Create a new task and return its dict."""
         tasks = self._load_tasks()
         now = datetime.now()
         task = {
-            "id": _generate_id(title),
+            "id": task_id or _generate_id(title),
             "sync_id": sync_id or str(uuid.uuid4()),
             "customer": customer,
             "title": title,

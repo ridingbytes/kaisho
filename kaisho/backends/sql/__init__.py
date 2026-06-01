@@ -581,9 +581,14 @@ class SqlTaskBackend(TaskBackend):
         body=None,
         github_url=None,
         sync_id=None,
+        task_id=None,
     ) -> dict:
         """Create a new task and return its dict."""
-        task_id = _generate_id(title)
+        # ``task_id`` is honoured when the caller wants to
+        # preserve cross-references (services.convert needs
+        # this so clock entries' task_id keeps resolving
+        # after an org -> sql conversion).
+        task_id = task_id or _generate_id(title)
         now = datetime.now().isoformat()
         row = TaskRow(
             id=task_id,

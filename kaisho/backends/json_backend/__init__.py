@@ -211,11 +211,12 @@ class JsonTaskBackend(TaskBackend):
         body=None,
         github_url=None,
         sync_id=None,
+        task_id=None,
     ) -> dict:
         """Create a new task and return its dict."""
         tasks = _read_json(self._tasks_file)
         task = {
-            "id": _generate_id(title),
+            "id": task_id or _generate_id(title),
             "customer": customer,
             "title": title,
             "status": status,

@@ -272,6 +272,7 @@ def add_task(
     body: str | None = None,
     github_url: str | None = None,
     sync_id: str | None = None,
+    task_id: str | None = None,
 ) -> dict:
     """Add a new task to todos.org as a flat heading."""
     if not todos_file.exists():
@@ -301,7 +302,10 @@ def add_task(
         new_heading.properties["GITHUB_URL"] = github_url
 
     # Persist the stable ID so renames don't change it.
-    task_id = _stable_id(new_heading)
+    # Caller can pin the id explicitly (used by
+    # services.convert to preserve cross-references after
+    # a backend conversion).
+    task_id = task_id or _stable_id(new_heading)
     new_heading.properties["TASK_ID"] = task_id
 
     org_file.headings.insert(0, new_heading)

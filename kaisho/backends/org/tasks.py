@@ -50,6 +50,7 @@ class OrgTaskBackend(TaskBackend):
         body: str | None = None,
         github_url: str | None = None,
         sync_id: str | None = None,
+        task_id: str | None = None,
     ) -> dict:
         """Create a new task and return its dict."""
         return kanban.add_task(
@@ -62,6 +63,7 @@ class OrgTaskBackend(TaskBackend):
             body=body,
             github_url=github_url,
             sync_id=sync_id,
+            task_id=task_id,
         )
 
     def move_task(self, task_id: str, new_status: str) -> dict:

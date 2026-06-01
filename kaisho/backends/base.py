@@ -44,11 +44,17 @@ class TaskBackend(ABC):
         body: str | None = None,
         github_url: str | None = None,
         sync_id: str | None = None,
+        task_id: str | None = None,
     ) -> dict:
         """Create and persist a new task, return its dict.
 
         :param sync_id: Optional UUID for cloud sync
             identity. Generated if not provided.
+        :param task_id: Optional explicit task id. Used by
+            ``services.convert`` so that cross-references
+            (clock entries' ``task_id``, notes' ``task_id``)
+            keep resolving after a backend conversion. When
+            omitted, a fresh id is generated as before.
         """
 
     @abstractmethod

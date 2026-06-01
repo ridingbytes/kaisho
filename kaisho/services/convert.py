@@ -388,6 +388,12 @@ def _convert_tasks(
             skipped,
             "task",
             t.get("title", "<no title>"),
+            # Preserve the source's task id so cross-
+            # references from clocks / notes keep
+            # resolving in the target backend (without
+            # this the user sees raw 12-char hex IDs in
+            # the clock list because the new task got a
+            # fresh id while the clock kept the old one).
             lambda t=t, status=status: target.tasks.add_task(
                 customer=t.get("customer") or "",
                 title=_clean_title(t["title"]),
@@ -395,6 +401,7 @@ def _convert_tasks(
                 tags=t.get("tags"),
                 body=t.get("body"),
                 github_url=t.get("github_url"),
+                task_id=t.get("id"),
             ),
         )
         if ok:
@@ -438,6 +445,7 @@ def _archive_one_task(
             tags=a.get("tags"),
             body=a.get("body"),
             github_url=a.get("github_url"),
+            task_id=a.get("id"),
         )
 
     title = a.get("title", "<no title>")
