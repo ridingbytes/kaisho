@@ -476,8 +476,15 @@ class CustomerBackend(ABC):
         color: str = "",
         repo: str | None = None,
         tags: list[str] | None = None,
+        used_offset: float = 0,
     ) -> dict:
-        """Create a new customer. Raises ValueError if name exists."""
+        """Create a new customer. Raises ValueError if name exists.
+
+        :param used_offset: Optional customer-level
+            'invoiced hours' marker (the org ``:USED:`` H2
+            property). Set by ``services.convert`` so the
+            value isn't lost during a backend migration.
+        """
 
     def ensure_customer(self, name: str) -> dict | None:
         """Idempotent: return existing customer or create a

@@ -51,6 +51,17 @@ def _heading_to_customer(heading: Heading) -> dict:
     name = heading.title.strip()
     contracts = [_heading_to_contract(c, name) for c in contract_children]
 
+    # Customer-level invoiced-hours marker (the H2 :USED:
+    # property). Independent of any contract so it can be
+    # exported / migrated even when contracts later get
+    # added. Without surfacing this on the dict, the
+    # org->sql convert silently dropped historical
+    # offsets for customers with no contracts -- e.g. NRG
+    # FMI's 21h on 2026-06-01.
+    customer_offset = _extract_hours(
+        props.get("USED", "0"),
+    )
+
     if contracts:
         active = next(
             (c for c in contracts if not c["end_date"]), None
@@ -60,7 +71,7 @@ def _heading_to_customer(heading: Heading) -> dict:
         rest = budget - used
     else:
         budget = _extract_hours(props.get("BUDGET", "0"))
-        used = _extract_hours(props.get("USED", "0"))
+        used = customer_offset
         rest = budget - used
 
     return {
@@ -70,6 +81,7 @@ def _heading_to_customer(heading: Heading) -> dict:
         "color": props.get("COLOR", ""),
         "tags": list(heading.tags),
         "budget": budget,
+        "used_offset": customer_offset,
         "used": used,
         "rest": rest,
         "repo": props.get("REPO", None),
@@ -229,6 +241,7 @@ def add_customer(
     color: str = "",
     repo: str | None = None,
     tags: list[str] | None = None,
+    used_offset: float = 0,
 ) -> dict:
     """Add a new customer heading to customers file.
 
@@ -249,6 +262,11 @@ def add_customer(
         props["TYPE"] = customer_type
     if budget:
         props["BUDGET"] = f"{budget}h"
+    # Persist the customer-level USED only when non-zero --
+    # otherwise leave the property off so the org file
+    # stays tidy.
+    if used_offset:
+        props["USED"] = f"{used_offset}h"
     if repo:
         props["REPO"] = repo
 

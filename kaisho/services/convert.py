@@ -262,6 +262,12 @@ def _convert_customers(
             skipped_customers,
             "customer",
             c["name"],
+            # ``used_offset`` carries the org ``:USED:``
+            # H2 property forward. Critical for customers
+            # without contracts -- without this their
+            # historical invoiced hours are lost on import
+            # (e.g. NRG FMI's 21h reported by user
+            # 2026-06-01).
             lambda c=c: target.customers.add_customer(
                 name=c["name"],
                 status=c.get("status", "active"),
@@ -270,6 +276,7 @@ def _convert_customers(
                 color=c.get("color", ""),
                 repo=c.get("repo"),
                 tags=c.get("tags"),
+                used_offset=c.get("used_offset", 0),
             ),
             treat_exists_as_success=True,
         )

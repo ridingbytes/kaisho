@@ -115,6 +115,13 @@ class CustomerRow(Base):
     type = Column(String, default="")
     color = Column(String, default="")
     budget = Column(Float, default=0)
+    # Customer-level invoiced-hours marker. For customers
+    # with contracts this is unused (the active contract's
+    # used_offset is the source of truth). For customers
+    # without contracts it preserves the org ``:USED:``
+    # H2-level property so the dashboard's MAXED indicator
+    # matches reality after a backend conversion.
+    used_offset = Column(Float, default=0)
     repo = Column(String, default="")
     tags = Column(String, default="")
     properties = Column(Text, default="{}")
@@ -161,6 +168,7 @@ class _Engine:
         self.engine = create_engine(dsn)
         Base.metadata.create_all(self.engine)
         _ensure_paused_column(self.engine)
+        _ensure_customer_used_offset_column(self.engine)
         self._Session = sessionmaker(bind=self.engine)
 
     def session(self):
@@ -188,6 +196,33 @@ def _ensure_paused_column(engine) -> None:
         conn.execute(text(
             "ALTER TABLE clocks "
             "ADD COLUMN paused BOOLEAN DEFAULT 0"
+        ))
+
+
+def _ensure_customer_used_offset_column(engine) -> None:
+    """Add the ``customers.used_offset`` column on legacy
+    databases.
+
+    Same shape as ``_ensure_paused_column``. Databases
+    created before 2.2.1 lack this column; the org->sql
+    import was silently dropping the customer-level
+    ``:USED:`` property because there was nowhere to put
+    it. Idempotent.
+    """
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    if "customers" not in inspector.get_table_names():
+        return
+    cols = {
+        c["name"]
+        for c in inspector.get_columns("customers")
+    }
+    if "used_offset" in cols:
+        return
+    with engine.begin() as conn:
+        conn.execute(text(
+            "ALTER TABLE customers "
+            "ADD COLUMN used_offset FLOAT DEFAULT 0"
         ))
 
 
@@ -413,6 +448,7 @@ def _customer_row_to_dict(row: CustomerRow) -> dict:
         "type": row.type or "",
         "color": row.color or "",
         "budget": row.budget or 0,
+        "used_offset": row.used_offset or 0,
         "repo": row.repo or "",
         "tags": _parse_tags(row.tags),
         "properties": _parse_properties(
@@ -1658,13 +1694,37 @@ class SqlCustomerBackend(CustomerBackend):
 
     def _enrich_customer(self, cust: dict) -> dict:
         """Add computed budget fields (used/rest)
-        to customer and all its contracts."""
+        to customer and all its contracts.
+
+        Mirrors services.customers._enrich_customer for
+        the org backend: when contracts exist, only the
+        active contract's clock hours count toward the
+        customer's 'used' total (other contracts are
+        either invoiced or historical). Without contracts,
+        all clock hours for the customer plus the stored
+        ``used_offset`` add up.
+        """
         name = cust["name"]
-        hours = self._used_hours(name)
         budget = cust.get("budget", 0)
-        cust["used"] = hours
-        cust["rest"] = round(budget - hours, 2)
-        for con in cust.get("contracts", []):
+        offset = cust.get("used_offset", 0) or 0
+        contracts = cust.get("contracts") or []
+        if contracts:
+            active = next(
+                (c for c in contracts
+                 if not c.get("end_date")),
+                None,
+            )
+            if active:
+                hours = self._contract_used_hours(
+                    name, active["name"],
+                )
+            else:
+                hours = 0.0
+        else:
+            hours = self._used_hours(name) + offset
+        cust["used"] = round(hours, 2)
+        cust["rest"] = round(budget - cust["used"], 2)
+        for con in contracts:
             self._enrich_contract(name, con)
         return cust
 
@@ -1763,6 +1823,7 @@ class SqlCustomerBackend(CustomerBackend):
         color="",
         repo=None,
         tags=None,
+        used_offset=0,
     ) -> dict:
         """Create a new customer. Raises ValueError if exists."""
         session = self._eng.session()
@@ -1785,6 +1846,7 @@ class SqlCustomerBackend(CustomerBackend):
                 type=customer_type,
                 color=color,
                 budget=budget,
+                used_offset=used_offset or 0,
                 repo=repo or "",
                 tags=_serialize_tags(tags),
                 properties="{}",
@@ -1813,7 +1875,8 @@ class SqlCustomerBackend(CustomerBackend):
             if row is None:
                 return None
             for key in (
-                "name", "status", "budget", "repo",
+                "name", "status", "budget",
+                "used_offset", "repo",
             ):
                 if key in updates:
                     setattr(row, key, updates[key])

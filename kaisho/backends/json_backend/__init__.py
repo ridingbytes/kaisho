@@ -1101,6 +1101,7 @@ class JsonCustomerBackend(CustomerBackend):
         color="",
         repo=None,
         tags=None,
+        used_offset=0,
     ) -> dict:
         """Create a new customer. Raises ValueError if exists."""
         custs = _read_json(self._customers_file)
@@ -1116,6 +1117,7 @@ class JsonCustomerBackend(CustomerBackend):
             "color": color,
             "tags": tags or [],
             "budget": budget,
+            "used_offset": used_offset or 0,
             "repo": repo or "",
             "used": 0,
             "rest": budget,

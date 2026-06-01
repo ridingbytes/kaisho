@@ -50,6 +50,7 @@ class OrgCustomerBackend(CustomerBackend):
         color: str = "",
         repo: str | None = None,
         tags: list[str] | None = None,
+        used_offset: float = 0,
     ) -> dict:
         """Create a new customer. Raises ValueError if exists."""
         return customers.add_customer(
@@ -61,6 +62,7 @@ class OrgCustomerBackend(CustomerBackend):
             color=color,
             repo=repo,
             tags=tags,
+            used_offset=used_offset,
         )
 
     def update_customer(
