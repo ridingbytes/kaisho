@@ -71,6 +71,9 @@ org workspace on 2026-06-01.
   `NOTES`). Date / start time / hours grid cells now
   use `w-full` + `min-w-0` so they fill their share
   rather than collapsing to placeholder-width stubs.
+  Field height bumped from `h-7`/`text-xs` to
+  `h-8`/`text-sm` (the standard `inputCls`) so the
+  form reads as a real form, not an inline table edit.
 
 ## 2.2.0
 
