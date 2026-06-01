@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.2.2
+
+Follow-up patch to 2.2.1 fixing one more org -> sql
+convert data-loss bug surfaced by the same user import
+on 2026-06-01.
+
+### Clock notes were dropped on import
+
+The multi-line body under each org `CLOCK:` heading
+(`notes`) was not transferred into the SQL `clocks`
+table. Two unrelated bugs combined to lose it:
+
+- `services.convert._convert_clocks` did not forward
+  `notes` to `target.clocks.quick_book`.
+- The SQL backend's `quick_book` accepted a `notes`
+  parameter but hardcoded `notes=""` when persisting
+  the row.
+
+Verified against the reporting user's archive: 37 of
+37 source clock entries with non-empty notes now
+import correctly.
+
 ## 2.2.1
 
 A polish + correctness release with three categories of

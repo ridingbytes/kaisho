@@ -1100,7 +1100,7 @@ class SqlClockBackend(ClockBackend):
             task_id=task_id or "",
             contract=contract or "",
             invoiced=False,
-            notes="",
+            notes=notes or "",
             sync_id=sid,
         )
         session = self._eng.session()
@@ -1117,7 +1117,7 @@ class SqlClockBackend(ClockBackend):
             "task_id": task_id or "",
             "contract": contract or "",
             "invoiced": False,
-            "notes": "",
+            "notes": notes or "",
             "sync_id": sid,
         }
         return _enrich_clock(entry)

@@ -512,6 +512,12 @@ def _convert_clocks(
                     description=e.get("description", ""),
                     task_id=e.get("task_id"),
                     contract=e.get("contract"),
+                    # ``notes`` is the multi-line body under
+                    # each org clock heading. Previously
+                    # dropped because the convert call did
+                    # not forward it. Reported by user
+                    # 2026-06-01.
+                    notes=e.get("notes"),
                     start_time=e.get("start"),
                 )
             ),
