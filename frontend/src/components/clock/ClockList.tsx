@@ -218,96 +218,132 @@ function SlotRow({
   }
 
   if (mode === "edit") {
+    // Eyebrow label cell -- same recipe ContractRow uses,
+    // for visual consistency across all inline edit forms.
+    const labelCls =
+      "text-2xs text-fg-muted uppercase tracking-wider";
     return (
       <div className="pl-3 pt-1.5 pb-2">
-        <div className="flex flex-col gap-1">
-          <CustomerAutocomplete
-            value={editCustomer}
-            onChange={(v) => {
-              setEditCustomer(v);
-              setEditContract("");
-            }}
-            onKeyDown={handleKeyDown}
-            inputClassName={smallInputCls}
-          />
-          <ContractSelect
-            customer={editCustomer}
-            value={editContract}
-            onChange={setEditContract}
-          />
-          <input
-            value={editDesc}
-            onChange={(e) =>
-              setEditDesc(e.target.value)
-            }
-            onKeyDown={handleKeyDown}
-            placeholder={tc("description")}
-            className={smallInputCls}
-          />
-          <TaskAutocomplete
-            taskId={editTaskId}
-            value={editTaskTitle}
-            onChange={setEditTaskTitle}
-            onSelect={(id, label) => {
-              setEditTaskId(id);
-              setEditTaskTitle(label);
-            }}
-            onClear={() => {
-              setEditTaskId(null);
-              setEditTaskTitle("");
-            }}
-            customer={editCustomer}
-            inputClassName={smallInputCls}
-            onKeyDown={handleKeyDown}
-          />
-          <div
-            className="grid gap-1"
-            style={{
-              gridTemplateColumns: "1fr 1fr 1fr",
-            }}
-          >
+        <div className="flex flex-col gap-2">
+          <label className="flex flex-col gap-0.5">
+            <span className={labelCls}>{tc("customer")}</span>
+            <CustomerAutocomplete
+              value={editCustomer}
+              onChange={(v) => {
+                setEditCustomer(v);
+                setEditContract("");
+              }}
+              onKeyDown={handleKeyDown}
+              inputClassName={smallInputCls + " w-full"}
+            />
+          </label>
+          <label className="flex flex-col gap-0.5">
+            <span className={labelCls}>{tc("contract")}</span>
+            <ContractSelect
+              customer={editCustomer}
+              value={editContract}
+              onChange={setEditContract}
+            />
+          </label>
+          <label className="flex flex-col gap-0.5">
+            <span className={labelCls}>
+              {tc("description")}
+            </span>
             <input
-              type="date"
-              value={editDate}
+              value={editDesc}
               onChange={(e) =>
-                setEditDate(e.target.value)
+                setEditDesc(e.target.value)
               }
               onKeyDown={handleKeyDown}
-              className={smallInputCls}
+              placeholder={tc("description")}
+              className={smallInputCls + " w-full"}
             />
-            <input
-              type="time"
-              value={editStartTime}
-              onChange={(e) =>
-                setEditStartTime(e.target.value)
-              }
+          </label>
+          <label className="flex flex-col gap-0.5">
+            <span className={labelCls}>{tc("task")}</span>
+            <TaskAutocomplete
+              taskId={editTaskId}
+              value={editTaskTitle}
+              onChange={setEditTaskTitle}
+              onSelect={(id, label) => {
+                setEditTaskId(id);
+                setEditTaskTitle(label);
+              }}
+              onClear={() => {
+                setEditTaskId(null);
+                setEditTaskTitle("");
+              }}
+              customer={editCustomer}
+              inputClassName={smallInputCls + " w-full"}
               onKeyDown={handleKeyDown}
-              className={smallInputCls}
-              title={t("startTime")}
             />
-            <input
-              value={editHours}
-              onChange={(e) =>
-                setEditHours(e.target.value)
-              }
-              onKeyDown={handleKeyDown}
-              placeholder={tc("hours")}
-              className={smallInputCls}
-            />
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            <label
+              className="flex flex-col gap-0.5 min-w-0"
+            >
+              <span className={labelCls}>{tc("date")}</span>
+              <input
+                type="date"
+                value={editDate}
+                onChange={(e) =>
+                  setEditDate(e.target.value)
+                }
+                onKeyDown={handleKeyDown}
+                className={smallInputCls + " w-full"}
+              />
+            </label>
+            <label
+              className="flex flex-col gap-0.5 min-w-0"
+            >
+              <span className={labelCls}>
+                {t("startTime")}
+              </span>
+              <input
+                type="time"
+                value={editStartTime}
+                onChange={(e) =>
+                  setEditStartTime(e.target.value)
+                }
+                onKeyDown={handleKeyDown}
+                className={smallInputCls + " w-full"}
+              />
+            </label>
+            <label
+              className="flex flex-col gap-0.5 min-w-0"
+            >
+              <span className={labelCls}>
+                {tc("hours")}
+              </span>
+              <input
+                value={editHours}
+                onChange={(e) =>
+                  setEditHours(e.target.value)
+                }
+                onKeyDown={handleKeyDown}
+                placeholder={tc("hours")}
+                className={
+                  smallInputCls + " w-full tabular-nums"
+                }
+              />
+            </label>
           </div>
-          <textarea
-            autoFocus
-            value={editNotes}
-            onChange={(e) =>
-              setEditNotes(e.target.value)
-            }
-            onKeyDown={handleTextareaKeyDown}
-            placeholder={tc("notes")}
-            rows={2}
-            className={[smallInputCls, "resize-y"].join(
-              " ",
-            )}
-          />
+          <label className="flex flex-col gap-0.5">
+            <span className={labelCls}>{tc("notes")}</span>
+            <textarea
+              autoFocus
+              value={editNotes}
+              onChange={(e) =>
+                setEditNotes(e.target.value)
+              }
+              onKeyDown={handleTextareaKeyDown}
+              placeholder={tc("notes")}
+              rows={2}
+              className={
+                smallInputCls + " w-full resize-y"
+              }
+            />
+          </label>
         </div>
         <EditFooter
           onSave={handleSave}
