@@ -25,7 +25,7 @@ import { useTasks } from "../../hooks/useTasks";
 import { useSetView } from "../../context/ViewContext";
 import { taskTitleById } from "../../utils/customerPrefix";
 import { minutesToDecimal } from "../../utils/formatting";
-import { smallInputCls } from "../../styles/formStyles";
+import { inputCls } from "../../styles/formStyles";
 import type { ClockEntry, Task } from "../../types";
 
 function formatDuration(minutes: number): string {
@@ -89,7 +89,7 @@ function ContractSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={smallInputCls}
+      className={inputCls + " w-full"}
     >
       <option value="">{tc("noContract")}</option>
       {contracts.map((c) => (
@@ -234,7 +234,7 @@ function SlotRow({
                 setEditContract("");
               }}
               onKeyDown={handleKeyDown}
-              inputClassName={smallInputCls + " w-full"}
+              inputClassName={inputCls + " w-full"}
             />
           </label>
           <label className="flex flex-col gap-0.5">
@@ -256,7 +256,7 @@ function SlotRow({
               }
               onKeyDown={handleKeyDown}
               placeholder={tc("description")}
-              className={smallInputCls + " w-full"}
+              className={inputCls + " w-full"}
             />
           </label>
           <label className="flex flex-col gap-0.5">
@@ -274,7 +274,7 @@ function SlotRow({
                 setEditTaskTitle("");
               }}
               customer={editCustomer}
-              inputClassName={smallInputCls + " w-full"}
+              inputClassName={inputCls + " w-full"}
               onKeyDown={handleKeyDown}
             />
           </label>
@@ -290,7 +290,7 @@ function SlotRow({
                   setEditDate(e.target.value)
                 }
                 onKeyDown={handleKeyDown}
-                className={smallInputCls + " w-full"}
+                className={inputCls + " w-full"}
               />
             </label>
             <label
@@ -306,7 +306,7 @@ function SlotRow({
                   setEditStartTime(e.target.value)
                 }
                 onKeyDown={handleKeyDown}
-                className={smallInputCls + " w-full"}
+                className={inputCls + " w-full"}
               />
             </label>
             <label
@@ -323,7 +323,7 @@ function SlotRow({
                 onKeyDown={handleKeyDown}
                 placeholder={tc("hours")}
                 className={
-                  smallInputCls + " w-full tabular-nums"
+                  inputCls + " w-full tabular-nums"
                 }
               />
             </label>
@@ -340,7 +340,7 @@ function SlotRow({
               placeholder={tc("notes")}
               rows={2}
               className={
-                smallInputCls + " w-full resize-y"
+                inputCls + " w-full resize-y"
               }
             />
           </label>
