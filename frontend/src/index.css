@@ -129,6 +129,16 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Modern browsers render ``::placeholder`` at ~54%
+     opacity by default, which made our themed
+     ``placeholder-fg-muted`` (already a muted text token)
+     read as nearly invisible on warm and dark presets.
+     Force full opacity so the colour we set is the colour
+     that paints. */
+  ::placeholder {
+    opacity: 1;
+  }
+
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;

@@ -15,9 +15,15 @@ interface SearchInputProps {
   validate?: boolean;
 }
 
+// ``smallInputCls`` no longer carries width (caller picks).
+// SearchInput's wrapping div is what defines the width
+// (``w-44``, ``w-40``, etc.), so the input itself must
+// fill that wrapper -- otherwise it sizes to its
+// placeholder + padding and overflows the next toolbar
+// sibling.
 const defaultInputCls = [
   smallInputCls,
-  "!pl-7 !pr-6",
+  "w-full !pl-7 !pr-6",
 ].join(" ");
 
 export function SearchInput({
