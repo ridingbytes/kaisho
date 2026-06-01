@@ -1,5 +1,77 @@
 # Changelog
 
+## 2.2.1
+
+A polish + correctness release with three categories of
+fixes layered on top of 2.2.0.
+
+### Data fidelity — convert preserves cross-references
+
+Two bugs in `services.convert` were silently corrupting
+data when migrating between backends (e.g. org -> sql).
+Both were surfaced by a user import of a long-running
+org workspace on 2026-06-01.
+
+- **Task IDs were regenerated on import**, so clock
+  entries and notes that referenced the source's task
+  IDs ended up pointing at nothing in the target DB.
+  The sidebar timetracker showed raw 12-char hex IDs
+  like `a81b5f2efd4b` next to entries instead of the
+  task title. Fixed by threading an optional ``task_id``
+  parameter through ``add_task`` in every backend (base
+  interface + sql + markdown + json + org/kanban) and
+  passing the source's id when converting. When omitted,
+  behaviour is unchanged.
+
+- **Customer-level `:USED:` (`used_offset`) was being
+  dropped** for customers without contracts. The SQL
+  `customers` table had no column for it. For one user
+  this lost 11 customer offsets totalling > 1,600 h of
+  historical invoiced work. Fixed by:
+  - Adding a `used_offset FLOAT` column to `CustomerRow`
+    + an idempotent `_ensure_customer_used_offset_column`
+    migration helper so legacy DBs grow the column on
+    next open (same shape as the existing
+    `_ensure_paused_column`).
+  - Surfacing `used_offset` on the org backend's
+    customer dict independently of any contract.
+  - Rewriting the SQL backend's `_enrich_customer` to
+    mirror the org backend's contract-scope logic so
+    historical entries on previous (invoiced) contracts
+    no longer poison the active contract's "remaining
+    capacity".
+  - Wiring `used_offset` through `add_customer` in every
+    backend and through `services.convert`.
+
+### UI polish
+
+- **SearchInput fills its wrapper.** The wrapping div
+  takes the caller's width (`w-44` / `w-52`), but the
+  inner `<input>` lost `w-full` in the form-recipe
+  cleanup -- so it sized to its placeholder + padding
+  and overflowed into the next toolbar sibling. Fixed
+  by re-adding `w-full` to the default input class
+  inside SearchInput.
+
+- **Placeholder text rendered too faint on warm and
+  dark themes.** Modern browsers paint `::placeholder`
+  at ~54% opacity by default; our themed
+  `placeholder-fg-muted` then disappeared on
+  `bg-surface-overlay` in sepia / gruvbox /
+  solarized-light and on the dark variants. Added a
+  global `::placeholder { opacity: 1; }` rule so the
+  colour we set is the colour that paints.
+
+- **Sidebar timetracker edit form gained per-input
+  labels.** Eight unlabelled stacked fields (where
+  Description and Task often hold the same string)
+  made the form impossible to read. Same eyebrow-label
+  treatment ContractRow uses (`CUSTOMER`, `CONTRACT`,
+  `DESCRIPTION`, `TASK`, `DATE`, `START TIME`, `HOURS`,
+  `NOTES`). Date / start time / hours grid cells now
+  use `w-full` + `min-w-0` so they fill their share
+  rather than collapsing to placeholder-width stubs.
+
 ## 2.2.0
 
 A theme + design-system release. Rewrites the appearance
