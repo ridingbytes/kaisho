@@ -1,5 +1,52 @@
 # Changelog
 
+## 2.2.5
+
+Bug fix and a documentation refresh. No new app features.
+
+### `kai customer list` shows used hours, not remaining
+
+The list formatter pulled the `rest` field and rendered
+`{rest}h / {budget}h ({percent}%)`, which reads naturally as
+"used of total (% used)" but the values meant the opposite. A
+customer at "36h / 40h (91%)" looked nearly exhausted when only
+4h had been used and 36h were still left.
+
+The formatter now uses the `used` field, matching the mental
+model for budget tracking and lining up with `kai customer show`,
+which already labels the field "Used:". Customers without a
+budget continue to show just their status.
+
+### Documentation refresh
+
+End-to-end pass over docs.kaisho.dev:
+
+- Cloud-sync API and integration pages rewritten to match the
+  current surface: Companion / Pro / Team plan names (renamed in
+  1.7.3, never reflected in the docs), the WebSocket fast path
+  with 2s debounce, the `/use-kaisho-models`, `/ai-usage`, and
+  `/sync-now` endpoints, real settings keys, and a clarified
+  triage model.
+- Every release-introduced feature now carries an inline
+  `version-added` chip next to its heading so readers can tell at
+  a glance when a feature shipped (2.2.0 themes, 1.8.1 pause /
+  resume, 1.5.0 KB metadata index, 1.4.4 Ollama Cloud, etc.).
+- All desktop and PWA screenshots re-shot against a fresh
+  `screenshots` demo profile. Desktop uses the default zinc
+  theme; PWA captures show the current PRO plan badge instead of
+  the legacy "SYNC + AI" string.
+
+### Notify the website on release publish
+
+New `.github/workflows/notify-website.yml` fires a
+`repository_dispatch` into `ridingbytes/kaisho-website` whenever a
+release publishes here. Combined with the website's
+`sync-kaisho-version.yml`, the visible version chip on
+`kaisho.dev` updates within seconds of a release instead of
+waiting up to six hours for the scheduled poll. Setup is
+optional: drop a `WEBSITE_DISPATCH_TOKEN` PAT into repo secrets
+to enable; the scheduled fallback continues to work without it.
+
 ## 2.2.4
 
 Single-purpose patch: the What's New dialog after the
