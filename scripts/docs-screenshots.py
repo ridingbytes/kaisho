@@ -32,8 +32,9 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 # Light + dark theme presets driven via the App.tsx contract:
 # `data-theme` carries the preset slug, `data-mode` carries
-# light|dark. Sepia matches the website's atelier look.
-LIGHT_THEME = "sepia"
+# light|dark. We capture in the Kaisho default theme (zinc) so
+# the docs match what a freshly-installed app shows.
+LIGHT_THEME = "zinc"
 DARK_THEME = "zinc"
 
 # Views to capture: (hash_route, filename, wait_ms)
