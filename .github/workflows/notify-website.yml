@@ -1,0 +1,58 @@
+name: Notify kaisho-website on release
+
+# Fires a repository_dispatch into the kaisho-website
+# repo whenever a release publishes here, so the
+# `sync-kaisho-version` workflow there can pick up the
+# new version immediately instead of waiting up to six
+# hours for its scheduled run.
+#
+# Setup (one-time): add a repo secret
+# `WEBSITE_DISPATCH_TOKEN` containing a fine-grained PAT
+# scoped to `ridingbytes/kaisho-website` with
+# `contents: read` and `metadata: read`. The default
+# `GITHUB_TOKEN` cannot trigger workflows in another
+# repo, so a PAT is required.
+#
+# This workflow is non-load-bearing: the website's
+# scheduled sync still runs every six hours, so if this
+# fails or the PAT is missing, the only cost is a delay.
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    # Job-level env so the step's `if:` can see GH_TOKEN
+    # (step-level env is not yet bound when step-level
+    # `if:` is evaluated). The release tag is also
+    # bound here, so it never enters a `run:` block via
+    # raw `${{ }}` interpolation.
+    env:
+      GH_TOKEN: ${{ secrets.WEBSITE_DISPATCH_TOKEN }}
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Notify kaisho-website
+        # Skip silently if the PAT isn't configured yet
+        # so a missing secret never blocks a release.
+        # The kaisho-website scheduled sync still
+        # catches the new release within 6h.
+        if: env.GH_TOKEN != ''
+        run: |
+          # Strict semver on our own tag before passing
+          # it to another repo. The tag is attacker-
+          # controlled in principle (anyone with release
+          # rights here), so we refuse to forward it if
+          # it isn't a clean semver string.
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]];
+          then
+            echo "tag '$TAG' is not strict semver" >&2
+            exit 0
+          fi
+          gh api \
+            repos/ridingbytes/kaisho-website/dispatches \
+            -X POST \
+            -f event_type=kaisho-release \
+            -f "client_payload[tag]=$TAG"
+          echo "dispatched kaisho-release for $TAG"
