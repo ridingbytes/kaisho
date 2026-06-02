@@ -3,7 +3,13 @@
 The task board is a kanban view for managing work. Columns represent
 status states. Drag tasks between columns to change their status.
 
-![Task Board](../assets/images/kanban.png){.screenshot}
+=== "Light"
+
+    ![Task Board, light](../assets/images/kanban.png){.screenshot}
+
+=== "Dark"
+
+    ![Task Board, dark](../assets/images/kanban-dark.png){.screenshot}
 
 ## Board Layout
 

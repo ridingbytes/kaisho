@@ -4,7 +4,13 @@ The dashboard is your home screen. It shows at a glance what needs
 attention: running timers, hours tracked, open tasks, inbox items,
 and budget status.
 
-![Dashboard](../assets/images/dashboard.png){.screenshot}
+=== "Light"
+
+    ![Dashboard, light](../assets/images/dashboard.png){.screenshot}
+
+=== "Dark"
+
+    ![Dashboard, dark](../assets/images/dashboard-dark.png){.screenshot}
 
 ## Stat Cards
 

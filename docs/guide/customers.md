@@ -3,7 +3,13 @@
 Customers are the people or companies you work for. Contracts track
 budgets and billing for specific engagements.
 
-![Customers](../assets/images/customers.png){.screenshot}
+=== "Light"
+
+    ![Customers, light](../assets/images/customers.png){.screenshot}
+
+=== "Dark"
+
+    ![Customers, dark](../assets/images/customers-dark.png){.screenshot}
 
 ## Managing Customers
 
