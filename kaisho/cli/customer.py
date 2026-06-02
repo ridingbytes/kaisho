@@ -11,11 +11,13 @@ def _format_customer(customer: dict) -> str:
     """Format a customer for display."""
     name = customer["name"].ljust(15)
     budget = customer.get("budget", 0)
-    rest = customer.get("rest", 0)
+    used = customer.get("used", 0)
     status = customer.get("status", "active")
     if budget > 0:
-        percent = round((rest / budget) * 100)
-        return f"{name}  {rest:>6.0f}h / {budget:>6.0f}h  ({percent}%)"
+        percent = round((used / budget) * 100)
+        return (
+            f"{name}  {used:>6.0f}h / {budget:>6.0f}h  ({percent}%)"
+        )
     return f"{name}  {status}"
 
 
