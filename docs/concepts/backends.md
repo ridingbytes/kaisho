@@ -6,10 +6,9 @@ and notes. You pick the format that fits your workflow.
 
 !!! version-added "Since 2.0.0"
 
-    Backends became pluggable in 2.0.0. Prior to that, only
-    org-mode was supported. The 2.0.1 release added `kai convert`
-    so you can move an existing profile between backends without
-    data loss.
+Backends became pluggable in 2.0.0. Prior to that, only org-mode
+was supported. The 2.0.1 release added `kai convert` so you can
+move an existing profile between backends without data loss.
 
 ## Available Backends
 

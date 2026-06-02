@@ -4,8 +4,8 @@ Keyboard shortcuts make the UI fast to navigate.
 
 !!! version-added "Since 2.2.0"
 
-    All shortcuts are user-customizable in **Settings > Shortcuts**;
-    overrides persist to `keybindings.json` next to `settings.yaml`.
+All shortcuts are user-customizable in **Settings > Shortcuts**;
+overrides persist to `keybindings.json` next to `settings.yaml`.
 
 ## Navigation
 

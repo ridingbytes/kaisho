@@ -5,9 +5,8 @@ your tasks and time tracking.
 
 !!! version-added "Since 1.5.0"
 
-    Projects v2 support (the new GitHub Projects API) landed in
-    1.5.0. The integration now lists project boards alongside
-    issues and PRs.
+Projects v2 support (the new GitHub Projects API) landed in 1.5.0.
+The integration now lists project boards alongside issues and PRs.
 
 !!! note "One token, in Integrations"
 

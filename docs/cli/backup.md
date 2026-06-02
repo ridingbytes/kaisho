@@ -4,8 +4,8 @@ Create and manage data backups.
 
 !!! version-added "Since 1.5.0"
 
-    Backup auto-pruning (configurable retention window) was added
-    in 1.5.0; older releases kept every backup forever.
+Backup auto-pruning (configurable retention window) was added in
+1.5.0; older releases kept every backup forever.
 
 ## Commands
 

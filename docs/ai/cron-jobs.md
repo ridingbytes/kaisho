@@ -8,9 +8,9 @@ written to files.
 
 !!! version-added "Since 1.3.0"
 
-    Cron job templates and the context-injection layer shipped in
-    1.3.0; before that, jobs were free-form prompts without a
-    structured way to weave in customer/task/clock data.
+Cron job templates and the context-injection layer shipped in
+1.3.0; before that, jobs were free-form prompts without a
+structured way to weave in customer/task/clock data.
 
 ## How Cron Jobs Work
 

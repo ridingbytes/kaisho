@@ -7,10 +7,10 @@ write your data.
 
 !!! version-added "Since 2.2.0"
 
-    The advisor's tool roster and the rule system that governs when
-    it will act (read-only by default, opt-in writes, budget-aware
-    suggestions) were overhauled in 2.2.0. The KB summary and
-    chat-over-document features arrived earlier in 1.5.0.
+The advisor's tool roster and the rule system that governs when it
+will act (read-only by default, opt-in writes, budget-aware
+suggestions) were overhauled in 2.2.0. The KB summary and
+chat-over-document features arrived earlier in 1.5.0.
 
 ![AI Advisor](../assets/images/advisor.png){.screenshot}
 

@@ -5,11 +5,10 @@ Kaisho supports multiple AI providers. Configure them in
 
 !!! version-added "Since 1.4.4"
 
-    Ollama Cloud (`ollama_cloud:`) was added in 1.4.4, giving you a
-    hosted-Ollama option that uses the same prefix-routing as the
-    local Ollama integration. Hosted Kaisho models
-    (`kaisho:advisor`, `kaisho:cron`) arrived with cloud sync in
-    2.0.0.
+Ollama Cloud (`ollama_cloud:`) was added in 1.4.4, giving you a
+hosted-Ollama option that uses the same prefix-routing as the
+local Ollama integration. Hosted Kaisho models
+(`kaisho:advisor`, `kaisho:cron`) arrived with cloud sync in 2.0.0.
 
 ## Provider Overview
 
