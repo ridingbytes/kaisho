@@ -4,6 +4,13 @@ The desktop app wraps Kaisho in a native window with a menu bar tray
 timer and automatic updates. It bundles the Python backend as a
 sidecar process -- no separate installation needed.
 
+!!! version-added "Since 1.4.3"
+
+    The "open in external editor" action that lets you pop an org /
+    markdown source into your editor of choice (Emacs, VS Code,
+    Cursor, etc.) shipped in 1.4.3. Tray theming follows the
+    desktop theme as of 1.8.0.
+
 ## Installation
 
 Download the latest release from

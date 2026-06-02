@@ -57,6 +57,47 @@ clock entries.
     kai clock stop --customer "Beta Inc"  # reassign
     ```
 
+## Pausing and Resuming
+
+!!! version-added "Since 1.8.1"
+
+A running timer can be paused mid-session and resumed later
+without splitting the entry. Pausing freezes the elapsed counter;
+resuming continues accumulating into the same clock entry.
+
+=== "Web UI"
+
+    Click the **Pause** icon on the active-timer banner or the
+    clock widget. The icon flips to **Resume**. The header pill
+    shows a dotted ring while paused.
+
+=== "CLI"
+
+    ```bash
+    kai clock pause
+    kai clock resume
+    ```
+
+=== "Tray"
+
+    The menu-bar tray reflects the paused state with a dimmed
+    icon and a "paused" label. Right-click for resume.
+
+## Rounding and Merging
+
+!!! version-added "Since 1.8.0"
+
+Two booking helpers that cover common workflow cleanup:
+
+- **Round.** `kai clock round 15min` snaps every entry in the
+  current day (or `--week`/`--month` range) to the nearest
+  rounding interval. The UI exposes the same operation under the
+  Clocks toolbar.
+- **Merge.** Adjacent entries on the same customer/description
+  collapse into one when invoked via `kai clock merge` or the
+  table's selection menu. Useful when a long task got split by
+  a pause that was forgotten about.
+
 ## Booking Retroactively
 
 Forgot to start the timer? Book time after the fact:
@@ -131,8 +172,11 @@ toolbar. The export includes all visible columns.
 
 ## Menu Bar Tray
 
+!!! version-added "Since 1.8.0"
+
 The desktop app shows a timer icon in the menu bar (macOS) or system
-tray (Windows/Linux):
+tray (Windows/Linux). The tray pill picks up the active theme so
+it matches whatever preset is set on the desktop side.
 
 - **Left-click** opens a popover with the active timer, quick-start
   buttons, and recent entries

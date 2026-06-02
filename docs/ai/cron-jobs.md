@@ -6,6 +6,12 @@ written to files.
 
 ![Cron Jobs](../assets/images/cron.png){.screenshot}
 
+!!! version-added "Since 1.3.0"
+
+    Cron job templates and the context-injection layer shipped in
+    1.3.0; before that, jobs were free-form prompts without a
+    structured way to weave in customer/task/clock data.
+
 ## How Cron Jobs Work
 
 1. You define a job with a schedule (cron expression), a prompt

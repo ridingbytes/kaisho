@@ -48,22 +48,36 @@ Three layers, no others:
 
 ## Built-in presets
 
+!!! version-added "Since 2.2.0"
+
+The preset roster expanded from 4 to 12 in 2.2.0. Each mode now
+ships 6 presets:
+
 | Preset | Mode | Description |
 |---|---|---|
 | `zinc` | light | True-neutral grey (default). |
 | `sepia` | light | Warm cream paper, sepia ink. |
+| `solarized-light` | light | Ethan Schoonover's Solarized Light. |
+| `github` | light | GitHub light, cool blue-grey. |
+| `gruvbox-light` | light | Gruvbox light, warm beige. |
+| `latte` | light | Catppuccin Latte. |
 | `zinc` | dark | True-neutral dark (default). |
 | `solarized` | dark | Ethan Schoonover's Solarized Dark. |
+| `dracula` | dark | Dracula, deep purple-grey. |
+| `nord` | dark | Nord, cool arctic blue. |
+| `tokyo-night` | dark | Tokyo Night, indigo accent. |
+| `mocha` | dark | Catppuccin Mocha. |
 
 The active preset is picked from `localStorage`:
 
-- `themeLight` → which light preset to use
-  (`"zinc"` or `"sepia"`)
-- `themeDark` → which dark preset to use
-  (`"zinc"` or `"solarized"`)
+- `themeLight` → which light preset to use (any from the light
+  rows above)
+- `themeDark` → which dark preset to use (any from the dark rows
+  above)
 
-Settings → General → Appearance exposes both as dropdowns
-alongside the mode picker. Changing a value writes to
+Settings → Appearance exposes both as dropdowns alongside the
+mode picker and the font picker (added in 2.2.0; choose between
+Inter, JetBrains Mono and a system stack). Changing a value writes to
 `localStorage` and dispatches a `kaisho-theme-changed`
 custom event so the running app re-themes without a
 reload.

@@ -1,5 +1,7 @@
 # kai youtube
 
+!!! version-added "Since 1.7.0"
+
 YouTube transcript tools for research and note-taking.
 
 ## Commands

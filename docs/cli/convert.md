@@ -1,5 +1,7 @@
 # kai convert
 
+!!! version-added "Since 2.0.1"
+
 Convert data between storage backends.
 
 ## Usage

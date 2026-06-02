@@ -9,7 +9,9 @@ files.
 
 ## How metadata works
 
-Starting in 1.5.0, KB metadata lives in a single index file at
+!!! version-added "Since 1.5.0"
+
+KB metadata lives in a single index file at
 `<profile>/kb_meta.yaml`. That file is the only place Kaisho writes
 metadata. Your KB files on disk are never modified: no frontmatter
 is added, removed, or rewritten by the app. You can edit, sync, or
