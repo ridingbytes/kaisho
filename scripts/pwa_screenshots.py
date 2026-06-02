@@ -1,25 +1,60 @@
-"""Take PWA screenshots for the website.
+"""Take PWA screenshots for the website and docs.
 
-Requires the kaisho-cloud mobile dev server running on
-localhost:5174 (or production at cloud.kaisho.dev).
+Default target is the production PWA at cloud.kaisho.dev/m so we
+shoot against the same demo account the website uses. Pass
+``--local`` to drive the dev server at http://localhost:5174/m
+instead.
+
+Credentials live in ``~/.config/ridingbytes/kaisho.env`` (mode
+600). The file is the canonical secrets store for this repo and
+is never committed; we read ``EMAIL`` and ``PASSWORD`` from its
+demo-account block.
+
+Output destinations:
+  - website mode (default): kaisho-website/screenshots/
+  - docs mode (``--docs``): kaisho/docs/assets/images/
 """
-import time
+import argparse
+import os
+import sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-BASE = "http://localhost:5174/m"
-OUT = Path(
-    "/Users/rbartl/develop/kaisho-website/screenshots"
-)
-OUT.mkdir(exist_ok=True)
+ENV_FILE = Path.home() / ".config/ridingbytes/kaisho.env"
 
 # iPhone 14 Pro dimensions
 WIDTH = 393
 HEIGHT = 852
 
-# Login credentials (demo account)
-EMAIL = "ramon.bartl@googlemail.com"
-PASSWORD = "12345678"
+
+def load_demo_credentials():
+    """Pull EMAIL + PASSWORD from the demo-account block of the
+    shared secrets file. We parse instead of sourcing because the
+    file mixes dev and PROD_-prefixed keys and is intentionally
+    not meant to be sourced wholesale."""
+    if not ENV_FILE.exists():
+        sys.exit(f"missing {ENV_FILE}")
+    creds = {}
+    in_demo_block = False
+    for raw in ENV_FILE.read_text().splitlines():
+        line = raw.strip()
+        if line.startswith("# --- Demo account"):
+            in_demo_block = True
+            continue
+        if in_demo_block and line.startswith("# ---"):
+            break
+        if not in_demo_block or "=" not in line or \
+                line.startswith("#"):
+            continue
+        key, _, value = line.partition("=")
+        creds[key.strip()] = value.strip().strip('"').strip("'")
+    for required in ("EMAIL", "PASSWORD"):
+        if not creds.get(required):
+            sys.exit(f"{required} missing from {ENV_FILE}")
+    return creds["EMAIL"], creds["PASSWORD"]
+
+
+EMAIL, PASSWORD = load_demo_credentials()
 
 
 def login(page):
@@ -65,6 +100,7 @@ def take_pwa_screenshots():
         login(page)
 
         views = [
+            ("pwa-dashboard", "#dashboard"),
             ("pwa-timer", "#timer"),
             ("pwa-entries", "#entries"),
             ("pwa-book", "#book"),
@@ -111,7 +147,35 @@ def take_pwa_screenshots():
         browser.close()
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--local", action="store_true",
+        help="Use the local PWA dev server on :5174",
+    )
+    parser.add_argument(
+        "--docs", action="store_true",
+        help="Write PNGs into kaisho/docs/assets/images/ "
+             "instead of the website screenshots folder",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    print("Taking PWA screenshots...")
+    args = parse_args()
+    BASE = (
+        "http://localhost:5174/m" if args.local
+        else "https://cloud.kaisho.dev/m"
+    )
+    if args.docs:
+        OUT = Path(__file__).parent.parent / \
+            "docs" / "assets" / "images"
+    else:
+        OUT = Path(
+            "/Users/rbartl/develop/kaisho-website/screenshots"
+        )
+    OUT.mkdir(parents=True, exist_ok=True)
+    print(f"Taking PWA screenshots from {BASE}")
+    print(f"Writing to {OUT}")
     take_pwa_screenshots()
     print("Done!")
