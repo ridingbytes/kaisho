@@ -13,28 +13,104 @@
   </head>
   <body style="overflow:hidden;margin:0">
     <script>
-      // Apply persisted theme and keep it in sync
-      (function(){
-        function apply(){
-          var t=localStorage.getItem("theme");
-          if(t==="dark")document.documentElement.dataset.theme="dark";
-          else delete document.documentElement.dataset.theme;
+      // Apply persisted theme + font + language and keep
+      // them in sync with the main window.
+      //
+      // Mirrors App.tsx resolveTheme + attrForPreset +
+      // applyFont so the tray picks up sepia /
+      // solarized / dracula / nord / any future preset,
+      // plus the "system" mode following OS preferences.
+      // Pure inline JS (no React) so the tray paints the
+      // correct theme on first frame.
+      (function () {
+        var LIGHTS = ["zinc", "sepia", "solarized-light",
+          "github", "gruvbox-light", "latte"];
+        var DARKS = ["zinc", "solarized", "dracula",
+          "nord", "tokyo-night", "mocha"];
+        var FONTS = {
+          "inter":  '"Inter", system-ui, sans-serif',
+          "system":
+            'system-ui, -apple-system, "Segoe UI", '
+            + 'Roboto, "Helvetica Neue", Arial, sans-serif',
+          "sans":
+            '"Helvetica Neue", Helvetica, Arial, '
+            + 'sans-serif',
+          "serif":
+            'Georgia, "Times New Roman", Times, serif',
+          "mono":
+            '"JetBrains Mono", "Fira Code", Menlo, '
+            + 'Consolas, monospace'
+        };
+        var MEDIA = window.matchMedia(
+          "(prefers-color-scheme: dark)"
+        );
+        function resolveMode() {
+          var m = localStorage.getItem("theme");
+          if (m === "light" || m === "dark") return m;
+          return MEDIA.matches ? "dark" : "light";
         }
-        apply();
-        window.addEventListener("storage",function(e){
-          apply();
-          if(e.key==="kaisho_lang"&&e.newValue&&window.__i18n){
+        function pickPreset(key, allowed, def) {
+          var v = localStorage.getItem(key);
+          return v && allowed.indexOf(v) !== -1 ? v : def;
+        }
+        function applyTheme() {
+          var mode = resolveMode();
+          var lp = pickPreset(
+            "themeLight", LIGHTS, "zinc",
+          );
+          var dp = pickPreset(
+            "themeDark",  DARKS,  "zinc",
+          );
+          var attr;
+          if (mode === "light") {
+            attr = lp === "zinc" ? "" : lp;
+          } else {
+            attr = dp === "zinc" ? "dark" : dp;
+          }
+          if (attr) {
+            document.documentElement.dataset.theme = attr;
+          } else {
+            delete document.documentElement.dataset.theme;
+          }
+        }
+        function applyFont() {
+          var f = localStorage.getItem("themeFont");
+          var fam = (f && FONTS[f]) || FONTS["inter"];
+          document.documentElement.style
+            .setProperty("--app-font", fam);
+        }
+        function applyAll() { applyTheme(); applyFont(); }
+        applyAll();
+        var WATCHED = {
+          theme: 1, themeLight: 1, themeDark: 1,
+          themeFont: 1,
+        };
+        window.addEventListener("storage", function (e) {
+          if (e.key && WATCHED[e.key]) applyAll();
+          if (e.key === "kaisho_lang" && e.newValue
+              && window.__i18n) {
             window.__i18n.changeLanguage(e.newValue);
           }
         });
-        document.addEventListener("visibilitychange",function(){
-          apply();
-          var l=localStorage.getItem("kaisho_lang");
-          if(l&&window.__i18n&&window.__i18n.language!==l){
-            window.__i18n.changeLanguage(l);
-          }
-        });
-      })()
+        // Same-window updates (main app dispatches this
+        // when the user changes appearance).
+        window.addEventListener(
+          "kaisho-theme-changed", applyAll,
+        );
+        if (MEDIA.addEventListener) {
+          MEDIA.addEventListener("change", applyTheme);
+        }
+        document.addEventListener(
+          "visibilitychange", function () {
+            applyAll();
+            var l = localStorage.getItem("kaisho_lang");
+            if (l && window.__i18n
+                && window.__i18n.language !== l) {
+              window.__i18n.changeLanguage(l);
+            }
+          },
+        );
+      })();
     </script>
     <div id="tray-root"></div>
     <script type="module" src="/src/tray/main.tsx"></script>

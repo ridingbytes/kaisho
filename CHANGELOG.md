@@ -1,5 +1,46 @@
 # Changelog
 
+## 2.2.3
+
+Three desktop-app polish fixes.
+
+### Settings → Install Update no longer fails on a stale chunk
+
+The Settings → Updates flow imported
+`@tauri-apps/api/core` dynamically to call a
+renderer-side `kill_sidecar` IPC before the installer
+ran. That extra chunk failed to load post-update on some
+installs and aborted the install with `Importing a
+module script failed`. The auto-update banner has never
+performed that kill and works reliably; the settings
+flow now matches it, delegating sidecar termination to
+the NSIS pre-install hook (Windows) and the installer
+itself (macOS/Linux).
+
+### Version history label no longer renders as a literal key
+
+`UpdateTab` referenced two i18n keys
+(`versionHistory`, `versionHistoryCount`) that were not
+defined in `settings.json`, so the heading rendered as
+the raw `versionHistoryCount` string in the UI. Keys
+added for `en` / `de` / `es` / `ru` with plural variants
+(`_one` / `_few` / `_many` / `_other` where the locale
+requires them).
+
+### Tray popup picks up the selected theme
+
+`tray.html`'s inline theme-sync script only handled the
+legacy two-mode `theme === "dark"` toggle. It ignored
+`themeLight` and `themeDark` preset names (sepia,
+solarized, dracula, nord, ...), the `"system"` mode that
+follows OS preferences, and the `themeFont` choice. It
+now mirrors `App.tsx` `resolveTheme` /
+`attrForPreset` / `applyFont`, listens for the
+`kaisho-theme-changed` custom event for same-window
+updates, and follows the `prefers-color-scheme` media
+query so the tray re-themes live when the OS flips
+between Light and Dark.
+
 ## 2.2.2
 
 Follow-up patch to 2.2.1 fixing one more org -> sql

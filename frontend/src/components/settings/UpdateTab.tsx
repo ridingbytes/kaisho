@@ -189,26 +189,16 @@ export function UpdateSection(): JSX.Element {
         `Downloading v${update.version}...`,
       );
 
-      // Kill the kai-server sidecar BEFORE the installer
-      // touches kai-server.exe. On Windows, NSIS aborts
-      // with "Error opening the file for writing" if the
-      // sidecar still has the binary mapped. Doing it
-      // here (rather than in the NSIS pre-install hook
-      // alone) is more reliable because the running
-      // Kaisho.exe owns the child process; killing from
-      // taskkill /IM races with parent respawn logic.
-      try {
-        const { invoke } = await import(
-          "@tauri-apps/api/core"
-        );
-        await invoke("kill_sidecar");
-        // Brief grace period for the OS to release file
-        // handles before the installer claims them.
-        await new Promise((r) => setTimeout(r, 800));
-      } catch {
-        // Older Tauri shells without the IPC fall back
-        // to NSIS-only kill — still better than nothing.
-      }
+      // Sidecar termination is delegated to the NSIS
+      // pre-install hook (Windows) and the installer
+      // itself (macOS/Linux). The previous in-renderer
+      // kill_sidecar IPC required a dynamic import of
+      // ``@tauri-apps/api/core`` whose chunk failed to
+      // load post-update on some installs, surfacing as
+      // "Importing a module script failed" and aborting
+      // the install. The auto-update banner has never
+      // performed this kill and works reliably — match
+      // that flow here.
 
       let downloaded = 0;
       let total = 0;
