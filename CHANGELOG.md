@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.2.4
+
+Single-purpose patch: the What's New dialog after the
+2.2.3 update rendered an empty body. The CHANGELOG
+parser only picked up top-level `- bullets` and the
+2.2.3 entry was written entirely as prose plus `###`
+subsections, so it produced `items: []` and the dialog
+showed no content beyond the title.
+
+### Parser handles prose and subsections
+
+`frontend/src/utils/changelog.ts` now treats each
+`### Heading` as a new item with the heading rendered
+as a bold prefix and the prose underneath accumulated
+as the item body. Leading paragraphs directly under
+`## VERSION` are emitted as the section's first item.
+Old-style top-level `- bullets` and their indented
+continuation lines are preserved inline inside the
+parent section, so every historical entry (1.x, 2.0.x,
+2.1.x) still renders correctly. Verified against the
+full CHANGELOG: 2.2.3 now produces four items where it
+previously produced zero, 2.2.2 produces two, 2.2.1
+produces three, 2.2.0 produces twelve.
+
 ## 2.2.3
 
 Three desktop-app polish fixes.

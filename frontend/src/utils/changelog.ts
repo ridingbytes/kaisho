@@ -17,21 +17,55 @@ function rstToMarkdownInlineCode(s: string): string {
 
 /** Parse CHANGELOG.md into structured entries.
  *
- * Bullets that wrap onto indented continuation lines
- * (commonly produced by editors that respect an 80-col
- * limit) are merged back into a single string per item
- * so the UI shows the full sentence instead of a
- * truncated head.
+ * Supported shapes per ``## VERSION`` section, mixed in
+ * the same release:
+ *
+ *   - leading prose paragraph(s) directly under the
+ *     version heading become the first item
+ *   - each ``### Subheading`` starts a new item; the
+ *     heading becomes a bold prefix and prose paragraphs
+ *     below it accumulate as the item's body
+ *   - ``- bullet`` lines and their indented continuation
+ *     wraps are preserved inline so the renderer treats
+ *     them as a nested list inside the item
+ *
+ * Output items are Markdown strings; the dialog passes
+ * each one to the Markdown component which handles
+ * paragraphs, inline code, and nested bullets.
+ *
+ * Why this matters: the previous parser only picked up
+ * top-level ``- bullets``. Modern essay-style entries
+ * (paragraphs + ``###`` sub-headings) produced an empty
+ * ``items: []`` and the What's New dialog rendered
+ * blank — exactly what happened on 2.2.3.
  */
 export function parseChangelog(
   raw: string,
 ): ChangelogEntry[] {
   const entries: ChangelogEntry[] = [];
   let current: ChangelogEntry | null = null;
+  let buffer: string | null = null;
+
+  function flush(): void {
+    if (buffer === null || !current) {
+      buffer = null;
+      return;
+    }
+    const cleaned = buffer
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    if (cleaned) {
+      current.items.push(
+        rstToMarkdownInlineCode(cleaned),
+      );
+    }
+    buffer = null;
+  }
 
   for (const line of raw.split("\n")) {
     const versionMatch = line.match(/^## (.+)/);
     if (versionMatch) {
+      flush();
       current = {
         version: versionMatch[1].trim(),
         items: [],
@@ -41,25 +75,23 @@ export function parseChangelog(
     }
     if (!current) continue;
 
-    const itemMatch = line.match(/^- (.+)/);
-    if (itemMatch) {
-      current.items.push(
-        rstToMarkdownInlineCode(itemMatch[1].trim()),
-      );
+    const subMatch = line.match(/^### (.+)/);
+    if (subMatch) {
+      flush();
+      buffer = `**${subMatch[1].trim()}**`;
       continue;
     }
 
-    // Indented continuation of the previous bullet.
-    // Treat any leading-whitespace non-empty line as a
-    // wrap of the prior item rather than a new entry.
-    const continuation = line.match(/^\s+(\S.*)$/);
-    if (continuation && current.items.length > 0) {
-      const last = current.items.length - 1;
-      current.items[last] = rstToMarkdownInlineCode(
-        current.items[last] + " " + continuation[1].trim(),
-      );
+    if (buffer === null) {
+      // Hold blank lines until real content appears so
+      // the first item doesn't start with a blank line.
+      if (line.trim().length === 0) continue;
+      buffer = line;
+    } else {
+      buffer += "\n" + line;
     }
   }
 
+  flush();
   return entries;
 }
