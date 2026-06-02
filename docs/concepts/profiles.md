@@ -87,8 +87,7 @@ specific profile regardless of what's active in the UI.
 
 ## Browser State Isolation
 
-:octicons-tag-24: Added in v0.9.0
-{ .version-badge }
+!!! version-added "Since 0.9.0"
 
 The web UI scopes all browser state per profile. Advisor chat
 history, unread badges, clock filters, board view toggles, and

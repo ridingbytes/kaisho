@@ -5,11 +5,21 @@ mobile PWA. It uses Kaisho Cloud as the synchronization relay.
 
 ## Plans
 
-| Plan | Includes |
-|------|----------|
-| Free | Local-only, no sync |
-| Sync | Bidirectional sync, mobile access |
-| Sync + AI | Sync plus hosted AI gateway |
+| Plan | Cloud sync | Mobile PWA | Hosted AI | Pro integrations |
+|------|------------|------------|-----------|------------------|
+| Free | no | no | no | no |
+| Companion | yes | yes | yes | no |
+| Pro | yes | yes | yes | yes |
+| Team | yes | yes | yes | yes |
+
+!!! info "Since 1.7.3"
+    The plan tiers were renamed from Free / Sync / Sync+AI to
+    Free / Companion / Pro / Team. The Companion tier covers
+    everything an individual needs; Pro and Team unlock the
+    workspace integrations (Linear, Slack, Google).
+
+The free plan cannot connect; the cloud refuses connection attempts
+from accounts on a free plan.
 
 ## Connecting
 
@@ -17,21 +27,39 @@ mobile PWA. It uses Kaisho Cloud as the synchronization relay.
 2. Enter your Kaisho Cloud API key.
 3. Press **Connect**.
 
-The initial sync pushes your local data to the cloud. After that,
-changes sync automatically in both directions.
+The initial sync pulls cloud-side data; subsequent changes flow in
+both directions automatically.
 
-## How Sync Works
+If `advisor_model` and `cron_model` are not yet set, connecting on
+a paid plan auto-populates them with the hosted models
+(`kaisho:advisor` and `kaisho:cron`). Any model you already chose
+is preserved.
 
-- **Push**: local changes are sent to the cloud in real time via
-  WebSocket
-- **Pull**: cloud changes (from mobile or other devices) arrive via
-  WebSocket and merge into local data
-- **Conflict resolution**: last writer wins, based on `updated_at`
-  timestamps
-- **Soft deletes**: deleted entries are tracked as tombstones and
-  propagated to the cloud
+## How sync works
 
-## Sync Status
+Two paths run in parallel:
+
+**WebSocket (fast path).** The desktop holds a WebSocket to the
+cloud for the active profile. When the cloud reports a change
+(timer started / stopped, entries / inbox / tasks / notes
+changed), the desktop runs a debounced sync after 2 seconds. This
+is what makes mobile-to-desktop feel instant.
+
+**Polling (fallback).** A background job runs every 5 minutes for
+**every** connected profile, whether or not it is currently
+active. This catches anything missed by the WebSocket and keeps
+inactive profiles up to date.
+
+**Eager push.** Local changes call into a push scheduler that
+enqueues a push immediately. A lock prevents the 5-minute job and
+the eager push from overlapping.
+
+**Conflict resolution.** Last writer wins, based on `updated_at`
+timestamps. Soft deletes are tracked as tombstones and propagated
+to the cloud; tombstones are cleared after the cloud acknowledges
+them.
+
+## Sync status
 
 The header bar shows a sync status badge:
 
@@ -41,52 +69,52 @@ The header bar shows a sync status badge:
 
 Click the badge to navigate to Cloud Sync settings.
 
-## Multiple Profiles
+## Multiple profiles
 
 Each profile can connect to its own cloud account independently.
 Cloud sync credentials (API key, URL) are stored per-profile in
-`settings.yaml`. Background sync runs for all connected profiles
-every 5 minutes, regardless of which profile is currently active.
+`settings.yaml`.
 
-Real-time WebSocket events are only active for the current profile.
-Inactive profiles rely on the 5-minute polling interval.
+The 5-minute polling cycle runs for every connected profile.
+Real-time WebSocket events are only active for the currently
+selected profile; inactive profiles rely on polling alone.
 
-## Mobile Access
+## Mobile access
 
-Once connected, sign into the mobile PWA at your cloud URL.
-Time entries created on mobile sync back to the desktop
-automatically.
+Once connected, sign into the mobile PWA at your cloud URL. Time
+entries created on mobile sync back to the desktop automatically.
 
-Entries from mobile may arrive without a customer assignment. The
-**Cloud Triage** panel in the clocks view lets you assign customers
-and contracts to these entries in bulk.
+Mobile usually attaches a customer at capture time. If a mobile
+entry arrives without one, it lands on the desktop with a
+`FROM_CLOUD` marker and shows up in the **Cloud Triage** panel of
+the Clocks view, where you can batch-assign customer, task, and
+contract before they enter the regular timeline.
 
 ## Kaisho Cloud AI
 
-With a Sync + AI plan, the advisor uses the hosted AI gateway.
-No local AI provider or API keys needed. Toggle this in
+Companion, Pro, and Team plans include access to the hosted AI
+gateway. No local AI provider or API keys needed. Toggle this in
 **Settings > Cloud Sync > Use Kaisho AI**.
 
-The AI token usage meter shows your consumption against the monthly
-quota.
+The AI token usage meter shows your consumption against the
+monthly quota (default 200,000 tokens; raised on Pro and Team).
 
 ### Use Kaisho models everywhere
 
-After connecting on a Sync + AI plan, click
-**Settings > Cloud Sync > Use Kaisho models** to switch the advisor
-and every cron job to the hosted models in one step. The button
-sets `advisor_model` to `kaisho:advisor`, `cron_model` to
-`kaisho:cron`, and rewrites every cron job's `model` to
-`kaisho:cron`. Idempotent: running it again on an already-converted
-profile is a no-op.
+After connecting, click **Settings > Cloud Sync > Use Kaisho
+models** to switch the advisor and every cron job to the hosted
+models in one step. The button sets `advisor_model` to
+`kaisho:advisor`, `cron_model` to `kaisho:cron`, and rewrites
+every cron job's `model` to `kaisho:cron`. Idempotent: running it
+again on an already-converted profile is a no-op.
 
 ## Disconnecting
 
-Go to **Settings > Cloud Sync** and press **Disconnect**. This
-removes the cloud connection and optionally wipes cloud-side data.
-Local data is not affected.
+Go to **Settings > Cloud Sync** and press **Disconnect**. A final
+pull runs first, then cloud-side data is wiped (optional) and
+local sync state is cleared. Your local data is not touched.
 
-## Manual Sync
+## Manual sync
 
 Force an immediate sync cycle:
 
@@ -94,4 +122,6 @@ Force an immediate sync cycle:
 POST /api/cloud-sync/sync-now
 ```
 
-This blocks until the push/pull cycle completes.
+This blocks until the push/pull cycle completes. See the
+[Cloud Sync API reference](../api/cloud-sync.md) for the full
+endpoint catalogue.

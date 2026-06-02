@@ -67,8 +67,7 @@ Clock entries use the org CLOCK logbook format:
 
 ## Using Kaisho Tools from gptel
 
-:octicons-tag-24: Added in v0.9.0
-{ .version-badge }
+!!! version-added "Since 0.9.1"
 
 If you use [gptel](https://github.com/karthink/gptel) with its
 MCP integration, you can access Kaisho's 40 tools from any gptel

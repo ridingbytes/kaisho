@@ -1,7 +1,6 @@
 # kai mcp-server
 
-:octicons-tag-24: Added in v0.9.0
-{ .version-badge }
+!!! version-added "Since 0.9.0"
 
 Start the MCP server (stdio transport).
 

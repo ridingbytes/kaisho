@@ -128,8 +128,7 @@ background queries).
 
 ## Using Kaisho from Claude Code
 
-:octicons-tag-24: Added in v0.9.0
-{ .version-badge }
+!!! version-added "Since 0.9.0"
 
 The same 40 tools available to the built-in advisor are also
 accessible from Claude Code, Claude Desktop, and Cursor via the
