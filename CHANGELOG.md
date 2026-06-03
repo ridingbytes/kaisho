@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.3.2
+
+### Fix KB summarize crashing when the Kaisho-cloud model is selected
+
+`_ask_kaisho_cloud` was calling `cloud_ai_agentic` with
+`system_prompt=` and `tool_handlers=`, but the function
+signature uses `system=` and `tool_executor=`. The mismatch
+landed during an earlier refactor of `cloud_ai_agentic` and
+went undetected because nobody summarized a KB file against
+the cloud model. Any attempt to do so raised
+`TypeError: cloud_ai_agentic() got an unexpected keyword
+argument 'system_prompt'` and returned a 500 from
+`/api/knowledge/file/summarize`.
+
+Caller updated to use the right names. Added a regression
+test that snapshots the real signature and asserts every
+kwarg the summarize path passes is one the function
+actually accepts, so the same drift cannot recur silently.
+
 ## 2.3.1
 
 ### Register the kaisho:// URL scheme so kaisho.dev can deep-link into the app
