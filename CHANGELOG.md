@@ -17,18 +17,14 @@ The token stays masked by default behind a Show toggle so
 the value doesn't sit on screen during demos or pair
 programming sessions.
 
-The panel also includes an Enabled switch and a live status
-pill (green Running, gray Disabled, red Backend unreachable)
-that refreshes every 10 seconds. Toggling off makes the
-`/mcp/` endpoint return 503 to every request regardless of
-bearer, so a leaked token can be revoked without restarting
-the app.
-
-For Claude Code on the desktop build, an Install button next
-to the snippet runs `claude mcp add --transport http kaisho
-<url> --header "Authorization: Bearer <token>"` directly
-through the Tauri shell plugin, skipping the copy / paste /
-terminal hop.
+When disconnected, the panel collapses to a single Connect
+button matching the cloud-integration rows above. Clicking
+Connect starts serving on `/mcp/` and expands the panel to
+show the URL, token, snippets, and a live status pill (green
+Running, gray Disabled, red Backend unreachable) that
+refreshes every 10 seconds. Disconnect makes the endpoint
+return 503 to every request regardless of bearer, so a leaked
+token can be revoked without restarting the app.
 
 ### Expose the MCP server over HTTP so any client can connect with a URL
 
