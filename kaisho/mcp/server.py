@@ -1,8 +1,17 @@
 """Kaisho MCP server.
 
-Exposes Kaisho tools via the Model Context Protocol (stdio).
-Reuses the same ``execute_tool()`` dispatcher as the cron
-executor and advisor, so tool behavior is identical.
+Exposes Kaisho tools via the Model Context Protocol over
+two transports:
+
+- stdio (``run_server``): launched per-client by the desktop
+  app or a CLI shim, classic MCP setup.
+- streamable HTTP (``build_http_app``): mounted onto the
+  running ``kai serve`` FastAPI app at ``/mcp`` so a single
+  always-on backend can serve any number of MCP clients
+  without each one spawning its own process.
+
+Both transports share ``create_server()`` so tool behavior,
+tier filtering, and audit logging are identical.
 """
 import json
 import keyword
@@ -18,6 +27,7 @@ from ..config import get_config, reset_config
 from ..cron.tools import execute_tool
 from .audit import log_call
 from .tiers import filter_tools, parse_tiers
+from .token import load_or_create_token, verify_token
 
 # Valid Python identifier pattern for exec() safety
 _IDENT_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
@@ -255,3 +265,125 @@ def run_server(
     """Create and run the MCP server (stdio transport)."""
     server = create_server(profile=profile, allow=allow)
     server.run(transport="stdio")
+
+
+# -- HTTP transport ---------------------------------------
+
+# Default mount path inside ``kai serve``. Kept short so
+# the install URL we hand out is friendly:
+#   http://localhost:8765/mcp
+HTTP_MOUNT_PATH = "/mcp"
+
+
+class BearerAuthMiddleware:
+    """ASGI middleware enforcing the user's bearer token on
+    every request to the mounted MCP app.
+
+    The token is read from disk on each request rather than
+    cached so a manual rotation (delete file + restart) takes
+    effect without bouncing the parent FastAPI process. The
+    cost is negligible — a single small file read per call.
+    """
+
+    def __init__(self, app, data_dir: Path):
+        self.app = app
+        self.data_dir = Path(data_dir)
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        presented = _extract_bearer(scope.get("headers", []))
+        if not verify_token(self.data_dir, presented):
+            await _send_unauthorized(send)
+            return
+        await self.app(scope, receive, send)
+
+
+def _extract_bearer(headers) -> str:
+    """Pull the bearer value out of ASGI ``headers``.
+
+    Headers arrive as a list of ``(bytes, bytes)`` tuples
+    with lower-case names per the ASGI spec.
+    """
+    for name, value in headers:
+        if name == b"authorization":
+            decoded = value.decode("latin-1", "ignore")
+            if decoded.lower().startswith("bearer "):
+                return decoded[7:].strip()
+            return ""
+    return ""
+
+
+async def _send_unauthorized(send) -> None:
+    body = b'{"error":"unauthorized"}'
+    await send({
+        "type": "http.response.start",
+        "status": 401,
+        "headers": [
+            (b"content-type", b"application/json"),
+            (
+                b"www-authenticate",
+                b'Bearer realm="kaisho-mcp"',
+            ),
+        ],
+    })
+    await send({
+        "type": "http.response.body",
+        "body": body,
+    })
+
+
+def build_http_app(profile: str | None = None,
+                   allow: str = "read"):
+    """Build the streamable-HTTP ASGI app for mounting.
+
+    The returned object is a ``StarletteWithLifespan`` whose
+    lifespan must be chained into the parent app so the MCP
+    session manager starts and stops cleanly.
+
+    The internal mount path is ``/`` so the caller can mount
+    the whole app at ``/mcp`` on the outer FastAPI and the
+    public URL is just ``http://host:port/mcp`` rather than
+    ``/mcp/mcp``.
+
+    The bearer middleware is wired in at construction time
+    against the user-level data dir, so rotating the token
+    on disk is enough to invalidate existing sessions on
+    the next request.
+
+    :param profile: Profile to pin; ``None`` follows the
+        active profile (same semantics as stdio).
+    :param allow: Tier filter, see ``create_server``.
+    :returns: ASGI app with bearer auth applied.
+    """
+    server = create_server(profile=profile, allow=allow)
+    cfg = get_config()
+    data_dir = Path(str(cfg.DATA_DIR))
+    load_or_create_token(data_dir)
+    return server.http_app(
+        path="/",
+        middleware=[
+            _starlette_middleware(data_dir),
+        ],
+    )
+
+
+def _starlette_middleware(data_dir: Path):
+    """Wrap ``BearerAuthMiddleware`` in the Starlette
+    ``Middleware`` shape expected by FastMCP's ``http_app``.
+    """
+    from starlette.middleware import Middleware
+    return Middleware(
+        BearerAuthMiddleware,
+        data_dir=data_dir,
+    )
+
+
+def get_http_token() -> str:
+    """Return the user's MCP bearer token, generating one
+    if missing. Settings → Integrations surfaces this so
+    the user can copy it into Claude's config.
+    """
+    cfg = get_config()
+    return load_or_create_token(Path(str(cfg.DATA_DIR)))

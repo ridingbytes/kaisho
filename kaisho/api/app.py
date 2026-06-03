@@ -36,7 +36,14 @@ from .routers import calendar as calendar_router
 from .routers import cli as cli_router
 from .routers import version as version_router
 from ..cron.scheduler import build_scheduler
+from ..mcp.server import HTTP_MOUNT_PATH, build_http_app
 from .watcher.service import start_watcher, stop_watcher
+
+# Built once at import time so the mounted app + its
+# lifespan can be referenced from both ``app.mount`` and
+# the FastAPI ``lifespan`` chain below. Rebuilding per
+# request would tear the MCP session manager.
+_mcp_app = build_http_app()
 
 
 def _init_ssl():
@@ -94,7 +101,16 @@ async def lifespan(app: FastAPI):
     scheduler.start()
 
     start_watcher(*get_backend().watch_paths)
-    yield
+    # Chain the MCP HTTP app's lifespan so its session
+    # manager starts/stops alongside the API. Without this
+    # the mounted /mcp endpoint accepts connections but the
+    # FastMCP session manager is never initialized and the
+    # first request 500s. ``router.lifespan_context`` is the
+    # asynccontextmanager-wrapped form; ``app.lifespan`` is
+    # the bare async generator factory and can't be used
+    # with ``async with`` directly.
+    async with _mcp_app.router.lifespan_context(_mcp_app):
+        yield
     scheduler.shutdown(wait=False)
     stop_watcher()
 
@@ -183,6 +199,13 @@ app.include_router(ws_router.router)
 app.include_router(version_router.router)
 app.include_router(cli_router.router)
 app.include_router(files_router.router)
+
+# Mount the streamable-HTTP MCP transport. The mount path
+# matches the path inside the MCP app so the public URL the
+# user puts into their Claude config is just
+# ``http://localhost:8765/mcp`` with a Bearer token from
+# Settings → Integrations.
+app.mount(HTTP_MOUNT_PATH, _mcp_app)
 
 
 @app.get("/health")

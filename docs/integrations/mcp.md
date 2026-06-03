@@ -40,6 +40,104 @@ kai mcp-server --profile work --allow read,write
 This launches a stdio-based MCP server that exposes all read and
 write tools for the `work` profile.
 
+## HTTP Transport
+
+!!! version-added "Since 2.3.0"
+
+Kaisho exposes the same MCP surface over HTTP at
+`http://localhost:8765/mcp/` whenever `kai serve` is running. The
+Kaisho desktop app starts `kai serve` automatically, so this
+endpoint is live the moment the app is open.
+
+The HTTP transport removes two pain points of the stdio setup:
+
+- No PATH dance. The desktop installer never puts `kai` on the
+  user's PATH, so a stdio config had to reference the bundled
+  binary by full path per platform. The URL is identical
+  everywhere.
+- No subprocess per client. One always-on backend can serve any
+  number of Claude / Cursor / Zed sessions concurrently.
+
+### Bearer Token
+
+The endpoint is gated by a per-user bearer token stored at
+`~/.kaisho/mcp-token` with mode `0600`. It is generated lazily on
+first start of `kai serve` and reused across restarts. Read it
+once and paste it into your MCP client config:
+
+```bash
+cat ~/.kaisho/mcp-token
+```
+
+Rotation: delete the file and restart `kai serve`. The next read
+creates a fresh token; clients with the old value will get a 401
+on their next request.
+
+### Client Configuration
+
+=== "Claude Code"
+
+    ```bash
+    claude mcp add kaisho \
+      --transport http \
+      --url http://localhost:8765/mcp/ \
+      --header "Authorization: Bearer $(cat ~/.kaisho/mcp-token)"
+    ```
+
+=== "Claude Desktop"
+
+    `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+    ```json
+    {
+      "mcpServers": {
+        "kaisho": {
+          "url": "http://localhost:8765/mcp/",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          }
+        }
+      }
+    }
+    ```
+
+=== "Cursor"
+
+    `.cursor/mcp.json`:
+
+    ```json
+    {
+      "mcpServers": {
+        "kaisho": {
+          "url": "http://localhost:8765/mcp/",
+          "headers": {
+            "Authorization": "Bearer YOUR_TOKEN_HERE"
+          }
+        }
+      }
+    }
+    ```
+
+### Profile Selection
+
+Tool calls follow the active profile of the running `kai serve`
+instance, the same way the stdio server does when launched
+without `--profile`. Switching profiles in the UI takes effect on
+the next tool dispatch; the client connection itself stays open.
+
+### When to Use Stdio Instead
+
+The stdio transport is still the right choice when:
+
+- You want a different access tier per MCP client (the HTTP
+  endpoint serves a single tier configured at server startup).
+- You run automation that should not depend on the desktop app
+  being open.
+- You need to pin a specific profile per client.
+
+Both transports can run side by side. They share the same audit
+log, write caps, and auto-snapshot guards.
+
 ## App-Only Setup (No Python Install)
 
 If you installed the Kaisho desktop app (Mac/Linux DMG, AppImage,
@@ -409,7 +507,9 @@ backend functions, so tool behavior is identical everywhere.
 graph TD
     A["Claude Code / Desktop / Cursor"]
     A -->|"stdio JSON-RPC"| B["kai mcp-server"]
+    A -->|"HTTP + Bearer"| H["kai serve  :8765/mcp/"]
     B --> C["execute_tool(name, args)"]
+    H --> C
     C --> D["Backend services"]
     D --> E["org / md / json / sql files"]
 
@@ -417,14 +517,21 @@ graph TD
     G["AI advisor"] --> C
 ```
 
-The server runs as a standalone process (started by the MCP client
-as a subprocess). It accesses the profile's data files directly,
-not via HTTP to the running FastAPI server.
+Both transports route through the same `execute_tool()` dispatcher.
+The stdio server runs as a per-client subprocess and accesses the
+profile's data files directly. The HTTP transport is mounted at
+`/mcp/` on the always-running `kai serve` FastAPI app, so a single
+backend serves any number of MCP clients without spawning extra
+processes.
 
 ## Security
 
-**Transport**: stdio only (no network ports). The MCP client starts
-the server as a subprocess. Trust boundary = OS user.
+**Transport**: stdio (no network) or HTTP on `127.0.0.1` only.
+The stdio server is launched as a subprocess by the client and
+trusts whoever spawned it. The HTTP server binds to loopback only
+and requires a bearer token from `~/.kaisho/mcp-token` (mode 0600)
+on every request, compared in constant time. In both cases the
+trust boundary is the OS user.
 
 **Profile scoping**: by default (no `--profile`), the MCP server
 follows the active profile of the running `kai serve` instance. It
