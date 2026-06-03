@@ -201,6 +201,7 @@ export interface McpInfo {
   url: string;
   token: string;
   mounted_at: string;
+  enabled: boolean;
 }
 
 export function fetchMcpInfo(): Promise<McpInfo> {
@@ -209,6 +210,12 @@ export function fetchMcpInfo(): Promise<McpInfo> {
 
 export function rotateMcpToken(): Promise<McpInfo> {
   return post<McpInfo>("/settings/mcp/rotate", {});
+}
+
+export function setMcpEnabled(
+  enabled: boolean,
+): Promise<McpInfo> {
+  return post<McpInfo>("/settings/mcp/toggle", { enabled });
 }
 
 /** Fetch AI-specific settings (model, provider, etc.). */

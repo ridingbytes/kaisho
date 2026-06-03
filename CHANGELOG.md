@@ -17,6 +17,19 @@ The token stays masked by default behind a Show toggle so
 the value doesn't sit on screen during demos or pair
 programming sessions.
 
+The panel also includes an Enabled switch and a live status
+pill (green Running, gray Disabled, red Backend unreachable)
+that refreshes every 10 seconds. Toggling off makes the
+`/mcp/` endpoint return 503 to every request regardless of
+bearer, so a leaked token can be revoked without restarting
+the app.
+
+For Claude Code on the desktop build, an Install button next
+to the snippet runs `claude mcp add --transport http kaisho
+<url> --header "Authorization: Bearer <token>"` directly
+through the Tauri shell plugin, skipping the copy / paste /
+terminal hop.
+
 ### Expose the MCP server over HTTP so any client can connect with a URL
 
 The MCP server was stdio-only, which forced every Claude /

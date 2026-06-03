@@ -78,9 +78,8 @@ on their next request.
 === "Claude Code"
 
     ```bash
-    claude mcp add kaisho \
-      --transport http \
-      --url http://localhost:8765/mcp/ \
+    claude mcp add --transport http kaisho \
+      http://localhost:8765/mcp/ \
       --header "Authorization: Bearer $(cat ~/.kaisho/mcp-token)"
     ```
 

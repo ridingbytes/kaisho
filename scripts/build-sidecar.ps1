@@ -49,6 +49,8 @@ pyinstaller `
     --add-data "prompts;prompts" `
     --add-data "CHANGELOG.md;." `
     --add-data "pyproject.toml;." `
+    --copy-metadata "fastmcp" `
+    --copy-metadata "mcp" `
     --hidden-import "kaisho" `
     --hidden-import "uvicorn" `
     --hidden-import "uvicorn.logging" `

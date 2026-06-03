@@ -71,6 +71,11 @@ DATA=(
     --add-data "prompts:prompts"
     --add-data "CHANGELOG.md:."
     --add-data "pyproject.toml:."
+    # fastmcp and mcp call importlib.metadata.version on
+    # themselves at import time; without their dist-info
+    # the sidecar crashes before the API binds.
+    --copy-metadata fastmcp
+    --copy-metadata mcp
 )
 
 mkdir -p "$BIN_DIR"

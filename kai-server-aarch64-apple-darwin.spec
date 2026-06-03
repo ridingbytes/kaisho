@@ -1,7 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import copy_metadata
 
+datas = [('frontend/dist', 'frontend/dist'), ('templates', 'templates'), ('prompts', 'prompts'), ('CHANGELOG.md', '.'), ('pyproject.toml', '.')]
 hiddenimports = ['kaisho', 'uvicorn', 'uvicorn.logging', 'uvicorn.loops', 'uvicorn.loops.auto', 'uvicorn.protocols', 'uvicorn.protocols.http', 'uvicorn.protocols.http.auto', 'uvicorn.protocols.websockets', 'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan', 'uvicorn.lifespan.on']
+datas += copy_metadata('fastmcp')
+datas += copy_metadata('mcp')
 hiddenimports += collect_submodules('kaisho')
 
 
@@ -9,7 +13,7 @@ a = Analysis(
     ['kaisho_launcher.py'],
     pathex=[],
     binaries=[],
-    datas=[('frontend/dist', 'frontend/dist'), ('templates', 'templates'), ('prompts', 'prompts'), ('CHANGELOG.md', '.'), ('pyproject.toml', '.')],
+    datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},

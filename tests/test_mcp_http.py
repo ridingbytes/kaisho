@@ -158,6 +158,30 @@ def test_middleware_rejects_wrong_token(tmp_path):
     assert statuses and statuses[0]["status"] == 401
 
 
+def test_middleware_returns_503_when_disabled(tmp_path):
+    """Toggling the disabled flag must short-circuit before
+    the bearer check so a valid client also sees 503 rather
+    than getting tools served by an off endpoint.
+    """
+    from kaisho.mcp.token import set_disabled
+    token = load_or_create_token(tmp_path)
+    set_disabled(tmp_path, True)
+    middleware = BearerAuthMiddleware(_inner_app, tmp_path)
+    recorder = _Recorder()
+    auth = f"Bearer {token}".encode("latin-1")
+    scope = _scope([(b"authorization", auth)])
+
+    async def empty_receive():
+        return {"type": "http.disconnect"}
+
+    asyncio.run(middleware(scope, empty_receive, recorder))
+    statuses = [
+        e for e in recorder.events
+        if e["type"] == "http.response.start"
+    ]
+    assert statuses and statuses[0]["status"] == 503
+
+
 def test_middleware_passes_through_non_http_scopes(tmp_path):
     """Lifespan and websocket scopes must not be auth-gated;
     the middleware should hand them straight to the inner
