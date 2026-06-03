@@ -12,6 +12,7 @@ import { useCloudSyncStatus } from "../../hooks/useSettings";
 import { openExternal } from "../../utils/tauri";
 import { CalDavSection } from "./CalDavSection";
 import { GithubAdvanced } from "./GithubAdvanced";
+import { McpSection } from "./McpSection";
 
 type ProviderType = "key" | "oauth";
 
@@ -246,6 +247,7 @@ export function IntegrationsSection() {
           </div>
         );
       })}
+      <McpSection />
       <CalDavSection />
       <p className="text-2xs text-fg-subtle">
         {t("integrations.oauthNote")}

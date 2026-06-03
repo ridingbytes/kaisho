@@ -2,6 +2,30 @@
 
 ## 2.3.0
 
+### Surface the MCP URL and bearer token in Settings → Integrations
+
+The HTTP transport from the previous change worked but
+required users to `cat ~/.kaisho/mcp-token` from a shell to
+find the bearer token. The Integrations tab now shows the
+URL and token directly with copy buttons, ready-to-paste
+config snippets for Claude Code, Claude Desktop, and Cursor
+that interpolate the live values, and a rotate button that
+generates a fresh token and warns that existing clients will
+disconnect.
+
+The token stays masked by default behind a Show toggle so
+the value doesn't sit on screen during demos or pair
+programming sessions.
+
+When disconnected, the panel collapses to a single Connect
+button matching the cloud-integration rows above. Clicking
+Connect starts serving on `/mcp/` and expands the panel to
+show the URL, token, snippets, and a live status pill (green
+Running, gray Disabled, red Backend unreachable) that
+refreshes every 10 seconds. Disconnect makes the endpoint
+return 503 to every request regardless of bearer, so a leaked
+token can be revoked without restarting the app.
+
 ### Expose the MCP server over HTTP so any client can connect with a URL
 
 The MCP server was stdio-only, which forced every Claude /
