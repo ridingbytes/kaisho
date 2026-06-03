@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+### Restore the SQL_DSN field in Settings → Paths so Postgres + other SQLAlchemy backends are reachable again
+
+The SQL backend has supported arbitrary SQLAlchemy DSNs
+(SQLite, Postgres, MySQL, anything SQLAlchemy can drive)
+since the April 2026 rewrite. Config plumbing, settings
+service, REST API, and TypeScript types all carry the
+field. The Paths settings UI lost its input row at some
+point during a refactor, so users had no way to point
+Kaisho at a Postgres instance from the desktop app even
+though every layer below the form supported it.
+
+Re-adds the `SQL_DSN` input under the SQL backend row in
+Settings → Paths. Visible only when the active backend is
+`sql`. Placeholder shows the recommended
+`postgresql+psycopg://user:pass@host/db` shape; an empty
+field keeps the current behaviour of a per-profile
+`sqlite:///<profile>/kaisho.db`. Saving the form persists
+to `settings.yaml` via the existing `/api/settings/paths`
+PATCH and triggers `reset_backend()` so the new DSN takes
+effect without restarting.
+
+Translations updated for EN, DE, ES, and RU. Added unit
+tests that exercise the settings round-trip and the
+`_OverlayCfg` proxy used by the backend factory.
+
 ## 2.3.2
 
 ### Fix KB summarize crashing when the Kaisho-cloud model is selected
