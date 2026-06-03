@@ -16,7 +16,12 @@ from pydantic import BaseModel
 
 from ...config import get_config
 from ...mcp.server import HTTP_MOUNT_PATH
-from ...mcp.token import load_or_create_token, token_path
+from ...mcp.token import (
+    is_disabled,
+    load_or_create_token,
+    set_disabled,
+    token_path,
+)
 
 
 router = APIRouter(
@@ -28,6 +33,11 @@ class McpInfo(BaseModel):
     url: str
     token: str
     mounted_at: str
+    enabled: bool
+
+
+class McpToggle(BaseModel):
+    enabled: bool
 
 
 def _build_info() -> McpInfo:
@@ -47,7 +57,10 @@ def _build_info() -> McpInfo:
         f"{HTTP_MOUNT_PATH}/"
     )
     return McpInfo(
-        url=url, token=token, mounted_at=HTTP_MOUNT_PATH,
+        url=url,
+        token=token,
+        mounted_at=HTTP_MOUNT_PATH,
+        enabled=not is_disabled(cfg.DATA_DIR),
     )
 
 
@@ -67,4 +80,16 @@ def rotate_mcp_token() -> McpInfo:
     path = token_path(cfg.DATA_DIR)
     if path.exists():
         path.unlink()
+    return _build_info()
+
+
+@router.post("/toggle", response_model=McpInfo)
+def toggle_mcp(body: McpToggle) -> McpInfo:
+    """Enable or disable the HTTP MCP endpoint. When
+    disabled the middleware returns 503 to every request
+    regardless of the bearer, so existing clients see a
+    clean ``service unavailable`` rather than a hang.
+    """
+    cfg = get_config()
+    set_disabled(cfg.DATA_DIR, not body.enabled)
     return _build_info()

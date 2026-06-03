@@ -23,6 +23,30 @@ from pathlib import Path
 TOKEN_FILENAME = "mcp-token"
 TOKEN_BYTES = 32
 
+# Presence of this file (any contents) disables the HTTP
+# transport: the middleware returns 503 regardless of the
+# bearer. Kept as a flag file rather than a settings.yaml
+# key so the desktop app and a manual shell user can toggle
+# it without parsing YAML.
+DISABLED_FILENAME = "mcp-disabled"
+
+
+def disabled_path(data_dir: Path) -> Path:
+    return Path(data_dir) / DISABLED_FILENAME
+
+
+def is_disabled(data_dir: Path) -> bool:
+    return disabled_path(data_dir).exists()
+
+
+def set_disabled(data_dir: Path, value: bool) -> None:
+    path = disabled_path(data_dir)
+    if value:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.touch(exist_ok=True)
+    elif path.exists():
+        path.unlink()
+
 
 def token_path(data_dir: Path) -> Path:
     """Return the on-disk token path for the data dir."""

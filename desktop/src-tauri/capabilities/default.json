@@ -23,7 +23,8 @@
     {
       "identifier": "shell:allow-execute",
       "allow": [
-        { "name": "binaries/kai-server", "sidecar": true }
+        { "name": "binaries/kai-server", "sidecar": true },
+        { "name": "claude-mcp-add", "command": "claude", "args": true }
       ]
     },
     "updater:default",

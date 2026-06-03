@@ -150,7 +150,6 @@ export function IntegrationsSection() {
       {err && (
         <p className="text-xs text-red-500">{err}</p>
       )}
-      <McpSection />
       {PROVIDERS.map((p) => {
         const conn = isConnected(p.kind);
         const isBusy = busy === p.kind;
@@ -248,6 +247,7 @@ export function IntegrationsSection() {
           </div>
         );
       })}
+      <McpSection />
       <CalDavSection />
       <p className="text-2xs text-fg-subtle">
         {t("integrations.oauthNote")}

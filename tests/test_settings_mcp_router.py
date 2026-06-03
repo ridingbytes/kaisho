@@ -34,6 +34,24 @@ def test_get_returns_url_and_token(monkeypatch, tmp_path):
     assert body["url"] == "http://localhost:8765/mcp/"
     assert body["mounted_at"] == "/mcp"
     assert len(body["token"]) > 20
+    assert body["enabled"] is True
+
+
+def test_toggle_flips_state(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    off = client.post(
+        "/api/settings/mcp/toggle",
+        json={"enabled": False},
+    ).json()
+    assert off["enabled"] is False
+    assert client.get(
+        "/api/settings/mcp",
+    ).json()["enabled"] is False
+    on = client.post(
+        "/api/settings/mcp/toggle",
+        json={"enabled": True},
+    ).json()
+    assert on["enabled"] is True
 
 
 def test_get_is_stable_across_calls(monkeypatch, tmp_path):

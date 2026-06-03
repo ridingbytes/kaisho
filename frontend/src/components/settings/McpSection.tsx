@@ -4,8 +4,14 @@ import { useTranslation } from "react-i18next";
 import {
   fetchMcpInfo,
   rotateMcpToken,
+  setMcpEnabled,
   type McpInfo,
 } from "../../api/client";
+import { isTauri } from "../../utils/tauri";
+
+type Status = "running" | "disabled" | "down";
+
+const POLL_MS = 10_000;
 
 type ClientKind = "claudeCode" | "claudeDesktop" | "cursor";
 
@@ -18,9 +24,8 @@ function snippetFor(
 ): string {
   if (kind === "claudeCode") {
     return (
-      "claude mcp add kaisho \\\n"
-      + "  --transport http \\\n"
-      + `  --url ${info.url} \\\n`
+      "claude mcp add --transport http kaisho \\\n"
+      + `  ${info.url} \\\n`
       + `  --header "Authorization: Bearer ${info.token}"`
     );
   }
@@ -45,6 +50,7 @@ const btn =
 export function McpSection() {
   const { t } = useTranslation("settings");
   const [info, setInfo] = useState<McpInfo | null>(null);
+  const [status, setStatus] = useState<Status>("running");
   const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [client, setClient] = useState<ClientKind>(
@@ -53,10 +59,45 @@ export function McpSection() {
   const [copiedKey, setCopiedKey] = useState<string | null>(
     null,
   );
+  const [installState, setInstallState] = useState<
+    "idle" | "running" | "done" | "error"
+  >("idle");
+  const [installError, setInstallError] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
-    fetchMcpInfo().then(setInfo).catch(() => {});
+    let cancelled = false;
+
+    async function tick() {
+      try {
+        const next = await fetchMcpInfo();
+        if (cancelled) return;
+        setInfo(next);
+        setStatus(next.enabled ? "running" : "disabled");
+      } catch {
+        if (cancelled) return;
+        setStatus("down");
+      }
+    }
+
+    void tick();
+    const id = window.setInterval(tick, POLL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
   }, []);
+
+  async function toggle(enabled: boolean) {
+    try {
+      const next = await setMcpEnabled(enabled);
+      setInfo(next);
+      setStatus(next.enabled ? "running" : "disabled");
+    } catch {
+      setStatus("down");
+    }
+  }
 
   async function copy(key: string, value: string) {
     try {
@@ -66,6 +107,44 @@ export function McpSection() {
     } catch {
       // Clipboard may be unavailable in some webviews; the
       // user can select+copy from the visible text.
+    }
+  }
+
+  async function installClaudeCode() {
+    if (!info) return;
+    setInstallState("running");
+    setInstallError(null);
+    try {
+      const { Command } = await import(
+        "@tauri-apps/plugin-shell"
+      );
+      const cmd = Command.create("claude-mcp-add", [
+        "mcp", "add",
+        "--transport", "http",
+        "kaisho",
+        info.url,
+        "--header",
+        `Authorization: Bearer ${info.token}`,
+      ]);
+      const out = await cmd.execute();
+      if (out.code === 0) {
+        setInstallState("done");
+        window.setTimeout(
+          () => setInstallState("idle"), 3000,
+        );
+      } else {
+        setInstallState("error");
+        setInstallError(
+          (out.stderr || out.stdout || "exit "
+            + out.code).trim().split("\n").pop()
+          || `exit ${out.code}`,
+        );
+      }
+    } catch (e) {
+      setInstallState("error");
+      setInstallError(
+        e instanceof Error ? e.message : String(e),
+      );
     }
   }
 
@@ -89,14 +168,39 @@ export function McpSection() {
     Math.min(40, info.token.length),
   );
 
+  const dot = status === "running"
+    ? "bg-green-500"
+    : status === "disabled"
+    ? "bg-fg-muted"
+    : "bg-red-500";
+
   return (
     <div className="bg-surface-card rounded-lg border border-border p-4">
-      <p className="font-semibold text-sm text-fg-strong">
-        {t("integrations.mcp.title")}
-      </p>
-      <p className="text-2xs text-fg-muted mt-0.5">
-        {t("integrations.mcp.hint")}
-      </p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold text-sm text-fg-strong flex items-center gap-2">
+            {t("integrations.mcp.title")}
+            <span className="inline-flex items-center gap-1 text-2xs text-fg-muted font-normal">
+              <span
+                className={`inline-block w-1.5 h-1.5 rounded-full ${dot}`}
+              />
+              {t(`integrations.mcp.status.${status}`)}
+            </span>
+          </p>
+          <p className="text-2xs text-fg-muted mt-0.5">
+            {t("integrations.mcp.hint")}
+          </p>
+        </div>
+        <label className="flex items-center gap-2 text-2xs text-fg-muted cursor-pointer shrink-0">
+          <input
+            type="checkbox"
+            checked={info.enabled}
+            onChange={(e) => toggle(e.target.checked)}
+            className="accent-cta"
+          />
+          {t("integrations.mcp.enable")}
+        </label>
+      </div>
 
       <div className="mt-3 flex flex-col gap-2">
         <Field
@@ -148,26 +252,55 @@ export function McpSection() {
         ))}
       </div>
 
-      <div className="relative mt-2">
+      <p className="text-2xs text-fg-muted mt-2">
+        {t(`integrations.mcp.howto.${client}`)}
+      </p>
+
+      <div className="relative mt-1">
         <pre className="text-2xs bg-surface-raised border border-border rounded-md p-2 overflow-x-auto text-fg whitespace-pre">
           {snippetFor(client, info)}
         </pre>
-        <button
-          type="button"
-          onClick={() => copy(
-            "snippet", snippetFor(client, info),
+        <div className="absolute top-1.5 right-1.5 flex gap-1">
+          {client === "claudeCode" && isTauri() && (
+            <button
+              type="button"
+              onClick={installClaudeCode}
+              disabled={installState === "running"}
+              className={
+                btn
+                + " bg-cta text-white hover:bg-cta-hover"
+              }
+            >
+              {installState === "running"
+                ? t("integrations.mcp.installing")
+                : installState === "done"
+                ? t("integrations.mcp.installed")
+                : t("integrations.mcp.install")}
+            </button>
           )}
-          className={
-            "absolute top-1.5 right-1.5 "
-            + btn
-            + " bg-surface-card border border-border text-fg hover:bg-surface-raised"
-          }
-        >
-          {copiedKey === "snippet"
-            ? t("integrations.mcp.copied")
-            : t("integrations.mcp.copy")}
-        </button>
+          <button
+            type="button"
+            onClick={() => copy(
+              "snippet", snippetFor(client, info),
+            )}
+            className={
+              btn
+              + " bg-surface-card border border-border text-fg hover:bg-surface-raised"
+            }
+          >
+            {copiedKey === "snippet"
+              ? t("integrations.mcp.copied")
+              : t("integrations.mcp.copy")}
+          </button>
+        </div>
       </div>
+      {installState === "error" && installError && (
+        <p className="text-2xs text-red-500 mt-1">
+          {t("integrations.mcp.installError", {
+            error: installError,
+          })}
+        </p>
+      )}
 
       <div className="mt-3 flex justify-end">
         <button

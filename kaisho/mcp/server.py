@@ -27,7 +27,11 @@ from ..config import get_config, reset_config
 from ..cron.tools import execute_tool
 from .audit import log_call
 from .tiers import filter_tools, parse_tiers
-from .token import load_or_create_token, verify_token
+from .token import (
+    is_disabled,
+    load_or_create_token,
+    verify_token,
+)
 
 # Valid Python identifier pattern for exec() safety
 _IDENT_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
@@ -293,6 +297,9 @@ class BearerAuthMiddleware:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
+        if is_disabled(self.data_dir):
+            await _send_disabled(send)
+            return
         presented = _extract_bearer(scope.get("headers", []))
         if not verify_token(self.data_dir, presented):
             await _send_unauthorized(send)
@@ -326,6 +333,21 @@ async def _send_unauthorized(send) -> None:
                 b"www-authenticate",
                 b'Bearer realm="kaisho-mcp"',
             ),
+        ],
+    })
+    await send({
+        "type": "http.response.body",
+        "body": body,
+    })
+
+
+async def _send_disabled(send) -> None:
+    body = b'{"error":"mcp_disabled"}'
+    await send({
+        "type": "http.response.start",
+        "status": 503,
+        "headers": [
+            (b"content-type", b"application/json"),
         ],
     })
     await send({
