@@ -196,6 +196,21 @@ export function fetchSettings(): Promise<Settings> {
   return get<Settings>("/settings");
 }
 
+/** Local MCP HTTP endpoint info for the Integrations panel. */
+export interface McpInfo {
+  url: string;
+  token: string;
+  mounted_at: string;
+}
+
+export function fetchMcpInfo(): Promise<McpInfo> {
+  return get<McpInfo>("/settings/mcp");
+}
+
+export function rotateMcpToken(): Promise<McpInfo> {
+  return post<McpInfo>("/settings/mcp/rotate", {});
+}
+
 /** Fetch AI-specific settings (model, provider, etc.). */
 export function fetchAiSettings(): Promise<AiSettings> {
   return get<AiSettings>("/settings/ai");

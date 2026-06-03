@@ -12,6 +12,7 @@ import { useCloudSyncStatus } from "../../hooks/useSettings";
 import { openExternal } from "../../utils/tauri";
 import { CalDavSection } from "./CalDavSection";
 import { GithubAdvanced } from "./GithubAdvanced";
+import { McpSection } from "./McpSection";
 
 type ProviderType = "key" | "oauth";
 
@@ -149,6 +150,7 @@ export function IntegrationsSection() {
       {err && (
         <p className="text-xs text-red-500">{err}</p>
       )}
+      <McpSection />
       {PROVIDERS.map((p) => {
         const conn = isConnected(p.kind);
         const isBusy = busy === p.kind;
