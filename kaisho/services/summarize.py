@@ -282,10 +282,10 @@ def _ask_kaisho_cloud(
         cloud_url=cloud_url,
         api_key=cloud_api_key,
         mode=model_name or "default",
-        system_prompt=system_prompt,
+        system=system_prompt,
         prompt=prompt,
         tools=[],
-        tool_handlers={},
+        tool_executor=None,
     )
 
 
