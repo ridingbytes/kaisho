@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.3.0
+
+### Expose the MCP server over HTTP so any client can connect with a URL
+
+The MCP server was stdio-only, which forced every Claude /
+Cursor / Zed config to spawn a per-client subprocess and
+reference the bundled `kai-server` binary by full path. Desktop
+installers do not put `kai` on PATH, so the JSON differed per
+operating system and broke after auto-updates relocated the
+bundle.
+
+The MCP transport now mounts onto the always-running `kai serve`
+FastAPI app at `http://localhost:8765/mcp/`. Clients point at a
+single URL that is identical on macOS, Windows, Linux, and inside
+WSL. One always-on backend serves any number of MCP clients
+concurrently instead of one subprocess per connection.
+
+Auth is a per-user bearer token at `~/.kaisho/mcp-token`,
+generated lazily on first start with mode `0600` and compared in
+constant time on every request. Loopback binding plus file perms
+keep the surface tight; rotation is a file delete and restart.
+
+Stdio remains available via `kai mcp-server` for setups that
+need per-client tier scoping, profile pinning, or independence
+from the desktop app.
+
 ## 2.2.5
 
 Bug fix and a documentation refresh. No new app features.
