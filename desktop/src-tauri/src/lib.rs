@@ -14,7 +14,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 use std::time::Duration;
 
-use tauri::{Manager, RunEvent, State, WindowEvent};
+use tauri::{Emitter, Manager, RunEvent, State, WindowEvent};
 use tauri::Url;
 
 use sidecar::KaiProcess;
@@ -329,6 +329,7 @@ pub fn run() {
             tauri_plugin_global_shortcut::Builder::new()
                 .build(),
         )
+        .plugin(tauri_plugin_deep_link::init())
         .invoke_handler(tauri::generate_handler![
             update_tray_icon,
             set_active_timer,
@@ -361,12 +362,46 @@ pub fn run() {
             tray::setup(app)?;
             tray::spawn_ticker(app.handle().clone());
             register_shortcuts(app);
+            register_deep_link_handler(app);
 
             Ok(())
         })
         .build(tauri::generate_context!())
         .expect("error while building Kaisho")
         .run(handle_run_event);
+}
+
+// -----------------------------------------------------------
+// Deep links (kaisho:// URLs)
+// -----------------------------------------------------------
+
+// External URLs in the form ``kaisho://<path>[#<fragment>]``
+// are surfaced to the React UI as a window event. The
+// frontend listens on the main window and routes to the
+// matching settings tab or panel. Bringing the window to
+// focus is done up-front so the user sees the response
+// even when the app was minimised or backgrounded.
+fn register_deep_link_handler(app: &tauri::App) {
+    use tauri_plugin_deep_link::DeepLinkExt;
+
+    let handle = app.handle().clone();
+    app.deep_link().on_open_url(move |event| {
+        if let Some(main) = handle.get_webview_window("main") {
+            let _ = main.show();
+            let _ = main.set_focus();
+        }
+        let urls: Vec<String> = event
+            .urls()
+            .iter()
+            .map(|u| u.to_string())
+            .collect();
+        if let Some(first) = urls.first() {
+            let _ = handle.emit(
+                "kaisho://deep-link",
+                first.clone(),
+            );
+        }
+    });
 }
 
 // -----------------------------------------------------------

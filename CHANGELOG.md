@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.3.1
+
+### Register the kaisho:// URL scheme so kaisho.dev can deep-link into the app
+
+Adds `tauri-plugin-deep-link` with the `kaisho://` scheme
+registered against the desktop bundle. The Rust handler
+focuses the main window on receipt and emits the incoming
+URL to the React UI as a window event; the frontend parses
+`kaisho://<view>[#<sub-tab>]` and drives the existing hash
+router so the user lands on the right panel.
+
+Initial use case: `kaisho://settings#integrations` lets the
+kaisho.dev MCP page open the Settings → Integrations panel
+directly, so visitors do not have to hunt through menus to
+find the URL + token they need to configure their MCP
+client.
+
+The handler ignores unknown views and malformed URLs
+silently rather than surfacing an error, since the OS will
+hand us anything that starts with the scheme.
+
 ## 2.3.0
 
 ### Surface the MCP URL and bearer token in Settings → Integrations

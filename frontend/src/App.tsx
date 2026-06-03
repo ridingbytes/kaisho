@@ -239,6 +239,32 @@ function viewFromHash(): View {
   return VALID_VIEWS.has(hash as View) ? (hash as View) : "board";
 }
 
+// Parse a ``kaisho://<view>[#<sub>]`` URL and apply it. We
+// drive the existing hash-based view router by writing into
+// ``window.location.hash`` so the same code path that
+// handles sidebar clicks fires. A fragment (e.g.
+// ``#integrations`` on ``kaisho://settings``) is forwarded
+// as a ``navigate-settings-tab`` event so the Settings view
+// opens on the right sub-tab.
+function routeDeepLink(raw: string): void {
+  try {
+    const url = new URL(raw);
+    const view = url.host || url.pathname.replace(
+      /^\/+/, "",
+    );
+    if (!VALID_VIEWS.has(view as View)) return;
+    window.location.hash = `/${view}`;
+    const sub = (url.hash || "").replace(/^#/, "");
+    if (view === "settings" && sub) {
+      window.dispatchEvent(new CustomEvent(
+        "navigate-settings-tab", { detail: sub },
+      ));
+    }
+  } catch {
+    // Bogus URL from the OS; ignore rather than crash.
+  }
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 30_000, refetchOnWindowFocus: true },
@@ -808,6 +834,31 @@ function AppShell() {
     const handler = () => setView(viewFromHash());
     window.addEventListener("hashchange", handler);
     return () => window.removeEventListener("hashchange", handler);
+  }, []);
+
+  // External ``kaisho://`` URLs (registered with the OS via
+  // tauri-plugin-deep-link) arrive here as a window event
+  // emitted by the Rust side. Map the path to the View
+  // router and the fragment to the settings sub-tab event
+  // already used by Sidebar shortcuts.
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    (async () => {
+      try {
+        const { listen } = await import(
+          "@tauri-apps/api/event"
+        );
+        unlisten = await listen<string>(
+          "kaisho://deep-link",
+          (event) => routeDeepLink(event.payload),
+        );
+      } catch {
+        // Not running under Tauri (browser dev); ignore.
+      }
+    })();
+    return () => {
+      if (unlisten) unlisten();
+    };
   }, []);
 
   // Knowledge -> Advisor handover. The KB SummaryPopover
