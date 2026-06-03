@@ -29,6 +29,7 @@ from .routers import cloud_sync
 from .routers import integrations as integrations_router
 from .routers import settings as settings_router
 from .routers import settings_ai
+from .routers import settings_mcp
 from .routers import settings_profiles
 from .routers import settings_states
 from .routers import caldav as caldav_router
@@ -189,6 +190,7 @@ app.include_router(backup_router.router)
 app.include_router(settings_router.router)
 app.include_router(settings_states.router)
 app.include_router(settings_ai.router)
+app.include_router(settings_mcp.router)
 app.include_router(settings_profiles.router)
 app.include_router(github.router)
 app.include_router(caldav_router.router)
