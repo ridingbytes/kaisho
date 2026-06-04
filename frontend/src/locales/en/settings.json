@@ -259,6 +259,7 @@
   "info": "Info",
   "settingsFile": "Settings file",
   "pathsHint": "Backend and data directories are stored per profile. DATA_DIR, HOST, PORT are global (.env).",
+  "sqlDsnHint": "SQLAlchemy connection string. Leave empty to use a per-profile SQLite file. Supports postgresql+psycopg://, mysql+pymysql://, and any other SQLAlchemy-supported driver.",
   "globalSetViaEnv": "(global, set via .env)",
   "selectedColumns": "Selected columns",
   "availableFields": "Available fields",

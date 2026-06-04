@@ -127,6 +127,7 @@ export function PathsSection(): JSX.Element {
   const updateKb = useUpdateKbSources();
   const [orgDir, setOrgDir] = useState("");
   const [mdDir, setMdDir] = useState("");
+  const [sqlDsn, setSqlDsn] = useState("");
   const [backend, setBackend] = useState("org");
   const [sources, setSources] = useState<
     { label: string; path: string }[]
@@ -137,6 +138,15 @@ export function PathsSection(): JSX.Element {
     if (paths) {
       setOrgDir(paths.org_dir ?? "");
       setMdDir(paths.markdown_dir ?? "");
+      // The backend GET returns a synthesised
+      // sqlite:///<profile>/kaisho.db when sql_dsn is
+      // unset. Treat that as "default" by leaving the
+      // field blank, so saving an unmodified form does not
+      // pin the per-profile fallback into settings.yaml.
+      const dsn = paths.sql_dsn ?? "";
+      setSqlDsn(
+        dsn.startsWith("sqlite:///") ? "" : dsn,
+      );
       setBackend(paths.backend ?? "org");
     }
   }, [paths]);
@@ -154,6 +164,7 @@ export function PathsSection(): JSX.Element {
       {
         org_dir: orgDir,
         markdown_dir: mdDir,
+        sql_dsn: sqlDsn,
       },
       {
         onSuccess: () => {
@@ -296,6 +307,23 @@ export function PathsSection(): JSX.Element {
               placeholder="data/markdown"
             />
           </label>
+          {backend === "sql" && (
+            <label className="flex items-center gap-3 px-4 py-2.5 border-b border-border-subtle">
+              <span className="text-xs text-fg w-32 shrink-0">
+                SQL_DSN
+              </span>
+              <input
+                type="text"
+                value={sqlDsn}
+                onChange={(e) =>
+                  setSqlDsn(e.target.value)
+                }
+                className={inputCls}
+                placeholder="postgresql+psycopg://user:pass@host/db"
+                title={t("sqlDsnHint")}
+              />
+            </label>
+          )}
           <div className="flex items-center gap-3 px-4 py-2.5">
             <span className="text-xs text-fg w-32 shrink-0">
               DATA_DIR
