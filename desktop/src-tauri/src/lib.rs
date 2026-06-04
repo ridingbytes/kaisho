@@ -9,6 +9,7 @@ mod sidecar;
 mod tray;
 mod tray_render;
 mod http;
+mod proc;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
@@ -229,7 +230,7 @@ fn open_in_editor(command: String) -> Result<(), String> {
     })?;
     let args: Vec<String> = iter.collect();
 
-    let mut cmd = std::process::Command::new(&bin);
+    let mut cmd = proc::configured(&bin, "open_in_editor");
     cmd.args(&args);
     if let Some(path) = shell_path() {
         cmd.env("PATH", path);
@@ -262,7 +263,9 @@ fn detect_shell_path() -> Option<String> {
     // rc files (.zprofile, .zshrc, .bash_profile, etc.).
     // Redirect stderr to /dev/null to avoid noisy banners
     // from rc files polluting our captured value.
-    let output = std::process::Command::new(&shell)
+    let output = proc::configured(
+        &shell, "detect_shell_path",
+    )
         .args(["-l", "-i", "-c", "printf %s \"$PATH\""])
         .output()
         .ok()?;

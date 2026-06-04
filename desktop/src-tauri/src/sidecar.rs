@@ -37,8 +37,9 @@ const SIDECAR_PORT: &str = "8767";
 fn kill_stale() {
     #[cfg(unix)]
     {
-        use std::process::Command;
-        if let Ok(out) = Command::new("lsof")
+        if let Ok(out) = crate::proc::configured(
+            "lsof", "kill_stale.lsof",
+        )
             .args(["-ti", &format!(":{}", SIDECAR_PORT)])
             .output()
         {
@@ -48,7 +49,9 @@ fn kill_stale() {
                     "[kai] killing stale process {}",
                     pid,
                 );
-                let _ = Command::new("kill")
+                let _ = crate::proc::configured(
+                    "kill", "kill_stale.kill",
+                )
                     .arg(pid.trim())
                     .output();
             }
@@ -62,12 +65,32 @@ fn kill_stale() {
 
     #[cfg(windows)]
     {
-        // Find PIDs bound to SIDECAR_PORT and taskkill
-        // each one. ``taskkill /IM kai-server.exe`` would
-        // also kill the user's installed Kaisho.app on
-        // 8765, defeating the dev/release port split.
-        use std::process::Command;
-        let netstat = match Command::new("netstat")
+        // Find the single PID currently *listening* on
+        // SIDECAR_PORT and taskkill it. The previous
+        // implementation killed every PID that appeared
+        // in any netstat line containing ``:8765`` — that
+        // also matched ESTABLISHED and TIME_WAIT entries
+        // for client-side connections from the webview,
+        // so a normal shutdown would leave 20+ stale
+        // socket entries and the next launch would spend
+        // a full minute taskkilling unrelated PIDs
+        // (including, on a bad day, kaisho-desktop itself
+        // since the webview connects back to port 8765).
+        //
+        // The netstat layout is fixed-width-ish:
+        //   Proto  Local Address  Foreign Address  State        PID
+        //   TCP    127.0.0.1:8765 0.0.0.0:0        LISTENING    12345
+        //
+        // We want only the LISTENING row whose local
+        // address ends with ``:SIDECAR_PORT``.
+        //
+        // Both ``netstat`` and ``taskkill`` are console-
+        // subsystem CLIs; spawning them via ``proc::
+        // configured`` applies ``CREATE_NO_WINDOW`` so we
+        // don't flash a conhost window.
+        let netstat = match crate::proc::configured(
+            "netstat", "kill_stale.netstat",
+        )
             .args(["-ano", "-p", "TCP"])
             .output()
         {
@@ -77,23 +100,30 @@ fn kill_stale() {
         let stdout = String::from_utf8_lossy(
             &netstat.stdout,
         );
-        let needle = format!(":{}", SIDECAR_PORT);
+        let suffix = format!(":{}", SIDECAR_PORT);
         let mut killed_any = false;
         for line in stdout.lines() {
-            if !line.contains(&needle) {
+            let cols: Vec<&str> =
+                line.split_whitespace().collect();
+            // Need at least: Proto Local Foreign State PID
+            if cols.len() < 5 {
                 continue;
             }
-            // netstat columns: Proto Local Foreign State PID
-            let pid = match line.split_whitespace().last()
-            {
-                Some(p) => p,
-                None => continue,
-            };
+            if cols[3] != "LISTENING" {
+                continue;
+            }
+            if !cols[1].ends_with(&suffix) {
+                continue;
+            }
+            let pid = cols[4];
             eprintln!(
-                "[kai] killing stale PID {} on port {}",
+                "[kai] killing stale PID {} listening on \
+                 port {}",
                 pid, SIDECAR_PORT,
             );
-            let _ = Command::new("taskkill")
+            let _ = crate::proc::configured(
+                "taskkill", "kill_stale.taskkill",
+            )
                 .args(["/F", "/PID", pid])
                 .output();
             killed_any = true;
