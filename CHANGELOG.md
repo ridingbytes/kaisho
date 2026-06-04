@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased
+
+### Suppress remaining Windows console flashes from the Tauri shell and add an opt-in subprocess spawn tracer
+
+The 2.4.0 fix covered every `subprocess.run` in the Python
+sidecar but missed the Rust side of the Tauri shell. On
+startup the desktop app shells out to `netstat` and
+`taskkill` (per stale PID on the sidecar port) and, when
+opening an external editor, to whatever the user
+configured. Those went through bare
+`std::process::Command::new(...)` which does **not** set
+`CREATE_NO_WINDOW` on Windows, so each one flashed a
+conhost window.
+
+New `desktop/src-tauri/src/proc.rs` wraps `Command` with
+`CREATE_NO_WINDOW` on Windows and is now used by
+`sidecar::kill_stale`, `open_in_editor`, and
+`detect_shell_path`. All three were the visible flashes
+during the loading screen.
+
+Both halves now also share an opt-in spawn tracer. Setting
+`KAISHO_TRACE_SUBPROC=1` causes:
+
+- The Python sidecar to monkey-patch `subprocess.Popen`
+  and log every spawn (argv, cwd, creation flags, caller
+  frame).
+- The Tauri shell to log every `Command` it routes
+  through `proc::configured` (binary + call-site label).
+
+Both write to `<KAISHO_HOME or ~/.kaisho>/subproc-trace.log`
+so a single tail covers the whole boot path. Off by
+default; instructions in the trace log header.
+
 ## 2.4.0
 
 ### Restore the SQL_DSN field in Settings → Paths so Postgres + other SQLAlchemy backends are reachable again

@@ -37,8 +37,9 @@ const SIDECAR_PORT: &str = "8767";
 fn kill_stale() {
     #[cfg(unix)]
     {
-        use std::process::Command;
-        if let Ok(out) = Command::new("lsof")
+        if let Ok(out) = crate::proc::configured(
+            "lsof", "kill_stale.lsof",
+        )
             .args(["-ti", &format!(":{}", SIDECAR_PORT)])
             .output()
         {
@@ -48,7 +49,9 @@ fn kill_stale() {
                     "[kai] killing stale process {}",
                     pid,
                 );
-                let _ = Command::new("kill")
+                let _ = crate::proc::configured(
+                    "kill", "kill_stale.kill",
+                )
                     .arg(pid.trim())
                     .output();
             }
@@ -66,8 +69,13 @@ fn kill_stale() {
         // each one. ``taskkill /IM kai-server.exe`` would
         // also kill the user's installed Kaisho.app on
         // 8765, defeating the dev/release port split.
-        use std::process::Command;
-        let netstat = match Command::new("netstat")
+        // Both ``netstat`` and ``taskkill`` are console-
+        // subsystem CLIs; spawning them via ``proc::
+        // configured`` applies ``CREATE_NO_WINDOW`` so we
+        // don't flash a conhost window per stale PID.
+        let netstat = match crate::proc::configured(
+            "netstat", "kill_stale.netstat",
+        )
             .args(["-ano", "-p", "TCP"])
             .output()
         {
@@ -93,7 +101,9 @@ fn kill_stale() {
                 "[kai] killing stale PID {} on port {}",
                 pid, SIDECAR_PORT,
             );
-            let _ = Command::new("taskkill")
+            let _ = crate::proc::configured(
+                "taskkill", "kill_stale.taskkill",
+            )
                 .args(["/F", "/PID", pid])
                 .output();
             killed_any = true;
