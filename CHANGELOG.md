@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.4.0
 
 ### Restore the SQL_DSN field in Settings → Paths so Postgres + other SQLAlchemy backends are reachable again
 
