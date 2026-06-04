@@ -621,9 +621,10 @@ def ask_claude_cli(model: str, prompt: str) -> str:
             "claude CLI not found. Install it and run "
             "'claude login' first."
         )
+    from ..subproc import run as _run
     cmd = [claude_bin, "-p", "-", "--model", model]
     try:
-        result = subprocess.run(
+        result = _run(
             cmd,
             input=prompt,
             capture_output=True,

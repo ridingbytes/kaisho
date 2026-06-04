@@ -27,6 +27,38 @@ Translations updated for EN, DE, ES, and RU. Added unit
 tests that exercise the settings round-trip and the
 `_OverlayCfg` proxy used by the backend factory.
 
+### Stop the Windows sidecar from flashing console windows on startup
+
+On Windows, every `subprocess.run` against a console-mode
+child flashes a `conhost.exe` window for the lifetime of
+the call. The Settings panel polls the `claude --version`
+status on mount, and PDF ingest shells out to `pdftotext`,
+so users saw a stream of black terminals pop in and out
+during the loading screen and again whenever they opened
+Settings.
+
+Two changes, scoped to the flicker:
+
+- New `kaisho.subproc.run` helper that sets
+  `CREATE_NO_WINDOW` on Windows and passes through
+  unchanged on POSIX. All sidecar-side `subprocess.run`
+  call sites (`settings_ai`, `knowledge`, `advisor`,
+  `cron.tools`, `cron.executor`) route through it. The
+  interactive CLI editor launcher is left on plain
+  `subprocess.run` because suppressing the console would
+  hide `vim` / `emacs -nw`.
+- `scripts/build-sidecar.ps1` builds with `--noconsole`
+  so the sidecar exe itself is GUI-subsystem on Windows.
+  Tauri already captures the sidecar's stdout/stderr via
+  its `Command` API, so log capture is unchanged.
+
+Slow Windows startup (>1 min during the loading screen)
+is a separate problem: `--onefile` re-extracts the whole
+bundle to `%TEMP%\_MEI*` every launch and Defender scans
+each extracted file. Fixing that requires switching to
+`--onedir` and restructuring the Tauri `externalBin`
+bundle, which is left for a follow-up.
+
 ## 2.3.2
 
 ### Fix KB summarize crashing when the Kaisho-cloud model is selected

@@ -347,10 +347,12 @@ def _pdftotext(path: str) -> str | None:
     """
     import shutil
     import subprocess
+
+    from ..subproc import run as _run
     if not shutil.which("pdftotext"):
         return None
     try:
-        result = subprocess.run(
+        result = _run(
             ["pdftotext", path, "-"],
             capture_output=True,
             text=True,

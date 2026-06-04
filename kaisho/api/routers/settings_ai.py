@@ -17,6 +17,8 @@ def _claude_cli_status() -> dict:
     """Check if claude CLI is installed and authenticated."""
     import shutil
     import subprocess
+
+    from ...subproc import run as _run
     path = shutil.which("claude")
     if not path:
         return {
@@ -26,7 +28,7 @@ def _claude_cli_status() -> dict:
             "path": "",
         }
     try:
-        result = subprocess.run(
+        result = _run(
             [path, "--version"],
             capture_output=True, text=True, timeout=5,
         )

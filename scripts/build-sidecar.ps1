@@ -43,6 +43,7 @@ if (Test-Path "dist\kai-server-$Target.exe") {
 pyinstaller `
     --noconfirm `
     --onefile `
+    --noconsole `
     --name "kai-server-$Target" `
     --add-data "frontend\dist;frontend\dist" `
     --add-data "templates;templates" `

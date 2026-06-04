@@ -1493,8 +1493,9 @@ def _execute_cli(command: str) -> dict:
         return {"output": output} if output else {
             "error": err.getvalue().strip() or "no output",
         }
+    from ..subproc import run as _run
     try:
-        result = subprocess.run(
+        result = _run(
             cmd_args, capture_output=True,
             text=True, timeout=60,
         )
