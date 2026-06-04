@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.4.1
 
 ### Fix the Windows loading-screen freeze and console flicker by trimming kill_stale and routing every Rust spawn through CREATE_NO_WINDOW
 
