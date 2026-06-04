@@ -2,25 +2,50 @@
 
 ## Unreleased
 
-### Suppress remaining Windows console flashes from the Tauri shell and add an opt-in subprocess spawn tracer
+### Fix the Windows loading-screen freeze and console flicker by trimming kill_stale and routing every Rust spawn through CREATE_NO_WINDOW
 
-The 2.4.0 fix covered every `subprocess.run` in the Python
-sidecar but missed the Rust side of the Tauri shell. On
-startup the desktop app shells out to `netstat` and
-`taskkill` (per stale PID on the sidecar port) and, when
-opening an external editor, to whatever the user
-configured. Those went through bare
-`std::process::Command::new(...)` which does **not** set
-`CREATE_NO_WINDOW` on Windows, so each one flashed a
-conhost window.
+Two cooperating bugs were behind the multi-minute Windows
+startup and the cluster of conhost windows that flashed
+during it. Procmon traces from a 2.4.0 user confirmed
+both.
 
-New `desktop/src-tauri/src/proc.rs` wraps `Command` with
-`CREATE_NO_WINDOW` on Windows and is now used by
-`sidecar::kill_stale`, `open_in_editor`, and
-`detect_shell_path`. All three were the visible flashes
-during the loading screen.
+**`kill_stale` was killing the wrong PIDs.** The Windows
+branch parsed `netstat -ano -p TCP` and ran
+`taskkill /F /PID <pid>` for every PID appearing in any
+line containing `:8765`. That suffix matches not only the
+sidecar's LISTENING row but also every ESTABLISHED and
+TIME_WAIT entry for client connections from the webview
+back to the sidecar. A normally-closed previous session
+leaves 20+ such socket entries on the port for the OS
+TCP cleanup window, so the next launch spent the full
+loading-screen budget taskkilling unrelated PIDs (the
+webview, `kaisho-desktop` itself on a bad day, system
+processes that happened to share a PID with an old entry)
+before the real sidecar was ever spawned. Now we walk
+the netstat columns and only kill the single PID whose
+state is `LISTENING` and whose local address ends in the
+sidecar port.
 
-Both halves now also share an opt-in spawn tracer. Setting
+**Every Rust-side `Command` bypassed `CREATE_NO_WINDOW`.**
+`std::process::Command::new(...)` does not set
+`CREATE_NO_WINDOW` on Windows, so each console-subsystem
+child (`netstat`, `taskkill`, the user's external editor)
+flashed a conhost window for its lifetime. New
+`desktop/src-tauri/src/proc.rs` wraps `Command` with the
+flag on Windows and is now used by `sidecar::kill_stale`,
+`open_in_editor`, and `detect_shell_path`.
+
+The combination is what users will notice: startup goes
+from the previous "minute or two of loading screen with
+20-30 black windows flashing" to "a few seconds with no
+visible terminals". The 2.4.0 Python-side fix is still
+necessary for the same reason on the sidecar's own
+children (`claude --version`, `pdftotext`, ...).
+
+### Add an opt-in subprocess spawn tracer
+
+For diagnosing future "surprise spawn" reports, both
+halves of the app now share a tracer. Setting
 `KAISHO_TRACE_SUBPROC=1` causes:
 
 - The Python sidecar to monkey-patch `subprocess.Popen`
@@ -31,7 +56,8 @@ Both halves now also share an opt-in spawn tracer. Setting
 
 Both write to `<KAISHO_HOME or ~/.kaisho>/subproc-trace.log`
 so a single tail covers the whole boot path. Off by
-default; instructions in the trace log header.
+default. Replaces the previous "ask the user to run
+Procmon" support flow.
 
 ## 2.4.0
 
