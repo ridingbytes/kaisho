@@ -472,12 +472,13 @@ def _run_claude_cli(
     claude_cli run as simple prompt-in/text-out.
     """
     import shutil
-    import subprocess
+
+    from ..subproc import run as _run
 
     claude_bin = shutil.which("claude")
     if not claude_bin:
         raise ExecutorError("claude CLI not found")
-    result = subprocess.run(
+    result = _run(
         [claude_bin, "-p", "-", "--model", model],
         input=prompt,
         capture_output=True, text=True, timeout=timeout,
