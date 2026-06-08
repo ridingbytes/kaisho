@@ -197,11 +197,15 @@ export function fetchSettings(): Promise<Settings> {
 }
 
 /** Local MCP HTTP endpoint info for the Integrations panel. */
+export type McpAllow = "read" | "write" | "destructive";
+
 export interface McpInfo {
   url: string;
   token: string;
   mounted_at: string;
   enabled: boolean;
+  allow: McpAllow;
+  allow_active: McpAllow;
 }
 
 export function fetchMcpInfo(): Promise<McpInfo> {
@@ -216,6 +220,10 @@ export function setMcpEnabled(
   enabled: boolean,
 ): Promise<McpInfo> {
   return post<McpInfo>("/settings/mcp/toggle", { enabled });
+}
+
+export function setMcpAllow(allow: McpAllow): Promise<McpInfo> {
+  return post<McpInfo>("/settings/mcp/allow", { allow });
 }
 
 /** Fetch AI-specific settings (model, provider, etc.). */

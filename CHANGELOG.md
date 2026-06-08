@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Add a Permissions selector to the MCP integration panel so the
+  HTTP transport can be widened to write or destructive tiers
+  without editing the stdio CLI flags. The choice persists at
+  `~/.kaisho/mcp-allow` and applies on the next `kai serve`
+  restart; defaults to `read` so upgrades never silently widen
+  the remote surface.
+
 ## 2.4.1
 
 ### Fix the Windows loading-screen freeze and console flicker by trimming kill_stale and routing every Rust spawn through CREATE_NO_WINDOW

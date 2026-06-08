@@ -73,6 +73,42 @@ def test_rotate_changes_token(monkeypatch, tmp_path):
     ).json()["token"] == after
 
 
+def test_allow_defaults_to_read(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    body = client.get("/api/settings/mcp").json()
+    assert body["allow"] == "read"
+    assert body["allow_active"] == "read"
+
+
+def test_allow_persists_and_signals_restart(
+    monkeypatch, tmp_path,
+):
+    client = _client(monkeypatch, tmp_path)
+    resp = client.post(
+        "/api/settings/mcp/allow",
+        json={"allow": "write"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    # On-disk preference updates immediately ...
+    assert body["allow"] == "write"
+    # ... but the running FastMCP was never built in this
+    # test rig, so allow_active falls back to the on-disk
+    # value (i.e. they match here; in production they would
+    # diverge until restart).
+    again = client.get("/api/settings/mcp").json()
+    assert again["allow"] == "write"
+
+
+def test_allow_rejects_unknown_tier(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    resp = client.post(
+        "/api/settings/mcp/allow",
+        json={"allow": "nope"},
+    )
+    assert resp.status_code == 400
+
+
 def test_loopback_host_displays_as_localhost(
     monkeypatch, tmp_path,
 ):
