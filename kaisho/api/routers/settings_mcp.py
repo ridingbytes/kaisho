@@ -14,11 +14,15 @@ same trust scope as the on-disk file itself.
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from fastapi import HTTPException
+
 from ...config import get_config
-from ...mcp.server import HTTP_MOUNT_PATH
+from ...mcp.server import HTTP_MOUNT_PATH, get_active_http_allow
 from ...mcp.token import (
     is_disabled,
+    load_allow,
     load_or_create_token,
+    set_allow,
     set_disabled,
     token_path,
 )
@@ -34,10 +38,29 @@ class McpInfo(BaseModel):
     token: str
     mounted_at: str
     enabled: bool
+    allow: str
+    allow_active: str
 
 
 class McpToggle(BaseModel):
     enabled: bool
+
+
+class McpAllow(BaseModel):
+    allow: str
+
+
+def _active_allow() -> str:
+    """Return the tier the live FastMCP instance is serving.
+
+    Falls back to the on-disk value when the HTTP transport
+    was never built — keeps the panel coherent in stdio-only
+    test setups.
+    """
+    active = get_active_http_allow()
+    if active:
+        return active
+    return load_allow(get_config().DATA_DIR)
 
 
 def _build_info() -> McpInfo:
@@ -61,6 +84,8 @@ def _build_info() -> McpInfo:
         token=token,
         mounted_at=HTTP_MOUNT_PATH,
         enabled=not is_disabled(cfg.DATA_DIR),
+        allow=load_allow(cfg.DATA_DIR),
+        allow_active=_active_allow(),
     )
 
 
@@ -80,6 +105,24 @@ def rotate_mcp_token() -> McpInfo:
     path = token_path(cfg.DATA_DIR)
     if path.exists():
         path.unlink()
+    return _build_info()
+
+
+@router.post("/allow", response_model=McpInfo)
+def update_mcp_allow(body: McpAllow) -> McpInfo:
+    """Persist the tier the HTTP transport should serve.
+
+    Takes effect on the next ``kai serve`` restart because
+    FastMCP registers the tool list eagerly at startup.
+    """
+    cfg = get_config()
+    try:
+        set_allow(cfg.DATA_DIR, body.allow)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
     return _build_info()
 
 

@@ -4,7 +4,9 @@ import { useTranslation } from "react-i18next";
 import {
   fetchMcpInfo,
   rotateMcpToken,
+  setMcpAllow,
   setMcpEnabled,
+  type McpAllow,
   type McpInfo,
 } from "../../api/client";
 
@@ -16,6 +18,10 @@ type ClientKind = "claudeCode" | "claudeDesktop" | "cursor";
 
 const CLIENTS: ClientKind[] = [
   "claudeCode", "claudeDesktop", "cursor",
+];
+
+const ALLOW_TIERS: McpAllow[] = [
+  "read", "write", "destructive",
 ];
 
 function snippetFor(
@@ -100,6 +106,17 @@ export function McpSection() {
     } catch {
       // Clipboard may be unavailable in some webviews; the
       // user can select+copy from the visible text.
+    }
+  }
+
+  async function changeAllow(tier: McpAllow) {
+    if (!info || tier === info.allow) return;
+    setBusy(true);
+    try {
+      const next = await setMcpAllow(tier);
+      setInfo(next);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -220,6 +237,36 @@ export function McpSection() {
           )}
           t={t}
         />
+      </div>
+
+      <div className="mt-3">
+        <p className="text-2xs text-fg-muted mb-1">
+          {t("integrations.mcp.allow.label")}
+        </p>
+        <div className="flex items-center gap-1">
+          {ALLOW_TIERS.map((tier) => (
+            <button
+              key={tier}
+              type="button"
+              disabled={busy}
+              onClick={() => changeAllow(tier)}
+              className={
+                "px-2.5 py-1 rounded-md text-2xs font-medium "
+                + "transition-colors disabled:opacity-50 "
+                + (tier === info.allow
+                  ? "bg-surface-raised border border-border text-fg-strong"
+                  : "text-fg-muted hover:text-fg")
+              }
+            >
+              {t(`integrations.mcp.allow.${tier}`)}
+            </button>
+          ))}
+        </div>
+        {info.allow !== info.allow_active && (
+          <p className="text-2xs text-amber-500 mt-1">
+            {t("integrations.mcp.allow.restartHint")}
+          </p>
+        )}
       </div>
 
       <div className="mt-3 flex items-center gap-1">

@@ -124,12 +124,28 @@ instance, the same way the stdio server does when launched
 without `--profile`. Switching profiles in the UI takes effect on
 the next tool dispatch; the client connection itself stays open.
 
+### Permissions
+
+The HTTP transport defaults to **read-only**. Toggle the active
+tier in **Settings -> Integrations -> Local MCP server ->
+Permissions**:
+
+- **Read only** -- query tools only (default after install).
+- **Read + write** -- adds create/update/start-timer tools.
+- **Read + write + destructive** -- adds delete and rename tools.
+
+The choice is persisted at `~/.kaisho/mcp-allow`. FastMCP
+registers the tool list at startup, so changing the tier requires
+restarting `kai serve` (or the desktop app); the panel surfaces a
+restart hint when the on-disk value drifts ahead of the running
+server.
+
 ### When to Use Stdio Instead
 
 The stdio transport is still the right choice when:
 
 - You want a different access tier per MCP client (the HTTP
-  endpoint serves a single tier configured at server startup).
+  endpoint serves a single tier system-wide).
 - You run automation that should not depend on the desktop app
   being open.
 - You need to pin a specific profile per client.
@@ -328,13 +344,18 @@ MCP server makes available:
 | `write` | Off | Create/update tasks, start timers, book time |
 | `destructive` | Off | Delete notes, archive tasks, run arbitrary CLI |
 
-The `--allow` flag controls which tiers are active:
+For the stdio transport, the `--allow` flag controls which tiers
+are active:
 
 ```bash
 kai mcp-server --allow read             # read-only (default)
 kai mcp-server --allow read,write       # read + write
 kai mcp-server --allow destructive      # all tiers (destructive implies read,write)
 ```
+
+For the HTTP transport, the active tier is the value persisted at
+`~/.kaisho/mcp-allow` (set via the Settings UI or by editing the
+file directly). Defaults to `read` when the file is missing.
 
 MCP clients that support tool annotations see `readOnlyHint` and
 `destructiveHint` flags, so they can display confirmation prompts
@@ -545,8 +566,10 @@ UI switches (useful when you run several MCP servers in parallel for
 different profiles, or want stable scoping for automation).
 
 **Tier filtering**: tools are filtered at startup based on
-`--allow`. A read-only server cannot call write tools even if the
-client requests them.
+`--allow` (stdio) or `~/.kaisho/mcp-allow` (HTTP, set via Settings
+-> Integrations). A read-only server cannot call write tools even
+if the client requests them. The HTTP default is `read`, so an
+upgrade never silently widens what a remote client can drive.
 
 **No secrets exposure**: API keys and credentials in `settings.yaml`
 are never returned by any tool. The settings service is not exposed

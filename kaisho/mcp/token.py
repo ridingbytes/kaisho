@@ -30,6 +30,21 @@ TOKEN_BYTES = 32
 # it without parsing YAML.
 DISABLED_FILENAME = "mcp-disabled"
 
+# Per-user tier toggle for the HTTP transport. File contents
+# are one of ``read | write | destructive`` and the value is
+# read at FastMCP startup (``build_http_app``). The default
+# when the file is missing is the safest tier — ``read`` —
+# so an upgrade does not silently widen the surface a remote
+# client can drive.
+#
+# A flag file (rather than settings.yaml) keeps this in step
+# with ``mcp-disabled``: the desktop sidecar, a shell user,
+# and a deployment script can all set the tier without
+# parsing YAML.
+ALLOW_FILENAME = "mcp-allow"
+DEFAULT_ALLOW = "read"
+VALID_ALLOW = ("read", "write", "destructive")
+
 
 def disabled_path(data_dir: Path) -> Path:
     return Path(data_dir) / DISABLED_FILENAME
@@ -46,6 +61,38 @@ def set_disabled(data_dir: Path, value: bool) -> None:
         path.touch(exist_ok=True)
     elif path.exists():
         path.unlink()
+
+
+def allow_path(data_dir: Path) -> Path:
+    return Path(data_dir) / ALLOW_FILENAME
+
+
+def load_allow(data_dir: Path) -> str:
+    """Return the configured tier string for the HTTP
+    transport, falling back to ``DEFAULT_ALLOW`` when the
+    file is missing or holds an unrecognised value.
+    """
+    path = allow_path(data_dir)
+    if not path.exists():
+        return DEFAULT_ALLOW
+    value = path.read_text().strip().lower()
+    if value not in VALID_ALLOW:
+        return DEFAULT_ALLOW
+    return value
+
+
+def set_allow(data_dir: Path, tier: str) -> str:
+    """Persist the tier choice. Raises ``ValueError`` on an
+    unknown tier so a bad client request 400s cleanly instead
+    of writing garbage to disk.
+    """
+    normalised = tier.strip().lower()
+    if normalised not in VALID_ALLOW:
+        raise ValueError(f"Invalid tier: {tier!r}")
+    path = allow_path(data_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(normalised)
+    return normalised
 
 
 def token_path(data_dir: Path) -> Path:

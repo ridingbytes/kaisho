@@ -38,13 +38,21 @@ from .routers import cli as cli_router
 from .routers import version as version_router
 from ..cron.scheduler import build_scheduler
 from ..mcp.server import HTTP_MOUNT_PATH, build_http_app
+from ..mcp.token import load_allow
 from .watcher.service import start_watcher, stop_watcher
 
 # Built once at import time so the mounted app + its
 # lifespan can be referenced from both ``app.mount`` and
 # the FastAPI ``lifespan`` chain below. Rebuilding per
 # request would tear the MCP session manager.
-_mcp_app = build_http_app()
+#
+# The allow-tier is read from the per-user flag file at
+# startup. FastMCP registers the tool list eagerly, so
+# changing the tier requires restarting ``kai serve`` (the
+# UI surfaces this as a "restart required" hint).
+_mcp_app = build_http_app(
+    allow=load_allow(get_config().DATA_DIR),
+)
 
 
 def _init_ssl():

@@ -53,6 +53,21 @@ _IDENT_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 _profile_pinned = False
 _profile_lock = threading.Lock()
 
+# Tier the running HTTP transport was built with. Set by
+# ``build_http_app`` and read by the settings router so the
+# UI can show whether the on-disk choice matches what is
+# actually serving requests (changes require restart because
+# FastMCP registers the tool list eagerly).
+_active_http_allow: str | None = None
+
+
+def get_active_http_allow() -> str | None:
+    """Return the tier the live HTTP transport was built with,
+    or ``None`` if it was never built (stdio-only runs).
+    """
+    return _active_http_allow
+
+
 # Tier annotations for MCP client hints
 _TIER_ANNOTATIONS = {
     "read": {
@@ -379,10 +394,12 @@ def build_http_app(profile: str | None = None,
     :param allow: Tier filter, see ``create_server``.
     :returns: ASGI app with bearer auth applied.
     """
+    global _active_http_allow
     server = create_server(profile=profile, allow=allow)
     cfg = get_config()
     data_dir = Path(str(cfg.DATA_DIR))
     load_or_create_token(data_dir)
+    _active_http_allow = allow
     return server.http_app(
         path="/",
         middleware=[
