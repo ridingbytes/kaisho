@@ -1,13 +1,40 @@
 # Changelog
 
-## Unreleased
+## 2.5.0
 
-- Add a Permissions selector to the MCP integration panel so the
-  HTTP transport can be widened to write or destructive tiers
-  without editing the stdio CLI flags. The choice persists at
-  `~/.kaisho/mcp-allow` and applies on the next `kai serve`
-  restart; defaults to `read` so upgrades never silently widen
-  the remote surface.
+### Expose the MCP HTTP allow-tier in Settings so write and destructive tools can be enabled without editing the stdio CLI flags [#147]
+
+Before 2.5.0 the HTTP MCP transport mounted by `kai serve`
+was hard-wired to `allow="read"`. Stdio users could pick a
+tier with `kai mcp-server --allow ...`, but HTTP clients
+(the default Claude Desktop / Claude Code / Cursor setup
+the integration panel hands out) saw only the read-only
+tool surface and had no way to widen it without editing
+source.
+
+**A new Permissions selector in Settings → Integrations →
+Local MCP server** persists the chosen tier as a flag file
+at `~/.kaisho/mcp-allow` (mirroring the existing
+`mcp-disabled` pattern, so the desktop app, a shell user,
+and a deploy script can all set it without parsing YAML):
+
+- `read` — query tools only (default after install).
+- `write` — adds `add_task`, `start_clock`, `book_time`,
+  `add_note`, and the rest of the create / update tools.
+- `destructive` — also adds `delete_*` and `rename_profile`.
+
+The default stays at `read` so an upgrade never silently
+widens what a remote client can drive with the bearer
+token.
+
+**Restart-aware UI.** FastMCP registers the tool list once
+at startup, so changing the tier requires restarting
+`kai serve` (or the desktop app). The panel detects when
+the on-disk preference has diverged from the live tier and
+surfaces an inline "restart required" hint until the
+running server catches up.
+
+## 2.4.1
 
 ## 2.4.1
 
