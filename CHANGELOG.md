@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Replace the global "Show done" toggle on the kanban
+  board with per-column collapse. Each column has its own
+  chevron; collapsed columns shrink to a narrow strip with
+  a rotated label and task count, the choice persists per
+  profile, and re-expanding restores the full column.
+  Drops are blocked on collapsed columns so cards can't
+  vanish into an invisible drop zone.
+
 ## 2.5.1
 
 This release fixes a cluster of cloud-sync edge cases that

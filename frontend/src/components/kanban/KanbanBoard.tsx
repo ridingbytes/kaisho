@@ -35,18 +35,14 @@ import { reorderTasks as apiReorderTasks } from "../../api/client";
 import { useReorderStates, useSettings } from "../../hooks/useSettings";
 import type { ArchivedTask, Task } from "../../types";
 import { ConfirmPopover } from "../common/ConfirmPopover";
-import { Toggle } from "../common/Toggle";
 import { Button } from "../common/Button";
 import { HelpButton } from "../common/HelpButton";
 import { OpenInEditorButton } from "../common/OpenInEditorButton";
-import {
-  profileGet,
-  profileSet,
-} from "../../utils/profileStorage";
 import { SearchInput } from "../common/SearchInput";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { ResizeHandle } from "../common/ResizeHandle";
 import { useResizableColumns } from "../../hooks/useResizableColumns";
+import { useCollapsedColumns } from "../../hooks/useCollapsedColumns";
 import { DOCS } from "../../docs/panelDocs";
 import { TaskCard } from "./TaskCard";
 import { KanbanColumn } from "./KanbanColumn";
@@ -347,13 +343,15 @@ export function KanbanBoard() {
   const { t } = useTranslation("kanban");
   const { t: tc } = useTranslation("common");
   const { t: tNav } = useTranslation("nav");
-  const [showDone, setShowDone] = useState(
-    () => profileGet("board_show_done") === "true"
-  );
   const [openAddInFirst, setOpenAddInFirst] = useState(false);
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
-  const { data: rawTasks = [], isLoading } = useTasks(showDone);
+  // Always fetch all states; per-column collapse hides them
+  // visually without re-fetching, so re-expanding is instant.
+  const { data: rawTasks = [], isLoading } = useTasks(true);
+  const {
+    isCollapsed, toggle: toggleCollapsed,
+  } = useCollapsedColumns();
   const tasks = rawTasks.filter((t) => matchesSearch(t, search));
   const { pendingSearch, clearPendingSearch } = usePendingSearch();
 
@@ -406,8 +404,7 @@ export function KanbanBoard() {
     })
   );
 
-  const states =
-    settings?.task_states.filter((s) => showDone || !s.done) ?? [];
+  const states = settings?.task_states ?? [];
   const colCount = states.length;
 
   // Responsive column width: snap to 2, 3, or all columns
@@ -632,20 +629,6 @@ export function KanbanBoard() {
           </div>
         </>}
         right={<>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-xs text-fg-muted">
-              {t("showDone")}
-            </span>
-            <Toggle
-              checked={showDone}
-              onChange={(v) => {
-                profileSet(
-                  "board_show_done", String(v),
-                );
-                setShowDone(v);
-              }}
-            />
-          </label>
           <Button
             variant="tonal"
             size="sm"
@@ -694,6 +677,10 @@ export function KanbanBoard() {
                     setSearch((s) =>
                       mergeSearchToken(s, "customer", c)
                     )
+                  }
+                  collapsed={isCollapsed(state.name)}
+                  onToggleCollapsed={
+                    () => toggleCollapsed(state.name)
                   }
                 />
               ))}
