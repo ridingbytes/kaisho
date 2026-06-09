@@ -228,17 +228,11 @@ pub fn spawn(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     tauri::async_runtime::spawn(async move {
         while let Some(event) = rx.recv().await {
             match event {
-                CommandEvent::Stdout(line) => {
-                    println!(
-                        "[kai] {}",
-                        String::from_utf8_lossy(&line),
-                    );
+                CommandEvent::Stdout(bytes) => {
+                    emit_sidecar_output(&bytes, false);
                 }
-                CommandEvent::Stderr(line) => {
-                    eprintln!(
-                        "[kai] {}",
-                        String::from_utf8_lossy(&line),
-                    );
+                CommandEvent::Stderr(bytes) => {
+                    emit_sidecar_output(&bytes, true);
                 }
                 CommandEvent::Terminated(p) => {
                     eprintln!(
@@ -252,4 +246,38 @@ pub fn spawn(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     });
 
     Ok(())
+}
+
+/// Print sidecar output with a `[kai] ` prefix, one host
+/// line per source line.
+///
+/// `tauri-plugin-shell` emits `Stdout` / `Stderr` events
+/// whose payload already ends with the source's newline,
+/// and may also carry several source lines in a single
+/// event during bursts. Naively forwarding with
+/// `println!("[kai] {}", lossy)` therefore duplicates the
+/// newline (blank line between every entry) and renders
+/// multi-line bursts (e.g. Python tracebacks) as a single
+/// `[kai] `-prefixed blob.
+///
+/// This helper trims trailing newlines, splits on any
+/// internal `\n`, and prints each line through `println!`
+/// / `eprintln!` so every source line gets exactly one
+/// `[kai] ` prefix and exactly one trailing newline.
+fn emit_sidecar_output(bytes: &[u8], stderr: bool) {
+    let text = String::from_utf8_lossy(bytes);
+    let trimmed = text
+        .trim_end_matches('\n')
+        .trim_end_matches('\r');
+    if trimmed.is_empty() {
+        return;
+    }
+    for line in trimmed.split('\n') {
+        let line = line.trim_end_matches('\r');
+        if stderr {
+            eprintln!("[kai] {}", line);
+        } else {
+            println!("[kai] {}", line);
+        }
+    }
 }
