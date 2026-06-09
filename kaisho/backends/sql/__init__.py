@@ -1372,6 +1372,14 @@ def _apply_clock_fields(row: ClockRow, fields: dict) -> None:
     row.updated_at = (
         fields.get("updated_at") or _local_now().isoformat()
     )
+    # ``paused`` is a desktop-only UI affordance and never
+    # crosses the wire. Any cloud-origin pull is therefore
+    # authoritative evidence that the entry is *not* paused
+    # — otherwise the running-timer card stays stuck on a
+    # stale Resume affordance for an entry the cloud has
+    # since resumed or stopped on another device. Mirrors
+    # the same clear in ``services/clocks.py:apply_sync_payload``.
+    row.paused = False
 
 
 # ====================================================================

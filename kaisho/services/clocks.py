@@ -780,6 +780,13 @@ def apply_sync_payload(
         props.pop("INVOICED", None)
     props["SYNC_ID"] = fields["sync_id"]
     props["UPDATED_AT"] = fields["updated_at"]
+    # ``PAUSED`` is a desktop-only UI affordance and never
+    # crosses the wire. Any cloud-origin pull is therefore
+    # authoritative evidence that the entry is *not* paused
+    # — otherwise the running-timer card stays stuck on a
+    # stale Resume affordance for an entry the cloud has
+    # since resumed or stopped on another device.
+    props.pop("PAUSED", None)
 
     notes = fields.get("notes") or ""
     heading.body = (
