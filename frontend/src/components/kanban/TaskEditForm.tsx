@@ -26,6 +26,10 @@ interface TaskEditFormProps {
   editBody: string;
   editGithubUrl: string;
   editTags: string[];
+  /** Date-only ISO ``YYYY-MM-DD`` or empty string. */
+  editScheduled: string;
+  /** Date-only ISO ``YYYY-MM-DD`` or empty string. */
+  editDeadline: string;
   allTags: TagDef[];
   isSaving: boolean;
   onCustomerChange: (v: string) => void;
@@ -33,6 +37,8 @@ interface TaskEditFormProps {
   onBodyChange: (v: string) => void;
   onGithubUrlChange: (v: string) => void;
   onTagsChange: (tags: string[]) => void;
+  onScheduledChange: (v: string) => void;
+  onDeadlineChange: (v: string) => void;
   onSave: () => void;
   onCancel: () => void;
 }
@@ -48,6 +54,8 @@ export function TaskEditForm({
   editBody,
   editGithubUrl,
   editTags,
+  editScheduled,
+  editDeadline,
   allTags,
   isSaving,
   onCustomerChange,
@@ -55,9 +63,12 @@ export function TaskEditForm({
   onBodyChange,
   onGithubUrlChange,
   onTagsChange,
+  onScheduledChange,
+  onDeadlineChange,
   onSave,
   onCancel,
 }: TaskEditFormProps) {
+  const { t } = useTranslation("kanban");
   const { t: tc } = useTranslation("common");
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -110,6 +121,39 @@ export function TaskEditForm({
           onChange={onGithubUrlChange}
           inputClassName={editInputCls}
         />
+      </div>
+      <div
+        onPointerDown={(e) => e.stopPropagation()}
+        className="flex gap-1.5"
+      >
+        <label className="flex-1 flex flex-col gap-0.5">
+          <span className="text-2xs text-fg-muted px-0.5">
+            {t("scheduledLabel")}
+          </span>
+          <input
+            type="date"
+            value={editScheduled}
+            onChange={(e) =>
+              onScheduledChange(e.target.value)
+            }
+            onKeyDown={handleKeyDown}
+            className={editInputCls}
+          />
+        </label>
+        <label className="flex-1 flex flex-col gap-0.5">
+          <span className="text-2xs text-fg-muted px-0.5">
+            {t("deadlineLabel")}
+          </span>
+          <input
+            type="date"
+            value={editDeadline}
+            onChange={(e) =>
+              onDeadlineChange(e.target.value)
+            }
+            onKeyDown={handleKeyDown}
+            className={editInputCls}
+          />
+        </label>
       </div>
       <div
         onPointerDown={(e) => e.stopPropagation()}

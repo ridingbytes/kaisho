@@ -46,6 +46,7 @@ import { useCollapsedColumns } from "../../hooks/useCollapsedColumns";
 import { DOCS } from "../../docs/panelDocs";
 import { TaskCard } from "./TaskCard";
 import { KanbanColumn } from "./KanbanColumn";
+import { SnoozedPill } from "./SnoozedPill";
 import { registerPanelAction } from "../../utils/panelActions";
 import { usePendingSearch } from "../../context/ViewContext";
 import { stripCustomerPrefix } from "../../utils/customerPrefix";
@@ -352,7 +353,19 @@ export function KanbanBoard() {
   const {
     isCollapsed, toggle: toggleCollapsed,
   } = useCollapsedColumns();
-  const tasks = rawTasks.filter((t) => matchesSearch(t, search));
+  // Hide tasks whose ``scheduled`` date is still in the
+  // future — they reappear on the day. The count is shown
+  // in a toolbar pill so the user can still see them.
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const snoozed = rawTasks.filter(
+    (t) => t.scheduled && t.scheduled > todayStr,
+  );
+  const visibleTasks = rawTasks.filter(
+    (t) => !t.scheduled || t.scheduled <= todayStr,
+  );
+  const tasks = visibleTasks.filter(
+    (t) => matchesSearch(t, search),
+  );
   const { pendingSearch, clearPendingSearch } = usePendingSearch();
 
   useEffect(
@@ -629,6 +642,7 @@ export function KanbanBoard() {
           </div>
         </>}
         right={<>
+          <SnoozedPill snoozed={snoozed} />
           <Button
             variant="tonal"
             size="sm"

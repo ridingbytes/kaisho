@@ -33,6 +33,7 @@ import { TaskEditForm } from "./TaskEditForm";
 import { TaskCardActions } from "./TaskCardActions";
 import { TaskCardContent } from "./TaskCardContent";
 import { StateHistoryPopup } from "./StateHistoryPopup";
+import { TaskDateBadges } from "./TaskDateBadges";
 
 interface TaskCardProps {
   task: Task;
@@ -87,6 +88,8 @@ export function TaskCard({
   const [editGithubUrl, setEditGithubUrl] = useState(
     "",
   );
+  const [editScheduled, setEditScheduled] = useState("");
+  const [editDeadline, setEditDeadline] = useState("");
   const { overlayUrl, openOverlay, closeOverlay } =
     useLinkOverlay();
   const updateTask = useUpdateTask();
@@ -106,6 +109,8 @@ export function TaskCard({
     setEditTags([...task.tags]);
     setEditBody(task.body ?? "");
     setEditGithubUrl(task.github_url ?? "");
+    setEditScheduled(task.scheduled ?? "");
+    setEditDeadline(task.deadline ?? "");
     setEditing(true);
   }
 
@@ -121,6 +126,11 @@ export function TaskCard({
           customer: editCustomer.trim(),
           body: editBody,
           github_url: editGithubUrl,
+          // Always send so the user can also clear by
+          // emptying the input. ``""`` clears server-side;
+          // an unchanged value just rewrites the same date.
+          scheduled: editScheduled,
+          deadline: editDeadline,
         },
       },
       {
@@ -168,6 +178,9 @@ export function TaskCard({
         className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-lg"
         style={{ backgroundColor: statusColor }}
       />
+
+      {/* Snooze + deadline badges (top-left) */}
+      {!editing && <TaskDateBadges task={task} />}
 
       <div className="flex items-stretch">
         {/* Drag handle + state picker */}
@@ -228,11 +241,15 @@ export function TaskCard({
                 updateTask.isPending ||
                 setTaskTags.isPending
               }
+              editScheduled={editScheduled}
+              editDeadline={editDeadline}
               onCustomerChange={setEditCustomer}
               onTitleChange={setEditTitle}
               onBodyChange={setEditBody}
               onGithubUrlChange={setEditGithubUrl}
               onTagsChange={setEditTags}
+              onScheduledChange={setEditScheduled}
+              onDeadlineChange={setEditDeadline}
               onSave={handleSave}
               onCancel={() => setEditing(false)}
             />

@@ -87,6 +87,8 @@ export function useUpdateTask() {
         status?: string;
         body?: string;
         github_url?: string;
+        scheduled?: string;
+        deadline?: string;
       };
     }) => updateTask(taskId, updates),
     onSuccess: () => {

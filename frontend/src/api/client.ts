@@ -143,7 +143,10 @@ export function createTask(
   });
 }
 
-/** Update one or more fields on an existing task. */
+/** Update one or more fields on an existing task.
+ *  ``scheduled`` / ``deadline`` accept date-only ISO
+ *  strings (``YYYY-MM-DD``). Pass ``""`` to clear, omit
+ *  to leave unchanged. */
 export function updateTask(
   taskId: string,
   updates: {
@@ -152,6 +155,8 @@ export function updateTask(
     status?: string;
     body?: string;
     github_url?: string;
+    scheduled?: string;
+    deadline?: string;
   }
 ): Promise<Task> {
   return patch<Task>(`/kanban/tasks/${taskId}`, updates);
