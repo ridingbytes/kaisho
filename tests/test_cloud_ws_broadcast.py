@@ -52,6 +52,26 @@ def test_entries_changed_records_pending_clocks(monkeypatch):
     assert "clocks" in scheduler._ws_pending_resources
 
 
+def test_timer_started_schedules_sync(monkeypatch):
+    """A ``timer:started`` from the cloud (e.g. iPhone
+    starting a brand-new timer or resuming a paused entry)
+    must schedule a sync. Without it, the immediate
+    ``clocks`` broadcast invalidates the local query and
+    the frontend refetches the stale pre-start state — the
+    running-timer card stays empty until the 5-minute
+    poller catches up."""
+    monkeypatch.setattr(
+        scheduler, "_schedule_ws_sync", lambda: None,
+    )
+    # The timer-event broadcast at the top of the handler
+    # imports broadcast_sync; stub it so this test stays
+    # isolated to the routing logic.
+    import kaisho.api.ws.manager as mgr
+    monkeypatch.setattr(mgr, "broadcast_sync", lambda _: None)
+    scheduler._on_cloud_ws_event("timer:started", {})
+    assert "clocks" in scheduler._ws_pending_resources
+
+
 def test_tasks_changed_maps_to_kanban(monkeypatch):
     """``tasks:changed`` must map to ``kanban`` because the
     frontend's RESOURCE_TO_QUERY only routes ``kanban`` to
