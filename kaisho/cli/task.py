@@ -24,6 +24,12 @@ def _format_task_line(task: dict) -> str:
     if tag_str:
         parts.append(tag_str)
     parts.append(created)
+    scheduled = task.get("scheduled")
+    deadline = task.get("deadline")
+    if scheduled:
+        parts.append(f"scheduled:{scheduled}")
+    if deadline:
+        parts.append(f"deadline:{deadline}")
     return "  ".join(parts)
 
 
@@ -41,10 +47,16 @@ def task():
               help="Task body/description")
 @click.option("--github-url", default=None,
               help="GitHub issue/PR URL")
+@click.option("--scheduled", default=None,
+              help="Snooze date (YYYY-MM-DD). "
+                   "Task hidden until that day arrives.")
+@click.option("--deadline", default=None,
+              help="Deadline date (YYYY-MM-DD).")
 @click.option("--json", "as_json", is_flag=True,
               help="JSON output")
 def task_add(customer_name, title, tags, status,
-             body, github_url, as_json):
+             body, github_url, scheduled, deadline,
+             as_json):
     """Add a new task."""
     backend = get_backend()
     backend.customers.ensure_customer(customer_name or "")
@@ -55,6 +67,8 @@ def task_add(customer_name, title, tags, status,
         tags=list(tags),
         body=body,
         github_url=github_url,
+        scheduled=scheduled,
+        deadline=deadline,
     )
     if as_json:
         click.echo(json.dumps(result, default=str))
@@ -187,9 +201,15 @@ def task_show(task_id, as_json):
               help="New body text")
 @click.option("--github-url", default=None,
               help="GitHub issue/PR URL")
+@click.option("--scheduled", default=None,
+              help="Snooze date (YYYY-MM-DD). "
+                   "Pass empty string to clear.")
+@click.option("--deadline", default=None,
+              help="Deadline date (YYYY-MM-DD). "
+                   "Pass empty string to clear.")
 @click.option("--json", "as_json", is_flag=True)
 def task_update(task_id, title, customer, body,
-                github_url, as_json):
+                github_url, scheduled, deadline, as_json):
     """Update a task's fields."""
     result = get_backend().tasks.update_task(
         task_id=task_id,
@@ -197,6 +217,8 @@ def task_update(task_id, title, customer, body,
         customer=customer,
         body=body,
         github_url=github_url,
+        scheduled=scheduled,
+        deadline=deadline,
     )
     if as_json:
         click.echo(json.dumps(result, default=str))

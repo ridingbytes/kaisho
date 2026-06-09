@@ -19,8 +19,10 @@ TOOL_DEFS: list[dict] = [
         "name": "list_tasks",
         "tier": "read",
         "description": (
-            "List tasks from the kanban board. "
-            "Returns id, customer, title, status, tags for each task."
+            "List tasks from the kanban board. Returns "
+            "id, customer, title, status, tags, scheduled "
+            "(snooze date, YYYY-MM-DD or null), and "
+            "deadline (YYYY-MM-DD or null) for each task."
         ),
         "input_schema": {
             "type": "object",
