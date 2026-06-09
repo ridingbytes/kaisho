@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Run the cloud sync once at startup instead of waiting a
+  full five minutes for the first interval tick. A fresh
+  app launch now reconciles with the cloud immediately, so
+  a timer running on another device (PWA, iOS) shows up in
+  the desktop's running-timer card right after boot. The
+  WebSocket only delivers events from the moment it
+  connects, so without an initial pull there was nothing
+  to fill the offline-window gap.
+
 - Pull from the cloud when a `timer:started` arrives over
   the cloud WebSocket. The previous map only triggered a
   sync on `timer:stopped`, so a timer started or resumed
