@@ -95,9 +95,11 @@ export function TaskEditForm({
         onKeyDown={handleKeyDown}
         placeholder={tc("descriptionOptional")}
         rows={3}
-        className={[editInputCls, "resize-none"].join(
-          " ",
-        )}
+        // ``resize-y`` enables the native bottom-right
+        // grip for vertical resizing. Horizontal resize is
+        // intentionally blocked so dragging the corner
+        // doesn't push the column's neighbours around.
+        className={[editInputCls, "resize-y"].join(" ")}
       />
       <div
         onPointerDown={(e) => e.stopPropagation()}
