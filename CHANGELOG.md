@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Make the 5-minute cloud-sync poller's
+  `_broadcast_sync_changes` actually refresh the kanban.
+  It was sending `resource: "tasks"` while the frontend's
+  `RESOURCE_TO_QUERY` map only routes `kanban` to the
+  tasks React Query, so cloud-side task edits picked up
+  by the periodic sync (rather than the WS hot path)
+  silently never reached the board. Same fix drops the
+  `pulled+deleted == 0` gate that suppressed legitimate
+  refreshes whenever cursor races or push-lock
+  contention returned zero counts. Closes #150.
+
 - Surface the new task date fields in the kanban UI.
   Snoozed tasks (`scheduled` in the future) drop off the
   board until the day arrives, then return with a small

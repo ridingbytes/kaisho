@@ -132,6 +132,47 @@ def test_debounced_sync_broadcasts_after_pull(monkeypatch):
     assert {m["resource"] for m in captured} == {"clocks"}
 
 
+def test_broadcast_sync_changes_uses_kanban_not_tasks(
+    monkeypatch,
+):
+    """The poller's ``_broadcast_sync_changes`` must
+    broadcast ``resource: "kanban"`` for the tasks query.
+    The frontend's RESOURCE_TO_QUERY only routes the
+    ``kanban`` key to the tasks React Query, so the
+    previous ``tasks`` payload was a silent no-op."""
+    captured = _capture_broadcasts(monkeypatch)
+    scheduler._broadcast_sync_changes(
+        {"pulled_up": 1, "pulled_del": 0},
+    )
+    resources = {m["resource"] for m in captured}
+    assert "kanban" in resources, (
+        "broadcast must use the 'kanban' resource key so "
+        "the frontend's RESOURCE_TO_QUERY actually "
+        "invalidates the tasks query"
+    )
+    assert "tasks" not in resources
+
+
+def test_broadcast_sync_changes_fires_when_counts_zero(
+    monkeypatch,
+):
+    """The old ``pulled+deleted == 0`` gate suppressed
+    legitimate refreshes when the sync cycle returned
+    zero counts (cursor races, push-lock contention,
+    partial-success cycles). The gate is gone: the
+    function must broadcast every cycle, trusting that an
+    occasional empty refetch is cheaper than the user
+    staring at stale data."""
+    captured = _capture_broadcasts(monkeypatch)
+    scheduler._broadcast_sync_changes(
+        {"pulled_up": 0, "pulled_del": 0},
+    )
+    resources = {m["resource"] for m in captured}
+    assert resources == {
+        "clocks", "inbox", "kanban", "notes",
+    }
+
+
 def test_failed_sync_does_not_broadcast(monkeypatch):
     """If the sync raises, the pending set must stay intact
     so the next attempt still has the resource recorded —
