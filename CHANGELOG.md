@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Pull from the cloud when a `timer:started` arrives over
+  the cloud WebSocket. The previous map only triggered a
+  sync on `timer:stopped`, so a timer started or resumed
+  on another device (PWA, iOS) only fired the immediate
+  `clocks` broadcast — the desktop frontend invalidated
+  its query and re-read the same pre-start local state,
+  leaving the running-timer card empty until the 5-minute
+  poller eventually caught up. Resume now propagates
+  symmetrically with stop.
+
 - Fix a `FileNotFoundError` crash in `write_org_file` when
   two writers raced on the same org file (e.g. a kanban
   list request that backfilled `TASK_ID`/`SYNC_ID` while

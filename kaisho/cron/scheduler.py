@@ -229,6 +229,17 @@ _ws_pending_resources: set[str] = set()
 _WS_EVENT_TO_RESOURCE = {
     "entries:changed": "clocks",
     "entries:deleted": "clocks",
+    # ``timer:started`` covers two cases that both need a
+    # pull: a brand-new timer started on another device,
+    # and a paused entry resumed on another device (the
+    # cloud emits ``timer:started`` for resume because the
+    # entry's end is cleared). Without the pull, the
+    # immediate ``clocks`` broadcast fires above but the
+    # frontend refetches local data that is still in the
+    # pre-resume / pre-start state and the running-timer
+    # card stays empty until the 5-minute poller catches
+    # up.
+    "timer:started": "clocks",
     "timer:stopped": "clocks",
     "inbox:changed": "inbox",
     "tasks:changed": "kanban",
