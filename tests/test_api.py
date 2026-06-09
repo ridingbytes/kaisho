@@ -359,6 +359,64 @@ class TestClocks:
         assert r.status_code == 200
         assert "BEGIN:VCALENDAR" in r.text
 
+    def test_merge_records_cloud_tombstone(self, client):
+        """POST /api/clocks/merge must record a cloud
+        tombstone for the merged-away entry.
+
+        Regression test for the bug where the merge endpoint
+        only dropped the source from CalDAV but never told
+        cloud sync about the deletion, so other devices on
+        the account (PWA, iOS) kept showing both originals
+        plus the merged result.
+        """
+        from kaisho.config import get_config
+        from kaisho.services import sync_state
+
+        client.post(
+            "/api/clocks/quick-book",
+            json={
+                "duration": "10m",
+                "customer": "Acme",
+                "description": "First chunk",
+            },
+        )
+        client.post(
+            "/api/clocks/quick-book",
+            json={
+                "duration": "15m",
+                "customer": "Acme",
+                "description": "Second chunk",
+            },
+        )
+        entries = client.get("/api/clocks/entries").json()
+        assert len(entries) == 2
+        into_sync_id = entries[0]["sync_id"]
+        from_sync_id = entries[1]["sync_id"]
+
+        r = client.post(
+            "/api/clocks/merge",
+            json={
+                "into_sync_id": into_sync_id,
+                "from_sync_id": from_sync_id,
+            },
+        )
+        assert r.status_code == 200
+
+        remaining = client.get("/api/clocks/entries").json()
+        assert len(remaining) == 1
+        assert remaining[0]["sync_id"] == into_sync_id
+
+        tombstones = sync_state.load_tombstones(
+            get_config().PROFILE_DIR,
+        )
+        tombstoned = {t["sync_id"] for t in tombstones}
+        assert from_sync_id in tombstoned, (
+            "merge must record a cloud tombstone for the "
+            "merged-away entry so PWA / iOS sync sees the "
+            "deletion (see issue: app keeps showing the "
+            "originals after a desktop merge)"
+        )
+
 
 # ── Customers ───────────────────────────────────────────
 
