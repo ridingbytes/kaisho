@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Surface the new task date fields in the kanban UI.
+  Snoozed tasks (`scheduled` in the future) drop off the
+  board until the day arrives, then return with a small
+  alarm-clock badge top-left — clicking it acknowledges,
+  which clears the snooze. A toolbar pill shows the
+  snoozed count and expands to a list with one-click
+  "Wake" per task. Deadlines within three days (or
+  overdue) get a separate bell badge that can be
+  acknowledged per-device via localStorage — the deadline
+  date stays on the task, the urgency cue just gets
+  muted. Add-task and edit-task forms gain two date
+  inputs.
+
 - Add `scheduled` and `deadline` date fields to the task
   model across all four backends (org, markdown, sql,
   json) and the cloud wire format. Both are date-only ISO
