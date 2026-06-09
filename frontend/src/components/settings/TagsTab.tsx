@@ -289,6 +289,7 @@ function TaskStateRow({
   state: TaskState;
   isLast: boolean;
 }) {
+  const { t } = useTranslation("settings");
   const update = useUpdateState();
   const toast = useToast();
   const remove = useDeleteState();
@@ -313,6 +314,13 @@ function TaskStateRow({
     if (Object.keys(updates).length > 0) {
       update.mutate({ name: state.name, updates });
     }
+  }
+
+  function toggleDone() {
+    update.mutate({
+      name: state.name,
+      updates: { done: !state.done },
+    });
   }
 
   function handleDelete() {
@@ -360,11 +368,21 @@ function TaskStateRow({
             e.currentTarget.blur();
         }}
       />
-      {state.done && (
-        <span className="text-2xs font-semibold uppercase text-fg-muted bg-surface-raised px-1.5 py-0.5 rounded shrink-0">
-          done
-        </span>
-      )}
+      <button
+        type="button"
+        onClick={toggleDone}
+        className={[
+          "text-2xs font-semibold uppercase",
+          "px-1.5 py-0.5 rounded shrink-0",
+          "transition-colors border",
+          state.done
+            ? "bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20"
+            : "bg-surface-raised text-fg-subtle border-border-subtle hover:text-fg hover:bg-surface-card",
+        ].join(" ")}
+        title={t("doneStateToggleTooltip")}
+      >
+        {t("doneStateBadge")}
+      </button>
       <ConfirmPopover
         onConfirm={handleDelete}
         disabled={remove.isPending}
@@ -543,7 +561,7 @@ function TaskStatesSection({
   const existingNames = states.map((s) => s.name);
   return (
     <section>
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex items-center gap-3 mb-1">
         <h2 className="text-xs font-semibold tracking-wider uppercase text-fg-muted">
           {t("taskStates")}
         </h2>
@@ -555,6 +573,9 @@ function TaskStatesSection({
           <Plus size={12} />
         </button>
       </div>
+      <p className="text-2xs text-fg-muted mb-3 leading-relaxed">
+        {t("taskStatesHint")}
+      </p>
       <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
         <SortableList
           items={states}

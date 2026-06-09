@@ -169,8 +169,34 @@ def _matches_filter(
 
 
 def _get_done_states(keywords: set[str]) -> set[str]:
-    """Determine done states from keywords set."""
-    return {"DONE", "CANCELLED"} & keywords
+    """Return the configured terminal/done states.
+
+    Reads the ``done: true`` flag from ``task_states`` in
+    ``settings.yaml`` so the user can choose which states
+    count as completed (e.g. mark ``ARCHIVED`` as done in
+    a custom workflow). Falls back to the hardcoded
+    ``{"DONE", "CANCELLED"}`` intersection only when no
+    settings flag is set so existing profiles without the
+    flag don't suddenly lose their done-filtering.
+
+    ``keywords`` is the set of TODO-keyword names the
+    parser understands; the result is intersected with it
+    so a stale ``done: true`` for a state that was later
+    deleted doesn't surface as a phantom done-state.
+    """
+    from ..config import load_settings_yaml
+    from . import settings as settings_svc
+    try:
+        configured = set(
+            settings_svc.get_done_state_names(
+                load_settings_yaml(),
+            ),
+        )
+    except (FileNotFoundError, OSError):
+        configured = set()
+    if not configured:
+        configured = {"DONE", "CANCELLED"}
+    return configured & keywords
 
 
 def reorder_tasks(

@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Make the `DONE` flag on task states load-bearing. The
+  badge in Settings → Task States is now a clickable
+  toggle, the backend's done-filter reads it instead of
+  hardcoding `{DONE, CANCELLED}`, and the kanban card's
+  tick icon moves a task to the **first** state flagged
+  done (deterministic by the user's own ordering). If no
+  state is flagged, the tick icon hides entirely — so
+  deleting the DONE column can't silently orphan tasks
+  into a missing status anymore. Existing profiles whose
+  settings have no `done` flag set fall back to the old
+  hardcoded set, so nothing changes for anyone who
+  hasn't customised. A short description above the list
+  explains what the toggle does.
+
 - Refactor the cloud-WS broadcast plumbing from the
   post-feature audit. Single `BROADCAST_RESOURCES`
   constant replaces three duplicate listings of

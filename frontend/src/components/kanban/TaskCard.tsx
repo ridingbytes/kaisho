@@ -97,6 +97,15 @@ export function TaskCard({
   const archiveTask = useArchiveTask();
   const { data: settings } = useSettings();
   const allTags = settings?.tags ?? [];
+  // Done-states drive both the tick icon's visibility and
+  // its target. First state with ``done: true`` wins; if
+  // none is configured the tick icon disappears entirely
+  // so nothing can orphan the task into a missing column.
+  const doneStates = (settings?.task_states ?? [])
+    .filter((s) => s.done)
+    .map((s) => s.name);
+  const firstDoneState = doneStates[0] ?? null;
+  const isStatusDone = doneStates.includes(task.status);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -279,6 +288,8 @@ export function TaskCard({
         {!editing && !isDragOverlay && (
           <TaskCardActions
             status={task.status}
+            isStatusDone={isStatusDone}
+            hasDoneState={!!firstDoneState}
             isTimerRunning={isTimerRunning}
             hasCustomer={!!task.customer}
             isMarkDonePending={markDone.isPending}
@@ -287,12 +298,13 @@ export function TaskCard({
             }
             isStopClockPending={stopClock.isPending}
             isArchivePending={archiveTask.isPending}
-            onMarkDone={() =>
+            onMarkDone={() => {
+              if (!firstDoneState) return;
               markDone.mutate({
                 taskId: task.id,
-                status: "DONE",
-              })
-            }
+                status: firstDoneState,
+              });
+            }}
             onStartTimer={async () => {
               if (activeTimer?.active) {
                 await stopClock.mutateAsync();

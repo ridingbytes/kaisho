@@ -14,6 +14,16 @@ import { ConfirmPopover } from "../common/ConfirmPopover";
 interface TaskCardActionsProps {
   /** Current task status. */
   status: string;
+  /** Whether the task is already in a configured
+   *  ``done`` state — hides the tick icon in that case.
+   *  Computed from the task-states settings so a custom
+   *  workflow (e.g. ``ARCHIVED`` flagged as done) is
+   *  respected without a code change. */
+  isStatusDone: boolean;
+  /** Whether *any* state has the ``done`` flag set.
+   *  When false, the tick icon is hidden — there's
+   *  nowhere coherent to move the task. */
+  hasDoneState: boolean;
   /** Whether a timer is already running for this task. */
   isTimerRunning: boolean;
   /** Whether the task has a customer assigned. */
@@ -38,6 +48,8 @@ interface TaskCardActionsProps {
  */
 export function TaskCardActions({
   status,
+  isStatusDone,
+  hasDoneState,
   isTimerRunning,
   hasCustomer,
   isMarkDonePending,
@@ -52,22 +64,26 @@ export function TaskCardActions({
   const { t } = useTranslation("kanban");
   const { t: tc } = useTranslation("common");
   const { t: tClocks } = useTranslation("clocks");
+  // ``status`` is read above for symmetry with the rest of
+  // the props bag, but the tick visibility is driven by
+  // the computed flags below.
+  void status;
+  const showMarkDone = hasDoneState && !isStatusDone;
   return (
     <div className="flex flex-col items-center gap-1 px-1 py-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-      {status !== "DONE" &&
-        status !== "CANCELLED" && (
-          <button
-            onPointerDown={(e) =>
-              e.stopPropagation()
-            }
-            onClick={onMarkDone}
-            disabled={isMarkDonePending}
-            className="p-1 rounded text-fg-subtle hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
-            title={t("markAsDone")}
-          >
-            <Check size={11} />
-          </button>
-        )}
+      {showMarkDone && (
+        <button
+          onPointerDown={(e) =>
+            e.stopPropagation()
+          }
+          onClick={onMarkDone}
+          disabled={isMarkDonePending}
+          className="p-1 rounded text-fg-subtle hover:text-green-500 hover:bg-green-500/10 transition-colors disabled:opacity-40"
+          title={t("markAsDone")}
+        >
+          <Check size={11} />
+        </button>
+      )}
       {!isTimerRunning && hasCustomer && (
         <button
           onPointerDown={(e) =>
