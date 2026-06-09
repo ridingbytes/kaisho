@@ -1698,14 +1698,27 @@ def _apply_task_update(
     status (only when changed, since move_task is the
     write that moves between sections in the org file).
     """
+    # Pass scheduled / deadline through as-is. ``None``
+    # means "leave the local value alone" -- which is
+    # exactly the right behaviour for two cases that we
+    # can't distinguish at this layer: a wire payload
+    # from an older peer that doesn't know about these
+    # fields, and a fresh wire payload whose field was
+    # never set on the cloud side. Coercing ``None`` to
+    # ``""`` (the previous code) would silently clear a
+    # local date whenever either happened. The
+    # trade-off: a cloud-side clear by a newer peer is
+    # also seen as "leave alone" until the user wakes /
+    # resets the date locally. Acceptable until the wire
+    # carries an explicit "cleared" marker.
     backend.tasks.update_task(
         existing["id"],
         title=incoming["title"],
         customer=incoming["customer"],
         body=incoming["body"],
         github_url=incoming["github_url"],
-        scheduled=incoming.get("scheduled") or "",
-        deadline=incoming.get("deadline") or "",
+        scheduled=incoming.get("scheduled"),
+        deadline=incoming.get("deadline"),
     )
     if incoming.get("tags") != existing.get("tags"):
         backend.tasks.set_tags(

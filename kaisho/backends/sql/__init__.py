@@ -1410,6 +1410,15 @@ class SqlClockBackend(ClockBackend):
 def _apply_clock_fields(row: ClockRow, fields: dict) -> None:
     """Set ClockRow columns from a sync payload. The caller
     enforces last-writer-wins before calling this."""
+    # Snapshot ``row.end`` before the new value lands so
+    # we can tell whether the cloud-origin change touched
+    # the entry's timing — see PAUSED handling below.
+    prev_end = row.end
+    new_end = (
+        fields["end"] or None if "end" in fields
+        else row.end
+    )
+
     for col in (
         "customer", "description", "start",
         "task_id", "contract", "notes",
@@ -1417,21 +1426,25 @@ def _apply_clock_fields(row: ClockRow, fields: dict) -> None:
         if col in fields:
             setattr(row, col, fields[col] or "")
     if "end" in fields:
-        row.end = fields["end"] or None
+        row.end = new_end
     if "invoiced" in fields:
         row.invoiced = bool(fields["invoiced"])
     row.sync_id = fields["sync_id"]
     row.updated_at = (
         fields.get("updated_at") or _local_now().isoformat()
     )
-    # ``paused`` is a desktop-only UI affordance and never
-    # crosses the wire. Any cloud-origin pull is therefore
-    # authoritative evidence that the entry is *not* paused
-    # — otherwise the running-timer card stays stuck on a
-    # stale Resume affordance for an entry the cloud has
-    # since resumed or stopped on another device. Mirrors
-    # the same clear in ``services/clocks.py:apply_sync_payload``.
-    row.paused = False
+    # ``paused`` is a desktop-only UI affordance that
+    # never crosses the wire. Only clear it when the
+    # cloud actually touched this entry's timing — resume
+    # clears ``end``, stop sets it. A non-timing change
+    # (notes appended on the PWA, customer renamed, tag
+    # adjusted) leaves ``end`` unchanged and must NOT
+    # wipe the local pause flag: the user paused on this
+    # device and still intends to resume. Mirrors the
+    # narrower clear in
+    # ``services/clocks.py:apply_sync_payload``.
+    if prev_end != new_end:
+        row.paused = False
 
 
 # ====================================================================

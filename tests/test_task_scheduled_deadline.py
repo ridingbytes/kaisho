@@ -206,6 +206,43 @@ def test_json_add_and_read_dates(tmp_path):
     assert raw[0]["scheduled"] == "2099-06-15"
     assert raw[0]["deadline"] == "2099-06-20"
 
+    # Round-trip via a fresh backend instance so the dates
+    # survive a save/load cycle (the markdown test does
+    # this; the JSON one was missing it before the audit).
+    fresh = _json_backend(tmp_path)
+    again = fresh.list_tasks(include_done=True)[0]
+    assert again["scheduled"] == "2099-06-15"
+    assert again["deadline"] == "2099-06-20"
+
+
+def test_json_legacy_row_normalises_missing_dates(
+    tmp_path,
+):
+    """A JSON file written before scheduled/deadline
+    existed must come back with both keys present and
+    set to None — otherwise the dict shape diverges from
+    what SQL and markdown emit and from what
+    ``frontend/src/types.ts:Task`` expects."""
+    legacy = [{
+        "id": "abc",
+        "customer": "Acme",
+        "title": "Old task",
+        "status": "TODO",
+        "tags": [],
+        "body": "",
+        "github_url": "",
+        "created": "2026-01-01T10:00:00",
+    }]
+    (tmp_path / "tasks.json").write_text(
+        json.dumps(legacy), encoding="utf-8",
+    )
+    backend = _json_backend(tmp_path)
+    task = backend.list_tasks(include_done=True)[0]
+    assert "scheduled" in task
+    assert "deadline" in task
+    assert task["scheduled"] is None
+    assert task["deadline"] is None
+
 
 # -- Markdown backend -------------------------------------
 
@@ -287,3 +324,62 @@ def test_wire_handles_missing_dates_as_none():
     back = wire_to_task(wire)
     assert back["scheduled"] is None
     assert back["deadline"] is None
+
+
+# -- Cloud pull does not clobber local dates --------------
+
+class _BackendShim:
+    """Minimal stand-in for the kaisho backend façade so
+    cloud-sync helpers can be called against a single
+    sub-backend in tests. The production code expects
+    ``backend.tasks`` (and other domain attributes); this
+    wrapper exposes just what ``_apply_task_update``
+    needs."""
+
+    def __init__(self, tasks_backend):
+        self.tasks = tasks_backend
+
+
+def test_cloud_pull_does_not_clear_local_dates(tmp_path):
+    """A wire entry from an older peer (or a fresh peer
+    that never set the dates) carries ``scheduled: None``
+    / ``deadline: None``. The cloud-pull path must
+    interpret ``None`` as "leave the local value alone",
+    not as "clear". Coercing ``None`` → ``""`` (the
+    previous code) silently wiped a local-set date every
+    time a remote edited the task for any other reason."""
+    from kaisho.services.cloud_sync import _apply_task_update
+    tasks = _org_backend(tmp_path)
+    backend = _BackendShim(tasks)
+    task = tasks.add_task(
+        customer="Acme",
+        title="Locally scheduled",
+        scheduled="2099-06-15",
+        deadline="2099-06-20",
+    )
+    existing = tasks.list_tasks(include_done=True)[0]
+    assert existing["scheduled"] == "2099-06-15"
+
+    incoming = {
+        "sync_id": task["sync_id"],
+        "customer": "Acme",
+        "title": "Locally scheduled",
+        "status": "TODO",
+        "tags": [],
+        "body": "edited remotely",
+        "github_url": "",
+        "scheduled": None,
+        "deadline": None,
+        "updated_at": "2099-12-31T00:00:00",
+    }
+    _apply_task_update(backend, incoming, existing)
+
+    after = tasks.list_tasks(include_done=True)[0]
+    assert after["scheduled"] == "2099-06-15", (
+        "cloud pull with scheduled=None must NOT wipe "
+        "the local scheduled date"
+    )
+    assert after["deadline"] == "2099-06-20"
+    # The remote did change something — confirm the
+    # legitimate field went through.
+    assert after["body"] == "edited remotely"

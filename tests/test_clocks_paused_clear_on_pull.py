@@ -110,3 +110,49 @@ def test_pull_clears_paused_for_resumed_running_entry(
     # And the clock is now running (no end).
     clock = org.headings[0].logbook[0]
     assert clock.end is None
+
+
+def test_pull_preserves_paused_on_non_timing_edit(
+    tmp_path,
+):
+    """A cloud-origin update that does NOT touch the
+    entry's timing (notes appended, customer renamed,
+    tag adjusted) must leave the local PAUSED flag
+    alone. The user paused on this device and still
+    intends to resume — an unrelated remote edit must
+    not silently wipe that intent."""
+    clocks_file = tmp_path / "clocks.org"
+    sync_id = "abc-notes"
+    _seed_paused_entry(clocks_file, sync_id)
+
+    clocks_svc.update_clock_entry_by_sync_id(
+        clocks_file=clocks_file,
+        sync_id=sync_id,
+        fields={
+            "sync_id": sync_id,
+            "customer": "KAISHO",
+            "description": "paused-entry",
+            "start": "2026-06-09T10:29:00",
+            # End matches the seed exactly — the cloud
+            # only changed the notes.
+            "end": "2026-06-09T10:30:00",
+            "updated_at": "2099-01-01T11:00:01",
+            "invoiced": False,
+            "task_id": None,
+            "contract": None,
+            "notes": "remote added a note",
+        },
+    )
+
+    org = parse_org_file(clocks_file, CLOCK_KEYWORDS)
+    assert (
+        org.headings[0].properties.get("PAUSED")
+        == "true"
+    ), (
+        "PAUSED must survive a cloud pull that did not "
+        "change the entry's end timestamp — only resume "
+        "or stop should clear the local pause intent"
+    )
+    # And the note made it through.
+    body_text = "\n".join(org.headings[0].body)
+    assert "remote added a note" in body_text

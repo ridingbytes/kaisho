@@ -750,6 +750,11 @@ def apply_sync_payload(
         else None
     )
 
+    # Snapshot the previous ``end`` *before* the new value
+    # lands so we can tell whether the cloud-origin
+    # change actually touched the entry's timing.
+    prev_end = clock.end
+
     clock.start = start
     clock.end = end
     if end is not None:
@@ -780,13 +785,17 @@ def apply_sync_payload(
         props.pop("INVOICED", None)
     props["SYNC_ID"] = fields["sync_id"]
     props["UPDATED_AT"] = fields["updated_at"]
-    # ``PAUSED`` is a desktop-only UI affordance and never
-    # crosses the wire. Any cloud-origin pull is therefore
-    # authoritative evidence that the entry is *not* paused
-    # — otherwise the running-timer card stays stuck on a
-    # stale Resume affordance for an entry the cloud has
-    # since resumed or stopped on another device.
-    props.pop("PAUSED", None)
+    # ``PAUSED`` is a desktop-only UI affordance that never
+    # crosses the wire. Only clear it when the cloud
+    # actually touched the entry's timing — resume sets
+    # ``end`` from a value to None, stop sets it from None
+    # (or a previous value) to a new one. A non-timing
+    # change (notes appended on the PWA, customer renamed,
+    # tag adjusted) leaves ``end`` unchanged and must NOT
+    # wipe the local pause flag — the user paused on this
+    # device and still intends to resume.
+    if prev_end != end:
+        props.pop("PAUSED", None)
 
     notes = fields.get("notes") or ""
     heading.body = (
