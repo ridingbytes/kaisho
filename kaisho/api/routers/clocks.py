@@ -334,11 +334,20 @@ def merge_entries(body: MergeRequest):
             into_sync_id=body.into_sync_id,
             from_sync_id=body.from_sync_id,
         )
+        # Record a cloud tombstone for the merged-away
+        # entry so the next push tells the cloud (and any
+        # other device on the account — PWA, iOS) that the
+        # source is gone. Without this, the surviving
+        # entry's update propagates but the deletion never
+        # does, so other clients keep showing both the
+        # originals and the merged result.
+        deleted = (result or {}).get("deleted")
+        if deleted:
+            sync_svc.on_local_delete(deleted)
         sync_svc.schedule_push()
         # Drop the merged-away event from CalDAV before
         # the push cycle so we do not race against an
         # update that would resurrect it.
-        deleted = (result or {}).get("deleted")
         if deleted:
             caldav_sync.on_local_delete(deleted)
         caldav_sync.schedule_push()

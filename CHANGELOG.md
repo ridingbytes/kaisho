@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Record a cloud tombstone when merging two clock entries
+  so the deletion of the merged-away entry propagates to
+  other devices on the account (PWA, iOS). Before, the
+  merge router only dropped the source from CalDAV — the
+  surviving entry's update was pushed to the cloud but
+  the deletion of the source never was, so the iOS app
+  and the PWA kept showing both the originals plus the
+  merged result until those rows were deleted by hand.
+
 - Refresh the desktop UI when the cloud broadcasts
   `entries:changed`, `entries:deleted`, `inbox:changed`,
   `tasks:changed`, or `notes:changed`. The sidecar already
