@@ -88,6 +88,42 @@ def test_apply_clears_local_paused_flag(tmp_path):
     assert after["paused"] is False
 
 
+def test_apply_keeps_paused_when_end_unchanged(tmp_path):
+    """A cloud-origin update that does NOT touch ``end``
+    (notes appended, customer renamed) must leave the
+    local ``paused`` flag alone. The user paused on this
+    device and still intends to resume; an unrelated
+    remote edit must not silently wipe that intent.
+
+    Mirror of
+    ``test_pull_preserves_paused_on_non_timing_edit`` for
+    the org backend."""
+    clocks = _clocks(tmp_path)
+    clocks.apply_sync_payload(_payload(end=None))
+    clocks.stop(paused=True)
+    paused_row = clocks.list_entries(period="all")[0]
+    assert paused_row["paused"] is True
+    paused_end = paused_row["end"]
+
+    # Cloud sends a newer update with the SAME end
+    # timestamp — only the notes / description moved.
+    clocks.apply_sync_payload(_payload(
+        end=paused_end,
+        description="remote updated description",
+        updated_at="2099-01-01T13:00:01",
+    ))
+    after = clocks.list_entries(period="all")[0]
+    assert after["paused"] is True, (
+        "paused must survive a cloud pull that did not "
+        "change end -- only resume or stop should clear "
+        "the local pause intent"
+    )
+    assert (
+        after["description"]
+        == "remote updated description"
+    )
+
+
 def test_delete_entry_by_sync_id(tmp_path):
     clocks = _clocks(tmp_path)
     clocks.apply_sync_payload(_payload())

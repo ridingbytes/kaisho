@@ -129,6 +129,23 @@ def _guess_inbox_type(text: str) -> str:
     return "note"
 
 
+def _normalize_task(task: dict) -> dict:
+    """Ensure every task dict carries the full
+    documented shape — used on the read path so legacy
+    rows (written before a field was added) match what
+    SQL and markdown backends emit and what
+    ``frontend/src/types.ts:Task`` expects.
+
+    Today the only fields needing a missing → None fill
+    are ``scheduled`` and ``deadline``. The helper is
+    deliberately additive so future schema growth lands
+    in one place.
+    """
+    task.setdefault("scheduled", None)
+    task.setdefault("deadline", None)
+    return task
+
+
 # ====================================================================
 #  TaskBackend
 # ====================================================================
@@ -156,7 +173,10 @@ class JsonTaskBackend(TaskBackend):
         include_done=False,
     ) -> list[dict]:
         """Return tasks matching the given filters."""
-        tasks = _read_json(self._tasks_file)
+        tasks = [
+            _normalize_task(t)
+            for t in _read_json(self._tasks_file)
+        ]
         if not include_done:
             tasks = [
                 t for t in tasks
@@ -198,7 +218,10 @@ class JsonTaskBackend(TaskBackend):
 
     def list_archived(self) -> list[dict]:
         """Return all archived tasks."""
-        return _read_json(self._archive_file)
+        return [
+            _normalize_task(t)
+            for t in _read_json(self._archive_file)
+        ]
 
     # -- mutations -----------------------------------------------
 

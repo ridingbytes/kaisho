@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+- Fix three correctness regressions from the
+  scheduling + sync work. (1) A cloud-pull update for a
+  task whose wire payload omits `scheduled`/`deadline`
+  (legacy peer, PWA, iOS on an older build) no longer
+  silently clears the local dates; `None` on the wire
+  is now "leave unchanged", matching the rest of the
+  PATCH convention. (2) The JSON backend's `list_tasks`
+  / `list_archived` normalise legacy task dicts so
+  `scheduled`/`deadline` always come back as `None`
+  instead of missing keys — the SQL and markdown
+  backends already did this, the JSON one diverged.
+  (3) The PAUSED-on-pull clear from v2.5.1 was too
+  aggressive: it wiped the local pause flag on every
+  cloud-origin sync, including unrelated edits (notes
+  appended, customer renamed). Now PAUSED only clears
+  when the cloud actually touched the entry's `end` —
+  resume or stop — so editing notes on the iPhone for
+  a paused entry leaves the desktop pause flag alone.
+
 - Make the 5-minute cloud-sync poller's
   `_broadcast_sync_changes` actually refresh the kanban.
   It was sending `resource: "tasks"` while the frontend's
