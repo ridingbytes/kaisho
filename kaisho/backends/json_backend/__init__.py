@@ -212,6 +212,8 @@ class JsonTaskBackend(TaskBackend):
         github_url=None,
         sync_id=None,
         task_id=None,
+        scheduled=None,
+        deadline=None,
     ) -> dict:
         """Create a new task and return its dict."""
         tasks = _read_json(self._tasks_file)
@@ -225,6 +227,8 @@ class JsonTaskBackend(TaskBackend):
             "github_url": github_url or "",
             "properties": {},
             "created": datetime.now().isoformat(),
+            "scheduled": scheduled or None,
+            "deadline": deadline or None,
         }
         tasks.insert(0, task)
         _write_json(self._tasks_file, tasks)
@@ -274,6 +278,8 @@ class JsonTaskBackend(TaskBackend):
         customer=None,
         body=None,
         github_url=None,
+        scheduled=None,
+        deadline=None,
     ) -> dict:
         """Update a task's fields and return updated dict."""
         tasks = _read_json(self._tasks_file)
@@ -287,6 +293,10 @@ class JsonTaskBackend(TaskBackend):
                     t["body"] = body
                 if github_url is not None:
                     t["github_url"] = github_url
+                if scheduled is not None:
+                    t["scheduled"] = scheduled or None
+                if deadline is not None:
+                    t["deadline"] = deadline or None
                 _write_json(self._tasks_file, tasks)
                 return t
         raise ValueError(f"Task not found: {task_id}")

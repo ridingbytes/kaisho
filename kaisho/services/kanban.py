@@ -90,6 +90,17 @@ def _heading_to_task(heading: Heading, task_id: str) -> dict:
         "github_url": heading.properties.get(
             "GITHUB_URL", ""
         ),
+        # ``SCHEDULED`` / ``DEADLINE`` heading properties
+        # carry the date-only ISO string. Org-mode users may
+        # also use the native ``SCHEDULED:`` / ``DEADLINE:``
+        # planning lines, but kaisho writes them as
+        # properties to keep parsing trivial across backends.
+        "scheduled": (
+            heading.properties.get("SCHEDULED") or None
+        ),
+        "deadline": (
+            heading.properties.get("DEADLINE") or None
+        ),
         "state_history": _state_history(heading),
     }
 
@@ -273,8 +284,16 @@ def add_task(
     github_url: str | None = None,
     sync_id: str | None = None,
     task_id: str | None = None,
+    scheduled: str | None = None,
+    deadline: str | None = None,
 ) -> dict:
-    """Add a new task to todos.org as a flat heading."""
+    """Add a new task to todos.org as a flat heading.
+
+    :param scheduled: Optional snooze date (``YYYY-MM-DD``).
+        Written as a ``:SCHEDULED:`` heading property.
+    :param deadline: Optional deadline date (``YYYY-MM-DD``).
+        Written as a ``:DEADLINE:`` heading property.
+    """
     if not todos_file.exists():
         todos_file.parent.mkdir(parents=True, exist_ok=True)
         todos_file.write_text("", encoding="utf-8")
@@ -300,6 +319,10 @@ def add_task(
     )
     if github_url:
         new_heading.properties["GITHUB_URL"] = github_url
+    if scheduled:
+        new_heading.properties["SCHEDULED"] = scheduled
+    if deadline:
+        new_heading.properties["DEADLINE"] = deadline
 
     # Persist the stable ID so renames don't change it.
     # Caller can pin the id explicitly (used by
@@ -372,8 +395,16 @@ def update_task(
     customer: str | None = None,
     body: str | None = None,
     github_url: str | None = None,
+    scheduled: str | None = None,
+    deadline: str | None = None,
 ) -> dict:
-    """Update a task's title, customer, and/or body."""
+    """Update a task's fields.
+
+    ``scheduled`` / ``deadline`` follow the same sentinel
+    rules as the other params: ``None`` leaves the existing
+    value alone, an empty string clears the property, a
+    ``YYYY-MM-DD`` string sets it.
+    """
     org_file = parse_org_file(todos_file, keywords)
     heading = _find_task_heading(org_file, keywords, task_id)
     if heading is None:
@@ -392,6 +423,16 @@ def update_task(
             heading.properties["GITHUB_URL"] = github_url
         else:
             heading.properties.pop("GITHUB_URL", None)
+    if scheduled is not None:
+        if scheduled:
+            heading.properties["SCHEDULED"] = scheduled
+        else:
+            heading.properties.pop("SCHEDULED", None)
+    if deadline is not None:
+        if deadline:
+            heading.properties["DEADLINE"] = deadline
+        else:
+            heading.properties.pop("DEADLINE", None)
     heading.properties["UPDATED_AT"] = current_timestamp()
     ensure_sync_identity(heading)
     heading.dirty = True

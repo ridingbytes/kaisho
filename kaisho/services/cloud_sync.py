@@ -742,7 +742,13 @@ def _strip_customer_prefix(title: str) -> str:
 
 
 def task_to_wire(task: dict) -> dict:
-    """Convert a local task dict to wire format."""
+    """Convert a local task dict to wire format.
+
+    ``scheduled`` / ``deadline`` are date-only ISO strings
+    (``YYYY-MM-DD``); they cross the wire unchanged so the
+    cloud (and downstream PWA / iOS) sees the same dates
+    the desktop set.
+    """
     return {
         "id": task["sync_id"],
         "customer": task.get("customer") or "",
@@ -753,6 +759,8 @@ def task_to_wire(task: dict) -> dict:
         "tags": task.get("tags") or [],
         "body": task.get("body") or "",
         "github_url": task.get("github_url") or "",
+        "scheduled": task.get("scheduled") or None,
+        "deadline": task.get("deadline") or None,
         "created_at": _local_to_utc(
             task.get("created") or local_now().isoformat()
         ),
@@ -773,6 +781,8 @@ def wire_to_task(entry: dict) -> dict:
         "tags": entry.get("tags") or [],
         "body": entry.get("body") or "",
         "github_url": entry.get("github_url") or "",
+        "scheduled": entry.get("scheduled") or None,
+        "deadline": entry.get("deadline") or None,
         "created": _utc_to_local(
             entry.get("created_at") or ""
         ),
@@ -1658,6 +1668,8 @@ def _apply_pulled_task(
         github_url=incoming["github_url"],
         tags=incoming.get("tags"),
         sync_id=incoming["sync_id"],
+        scheduled=incoming.get("scheduled"),
+        deadline=incoming.get("deadline"),
     )
     return 1, 0
 
@@ -1692,6 +1704,8 @@ def _apply_task_update(
         customer=incoming["customer"],
         body=incoming["body"],
         github_url=incoming["github_url"],
+        scheduled=incoming.get("scheduled") or "",
+        deadline=incoming.get("deadline") or "",
     )
     if incoming.get("tags") != existing.get("tags"):
         backend.tasks.set_tags(
