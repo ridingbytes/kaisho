@@ -54,6 +54,40 @@ def test_apply_is_last_writer_wins(tmp_path):
     assert len(clocks.list_entries(period="all")) == 1
 
 
+def test_apply_clears_local_paused_flag(tmp_path):
+    """A cloud pull must clear the desktop-local ``paused``
+    flag. ``paused`` is a desktop-only UI affordance and
+    never crosses the wire, so the only way the local row
+    has ``paused=True`` is because someone hit Pause on
+    this device. The cloud sending an update (or, in
+    practice, the other-device having resumed/stopped) is
+    proof the entry is no longer paused; failing to clear
+    leaves the running-timer card stuck on a stale Resume
+    affordance."""
+    clocks = _clocks(tmp_path)
+    # Insert a running entry, then locally pause it via
+    # ``stop(paused=True)`` — same flow as the desktop
+    # Pause button.
+    clocks.apply_sync_payload(_payload(end=None))
+    clocks.stop(paused=True)
+    paused_row = clocks.list_entries(period="all")[0]
+    assert paused_row["paused"] is True
+
+    # Cloud sends a newer update — typically because
+    # another device resumed or stopped the entry. The
+    # local paused flag must be cleared. A far-future
+    # ``updated_at`` keeps last-writer-wins out of the
+    # way (``stop()`` stamps the local row with the real
+    # wall clock, so a 2026-dated payload would be
+    # skipped on a machine in 2026).
+    clocks.apply_sync_payload(_payload(
+        end="2099-01-01T13:00:00",
+        updated_at="2099-01-01T13:00:01",
+    ))
+    after = clocks.list_entries(period="all")[0]
+    assert after["paused"] is False
+
+
 def test_delete_entry_by_sync_id(tmp_path):
     clocks = _clocks(tmp_path)
     clocks.apply_sync_payload(_payload())

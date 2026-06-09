@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Clear the desktop-local `PAUSED` flag on every
+  cloud-origin pull. `PAUSED` is a desktop-only UI
+  affordance that never crosses the wire, so a paused
+  entry that another device (PWA, iOS) has since resumed
+  or stopped used to stay marked paused locally — the
+  running-timer card kept offering "Resume" for an entry
+  the cloud thought was finished. Both the org and SQL
+  backends now clear it whenever they apply an incoming
+  sync payload.
+
 - Run the cloud sync once at startup instead of waiting a
   full five minutes for the first interval tick. A fresh
   app launch now reconciles with the cloud immediately, so
