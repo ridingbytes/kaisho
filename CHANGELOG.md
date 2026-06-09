@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Refresh the desktop UI when the cloud broadcasts
+  `entries:changed`, `entries:deleted`, `inbox:changed`,
+  `tasks:changed`, or `notes:changed`. The sidecar already
+  pulled the new rows into local SQL, but never told the
+  React frontend to invalidate its queries — so an entry
+  edited on the PWA or iOS app stayed stale on desktop
+  until the app was restarted. Cloud-WS events now record
+  which resource needs refreshing and the broadcast fires
+  after the debounced sync writes the new rows locally.
+  Closes #148.
+
 ## 2.5.0
 
 ### Expose the MCP HTTP allow-tier in Settings so write and destructive tools can be enabled without editing the stdio CLI flags [#147]
