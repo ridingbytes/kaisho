@@ -104,11 +104,15 @@ export function KanbanColumn({
   }
 
   if (collapsed) {
-    // Compact strip: rotated label + count + expand chevron.
-    // Drag handle (column reorder) and the expand toggle
-    // are the only interactive surfaces; the drop zone is
-    // intentionally absent so cards cannot be dropped into
-    // an invisible column.
+    // Compact strip. The header row mirrors the open
+    // column's ``flex items-center gap-2 mb-3 px-1`` so
+    // the expand chevron lines up vertically with the
+    // collapse chevrons on the open columns next to it.
+    // The body below mirrors the open column's drop zone
+    // — dashed border, rounded corners, same background —
+    // but holds the dot + count chip + rotated label
+    // instead of cards. No drop target on purpose: cards
+    // must not vanish into an invisible column.
     return (
       <div
         ref={setNodeRef}
@@ -119,49 +123,59 @@ export function KanbanColumn({
         }}
         className={[
           "flex flex-col shrink-0 h-full min-h-0",
-          "items-center py-2 gap-3",
-          "rounded-lg border border-dashed border-border-subtle",
-          "bg-surface-card/30",
           isDragging ? "opacity-40" : "",
         ]
           .filter(Boolean)
           .join(" ")}
       >
-        <button
-          onClick={onToggleCollapsed}
-          className={
-            "p-1 rounded-md text-fg-muted hover:text-fg "
-            + "hover:bg-surface-raised transition-colors"
-          }
-          title={t("expandColumn")}
-        >
-          <ChevronRight size={13} strokeWidth={2} />
-        </button>
+        {/* Header: same Y as the open column's header */}
+        <div className="flex items-center justify-center mb-3 px-1">
+          <button
+            onClick={onToggleCollapsed}
+            className={
+              "p-1 rounded-md text-fg-muted hover:text-fg "
+              + "hover:bg-surface-raised transition-colors"
+            }
+            title={t("expandColumn")}
+          >
+            <ChevronRight size={13} strokeWidth={2} />
+          </button>
+        </div>
+        {/* Body: matches the open column's drop-zone */}
         <div
-          className="w-2 h-2 rounded-full shrink-0"
-          style={{ backgroundColor: state.color }}
-        />
-        <span
           className={[
-            "px-1.5 py-0.5 rounded text-2xs font-semibold",
-            "bg-surface-raised text-fg-muted",
-            "border border-border-subtle",
+            "flex flex-col items-center gap-3 p-2",
+            "rounded-lg border border-dashed",
+            "border-border-subtle bg-surface-card/30",
+            "flex-1 min-h-0",
           ].join(" ")}
         >
-          {tasks.length}
-        </span>
-        <div
-          {...attributes}
-          {...listeners}
-          className={
-            "[writing-mode:vertical-rl] rotate-180 "
-            + "text-xs font-semibold tracking-wider "
-            + "uppercase text-fg cursor-grab "
-            + "active:cursor-grabbing select-none"
-          }
-          title={t("dragToReorder")}
-        >
-          {state.label || state.name}
+          <div
+            className="w-2 h-2 rounded-full shrink-0"
+            style={{ backgroundColor: state.color }}
+          />
+          <span
+            className={[
+              "px-1.5 py-0.5 rounded text-2xs font-semibold",
+              "bg-surface-raised text-fg-muted",
+              "border border-border-subtle",
+            ].join(" ")}
+          >
+            {tasks.length}
+          </span>
+          <div
+            {...attributes}
+            {...listeners}
+            className={
+              "[writing-mode:vertical-rl] rotate-180 "
+              + "text-xs font-semibold tracking-wider "
+              + "uppercase text-fg cursor-grab "
+              + "active:cursor-grabbing select-none"
+            }
+            title={t("dragToReorder")}
+          >
+            {state.label || state.name}
+          </div>
         </div>
       </div>
     );
