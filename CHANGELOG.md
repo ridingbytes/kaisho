@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 2.5.1
+
+This release fixes a cluster of cloud-sync edge cases that
+left the desktop showing stale paused / running / merge
+state whenever another device (PWA, iOS) made a change.
+Plus two dev-loop fixes that landed alongside.
 
 - Clear the desktop-local `PAUSED` flag on every
   cloud-origin pull. `PAUSED` is a desktop-only UI
@@ -59,6 +64,12 @@
   which resource needs refreshing and the broadcast fires
   after the debounced sync writes the new rows locally.
   Closes #148.
+
+- Strip duplicate newlines and re-split bursts when piping
+  `kai-server` output in `bin/dev --desktop` so Python
+  tracebacks render with one `[kai]`-prefixed line per
+  frame instead of a single squashed blob with a blank
+  line between every entry.
 
 ## 2.5.0
 
