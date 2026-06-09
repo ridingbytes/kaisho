@@ -391,20 +391,31 @@ def restart_cloud_ws() -> None:
 def _broadcast_sync_changes(result: dict) -> None:
     """Notify the desktop frontend after a sync cycle.
 
-    Broadcasts a refresh event for each resource so
-    the UI updates without a manual reload. Over-
-    broadcasts all resources because the result dict
-    aggregates counts — this is safe (just extra
-    React Query refetches).
+    Broadcasts a refresh event for each resource so the UI
+    updates without a manual reload. Over-broadcasts all
+    resources because the ``result`` dict only carries
+    aggregate counts — sending all four is safe (a few
+    extra React Query refetches at most).
+
+    Resource names must match the keys in
+    ``frontend/src/hooks/useWebSocket.ts``'s
+    ``RESOURCE_TO_QUERY`` — the tasks query is routed via
+    the ``kanban`` key there, so ``tasks`` (the obvious
+    name) would be a silent no-op.
+
+    No ``pulled+deleted == 0`` gate: a zero-count result is
+    not proof that nothing changed — cursor races,
+    push-lock contention, and partial-success cycles can
+    all produce zero counts even when remote state has
+    moved. The cost of always broadcasting is a couple of
+    extra refetches when the result really is empty, which
+    is cheaper than the user staring at stale data after a
+    cycle the gate quietly swallowed.
     """
-    pulled = result.get("pulled_up", 0)
-    deleted = result.get("pulled_del", 0)
-    if pulled + deleted == 0:
-        return
     from ..api.ws.manager import broadcast_sync
     try:
         for resource in (
-            "clocks", "inbox", "tasks", "notes",
+            "clocks", "inbox", "kanban", "notes",
         ):
             broadcast_sync({
                 "resource": resource,
