@@ -210,12 +210,69 @@ _sync_log = logging.getLogger(__name__ + ".sync")
 _ws_sync_pending = False
 _ws_sync_lock = threading.Lock()
 
+# Resources whose React Query cache must be invalidated
+# after the next WS-triggered sync completes. Accumulated
+# under ``_ws_sync_lock`` so concurrent cloud-WS events
+# can stack their refresh hints without races.
+#
+# Drained inside ``_debounced_sync`` once the sync cycle
+# has actually written the new rows to local SQL — the
+# order matters: broadcasting before the pull lands would
+# cause React Query to refetch the still-stale cache.
+_ws_pending_resources: set[str] = set()
+
+# Map cloud-WS event names onto the ``resource`` keys the
+# desktop frontend understands in
+# ``frontend/src/hooks/useWebSocket.ts``. ``tasks:changed``
+# maps to ``kanban`` because RESOURCE_TO_QUERY only routes
+# the ``kanban`` key to the tasks React Query.
+_WS_EVENT_TO_RESOURCE = {
+    "entries:changed": "clocks",
+    "entries:deleted": "clocks",
+    "timer:stopped": "clocks",
+    "inbox:changed": "inbox",
+    "tasks:changed": "kanban",
+    "notes:changed": "notes",
+}
+
+
+def _drain_and_broadcast_pending() -> None:
+    """Broadcast a refresh hint for each resource that had
+    cloud-WS activity during the debounce window.
+
+    Called from ``_debounced_sync`` on the success path so
+    the local SQL has the new rows by the time the frontend
+    invalidates its queries and refetches.
+    """
+    with _ws_sync_lock:
+        resources = list(_ws_pending_resources)
+        _ws_pending_resources.clear()
+    if not resources:
+        return
+    from ..api.ws.manager import broadcast_sync
+    for resource in resources:
+        try:
+            broadcast_sync({
+                "resource": resource,
+                "type": "cloud:refresh",
+            })
+        except Exception:  # noqa: BLE001
+            _ws_log.warning(
+                "Failed to broadcast %s refresh",
+                resource, exc_info=True,
+            )
+
 
 def _debounced_sync() -> None:
     """Run a sync if one is pending, with dedup.
 
     Waits 2 seconds to coalesce rapid events into a
     single sync cycle. Logs errors instead of swallowing.
+
+    On success, drains the pending-resources set and
+    broadcasts a refresh hint per resource so React Query
+    invalidates its cache after the new rows have been
+    written to local SQL.
     """
     global _ws_sync_pending
     time.sleep(2)
@@ -229,6 +286,8 @@ def _debounced_sync() -> None:
         _ws_log.warning(
             "WS-triggered sync failed", exc_info=True,
         )
+        return
+    _drain_and_broadcast_pending()
 
 
 def _schedule_ws_sync() -> None:
@@ -254,9 +313,11 @@ def _on_cloud_ws_event(
 ) -> None:
     """Handle real-time events from the cloud WebSocket.
 
-    Timer events are broadcast to the local WebSocket
-    for instant UI updates. Data changes schedule a
-    debounced sync cycle.
+    Timer events are broadcast to the local WebSocket for
+    instant UI updates. Data-change events record which
+    resource needs refreshing and schedule a debounced
+    sync cycle; the broadcast for those fires once the
+    sync has actually pulled the new rows.
     """
     _ws_log.info("Cloud WS event: %s", event)
 
@@ -275,15 +336,13 @@ def _on_cloud_ws_event(
                 exc_info=True,
             )
 
-    # Data changes: schedule debounced background sync
-    if event in (
-        "entries:changed",
-        "entries:deleted",
-        "inbox:changed",
-        "tasks:changed",
-        "notes:changed",
-        "timer:stopped",
-    ):
+    # Data changes: record the resource and schedule a
+    # debounced background sync. The broadcast happens
+    # in ``_debounced_sync`` after the pull lands.
+    resource = _WS_EVENT_TO_RESOURCE.get(event)
+    if resource is not None:
+        with _ws_sync_lock:
+            _ws_pending_resources.add(resource)
         _schedule_ws_sync()
 
 
