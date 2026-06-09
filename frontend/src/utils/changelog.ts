@@ -66,10 +66,17 @@ export function parseChangelog(
     const versionMatch = line.match(/^## (.+)/);
     if (versionMatch) {
       flush();
-      current = {
-        version: versionMatch[1].trim(),
-        items: [],
-      };
+      const version = versionMatch[1].trim();
+      // ``Unreleased`` is a staging area in CHANGELOG.md
+      // for entries waiting on the next bump-version run;
+      // it must not surface in the What's New dialog (it
+      // would show up as "What's New Unreleased" and steal
+      // the slot the real latest release should occupy).
+      if (/^unreleased$/i.test(version)) {
+        current = null;
+        continue;
+      }
+      current = { version, items: [] };
       entries.push(current);
       continue;
     }
@@ -79,6 +86,19 @@ export function parseChangelog(
     if (subMatch) {
       flush();
       buffer = `**${subMatch[1].trim()}**`;
+      continue;
+    }
+
+    // A top-level ``- `` line starts a new item. The
+    // leading dash is dropped because the dialog renders
+    // its own bullet glyph in the outer ``<li>``; passing
+    // ``- text`` through to the Markdown component would
+    // produce a second nested bullet ("• •"). Indented
+    // continuation lines (``  more text``) are folded
+    // into the current item by the catch-all below.
+    if (/^- /.test(line)) {
+      flush();
+      buffer = line.replace(/^- /, "");
       continue;
     }
 
