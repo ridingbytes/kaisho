@@ -4,6 +4,7 @@
   "newTask": "New task (double-tap B)",
   "collapseColumn": "Collapse column",
   "expandColumn": "Expand column",
+  "datesOutOfOrder": "Deadline must be on or after the scheduled date.",
   "scheduledLabel": "Scheduled",
   "deadlineLabel": "Deadline",
   "snoozedCount": "{{count}} snoozed",

@@ -71,13 +71,30 @@ export function TaskEditForm({
   const { t } = useTranslation("kanban");
   const { t: tc } = useTranslation("common");
 
+  // Cross-field check: a snooze date past the deadline
+  // is incoherent (the deadline badge would fire before
+  // the snooze even surfaces). Lex compare agrees with
+  // chronological order on ``YYYY-MM-DD``. The API
+  // mirrors this rule and returns 400 if it slips
+  // through, so this is purely instant-feedback UX.
+  const datesOutOfOrder = !!(
+    editScheduled
+    && editDeadline
+    && editDeadline < editScheduled
+  );
+
+  function handleSave() {
+    if (datesOutOfOrder) return;
+    onSave();
+  }
+
   function handleKeyDown(e: React.KeyboardEvent) {
     if (
       (e.metaKey || e.ctrlKey) &&
       e.key === "Enter"
     ) {
       e.preventDefault();
-      onSave();
+      handleSave();
     }
     if (e.key === "Escape") {
       onCancel();
@@ -155,6 +172,11 @@ export function TaskEditForm({
           />
         </label>
       </div>
+      {datesOutOfOrder && (
+        <p className="text-2xs text-red-500 px-0.5">
+          {t("datesOutOfOrder")}
+        </p>
+      )}
       <div
         onPointerDown={(e) => e.stopPropagation()}
       >
@@ -177,8 +199,8 @@ export function TaskEditForm({
         </button>
         <button
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={onSave}
-          disabled={isSaving}
+          onClick={handleSave}
+          disabled={isSaving || datesOutOfOrder}
           className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
         >
           <Check size={12} />

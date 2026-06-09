@@ -1,10 +1,40 @@
 from fastapi import APIRouter, Body, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from ...backends import get_backend
 from ...config import load_settings_yaml
 
 router = APIRouter(prefix="/api/kanban", tags=["kanban"])
+
+
+def _reject_deadline_before_scheduled(
+    scheduled: str | None, deadline: str | None,
+) -> None:
+    """Raise ``ValueError`` when the user has supplied
+    both dates in the same payload and the deadline lands
+    before the scheduled (snooze) date.
+
+    A snoozed-past-its-deadline task is incoherent — the
+    deadline badge would fire before the snooze even
+    surfaces — and is almost certainly a typo. Lexicographic
+    compare on ``YYYY-MM-DD`` agrees with chronological
+    order, so a plain string compare is enough.
+
+    On ``TaskUpdate`` this only catches the "user sent
+    both at once" case; sending just one that breaks the
+    invariant against the stored other is not validated
+    here (the frontend has the merged shape and can do
+    that check). Catching the typo at the API boundary is
+    the higher-value safety net.
+    """
+    if not scheduled or not deadline:
+        return
+    if deadline < scheduled:
+        raise ValueError(
+            "deadline must be on or after scheduled date "
+            f"(got scheduled={scheduled}, "
+            f"deadline={deadline})"
+        )
 
 
 class TaskCreate(BaseModel):
@@ -20,6 +50,13 @@ class TaskCreate(BaseModel):
     scheduled: str | None = None
     deadline: str | None = None
 
+    @model_validator(mode="after")
+    def _check_dates(self) -> "TaskCreate":
+        _reject_deadline_before_scheduled(
+            self.scheduled, self.deadline,
+        )
+        return self
+
 
 class TaskUpdate(BaseModel):
     status: str | None = None
@@ -31,6 +68,13 @@ class TaskUpdate(BaseModel):
     # ``""`` = clear; ``"YYYY-MM-DD"`` = set.
     scheduled: str | None = None
     deadline: str | None = None
+
+    @model_validator(mode="after")
+    def _check_dates(self) -> "TaskUpdate":
+        _reject_deadline_before_scheduled(
+            self.scheduled, self.deadline,
+        )
+        return self
 
 
 class TagsUpdate(BaseModel):

@@ -4,6 +4,7 @@
   "newTask": "Neue Aufgabe (Doppeltipp B)",
   "collapseColumn": "Spalte einklappen",
   "expandColumn": "Spalte ausklappen",
+  "datesOutOfOrder": "Frist muss am oder nach dem geplanten Datum liegen.",
   "scheduledLabel": "Geplant",
   "deadlineLabel": "Frist",
   "snoozedCount": "{{count}} geplant",

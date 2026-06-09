@@ -4,6 +4,7 @@
   "newTask": "Новая задача (двойное нажатие B)",
   "collapseColumn": "Свернуть колонку",
   "expandColumn": "Развернуть колонку",
+  "datesOutOfOrder": "Срок должен быть не раньше запланированной даты.",
   "scheduledLabel": "Запланировано",
   "deadlineLabel": "Срок",
   "snoozedCount": "{{count}} отложено",
