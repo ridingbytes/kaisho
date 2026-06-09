@@ -356,7 +356,14 @@ export function KanbanBoard() {
   // Hide tasks whose ``scheduled`` date is still in the
   // future — they reappear on the day. The count is shown
   // in a toolbar pill so the user can still see them.
-  const todayStr = new Date().toISOString().slice(0, 10);
+  //
+  // ``toISOString()`` returns UTC, which trips negative-UTC
+  // timezones: a user in PDT (UTC−7) at 22:00 local sees
+  // the next day's UTC date and their snooze "expires" a
+  // day late. ``en-CA`` produces the canonical
+  // ``YYYY-MM-DD`` shape in *local* time, which is what
+  // we actually want.
+  const todayStr = new Date().toLocaleDateString("en-CA");
   const snoozed = rawTasks.filter(
     (t) => t.scheduled && t.scheduled > todayStr,
   );

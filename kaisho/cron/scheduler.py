@@ -211,35 +211,31 @@ _sync_log = logging.getLogger(__name__ + ".sync")
 _ws_sync_pending = False
 _ws_sync_lock = threading.Lock()
 
-# Resources whose React Query cache must be invalidated
-# after the next WS-triggered sync completes. Accumulated
-# under ``_ws_sync_lock`` so concurrent cloud-WS events
-# can stack their refresh hints without races.
-#
-# Drained inside ``_debounced_sync`` once the sync cycle
-# has actually written the new rows to local SQL — the
-# order matters: broadcasting before the pull lands would
-# cause React Query to refetch the still-stale cache.
-_ws_pending_resources: set[str] = set()
+# Frontend resource keys the React side knows how to
+# invalidate (see ``frontend/src/hooks/useWebSocket.ts``
+# ``RESOURCE_TO_QUERY``). The tasks query is routed via
+# the ``kanban`` key there, so ``tasks`` (the obvious
+# name) would be a silent no-op — that exact trap got
+# missed for months, hence the comment-and-constant.
+# Single source of truth so the periodic-poller broadcast
+# and any future per-resource trigger stay in lock-step.
+BROADCAST_RESOURCES = ("clocks", "inbox", "kanban", "notes")
 
-# Map cloud-WS event names onto the ``resource`` keys the
-# desktop frontend understands in
-# ``frontend/src/hooks/useWebSocket.ts``. ``tasks:changed``
-# maps to ``kanban`` because RESOURCE_TO_QUERY only routes
-# the ``kanban`` key to the tasks React Query.
+# Cloud-WS event names that warrant a debounced sync.
+# Mapped to the resource purely for documentation / for
+# any consumer that needs the affinity; the broadcast
+# itself is now blanket via ``BROADCAST_RESOURCES`` so
+# every WS-triggered cycle refreshes everything that
+# matters.
+#
+# ``timer:started`` covers two cases that both need a
+# pull: a brand-new timer started on another device, and
+# a paused entry resumed on another device (the cloud
+# emits ``timer:started`` for resume because the entry's
+# end is cleared).
 _WS_EVENT_TO_RESOURCE = {
     "entries:changed": "clocks",
     "entries:deleted": "clocks",
-    # ``timer:started`` covers two cases that both need a
-    # pull: a brand-new timer started on another device,
-    # and a paused entry resumed on another device (the
-    # cloud emits ``timer:started`` for resume because the
-    # entry's end is cleared). Without the pull, the
-    # immediate ``clocks`` broadcast fires above but the
-    # frontend refetches local data that is still in the
-    # pre-resume / pre-start state and the running-timer
-    # card stays empty until the 5-minute poller catches
-    # up.
     "timer:started": "clocks",
     "timer:stopped": "clocks",
     "inbox:changed": "inbox",
@@ -248,43 +244,15 @@ _WS_EVENT_TO_RESOURCE = {
 }
 
 
-def _drain_and_broadcast_pending() -> None:
-    """Broadcast a refresh hint for each resource that had
-    cloud-WS activity during the debounce window.
-
-    Called from ``_debounced_sync`` on the success path so
-    the local SQL has the new rows by the time the frontend
-    invalidates its queries and refetches.
-    """
-    with _ws_sync_lock:
-        resources = list(_ws_pending_resources)
-        _ws_pending_resources.clear()
-    if not resources:
-        return
-    from ..api.ws.manager import broadcast_sync
-    for resource in resources:
-        try:
-            broadcast_sync({
-                "resource": resource,
-                "type": "cloud:refresh",
-            })
-        except Exception:  # noqa: BLE001
-            _ws_log.warning(
-                "Failed to broadcast %s refresh",
-                resource, exc_info=True,
-            )
-
-
 def _debounced_sync() -> None:
     """Run a sync if one is pending, with dedup.
 
     Waits 2 seconds to coalesce rapid events into a
-    single sync cycle. Logs errors instead of swallowing.
-
-    On success, drains the pending-resources set and
-    broadcasts a refresh hint per resource so React Query
-    invalidates its cache after the new rows have been
-    written to local SQL.
+    single sync cycle, then calls ``_run_cloud_sync`` —
+    which in turn fires ``_broadcast_sync_changes`` on
+    success so the frontend's React Query cache lands
+    *after* the new rows are in local SQL. Errors are
+    logged, not raised.
     """
     global _ws_sync_pending
     time.sleep(2)
@@ -298,8 +266,6 @@ def _debounced_sync() -> None:
         _ws_log.warning(
             "WS-triggered sync failed", exc_info=True,
         )
-        return
-    _drain_and_broadcast_pending()
 
 
 def _schedule_ws_sync() -> None:
@@ -325,15 +291,20 @@ def _on_cloud_ws_event(
 ) -> None:
     """Handle real-time events from the cloud WebSocket.
 
-    Timer events are broadcast to the local WebSocket for
-    instant UI updates. Data-change events record which
-    resource needs refreshing and schedule a debounced
-    sync cycle; the broadcast for those fires once the
-    sync has actually pulled the new rows.
+    Timer events fire an immediate ``clocks`` broadcast so
+    the running-timer card flashes the new state without
+    waiting for the 2-second sync debounce — the data
+    might still be stale when the frontend refetches, but
+    the visual cue is worth it.
+
+    Any event in ``_WS_EVENT_TO_RESOURCE`` schedules a
+    debounced sync; the eventual ``_run_cloud_sync`` call
+    will broadcast all resources via
+    ``_broadcast_sync_changes`` once the pull lands.
     """
     _ws_log.info("Cloud WS event: %s", event)
 
-    # Timer events: broadcast to desktop frontend
+    # Timer events: immediate broadcast for instant UI cue
     if event in ("timer:started", "timer:stopped"):
         try:
             from ..api.ws.manager import broadcast_sync
@@ -348,13 +319,10 @@ def _on_cloud_ws_event(
                 exc_info=True,
             )
 
-    # Data changes: record the resource and schedule a
-    # debounced background sync. The broadcast happens
-    # in ``_debounced_sync`` after the pull lands.
-    resource = _WS_EVENT_TO_RESOURCE.get(event)
-    if resource is not None:
-        with _ws_sync_lock:
-            _ws_pending_resources.add(resource)
+    # Data changes trigger a debounced sync; the broadcast
+    # piggybacks on ``_broadcast_sync_changes`` once the
+    # cycle writes new rows to local SQL.
+    if event in _WS_EVENT_TO_RESOURCE:
         _schedule_ws_sync()
 
 
@@ -413,19 +381,17 @@ def _broadcast_sync_changes(result: dict) -> None:
     cycle the gate quietly swallowed.
     """
     from ..api.ws.manager import broadcast_sync
-    try:
-        for resource in (
-            "clocks", "inbox", "kanban", "notes",
-        ):
+    for resource in BROADCAST_RESOURCES:
+        try:
             broadcast_sync({
                 "resource": resource,
                 "type": "sync:updated",
             })
-    except Exception:  # noqa: BLE001
-        _ws_log.warning(
-            "Failed to broadcast sync changes",
-            exc_info=True,
-        )
+        except Exception:  # noqa: BLE001
+            _ws_log.warning(
+                "Failed to broadcast %s sync",
+                resource, exc_info=True,
+            )
 
 
 def _run_cloud_sync() -> None:
@@ -536,11 +502,17 @@ def build_scheduler(jobs_file: Path) -> BackgroundScheduler:
     # device while the desktop was offline). The cloud
     # WebSocket only delivers events from the moment it
     # connects, so it cannot fill that gap on its own.
+    #
+    # APScheduler's BackgroundScheduler is tz-aware;
+    # feeding it a naive ``datetime.now()`` triggers
+    # ``PytzUsageWarning`` and, on some platforms, refuses
+    # to schedule. Use the scheduler's own timezone so the
+    # kick-off datetime always matches.
     _scheduler.add_job(
         _run_cloud_sync,
         "interval",
         minutes=5,
-        next_run_time=datetime.now(),
+        next_run_time=datetime.now(_scheduler.timezone),
         id="__cloud_sync__",
         name="Cloud Sync",
         replace_existing=True,

@@ -36,7 +36,12 @@ const DEADLINE_ACK_EVENT = "kaisho:deadline-acked";
 const DEADLINE_URGENCY_DAYS = 3;
 
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  // Local-time ``YYYY-MM-DD``. ``toISOString`` gives UTC,
+  // which trips negative-UTC timezones: a user in PDT
+  // (UTC−7) at 22:00 local sees the next day's UTC date
+  // and their scheduled badge surfaces / their deadline
+  // badge fires a day off.
+  return new Date().toLocaleDateString("en-CA");
 }
 
 /** Inclusive day-difference between two ``YYYY-MM-DD``

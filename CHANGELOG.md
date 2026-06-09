@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- Refactor the cloud-WS broadcast plumbing from the
+  post-feature audit. Single `BROADCAST_RESOURCES`
+  constant replaces three duplicate listings of
+  `("clocks", "inbox", "kanban", "notes")`. Drop the WS
+  pending-resources set + `_drain_and_broadcast_pending`
+  since `_broadcast_sync_changes` now fires
+  unconditionally inside `_run_cloud_sync` — two
+  mechanisms for the same effect collapsed to one.
+  Per-iteration `try/except` in the broadcast loop so
+  one failing resource doesn't abort the rest. Pass the
+  scheduler's own timezone to `next_run_time` so
+  APScheduler stops emitting the naive-datetime
+  warning. And the snooze filter + deadline badge use
+  `toLocaleDateString("en-CA")` instead of
+  `toISOString().slice(0, 10)` so users in negative-UTC
+  timezones no longer see their snoozes expire /
+  deadlines fire a day late.
+
 - Fix three correctness regressions from the
   scheduling + sync work. (1) A cloud-pull update for a
   task whose wire payload omits `scheduled`/`deadline`
