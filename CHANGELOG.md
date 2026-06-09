@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Fix a `FileNotFoundError` crash in `write_org_file` when
+  two writers raced on the same org file (e.g. a kanban
+  list request that backfilled `TASK_ID`/`SYNC_ID` while
+  the background cloud sync was also writing). The old
+  shared `<path>.tmp` scratch path lost one of the two
+  writers to a missing-source rename. Each writer now gets
+  a unique `tempfile.mkstemp` scratch and removes it on
+  failure. Same fix applied to `kb_index.save_index`.
+
 - Record a cloud tombstone when merging two clock entries
   so the deletion of the merged-away entry propagates to
   other devices on the account (PWA, iOS). Before, the

@@ -1,4 +1,5 @@
 import os
+import tempfile
 from pathlib import Path
 
 from .clock import format_clock
@@ -95,8 +96,29 @@ def write_org_string(org_file: OrgFile) -> str:
 
 
 def write_org_file(path: Path, org_file: OrgFile) -> None:
-    """Atomic write: write to .tmp then os.replace."""
+    """Atomic write: write to a unique tmp file then
+    ``os.replace`` it into place.
+
+    Each writer gets its own ``tempfile.NamedTemporaryFile``
+    so two concurrent ``write_org_file`` calls cannot share
+    the same scratch path. A shared scratch path (the
+    previous ``path.with_suffix('.org.tmp')`` pattern) loses
+    one of two concurrent writers to a ``FileNotFoundError``
+    when the second ``os.replace`` finds the tmp file has
+    already been renamed away by the first.
+    """
     content = write_org_string(org_file)
-    tmp_path = path.with_suffix(".org.tmp")
-    tmp_path.write_text(content, encoding="utf-8")
-    os.replace(tmp_path, path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(
+        dir=path.parent,
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+    )
+    tmp_path = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(content)
+        os.replace(tmp_path, path)
+    except BaseException:
+        tmp_path.unlink(missing_ok=True)
+        raise

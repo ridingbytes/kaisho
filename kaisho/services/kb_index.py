@@ -29,6 +29,8 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import os
+import tempfile
 import threading
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -215,9 +217,23 @@ def save_index(
         allow_unicode=True,
         default_flow_style=False,
     )
-    tmp = p.with_suffix(p.suffix + ".tmp")
-    tmp.write_text(text, encoding="utf-8")
-    tmp.replace(p)
+    # Unique tmp name per writer so two concurrent
+    # ``save_index`` calls cannot share the same scratch
+    # path. See ``kaisho/org/writer.py:write_org_file`` for
+    # the same fix in the org backend.
+    fd, tmp_name = tempfile.mkstemp(
+        dir=p.parent,
+        prefix=f".{p.name}.",
+        suffix=".tmp",
+    )
+    tmp = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text)
+        tmp.replace(p)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 def lookup(
