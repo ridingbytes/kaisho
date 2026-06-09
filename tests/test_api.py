@@ -285,6 +285,65 @@ class TestKanban:
         )
         assert r.status_code == 422
 
+    def test_create_rejects_deadline_before_scheduled(
+        self, client,
+    ):
+        """A snoozed-past-its-deadline task is incoherent
+        (deadline badge would fire before the snooze even
+        surfaces). The API rejects with 422 when both
+        dates are set and deadline < scheduled."""
+        r = client.post(
+            "/api/kanban/tasks",
+            json={
+                "customer": "Acme",
+                "title": "Incoherent",
+                "scheduled": "2099-06-15",
+                "deadline": "2099-06-10",
+            },
+        )
+        assert r.status_code == 422
+        assert "scheduled" in r.text.lower()
+
+    def test_create_allows_deadline_equal_scheduled(
+        self, client,
+    ):
+        """Same-day scheduled/deadline is legal — the
+        snooze surfaces and the deadline lands on the
+        same day, no contradiction."""
+        r = client.post(
+            "/api/kanban/tasks",
+            json={
+                "customer": "Acme",
+                "title": "Same day",
+                "scheduled": "2099-06-15",
+                "deadline": "2099-06-15",
+            },
+        )
+        assert r.status_code == 201
+
+    def test_update_rejects_deadline_before_scheduled(
+        self, client,
+    ):
+        """The cross-field check applies to PATCH too —
+        the user can't slip an invalid pair in via an
+        edit that sends both fields at once."""
+        r = client.post(
+            "/api/kanban/tasks",
+            json={
+                "customer": "Acme",
+                "title": "Edit me",
+            },
+        )
+        task_id = r.json()["id"]
+        r = client.patch(
+            f"/api/kanban/tasks/{task_id}",
+            json={
+                "scheduled": "2099-06-15",
+                "deadline": "2099-06-10",
+            },
+        )
+        assert r.status_code == 422
+
 
 # ── Clocks ──────────────────────────────────────────────
 

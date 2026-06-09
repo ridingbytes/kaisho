@@ -4,6 +4,7 @@
   "newTask": "Nueva tarea (doble clic en B)",
   "collapseColumn": "Colapsar columna",
   "expandColumn": "Expandir columna",
+  "datesOutOfOrder": "La fecha límite debe ser igual o posterior a la fecha programada.",
   "scheduledLabel": "Programada",
   "deadlineLabel": "Fecha l\u00edmite",
   "snoozedCount": "{{count}} pospuestas",
