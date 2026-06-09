@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, X, Check, GripVertical } from "lucide-react";
+import {
+  Plus, X, Check, GripVertical,
+  ChevronLeft, ChevronRight,
+} from "lucide-react";
 import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
@@ -19,7 +22,16 @@ interface KanbanColumnProps {
   onAddOpened?: () => void;
   onTagClick?: (tag: string) => void;
   onCustomerClick?: (customer: string) => void;
+  /** Collapse state, persisted per profile by the parent. */
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
 }
+
+/** Width of a collapsed column in px. Wide enough for the
+ *  vertical title + count chip + expand chevron, narrow
+ *  enough that several collapsed columns side by side still
+ *  leave most of the board for the expanded ones. */
+const COLLAPSED_WIDTH = 40;
 
 export function KanbanColumn({
   state,
@@ -29,6 +41,8 @@ export function KanbanColumn({
   onTagClick,
   onCustomerClick,
   columnWidth,
+  collapsed = false,
+  onToggleCollapsed,
 }: KanbanColumnProps) {
   const { t } = useTranslation("kanban");
   const {
@@ -89,6 +103,84 @@ export function KanbanColumn({
     if (e.key === "Escape") setAdding(false);
   }
 
+  if (collapsed) {
+    // Compact strip. The header row mirrors the open
+    // column's ``flex items-center gap-2 mb-3 px-1`` so
+    // the expand chevron lines up vertically with the
+    // collapse chevrons on the open columns next to it.
+    // The body below mirrors the open column's drop zone
+    // — dashed border, rounded corners, same background —
+    // but holds the dot + count chip + rotated label
+    // instead of cards. No drop target on purpose: cards
+    // must not vanish into an invisible column.
+    return (
+      <div
+        ref={setNodeRef}
+        style={{
+          ...style,
+          width: COLLAPSED_WIDTH,
+          minWidth: COLLAPSED_WIDTH,
+        }}
+        className={[
+          "flex flex-col shrink-0 h-full min-h-0",
+          isDragging ? "opacity-40" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        {/* Header: same Y as the open column's header */}
+        <div className="flex items-center justify-center mb-3 px-1">
+          <button
+            onClick={onToggleCollapsed}
+            className={
+              "p-1 rounded-md text-fg-muted hover:text-fg "
+              + "hover:bg-surface-raised transition-colors"
+            }
+            title={t("expandColumn")}
+          >
+            <ChevronRight size={13} strokeWidth={2} />
+          </button>
+        </div>
+        {/* Body: matches the open column's drop-zone */}
+        <div
+          className={[
+            "flex flex-col items-center gap-3 p-2",
+            "rounded-lg border border-dashed",
+            "border-border-subtle bg-surface-card/30",
+            "flex-1 min-h-0",
+          ].join(" ")}
+        >
+          <div
+            className="w-2 h-2 rounded-full shrink-0"
+            style={{ backgroundColor: state.color }}
+          />
+          <span
+            className={[
+              "px-1.5 py-0.5 rounded text-2xs font-semibold",
+              "bg-surface-raised text-fg-muted",
+              "border border-border-subtle",
+            ].join(" ")}
+          >
+            {tasks.length}
+          </span>
+          <div
+            {...attributes}
+            {...listeners}
+            className={
+              "[writing-mode:vertical-rl] rotate-180 "
+              + "text-xs font-semibold tracking-wider "
+              + "uppercase text-fg cursor-grab "
+              + "active:cursor-grabbing select-none"
+            }
+            title={t("dragToReorder")}
+          >
+            {state.label || state.name}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -142,6 +234,16 @@ export function KanbanColumn({
           title={t("addTask")}
         >
           <Plus size={13} strokeWidth={2} />
+        </button>
+        <button
+          onClick={onToggleCollapsed}
+          className={
+            "p-1 rounded-md text-fg-muted hover:text-fg "
+            + "hover:bg-surface-raised transition-colors"
+          }
+          title={t("collapseColumn")}
+        >
+          <ChevronLeft size={13} strokeWidth={2} />
         </button>
       </div>
 
