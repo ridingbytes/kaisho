@@ -14,6 +14,12 @@ export interface Task {
   created: string;
   body: string;
   github_url: string;
+  /** Date-only ISO string (``YYYY-MM-DD``) or null.
+   *  Snooze date: when set and in the future, the card is
+   *  hidden from the board until the day arrives. */
+  scheduled: string | null;
+  /** Date-only ISO string (``YYYY-MM-DD``) or null. */
+  deadline: string | null;
   state_history?: StateChange[];
 }
 

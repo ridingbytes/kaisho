@@ -444,6 +444,8 @@ def _section_to_task(sec: dict) -> dict:
         "archive_status": meta.get(
             "archive_status", ""
         ),
+        "scheduled": meta.get("scheduled") or None,
+        "deadline": meta.get("deadline") or None,
     }
 
 
@@ -460,6 +462,14 @@ def _task_to_section(task: dict) -> dict:
         meta["archived_at"] = task["archived_at"]
     if task.get("archive_status"):
         meta["archive_status"] = task["archive_status"]
+    # Only emit ``scheduled`` / ``deadline`` when set, so
+    # the absence of a value reads as a clean missing key
+    # in the YAML / TOML-style metadata header rather than
+    # an explicit empty.
+    if task.get("scheduled"):
+        meta["scheduled"] = task["scheduled"]
+    if task.get("deadline"):
+        meta["deadline"] = task["deadline"]
     props = _task_meta_to_props({
         **meta,
         "properties": task.get("properties", {}),
@@ -588,6 +598,8 @@ class MarkdownTaskBackend(TaskBackend):
         github_url=None,
         sync_id=None,
         task_id=None,
+        scheduled=None,
+        deadline=None,
     ) -> dict:
         """Create a new task and return its dict."""
         tasks = self._load_tasks()
@@ -604,6 +616,8 @@ class MarkdownTaskBackend(TaskBackend):
             "properties": {},
             "created": now.isoformat(),
             "updated_at": now.isoformat(),
+            "scheduled": scheduled or None,
+            "deadline": deadline or None,
         }
         tasks.insert(0, task)
         self._save_tasks(tasks)
@@ -659,6 +673,8 @@ class MarkdownTaskBackend(TaskBackend):
         customer=None,
         body=None,
         github_url=None,
+        scheduled=None,
+        deadline=None,
     ) -> dict:
         """Update a task's fields and return updated dict."""
         tasks = self._load_tasks()
@@ -672,6 +688,10 @@ class MarkdownTaskBackend(TaskBackend):
                     t["body"] = body
                 if github_url is not None:
                     t["github_url"] = github_url
+                if scheduled is not None:
+                    t["scheduled"] = scheduled or None
+                if deadline is not None:
+                    t["deadline"] = deadline or None
                 t["updated_at"] = (
                     _local_now().isoformat()
                 )

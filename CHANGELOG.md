@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Add `scheduled` and `deadline` date fields to the task
+  model across all four backends (org, markdown, sql,
+  json) and the cloud wire format. Both are date-only ISO
+  strings; `scheduled` is the snooze (later UI hides the
+  card until that day arrives) and `deadline` is the due
+  date (later UI surfaces it as an urgency cue). SQL gets
+  an idempotent `ALTER TABLE` migration so existing
+  databases pick up the columns on next open. The
+  add_task / update_task / MCP / API surfaces all accept
+  the new kwargs; UI follows in a separate PR.
+
 - Replace the global "Show done" toggle on the kanban
   board with per-column collapse. Each column has its own
   chevron; collapsed columns shrink to a narrow strip with

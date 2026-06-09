@@ -14,6 +14,11 @@ class TaskCreate(BaseModel):
     tags: list[str] = []
     body: str | None = None
     github_url: str | None = None
+    # Date-only ISO strings (``YYYY-MM-DD``). ``scheduled``
+    # is the snooze (hidden / subdued until that day),
+    # ``deadline`` is the due date. Both are optional.
+    scheduled: str | None = None
+    deadline: str | None = None
 
 
 class TaskUpdate(BaseModel):
@@ -22,6 +27,10 @@ class TaskUpdate(BaseModel):
     customer: str | None = None
     body: str | None = None
     github_url: str | None = None
+    # ``None`` = leave unchanged (default Pydantic shape);
+    # ``""`` = clear; ``"YYYY-MM-DD"`` = set.
+    scheduled: str | None = None
+    deadline: str | None = None
 
 
 class TagsUpdate(BaseModel):
@@ -66,6 +75,8 @@ def create_task(body: TaskCreate):
         tags=body.tags,
         body=body.body,
         github_url=body.github_url,
+        scheduled=body.scheduled,
+        deadline=body.deadline,
     )
 
 
@@ -85,6 +96,8 @@ def update_task(task_id: str, body: TaskUpdate):
             or body.customer is not None
             or body.body is not None
             or body.github_url is not None
+            or body.scheduled is not None
+            or body.deadline is not None
         ):
             result = tasks.update_task(
                 task_id,
@@ -92,6 +105,8 @@ def update_task(task_id: str, body: TaskUpdate):
                 customer=body.customer,
                 body=body.body,
                 github_url=body.github_url,
+                scheduled=body.scheduled,
+                deadline=body.deadline,
             )
         if result is None:
             raise HTTPException(

@@ -51,6 +51,8 @@ class OrgTaskBackend(TaskBackend):
         github_url: str | None = None,
         sync_id: str | None = None,
         task_id: str | None = None,
+        scheduled: str | None = None,
+        deadline: str | None = None,
     ) -> dict:
         """Create a new task and return its dict."""
         return kanban.add_task(
@@ -64,6 +66,8 @@ class OrgTaskBackend(TaskBackend):
             github_url=github_url,
             sync_id=sync_id,
             task_id=task_id,
+            scheduled=scheduled,
+            deadline=deadline,
         )
 
     def move_task(self, task_id: str, new_status: str) -> dict:
@@ -100,6 +104,8 @@ class OrgTaskBackend(TaskBackend):
         customer: str | None = None,
         body: str | None = None,
         github_url: str | None = None,
+        scheduled: str | None = None,
+        deadline: str | None = None,
     ) -> dict:
         """Update a task's fields and return updated dict."""
         return kanban.update_task(
@@ -110,6 +116,8 @@ class OrgTaskBackend(TaskBackend):
             customer=customer,
             body=body,
             github_url=github_url,
+            scheduled=scheduled,
+            deadline=deadline,
         )
 
     def archive_task(self, task_id: str) -> bool:

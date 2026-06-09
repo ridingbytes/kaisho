@@ -77,6 +77,20 @@ TOOL_DEFS: list[dict] = [
                         "link to this task"
                     ),
                 },
+                "scheduled": {
+                    "type": "string",
+                    "description": (
+                        "Snooze date (YYYY-MM-DD). Task is "
+                        "hidden until that day arrives."
+                    ),
+                },
+                "deadline": {
+                    "type": "string",
+                    "description": (
+                        "Due date (YYYY-MM-DD). Surfaced "
+                        "as an urgency cue on the card."
+                    ),
+                },
             },
             "required": ["title"],
         },
@@ -380,7 +394,7 @@ TOOL_DEFS: list[dict] = [
         "tier": "write",
         "description": (
             "Update a task's title, customer, body, "
-            "or GitHub URL."
+            "GitHub URL, scheduled date, or deadline."
         ),
         "input_schema": {
             "type": "object",
@@ -409,6 +423,22 @@ TOOL_DEFS: list[dict] = [
                     "description": (
                         "GitHub issue/PR URL "
                         "(optional)"
+                    ),
+                },
+                "scheduled": {
+                    "type": "string",
+                    "description": (
+                        "Snooze date (YYYY-MM-DD), empty "
+                        "string to clear, omit to leave "
+                        "unchanged."
+                    ),
+                },
+                "deadline": {
+                    "type": "string",
+                    "description": (
+                        "Due date (YYYY-MM-DD), empty "
+                        "string to clear, omit to leave "
+                        "unchanged."
                     ),
                 },
             },
