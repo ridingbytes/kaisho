@@ -7,6 +7,7 @@ is written to cron_history.json in the profile directory.
 import logging
 import threading
 import time
+from datetime import datetime
 from pathlib import Path
 
 from apscheduler.jobstores.base import JobLookupError
@@ -515,10 +516,20 @@ def build_scheduler(jobs_file: Path) -> BackgroundScheduler:
     # Cloud sync — runs every 5 minutes. The cloud WS
     # triggers immediate sync on data changes; this is
     # the polling fallback.
+    #
+    # ``next_run_time=now`` fires the first sync as soon
+    # as the scheduler starts. Without it, APScheduler
+    # waits a full interval before the initial run, so a
+    # fresh app launch shows up to five minutes of stale
+    # state (e.g. a running timer started on another
+    # device while the desktop was offline). The cloud
+    # WebSocket only delivers events from the moment it
+    # connects, so it cannot fill that gap on its own.
     _scheduler.add_job(
         _run_cloud_sync,
         "interval",
         minutes=5,
+        next_run_time=datetime.now(),
         id="__cloud_sync__",
         name="Cloud Sync",
         replace_existing=True,
