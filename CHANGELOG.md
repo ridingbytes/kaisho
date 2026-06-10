@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 2.5.2
+
+This release adds the kanban-scheduling feature (snooze a
+task until a future date, see a deadline cue when it's
+close) and lands a cluster of correctness fixes from the
+post-feature code review — most of them touching the
+cloud-sync path where v2.5.1 left small gaps.
 
 - Make the `DONE` flag on task states load-bearing. The
   badge in Settings → Task States is now a clickable
@@ -95,6 +101,26 @@
   profile, and re-expanding restores the full column.
   Drops are blocked on collapsed columns so cards can't
   vanish into an invisible drop zone.
+
+- Expose `scheduled` / `deadline` through the CLI `task
+  add` and `task update` commands so a shell user can set
+  or clear a snooze and deadline without going through
+  the UI. `task list` shows both fields inline. The MCP
+  `list_tasks` description now mentions both fields too.
+  Reject `deadline < scheduled` at the API and gate the
+  Save button in the edit form so the typo can't sneak
+  in.
+
+- Make the task body textarea on the edit form
+  vertically resizable. Long notes (meeting summaries,
+  pasted emails) no longer force an internal scroll
+  inside a fixed three-row box.
+
+- Skip the `Unreleased` section in the What's New parser
+  and split top-level bullets into separate items. Before,
+  opening the dialog against a `CHANGELOG.md` with an
+  `## Unreleased` staging section displayed "What's New
+  Unreleased" and rendered every bullet with two dots.
 
 ## 2.5.1
 
