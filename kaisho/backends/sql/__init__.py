@@ -102,6 +102,11 @@ class InboxRow(Base):
     direction = Column(String, default="")
     created = Column(String, nullable=False)
     properties = Column(Text, default="{}")
+    # Cloud-sync identity. Without these, inbox items
+    # could not be pushed (empty updated_at never beats the
+    # cursor) nor matched on pull (no stable sync_id).
+    sync_id = Column(String, nullable=True)
+    updated_at = Column(String, nullable=True)
 
 
 class NoteRow(Base):
@@ -113,6 +118,9 @@ class NoteRow(Base):
     task_id = Column(String, nullable=True)
     tags = Column(String, default="")
     created = Column(String, nullable=False)
+    # Cloud-sync identity (see InboxRow).
+    sync_id = Column(String, nullable=True)
+    updated_at = Column(String, nullable=True)
 
 
 class CustomerRow(Base):
@@ -177,6 +185,8 @@ class _Engine:
         _ensure_paused_column(self.engine)
         _ensure_task_date_columns(self.engine)
         _ensure_customer_used_offset_column(self.engine)
+        _ensure_sync_columns(self.engine, "notes")
+        _ensure_sync_columns(self.engine, "inbox")
         self._Session = sessionmaker(bind=self.engine)
 
     def session(self):
@@ -227,6 +237,32 @@ def _ensure_task_date_columns(engine) -> None:
         if "deadline" not in cols:
             conn.execute(text(
                 "ALTER TABLE tasks ADD COLUMN deadline VARCHAR"
+            ))
+
+
+def _ensure_sync_columns(engine, table: str) -> None:
+    """Add ``sync_id`` and ``updated_at`` columns to a
+    table on legacy databases.
+
+    Same idempotent shape as ``_ensure_paused_column``.
+    Used for ``notes`` and ``inbox``, which gained cloud-
+    sync identity after their tables were first created.
+    """
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    if table not in inspector.get_table_names():
+        return
+    cols = {c["name"] for c in inspector.get_columns(table)}
+    with engine.begin() as conn:
+        if "sync_id" not in cols:
+            conn.execute(text(
+                f"ALTER TABLE {table} "
+                "ADD COLUMN sync_id VARCHAR"
+            ))
+        if "updated_at" not in cols:
+            conn.execute(text(
+                f"ALTER TABLE {table} "
+                "ADD COLUMN updated_at VARCHAR"
             ))
 
 
@@ -449,7 +485,31 @@ def _inbox_row_to_dict(row: InboxRow) -> dict:
         "direction": row.direction or "",
         "created": row.created,
         "properties": _parse_properties(row.properties),
+        "sync_id": row.sync_id or "",
+        "updated_at": row.updated_at or "",
     }
+
+
+def _backfill_sync_identity(rows) -> bool:
+    """Assign ``sync_id`` / ``updated_at`` to any row that
+    lacks them. Mutates the rows in place; returns True if
+    anything changed so the caller knows to commit.
+
+    Legacy notes / inbox items predate cloud-sync identity;
+    without a backfill they would never push (empty
+    ``updated_at``) nor match on pull (no ``sync_id``).
+    """
+    changed = False
+    for row in rows:
+        if not row.sync_id:
+            row.sync_id = str(uuid.uuid4())
+            changed = True
+        if not row.updated_at:
+            row.updated_at = row.created or (
+                datetime.now().isoformat()
+            )
+            changed = True
+    return changed
 
 
 def _note_row_to_dict(row: NoteRow) -> dict:
@@ -462,6 +522,8 @@ def _note_row_to_dict(row: NoteRow) -> dict:
         "task_id": row.task_id,
         "tags": _parse_tags(row.tags),
         "created": row.created,
+        "sync_id": row.sync_id or "",
+        "updated_at": row.updated_at or "",
     }
 
 
@@ -1459,10 +1521,17 @@ class SqlInboxBackend(InboxBackend):
         self._eng = eng
 
     def list_items(self) -> list[dict]:
-        """Return all inbox items."""
+        """Return all inbox items.
+
+        Backfills sync identity on legacy rows so cloud
+        sync can address them (mirrors the org / JSON
+        backends' backfill-on-read).
+        """
         session = self._eng.session()
         try:
             rows = session.query(InboxRow).all()
+            if _backfill_sync_identity(rows):
+                session.commit()
             return [_inbox_row_to_dict(r) for r in rows]
         finally:
             session.close()
@@ -1480,6 +1549,7 @@ class SqlInboxBackend(InboxBackend):
         """Capture a new inbox item and return its dict."""
         item_id = _generate_id(text)
         now = datetime.now().isoformat()
+        sid = sync_id or str(uuid.uuid4())
         resolved_type = (
             item_type or _guess_inbox_type(text)
         )
@@ -1493,24 +1563,17 @@ class SqlInboxBackend(InboxBackend):
             direction=direction or "",
             created=now,
             properties="{}",
+            sync_id=sid,
+            updated_at=now,
         )
         session = self._eng.session()
         try:
             session.add(row)
             session.commit()
+            result = _inbox_row_to_dict(row)
         finally:
             session.close()
-        return {
-            "id": item_id,
-            "type": resolved_type,
-            "customer": customer or "",
-            "title": text,
-            "body": body or "",
-            "channel": channel or "",
-            "direction": direction or "",
-            "created": now,
-            "properties": {},
-        }
+        return result
 
     def remove_item(self, item_id) -> bool:
         """Delete an inbox item. Return False if not found."""
@@ -1545,6 +1608,9 @@ class SqlInboxBackend(InboxBackend):
                 row.properties = _serialize_properties(
                     updates["properties"]
                 )
+            if not row.sync_id:
+                row.sync_id = str(uuid.uuid4())
+            row.updated_at = datetime.now().isoformat()
             session.commit()
             result = _inbox_row_to_dict(row)
         finally:
@@ -1588,10 +1654,17 @@ class SqlNotesBackend(NotesBackend):
         self._eng = eng
 
     def list_notes(self) -> list[dict]:
-        """Return all notes."""
+        """Return all notes.
+
+        Backfills sync identity on legacy rows so cloud
+        sync can address them (mirrors the org / JSON
+        backends' backfill-on-read).
+        """
         session = self._eng.session()
         try:
             rows = session.query(NoteRow).all()
+            if _backfill_sync_identity(rows):
+                session.commit()
             return [_note_row_to_dict(r) for r in rows]
         finally:
             session.close()
@@ -1608,6 +1681,7 @@ class SqlNotesBackend(NotesBackend):
         """Create a new note and return its dict."""
         note_id = _generate_id(title)
         now = datetime.now().isoformat()
+        sid = sync_id or str(uuid.uuid4())
         row = NoteRow(
             id=note_id,
             title=title,
@@ -1616,22 +1690,17 @@ class SqlNotesBackend(NotesBackend):
             task_id=task_id,
             tags=_serialize_tags(tags),
             created=now,
+            sync_id=sid,
+            updated_at=now,
         )
         session = self._eng.session()
         try:
             session.add(row)
             session.commit()
+            result = _note_row_to_dict(row)
         finally:
             session.close()
-        return {
-            "id": note_id,
-            "title": title,
-            "body": body,
-            "customer": customer or "",
-            "task_id": task_id,
-            "tags": tags or [],
-            "created": now,
-        }
+        return result
 
     def delete_note(self, note_id) -> bool:
         """Delete a note. Return False if not found."""
@@ -1665,6 +1734,9 @@ class SqlNotesBackend(NotesBackend):
                 row.tags = _serialize_tags(
                     updates["tags"]
                 )
+            if not row.sync_id:
+                row.sync_id = str(uuid.uuid4())
+            row.updated_at = datetime.now().isoformat()
             session.commit()
             result = _note_row_to_dict(row)
         finally:

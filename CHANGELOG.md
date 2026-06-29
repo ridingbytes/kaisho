@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Give SQL-backend notes and inbox items cloud-sync
+  identity (`sync_id` + `updated_at`). Without it they
+  were silently never pushed to the cloud, and pulled
+  items duplicated on every sync. Adds the columns with an
+  idempotent migration and backfills legacy rows on read.
+
 ## 2.5.3
 
 This release adds drag-and-drop file attachments for
