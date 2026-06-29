@@ -76,6 +76,9 @@
   strings to the German, Spanish, and Russian locales
   (with correct Russian plural categories) so non-English
   users no longer see the English fallback.
+- Push to the cloud / CalDAV after a batch-invoice so the
+  invoiced flag propagates to other devices, matching
+  every other clock mutation.
 
 ## 2.5.2
 
