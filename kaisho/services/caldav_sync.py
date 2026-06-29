@@ -488,7 +488,36 @@ def _should_push(entry: dict, account: dict) -> bool:
         or _entry_end(entry)
         or ""
     )
-    return updated_at >= enabled_since
+    # Compare as instants, not strings. ``enabled_since``
+    # is offset-aware UTC while org ``updated_at`` is naive
+    # local; a lexicographic compare silently drops recent
+    # entries at negative UTC offsets. If either side is
+    # unparseable, push rather than risk dropping data.
+    enabled_dt = _to_utc(enabled_since)
+    updated_dt = _to_utc(updated_at)
+    if enabled_dt is None or updated_dt is None:
+        return True
+    return updated_dt >= enabled_dt
+
+
+def _to_utc(ts: str) -> datetime | None:
+    """Parse an ISO timestamp to an aware UTC datetime.
+
+    Naive timestamps (org ``updated_at``) are interpreted
+    in system-local time; aware ones (``enabled_since``,
+    stored as UTC) are converted. Returns ``None`` when
+    the string can't be parsed.
+    """
+    try:
+        dt = datetime.fromisoformat(
+            ts.replace("Z", "+00:00"),
+        )
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        # Naive -> assume system local, then normalise.
+        dt = dt.astimezone()
+    return dt.astimezone(timezone.utc)
 
 
 def _entry_start(entry: dict) -> str:

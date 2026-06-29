@@ -313,6 +313,54 @@ class TestSyncCycle:
         )
         assert all_pushes == 0
 
+    def test_failed_initial_push_retries_full_push(
+        self, backend, fake_cloud,
+        profile_dir, patched_backend, monkeypatch,
+    ):
+        """If the first push fails after the pull advanced
+        the cursor, the next cycle must still push *all*
+        pre-existing local history (regression for the
+        initial-push-skip bug). Driven by the explicit
+        ``initial_push_done`` flag, not ``last_push_cursor``
+        which the pull mutates."""
+        backend.quick_book(
+            duration_str="1h",
+            customer="Acme", description="bill",
+        )
+
+        real_push = sync_svc.push_local_entry
+        calls = {"n": 0}
+
+        def flaky_push(*a, **kw):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise sync_svc.CloudUnavailable("boom")
+            return real_push(*a, **kw)
+
+        monkeypatch.setattr(
+            sync_svc, "push_local_entry", flaky_push,
+        )
+
+        # Cycle 1: push fails -> nothing reaches the cloud,
+        # and the initial flag must stay False.
+        sync_svc.run_sync_cycle(
+            cloud_url="http://fake", api_key="key",
+            profile_dir=profile_dir,
+        )
+        assert len(fake_cloud.entries) == 0
+        cursor = sync_state.load_cursor(profile_dir)
+        assert cursor["initial_push_done"] is False
+
+        # Cycle 2: push works -> the pre-existing entry is
+        # pushed because it's still treated as initial.
+        sync_svc.run_sync_cycle(
+            cloud_url="http://fake", api_key="key",
+            profile_dir=profile_dir,
+        )
+        assert len(fake_cloud.entries) == 1
+        cursor = sync_state.load_cursor(profile_dir)
+        assert cursor["initial_push_done"] is True
+
 
 # ── Tests: LWW ────────────────────────────────────────
 

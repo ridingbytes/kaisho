@@ -1,4 +1,5 @@
 import re
+import threading
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -10,6 +11,13 @@ router = APIRouter(
 )
 
 _PROFILE_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+# Serialises the global ``os.environ["PROFILE"]`` swap.
+# switch_profile and create_profile both mutate process-
+# wide state; concurrent requests would otherwise leave
+# the server pointed at the wrong (or a half-created)
+# profile.
+_profile_lock = threading.Lock()
 
 
 def _validate_profile_name(name: str) -> str:
@@ -116,17 +124,18 @@ def switch_profile(body: ProfileSwitch):
         save_active_profile,
     )
     name = _validate_profile_name(body.profile)
-    os.environ["PROFILE"] = name
-    cfg = reset_config()
-    init_data_dir(cfg)
-    reset_backend()
-    save_active_profile(cfg.DATA_DIR, cfg.PROFILE)
+    with _profile_lock:
+        os.environ["PROFILE"] = name
+        cfg = reset_config()
+        init_data_dir(cfg)
+        reset_backend()
+        save_active_profile(cfg.DATA_DIR, cfg.PROFILE)
 
-    from ...cron.scheduler import restart_cloud_ws
-    restart_cloud_ws()
+        from ...cron.scheduler import restart_cloud_ws
+        restart_cloud_ws()
 
-    from ..watcher.service import restart_watcher
-    restart_watcher()
+        from ..watcher.service import restart_watcher
+        restart_watcher()
 
     return {
         "profile": cfg.PROFILE,
@@ -152,15 +161,22 @@ def create_profile(body: ProfileCreate):
             status_code=409,
             detail=f"Profile '{name}' already exists",
         )
-    old = os.environ.get("PROFILE")
-    os.environ["PROFILE"] = name
-    new_cfg = reset_config()
-    init_data_dir(new_cfg)
-    if old is not None:
-        os.environ["PROFILE"] = old
-    else:
-        os.environ.pop("PROFILE", None)
-    reset_config()
+    with _profile_lock:
+        old = os.environ.get("PROFILE")
+        os.environ["PROFILE"] = name
+        try:
+            new_cfg = reset_config()
+            init_data_dir(new_cfg)
+        finally:
+            # Always restore the active profile, even if
+            # init_data_dir raised half-way, so a failed
+            # create never leaves the server pointed at the
+            # new (possibly incomplete) profile.
+            if old is not None:
+                os.environ["PROFILE"] = old
+            else:
+                os.environ.pop("PROFILE", None)
+            reset_config()
     return {"name": name}
 
 
