@@ -463,7 +463,7 @@ function NoteRow({
                 onDragOver={editDrop.onDragOver}
                 onPaste={editDrop.onPaste}
                 placeholder={t("bodyOptional")}
-                rows={4}
+                rows={8}
                 className={`${smallFieldCls} w-full resize-y`}
               />
               {editDrop.uploading > 0 && (
@@ -712,8 +712,8 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
         onDrop={drop.onDrop}
         onDragOver={drop.onDragOver}
         onPaste={drop.onPaste}
-        rows={3}
-        className={`${fieldCls} resize-none`}
+        rows={6}
+        className={`${fieldCls} resize-y`}
       />
       {drop.uploading > 0 && (
         <div className="text-2xs text-fg-muted px-0.5">
