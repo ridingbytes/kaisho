@@ -482,6 +482,9 @@ class BatchBookRequest(BaseModel):
 @router.post("/batch-invoice")
 def batch_invoice(body: BatchBookRequest):
     """Mark multiple entries as invoiced."""
+    from ...services import cloud_sync as sync_svc
+    from ...services import caldav_sync
+
     backend = get_backend()
     count = 0
     for start_iso in body.starts:
@@ -490,4 +493,10 @@ def batch_invoice(body: BatchBookRequest):
         )
         if result is not None:
             count += 1
+    if count:
+        # Every other clocks mutation propagates; without
+        # this the invoiced flag stayed local and never
+        # reached the cloud / CalDAV peers.
+        sync_svc.schedule_push()
+        caldav_sync.schedule_push()
     return {"invoiced": count}
