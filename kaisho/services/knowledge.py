@@ -14,6 +14,7 @@ import hashlib
 import logging
 import os
 import re
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -345,7 +346,6 @@ def _pdftotext(path: str) -> str | None:
     Returns ``None`` if pdftotext is not installed or
     fails.
     """
-    import shutil
     import subprocess
 
     from ..subproc import run as _run
@@ -647,9 +647,12 @@ def move_file(
         raise ValueError(f"File not found: {old_path!r}")
     dst = _safe_path(dst_base, dest_path)
     dst.parent.mkdir(parents=True, exist_ok=True)
-    content = src.read_text(encoding="utf-8")
-    dst.write_text(content, encoding="utf-8")
-    src.unlink()
+    # ``shutil.move`` preserves binary content (KB files
+    # include PDFs, which ``read_text`` would corrupt) and
+    # is atomic on the same filesystem (rename), so the
+    # source is never deleted before the destination
+    # exists.
+    shutil.move(str(src), str(dst))
     return {
         "path": dest_path,
         "label": new_label,

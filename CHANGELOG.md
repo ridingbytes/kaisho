@@ -23,6 +23,11 @@
 - Make the note body field taller by default (and
   resizable on the create form) so writing longer notes
   isn't cramped.
+- Fix two data-loss windows from non-atomic file moves:
+  archiving / unarchiving a task now writes the
+  destination file before removing from the source, and
+  knowledge-base file moves use an atomic `shutil.move`
+  that also no longer corrupts binary files (PDFs).
 
 ## 2.5.2
 
