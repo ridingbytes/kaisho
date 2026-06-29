@@ -20,6 +20,9 @@
 - Move the scheduled/deadline badges on task cards from
   next to the customer chip to the top-right corner
   where they no longer crowd the title.
+- Make the note body field taller by default (and
+  resizable on the create form) so writing longer notes
+  isn't cramped.
 
 ## 2.5.2
 
