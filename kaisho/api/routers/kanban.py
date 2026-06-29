@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel, model_validator
 
@@ -5,6 +7,27 @@ from ...backends import get_backend
 from ...config import load_settings_yaml
 
 router = APIRouter(prefix="/api/kanban", tags=["kanban"])
+
+
+def _validate_date(value: str | None, field: str) -> None:
+    """Reject a non-empty date that isn't a valid
+    ``YYYY-MM-DD``.
+
+    ``None`` (leave unchanged) and ``""`` (clear) are both
+    allowed. Without this a malformed string like
+    ``"tomorrow"`` would be persisted verbatim and the
+    lexicographic ordering check would misbehave against
+    it.
+    """
+    if not value:
+        return
+    try:
+        date.fromisoformat(value)
+    except ValueError:
+        raise ValueError(
+            f"{field} must be a YYYY-MM-DD date "
+            f"(got {value!r})"
+        )
 
 
 def _reject_deadline_before_scheduled(
@@ -52,6 +75,8 @@ class TaskCreate(BaseModel):
 
     @model_validator(mode="after")
     def _check_dates(self) -> "TaskCreate":
+        _validate_date(self.scheduled, "scheduled")
+        _validate_date(self.deadline, "deadline")
         _reject_deadline_before_scheduled(
             self.scheduled, self.deadline,
         )
@@ -71,6 +96,8 @@ class TaskUpdate(BaseModel):
 
     @model_validator(mode="after")
     def _check_dates(self) -> "TaskUpdate":
+        _validate_date(self.scheduled, "scheduled")
+        _validate_date(self.deadline, "deadline")
         _reject_deadline_before_scheduled(
             self.scheduled, self.deadline,
         )

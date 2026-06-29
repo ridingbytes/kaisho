@@ -344,6 +344,36 @@ class TestKanban:
         )
         assert r.status_code == 422
 
+    def test_create_rejects_malformed_date(self, client):
+        """A non-ISO date string must be rejected, not
+        persisted verbatim."""
+        r = client.post(
+            "/api/kanban/tasks",
+            json={
+                "customer": "Acme",
+                "title": "Bad date",
+                "scheduled": "tomorrow",
+            },
+        )
+        assert r.status_code == 422
+        assert "yyyy-mm-dd" in r.text.lower()
+
+    def test_create_allows_empty_date_string(
+        self, client,
+    ):
+        """Empty string (clear) is allowed, not treated as
+        a malformed date."""
+        r = client.post(
+            "/api/kanban/tasks",
+            json={
+                "customer": "Acme",
+                "title": "Cleared",
+                "scheduled": "",
+                "deadline": "",
+            },
+        )
+        assert r.status_code == 201
+
 
 # ── Clocks ──────────────────────────────────────────────
 
