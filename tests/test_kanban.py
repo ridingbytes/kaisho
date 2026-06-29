@@ -1,6 +1,4 @@
 """Tests for the kanban service."""
-from pathlib import Path
-
 import pytest
 
 from kaisho.services import kanban as kanban_svc
@@ -62,3 +60,45 @@ def test_filter_by_customer(org_dir):
     acme = kanban_svc.list_tasks(todos, KEYWORDS, customer="ACME")
     assert len(acme) == 1
     assert acme[0]["customer"] == "ACME"
+
+
+def test_archive_writes_destination_before_source(
+    org_dir, monkeypatch,
+):
+    """A crash after the first write must not lose the
+    task. We make the SECOND ``write_org_file`` raise and
+    assert the task is still recoverable from archive.org
+    (additive side written first), not gone from both."""
+    todos = org_dir / "todos.org"
+    archive = org_dir / "archive.org"
+    task = kanban_svc.add_task(
+        todos, KEYWORDS, "ACME", "Important task",
+    )
+
+    calls = {"n": 0}
+    real_write = kanban_svc.write_org_file
+
+    def flaky_write(path, org_file):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise OSError("simulated crash mid-archive")
+        return real_write(path, org_file)
+
+    monkeypatch.setattr(
+        kanban_svc, "write_org_file", flaky_write,
+    )
+
+    with pytest.raises(OSError):
+        kanban_svc.archive_task(
+            todos, archive, KEYWORDS, task["id"],
+        )
+
+    # The task must survive somewhere. Because the archive
+    # is written first, it lands there; the source still
+    # has it too (duplicate is recoverable, loss is not).
+    archived = kanban_svc.list_archived_tasks(
+        archive, KEYWORDS,
+    )
+    assert any(
+        "Important task" in a["title"] for a in archived
+    )

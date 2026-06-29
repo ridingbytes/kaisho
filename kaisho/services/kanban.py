@@ -484,9 +484,10 @@ def archive_task(
 
     original_keyword = heading.keyword
 
-    # Remove from todos.org
-    _remove_heading_from_tree(org_file.headings, heading)
-    write_org_file(todos_file, org_file)
+    # Write the additive side (archive.org) FIRST, then
+    # remove from the source. A crash between the two
+    # writes then leaves the task duplicated (recoverable)
+    # rather than deleted from both files (data loss).
 
     # Load or create archive.org
     if not archive_file.exists():
@@ -506,6 +507,10 @@ def archive_task(
     archive.dirty = True
 
     write_org_file(archive_file, archive_org)
+
+    # Now remove from todos.org.
+    _remove_heading_from_tree(org_file.headings, heading)
+    write_org_file(todos_file, org_file)
     return True
 
 
@@ -670,9 +675,6 @@ def unarchive_task(
         return False
 
     heading = archive_root.children[idx]
-    archive_root.children.pop(idx)
-    archive_root.dirty = True
-    write_org_file(archive_file, archive_org)
 
     # Restore heading for todos.org
     _strip_archive_properties(heading)
@@ -682,10 +684,19 @@ def unarchive_task(
     heading.level = 1
     heading.dirty = True
 
+    # Write the additive side (todos.org) FIRST, then
+    # remove from the archive. A crash between the two
+    # writes then leaves the task duplicated (recoverable)
+    # rather than deleted from both files (data loss).
     if not todos_file.exists():
         todos_file.parent.mkdir(parents=True, exist_ok=True)
         todos_file.write_text("", encoding="utf-8")
     todos_org = parse_org_file(todos_file, keywords)
     todos_org.headings.append(heading)
     write_org_file(todos_file, todos_org)
+
+    # Now remove from archive.org.
+    archive_root.children.pop(idx)
+    archive_root.dirty = True
+    write_org_file(archive_file, archive_org)
     return True
