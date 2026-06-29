@@ -5,6 +5,7 @@ from pathlib import Path
 
 from kaisho.services.notes import (
     add_note,
+    delete_note,
     list_notes,
     update_note,
 )
@@ -65,6 +66,47 @@ class TestNoteSyncIdentity:
             p, note["id"], {"title": "Changed"},
         )
         assert updated["updated_at"] >= original
+
+    def test_id_equals_sync_id(self):
+        """The note id is now its stable SYNC_ID, not a
+        positional index."""
+        p = _tmp_notes()
+        note = add_note(p, "Test")
+        assert note["id"] == note["sync_id"]
+
+    def test_addressing_survives_insert_before(self):
+        """The original bug: a note's id was its list
+        position, so inserting a note ahead of it made a
+        later update/delete by the old id hit the WRONG
+        note. With SYNC_ID addressing the id stays valid."""
+        p = _tmp_notes()
+        first = add_note(p, "First")
+        # Insert another note; under positional addressing
+        # ``first`` would shift and its old id "1" would
+        # now point at the wrong heading.
+        add_note(p, "Second")
+        # Update by the original id must still hit "First".
+        updated = update_note(
+            p, first["id"], {"title": "First edited"},
+        )
+        assert updated["sync_id"] == first["sync_id"]
+        assert updated["title"] == "First edited"
+        titles = {n["title"] for n in list_notes(p)}
+        assert titles == {"First edited", "Second"}
+
+    def test_delete_by_sync_id_removes_right_note(self):
+        p = _tmp_notes()
+        a = add_note(p, "Alpha")
+        add_note(p, "Beta")
+        assert delete_note(p, a["id"]) is True
+        titles = [n["title"] for n in list_notes(p)]
+        assert titles == ["Beta"]
+
+    def test_delete_unknown_id_returns_false(self):
+        p = _tmp_notes()
+        add_note(p, "Only")
+        assert delete_note(p, "no-such-id") is False
+        assert delete_note(p, "12345") is False
 
 
 class TestNoteWireFormat:
