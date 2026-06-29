@@ -2,9 +2,12 @@
  * TimeEntryRow renders a single clock entry with inline
  * editing, contract badge, and delete action.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, Pencil, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import {
+  useFileDropOnTextarea,
+} from "../../hooks/useFileDropOnTextarea";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
 import { HoverActions } from "../common/HoverActions";
@@ -49,6 +52,13 @@ export function TimeEntryRow({
   const { t: tc } = useTranslation("common");
   const [editing, setEditing] = useState(false);
   const [desc, setDesc] = useState(entry.description);
+  const descRef = useRef<HTMLTextAreaElement | null>(null);
+  const drop = useFileDropOnTextarea({
+    value: desc,
+    onChange: setDesc,
+    bucketId: entry.sync_id ?? "",
+    textareaRef: descRef,
+  });
   const [hrs, setHrs] = useState(
     entry.duration_minutes != null
       ? String(entry.duration_minutes / 60)
@@ -97,6 +107,7 @@ export function TimeEntryRow({
       >
         <textarea
           autoFocus
+          ref={descRef}
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           onKeyDown={(e) => {
@@ -109,10 +120,25 @@ export function TimeEntryRow({
             }
             if (e.key === "Escape") setEditing(false);
           }}
+          onDrop={drop.onDrop}
+          onDragOver={drop.onDragOver}
+          onPaste={drop.onPaste}
           placeholder={tc("description")}
           rows={2}
           className={fieldClass("resize-none")}
         />
+        {drop.uploading > 0 && (
+          <div className="text-2xs text-fg-muted px-0.5">
+            {tc("uploadingAttachment", {
+              count: drop.uploading,
+            })}
+          </div>
+        )}
+        {drop.error && (
+          <div className="text-2xs text-red-500 px-0.5">
+            {drop.error}
+          </div>
+        )}
         <div className="flex gap-1">
           <input
             type="number"

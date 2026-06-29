@@ -6,8 +6,6 @@
   "expandColumn": "Spalte ausklappen",
   "datesOutOfOrder": "Frist muss am oder nach dem geplanten Datum liegen.",
   "scheduledLabel": "Geplant",
-  "uploadingAttachment_one": "Lade 1 Datei hoch…",
-  "uploadingAttachment_other": "Lade {{count}} Dateien hoch…",
   "deadlineLabel": "Frist",
   "snoozedCount": "{{count}} geplant",
   "snoozedTooltip": "Aufgaben, die auf ein zukünftiges Datum warten",

@@ -19,6 +19,9 @@ import { ConfirmPopover } from "../common/ConfirmPopover";
 import { Markdown } from "../common/Markdown";
 import { CodeViewer } from "./CodeViewer";
 import {
+  useFileDropOnTextarea,
+} from "../../hooks/useFileDropOnTextarea";
+import {
   actionsForType,
   applySyntax,
   detectCodeLanguage,
@@ -66,6 +69,12 @@ export function EditorPanel({
   ) === "code";
   const [preview, setPreview] = useState(initialPreview);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const drop = useFileDropOnTextarea({
+    value: content,
+    onChange: setContent,
+    bucketId: file.path,
+    textareaRef,
+  });
   const save = useSaveKnowledgeFile();
   const remove = useDeleteKnowledgeFile();
 
@@ -266,6 +275,9 @@ export function EditorPanel({
             ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            onDrop={drop.onDrop}
+            onDragOver={drop.onDragOver}
+            onPaste={drop.onPaste}
             className={[
               "flex-1 resize-none p-4 font-mono",
               "text-sm leading-relaxed",
@@ -276,6 +288,22 @@ export function EditorPanel({
             placeholder={t("writeHere")}
             spellCheck={false}
           />
+          {(drop.uploading > 0 || drop.error) && (
+            <div className="px-4 py-1 shrink-0 text-2xs">
+              {drop.uploading > 0 && (
+                <span className="text-fg-muted">
+                  {tc("uploadingAttachment", {
+                    count: drop.uploading,
+                  })}
+                </span>
+              )}
+              {drop.error && (
+                <span className="text-red-500">
+                  {drop.error}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 

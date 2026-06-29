@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { useCaptureItem } from "../../hooks/useInbox";
 import { useSettings } from "../../hooks/useSettings";
+import {
+  useFileDropOnTextarea,
+} from "../../hooks/useFileDropOnTextarea";
 
 export function AddInboxForm({
   onClose,
@@ -24,6 +27,15 @@ export function AddInboxForm({
   const [type, setType] = useState<string>("");
   const [customer, setCustomer] = useState("");
   const [body, setBody] = useState("");
+  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+  // Create-time form: no item id yet, attachments fall
+  // through to ``_misc``.
+  const drop = useFileDropOnTextarea({
+    value: body,
+    onChange: setBody,
+    bucketId: "",
+    textareaRef: bodyRef,
+  });
   const [channel, setChannel] = useState("");
   const [direction, setDirection] = useState("");
   const capture = useCaptureItem();
@@ -131,12 +143,28 @@ export function AddInboxForm({
         </select>
       </div>
       <textarea
+        ref={bodyRef}
         placeholder={t("bodyOptional")}
         value={body}
         onChange={(e) => setBody(e.target.value)}
+        onDrop={drop.onDrop}
+        onDragOver={drop.onDragOver}
+        onPaste={drop.onPaste}
         rows={2}
         className={[inputCls, "resize-y min-h-[60px]"].join(" ")}
       />
+      {drop.uploading > 0 && (
+        <div className="text-2xs text-fg-muted px-0.5">
+          {tc("uploadingAttachment", {
+            count: drop.uploading,
+          })}
+        </div>
+      )}
+      {drop.error && (
+        <div className="text-2xs text-red-500 px-0.5">
+          {drop.error}
+        </div>
+      )}
     </form>
   );
 }
