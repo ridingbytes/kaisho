@@ -2,12 +2,11 @@
 
 ## Unreleased
 
-- Drag-and-drop or paste files onto any markdown
-  description to attach them, GitHub-issue style — task
-  bodies, note bodies (edit + create), inbox items
-  (edit + create), clock-entry notes, customer time-entry
-  descriptions, and the knowledge-base editor all accept
-  drops now. Files land under the active profile at
+- Drag-and-drop or paste files onto a markdown body to
+  attach them, GitHub-issue style — task descriptions,
+  note bodies (edit + create), inbox items (edit +
+  create), and the knowledge-base editor all accept drops
+  now. Files land under the active profile at
   `data/profiles/<profile>/attachments/<bucket>/...` and
   are served back from `/api/attachments/...`. Images
   embed as `![name](url)`; everything else becomes a
