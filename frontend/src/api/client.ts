@@ -108,6 +108,33 @@ async function del(path: string): Promise<void> {
   );
 }
 
+// ─── Attachments ────────────────────────────────────
+
+export interface UploadedAttachment {
+  url: string;
+  name: string;
+  size: number;
+}
+
+/** Upload a file to the active profile's attachments dir.
+ *  ``taskId`` buckets the file under the task it belongs
+ *  to; pass an empty string for orphan uploads. */
+export async function uploadAttachment(
+  file: File, taskId: string,
+): Promise<UploadedAttachment> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("task_id", taskId);
+  const res = await fetch(`${BASE}/attachments`, {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) throw await extractError(
+    "POST", "/attachments", res,
+  );
+  return res.json() as Promise<UploadedAttachment>;
+}
+
 // ─── Tasks ──────────────────────────────────────────
 
 /** Fetch all kanban tasks. Set includeDone to also

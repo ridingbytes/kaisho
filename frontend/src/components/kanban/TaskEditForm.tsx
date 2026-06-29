@@ -2,11 +2,13 @@
  * TaskEditForm -- Inline edit form for a task card, allowing
  * edits to customer, title, description, GitHub URL, and tags.
  */
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, X } from "lucide-react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TagDropdown } from "../common/TagDropdown";
 import { GithubIssueInput } from "./GithubIssueInput";
+import { uploadAttachment } from "../../api/client";
 
 const editInputCls = [
   "w-full px-2 py-1 rounded text-xs",
@@ -21,6 +23,9 @@ interface TagDef {
 }
 
 interface TaskEditFormProps {
+  /** Task id used to bucket dropped/pasted attachments
+   *  under the right folder on disk. */
+  taskId: string;
   editCustomer: string;
   editTitle: string;
   editBody: string;
@@ -49,6 +54,7 @@ interface TaskEditFormProps {
  * Cmd+Enter to save and Escape to cancel.
  */
 export function TaskEditForm({
+  taskId,
   editCustomer,
   editTitle,
   editBody,
@@ -88,6 +94,88 @@ export function TaskEditForm({
     onSave();
   }
 
+  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+  const [uploading, setUploading] = useState(0);
+  const [uploadError, setUploadError] = useState<
+    string | null
+  >(null);
+
+  /** Insert markdown for a file at the caret. Images get
+   *  the embed form, everything else gets a plain link so
+   *  PDFs / archives stay clickable rather than rendering
+   *  as broken images. */
+  function insertAttachmentMarkdown(
+    name: string, url: string, isImage: boolean,
+  ) {
+    const ta = bodyRef.current;
+    const snippet = isImage
+      ? `![${name}](${url})`
+      : `[${name}](${url})`;
+    if (!ta) {
+      onBodyChange(
+        editBody
+          ? `${editBody}\n${snippet}\n`
+          : `${snippet}\n`,
+      );
+      return;
+    }
+    const start = ta.selectionStart ?? editBody.length;
+    const end = ta.selectionEnd ?? editBody.length;
+    const before = editBody.slice(0, start);
+    const after = editBody.slice(end);
+    const needsLeadingNl = before && !before.endsWith("\n");
+    const wrapped = (needsLeadingNl ? "\n" : "")
+      + snippet + "\n";
+    const next = before + wrapped + after;
+    onBodyChange(next);
+    // Restore caret after React applies the new value.
+    const caret = (before + wrapped).length;
+    requestAnimationFrame(() => {
+      if (bodyRef.current) {
+        bodyRef.current.selectionStart = caret;
+        bodyRef.current.selectionEnd = caret;
+        bodyRef.current.focus();
+      }
+    });
+  }
+
+  async function uploadOne(file: File) {
+    setUploading((n) => n + 1);
+    setUploadError(null);
+    try {
+      const res = await uploadAttachment(file, taskId);
+      const isImage = (
+        file.type.startsWith("image/")
+        || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(
+          res.name,
+        )
+      );
+      insertAttachmentMarkdown(
+        res.name, res.url, isImage,
+      );
+    } catch (err) {
+      setUploadError(
+        err instanceof Error ? err.message : String(err),
+      );
+    } finally {
+      setUploading((n) => n - 1);
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    if (!e.dataTransfer?.files?.length) return;
+    e.preventDefault();
+    e.stopPropagation();
+    Array.from(e.dataTransfer.files).forEach(uploadOne);
+  }
+
+  function handlePaste(e: React.ClipboardEvent) {
+    const files = e.clipboardData?.files;
+    if (!files || files.length === 0) return;
+    e.preventDefault();
+    Array.from(files).forEach(uploadOne);
+  }
+
   function handleKeyDown(e: React.KeyboardEvent) {
     if (
       (e.metaKey || e.ctrlKey) &&
@@ -118,9 +206,16 @@ export function TaskEditForm({
       />
       <textarea
         autoFocus
+        ref={bodyRef}
         value={editBody}
         onChange={(e) => onBodyChange(e.target.value)}
         onKeyDown={handleKeyDown}
+        onDrop={handleDrop}
+        // Default ``dragover`` blocks ``drop``; preventing
+        // it tells the browser this textarea is a valid
+        // drop target.
+        onDragOver={(e) => e.preventDefault()}
+        onPaste={handlePaste}
         placeholder={tc("descriptionOptional")}
         rows={3}
         // ``resize-y`` enables the native bottom-right
@@ -129,6 +224,16 @@ export function TaskEditForm({
         // doesn't push the column's neighbours around.
         className={[editInputCls, "resize-y"].join(" ")}
       />
+      {uploading > 0 && (
+        <div className="text-2xs text-fg-muted px-0.5">
+          {t("uploadingAttachment", { count: uploading })}
+        </div>
+      )}
+      {uploadError && (
+        <div className="text-2xs text-red-500 px-0.5">
+          {uploadError}
+        </div>
+      )}
       <div
         onPointerDown={(e) => e.stopPropagation()}
       >

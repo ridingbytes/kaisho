@@ -12,6 +12,7 @@ from ..config import (
 )
 from .routers import (
     advisor,
+    attachments as attachments_router,
     backup as backup_router,
     clocks,
     cron,
@@ -209,6 +210,7 @@ app.include_router(ws_router.router)
 app.include_router(version_router.router)
 app.include_router(cli_router.router)
 app.include_router(files_router.router)
+app.include_router(attachments_router.router)
 
 # Mount the streamable-HTTP MCP transport. The mount path
 # matches the path inside the MCP app so the public URL the

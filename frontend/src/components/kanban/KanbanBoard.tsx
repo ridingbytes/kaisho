@@ -433,30 +433,45 @@ export function KanbanBoard() {
     number | undefined
   >(undefined);
 
+  // Collapsed columns are fixed-width strips; only the
+  // expanded ones share the leftover space.
+  const expandedCount = states.reduce(
+    (n, s) => n + (isCollapsed(s.name) ? 0 : 1),
+    0,
+  );
+  const collapsedCount = colCount - expandedCount;
+
   useEffect(() => {
     const el = boardRef.current;
-    if (!el || colCount === 0) return;
+    if (!el || expandedCount === 0) return;
     const GAP = 16; // gap-4
     const PAD = 48; // p-6 * 2
+    const COLLAPSED = 40; // KanbanColumn COLLAPSED_WIDTH
+    const MIN = 288; // current w-72 fallback
+    const MAX = 400; // cap so cards don't stretch to a line
     function calc() {
       if (!el) return;
-      const avail = el.clientWidth - PAD;
-      // How many columns fit at min 220px each?
+      const collapsedSpace =
+        collapsedCount * COLLAPSED
+        + collapsedCount * GAP;
+      const avail = el.clientWidth - PAD - collapsedSpace;
+      // How many expanded columns fit at min width each?
       const fit = Math.min(
-        colCount,
+        expandedCount,
         Math.max(1, Math.floor(
-          (avail + GAP) / (220 + GAP),
+          (avail + GAP) / (MIN + GAP),
         )),
       );
-      setColWidth(
-        Math.floor((avail - (fit - 1) * GAP) / fit),
+      const raw = Math.floor(
+        (avail - (fit - 1) * GAP) / fit,
       );
+      setColWidth(Math.max(MIN, Math.min(MAX, raw)));
     }
     calc();
     const ro = new ResizeObserver(calc);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [colCount]);
+  }, [expandedCount, collapsedCount]);
 
   const stateMap = Object.fromEntries(
     (settings?.task_states ?? []).map((s) => [s.name, s])
