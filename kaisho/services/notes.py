@@ -27,10 +27,13 @@ def _strip_customer(title: str) -> str:
     return CUSTOMER_RE.sub("", title).strip()
 
 
-def _heading_to_note(heading: Heading, note_id: str) -> dict:
+def _heading_to_note(heading: Heading) -> dict:
     """Convert org heading to note dict.
 
-    Ensures SYNC_ID and UPDATED_AT properties exist.
+    The note ``id`` is its stable ``SYNC_ID`` (assigned by
+    :func:`ensure_sync_identity` if missing), NOT its
+    position in the file — a positional id breaks the
+    moment a concurrent insert shifts the list.
     """
     sync_id, updated_at = ensure_sync_identity(heading)
     raw_title = heading.title.strip()
@@ -38,7 +41,7 @@ def _heading_to_note(heading: Heading, note_id: str) -> dict:
     title = _strip_customer(raw_title)
     body = "\n".join(heading.body).strip()
     return {
-        "id": note_id,
+        "id": sync_id,
         "sync_id": sync_id,
         "title": title,
         "customer": customer,
@@ -50,14 +53,30 @@ def _heading_to_note(heading: Heading, note_id: str) -> dict:
     }
 
 
+def _find_heading(
+    org_file: OrgFile, note_id: str,
+) -> tuple[int, Heading] | tuple[None, None]:
+    """Locate a note heading by its stable SYNC_ID.
+
+    Assigns a SYNC_ID to any legacy heading while scanning
+    so a note created before sync identity existed can
+    still be matched. Returns ``(None, None)`` when no
+    heading matches.
+    """
+    for idx, heading in enumerate(org_file.headings):
+        sync_id, _ = ensure_sync_identity(heading)
+        if sync_id == note_id:
+            return idx, heading
+    return None, None
+
+
 def list_notes(notes_file: Path) -> list[dict]:
     """Return all notes ordered oldest-first."""
     if not notes_file.exists():
         return []
     org_file = parse_org_file(notes_file, NOTES_KEYWORDS)
     notes = [
-        _heading_to_note(h, str(i))
-        for i, h in enumerate(org_file.headings, start=1)
+        _heading_to_note(h) for h in org_file.headings
     ]
     if any(h.dirty for h in org_file.headings):
         write_org_file(notes_file, org_file)
@@ -67,11 +86,10 @@ def list_notes(notes_file: Path) -> list[dict]:
 def reorder_notes(
     notes_file: Path, note_ids: list[str],
 ) -> list[dict]:
-    """Reorder notes to match the given ID sequence.
+    """Reorder notes to match the given SYNC_ID sequence.
 
-    IDs are 1-based indices into the current heading
-    list. Headings not in ``note_ids`` are appended at
-    the end in their original order.
+    Headings not in ``note_ids`` are appended at the end
+    in their original order.
     """
     if not notes_file.exists():
         return []
@@ -79,21 +97,22 @@ def reorder_notes(
         notes_file, NOTES_KEYWORDS,
     )
     old = list(org_file.headings)
-    by_id = {str(i): h for i, h in enumerate(old, 1)}
+    by_id = {}
+    for heading in old:
+        sync_id, _ = ensure_sync_identity(heading)
+        by_id[sync_id] = heading
     ordered = [
         by_id[nid] for nid in note_ids
         if nid in by_id
     ]
     seen = set(note_ids)
-    for i, h in enumerate(old, 1):
-        if str(i) not in seen:
-            ordered.append(h)
+    for heading in old:
+        sync_id, _ = ensure_sync_identity(heading)
+        if sync_id not in seen:
+            ordered.append(heading)
     org_file.headings = ordered
     write_org_file(notes_file, org_file)
-    return [
-        _heading_to_note(h, str(i))
-        for i, h in enumerate(ordered, start=1)
-    ]
+    return [_heading_to_note(h) for h in ordered]
 
 
 def add_note(
@@ -139,17 +158,17 @@ def add_note(
     org_file.headings.append(new_heading)
     write_org_file(notes_file, org_file)
 
-    note_id = str(len(org_file.headings))
-    return _heading_to_note(new_heading, note_id)
+    return _heading_to_note(new_heading)
 
 
 def delete_note(notes_file: Path, note_id: str) -> bool:
-    """Delete a note by 1-based ID. Returns False if not found."""
+    """Delete a note by SYNC_ID. Returns False if not
+    found."""
     if not notes_file.exists():
         return False
     org_file = parse_org_file(notes_file, NOTES_KEYWORDS)
-    idx = int(note_id) - 1
-    if idx < 0 or idx >= len(org_file.headings):
+    idx, _heading = _find_heading(org_file, note_id)
+    if idx is None:
         return False
     org_file.headings.pop(idx)
     write_org_file(notes_file, org_file)
@@ -161,14 +180,14 @@ def update_note(
     note_id: str,
     updates: dict,
 ) -> dict:
-    """Update title, body, customer, and/or tags of a note."""
+    """Update title, body, customer, and/or tags of a note,
+    identified by SYNC_ID."""
     if not notes_file.exists():
         raise ValueError("Note not found")
     org_file = parse_org_file(notes_file, NOTES_KEYWORDS)
-    idx = int(note_id) - 1
-    if idx < 0 or idx >= len(org_file.headings):
+    _idx, heading = _find_heading(org_file, note_id)
+    if heading is None:
         raise ValueError("Note not found")
-    heading = org_file.headings[idx]
     heading.dirty = True
     if "title" in updates or "customer" in updates:
         bare = _strip_customer(heading.title.strip())
@@ -195,20 +214,21 @@ def update_note(
     heading.properties["UPDATED_AT"] = current_timestamp()
     ensure_sync_identity(heading)
     write_org_file(notes_file, org_file)
-    return _heading_to_note(heading, note_id)
+    return _heading_to_note(heading)
 
 
 def _load_heading(
     notes_file: Path, note_id: str
 ) -> tuple[OrgFile, int, Heading]:
-    """Parse notes file and return (org_file, idx, heading)."""
+    """Parse notes file and return (org_file, idx, heading)
+    for the note with the given SYNC_ID."""
     if not notes_file.exists():
         raise ValueError("Notes file not found")
     org_file = parse_org_file(notes_file, NOTES_KEYWORDS)
-    idx = int(note_id) - 1
-    if idx < 0 or idx >= len(org_file.headings):
+    idx, heading = _find_heading(org_file, note_id)
+    if idx is None:
         raise ValueError(f"Note not found: {note_id}")
-    return org_file, idx, org_file.headings[idx]
+    return org_file, idx, heading
 
 
 def promote_to_task(

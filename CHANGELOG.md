@@ -57,6 +57,11 @@
   parameters (e.g. a task's `tags`) as strings, so MCP
   clients now send list-valued arguments in the correct
   shape.
+- Address org-mode notes by their stable `SYNC_ID`
+  instead of their position in the file. Editing or
+  deleting a note could previously hit the wrong note if
+  another note had been inserted ahead of it, and a
+  non-numeric id raised a 500.
 
 ## 2.5.2
 
