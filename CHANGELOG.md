@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## 2.5.3
+
+This release adds drag-and-drop file attachments for
+markdown bodies and lands the results of a full whole-app
+code review: a cluster of security, data-loss, and
+sync-correctness fixes, plus some UI polish. Remaining
+structural refactors surfaced by the review are tracked as
+GitHub issues.
 
 - Drag-and-drop or paste files onto a markdown body to
   attach them, GitHub-issue style — task descriptions,
