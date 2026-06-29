@@ -79,6 +79,9 @@
 - Push to the cloud / CalDAV after a batch-invoice so the
   invoiced flag propagates to other devices, matching
   every other clock mutation.
+- Validate task `scheduled` / `deadline` as `YYYY-MM-DD`
+  at the API boundary so a malformed date can't be
+  persisted verbatim.
 
 ## 2.5.2
 
