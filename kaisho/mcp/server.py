@@ -84,12 +84,18 @@ _TIER_ANNOTATIONS = {
     },
 }
 
-# Map JSON schema types to Python type annotations
+# Map JSON schema types to Python type annotations.
+# ``array`` / ``object`` must map to ``list`` / ``dict`` —
+# defaulting them to ``str`` made the generated handler
+# signature advertise list-valued params (e.g. a tool's
+# ``tags``) as strings, so MCP clients sent the wrong shape.
 _TYPE_MAP = {
     "string": "str",
     "integer": "int",
     "number": "float",
     "boolean": "bool",
+    "array": "list",
+    "object": "dict",
 }
 
 

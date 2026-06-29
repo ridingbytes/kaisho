@@ -53,6 +53,10 @@
   switch / create now hold a lock and restore the active
   profile on failure so a half-created profile can't
   strand the server.
+- Fix the MCP server advertising array/object tool
+  parameters (e.g. a task's `tags`) as strings, so MCP
+  clients now send list-valued arguments in the correct
+  shape.
 
 ## 2.5.2
 
