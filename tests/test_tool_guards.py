@@ -267,3 +267,14 @@ def test_write_kb_file_overwrite_true_replaces(
     )
     assert "file" in result
     assert result["overwritten"] is True
+
+
+def test_batch_invoice_requires_scope(clean_profile):
+    """``batch_invoice`` with neither customer nor
+    contract would invoice the user's entire year of
+    entries. It must refuse instead."""
+    from kaisho.cron.tools import execute_tool
+
+    result = execute_tool("batch_invoice", {})
+    assert "error" in result
+    assert "customer or a contract" in result["error"]

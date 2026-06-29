@@ -469,8 +469,18 @@ def api_move_run_output(entry_id: int, body: MoveRunRequest):
             )
         kb_dir = cfg.KNOWLEDGE_DIR.expanduser()
         kb_dir.mkdir(parents=True, exist_ok=True)
-        dest = kb_dir / body.filename
+        dest = (kb_dir / body.filename).resolve()
+        # Refuse any filename that escapes the KB dir
+        # (``../../etc/x.md`` resolves outside ``kb_dir``).
+        try:
+            dest.relative_to(kb_dir.resolve())
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="filename must stay within the KB",
+            )
         content = f"# {title}\n\n{output}\n"
+        dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(content, encoding="utf-8")
         return {"path": str(dest)}
 
