@@ -68,6 +68,10 @@
   were selectable when editing an entry but hidden when
   booking), while the currently-selected contract stays
   visible so editing never blanks it.
+- Small frontend cleanups: memoise the toast context value
+  so toasts no longer re-render every consumer, cancel the
+  active-timer notes debounce on unmount, and stop
+  remounting the timer digits every second.
 
 ## 2.5.2
 
