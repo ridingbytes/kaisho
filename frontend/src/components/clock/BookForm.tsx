@@ -7,6 +7,9 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
+import {
+  ContractSelect,
+} from "../common/ContractSelect";
 import { useContracts } from "../../hooks/useContracts";
 import { useQuickBook } from "../../hooks/useClocks";
 import { inputCls } from "../../styles/formStyles";
@@ -31,11 +34,8 @@ export function BookForm({ onClose }: BookFormProps) {
     null,
   );
   const [taskTitle, setTaskTitle] = useState("");
-  const { data: allContracts = [] } = useContracts(
+  const { data: contracts = [] } = useContracts(
     customer || null,
-  );
-  const contracts = allContracts.filter(
-    (c) => !c.invoiced,
   );
   const book = useQuickBook();
 
@@ -109,21 +109,12 @@ export function BookForm({ onClose }: BookFormProps) {
           <label className="text-2xs text-fg-muted uppercase tracking-wider">
             {tc("contract")}
           </label>
-          <select
+          <ContractSelect
+            contracts={contracts}
             value={contract}
-            onChange={(e) =>
-              setContract(e.target.value)
-            }
+            onChange={setContract}
             className={`${inputCls} w-36`}
-          >
-            <option value="">{tc("noNone")}</option>
-            {contracts.map((c) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-                {c.end_date ? ` (${tc("closed")})` : ""}
-              </option>
-            ))}
-          </select>
+          />
         </div>
       )}
       <div className="flex flex-col gap-1 flex-1 min-w-40">

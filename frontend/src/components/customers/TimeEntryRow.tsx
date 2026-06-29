@@ -7,6 +7,7 @@ import { Check, Pencil, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
+import { ContractSelect } from "../common/ContractSelect";
 import { HoverActions } from "../common/HoverActions";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import {
@@ -128,20 +129,12 @@ export function TimeEntryRow({
           />
         </div>
         {contracts.length > 0 && (
-          <select
+          <ContractSelect
+            contracts={contracts}
             value={contract}
-            onChange={(e) =>
-              setContract(e.target.value)
-            }
+            onChange={setContract}
             className={fieldClass()}
-          >
-            <option value="">{tc("noContract")}</option>
-            {contracts.map((ct) => (
-              <option key={ct.name} value={ct.name}>
-                {ct.name}
-              </option>
-            ))}
-          </select>
+          />
         )}
         <div className="flex gap-1 justify-end">
           <button
