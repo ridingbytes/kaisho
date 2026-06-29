@@ -3,6 +3,7 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  type QueryClient,
 } from "@tanstack/react-query";
 import { useToast } from "../context/ToastContext";
 import { isTauri } from "../utils/tauri";
@@ -23,6 +24,20 @@ import {
   updateClockEntry,
 } from "../api/client";
 
+
+/** Every clock write affects the same downstream caches:
+ *  clock lists, the customer + contract budget bars that
+ *  sum booked time, and the dashboard totals. Invalidating
+ *  a different subset per mutation left those bars stale
+ *  after pause / merge / clear. This single helper keeps
+ *  every clock mutation consistent. */
+function invalidateClockCaches(qc: QueryClient) {
+  for (const key of [
+    "clocks", "customers", "contracts", "dashboard",
+  ]) {
+    void qc.invalidateQueries({ queryKey: [key] });
+  }
+}
 
 /** Provides the currently running timer, polling
  *  every 5 seconds. Use this to show elapsed time. */
@@ -146,18 +161,7 @@ export function useStartTimer() {
       customer, description, taskId, contract,
     }),
     onSuccess: (_d, vars) => {
-      void qc.invalidateQueries({
-        queryKey: ["clocks"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["customers"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["contracts"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
+      invalidateClockCaches(qc);
       toast(`Timer started: ${vars.customer}`);
     },
   });
@@ -171,18 +175,7 @@ export function useStopTimer() {
   return useMutation({
     mutationFn: stopTimer,
     onSuccess: () => {
-      void qc.invalidateQueries({
-        queryKey: ["clocks"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["customers"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["contracts"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
+      invalidateClockCaches(qc);
       toast("Timer stopped");
     },
   });
@@ -196,9 +189,7 @@ export function useClearPaused() {
   return useMutation({
     mutationFn: clearPausedTimer,
     onSuccess: () => {
-      void qc.invalidateQueries({
-        queryKey: ["clocks"],
-      });
+      invalidateClockCaches(qc);
     },
   });
 }
@@ -213,12 +204,7 @@ export function usePauseTimer() {
   return useMutation({
     mutationFn: pauseTimer,
     onSuccess: () => {
-      void qc.invalidateQueries({
-        queryKey: ["clocks"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
+      invalidateClockCaches(qc);
       toast("Timer paused");
     },
   });
@@ -251,18 +237,7 @@ export function useQuickBook() {
       taskId, contract, date, notes,
     }),
     onSuccess: (_d, vars) => {
-      void qc.invalidateQueries({
-        queryKey: ["clocks"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["customers"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["contracts"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
+      invalidateClockCaches(qc);
       toast(`Booked ${vars.duration} for ${vars.customer}`);
     },
   });
@@ -295,18 +270,7 @@ export function useUpdateClockEntry() {
       silent?: boolean;
     }) => updateClockEntry(entry, updates),
     onSuccess: (_data, vars) => {
-      void qc.invalidateQueries({
-        queryKey: ["clocks"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["customers"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["contracts"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
+      invalidateClockCaches(qc);
       if (!vars.silent) toast("Clock entry updated");
     },
   });
@@ -334,12 +298,7 @@ export function useMergeClockEntries() {
       );
     },
     onSuccess: () => {
-      void qc.invalidateQueries({
-        queryKey: ["clocks"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
+      invalidateClockCaches(qc);
       toast("Entries merged");
     },
     onError: (err: Error) => {
@@ -359,18 +318,7 @@ export function useDeleteClockEntry() {
       entry: { sync_id: string | null; start: string },
     ) => deleteClockEntry(entry),
     onSuccess: () => {
-      void qc.invalidateQueries({
-        queryKey: ["clocks"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["customers"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["contracts"],
-      });
-      void qc.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
+      invalidateClockCaches(qc);
       toast("Clock entry deleted");
     },
   });

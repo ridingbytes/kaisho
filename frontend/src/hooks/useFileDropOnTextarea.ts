@@ -74,12 +74,19 @@ export function useFileDropOnTextarea(
   const [uploading, setUploading] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  function insert(snippet: string) {
+  // Insert one or more snippets in a SINGLE update. Doing
+  // one ``onChange`` per drop (rather than one per file)
+  // is what prevents the multi-file data-loss bug: N
+  // concurrent ``onChange`` calls each recompute from the
+  // same stale closure ``value``, so only the last would
+  // survive. Joining first means there is only ever one
+  // write per drop.
+  function insertSnippets(snippets: string[]) {
+    if (snippets.length === 0) return;
+    const block = snippets.join("\n") + "\n";
     const ta = textareaRef.current;
     if (!ta) {
-      onChange(
-        value ? `${value}\n${snippet}\n` : `${snippet}\n`,
-      );
+      onChange(value ? `${value}\n${block}` : block);
       return;
     }
     const start = ta.selectionStart ?? value.length;
@@ -87,8 +94,7 @@ export function useFileDropOnTextarea(
     const before = value.slice(0, start);
     const after = value.slice(end);
     const needsLeadingNl = before && !before.endsWith("\n");
-    const wrapped = (needsLeadingNl ? "\n" : "")
-      + snippet + "\n";
+    const wrapped = (needsLeadingNl ? "\n" : "") + block;
     onChange(before + wrapped + after);
     const caret = (before + wrapped).length;
     requestAnimationFrame(() => {
@@ -101,29 +107,45 @@ export function useFileDropOnTextarea(
     });
   }
 
-  async function uploadOne(file: File) {
-    setUploading((n) => n + 1);
+  function toSnippet(file: File, name: string, url: string) {
+    return isEmbeddableImage(file, name)
+      ? `![${name}](${url})`
+      : `[${name}](${url})`;
+  }
+
+  async function uploadFiles(files: File[]) {
+    setUploading((n) => n + files.length);
     setError(null);
-    try {
-      const res = await uploadAttachment(file, bucketId);
-      const snippet = isEmbeddableImage(file, res.name)
-        ? `![${res.name}](${res.url})`
-        : `[${res.name}](${res.url})`;
-      insert(snippet);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : String(err),
-      );
-    } finally {
-      setUploading((n) => n - 1);
-    }
+    const results = await Promise.all(
+      files.map(async (file) => {
+        try {
+          const res = await uploadAttachment(
+            file, bucketId,
+          );
+          return toSnippet(file, res.name, res.url);
+        } catch (err) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : String(err),
+          );
+          return null;
+        } finally {
+          setUploading((n) => n - 1);
+        }
+      }),
+    );
+    // Order preserved by Promise.all; drop the failures.
+    insertSnippets(
+      results.filter((s): s is string => s !== null),
+    );
   }
 
   function onDrop(e: React.DragEvent) {
     if (!e.dataTransfer?.files?.length) return;
     e.preventDefault();
     e.stopPropagation();
-    Array.from(e.dataTransfer.files).forEach(uploadOne);
+    uploadFiles(Array.from(e.dataTransfer.files));
   }
 
   function onDragOver(e: React.DragEvent) {
@@ -136,7 +158,7 @@ export function useFileDropOnTextarea(
     const files = e.clipboardData?.files;
     if (!files || files.length === 0) return;
     e.preventDefault();
-    Array.from(files).forEach(uploadOne);
+    uploadFiles(Array.from(files));
   }
 
   return { onDrop, onDragOver, onPaste, uploading, error };

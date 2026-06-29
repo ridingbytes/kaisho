@@ -20,7 +20,15 @@ export function useWebSocket() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    // Guards against the unmount race: ``close()`` fires
+    // ``onclose`` asynchronously, which would otherwise
+    // schedule a reconnect *after* cleanup ran — leaving
+    // an orphan timer and a zombie socket (doubled under
+    // React StrictMode's mount/unmount/remount).
+    let closed = false;
+
     function connect() {
+      if (closed) return;
       const protocol =
         window.location.protocol === "https:" ? "wss:" : "ws:";
       const url = `${protocol}//${window.location.host}${WS_URL}`;
@@ -43,6 +51,7 @@ export function useWebSocket() {
       };
 
       ws.onclose = () => {
+        if (closed) return;
         timerRef.current = setTimeout(connect, RECONNECT_DELAY);
       };
     }
@@ -50,8 +59,16 @@ export function useWebSocket() {
     connect();
 
     return () => {
-      socketRef.current?.close();
+      closed = true;
       if (timerRef.current) clearTimeout(timerRef.current);
+      const ws = socketRef.current;
+      if (ws) {
+        // Drop the handler before closing so the async
+        // ``onclose`` can't resurrect the connection.
+        ws.onclose = null;
+        ws.close();
+        socketRef.current = null;
+      }
     };
   }, [queryClient]);
 }

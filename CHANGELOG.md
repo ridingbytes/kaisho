@@ -36,6 +36,14 @@
   per request, and the `batch_invoice` tool refuses to
   run without a customer or contract scope so it can't
   invoice an entire history in one call.
+- Fix three frontend correctness bugs: dropping multiple
+  files into a description now inserts all their links
+  (previously only the last survived), every clock
+  mutation refreshes the customer/contract/dashboard
+  totals consistently (pause/merge/clear no longer leave
+  stale budget bars), and the live-update WebSocket no
+  longer leaks a zombie socket + reconnect timer on
+  unmount.
 
 ## 2.5.2
 
