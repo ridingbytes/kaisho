@@ -72,6 +72,10 @@
   so toasts no longer re-render every consumer, cancel the
   active-timer notes debounce on unmount, and stop
   remounting the timer digits every second.
+- Add the missing knowledge-search match-count plural
+  strings to the German, Spanish, and Russian locales
+  (with correct Russian plural categories) so non-English
+  users no longer see the English fallback.
 
 ## 2.5.2
 

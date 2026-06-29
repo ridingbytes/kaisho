@@ -68,5 +68,7 @@
   "chatInboxHeadline": "{{name}}: {{snippet}}",
   "recentFilter": "Nur kürzlich geänderte anzeigen",
   "groupSearchByFile": "Suchergebnisse pro Datei zusammenfassen",
-  "matches": "{{count}} Treffer"
+  "matches": "{{count}} Treffer",
+  "matches_one": "{{count}} Treffer",
+  "matches_other": "{{count}} Treffer"
 }

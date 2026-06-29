@@ -68,5 +68,9 @@
   "chatInboxHeadline": "{{name}}: {{snippet}}",
   "recentFilter": "Только недавние",
   "groupSearchByFile": "Группировать результаты по файлам",
-  "matches": "{{count}} совпадений"
+  "matches": "{{count}} совпадений",
+  "matches_one": "{{count}} совпадение",
+  "matches_few": "{{count}} совпадения",
+  "matches_many": "{{count}} совпадений",
+  "matches_other": "{{count}} совпадения"
 }
