@@ -1,4 +1,6 @@
 {
+  "uploadingAttachment_one": "Lade 1 Datei hoch…",
+  "uploadingAttachment_other": "Lade {{count}} Dateien hoch…",
   "save": "Speichern",
   "saving": "Speichern...",
   "saved": "Gespeichert",

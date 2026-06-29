@@ -6,8 +6,6 @@
   "expandColumn": "Expand column",
   "datesOutOfOrder": "Deadline must be on or after the scheduled date.",
   "scheduledLabel": "Scheduled",
-  "uploadingAttachment_one": "Uploading 1 file…",
-  "uploadingAttachment_other": "Uploading {{count}} files…",
   "deadlineLabel": "Deadline",
   "snoozedCount": "{{count}} snoozed",
   "snoozedTooltip": "Tasks waiting for a future date",

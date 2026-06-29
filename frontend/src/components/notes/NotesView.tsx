@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -36,6 +36,9 @@ import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { TagDropdown } from "../common/TagDropdown";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
+import {
+  useFileDropOnTextarea,
+} from "../../hooks/useFileDropOnTextarea";
 import { KbDestinationPicker } from "../common/KbDestinationPicker";
 import { DOCS } from "../../docs/panelDocs";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
@@ -96,6 +99,15 @@ function NoteRow({
   const [moveDest, setMoveDest] = useState<MoveDest | null>(null);
   const [editTitle, setEditTitle] = useState(note.title);
   const [editBody, setEditBody] = useState(note.body ?? "");
+  const editBodyRef = useRef<HTMLTextAreaElement | null>(
+    null,
+  );
+  const editDrop = useFileDropOnTextarea({
+    value: editBody,
+    onChange: setEditBody,
+    bucketId: note.id,
+    textareaRef: editBodyRef,
+  });
   const [editCustomer, setEditCustomer] = useState(
     note.customer ?? ""
   );
@@ -438,6 +450,7 @@ function NoteRow({
                 inputClassName={smallFieldCls}
               />
               <textarea
+                ref={editBodyRef}
                 value={editBody}
                 onChange={(e) => setEditBody(e.target.value)}
                 onKeyDown={(e) => {
@@ -446,10 +459,25 @@ function NoteRow({
                     doSave();
                   }
                 }}
+                onDrop={editDrop.onDrop}
+                onDragOver={editDrop.onDragOver}
+                onPaste={editDrop.onPaste}
                 placeholder={t("bodyOptional")}
                 rows={4}
                 className={`${smallFieldCls} w-full resize-y`}
               />
+              {editDrop.uploading > 0 && (
+                <div className="text-2xs text-fg-muted px-0.5">
+                  {tc("uploadingAttachment", {
+                    count: editDrop.uploading,
+                  })}
+                </div>
+              )}
+              {editDrop.error && (
+                <div className="text-2xs text-red-500 px-0.5">
+                  {editDrop.error}
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <span className="text-2xs text-fg-subtle">
                   ⌘↵ save
@@ -596,6 +624,17 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
   const [taskId, setTaskId] = useState<string | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+  // Create-time form has no note id yet, so attachments
+  // land in the ``_misc`` bucket. Acceptable: the file is
+  // still in the user's profile and the link works; a
+  // future re-bucketing pass could migrate it on save.
+  const drop = useFileDropOnTextarea({
+    value: body,
+    onChange: setBody,
+    bucketId: "",
+    textareaRef: bodyRef,
+  });
 
   function doSubmit() {
     if (!title.trim()) return;
@@ -665,13 +704,29 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
         inputClassName={fieldCls}
       />
       <textarea
+        ref={bodyRef}
         placeholder={t("bodyOptional")}
         value={body}
         onChange={(e) => setBody(e.target.value)}
         onKeyDown={handleKeyDown}
+        onDrop={drop.onDrop}
+        onDragOver={drop.onDragOver}
+        onPaste={drop.onPaste}
         rows={3}
         className={`${fieldCls} resize-none`}
       />
+      {drop.uploading > 0 && (
+        <div className="text-2xs text-fg-muted px-0.5">
+          {tc("uploadingAttachment", {
+            count: drop.uploading,
+          })}
+        </div>
+      )}
+      {drop.error && (
+        <div className="text-2xs text-red-500 px-0.5">
+          {drop.error}
+        </div>
+      )}
       <div className="flex items-center gap-2">
         <span className="text-2xs text-fg-subtle">
           ⌘↵ save

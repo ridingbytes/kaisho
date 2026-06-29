@@ -3,7 +3,7 @@
  * the read-only {@link EntryRow} when the user clicks
  * the edit button.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, X } from "lucide-react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
@@ -14,6 +14,9 @@ import { useUpdateClockEntry } from "../../hooks/useClocks";
 import { minutesToDecimal } from "../../utils/formatting";
 import { taskTitleById } from "../../utils/customerPrefix";
 import { smallInputCls } from "../../styles/formStyles";
+import {
+  useFileDropOnTextarea,
+} from "../../hooks/useFileDropOnTextarea";
 import type { ClockEntry } from "../../types";
 
 /** Props for the {@link EditForm} component. */
@@ -52,6 +55,13 @@ export function EditForm({
     minutesToDecimal(entry.duration_minutes),
   );
   const [notes, setNotes] = useState(entry.notes ?? "");
+  const notesRef = useRef<HTMLTextAreaElement | null>(null);
+  const drop = useFileDropOnTextarea({
+    value: notes,
+    onChange: setNotes,
+    bucketId: entry.sync_id ?? "",
+    textareaRef: notesRef,
+  });
   const [invoiced, setInvoiced] = useState(
     entry.invoiced ?? false,
   );
@@ -277,6 +287,7 @@ export function EditForm({
         <td colSpan={7} className="px-3 pb-2">
           <textarea
             autoFocus
+            ref={notesRef}
             value={notes}
             onChange={(e) =>
               setNotes(e.target.value)
@@ -291,12 +302,27 @@ export function EditForm({
               }
               if (e.key === "Escape") onClose();
             }}
+            onDrop={drop.onDrop}
+            onDragOver={drop.onDragOver}
+            onPaste={drop.onPaste}
             placeholder={tc("notesOptional")}
             rows={2}
             className={
               `${smallInputCls} w-full resize-y`
             }
           />
+          {drop.uploading > 0 && (
+            <div className="text-2xs text-fg-muted px-0.5">
+              {tc("uploadingAttachment", {
+                count: drop.uploading,
+              })}
+            </div>
+          )}
+          {drop.error && (
+            <div className="text-2xs text-red-500 px-0.5">
+              {drop.error}
+            </div>
+          )}
           <label className={
             "flex items-center gap-1.5 mt-1.5 " +
             "text-xs text-fg-muted cursor-pointer"

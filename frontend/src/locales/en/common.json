@@ -1,4 +1,6 @@
 {
+  "uploadingAttachment_one": "Uploading 1 file…",
+  "uploadingAttachment_other": "Uploading {{count}} files…",
   "save": "Save",
   "saving": "Saving...",
   "saved": "Saved",

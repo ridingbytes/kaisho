@@ -1,4 +1,6 @@
 {
+  "uploadingAttachment_one": "Загрузка 1 файла…",
+  "uploadingAttachment_other": "Загрузка {{count}} файлов…",
   "save": "Сохранить",
   "saving": "Сохранение...",
   "saved": "Сохранено",
