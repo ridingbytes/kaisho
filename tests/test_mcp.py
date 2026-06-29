@@ -28,6 +28,28 @@ def test_build_handler_renames_python_keyword_params():
     assert "from" not in sig.parameters
 
 
+def test_build_handler_maps_array_to_list():
+    """Array-typed schema params must surface as ``list``
+    in the generated signature, not ``str`` — otherwise
+    MCP clients are told to send list params as strings."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "tags": {"type": "array"},
+            "meta": {"type": "object"},
+        },
+        "required": ["tags"],
+    }
+    fn = _build_handler(
+        "set_task_tags", schema, Path("/tmp/x.log"),
+    )
+    sig = inspect.signature(fn)
+    assert sig.parameters["tags"].annotation is list
+    # Optional object param -> ``dict | None`` union.
+    meta_ann = sig.parameters["meta"].annotation
+    assert dict in getattr(meta_ann, "__args__", ())
+
+
 def test_parse_tiers_read():
     assert parse_tiers("read") == {"read"}
 
