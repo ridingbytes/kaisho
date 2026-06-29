@@ -62,6 +62,12 @@
   deleting a note could previously hit the wrong note if
   another note had been inserted ahead of it, and a
   non-numeric id raised a 500.
+- Unify the contract picker across all time-tracking
+  forms into a shared `ContractSelect`. Invoiced
+  contracts are now consistently hidden everywhere (they
+  were selectable when editing an entry but hidden when
+  booking), while the currently-selected contract stays
+  visible so editing never blanks it.
 
 ## 2.5.2
 

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Check, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
+import { ContractSelect } from "../common/ContractSelect";
 import { useQuickBook } from "../../hooks/useClocks";
 import type { Contract } from "../../types";
 
@@ -103,21 +104,12 @@ export function QuickBookForm({
         />
       </div>
       {contracts.length > 0 && (
-        <select
+        <ContractSelect
+          contracts={contracts}
           value={contract}
-          onChange={(e) => setContract(e.target.value)}
+          onChange={setContract}
           className={`w-full ${cls}`}
-        >
-          <option value="">
-            {tc("noContract")}
-          </option>
-          {contracts.map((c) => (
-            <option key={c.name} value={c.name}>
-              {c.name}
-              {c.end_date ? " (closed)" : ""}
-            </option>
-          ))}
-        </select>
+        />
       )}
       <TaskAutocomplete
         taskId={taskId}

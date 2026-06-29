@@ -8,6 +8,9 @@ import { useTranslation } from "react-i18next";
 import { Check, X } from "lucide-react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
+import {
+  ContractSelect,
+} from "../common/ContractSelect";
 import { useContracts } from "../../hooks/useContracts";
 import { useTasks } from "../../hooks/useTasks";
 import { useUpdateClockEntry } from "../../hooks/useClocks";
@@ -182,20 +185,12 @@ export function EditForm({
         {/* Contract */}
         <td className="px-3 py-2">
           {contracts.length > 0 && (
-            <select
+            <ContractSelect
+              contracts={contracts}
               value={contract}
-              onChange={(e) =>
-                setContract(e.target.value)
-              }
+              onChange={setContract}
               className={smallInputCls}
-            >
-              <option value="">{tc("noContract")}</option>
-              {contracts.map((c) => (
-                <option key={c.name} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            />
           )}
         </td>
         {/* Task */}
