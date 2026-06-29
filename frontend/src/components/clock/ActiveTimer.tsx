@@ -17,7 +17,10 @@ interface Props {
 export function ActiveTimer({ timer }: Props) {
   const { t } = useTranslation("clocks");
   const { t: tc } = useTranslation("common");
-  const [tick, setTick] = useState(0);
+  // Re-render once a second to advance the elapsed clock.
+  // The value itself is unused; only the state update
+  // matters as a render trigger.
+  const [, setTick] = useState(0);
   const [notesOpen, setNotesOpen] = useState(false);
   const [notes, setNotes] = useState(timer.notes ?? "");
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -35,6 +38,17 @@ export function ActiveTimer({ timer }: Props) {
   useEffect(() => {
     setNotes(timer.notes ?? "");
   }, [timer.notes]);
+
+  // Cancel any pending debounced notes save on unmount so
+  // it can't fire ``updateEntry.mutate`` on a gone
+  // component.
+  useEffect(() => {
+    return () => {
+      if (saveTimeout.current) {
+        clearTimeout(saveTimeout.current);
+      }
+    };
+  }, []);
 
   function saveNotes(value: string) {
     if (!timer.start) return;
@@ -79,7 +93,6 @@ export function ActiveTimer({ timer }: Props) {
       {/* Timer digits + stop button */}
       <div className="flex items-center justify-center gap-3">
         <div
-          key={tick}
           className="text-3xl font-light font-mono text-fg-strong tabular-nums tracking-wide"
         >
           {elapsed(timer.start)}

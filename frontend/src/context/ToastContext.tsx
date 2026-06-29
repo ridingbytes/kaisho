@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useMemo,
   useState,
 } from "react";
 import { Check, Info, AlertTriangle, X } from "lucide-react";
@@ -122,8 +123,14 @@ export function ToastProvider({
     [dismiss],
   );
 
+  // Memoise so the context value is stable: ``toasts``
+  // state changes on every add / auto-dismiss, and an
+  // inline ``{{ toast }}`` would re-render every
+  // ``useToast()`` consumer on each of those.
+  const value = useMemo(() => ({ toast }), [toast]);
+
   return (
-    <ToastContext.Provider value={{ toast }}>
+    <ToastContext.Provider value={value}>
       {children}
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
     </ToastContext.Provider>
