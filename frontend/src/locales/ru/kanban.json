@@ -6,6 +6,8 @@
   "expandColumn": "Развернуть колонку",
   "datesOutOfOrder": "Срок должен быть не раньше запланированной даты.",
   "scheduledLabel": "Запланировано",
+  "uploadingAttachment_one": "Загрузка 1 файла…",
+  "uploadingAttachment_other": "Загрузка {{count}} файлов…",
   "deadlineLabel": "Срок",
   "snoozedCount": "{{count}} отложено",
   "snoozedTooltip": "Задачи, ожидающие будущей даты",

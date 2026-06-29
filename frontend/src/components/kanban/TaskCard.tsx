@@ -188,7 +188,7 @@ export function TaskCard({
         style={{ backgroundColor: statusColor }}
       />
 
-      {/* Snooze + deadline badges (top-left) */}
+      {/* Snooze + deadline badges (top-right) */}
       {!editing && <TaskDateBadges task={task} />}
 
       <div className="flex items-stretch">
@@ -240,6 +240,7 @@ export function TaskCard({
         <div className="flex-1 min-w-0 py-3 pr-3">
           {editing ? (
             <TaskEditForm
+              taskId={task.id}
               editCustomer={editCustomer}
               editTitle={editTitle}
               editBody={editBody}

@@ -1,5 +1,5 @@
 /**
- * Top-left badges on a task card for the snooze surface
+ * Top-right badges on a task card for the snooze surface
  * (``scheduled``) and the deadline cue (``deadline``).
  *
  * - Scheduled badge: shown when ``task.scheduled`` is set
@@ -131,7 +131,7 @@ export function TaskDateBadges({
 
   return (
     <div
-      className="absolute top-1.5 left-7 z-10 flex gap-0.5"
+      className="absolute top-1.5 right-2 z-10 flex gap-0.5"
       onPointerDown={(e) => e.stopPropagation()}
     >
       {showScheduled && (

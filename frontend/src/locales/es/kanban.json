@@ -6,6 +6,8 @@
   "expandColumn": "Expandir columna",
   "datesOutOfOrder": "La fecha límite debe ser igual o posterior a la fecha programada.",
   "scheduledLabel": "Programada",
+  "uploadingAttachment_one": "Subiendo 1 archivo…",
+  "uploadingAttachment_other": "Subiendo {{count}} archivos…",
   "deadlineLabel": "Fecha l\u00edmite",
   "snoozedCount": "{{count}} pospuestas",
   "snoozedTooltip": "Tareas en espera de una fecha futura",

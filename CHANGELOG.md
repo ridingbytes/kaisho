@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+- Drag-and-drop or paste files onto a task's description
+  to attach them, GitHub-issue style. Files land under
+  the active profile at
+  `data/profiles/<profile>/attachments/<task_id>/...`
+  and are served back from `/api/attachments/...`.
+  Images embed as `![name](url)`; everything else
+  becomes a `[name](url)` link. Local-only for now —
+  desktop attachments will show as broken on the mobile
+  PWA until cloud-backed storage lands.
+- Kanban columns now expand to fill available width up
+  to a sensible cap (288–400 px) so editing on wide
+  screens is no longer cramped, and collapsed columns
+  hand their freed-up space back to the expanded ones.
+- Move the scheduled/deadline badges on task cards from
+  next to the customer chip to the top-right corner
+  where they no longer crowd the title.
+
 ## 2.5.2
 
 This release adds the kanban-scheduling feature (snooze a
