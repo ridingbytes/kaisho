@@ -97,6 +97,13 @@ DEFAULT_CURSOR: dict = {
     "last_push_at": None,
     "last_error": None,
     "last_snapshot_push": None,
+    # Flipped True only after the first fully-successful
+    # sync cycle. Drives the initial full-push (EPOCH
+    # push-since) for every entity. We can't infer this
+    # from ``last_push_cursor`` because the pull step
+    # advances that cursor before the push runs, so a
+    # failed first push would otherwise look "done".
+    "initial_push_done": False,
 }
 
 

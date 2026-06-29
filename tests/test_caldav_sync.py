@@ -516,9 +516,14 @@ class TestOrgBackendFieldNames:
             "description": "test",
             "updated_at": "2026-05-31T09:25:08.304817",
         }
+        # ``enabled_since`` a full day earlier so the naive
+        # local ``updated_at`` is unambiguously after it in
+        # instant terms regardless of the test machine's
+        # timezone (the gate now compares instants, not
+        # strings).
         account = {
             "enabled_since": (
-                "2026-05-31T07:43:48+00:00"
+                "2026-05-30T00:00:00+00:00"
             ),
         }
         assert _should_push(entry, account) is True

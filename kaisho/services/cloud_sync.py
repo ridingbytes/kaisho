@@ -2221,12 +2221,16 @@ def run_sync_cycle(
         "error": "",
     }
 
-    # On the first sync after connect the push cursor is
-    # at EPOCH. We must push *all* local entries, not
-    # just those modified after the pull cursor.
-    is_initial = (
-        cursor["last_push_cursor"] == sync_state.EPOCH
-    )
+    # On the first sync after connect we must push *all*
+    # local entries, not just those modified after the
+    # pull cursor. This is driven by an explicit flag that
+    # only flips after a fully-successful cycle: inferring
+    # it from ``last_push_cursor`` was unreliable because
+    # the pull step (below) advances that cursor before
+    # the push runs, so a failed first push would skip the
+    # full push forever. Pre-flag installs default to
+    # False and pay one harmless re-push (LWW) on upgrade.
+    is_initial = not cursor.get("initial_push_done")
 
     # Step 1: Pull
     try:
@@ -2269,6 +2273,11 @@ def run_sync_cycle(
         )
         cursor["last_push_cursor"] = started
         cursor["last_push_at"] = started
+        # The full initial push has now completed. Mark it
+        # only here, after the push actually succeeded — a
+        # failed push early-returns above and leaves the
+        # flag False so the next cycle retries from EPOCH.
+        cursor["initial_push_done"] = True
     except CloudUnavailable as exc:
         cursor["last_error"] = f"push: {exc}"
         sync_state.save_cursor(profile_dir, cursor)

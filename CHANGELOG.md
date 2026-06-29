@@ -44,6 +44,15 @@
   stale budget bars), and the live-update WebSocket no
   longer leaks a zombie socket + reconnect timer on
   unmount.
+- Fix three sync-correctness bugs: the cloud initial
+  full-push is now tracked by an explicit flag so a
+  failed first push no longer permanently skips pushing
+  pre-existing history; the CalDAV push gate compares
+  timestamps as instants instead of strings (no more
+  dropped entries at negative UTC offsets); and profile
+  switch / create now hold a lock and restore the active
+  profile on failure so a half-created profile can't
+  strand the server.
 
 ## 2.5.2
 
