@@ -14,11 +14,22 @@ from ...cli.main import cli
 
 router = APIRouter(prefix="/api/cli", tags=["cli"])
 
-runner = CliRunner()
+# Top-level commands that don't belong in the command bar
+# (long-running, or they re-point the whole server).
+_BLOCKED_TOPLEVEL = {
+    "serve", "profile", "config", "mcp-server",
+}
 
-# Commands that modify data and should not be
-# exposed without confirmation.
-_BLOCKED = {"serve", "profile", "config"}
+# Destructive verbs that must not run unconfirmed from the
+# command bar, regardless of which group they appear in
+# (``task delete``, ``customer delete``, ``backup prune``,
+# …). Matched against every token so a new destructive
+# subcommand in any group is covered without having to
+# enumerate the full command tree.
+_DESTRUCTIVE_VERBS = {
+    "delete", "remove", "rm", "purge", "destroy",
+    "drop", "reset", "prune", "archive",
+}
 
 
 class CliRequest(BaseModel):
@@ -67,15 +78,36 @@ def run_command(body: CliRequest):
             "error": "Empty command",
         }
 
-    # Block dangerous commands
-    if args[0] in _BLOCKED:
+    # Block long-running / server-repointing commands
+    if args[0] in _BLOCKED_TOPLEVEL:
         return {
             "output": "",
             "exit_code": 1,
             "error": f"Command not allowed: {args[0]}",
         }
 
-    result = runner.invoke(
+    # Block destructive verbs anywhere in the command;
+    # deletes/archives must go through the UI where they
+    # get a confirmation step.
+    destructive = next(
+        (tok for tok in args
+         if tok.lower() in _DESTRUCTIVE_VERBS),
+        None,
+    )
+    if destructive:
+        return {
+            "output": "",
+            "exit_code": 1,
+            "error": (
+                f"Destructive command '{destructive}' must "
+                "be run from the UI with confirmation"
+            ),
+        }
+
+    # Build the runner per request: ``CliRunner`` holds
+    # mutable state and is not safe to share across
+    # concurrent requests.
+    result = CliRunner().invoke(
         cli, args, catch_exceptions=True,
     )
 

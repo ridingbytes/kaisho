@@ -28,6 +28,14 @@
   destination file before removing from the source, and
   knowledge-base file moves use an atomic `shutil.move`
   that also no longer corrupts binary files (PDFs).
+- Harden three security gaps: the cron output-to-KB
+  endpoint now rejects filenames that escape the
+  knowledge dir (path traversal), the command-bar CLI
+  endpoint blocks destructive verbs (delete/remove/
+  archive/…) in any command group and builds its runner
+  per request, and the `batch_invoice` tool refuses to
+  run without a customer or contract scope so it can't
+  invoice an entire history in one call.
 
 ## 2.5.2
 

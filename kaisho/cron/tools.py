@@ -607,6 +607,19 @@ def _batch_invoice(args: dict) -> dict:
     """Mark all uninvoiced entries for a contract."""
     customer = args.get("customer")
     contract = args.get("contract")
+    # Require a scope. With both omitted, ``list_entries``
+    # returns every entry for the year and we would
+    # invoice the user's entire history in one call — a
+    # destructive, near-irreversible action that an LLM
+    # could trigger by leaving the args blank.
+    if not customer and not contract:
+        return {
+            "error": (
+                "batch_invoice requires a customer or a "
+                "contract to scope which entries to mark "
+                "invoiced"
+            ),
+        }
     entries = _backend().clocks.list_entries(
         period="year",
         customer=customer,
