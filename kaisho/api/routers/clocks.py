@@ -1,4 +1,3 @@
-import hashlib
 from datetime import date, datetime
 
 from fastapi import APIRouter, HTTPException
@@ -6,78 +5,9 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
 from ...backends import get_backend
+from ...services import ical as ical_svc
 
 router = APIRouter(prefix="/api/clocks", tags=["clocks"])
-
-
-# ── iCalendar feed ──────────────────────────────────
-
-def _ical_escape(text: str) -> str:
-    """Escape special characters for iCalendar text."""
-    return (
-        text.replace("\\", "\\\\")
-        .replace(";", "\\;")
-        .replace(",", "\\,")
-        .replace("\n", "\\n")
-    )
-
-
-def _entry_to_vevent(entry: dict) -> str:
-    """Convert a clock entry to an iCalendar VEVENT."""
-    start = entry.get("start", "")
-    end = entry.get("end", "")
-    customer = entry.get("customer", "")
-    desc = entry.get("description", "")
-    contract = entry.get("contract") or ""
-    notes = entry.get("notes") or ""
-    minutes = entry.get("duration_minutes") or 0
-
-    # UID: prefer sync_id for uniqueness, fall back
-    # to content hash for entries without one.
-    sync_id = entry.get("sync_id", "")
-    if sync_id:
-        uid = f"{sync_id}@kaisho"
-    else:
-        raw = f"{start}-{customer}-{desc}"
-        uid = hashlib.sha1(
-            raw.encode(), usedforsecurity=False,
-        ).hexdigest()[:16]
-        uid = f"{uid}@kaisho"
-
-    def fmt(iso: str) -> str:
-        """Convert ISO timestamp to iCal format.
-
-        2026-04-14T09:00:00+02:00 -> 20260414T090000
-        """
-        return iso[:19].replace("-", "").replace(
-            ":", "",
-        )
-
-    summary = f"[{customer}] {desc}" if customer else desc
-    if contract:
-        summary += f" ({contract})"
-
-    lines = [
-        "BEGIN:VEVENT",
-        f"UID:{uid}",
-        f"DTSTART:{fmt(start)}",
-    ]
-    if end:
-        lines.append(f"DTEND:{fmt(end)}")
-    elif minutes > 0:
-        hours = int(minutes // 60)
-        mins = int(minutes % 60)
-        lines.append(f"DURATION:PT{hours}H{mins}M")
-
-    lines.append(
-        f"SUMMARY:{_ical_escape(summary)}"
-    )
-    if notes:
-        lines.append(
-            f"DESCRIPTION:{_ical_escape(notes)}"
-        )
-    lines.append("END:VEVENT")
-    return "\r\n".join(lines)
 
 
 @router.get(
@@ -96,25 +26,8 @@ def calendar_feed(
     entries = get_backend().clocks.list_entries(
         period=period, customer=customer,
     )
-    # Only include entries with a start time
-    entries = [
-        e for e in entries if e.get("start")
-    ]
-
-    parts = [
-        "BEGIN:VCALENDAR",
-        "VERSION:2.0",
-        "PRODID:-//Kaisho//Clock Entries//EN",
-        "CALSCALE:GREGORIAN",
-        "METHOD:PUBLISH",
-        "X-WR-CALNAME:Kaisho Time Tracking",
-    ]
-    for e in entries:
-        parts.append(_entry_to_vevent(e))
-    parts.append("END:VCALENDAR")
-    ical = "\r\n".join(parts) + "\r\n"
     return PlainTextResponse(
-        content=ical,
+        content=ical_svc.build_calendar(entries),
         media_type="text/calendar; charset=utf-8",
     )
 
