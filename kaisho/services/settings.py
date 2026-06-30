@@ -161,6 +161,33 @@ def mutate_settings(path: Path, mutator) -> dict:
         return data
 
 
+def reorder_in_place(
+    items: list[dict],
+    order: list[str],
+    name_key: str = "name",
+) -> list[dict]:
+    """Reorder the subset of ``items`` named in ``order``
+    while leaving every other item at its current index.
+
+    Items not named in ``order`` keep their absolute
+    position; the named subset is rewritten into the slots
+    that subset currently occupies, in ``order`` sequence.
+    This preserves hidden items (e.g. done-flagged task
+    states) when only the visible subset is reordered.
+    """
+    order_set = set(order)
+    by_key = {it[name_key]: it for it in items}
+    reordered = [by_key[n] for n in order if n in by_key]
+    subset_positions = sorted(
+        i for i, it in enumerate(items)
+        if it[name_key] in order_set
+    )
+    result = list(items)
+    for pos, item in zip(subset_positions, reordered):
+        result[pos] = item
+    return result
+
+
 def _update_block(
     path: Path, key: str, updates: dict,
 ) -> dict:

@@ -209,52 +209,9 @@ def disconnect():
     """
     data, cfg = _sync_settings()
     url, key = _cloud_creds(data)
-
-    pull_error = None
-    wipe_error = None
-    wiped = 0
-
-    if url and key:
-        # Step 1: final pull to save mobile-only entries.
-        try:
-            sync_svc.run_sync_cycle(
-                cloud_url=url,
-                api_key=key,
-                profile_dir=cfg.PROFILE_DIR,
-            )
-        except (
-            sync_svc.CloudUnavailable,
-            OSError,
-            ValueError,
-        ) as exc:
-            pull_error = str(exc)
-
-        # Step 2: wipe cloud entries.
-        try:
-            result = sync_svc.wipe_cloud_entries(url, key)
-            wiped = result.get("deleted", 0) if result else 0
-        except sync_svc.CloudUnavailable as exc:
-            wipe_error = str(exc)
-    else:
-        wipe_error = "No cloud URL or API key configured"
-
-    # Step 3: clear local sync state.
-    sync_state.save_cursor(
-        cfg.PROFILE_DIR, sync_state.DEFAULT_CURSOR,
+    return sync_svc.disconnect_cloud(
+        cfg.PROFILE_DIR, cfg.SETTINGS_FILE, url, key,
     )
-    sync_state.save_tombstones(cfg.PROFILE_DIR, [])
-
-    # Step 4: disable cloud sync.
-    settings_svc.set_cloud_sync_settings(
-        cfg.SETTINGS_FILE,
-        {"enabled": False, "api_key": "", "url": ""},
-    )
-    return {
-        "ok": True,
-        "wiped": wiped,
-        "pull_error": pull_error,
-        "wipe_error": wipe_error,
-    }
 
 
 # ── GET /api/cloud-sync/active ────────────────────────

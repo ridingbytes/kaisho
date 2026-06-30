@@ -104,33 +104,9 @@ def reorder_states(body: list[str] = Body(...)):
     """
     cfg = get_config()
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
-    all_states = data.get("task_states", [])
-    state_map = {s["name"]: s for s in all_states}
-    body_set = set(body)
-
-    others = [
-        s for s in all_states
-        if s["name"] not in body_set
-    ]
-    reordered = [
-        state_map[n] for n in body if n in state_map
-    ]
-
-    body_positions = sorted(
-        i for i, s in enumerate(all_states)
-        if s["name"] in body_set
+    data["task_states"] = settings_svc.reorder_in_place(
+        data.get("task_states", []), body,
     )
-    result: list[dict] = list(all_states)
-    for pos, state in zip(body_positions, reordered):
-        result[pos] = state
-    other_positions = [
-        i for i, s in enumerate(all_states)
-        if s["name"] not in body_set
-    ]
-    for pos, state in zip(other_positions, others):
-        result[pos] = state
-
-    data["task_states"] = result
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
     return data["task_states"]
 
