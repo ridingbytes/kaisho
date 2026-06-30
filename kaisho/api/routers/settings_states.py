@@ -1,3 +1,5 @@
+from functools import wraps
+
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 
@@ -8,6 +10,24 @@ from ...services import settings as settings_svc
 router = APIRouter(
     prefix="/api/settings", tags=["settings"],
 )
+
+
+def _serialized(fn):
+    """Run a settings-mutating handler under the settings
+    lock so its inline load -> modify -> save cycle is one
+    critical section. Without this, two concurrent writes
+    to different blocks of the single settings file each
+    load, mutate, and save — the last writer silently
+    dropping the other's change. The lock is re-entrant, so
+    handlers calling service helpers that also take it are
+    fine.
+    """
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        with settings_svc.settings_lock():
+            return fn(*args, **kwargs)
+
+    return wrapper
 
 
 class StateCreate(BaseModel):
@@ -36,6 +56,7 @@ class TagUpdate(BaseModel):
 
 
 @router.post("/states", status_code=201)
+@_serialized
 def add_state(body: StateCreate):
     """Add a new kanban column state."""
     cfg = get_config()
@@ -72,6 +93,7 @@ def add_state(body: StateCreate):
 
 
 @router.put("/states/order", status_code=200)
+@_serialized
 def reorder_states(body: list[str] = Body(...)):
     """Reorder a subset of task_states.
 
@@ -114,6 +136,7 @@ def reorder_states(body: list[str] = Body(...)):
 
 
 @router.patch("/states/{name}", status_code=200)
+@_serialized
 def update_state(name: str, body: StateUpdate):
     """Update label, color, and/or done flag for a state."""
     cfg = get_config()
@@ -138,6 +161,7 @@ def update_state(name: str, body: StateUpdate):
 
 
 @router.delete("/states/{name}", status_code=204)
+@_serialized
 def remove_state(name: str):
     """Delete a kanban column state.
 
@@ -174,6 +198,7 @@ def remove_state(name: str):
 
 
 @router.post("/tags", status_code=201)
+@_serialized
 def add_tag(body: TagCreate):
     """Create a new tag with color and description."""
     cfg = get_config()
@@ -196,6 +221,7 @@ def add_tag(body: TagCreate):
 
 
 @router.patch("/tags/{name}")
+@_serialized
 def update_tag(name: str, body: TagUpdate):
     """Update color or description of a tag."""
     cfg = get_config()
@@ -217,6 +243,7 @@ def update_tag(name: str, body: TagUpdate):
 
 
 @router.delete("/tags/{name}", status_code=204)
+@_serialized
 def remove_tag(name: str):
     """Delete a tag."""
     cfg = get_config()
@@ -229,6 +256,7 @@ def remove_tag(name: str):
 
 
 @router.put("/tags/order", status_code=200)
+@_serialized
 def reorder_tags(body: list[str] = Body(...)):
     """Reorder tags by name. Unknown names are ignored;
     tags missing from the body keep their relative order
@@ -250,6 +278,7 @@ def reorder_tags(body: list[str] = Body(...)):
 
 
 @router.post("/customer_types", status_code=201)
+@_serialized
 def add_customer_type(body: dict = Body(...)):
     """Add a new customer type."""
     name = body.get("name", "").strip().upper()
@@ -272,6 +301,7 @@ def add_customer_type(body: dict = Body(...)):
 
 
 @router.delete("/customer_types/{name}", status_code=204)
+@_serialized
 def remove_customer_type(name: str):
     """Delete a customer type."""
     cfg = get_config()
@@ -284,6 +314,7 @@ def remove_customer_type(name: str):
 
 
 @router.put("/customer_types/order", status_code=200)
+@_serialized
 def reorder_customer_types(body: list[str] = Body(...)):
     """Reorder customer types."""
     cfg = get_config()
@@ -297,6 +328,7 @@ def reorder_customer_types(body: list[str] = Body(...)):
 
 
 @router.patch("/customer_types/{name}", status_code=200)
+@_serialized
 def rename_customer_type(name: str, body: dict = Body(...)):
     """Rename a customer type."""
     new_name = body.get("name", "").strip().upper()
@@ -330,6 +362,7 @@ def rename_customer_type(name: str, body: dict = Body(...)):
 
 
 @router.post("/inbox_types", status_code=201)
+@_serialized
 def add_inbox_type(body: dict = Body(...)):
     """Add a new inbox item type."""
     name = body.get("name", "").strip()
@@ -358,6 +391,7 @@ def add_inbox_type(body: dict = Body(...)):
 @router.delete(
     "/inbox_types/{name}", status_code=204,
 )
+@_serialized
 def remove_inbox_type(name: str):
     """Delete an inbox item type."""
     cfg = get_config()
@@ -374,6 +408,7 @@ def remove_inbox_type(name: str):
 
 
 @router.put("/inbox_types/order", status_code=200)
+@_serialized
 def reorder_inbox_types(body: list[str] = Body(...)):
     """Reorder inbox types."""
     cfg = get_config()
@@ -385,6 +420,7 @@ def reorder_inbox_types(body: list[str] = Body(...)):
 
 
 @router.patch("/inbox_types/{name}", status_code=200)
+@_serialized
 def rename_inbox_type(name: str, body: dict = Body(...)):
     """Rename an inbox type."""
     new_name = body.get("name", "").strip()
@@ -412,6 +448,7 @@ def rename_inbox_type(name: str, body: dict = Body(...)):
 
 
 @router.post("/inbox_channels", status_code=201)
+@_serialized
 def add_inbox_channel(body: dict = Body(...)):
     """Add a new inbox channel."""
     name = body.get("name", "").strip().lower()
@@ -440,6 +477,7 @@ def add_inbox_channel(body: dict = Body(...)):
 @router.delete(
     "/inbox_channels/{name}", status_code=204,
 )
+@_serialized
 def remove_inbox_channel(name: str):
     """Delete an inbox channel."""
     cfg = get_config()
@@ -456,6 +494,7 @@ def remove_inbox_channel(name: str):
 
 
 @router.put("/inbox_channels/order", status_code=200)
+@_serialized
 def reorder_inbox_channels(body: list[str] = Body(...)):
     """Reorder inbox channels."""
     cfg = get_config()
@@ -469,6 +508,7 @@ def reorder_inbox_channels(body: list[str] = Body(...)):
 
 
 @router.patch("/inbox_channels/{name}", status_code=200)
+@_serialized
 def rename_inbox_channel(
     name: str, body: dict = Body(...),
 ):

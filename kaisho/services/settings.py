@@ -1,7 +1,20 @@
 import os
+import tempfile
+import threading
+from contextlib import contextmanager
 from pathlib import Path
 
 import yaml
+
+# Serialises the whole load -> modify -> save cycle.
+# Every settings block (ai, cloud_sync, task_states, …)
+# lives in one YAML file, so two requests writing
+# different blocks concurrently would each load, merge
+# their own block, and save — last writer silently
+# dropping the other's change. Re-entrant so a mutator
+# that itself calls another settings helper doesn't
+# deadlock.
+_settings_lock = threading.RLock()
 
 # Settings YAML holds plaintext credentials (Ollama keys,
 # Claude/OpenAI/OpenRouter keys, GitHub PAT, cloud-sync
@@ -98,23 +111,100 @@ def _migrate_ollama_cloud_key(data: dict) -> bool:
 
 
 def save_settings(path: Path, settings: dict) -> None:
-    """Save settings to a YAML file.
+    """Save settings to a YAML file atomically.
 
     The file holds plaintext credentials, so we lock the
     parent directory to 0o700 and the file itself to 0o600
     after every write. ``chmod`` is best-effort on
     platforms where it is a no-op (Windows) -- the file
     will still be created, just without POSIX permissions.
+
+    Written via a temp file + ``os.replace`` so a crash
+    mid-write can't leave a truncated / corrupt settings
+    file (the rename is atomic on the same filesystem).
     """
     parent = path.parent
     parent.mkdir(parents=True, exist_ok=True)
     _restrict_path_mode(parent, _SETTINGS_DIR_MODE)
-    with open(path, "w", encoding="utf-8") as f:
-        yaml.dump(
-            settings, f,
-            allow_unicode=True, default_flow_style=False,
-        )
+    fd, tmp = tempfile.mkstemp(
+        dir=parent, prefix=".settings-", suffix=".tmp",
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            yaml.dump(
+                settings, f,
+                allow_unicode=True,
+                default_flow_style=False,
+            )
+        _restrict_path_mode(Path(tmp), _SETTINGS_FILE_MODE)
+        os.replace(tmp, path)
+    except BaseException:
+        # Don't leave the temp file behind on failure.
+        Path(tmp).unlink(missing_ok=True)
+        raise
     _restrict_path_mode(path, _SETTINGS_FILE_MODE)
+
+
+def mutate_settings(path: Path, mutator) -> dict:
+    """Atomically apply ``mutator`` to the settings dict.
+
+    Loads the settings, calls ``mutator(data)`` (which
+    mutates ``data`` in place), and saves — all under the
+    settings lock so concurrent writers can't drop each
+    other's changes. Returns the saved dict so callers can
+    derive their response from it.
+    """
+    with _settings_lock:
+        data = load_settings(path)
+        mutator(data)
+        save_settings(path, data)
+        return data
+
+
+def _update_block(
+    path: Path, key: str, updates: dict,
+) -> dict:
+    """Merge ``updates`` into the ``key`` block and save,
+    atomically and under the lock. Returns the saved
+    settings dict. Covers the common shallow-merge writer;
+    blocks needing custom merge logic (e.g. ``ai``, which
+    skips empty secrets) use :func:`mutate_settings`.
+    """
+    def _apply(data: dict) -> None:
+        block = data.get(key, {})
+        block.update(updates)
+        data[key] = block
+
+    return mutate_settings(path, _apply)
+
+
+@contextmanager
+def settings_transaction(path: Path):
+    """Hold the settings lock for a multi-step read-modify-
+    save that the simple ``mutate_settings`` callback can't
+    express (e.g. validate-then-conditionally-save).
+
+    Yields the loaded settings dict; the caller mutates it
+    and calls :func:`save_settings` inside the ``with``
+    block. The lock is held for the whole body so the
+    load and the save are one critical section.
+    """
+    with _settings_lock:
+        yield load_settings(path)
+
+
+def settings_lock():
+    """Return the re-entrant lock guarding the settings
+    read-modify-write cycle.
+
+    For callers that keep their own inline ``load_settings``
+    / ``save_settings`` pair (e.g. the states / tags API
+    handlers) and just need to serialise the whole cycle
+    against concurrent writers. Re-entrant, so a handler
+    holding it can still call service helpers that take it
+    again.
+    """
+    return _settings_lock
 
 
 def _restrict_path_mode(path: Path, mode: int) -> None:
@@ -221,11 +311,13 @@ def clear_ai_key(path: Path, field: str) -> dict:
     """
     if field not in _SECRET_KEYS:
         raise ValueError(f"unknown secret key: {field}")
-    data = load_settings(path)
-    ai = data.get("ai", {}) or {}
-    ai[field] = ""
-    data["ai"] = ai
-    save_settings(path, data)
+
+    def _apply(data: dict) -> None:
+        ai = data.get("ai", {}) or {}
+        ai[field] = ""
+        data["ai"] = ai
+
+    data = mutate_settings(path, _apply)
     return get_ai_settings_safe(data)
 
 
@@ -253,14 +345,15 @@ def set_ai_settings(path: Path, updates: dict) -> dict:
 
     :returns: The full ai block (with secrets masked).
     """
-    data = load_settings(path)
-    ai = data.get("ai", {})
-    for k, v in updates.items():
-        if k in _SECRET_KEYS and v == "":
-            continue
-        ai[k] = v
-    data["ai"] = ai
-    save_settings(path, data)
+    def _apply(data: dict) -> None:
+        ai = data.get("ai", {})
+        for k, v in updates.items():
+            if k in _SECRET_KEYS and v == "":
+                continue
+            ai[k] = v
+        data["ai"] = ai
+
+    data = mutate_settings(path, _apply)
     return get_ai_settings_safe(data)
 
 
@@ -297,11 +390,12 @@ def set_cloud_sync_settings(
     path: Path, updates: dict,
 ) -> dict:
     """Persist cloud sync settings; return new block."""
-    data = load_settings(path)
-    sync = data.get("cloud_sync", {})
-    sync.update(updates)
-    data["cloud_sync"] = sync
-    save_settings(path, data)
+    def _apply(data: dict) -> None:
+        sync = data.get("cloud_sync", {})
+        sync.update(updates)
+        data["cloud_sync"] = sync
+
+    data = mutate_settings(path, _apply)
     return get_cloud_sync_settings(data)
 
 
@@ -326,12 +420,9 @@ def set_backup_settings(
     path: Path, updates: dict,
 ) -> dict:
     """Persist backup settings updates; return the new block."""
-    data = load_settings(path)
-    block = data.get("backup", {})
-    block.update(updates)
-    data["backup"] = block
-    save_settings(path, data)
-    return get_backup_settings(data)
+    return get_backup_settings(
+        _update_block(path, "backup", updates),
+    )
 
 
 def resolve_backup_dir(settings: dict, cfg=None) -> Path:
@@ -385,12 +476,9 @@ def set_clocks_settings(
     path: Path, updates: dict,
 ) -> dict:
     """Persist clock settings updates; return the new block."""
-    data = load_settings(path)
-    block = data.get("clocks", {})
-    block.update(updates)
-    data["clocks"] = block
-    save_settings(path, data)
-    return get_clocks_settings(data)
+    return get_clocks_settings(
+        _update_block(path, "clocks", updates),
+    )
 
 
 DEFAULT_INVOICE_EXPORT: dict = {
@@ -419,12 +507,9 @@ def set_invoice_export_settings(
     path: Path, updates: dict,
 ) -> dict:
     """Persist invoice export settings."""
-    data = load_settings(path)
-    exp = data.get("invoice_export", {})
-    exp.update(updates)
-    data["invoice_export"] = exp
-    save_settings(path, data)
-    return get_invoice_export_settings(data)
+    return get_invoice_export_settings(
+        _update_block(path, "invoice_export", updates),
+    )
 
 
 DEFAULT_GITHUB: dict = {
@@ -440,12 +525,9 @@ def get_github_settings(settings: dict) -> dict:
 
 def set_github_settings(path: Path, updates: dict) -> dict:
     """Persist GitHub settings updates; return the new full block."""
-    data = load_settings(path)
-    gh = data.get("github", {})
-    gh.update(updates)
-    data["github"] = gh
-    save_settings(path, data)
-    return get_github_settings(data)
+    return get_github_settings(
+        _update_block(path, "github", updates),
+    )
 
 
 # ── External editor ─────────────────────────────────────
@@ -471,12 +553,9 @@ def set_external_editor_settings(
     path: Path, updates: dict,
 ) -> dict:
     """Persist external-editor settings updates."""
-    data = load_settings(path)
-    block = data.get("external_editor", {})
-    block.update(updates)
-    data["external_editor"] = block
-    save_settings(path, data)
-    return get_external_editor_settings(data)
+    return get_external_editor_settings(
+        _update_block(path, "external_editor", updates),
+    )
 
 
 def current_kb_sources() -> list[dict]:
@@ -528,9 +607,9 @@ def get_kb_sources(settings: dict, cfg=None) -> list[dict]:
 
 def set_kb_sources(path: Path, sources: list[dict]) -> list[dict]:
     """Persist KB sources; return the updated list."""
-    data = load_settings(path)
-    data["kb_sources"] = sources
-    save_settings(path, data)
+    mutate_settings(
+        path, lambda data: data.update(kb_sources=sources),
+    )
     return sources
 
 
@@ -602,16 +681,17 @@ def set_path_settings(
     path: Path, updates: dict,
 ) -> dict:
     """Persist path/backend settings."""
-    data = load_settings(path)
-    paths = data.get("paths", {})
-    for key in (
-        "backend", "org_dir",
-        "markdown_dir", "json_dir", "sql_dsn",
-    ):
-        if key in updates and updates[key] is not None:
-            paths[key] = updates[key]
-    data["paths"] = paths
-    save_settings(path, data)
+    def _apply(data: dict) -> None:
+        paths = data.get("paths", {})
+        for key in (
+            "backend", "org_dir",
+            "markdown_dir", "json_dir", "sql_dsn",
+        ):
+            if key in updates and updates[key] is not None:
+                paths[key] = updates[key]
+        data["paths"] = paths
+
+    data = mutate_settings(path, _apply)
     return get_path_settings(data)
 
 
@@ -622,10 +702,14 @@ def get_url_allowlist(settings: dict) -> list[str]:
 
 def add_to_url_allowlist(path: Path, domain: str) -> list[str]:
     """Add a domain to the URL allowlist and return the list."""
-    data = load_settings(path)
-    allowlist = data.get("url_allowlist", [])
-    if domain not in allowlist:
-        allowlist.append(domain)
-    data["url_allowlist"] = allowlist
-    save_settings(path, data)
-    return allowlist
+    result: list[str] = []
+
+    def _apply(data: dict) -> None:
+        allowlist = data.get("url_allowlist", [])
+        if domain not in allowlist:
+            allowlist.append(domain)
+        data["url_allowlist"] = allowlist
+        result.extend(allowlist)
+
+    mutate_settings(path, _apply)
+    return result

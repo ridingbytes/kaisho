@@ -7,6 +7,11 @@
   were silently never pushed to the cloud, and pulled
   items duplicated on every sync. Adds the columns with an
   idempotent migration and backfills legacy rows on read.
+- Serialise settings writes behind a lock and write the
+  settings file atomically. Two clients saving different
+  settings blocks at once could previously drop one
+  another's change (read-modify-write race), and a crash
+  mid-write could truncate the file.
 
 ## 2.5.3
 
