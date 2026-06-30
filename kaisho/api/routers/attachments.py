@@ -30,13 +30,28 @@ router = APIRouter(
     prefix="/api/attachments", tags=["attachments"],
 )
 
-MAX_BYTES = 25 * 1024 * 1024  # 25 MiB
+MAX_BYTES = 25 * 1024 * 1024  # 25 MiB per file
+# Per-bucket ceilings so a runaway client can't fill the
+# disk one small file at a time (the per-file cap alone
+# doesn't bound the total).
+MAX_BUCKET_FILES = 200
+MAX_BUCKET_BYTES = 200 * 1024 * 1024  # 200 MiB per bucket
 
 _SAFE_SEGMENT = re.compile(r"[^A-Za-z0-9._-]+")
 
 
 def _attachments_root() -> Path:
     return get_config().PROFILE_DIR / "attachments"
+
+
+def _bucket_usage(bucket_dir: Path) -> tuple[int, int]:
+    """Return ``(file_count, total_bytes)`` for a bucket.
+    Missing dir reads as empty."""
+    if not bucket_dir.is_dir():
+        return 0, 0
+    files = [p for p in bucket_dir.iterdir() if p.is_file()]
+    total = sum(p.stat().st_size for p in files)
+    return len(files), total
 
 
 def _safe_segment(name: str, fallback: str) -> str:
@@ -91,6 +106,20 @@ async def upload_attachment(
     bucket_dir.mkdir(parents=True, exist_ok=True)
     dest = _resolve_within(root, bucket_dir / stored_name)
 
+    # Refuse before writing if the bucket is already at its
+    # file-count ceiling.
+    existing_count, existing_bytes = _bucket_usage(
+        bucket_dir,
+    )
+    if existing_count >= MAX_BUCKET_FILES:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"bucket already has {MAX_BUCKET_FILES} "
+                "files"
+            ),
+        )
+
     written = 0
     with dest.open("wb") as fh:
         while True:
@@ -98,14 +127,23 @@ async def upload_attachment(
             if not chunk:
                 break
             written += len(chunk)
-            if written > MAX_BYTES:
+            over_file = written > MAX_BYTES
+            over_bucket = (
+                existing_bytes + written > MAX_BUCKET_BYTES
+            )
+            if over_file or over_bucket:
                 fh.close()
                 dest.unlink(missing_ok=True)
+                detail = (
+                    f"file exceeds {MAX_BYTES} bytes"
+                    if over_file
+                    else (
+                        "bucket exceeds "
+                        f"{MAX_BUCKET_BYTES} bytes"
+                    )
+                )
                 raise HTTPException(
-                    status_code=413,
-                    detail=(
-                        f"file exceeds {MAX_BYTES} bytes"
-                    ),
+                    status_code=413, detail=detail,
                 )
             fh.write(chunk)
 

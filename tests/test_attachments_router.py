@@ -139,6 +139,57 @@ def test_size_limit_enforced(monkeypatch, tmp_path):
     )
 
 
+def test_bucket_file_count_cap(monkeypatch, tmp_path):
+    """Once a bucket hits the file-count ceiling, further
+    uploads are refused with 413."""
+    monkeypatch.setattr(att, "MAX_BUCKET_FILES", 2)
+    client, _ = _client(monkeypatch, tmp_path)
+
+    def _put(n):
+        return client.post(
+            "/api/attachments",
+            files={
+                "file": (
+                    f"f{n}.txt",
+                    BytesIO(b"x"),
+                    "text/plain",
+                ),
+            },
+            data={"task_id": "b"},
+        )
+
+    assert _put(1).status_code == 200
+    assert _put(2).status_code == 200
+    third = _put(3)
+    assert third.status_code == 413
+    assert "files" in third.json()["detail"]
+
+
+def test_bucket_total_size_cap(monkeypatch, tmp_path):
+    """A bucket's aggregate byte ceiling is enforced even
+    when each individual file is under the per-file cap."""
+    monkeypatch.setattr(att, "MAX_BUCKET_BYTES", 10)
+    client, _ = _client(monkeypatch, tmp_path)
+
+    def _put(n):
+        return client.post(
+            "/api/attachments",
+            files={
+                "file": (
+                    f"f{n}.bin",
+                    BytesIO(b"x" * 6),
+                    "application/octet-stream",
+                ),
+            },
+            data={"task_id": "b"},
+        )
+
+    assert _put(1).status_code == 200   # 6 bytes
+    over = _put(2)                       # would be 12 > 10
+    assert over.status_code == 413
+    assert "bucket" in over.json()["detail"]
+
+
 def test_svg_is_forced_to_download(monkeypatch, tmp_path):
     """SVG can carry script; never serve it inline. The
     GET must force download + neutralise the mime so the
