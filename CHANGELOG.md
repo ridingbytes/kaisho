@@ -18,6 +18,10 @@
 - Cap attachment uploads per bucket (file count and total
   size) so a runaway client can't fill the disk one small
   file at a time, on top of the existing per-file limit.
+- Internal: move the iCalendar feed serialisation and the
+  dashboard metric aggregation out of their API routers
+  into dedicated services (`services/ical.py`,
+  `services/dashboard.py`).
 
 ## 2.5.3
 
