@@ -5,6 +5,7 @@ from ..org.models import Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 from ..time_utils import local_now
+from .knowledge import write_kb_markdown
 from .clocks import (
     current_timestamp,
     ensure_sync_identity,
@@ -272,13 +273,6 @@ def move_to_kb(
     Returns ``{path, rel_path, metadata}`` where ``rel_path`` is
     relative to ``kb_dir``.
     """
-    if not filename.endswith(".md"):
-        raise ValueError("filename must end with .md")
-    if "/" in filename or "\\" in filename:
-        raise ValueError(
-            "filename must not contain path separators"
-        )
-
     org_file, idx, heading = _load_heading(notes_file, note_id)
 
     props = heading.properties
@@ -296,20 +290,13 @@ def move_to_kb(
     if props.get("TASK_ID"):
         metadata["task_id"] = props["TASK_ID"]
 
-    content = f"# {title}\n\n{body}\n" if body else f"# {title}\n"
-
-    rel_dir = Path(subdir.strip("/")) if subdir else Path()
-    target_dir = (kb_dir / rel_dir).resolve()
-    if not str(target_dir).startswith(str(kb_dir.resolve())):
-        raise ValueError("subdir escapes KB source root")
-    target_dir.mkdir(parents=True, exist_ok=True)
-    dest = target_dir / filename
-    dest.write_text(content, encoding="utf-8")
+    dest, rel_path = write_kb_markdown(
+        kb_dir, filename, title, body, subdir,
+    )
 
     org_file.headings.pop(idx)
     write_org_file(notes_file, org_file)
 
-    rel_path = str(rel_dir / filename) if subdir else filename
     return {
         "path": str(dest),
         "rel_path": rel_path,
