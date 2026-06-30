@@ -1840,7 +1840,7 @@ dependencies = [
 
 [[package]]
 name = "kaisho-desktop"
-version = "2.5.3"
+version = "2.5.4"
 dependencies = [
  "ab_glyph",
  "embed_plist",

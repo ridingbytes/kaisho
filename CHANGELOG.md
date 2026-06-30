@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 2.5.4
+
+A correctness + hardening release continuing the whole-app
+review: two more data-integrity fixes (SQL notes/inbox
+cloud-sync identity, the settings write race) plus
+attachment upload caps and some internal cleanup.
 
 - Give SQL-backend notes and inbox items cloud-sync
   identity (`sync_id` + `updated_at`). Without it they
