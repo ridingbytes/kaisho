@@ -312,7 +312,12 @@ def add_account(
         data = _load_settings()
         data["accounts"].append(record)
         _save_settings(data)
-    except Exception:
+    except Exception:  # noqa: BLE001
+        # Rollback-and-reraise: if persisting the account
+        # fails for any reason, drop the password we just
+        # stored so we don't leak an orphan credential,
+        # then let the original error propagate. Broad on
+        # purpose — it never swallows.
         _delete_password(account_id)
         raise
 
