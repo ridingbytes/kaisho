@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Internal: finish moving business logic out of the API
+  routers into services — AI provider discovery / probing
+  (`services/ai_providers.py`), the cloud disconnect
+  workflow, and the task-state reorder algorithm now live
+  in their services; the routers are thin shims.
+
 ## 2.5.4
 
 A correctness + hardening release continuing the whole-app

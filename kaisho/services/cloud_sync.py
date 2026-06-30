@@ -2440,3 +2440,62 @@ def run_sync_cycle(
         cursor["last_error"] = None
     sync_state.save_cursor(profile_dir, cursor)
     return result
+
+
+def disconnect_cloud(
+    profile_dir: Path,
+    settings_file: Path,
+    url: str,
+    key: str,
+) -> dict:
+    """Tear down the cloud connection in order:
+
+    1. Final pull so any mobile-only entries are saved
+       locally (the org file is the source of truth).
+    2. Wipe cloud entries for a clean slate.
+    3. Clear local sync state (cursor + tombstones).
+    4. Disable cloud sync in settings.
+
+    On the next connect a full push rebuilds the cloud
+    from local state. Returns
+    ``{ok, wiped, pull_error, wipe_error}``.
+    """
+    from . import settings as settings_svc
+
+    pull_error = None
+    wipe_error = None
+    wiped = 0
+
+    if url and key:
+        try:
+            run_sync_cycle(
+                cloud_url=url,
+                api_key=key,
+                profile_dir=profile_dir,
+            )
+        except (CloudUnavailable, OSError, ValueError) as exc:
+            pull_error = str(exc)
+
+        try:
+            result = wipe_cloud_entries(url, key)
+            wiped = result.get("deleted", 0) if result else 0
+        except CloudUnavailable as exc:
+            wipe_error = str(exc)
+    else:
+        wipe_error = "No cloud URL or API key configured"
+
+    sync_state.save_cursor(
+        profile_dir, sync_state.DEFAULT_CURSOR,
+    )
+    sync_state.save_tombstones(profile_dir, [])
+
+    settings_svc.set_cloud_sync_settings(
+        settings_file,
+        {"enabled": False, "api_key": "", "url": ""},
+    )
+    return {
+        "ok": True,
+        "wiped": wiped,
+        "pull_error": pull_error,
+        "wipe_error": wipe_error,
+    }

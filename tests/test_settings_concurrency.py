@@ -76,3 +76,27 @@ def test_save_settings_atomic_cleans_temp_on_error(
     assert svc.load_settings(p) == {"keep": "me"}
     leftovers = list(tmp_path.glob(".settings-*"))
     assert leftovers == []
+
+
+def test_reorder_in_place_preserves_hidden_items():
+    """Reordering a visible subset must keep items not in
+    the order list at their absolute positions."""
+    items = [
+        {"name": "TODO"},
+        {"name": "DONE"},      # hidden (not in order)
+        {"name": "NEXT"},
+        {"name": "WAIT"},
+    ]
+    # User drags the visible subset into NEXT, TODO, WAIT.
+    result = svc.reorder_in_place(
+        items, ["NEXT", "TODO", "WAIT"],
+    )
+    names = [i["name"] for i in result]
+    # DONE stays at index 1; the subset fills slots 0,2,3.
+    assert names == ["NEXT", "DONE", "TODO", "WAIT"]
+
+
+def test_reorder_in_place_ignores_unknown_names():
+    items = [{"name": "A"}, {"name": "B"}]
+    result = svc.reorder_in_place(items, ["B", "ghost", "A"])
+    assert [i["name"] for i in result] == ["B", "A"]
