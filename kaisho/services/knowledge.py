@@ -620,6 +620,46 @@ def rename_file(
     raise ValueError(f"File not found: {old_path!r}")
 
 
+def write_kb_markdown(
+    kb_dir: Path,
+    filename: str,
+    title: str,
+    body: str,
+    subdir: str | None = None,
+) -> tuple[Path, str]:
+    """Write a ``# {title}`` + body markdown file into the
+    KB, optionally under ``subdir``.
+
+    Shared by the notes and inbox "move to knowledge base"
+    flows. Validates the filename and refuses a ``subdir``
+    that escapes ``kb_dir`` (path-traversal guard), then
+    writes the file.
+
+    :returns: ``(dest_path, rel_path)`` where ``rel_path``
+        is relative to ``kb_dir``.
+    """
+    if not filename.endswith(".md"):
+        raise ValueError("filename must end with .md")
+    if "/" in filename or "\\" in filename:
+        raise ValueError(
+            "filename must not contain path separators"
+        )
+    content = (
+        f"# {title}\n\n{body}\n" if body else f"# {title}\n"
+    )
+    rel_dir = Path(subdir.strip("/")) if subdir else Path()
+    target_dir = (kb_dir / rel_dir).resolve()
+    if not str(target_dir).startswith(
+        str(kb_dir.resolve())
+    ):
+        raise ValueError("subdir escapes KB source root")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    dest = target_dir / filename
+    dest.write_text(content, encoding="utf-8")
+    rel_path = str(rel_dir / filename) if subdir else filename
+    return dest, rel_path
+
+
 def move_file(
     sources: list[dict],
     old_path: str,

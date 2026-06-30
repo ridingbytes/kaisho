@@ -12,6 +12,9 @@
   settings blocks at once could previously drop one
   another's change (read-modify-write race), and a crash
   mid-write could truncate the file.
+- Internal: dedup the notes / inbox "move to knowledge
+  base" file-writing and path-traversal guard into a
+  shared `write_kb_markdown` helper.
 
 ## 2.5.3
 
