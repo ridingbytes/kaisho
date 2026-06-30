@@ -15,6 +15,9 @@
 - Internal: dedup the notes / inbox "move to knowledge
   base" file-writing and path-traversal guard into a
   shared `write_kb_markdown` helper.
+- Cap attachment uploads per bucket (file count and total
+  size) so a runaway client can't fill the disk one small
+  file at a time, on top of the existing per-file limit.
 
 ## 2.5.3
 
