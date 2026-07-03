@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Refresh the org backend keyword cache when a task state
+  is added or removed [#199]. Adding a new board column
+  (e.g. "Backlog") and moving a card into it no longer
+  makes the card vanish until a server restart.
 - Internal: finish moving business logic out of the API
   routers into services — AI provider discovery / probing
   (`services/ai_providers.py`), the cloud disconnect

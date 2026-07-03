@@ -3,7 +3,7 @@ from functools import wraps
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 
-from ...backends import get_backend
+from ...backends import get_backend, reset_backend
 from ...config import get_config
 from ...services import settings as settings_svc
 
@@ -89,6 +89,10 @@ def add_state(body: StateCreate):
         states.append(new_state)
     data["task_states"] = states
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+    # Rebuild the backend so its cached TODO-keyword set
+    # includes the new state; otherwise the org parser drops
+    # any task moved to this column as an unknown keyword.
+    reset_backend()
     return new_state
 
 
@@ -171,6 +175,8 @@ def remove_state(name: str):
         s for s in states if s["name"] != name
     ]
     settings_svc.save_settings(cfg.SETTINGS_FILE, data)
+    # Drop the removed keyword from the backend's cached set.
+    reset_backend()
 
 
 @router.post("/tags", status_code=201)
