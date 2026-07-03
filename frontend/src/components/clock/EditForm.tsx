@@ -142,6 +142,15 @@ export function EditForm({
     if (e.key === "Escape") onClose();
   }
 
+  // The multi-line description keeps plain Enter for
+  // newlines; only Cmd/Ctrl+Enter saves, Escape cancels.
+  function handleBodyKeyDown(e: React.KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      handleSave();
+    }
+    if (e.key === "Escape") onClose();
+  }
+
   return (
     <>
       <tr className="bg-surface-raised/40">
@@ -216,14 +225,15 @@ export function EditForm({
         </td>
         {/* Description */}
         <td className="px-3 py-2">
-          <input
+          <textarea
             value={description}
             onChange={(e) =>
               setDescription(e.target.value)
             }
-            onKeyDown={handleKeyDown}
+            onKeyDown={handleBodyKeyDown}
             placeholder={tc("description")}
-            className={smallInputCls}
+            rows={3}
+            className={[smallInputCls, "resize-y"].join(" ")}
           />
         </td>
         {/* Duration + actions */}

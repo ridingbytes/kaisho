@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Make the clock entry description a multi-line, resizable
+  field when editing [#210]. It was a single-line input.
 - Highlight selected clock rows [#209]. Selected rows carry
   a subtle accent tint, with a light hover cue on the rest.
 - Multi-select clock entries to bulk-edit them [#208].
