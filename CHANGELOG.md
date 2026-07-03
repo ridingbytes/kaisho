@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Allow dropping a task onto a folded column without
+  expanding it [#203]. Pointer-based drag collision lets a
+  narrow collapsed column win as the drop target, and it
+  now highlights while a card is dragged over it.
 - Show the inline add-task form at the top of the column
   [#202]. New tasks are inserted at the top, so a bottom
   form made the saved card jump up; typing at the top makes

@@ -1,10 +1,13 @@
 import {
+  CollisionDetection,
   DndContext,
   DragEndEvent,
   DragOverEvent,
   DragOverlay,
   DragStartEvent,
   PointerSensor,
+  pointerWithin,
+  rectIntersection,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -339,6 +342,20 @@ function matchesSearch(
   });
 }
 
+/** Prefer the droppable under the pointer, falling back to
+ *  rect intersection. The default (rectIntersection) picks
+ *  the target with the largest overlap area, so a narrow
+ *  collapsed column (40px) loses to its wider neighbors and
+ *  can't be dropped onto. Pointer-within makes the thin
+ *  target under the cursor win; the fallback keeps keyboard
+ *  dragging (no pointer) working. */
+const collisionDetection: CollisionDetection = (args) => {
+  const pointerHits = pointerWithin(args);
+  return pointerHits.length > 0
+    ? pointerHits
+    : rectIntersection(args);
+};
+
 export function KanbanBoard() {
   const { t } = useTranslation("kanban");
   const { t: tc } = useTranslation("common");
@@ -667,6 +684,7 @@ export function KanbanBoard() {
       >
         <DndContext
           sensors={sensors}
+          collisionDetection={collisionDetection}
           onDragStart={onDragStart}
           onDragOver={onDragOver}
           onDragEnd={onDragEnd}
