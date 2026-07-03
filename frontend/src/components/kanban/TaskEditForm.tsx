@@ -34,8 +34,6 @@ interface TaskEditFormProps {
   editGithubUrl: string;
   editTags: string[];
   /** Date-only ISO ``YYYY-MM-DD`` or empty string. */
-  editScheduled: string;
-  /** Date-only ISO ``YYYY-MM-DD`` or empty string. */
   editDeadline: string;
   allTags: TagDef[];
   isSaving: boolean;
@@ -44,7 +42,6 @@ interface TaskEditFormProps {
   onBodyChange: (v: string) => void;
   onGithubUrlChange: (v: string) => void;
   onTagsChange: (tags: string[]) => void;
-  onScheduledChange: (v: string) => void;
   onDeadlineChange: (v: string) => void;
   onSave: () => void;
   onCancel: () => void;
@@ -62,7 +59,6 @@ export function TaskEditForm({
   editBody,
   editGithubUrl,
   editTags,
-  editScheduled,
   editDeadline,
   allTags,
   isSaving,
@@ -71,30 +67,12 @@ export function TaskEditForm({
   onBodyChange,
   onGithubUrlChange,
   onTagsChange,
-  onScheduledChange,
   onDeadlineChange,
   onSave,
   onCancel,
 }: TaskEditFormProps) {
   const { t } = useTranslation("kanban");
   const { t: tc } = useTranslation("common");
-
-  // Cross-field check: a snooze date past the deadline
-  // is incoherent (the deadline badge would fire before
-  // the snooze even surfaces). Lex compare agrees with
-  // chronological order on ``YYYY-MM-DD``. The API
-  // mirrors this rule and returns 400 if it slips
-  // through, so this is purely instant-feedback UX.
-  const datesOutOfOrder = !!(
-    editScheduled
-    && editDeadline
-    && editDeadline < editScheduled
-  );
-
-  function handleSave() {
-    if (datesOutOfOrder) return;
-    onSave();
-  }
 
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
   const drop = useFileDropOnTextarea({
@@ -110,7 +88,7 @@ export function TaskEditForm({
       e.key === "Enter"
     ) {
       e.preventDefault();
-      handleSave();
+      onSave();
     }
     if (e.key === "Escape") {
       onCancel();
@@ -177,20 +155,6 @@ export function TaskEditForm({
       >
         <label className="flex-1 flex flex-col gap-0.5">
           <span className="text-2xs text-fg-muted px-0.5">
-            {t("scheduledLabel")}
-          </span>
-          <input
-            type="date"
-            value={editScheduled}
-            onChange={(e) =>
-              onScheduledChange(e.target.value)
-            }
-            onKeyDown={handleKeyDown}
-            className={editInputCls}
-          />
-        </label>
-        <label className="flex-1 flex flex-col gap-0.5">
-          <span className="text-2xs text-fg-muted px-0.5">
             {t("deadlineLabel")}
           </span>
           <input
@@ -204,11 +168,6 @@ export function TaskEditForm({
           />
         </label>
       </div>
-      {datesOutOfOrder && (
-        <p className="text-2xs text-red-500 px-0.5">
-          {t("datesOutOfOrder")}
-        </p>
-      )}
       <div
         onPointerDown={(e) => e.stopPropagation()}
       >
@@ -231,8 +190,8 @@ export function TaskEditForm({
         </button>
         <button
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={handleSave}
-          disabled={isSaving || datesOutOfOrder}
+          onClick={onSave}
+          disabled={isSaving}
           className="p-1 text-cta hover:bg-cta-muted rounded disabled:opacity-40"
         >
           <Check size={12} />

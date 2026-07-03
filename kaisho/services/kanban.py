@@ -90,14 +90,10 @@ def _heading_to_task(heading: Heading, task_id: str) -> dict:
         "github_url": heading.properties.get(
             "GITHUB_URL", ""
         ),
-        # ``SCHEDULED`` / ``DEADLINE`` heading properties
-        # carry the date-only ISO string. Org-mode users may
-        # also use the native ``SCHEDULED:`` / ``DEADLINE:``
-        # planning lines, but kaisho writes them as
-        # properties to keep parsing trivial across backends.
-        "scheduled": (
-            heading.properties.get("SCHEDULED") or None
-        ),
+        # ``DEADLINE`` heading property carries the date-only
+        # ISO string. Org-mode users may also use the native
+        # ``DEADLINE:`` planning line, but kaisho writes it as
+        # a property to keep parsing trivial across backends.
         "deadline": (
             heading.properties.get("DEADLINE") or None
         ),
@@ -310,13 +306,10 @@ def add_task(
     github_url: str | None = None,
     sync_id: str | None = None,
     task_id: str | None = None,
-    scheduled: str | None = None,
     deadline: str | None = None,
 ) -> dict:
     """Add a new task to todos.org as a flat heading.
 
-    :param scheduled: Optional snooze date (``YYYY-MM-DD``).
-        Written as a ``:SCHEDULED:`` heading property.
     :param deadline: Optional deadline date (``YYYY-MM-DD``).
         Written as a ``:DEADLINE:`` heading property.
     """
@@ -345,8 +338,6 @@ def add_task(
     )
     if github_url:
         new_heading.properties["GITHUB_URL"] = github_url
-    if scheduled:
-        new_heading.properties["SCHEDULED"] = scheduled
     if deadline:
         new_heading.properties["DEADLINE"] = deadline
 
@@ -421,15 +412,14 @@ def update_task(
     customer: str | None = None,
     body: str | None = None,
     github_url: str | None = None,
-    scheduled: str | None = None,
     deadline: str | None = None,
 ) -> dict:
     """Update a task's fields.
 
-    ``scheduled`` / ``deadline`` follow the same sentinel
-    rules as the other params: ``None`` leaves the existing
-    value alone, an empty string clears the property, a
-    ``YYYY-MM-DD`` string sets it.
+    ``deadline`` follows the same sentinel rules as the
+    other params: ``None`` leaves the existing value alone,
+    an empty string clears the property, a ``YYYY-MM-DD``
+    string sets it.
     """
     org_file = parse_org_file(todos_file, keywords)
     heading = _find_task_heading(org_file, keywords, task_id)
@@ -449,11 +439,6 @@ def update_task(
             heading.properties["GITHUB_URL"] = github_url
         else:
             heading.properties.pop("GITHUB_URL", None)
-    if scheduled is not None:
-        if scheduled:
-            heading.properties["SCHEDULED"] = scheduled
-        else:
-            heading.properties.pop("SCHEDULED", None)
     if deadline is not None:
         if deadline:
             heading.properties["DEADLINE"] = deadline

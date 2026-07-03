@@ -88,7 +88,6 @@ export function TaskCard({
   const [editGithubUrl, setEditGithubUrl] = useState(
     "",
   );
-  const [editScheduled, setEditScheduled] = useState("");
   const [editDeadline, setEditDeadline] = useState("");
   const { overlayUrl, openOverlay, closeOverlay } =
     useLinkOverlay();
@@ -118,7 +117,6 @@ export function TaskCard({
     setEditTags([...task.tags]);
     setEditBody(task.body ?? "");
     setEditGithubUrl(task.github_url ?? "");
-    setEditScheduled(task.scheduled ?? "");
     setEditDeadline(task.deadline ?? "");
     setEditing(true);
   }
@@ -138,7 +136,6 @@ export function TaskCard({
           // Always send so the user can also clear by
           // emptying the input. ``""`` clears server-side;
           // an unchanged value just rewrites the same date.
-          scheduled: editScheduled,
           deadline: editDeadline,
         },
       },
@@ -188,7 +185,7 @@ export function TaskCard({
         style={{ backgroundColor: statusColor }}
       />
 
-      {/* Snooze + deadline badges (top-right) */}
+      {/* Deadline badge (top-right) */}
       {!editing && <TaskDateBadges task={task} />}
 
       <div className="flex items-stretch">
@@ -251,14 +248,12 @@ export function TaskCard({
                 updateTask.isPending ||
                 setTaskTags.isPending
               }
-              editScheduled={editScheduled}
               editDeadline={editDeadline}
               onCustomerChange={setEditCustomer}
               onTitleChange={setEditTitle}
               onBodyChange={setEditBody}
               onGithubUrlChange={setEditGithubUrl}
               onTagsChange={setEditTags}
-              onScheduledChange={setEditScheduled}
               onDeadlineChange={setEditDeadline}
               onSave={handleSave}
               onCancel={() => setEditing(false)}

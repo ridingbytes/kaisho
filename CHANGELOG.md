@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Remove the task scheduled/planned date and the snooze
+  behavior [#200]. Tasks are no longer hidden until a
+  planned date; only the deadline date remains. Any
+  previously snoozed tasks are now always visible on the
+  board.
 - Refresh the org backend keyword cache when a task state
   is added or removed [#199]. Adding a new board column
   (e.g. "Backlog") and moving a card into it no longer

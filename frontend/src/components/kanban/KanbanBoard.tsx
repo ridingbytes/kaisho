@@ -46,7 +46,6 @@ import { useCollapsedColumns } from "../../hooks/useCollapsedColumns";
 import { DOCS } from "../../docs/panelDocs";
 import { TaskCard } from "./TaskCard";
 import { KanbanColumn } from "./KanbanColumn";
-import { SnoozedPill } from "./SnoozedPill";
 import { registerPanelAction } from "../../utils/panelActions";
 import { usePendingSearch } from "../../context/ViewContext";
 import { stripCustomerPrefix } from "../../utils/customerPrefix";
@@ -353,24 +352,7 @@ export function KanbanBoard() {
   const {
     isCollapsed, toggle: toggleCollapsed,
   } = useCollapsedColumns();
-  // Hide tasks whose ``scheduled`` date is still in the
-  // future — they reappear on the day. The count is shown
-  // in a toolbar pill so the user can still see them.
-  //
-  // ``toISOString()`` returns UTC, which trips negative-UTC
-  // timezones: a user in PDT (UTC−7) at 22:00 local sees
-  // the next day's UTC date and their snooze "expires" a
-  // day late. ``en-CA`` produces the canonical
-  // ``YYYY-MM-DD`` shape in *local* time, which is what
-  // we actually want.
-  const todayStr = new Date().toLocaleDateString("en-CA");
-  const snoozed = rawTasks.filter(
-    (t) => t.scheduled && t.scheduled > todayStr,
-  );
-  const visibleTasks = rawTasks.filter(
-    (t) => !t.scheduled || t.scheduled <= todayStr,
-  );
-  const tasks = visibleTasks.filter(
+  const tasks = rawTasks.filter(
     (t) => matchesSearch(t, search),
   );
   const { pendingSearch, clearPendingSearch } = usePendingSearch();
@@ -664,7 +646,6 @@ export function KanbanBoard() {
           </div>
         </>}
         right={<>
-          <SnoozedPill snoozed={snoozed} />
           <Button
             variant="tonal"
             size="sm"

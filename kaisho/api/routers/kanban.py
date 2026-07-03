@@ -30,36 +30,6 @@ def _validate_date(value: str | None, field: str) -> None:
         )
 
 
-def _reject_deadline_before_scheduled(
-    scheduled: str | None, deadline: str | None,
-) -> None:
-    """Raise ``ValueError`` when the user has supplied
-    both dates in the same payload and the deadline lands
-    before the scheduled (snooze) date.
-
-    A snoozed-past-its-deadline task is incoherent — the
-    deadline badge would fire before the snooze even
-    surfaces — and is almost certainly a typo. Lexicographic
-    compare on ``YYYY-MM-DD`` agrees with chronological
-    order, so a plain string compare is enough.
-
-    On ``TaskUpdate`` this only catches the "user sent
-    both at once" case; sending just one that breaks the
-    invariant against the stored other is not validated
-    here (the frontend has the merged shape and can do
-    that check). Catching the typo at the API boundary is
-    the higher-value safety net.
-    """
-    if not scheduled or not deadline:
-        return
-    if deadline < scheduled:
-        raise ValueError(
-            "deadline must be on or after scheduled date "
-            f"(got scheduled={scheduled}, "
-            f"deadline={deadline})"
-        )
-
-
 class TaskCreate(BaseModel):
     customer: str = ""
     title: str
@@ -67,19 +37,13 @@ class TaskCreate(BaseModel):
     tags: list[str] = []
     body: str | None = None
     github_url: str | None = None
-    # Date-only ISO strings (``YYYY-MM-DD``). ``scheduled``
-    # is the snooze (hidden / subdued until that day),
-    # ``deadline`` is the due date. Both are optional.
-    scheduled: str | None = None
+    # Date-only ISO string (``YYYY-MM-DD``). The
+    # ``deadline`` is the due date. Optional.
     deadline: str | None = None
 
     @model_validator(mode="after")
     def _check_dates(self) -> "TaskCreate":
-        _validate_date(self.scheduled, "scheduled")
         _validate_date(self.deadline, "deadline")
-        _reject_deadline_before_scheduled(
-            self.scheduled, self.deadline,
-        )
         return self
 
 
@@ -91,16 +55,11 @@ class TaskUpdate(BaseModel):
     github_url: str | None = None
     # ``None`` = leave unchanged (default Pydantic shape);
     # ``""`` = clear; ``"YYYY-MM-DD"`` = set.
-    scheduled: str | None = None
     deadline: str | None = None
 
     @model_validator(mode="after")
     def _check_dates(self) -> "TaskUpdate":
-        _validate_date(self.scheduled, "scheduled")
         _validate_date(self.deadline, "deadline")
-        _reject_deadline_before_scheduled(
-            self.scheduled, self.deadline,
-        )
         return self
 
 
@@ -146,7 +105,6 @@ def create_task(body: TaskCreate):
         tags=body.tags,
         body=body.body,
         github_url=body.github_url,
-        scheduled=body.scheduled,
         deadline=body.deadline,
     )
 
@@ -167,7 +125,6 @@ def update_task(task_id: str, body: TaskUpdate):
             or body.customer is not None
             or body.body is not None
             or body.github_url is not None
-            or body.scheduled is not None
             or body.deadline is not None
         ):
             result = tasks.update_task(
@@ -176,7 +133,6 @@ def update_task(task_id: str, body: TaskUpdate):
                 customer=body.customer,
                 body=body.body,
                 github_url=body.github_url,
-                scheduled=body.scheduled,
                 deadline=body.deadline,
             )
         if result is None:
