@@ -45,6 +45,7 @@ export function KanbanColumn({
   onToggleCollapsed,
 }: KanbanColumnProps) {
   const { t } = useTranslation("kanban");
+  const { t: tc } = useTranslation("common");
   const {
     setNodeRef,
     attributes,
@@ -70,6 +71,7 @@ export function KanbanColumn({
   }, [openAdd, onAddOpened]);
   const [customer, setCustomer] = useState("");
   const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const addTask = useAddTask();
   const { data: gh } = useGithubSettings();
@@ -82,12 +84,14 @@ export function KanbanColumn({
         customer: customer.trim(),
         title: title.trim(),
         status: state.name,
+        body: body.trim() || undefined,
         github_url: githubUrl.trim() || undefined,
       },
       {
         onSuccess: () => {
           setCustomer("");
           setTitle("");
+          setBody("");
           setGithubUrl("");
           setAdding(false);
         },
@@ -97,6 +101,16 @@ export function KanbanColumn({
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" || ((e.metaKey || e.ctrlKey) && e.key === "Enter")) {
+      e.preventDefault();
+      handleAdd();
+    }
+    if (e.key === "Escape") setAdding(false);
+  }
+
+  // The description textarea allows plain Enter for newlines;
+  // only Cmd/Ctrl+Enter submits, Escape cancels.
+  function handleBodyKeyDown(e: React.KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
       handleAdd();
     }
@@ -282,6 +296,14 @@ export function KanbanColumn({
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={handleKeyDown}
               className={inputCls}
+            />
+            <textarea
+              placeholder={tc("descriptionOptional")}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              onKeyDown={handleBodyKeyDown}
+              rows={2}
+              className={[inputCls, "resize-y"].join(" ")}
             />
             {githubConfigured && (
               <input
