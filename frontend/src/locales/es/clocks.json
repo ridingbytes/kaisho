@@ -69,5 +69,12 @@
   "task": "Tarea",
   "hideInvoiced": "Ocultar facturados",
   "icalFeed": "Suscribirse al calendario (iCal)",
-  "notesPlaceholder": "Agregar notas..."
+  "notesPlaceholder": "Agregar notas...",
+  "bulkSelected": "{{count}} seleccionados",
+  "bulkClear": "Limpiar",
+  "bulkMarkInvoiced": "Marcar facturado",
+  "bulkUnmarkInvoiced": "Desmarcar facturado",
+  "bulkSetCustomer": "Asignar cliente",
+  "bulkSetContract": "Asignar contrato",
+  "bulkContractMixedCustomers": "Selecciona filas de un solo cliente para asignar un contrato"
 }

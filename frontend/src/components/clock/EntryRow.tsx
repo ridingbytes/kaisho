@@ -35,6 +35,10 @@ export interface EntryRowProps {
   entry: ClockEntry;
   tasks: Task[];
   invoicedSet: Set<string>;
+  /** Whether this row is selected for bulk editing. */
+  selected?: boolean;
+  /** Toggle this row's selection. */
+  onToggleSelect?: () => void;
 }
 
 /**
@@ -47,6 +51,8 @@ export function EntryRow({
   entry,
   tasks,
   invoicedSet,
+  selected = false,
+  onToggleSelect,
 }: EntryRowProps) {
   const { t } = useTranslation("clocks");
   const { t: tc } = useTranslation("common");
@@ -105,6 +111,16 @@ export function EntryRow({
         "border-b border-border-subtle last:border-0"
       }
     >
+      <td className="px-2 py-1.5 text-center">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          onClick={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}
+          className="rounded border-border text-cta"
+        />
+      </td>
       <td
         className={
           "px-3 py-1.5 text-xs font-mono " +

@@ -69,5 +69,12 @@
   "task": "Aufgabe",
   "hideInvoiced": "Abgerechnete ausblenden",
   "icalFeed": "Kalender abonnieren (iCal)",
-  "notesPlaceholder": "Notizen hinzufügen..."
+  "notesPlaceholder": "Notizen hinzufügen...",
+  "bulkSelected": "{{count}} ausgewählt",
+  "bulkClear": "Aufheben",
+  "bulkMarkInvoiced": "Als abgerechnet markieren",
+  "bulkUnmarkInvoiced": "Abgerechnet aufheben",
+  "bulkSetCustomer": "Kunde setzen",
+  "bulkSetContract": "Vertrag setzen",
+  "bulkContractMixedCustomers": "Zeilen eines einzelnen Kunden auswählen, um einen Vertrag zu setzen"
 }

@@ -69,5 +69,12 @@
   "task": "Задача",
   "hideInvoiced": "Скрыть выставленные",
   "icalFeed": "Подписаться на календарь (iCal)",
-  "notesPlaceholder": "Добавьте заметки..."
+  "notesPlaceholder": "Добавьте заметки...",
+  "bulkSelected": "Выбрано: {{count}}",
+  "bulkClear": "Очистить",
+  "bulkMarkInvoiced": "Отметить как выставленное",
+  "bulkUnmarkInvoiced": "Снять отметку выставленного",
+  "bulkSetCustomer": "Задать клиента",
+  "bulkSetContract": "Задать договор",
+  "bulkContractMixedCustomers": "Выберите строки одного клиента, чтобы задать договор"
 }

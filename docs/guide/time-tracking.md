@@ -115,12 +115,21 @@ duration, customer, and description.
 Every clock entry is editable. In the **Clocks** view:
 
 - Click any cell to edit it inline
+- Double-click a row to open the inline edit form
 - Change customer, description, hours, date, contract, or notes
 - Toggle the invoiced flag
 - Link entries to tasks
 
 The table supports column filtering (including regex), sorting, and
 resizing.
+
+### Bulk editing
+
+Select rows with the leading checkboxes (or the header checkbox to
+select all) to reveal the bulk-action bar. It can mark or unmark the
+selection as invoiced, set a customer, and set a contract. Setting a
+contract requires the selected rows to share a single customer, since
+contracts are customer-scoped.
 
 ## Viewing Entries
 
@@ -131,7 +140,8 @@ Filter entries by period:
 | Today | `kai clock list` | Period toggle: Today |
 | This week | `kai clock list --week` | Period toggle: Week |
 | This month | `kai clock list --month` | Period toggle: Month |
-| Custom range | `kai clock list --from 2026-04-01 --to 2026-04-15` | Date picker |
+| Specific date | `kai clock list --from 2026-04-01 --to 2026-04-01` | Date picker |
+| Custom range | `kai clock list --from 2026-04-01 --to 2026-04-15` | Range checkbox + From/To pickers |
 | By customer | `kai clock list --customer "Acme Corp"` | Column filter |
 
 ## Summary

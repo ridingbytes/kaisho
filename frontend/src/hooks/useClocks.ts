@@ -23,6 +23,7 @@ import {
   stopTimer,
   updateClockEntry,
 } from "../api/client";
+import type { ClockEntry } from "../types";
 
 
 /** Every clock write affects the same downstream caches:
@@ -282,6 +283,41 @@ export function useUpdateClockEntry() {
     onSuccess: (_data, vars) => {
       invalidateClockCaches(qc);
       if (!vars.silent) toast("Clock entry updated");
+    },
+  });
+}
+
+/** Returns a mutation that applies the same field
+ *  updates to many clock entries at once (bulk edit of
+ *  invoiced / contract / customer). Writes are performed
+ *  sequentially, not in parallel: the org backend appends
+ *  to one file per write and concurrent writes race. The
+ *  caches are invalidated once, after the whole batch. */
+export function useBatchUpdateClockEntries() {
+  const qc = useQueryClient();
+  const toast = useToast();
+  return useMutation({
+    mutationFn: async ({
+      entries,
+      updates,
+    }: {
+      entries: ClockEntry[];
+      updates: {
+        invoiced?: boolean;
+        contract?: string;
+        customer?: string;
+      };
+    }) => {
+      for (const e of entries) {
+        await updateClockEntry(
+          { sync_id: e.sync_id, start: e.start },
+          updates,
+        );
+      }
+    },
+    onSuccess: (_data, vars) => {
+      invalidateClockCaches(qc);
+      toast(`${vars.entries.length} entries updated`);
     },
   });
 }
