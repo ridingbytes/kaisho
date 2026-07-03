@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Stop the deadline bell badge from overlapping the task
+  card hover actions [#201]. On hover the badge slides left
+  of the mark-done/edit/archive strip instead of sitting
+  under the tick icon.
 - Remove the task scheduled/planned date and the snooze
   behavior [#200]. Tasks are no longer hidden until a
   planned date; only the deadline date remains. Any
