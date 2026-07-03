@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add a description field to the inline create-task form
+  [#204]. New tasks can be given a body immediately instead
+  of having to create then edit.
 - Allow dropping a task onto a folded column without
   expanding it [#203]. Pointer-based drag collision lets a
   narrow collapsed column win as the drop target, and it

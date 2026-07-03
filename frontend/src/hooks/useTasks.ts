@@ -53,14 +53,16 @@ export function useAddTask() {
       customer,
       title,
       status,
+      body,
       github_url,
     }: {
       customer: string;
       title: string;
       status: string;
+      body?: string;
       github_url?: string;
     }) => createTask({
-      customer, title, status,
+      customer, title, status, body,
       githubUrl: github_url,
     }),
     onSuccess: (_d, vars) => {

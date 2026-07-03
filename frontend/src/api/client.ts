@@ -154,6 +154,7 @@ export interface CreateTaskParams {
   customer: string;
   title: string;
   status: string;
+  body?: string;
   githubUrl?: string;
 }
 
@@ -166,6 +167,7 @@ export function createTask(
     customer: params.customer,
     title: params.title,
     status: params.status,
+    body: params.body,
     github_url: params.githubUrl,
   });
 }
