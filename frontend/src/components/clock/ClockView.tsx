@@ -169,6 +169,9 @@ export function ClockView() {
   const { t: tc } = useTranslation("common");
   const [period, setPeriod] = useState<Period>(loadPeriod);
   const [specificDate, setSpecificDate] = useState("");
+  const [rangeMode, setRangeMode] = useState(false);
+  const [rangeFrom, setRangeFrom] = useState("");
+  const [rangeTo, setRangeTo] = useState("");
   const [search, setSearch] = useState("");
   const [colFilters, setColFilters] =
     useState<ColFilters>(loadFilters);
@@ -200,10 +203,15 @@ export function ClockView() {
     );
   }
 
+  // In range mode the from/to inputs drive the query; in
+  // single mode the one date input does (from == to).
+  const effectiveFrom = rangeMode ? rangeFrom : specificDate;
+  const effectiveTo = rangeMode ? rangeTo : specificDate;
   const { data: entries = [], isLoading } =
     useClockEntries(
       period,
-      specificDate || undefined,
+      effectiveFrom || undefined,
+      effectiveTo || undefined,
     );
   const { data: tasks = [] } = useTasks(true);
   const { pendingSearch, clearPendingSearch } =
@@ -313,6 +321,8 @@ export function ClockView() {
               const next = e.target.value as Period;
               setPeriod(next);
               setSpecificDate("");
+              setRangeFrom("");
+              setRangeTo("");
               profileSet(
                 PERIOD_STORAGE_KEY,
                 next,
@@ -324,15 +334,63 @@ export function ClockView() {
             <option value="month">{t("periodMonth")}</option>
             <option value="year">{t("periodYear")}</option>
           </select>
-          <input
-            type="date"
-            className={`${smallInputCls} !w-36`}
-            value={specificDate}
-            title={t("filterByDate")}
-            onChange={(e) =>
-              setSpecificDate(e.target.value)
-            }
-          />
+          <label
+            className="flex items-center gap-1 text-xs text-fg-muted select-none"
+            title={t("dateRangeHint")}
+          >
+            <input
+              type="checkbox"
+              checked={rangeMode}
+              onChange={(e) => {
+                const on = e.target.checked;
+                setRangeMode(on);
+                // Carry the picked day across the toggle so
+                // switching modes doesn't lose the filter.
+                if (on) {
+                  setRangeFrom(specificDate);
+                  setRangeTo("");
+                } else {
+                  setSpecificDate(rangeFrom);
+                }
+              }}
+            />
+            {t("dateRange")}
+          </label>
+          {rangeMode ? (
+            <>
+              <input
+                type="date"
+                className={`${smallInputCls} !w-36`}
+                value={rangeFrom}
+                title={t("fromDate")}
+                onChange={(e) =>
+                  setRangeFrom(e.target.value)
+                }
+              />
+              <span className="text-xs text-fg-muted">
+                –
+              </span>
+              <input
+                type="date"
+                className={`${smallInputCls} !w-36`}
+                value={rangeTo}
+                title={t("toDate")}
+                onChange={(e) =>
+                  setRangeTo(e.target.value)
+                }
+              />
+            </>
+          ) : (
+            <input
+              type="date"
+              className={`${smallInputCls} !w-36`}
+              value={specificDate}
+              title={t("filterByDate")}
+              onChange={(e) =>
+                setSpecificDate(e.target.value)
+              }
+            />
+          )}
           {!isLoading && invoiceFiltered.length > 0 && (
             <span className="text-xs text-fg-muted">
               {t("entriesCount", {

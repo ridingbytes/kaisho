@@ -639,14 +639,18 @@ export function fetchTodayEntries(): Promise<ClockEntry[]> {
 }
 
 /** Fetch clock entries for a time period (e.g. "week",
- *  "month") or a specific date string. */
+ *  "month") or a date range. When ``fromDate`` is given,
+ *  ``toDate`` defaults to it (a single day); otherwise the
+ *  named ``period`` is used. */
 export function fetchClockEntries(
   period: string,
-  specificDate?: string
+  fromDate?: string,
+  toDate?: string
 ): Promise<ClockEntry[]> {
-  if (specificDate) {
+  if (fromDate) {
+    const to = toDate || fromDate;
     return get<ClockEntry[]>(
-      `/clocks/entries?from_date=${specificDate}&to_date=${specificDate}`
+      `/clocks/entries?from_date=${fromDate}&to_date=${to}`
     );
   }
   return get<ClockEntry[]>(`/clocks/entries?period=${period}`);

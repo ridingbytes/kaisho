@@ -105,12 +105,22 @@ export function useTodayEntries() {
   });
 }
 
-/** Provides clock entries for a time period or a
- *  specific date. Use for the clocks history view. */
-export function useClockEntries(period: string, specificDate?: string) {
+/** Provides clock entries for a time period or a date
+ *  range. Pass ``fromDate`` alone for a single day, or
+ *  ``fromDate`` + ``toDate`` for an inclusive range. Use
+ *  for the clocks history view. */
+export function useClockEntries(
+  period: string,
+  fromDate?: string,
+  toDate?: string,
+) {
   return useQuery({
-    queryKey: ["clocks", "entries", period, specificDate ?? ""],
-    queryFn: () => fetchClockEntries(period, specificDate),
+    queryKey: [
+      "clocks", "entries", period,
+      fromDate ?? "", toDate ?? "",
+    ],
+    queryFn: () =>
+      fetchClockEntries(period, fromDate, toDate),
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   });
