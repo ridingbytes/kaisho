@@ -106,10 +106,16 @@ export function EntryRow({
       // navigation, so double-click-to-edit is most useful
       // on the time, duration, and description cells.
       onDoubleClick={() => setMode("edit")}
-      className={
-        "group hover:bg-surface-raised/30 " +
-        "border-b border-border-subtle last:border-0"
-      }
+      className={[
+        "group transition-colors",
+        "border-b border-border-subtle last:border-0",
+        // Subtle accent tint for selected rows; a light
+        // neutral hover otherwise. Selected rows keep their
+        // tint and deepen slightly on hover.
+        selected
+          ? "bg-cta-muted/50 hover:bg-cta-muted/70"
+          : "hover:bg-surface-raised/30",
+      ].join(" ")}
     >
       <td className="px-2 py-1.5 text-center">
         <input

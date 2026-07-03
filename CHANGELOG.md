@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Highlight selected clock rows [#209]. Selected rows carry
+  a subtle accent tint, with a light hover cue on the rest.
 - Multi-select clock entries to bulk-edit them [#208].
   Row checkboxes reveal a bulk-action bar that can mark or
   unmark invoiced and set a customer or contract on all
