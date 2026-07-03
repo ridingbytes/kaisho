@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Double-click a clock entry row to edit it [#207]. Opens
+  the same inline edit form as the pencil button.
 - Filter clock entries by a date range [#206]. A "Range"
   checkbox in the clocks history toolbar switches the single
   date picker to a From/To pair; the backend already
