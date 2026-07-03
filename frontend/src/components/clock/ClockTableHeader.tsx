@@ -87,6 +87,35 @@ export function SortTh({
  * Return a comparable value for the given column so
  * that entries can be sorted generically.
  */
+/** Props for the {@link SelectAllTh} component. */
+interface SelectAllThProps {
+  allSelected: boolean;
+  onToggleSelectAll: () => void;
+}
+
+/**
+ * Leading fixed-width header cell holding the select-all
+ * checkbox for the bulk-edit column.
+ */
+export function SelectAllTh({
+  allSelected,
+  onToggleSelectAll,
+}: SelectAllThProps) {
+  return (
+    <th
+      className="px-2 py-2 text-center"
+      style={{ width: 36 }}
+    >
+      <input
+        type="checkbox"
+        checked={allSelected}
+        onChange={onToggleSelectAll}
+        className="rounded border-border text-cta"
+      />
+    </th>
+  );
+}
+
 export function sortValue(
   entry: ClockEntry,
   col: SortCol,

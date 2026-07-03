@@ -145,6 +145,8 @@ export function EditForm({
   return (
     <>
       <tr className="bg-surface-raised/40">
+        {/* Bulk-select spacer */}
+        <td />
         {/* Date */}
         <td className="px-3 py-2">
           <input
@@ -269,7 +271,7 @@ export function EditForm({
         "bg-surface-raised/40 border-b " +
         "border-border-subtle"
       }>
-        <td colSpan={7} className="px-3 pb-2">
+        <td colSpan={8} className="px-3 pb-2">
           <textarea
             autoFocus
             value={notes}

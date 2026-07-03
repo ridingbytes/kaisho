@@ -13,18 +13,25 @@ import {
 import { BookForm } from "./BookForm";
 import { CloudTriagePanel } from "./CloudTriagePanel";
 import {
+  SelectAllTh,
   SortTh,
   sortValue,
 } from "./ClockTableHeader";
 import { EntryRow } from "./EntryRow";
 import { Button } from "../common/Button";
+import { ContractSelect } from "../common/ContractSelect";
+import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { HelpButton } from "../common/HelpButton";
 import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { SearchInput } from "../common/SearchInput";
 import { Toggle } from "../common/Toggle";
 import { DOCS } from "../../docs/panelDocs";
-import { useClockEntries } from "../../hooks/useClocks";
+import {
+  useBatchUpdateClockEntries,
+  useClockEntries,
+} from "../../hooks/useClocks";
+import { useContracts } from "../../hooks/useContracts";
 import { useInvoicedContracts } from "../../hooks/useInvoicedContracts";
 import { useResizableColumns } from "../../hooks/useResizableColumns";
 import { useInvoiceExportSettings } from "../../hooks/useSettings";
@@ -45,6 +52,7 @@ import {
 import { totalHours } from "../../utils/formatting";
 import { smallInputCls } from "../../styles/formStyles";
 import type { SortCol, SortState } from "./ClockTableHeader";
+import type { ClockEntry } from "../../types";
 
 type Period = "today" | "week" | "month" | "year";
 
@@ -185,6 +193,12 @@ export function ClockView() {
     col: "date",
     dir: "desc",
   });
+  const [selected, setSelected] = useState<Set<string>>(
+    new Set(),
+  );
+  const [bulkCustomer, setBulkCustomer] = useState("");
+  const [bulkContract, setBulkContract] = useState("");
+  const batchUpdate = useBatchUpdateClockEntries();
   const invoicedSet = useInvoicedContracts();
   const { data: exportSettings } =
     useInvoiceExportSettings();
@@ -300,6 +314,69 @@ export function ClockView() {
         : String(av).localeCompare(String(bv));
     return sort.dir === "asc" ? cmp : -cmp;
   });
+
+  // ---------------------------------------------------------
+  // Bulk selection
+  // ---------------------------------------------------------
+  const entryKey = (e: ClockEntry) => e.sync_id || e.start;
+
+  function toggleOne(entry: ClockEntry) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      const key = entryKey(entry);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  const allSelected =
+    sorted.length > 0 &&
+    sorted.every((e) => selected.has(entryKey(e)));
+
+  function toggleSelectAll() {
+    setSelected(
+      allSelected
+        ? new Set()
+        : new Set(sorted.map(entryKey)),
+    );
+  }
+
+  const selectedEntries = sorted.filter((e) =>
+    selected.has(entryKey(e)),
+  );
+  const selectedCustomers = Array.from(
+    new Set(selectedEntries.map((e) => e.customer)),
+  );
+  const singleCustomer =
+    selectedCustomers.length === 1
+      ? selectedCustomers[0]
+      : null;
+  const { data: bulkContracts = [] } =
+    useContracts(singleCustomer);
+
+  function clearSelection() {
+    setSelected(new Set());
+  }
+
+  function applyBulk(updates: {
+    invoiced?: boolean;
+    contract?: string;
+    customer?: string;
+  }) {
+    if (selectedEntries.length === 0) return;
+    batchUpdate.mutate(
+      { entries: selectedEntries, updates },
+      { onSuccess: clearSelection },
+    );
+  }
+
+  // Drop a stale selection when the visible entry set
+  // changes underneath it (period / date / range filters),
+  // so a bulk action never targets rows from another view.
+  useEffect(() => {
+    setSelected(new Set());
+  }, [period, specificDate, rangeFrom, rangeTo, rangeMode]);
 
   return (
     <div className="flex flex-col h-full">
@@ -485,6 +562,121 @@ export function ClockView() {
         <CloudTriagePanel />
       </div>
 
+      {/* Bulk-action bar */}
+      {selected.size > 0 && (
+        <div
+          className={
+            "flex flex-wrap items-center gap-2 " +
+            "px-4 py-2 border-y border-border " +
+            "bg-surface-raised/60"
+          }
+        >
+          <span className="text-xs text-fg-strong">
+            {t("bulkSelected", { count: selected.size })}
+          </span>
+          <button
+            onClick={clearSelection}
+            className={
+              "px-2 py-1 rounded text-xs text-fg " +
+              "hover:text-cta hover:bg-cta-muted " +
+              "transition-colors"
+            }
+          >
+            {t("bulkClear")}
+          </button>
+          <span className="text-border">|</span>
+          <button
+            onClick={() =>
+              applyBulk({ invoiced: true })
+            }
+            disabled={batchUpdate.isPending}
+            className={
+              "px-2 py-1 rounded text-xs text-fg " +
+              "hover:text-emerald-600 " +
+              "hover:bg-emerald-500/10 " +
+              "transition-colors disabled:opacity-40"
+            }
+          >
+            {t("bulkMarkInvoiced")}
+          </button>
+          <button
+            onClick={() =>
+              applyBulk({ invoiced: false })
+            }
+            disabled={batchUpdate.isPending}
+            className={
+              "px-2 py-1 rounded text-xs text-fg " +
+              "hover:text-cta hover:bg-cta-muted " +
+              "transition-colors disabled:opacity-40"
+            }
+          >
+            {t("bulkUnmarkInvoiced")}
+          </button>
+          <span className="text-border">|</span>
+          <div className="flex items-center gap-1">
+            <CustomerAutocomplete
+              value={bulkCustomer}
+              onChange={setBulkCustomer}
+              inputClassName={`${smallInputCls} !w-40`}
+              placeholder={t("bulkSetCustomer")}
+            />
+            <button
+              onClick={() => {
+                applyBulk({
+                  customer: bulkCustomer.trim(),
+                });
+                setBulkCustomer("");
+              }}
+              disabled={
+                batchUpdate.isPending ||
+                !bulkCustomer.trim()
+              }
+              className={
+                "px-2 py-1 rounded text-xs text-fg " +
+                "hover:text-cta hover:bg-cta-muted " +
+                "transition-colors disabled:opacity-40"
+              }
+            >
+              {t("bulkSetCustomer")}
+            </button>
+          </div>
+          <span className="text-border">|</span>
+          <div
+            className="flex items-center gap-1"
+            title={
+              singleCustomer
+                ? undefined
+                : t("bulkContractMixedCustomers")
+            }
+          >
+            <ContractSelect
+              contracts={bulkContracts}
+              value={bulkContract}
+              onChange={setBulkContract}
+              className={`${smallInputCls} !w-40`}
+            />
+            <button
+              onClick={() => {
+                applyBulk({ contract: bulkContract });
+                setBulkContract("");
+              }}
+              disabled={
+                batchUpdate.isPending ||
+                !singleCustomer ||
+                !bulkContract
+              }
+              className={
+                "px-2 py-1 rounded text-xs text-fg " +
+                "hover:text-cta hover:bg-cta-muted " +
+                "transition-colors disabled:opacity-40"
+              }
+            >
+              {t("bulkSetContract")}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
@@ -509,6 +701,7 @@ export function ClockView() {
             className="w-full table-fixed"
           >
             <colgroup>
+              <col style={{ width: 36 }} />
               {widths.map((w, i) => (
                 <col
                   key={CLOCK_COLUMNS[i].key}
@@ -521,6 +714,10 @@ export function ClockView() {
                 "border-b border-border text-left " +
                 "sticky top-0 bg-surface-card z-10"
               }>
+                <SelectAllTh
+                  allSelected={allSelected}
+                  onToggleSelectAll={toggleSelectAll}
+                />
                 <SortTh
                   label={tc("date")}
                   col="date"
@@ -577,6 +774,7 @@ export function ClockView() {
               }>
                 <th />
                 <th />
+                <th />
                 <th className="px-2 py-1">
                   <FilterInput
                     value={colFilters.customer}
@@ -616,7 +814,7 @@ export function ClockView() {
               {sorted.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className={
                       "text-center py-8 " +
                       "text-sm text-fg-muted"
@@ -645,6 +843,8 @@ export function ClockView() {
                     entry={entry}
                     tasks={tasks}
                     invoicedSet={invoicedSet}
+                    selected={selected.has(entryKey(entry))}
+                    onToggleSelect={() => toggleOne(entry)}
                   />
                 ))
               )}

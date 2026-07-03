@@ -69,5 +69,12 @@
   "task": "Task",
   "hideInvoiced": "Hide invoiced",
   "icalFeed": "Subscribe to calendar (iCal)",
-  "notesPlaceholder": "Add notes..."
+  "notesPlaceholder": "Add notes...",
+  "bulkSelected": "{{count}} selected",
+  "bulkClear": "Clear",
+  "bulkMarkInvoiced": "Mark invoiced",
+  "bulkUnmarkInvoiced": "Unmark invoiced",
+  "bulkSetCustomer": "Set customer",
+  "bulkSetContract": "Set contract",
+  "bulkContractMixedCustomers": "Select rows from a single customer to set a contract"
 }

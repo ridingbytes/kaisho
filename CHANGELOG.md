@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Multi-select clock entries to bulk-edit them [#208].
+  Row checkboxes reveal a bulk-action bar that can mark or
+  unmark invoiced and set a customer or contract on all
+  selected rows.
 - Double-click a clock entry row to edit it [#207]. Opens
   the same inline edit form as the pencil button.
 - Filter clock entries by a date range [#206]. A "Range"
