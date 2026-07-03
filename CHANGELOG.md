@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 2.5.5
+
+A UX-focused release. The clock history gains date-range
+filtering, double-click-to-edit, row highlighting, and
+multi-select bulk editing (invoiced / customer / contract).
+The task board drops the planned/snooze date in favor of
+deadline-only, adds inline task descriptions on create, and
+fixes several card interactions. Markdown task-list
+checkboxes are now clickable everywhere they can be saved.
 
 - Make the clock entry description a multi-line, resizable
   field when editing [#210]. It was a single-line input.
