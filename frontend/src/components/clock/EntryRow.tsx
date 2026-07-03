@@ -94,6 +94,12 @@ export function EntryRow({
 
   return (
     <tr
+      // Double-click anywhere on the row opens the same
+      // inline edit form as the pencil button. Link cells
+      // (date/customer/task) keep their single-click
+      // navigation, so double-click-to-edit is most useful
+      // on the time, duration, and description cells.
+      onDoubleClick={() => setMode("edit")}
       className={
         "group hover:bg-surface-raised/30 " +
         "border-b border-border-subtle last:border-0"
