@@ -60,12 +60,10 @@ class TaskRow(Base):
     created = Column(String, nullable=False)
     archived_at = Column(String, nullable=True)
     archive_status = Column(String, nullable=True)
-    # Date-only ISO strings (``YYYY-MM-DD``) or NULL.
-    # ``scheduled`` is the snooze: the task is hidden /
-    # subdued until that day arrives. ``deadline`` is the
-    # due date: shown but flagged when close or past. Both
-    # cross the wire so PWA / iOS see the same dates.
-    scheduled = Column(String, nullable=True)
+    # Date-only ISO string (``YYYY-MM-DD``) or NULL. The
+    # ``deadline`` is the due date: shown but flagged when
+    # close or past. Crosses the wire so PWA / iOS see the
+    # same date.
     deadline = Column(String, nullable=True)
 
 
@@ -218,8 +216,7 @@ def _ensure_paused_column(engine) -> None:
 
 
 def _ensure_task_date_columns(engine) -> None:
-    """Add ``tasks.scheduled`` and ``tasks.deadline`` columns
-    on legacy databases.
+    """Add the ``tasks.deadline`` column on legacy databases.
 
     Same shape as ``_ensure_paused_column``: idempotent
     per-column check, silent skip when already present.
@@ -230,10 +227,6 @@ def _ensure_task_date_columns(engine) -> None:
         return
     cols = {c["name"] for c in inspector.get_columns("tasks")}
     with engine.begin() as conn:
-        if "scheduled" not in cols:
-            conn.execute(text(
-                "ALTER TABLE tasks ADD COLUMN scheduled VARCHAR"
-            ))
         if "deadline" not in cols:
             conn.execute(text(
                 "ALTER TABLE tasks ADD COLUMN deadline VARCHAR"
@@ -450,7 +443,6 @@ def _task_row_to_dict(row: TaskRow) -> dict:
         "created": row.created,
         "archived_at": row.archived_at,
         "archive_status": row.archive_status,
-        "scheduled": row.scheduled or None,
         "deadline": row.deadline or None,
     }
 
@@ -713,7 +705,6 @@ class SqlTaskBackend(TaskBackend):
         github_url=None,
         sync_id=None,
         task_id=None,
-        scheduled=None,
         deadline=None,
     ) -> dict:
         """Create a new task and return its dict."""
@@ -733,7 +724,6 @@ class SqlTaskBackend(TaskBackend):
             github_url=github_url or "",
             properties="{}",
             created=now,
-            scheduled=scheduled or None,
             deadline=deadline or None,
         )
         session = self._eng.session()
@@ -752,7 +742,6 @@ class SqlTaskBackend(TaskBackend):
             "github_url": github_url or "",
             "properties": {},
             "created": now,
-            "scheduled": scheduled or None,
             "deadline": deadline or None,
         }
 
@@ -824,16 +813,14 @@ class SqlTaskBackend(TaskBackend):
         customer=None,
         body=None,
         github_url=None,
-        scheduled=None,
         deadline=None,
     ) -> dict:
         """Update a task's fields and return updated dict.
 
-        ``scheduled`` / ``deadline`` follow the same
-        sentinel rules as every other field on this
-        helper: ``None`` leaves the existing value alone,
-        an empty string clears the column, a date string
-        (``YYYY-MM-DD``) sets it.
+        ``deadline`` follows the same sentinel rules as
+        every other field on this helper: ``None`` leaves
+        the existing value alone, an empty string clears the
+        column, a date string (``YYYY-MM-DD``) sets it.
         """
         session = self._eng.session()
         try:
@@ -850,8 +837,6 @@ class SqlTaskBackend(TaskBackend):
                 row.body = body
             if github_url is not None:
                 row.github_url = github_url
-            if scheduled is not None:
-                row.scheduled = scheduled or None
             if deadline is not None:
                 row.deadline = deadline or None
             session.commit()

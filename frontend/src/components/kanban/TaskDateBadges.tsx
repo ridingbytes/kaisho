@@ -1,15 +1,6 @@
 /**
- * Top-right badges on a task card for the snooze surface
- * (``scheduled``) and the deadline cue (``deadline``).
- *
- * - Scheduled badge: shown when ``task.scheduled`` is set
- *   and the date is **today or in the past**. Clicking
- *   acknowledges: the badge clears the ``scheduled`` field
- *   server-side so the marker is gone forever (the snooze
- *   served its purpose). Future-dated scheduled tasks are
- *   filtered out of the board entirely by the parent
- *   board component, so this badge only ever renders for
- *   the surfaced state.
+ * Top-right deadline cue badge on a task card
+ * (``deadline``).
  *
  * - Deadline badge: shown when ``task.deadline`` is set
  *   AND the day is close enough (today or within
@@ -22,9 +13,8 @@
  *   the new date.
  */
 import { useEffect, useState } from "react";
-import { AlarmClock, BellRing } from "lucide-react";
+import { BellRing } from "lucide-react";
 
-import { useUpdateTask } from "../../hooks/useTasks";
 import {
   isDeadlineAcked,
   ackDeadline,
@@ -39,8 +29,7 @@ function todayIso(): string {
   // Local-time ``YYYY-MM-DD``. ``toISOString`` gives UTC,
   // which trips negative-UTC timezones: a user in PDT
   // (UTC−7) at 22:00 local sees the next day's UTC date
-  // and their scheduled badge surfaces / their deadline
-  // badge fires a day off.
+  // and their deadline badge fires a day off.
   return new Date().toLocaleDateString("en-CA");
 }
 
@@ -51,11 +40,6 @@ function daysBetween(a: string, b: string): number {
   return Math.floor(
     (Date.parse(a) - Date.parse(b)) / ms,
   );
-}
-
-function isScheduledSurfaced(task: Task): boolean {
-  if (!task.scheduled) return false;
-  return task.scheduled <= todayIso();
 }
 
 function isDeadlineUrgent(task: Task): boolean {
@@ -78,7 +62,6 @@ interface TaskDateBadgesProps {
 export function TaskDateBadges({
   task,
 }: TaskDateBadgesProps) {
-  const updateTask = useUpdateTask();
   // Local re-render trigger after a deadline ack — the
   // ack lives in localStorage, not React state, so we
   // need a nudge to recompute ``isDeadlineUrgent``.
@@ -99,19 +82,8 @@ export function TaskDateBadges({
   // ackTick is read here to make React track the dep.
   void ackTick;
 
-  const showScheduled = isScheduledSurfaced(task);
   const showDeadline = isDeadlineUrgent(task);
-  if (!showScheduled && !showDeadline) return null;
-
-  function ackScheduled(e: React.MouseEvent) {
-    e.stopPropagation();
-    updateTask.mutate({
-      taskId: task.id,
-      // Empty string clears the field server-side
-      // (PATCH convention).
-      updates: { scheduled: "" },
-    });
-  }
+  if (!showDeadline) return null;
 
   function ackDeadlineHere(e: React.MouseEvent) {
     e.stopPropagation();
@@ -134,19 +106,6 @@ export function TaskDateBadges({
       className="absolute top-1.5 right-2 z-10 flex gap-0.5"
       onPointerDown={(e) => e.stopPropagation()}
     >
-      {showScheduled && (
-        <button
-          onClick={ackScheduled}
-          className={
-            "p-0.5 rounded "
-            + "text-cta hover:bg-cta-muted "
-            + "transition-colors"
-          }
-          title={`Scheduled: ${task.scheduled}`}
-        >
-          <AlarmClock size={11} strokeWidth={2.2} />
-        </button>
-      )}
       {showDeadline && (
         <button
           onClick={ackDeadlineHere}

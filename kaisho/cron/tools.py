@@ -310,7 +310,6 @@ def _add_task(args: dict) -> dict:
         tags=_coerce_tags(args.get("tags")),
         body=args.get("body"),
         github_url=args.get("github_url"),
-        scheduled=args.get("scheduled"),
         deadline=args.get("deadline"),
     )
     return {"task": task}
@@ -477,7 +476,6 @@ def _update_task(args: dict) -> dict:
         customer=args.get("customer"),
         body=args.get("body"),
         github_url=args.get("github_url"),
-        scheduled=args.get("scheduled"),
         deadline=args.get("deadline"),
     )
     return {"task": task}

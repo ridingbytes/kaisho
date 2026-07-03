@@ -20,8 +20,7 @@ TOOL_DEFS: list[dict] = [
         "tier": "read",
         "description": (
             "List tasks from the kanban board. Returns "
-            "id, customer, title, status, tags, scheduled "
-            "(snooze date, YYYY-MM-DD or null), and "
+            "id, customer, title, status, tags, and "
             "deadline (YYYY-MM-DD or null) for each task."
         ),
         "input_schema": {
@@ -77,13 +76,6 @@ TOOL_DEFS: list[dict] = [
                     "description": (
                         "GitHub issue or PR URL to "
                         "link to this task"
-                    ),
-                },
-                "scheduled": {
-                    "type": "string",
-                    "description": (
-                        "Snooze date (YYYY-MM-DD). Task is "
-                        "hidden until that day arrives."
                     ),
                 },
                 "deadline": {
@@ -396,7 +388,7 @@ TOOL_DEFS: list[dict] = [
         "tier": "write",
         "description": (
             "Update a task's title, customer, body, "
-            "GitHub URL, scheduled date, or deadline."
+            "GitHub URL, or deadline."
         ),
         "input_schema": {
             "type": "object",
@@ -425,14 +417,6 @@ TOOL_DEFS: list[dict] = [
                     "description": (
                         "GitHub issue/PR URL "
                         "(optional)"
-                    ),
-                },
-                "scheduled": {
-                    "type": "string",
-                    "description": (
-                        "Snooze date (YYYY-MM-DD), empty "
-                        "string to clear, omit to leave "
-                        "unchanged."
                     ),
                 },
                 "deadline": {

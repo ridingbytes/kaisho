@@ -136,12 +136,10 @@ def _normalize_task(task: dict) -> dict:
     SQL and markdown backends emit and what
     ``frontend/src/types.ts:Task`` expects.
 
-    Today the only fields needing a missing → None fill
-    are ``scheduled`` and ``deadline``. The helper is
-    deliberately additive so future schema growth lands
-    in one place.
+    Today the only field needing a missing → None fill
+    is ``deadline``. The helper is deliberately additive
+    so future schema growth lands in one place.
     """
-    task.setdefault("scheduled", None)
     task.setdefault("deadline", None)
     return task
 
@@ -235,7 +233,6 @@ class JsonTaskBackend(TaskBackend):
         github_url=None,
         sync_id=None,
         task_id=None,
-        scheduled=None,
         deadline=None,
     ) -> dict:
         """Create a new task and return its dict."""
@@ -250,7 +247,6 @@ class JsonTaskBackend(TaskBackend):
             "github_url": github_url or "",
             "properties": {},
             "created": datetime.now().isoformat(),
-            "scheduled": scheduled or None,
             "deadline": deadline or None,
         }
         tasks.insert(0, task)
@@ -301,7 +297,6 @@ class JsonTaskBackend(TaskBackend):
         customer=None,
         body=None,
         github_url=None,
-        scheduled=None,
         deadline=None,
     ) -> dict:
         """Update a task's fields and return updated dict."""
@@ -316,8 +311,6 @@ class JsonTaskBackend(TaskBackend):
                     t["body"] = body
                 if github_url is not None:
                     t["github_url"] = github_url
-                if scheduled is not None:
-                    t["scheduled"] = scheduled or None
                 if deadline is not None:
                     t["deadline"] = deadline or None
                 _write_json(self._tasks_file, tasks)
