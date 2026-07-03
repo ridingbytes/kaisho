@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Make Markdown task-list checkboxes interactive [#205].
+  Clicking a `- [ ]` / `- [x]` in a rendered note, task
+  description, inbox item, or knowledge-base file toggles it
+  and saves the body.
 - Add a description field to the inline create-task form
   [#204]. New tasks can be given a body immediately instead
   of having to create then edit.

@@ -166,6 +166,13 @@ function NoteRow({
     setEditing(false);
   }
 
+  function handleBodyToggle(md: string) {
+    updateNote.mutate({
+      noteId: note.id,
+      updates: { body: md },
+    });
+  }
+
   function handleContextMenu(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
@@ -327,6 +334,7 @@ function NoteRow({
               content={note.body}
               title={note.title}
               markdown
+              onCheckboxToggle={handleBodyToggle}
             />
           </span>
         )}
@@ -509,7 +517,10 @@ function NoteRow({
             </div>
           ) : (
             note.body && (
-              <Markdown className="text-sm text-fg-strong">
+              <Markdown
+                className="text-sm text-fg-strong"
+                onCheckboxToggle={handleBodyToggle}
+              >
                 {note.body}
               </Markdown>
             )

@@ -38,6 +38,11 @@ link to customers and tasks.
 Notes appear as expandable rows. Click a note to see its full
 content rendered as Markdown.
 
+Markdown task-list checkboxes (`- [ ]` / `- [x]`) are
+interactive in the rendered view: click one to toggle it and
+the note body is saved. This works the same way for task
+descriptions, inbox items, and knowledge-base files.
+
 Filter by text search or customer. Notes are drag-reorderable.
 
 ## Moving Notes

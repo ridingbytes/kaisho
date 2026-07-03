@@ -20,7 +20,7 @@ import {
 import { tagBadgeStyle } from "../../utils/tagColors";
 import { Markdown } from "../common/Markdown";
 import { TagDropdown } from "../common/TagDropdown";
-import { useSetTaskTags } from "../../hooks/useTasks";
+import { useSetTaskTags, useUpdateTask } from "../../hooks/useTasks";
 import { stripCustomerPrefix } from "../../utils/customerPrefix";
 import { TimerBadge } from "./TimerBadge";
 import { TaskClockSection } from "./TaskClockSection";
@@ -74,6 +74,14 @@ export function TaskCardContent({
   );
   const [tagging, setTagging] = useState(false);
   const setTaskTags = useSetTaskTags();
+  const updateTask = useUpdateTask();
+
+  function handleBodyToggle(md: string) {
+    updateTask.mutate({
+      taskId: task.id,
+      updates: { body: md },
+    });
+  }
 
   return (
     <>
@@ -145,6 +153,7 @@ export function TaskCardContent({
                 )}
                 markdown
                 iconSize={9}
+                onCheckboxToggle={handleBodyToggle}
               />
             </span>
           </div>
@@ -158,6 +167,7 @@ export function TaskCardContent({
               <Markdown
                 className="text-xs text-fg [&_p]:mb-1 [&_p]:leading-relaxed break-words [&_a]:break-all"
                 onLinkClick={openOverlay}
+                onCheckboxToggle={handleBodyToggle}
               >
                 {task.body}
               </Markdown>
