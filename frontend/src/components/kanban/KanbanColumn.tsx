@@ -257,28 +257,10 @@ export function KanbanColumn({
             : "border-border-subtle bg-surface-card/30",
         ].join(" ")}
       >
-        <SortableContext
-          items={tasks.map((t) => t.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              statusColor={state.color}
-              onTagClick={onTagClick}
-              onCustomerClick={onCustomerClick}
-            />
-          ))}
-        </SortableContext>
-
-        {tasks.length === 0 && !adding && (
-          <div className="flex items-center justify-center h-16">
-            <span className="text-xs text-fg-subtle">{t("empty")}</span>
-          </div>
-        )}
-
-        {/* Inline add form */}
+        {/* Inline add form — rendered at the top so a new
+            task appears where it was typed. The backend
+            inserts new tasks at the top of the column, so a
+            bottom form would make the saved card jump up. */}
         {adding && (
           <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-surface-overlay border border-border">
             <CustomerAutocomplete
@@ -324,6 +306,27 @@ export function KanbanColumn({
                 <Check size={13} />
               </button>
             </div>
+          </div>
+        )}
+
+        <SortableContext
+          items={tasks.map((t) => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {tasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              statusColor={state.color}
+              onTagClick={onTagClick}
+              onCustomerClick={onCustomerClick}
+            />
+          ))}
+        </SortableContext>
+
+        {tasks.length === 0 && !adding && (
+          <div className="flex items-center justify-center h-16">
+            <span className="text-xs text-fg-subtle">{t("empty")}</span>
           </div>
         )}
       </div>

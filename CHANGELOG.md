@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Show the inline add-task form at the top of the column
+  [#202]. New tasks are inserted at the top, so a bottom
+  form made the saved card jump up; typing at the top makes
+  it appear where it was entered.
 - Stop the deadline bell badge from overlapping the task
   card hover actions [#201]. On hover the badge slides left
   of the mark-done/edit/archive strip instead of sitting
