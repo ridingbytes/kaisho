@@ -111,8 +111,10 @@ export function KanbanColumn({
     // The body below mirrors the open column's drop zone
     // — dashed border, rounded corners, same background —
     // but holds the dot + count chip + rotated label
-    // instead of cards. No drop target on purpose: cards
-    // must not vanish into an invisible column.
+    // instead of cards. It is a drop target (the outer node
+    // is the same droppable as the open column), so a task
+    // can be moved into a folded column without expanding
+    // it; ``isOver`` highlights it while dragging.
     return (
       <div
         ref={setNodeRef}
@@ -146,8 +148,11 @@ export function KanbanColumn({
           className={[
             "flex flex-col items-center gap-3 p-2",
             "rounded-lg border border-dashed",
-            "border-border-subtle bg-surface-card/30",
+            "transition-colors duration-150",
             "flex-1 min-h-0",
+            isOver
+              ? "border-cta bg-cta-muted"
+              : "border-border-subtle bg-surface-card/30",
           ].join(" ")}
         >
           <div
