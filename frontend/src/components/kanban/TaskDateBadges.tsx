@@ -11,6 +11,10 @@
  *   the deadline itself stays on the task. Changing the
  *   deadline re-keys the ack so the badge returns with
  *   the new date.
+ *
+ * On card hover the badge slides left (``group-hover:
+ * right-8``) so it clears the hover action strip (the
+ * mark-done tick etc.) that occupies the top-right edge.
  */
 import { useEffect, useState } from "react";
 import { BellRing } from "lucide-react";
@@ -103,7 +107,10 @@ export function TaskDateBadges({
 
   return (
     <div
-      className="absolute top-1.5 right-2 z-10 flex gap-0.5"
+      className={
+        "absolute top-1.5 right-2 z-10 flex gap-0.5 "
+        + "transition-all group-hover:right-8"
+      }
       onPointerDown={(e) => e.stopPropagation()}
     >
       {showDeadline && (
