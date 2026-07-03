@@ -170,6 +170,20 @@ export function InboxItemRow({ item }: Props) {
     setEditing(false);
   }
 
+  function handleBodyToggle(md: string) {
+    update.mutate({
+      itemId: item.id,
+      updates: {
+        title: item.title,
+        type: item.type,
+        customer: item.customer || undefined,
+        body: md,
+        channel: item.channel,
+        direction: item.direction,
+      },
+    });
+  }
+
   function openMovePanel(e: React.MouseEvent) {
     e.stopPropagation();
     setMoving((v) => !v);
@@ -277,6 +291,7 @@ export function InboxItemRow({ item }: Props) {
                 content={item.body}
                 title={cleanTitle(item.title)}
                 markdown
+                onCheckboxToggle={handleBodyToggle}
               />
             )}
           </div>
@@ -484,7 +499,10 @@ export function InboxItemRow({ item }: Props) {
           ) : (
             <>
               {item.body && (
-                <Markdown className="text-sm text-fg">
+                <Markdown
+                  className="text-sm text-fg"
+                  onCheckboxToggle={handleBodyToggle}
+                >
                   {item.body}
                 </Markdown>
               )}

@@ -105,6 +105,14 @@ export function EditorPanel({
     remove.mutate(file.path, { onSuccess: onDeleted });
   }
 
+  function handleCheckboxToggle(md: string) {
+    setContent(md);
+    save.mutate(
+      { label: file.label, path: file.path, content: md },
+      { onSuccess: onSaved }
+    );
+  }
+
   const dirty = content !== initialContent;
   const fileType = detectFileType(file.path, content);
   const syntaxActions = actionsForType(fileType);
@@ -228,7 +236,10 @@ export function EditorPanel({
               }
             />
           ) : (
-            <Markdown className="p-1">
+            <Markdown
+              className="p-1"
+              onCheckboxToggle={handleCheckboxToggle}
+            >
               {content}
             </Markdown>
           )}

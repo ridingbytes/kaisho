@@ -10,6 +10,7 @@ interface ContentPopupProps {
   markdown?: boolean;
   iconSize?: number;
   icon?: "expand" | "notes";
+  onCheckboxToggle?: (markdown: string) => void;
 }
 
 export function ContentPopup({
@@ -18,6 +19,7 @@ export function ContentPopup({
   markdown = false,
   iconSize = 11,
   icon = "expand",
+  onCheckboxToggle,
 }: ContentPopupProps) {
   const IconComponent =
     icon === "notes" ? MessageSquare : Maximize2;
@@ -95,7 +97,10 @@ export function ContentPopup({
             {/* Content */}
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {markdown ? (
-                <Markdown className="text-sm text-fg-strong">
+                <Markdown
+                  className="text-sm text-fg-strong"
+                  onCheckboxToggle={onCheckboxToggle}
+                >
                   {content}
                 </Markdown>
               ) : (

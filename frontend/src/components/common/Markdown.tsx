@@ -17,6 +17,73 @@ interface MarkdownProps {
    * heading sizes and shrinks vertical rhythm.
    */
   compact?: boolean;
+  /**
+   * When provided, GFM task-list checkboxes render as
+   * interactive (not disabled). Clicking one flips the
+   * matching ``- [ ]`` / ``- [x]`` line in the source and
+   * calls this with the new markdown, which the caller
+   * persists. Omit it to keep checkboxes read-only.
+   */
+  onCheckboxToggle?: (markdown: string) => void;
+}
+
+/** GFM task-list line: a list marker followed by a
+ *  ``[ ]`` / ``[x]`` box. Leading whitespace (nested
+ *  items) and both bullet and ordered markers are
+ *  allowed. */
+const TASK_LINE = /^(\s*(?:[-*+]|\d+[.)])\s+\[)([ xX])(\])/;
+
+/** Flip the ``n``-th (0-based) task-list checkbox in
+ *  ``md``, matching the document order react-markdown
+ *  renders them in. Returns the source unchanged if there
+ *  is no n-th checkbox. */
+function toggleNthCheckbox(md: string, n: number): string {
+  const lines = md.split("\n");
+  let seen = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(TASK_LINE);
+    if (!m) continue;
+    seen += 1;
+    if (seen !== n) continue;
+    const flipped = m[2] === " " ? "x" : " ";
+    lines[i] = lines[i].replace(
+      TASK_LINE, `$1${flipped}$3`,
+    );
+    break;
+  }
+  return lines.join("\n");
+}
+
+/** Build an ``input`` renderer that makes task-list
+ *  checkboxes interactive. ``counter`` is a fresh
+ *  per-render tally so the n-th rendered checkbox maps to
+ *  the n-th source checkbox. */
+function makeCheckboxInput(
+  source: string,
+  onToggle: (markdown: string) => void,
+  counter: { n: number },
+) {
+  return (props: {
+    type?: string;
+    checked?: boolean;
+  }) => {
+    if (props.type !== "checkbox") {
+      return <input {...props} />;
+    }
+    const index = counter.n;
+    counter.n += 1;
+    return (
+      <input
+        type="checkbox"
+        checked={!!props.checked}
+        onClick={(e) => e.stopPropagation()}
+        onChange={() =>
+          onToggle(toggleNthCheckbox(source, index))
+        }
+        className="mr-1.5 align-middle accent-cta cursor-pointer"
+      />
+    );
+  };
 }
 
 const components = {
@@ -50,8 +117,27 @@ const components = {
       {children}
     </ol>
   ),
-  li: ({ children }: { children?: React.ReactNode }) => (
-    <li className="leading-relaxed">{children}</li>
+  li: ({
+    children,
+    className,
+  }: {
+    children?: React.ReactNode;
+    className?: string;
+  }) => (
+    <li
+      className={[
+        "leading-relaxed",
+        // GFM task items carry their own checkbox, so drop
+        // the list bullet and reclaim its indent.
+        className?.includes("task-list-item")
+          ? "list-none -ml-5"
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {children}
+    </li>
   ),
   code: ({
     inline,
@@ -203,11 +289,23 @@ export function Markdown({
   className,
   onLinkClick,
   compact,
+  onCheckboxToggle,
 }: MarkdownProps) {
   const base = compact ? compactComponents : components;
-  const merged = onLinkClick
-    ? { ...base, a: makeLink(onLinkClick) }
-    : base;
+  // Fresh per render so the n-th rendered checkbox lines up
+  // with the n-th source checkbox.
+  const counter = { n: 0 };
+  const merged = {
+    ...base,
+    ...(onLinkClick ? { a: makeLink(onLinkClick) } : {}),
+    ...(onCheckboxToggle
+      ? {
+          input: makeCheckboxInput(
+            children, onCheckboxToggle, counter,
+          ),
+        }
+      : {}),
+  };
   return (
     <div className={className}>
       <ReactMarkdown
