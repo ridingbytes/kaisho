@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Filter clock entries by a date range [#206]. A "Range"
+  checkbox in the clocks history toolbar switches the single
+  date picker to a From/To pair; the backend already
+  supported the range.
 - Make Markdown task-list checkboxes interactive [#205].
   Clicking a `- [ ]` / `- [x]` in a rendered note, task
   description, inbox item, or knowledge-base file toggles it
