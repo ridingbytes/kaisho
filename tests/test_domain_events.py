@@ -216,3 +216,94 @@ def test_delete_clock_entry_emits_deleted(
     assert deleted is not None
     assert len(captured) == 1
     assert captured[0]["event"] == "clock.deleted"
+
+
+# -- Sync-path events (mobile-originated changes) ---------
+
+def _sync_fields(sync_id, updated_at, **over):
+    """A minimal cloud sync payload for one clock entry."""
+    fields = {
+        "sync_id": sync_id,
+        "start": "2026-07-05T09:00:00",
+        "end": "2026-07-05T10:00:00",
+        "customer": "ACME",
+        "description": "Synced work",
+        "updated_at": updated_at,
+        "invoiced": False,
+    }
+    fields.update(over)
+    return fields
+
+
+def test_insert_from_sync_emits_booked(org_dir, captured):
+    clocks = org_dir / "clocks.org"
+    clocks_svc.insert_clock_entry_from_sync(
+        clocks, _sync_fields("sid-1", "2026-07-05T10:00:00"),
+    )
+    assert [e["event"] for e in captured] == [
+        "clock.booked",
+    ]
+
+
+def test_update_from_sync_emits_updated(org_dir, captured):
+    clocks = org_dir / "clocks.org"
+    clocks_svc.insert_clock_entry_from_sync(
+        clocks, _sync_fields("sid-2", "2026-07-05T10:00:00"),
+    )
+    captured.clear()
+    clocks_svc.update_clock_entry_by_sync_id(
+        clocks, "sid-2",
+        _sync_fields(
+            "sid-2", "2026-07-05T11:00:00",
+            description="Edited on mobile",
+        ),
+    )
+    assert [e["event"] for e in captured] == [
+        "clock.updated",
+    ]
+
+
+def test_stale_sync_update_emits_nothing(
+    org_dir, captured,
+):
+    clocks = org_dir / "clocks.org"
+    clocks_svc.insert_clock_entry_from_sync(
+        clocks, _sync_fields("sid-3", "2026-07-05T12:00:00"),
+    )
+    captured.clear()
+    # Older updated_at loses last-writer-wins: no change,
+    # so no event.
+    clocks_svc.update_clock_entry_by_sync_id(
+        clocks, "sid-3",
+        _sync_fields("sid-3", "2026-07-05T08:00:00"),
+    )
+    assert captured == []
+
+
+def test_delete_from_sync_emits_deleted(org_dir, captured):
+    clocks = org_dir / "clocks.org"
+    clocks_svc.insert_clock_entry_from_sync(
+        clocks, _sync_fields("sid-4", "2026-07-05T10:00:00"),
+    )
+    captured.clear()
+    clocks_svc.delete_clock_entry_by_sync_id(clocks, "sid-4")
+    assert [e["event"] for e in captured] == [
+        "clock.deleted",
+    ]
+
+
+def test_suppressed_blocks_emission(org_dir, captured):
+    clocks = org_dir / "clocks.org"
+    with events.suppressed():
+        clocks_svc.insert_clock_entry_from_sync(
+            clocks,
+            _sync_fields("sid-5", "2026-07-05T10:00:00"),
+        )
+    assert captured == []
+    # Emission resumes after the context exits.
+    clocks_svc.insert_clock_entry_from_sync(
+        clocks, _sync_fields("sid-6", "2026-07-05T10:00:00"),
+    )
+    assert [e["event"] for e in captured] == [
+        "clock.booked",
+    ]

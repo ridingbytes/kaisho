@@ -17,11 +17,19 @@ domain events out to whoever subscribed. See
 and the event taxonomy.
 """
 import logging
+import threading
 import uuid
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Callable
 
 log = logging.getLogger(__name__)
+
+# When a cloud sync applies at least this many changes in a
+# single batch, per-item events are suppressed so a first
+# sync or a large catch-up does not flood webhook
+# subscribers with hundreds of deliveries.
+SYNC_BULK_THRESHOLD = 20
 
 # Event name taxonomy. Kept as constants so the emitters
 # and subscribers share one spelling.
@@ -54,6 +62,29 @@ ALL_EVENTS = [
 EventHandler = Callable[[dict], None]
 
 _subscribers: list[EventHandler] = []
+
+# Per-thread suppression depth. Thread-local so a bulk sync
+# on the scheduler thread never silences events a concurrent
+# request thread emits.
+_suppress = threading.local()
+
+
+def _is_suppressed() -> bool:
+    return getattr(_suppress, "depth", 0) > 0
+
+
+@contextmanager
+def suppressed():
+    """Suppress event emission on the current thread.
+
+    Re-entrant. Used by the cloud-sync apply loop to skip
+    per-item webhooks during a bulk pull.
+    """
+    _suppress.depth = getattr(_suppress, "depth", 0) + 1
+    try:
+        yield
+    finally:
+        _suppress.depth -= 1
 
 
 def subscribe(handler: EventHandler) -> Callable[[], None]:
@@ -133,7 +164,7 @@ def emit(name: str, data: dict) -> None:
     :param name: One of the ``*`` event-name constants.
     :param data: Event-specific payload.
     """
-    if not _subscribers:
+    if not _subscribers or _is_suppressed():
         return
     event = build_event(name, data)
     for handler in list(_subscribers):

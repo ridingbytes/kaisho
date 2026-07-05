@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Fire webhooks for mobile-originated changes [#215].
+  Clock and task edits pulled from the cloud now emit the
+  same domain events as local edits, so a running desktop
+  delivers webhooks for changes made on mobile. A large
+  first sync or catch-up is applied without firing per-item
+  events to avoid flooding subscribers.
 - Add outbound webhooks for workflow automation [#214].
   A new Settings → Automations panel subscribes endpoints
   (n8n, Make, Zapier, or any URL) to task and clock events
