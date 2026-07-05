@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add an importable n8n webhook recipe [#216]. A
+  task-moved-to-Slack workflow plus an Automation Recipes
+  guide under Integrations → Automations. See
+  `docs/integrations/automations-recipes.md`.
 - Fire webhooks for mobile-originated changes [#215].
   Clock and task edits pulled from the cloud now emit the
   same domain events as local edits, so a running desktop
