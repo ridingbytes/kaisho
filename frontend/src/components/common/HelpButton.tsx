@@ -47,14 +47,16 @@ export function HelpButton({ title, doc, view }: Props) {
       {open &&
         createPortal(
           <>
-            {/* Backdrop */}
+            {/* Backdrop. Sits in the top modal tier
+                (above the z-50 sidebar) so the whole app
+                dims uniformly behind the help panel. */}
             <div
-              className="fixed inset-0 z-40 bg-black/30"
+              className="fixed inset-0 z-[9998] bg-black/30"
               onClick={() => setOpen(false)}
             />
 
             {/* Panel */}
-            <div className="fixed top-0 right-0 h-full w-[440px] max-w-full z-50 flex flex-col bg-surface-card border-l border-border shadow-[var(--shadow-card-drag)]">
+            <div className="fixed top-0 right-0 h-full w-[440px] max-w-full z-[9999] flex flex-col bg-surface-card border-l border-border shadow-[var(--shadow-card-drag)]">
               <div className="flex items-center justify-between px-5 py-3 border-b border-border-subtle shrink-0">
                 <h2 className="text-sm font-semibold text-fg-strong">
                   {title}
