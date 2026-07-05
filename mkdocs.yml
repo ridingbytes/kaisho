@@ -122,6 +122,7 @@ nav:
       - Mobile PWA: integrations/mobile.md
       - Emacs: integrations/emacs.md
       - MCP Server: integrations/mcp.md
+      - Automations (Webhooks): integrations/automations.md
   - CLI Reference:
       - Overview: cli/index.md
       - clock: cli/clock.md
