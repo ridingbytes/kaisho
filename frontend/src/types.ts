@@ -248,6 +248,31 @@ export interface GithubSettings {
   base_url: string;
 }
 
+/** An outbound webhook subscription (secret masked). */
+export interface Webhook {
+  id: string;
+  url: string;
+  /** Subscribed event names; empty means every event. */
+  events: string[];
+  active: boolean;
+  /** True when a signing secret is stored. */
+  secret_set?: boolean;
+}
+
+/** A recorded webhook delivery attempt. */
+export interface WebhookDelivery {
+  id: string;
+  subscription_id: string;
+  url: string;
+  event: string;
+  event_id?: string;
+  status: "success" | "failed" | "blocked";
+  http_status?: number | null;
+  error?: string | null;
+  attempts: number;
+  at: string;
+}
+
 export interface GithubIssue {
   number: number;
   title: string;

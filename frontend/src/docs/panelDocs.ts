@@ -202,6 +202,42 @@ Requires \`GITHUB_TOKEN\` (or gh CLI auth) to be configured. Set the
 \`REPO\` property on a customer to include it.
 `,
 
+  automations: `
+# Automations (Webhooks)
+
+Send a signed webhook to an external tool (n8n, Make, Zapier, or any
+HTTP endpoint) whenever a task or clock entry changes. Use it to post
+to Slack when a task is done, append booked entries to a spreadsheet,
+or open an issue from a backlog card.
+
+**Add an endpoint** — paste your receiver URL, check the events you
+want (or leave all unchecked to receive every event), optionally set
+a signing secret, then "Add endpoint". Adding an endpoint approves
+its domain automatically.
+
+**Events** — task \`created\`, \`moved\`, \`updated\`, \`archived\`;
+clock \`booked\`, \`timer_started\`, \`timer_stopped\`, \`updated\`,
+\`deleted\`. Each delivery is a JSON POST carrying the full entity and,
+where relevant, a \`delta\` of what changed.
+
+**Signing** — with a secret set, each request carries an
+\`X-Kaisho-Signature: sha256=<hex>\` header (HMAC-SHA256 of the body).
+An \`X-Kaisho-Event\` header names the event for quick routing.
+
+**Test it** — "Send test event" delivers a synthetic \`ping\`. Or
+paste a [webhook.site](https://webhook.site) URL and move a task to
+watch the payload arrive. The Recent deliveries list shows each
+attempt and its result; a delivery retries up to three times before
+it is marked failed.
+
+**Where it fires** — webhooks fire from the desktop app while it is
+running, so they work against a receiver on the same machine or LAN.
+They do not fire while the app is closed.
+
+See the full payload reference in the docs under
+Integrations → Automations.
+`,
+
   notes: `
 # Notes
 

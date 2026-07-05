@@ -33,6 +33,7 @@ from .routers import settings_ai
 from .routers import settings_mcp
 from .routers import settings_profiles
 from .routers import settings_states
+from .routers import settings_webhooks
 from .routers import caldav as caldav_router
 from .routers import calendar as calendar_router
 from .routers import cli as cli_router
@@ -111,6 +112,12 @@ async def lifespan(app: FastAPI):
     scheduler.start()
 
     start_watcher(*get_backend().watch_paths)
+
+    # Start the outbound webhook dispatcher. It subscribes
+    # to the domain event bus and delivers signed POSTs on
+    # a background worker thread, off the write path.
+    from ..services import webhooks
+    webhooks.start()
     # Chain the MCP HTTP app's lifespan so its session
     # manager starts/stops alongside the API. Without this
     # the mounted /mcp endpoint accepts connections but the
@@ -123,6 +130,8 @@ async def lifespan(app: FastAPI):
         yield
     scheduler.shutdown(wait=False)
     stop_watcher()
+    from ..services import webhooks
+    webhooks.stop()
 
 
 app = FastAPI(title="Kaisho", lifespan=lifespan)
@@ -201,6 +210,7 @@ app.include_router(settings_states.router)
 app.include_router(settings_ai.router)
 app.include_router(settings_mcp.router)
 app.include_router(settings_profiles.router)
+app.include_router(settings_webhooks.router)
 app.include_router(github.router)
 app.include_router(caldav_router.router)
 app.include_router(calendar_router.router)
