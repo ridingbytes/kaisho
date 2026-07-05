@@ -35,6 +35,21 @@ CLOCK_TIMER_STOPPED = "clock.timer_stopped"
 CLOCK_UPDATED = "clock.updated"
 CLOCK_DELETED = "clock.deleted"
 
+# The full taxonomy, in a stable order. Consumers (the
+# webhook settings UI) render this so a user can pick which
+# events an endpoint subscribes to.
+ALL_EVENTS = [
+    TASK_CREATED,
+    TASK_MOVED,
+    TASK_UPDATED,
+    TASK_ARCHIVED,
+    CLOCK_BOOKED,
+    CLOCK_TIMER_STARTED,
+    CLOCK_TIMER_STOPPED,
+    CLOCK_UPDATED,
+    CLOCK_DELETED,
+]
+
 # A subscriber receives the full event envelope.
 EventHandler = Callable[[dict], None]
 

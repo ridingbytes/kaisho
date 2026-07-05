@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add outbound webhooks for workflow automation [#213].
+  A new Settings → Automations panel subscribes endpoints
+  (n8n, Make, Zapier, or any URL) to task and clock events
+  and delivers signed JSON POSTs, with a test-fire button
+  and a recent-deliveries log. See
+  `docs/integrations/automations.md`.
 - Emit domain events on task and clock changes [#212].
   Every task create / move / update / archive and clock
   book / timer start / stop / update / delete fires a

@@ -19,6 +19,8 @@ import type {
   NoteItem,
   Settings,
   Task,
+  Webhook,
+  WebhookDelivery,
 } from "../types";
 
 const BASE = "/api";
@@ -1889,6 +1891,60 @@ export function updateGithubSettings(
   updates: { token?: string; base_url?: string }
 ): Promise<GithubSettings> {
   return patch<GithubSettings>("/settings/github", updates);
+}
+
+// ─── Webhooks / automations ─────────────────────────
+
+/** List webhook subscriptions and the event catalog. */
+export function fetchWebhooks(): Promise<{
+  webhooks: Webhook[];
+  events: string[];
+}> {
+  return get("/settings/webhooks");
+}
+
+export function createWebhook(body: {
+  url: string;
+  events: string[];
+  secret?: string;
+  active?: boolean;
+}): Promise<Webhook> {
+  return post<Webhook>("/settings/webhooks", body);
+}
+
+export function updateWebhook(
+  id: string,
+  updates: {
+    url?: string;
+    events?: string[];
+    secret?: string;
+    active?: boolean;
+  },
+): Promise<Webhook> {
+  return patch<Webhook>(
+    `/settings/webhooks/${id}`, updates,
+  );
+}
+
+export function deleteWebhook(id: string): Promise<void> {
+  return del(`/settings/webhooks/${id}`);
+}
+
+export function testWebhook(
+  id: string,
+): Promise<WebhookDelivery> {
+  return post<WebhookDelivery>(
+    `/settings/webhooks/${id}/test`, {},
+  );
+}
+
+export function fetchWebhookDeliveries(
+  subscriptionId?: string,
+): Promise<{ deliveries: WebhookDelivery[] }> {
+  const q = subscriptionId
+    ? `?subscription_id=${encodeURIComponent(subscriptionId)}`
+    : "";
+  return get(`/settings/webhooks/deliveries${q}`);
 }
 
 // ─── External editor ────────────────────────────────
