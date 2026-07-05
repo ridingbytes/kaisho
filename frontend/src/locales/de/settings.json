@@ -379,5 +379,8 @@
   "automations.delete": "Endpunkt löschen",
   "automations.save": "Speichern",
   "automations.cancel": "Abbrechen",
-  "automations.editEvents": "Ereignisse bearbeiten"
+  "automations.editEvents": "Ereignisse bearbeiten",
+  "automations.edit": "Bearbeiten",
+  "automations.saved": "Gespeichert",
+  "automations.secretKeep": "Leer lassen, um das aktuelle Secret zu behalten"
 }

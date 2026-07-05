@@ -381,5 +381,8 @@
   "automations.delete": "Удалить endpoint",
   "automations.save": "Сохранить",
   "automations.cancel": "Отмена",
-  "automations.editEvents": "Изменить события"
+  "automations.editEvents": "Изменить события",
+  "automations.edit": "Изменить",
+  "automations.saved": "Сохранено",
+  "automations.secretKeep": "Оставьте пустым, чтобы сохранить текущий секрет"
 }

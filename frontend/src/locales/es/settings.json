@@ -379,5 +379,8 @@
   "automations.delete": "Eliminar endpoint",
   "automations.save": "Guardar",
   "automations.cancel": "Cancelar",
-  "automations.editEvents": "Editar eventos"
+  "automations.editEvents": "Editar eventos",
+  "automations.edit": "Editar",
+  "automations.saved": "Guardado",
+  "automations.secretKeep": "Deja en blanco para mantener el secreto actual"
 }

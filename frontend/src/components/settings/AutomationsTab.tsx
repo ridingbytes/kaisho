@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Send, Trash2 } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { HelpButton } from "../common/HelpButton";
 import { ToggleField } from "../common/ToggleField";
+import { DOCS } from "../../docs/panelDocs";
 import { useToast } from "../../context/ToastContext";
 import {
   useCreateWebhook,
@@ -172,6 +174,8 @@ function WebhookRow({
   const [picked, setPicked] = useState<string[]>(
     webhook.events,
   );
+  const [editUrl, setEditUrl] = useState(webhook.url);
+  const [editSecret, setEditSecret] = useState("");
 
   function toggleActive(active: boolean) {
     update.mutate({ id: webhook.id, updates: { active } });
@@ -185,11 +189,38 @@ function WebhookRow({
     );
   }
 
-  function saveEvents() {
+  function startEdit() {
+    setEditUrl(webhook.url);
+    setPicked(webhook.events);
+    setEditSecret("");
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setEditUrl(webhook.url);
+    setPicked(webhook.events);
+    setEditSecret("");
+    setEditing(false);
+  }
+
+  function saveEdits() {
+    const updates: {
+      url?: string;
+      events?: string[];
+      secret?: string;
+    } = { url: editUrl.trim(), events: picked };
+    // An empty secret leaves the stored one untouched.
+    if (editSecret.trim()) updates.secret = editSecret.trim();
     update.mutate(
-      { id: webhook.id, updates: { events: picked } },
+      { id: webhook.id, updates },
       {
-        onSuccess: () => setEditing(false),
+        onSuccess: () => {
+          setEditSecret("");
+          setEditing(false);
+          toast(t("automations.saved"), "success");
+        },
+        onError: (err) =>
+          toast((err as Error).message, "error"),
       },
     );
   }
@@ -275,24 +306,38 @@ function WebhookRow({
 
       {editing ? (
         <div className="mt-1 space-y-2">
+          <input
+            value={editUrl}
+            onChange={(e) => setEditUrl(e.target.value)}
+            placeholder={t("automations.urlPlaceholder")}
+            className={`${inputCls} w-full`}
+          />
           <EventPicker
             events={events}
             selected={picked}
             onToggle={toggleEvent}
           />
+          <input
+            type="password"
+            value={editSecret}
+            onChange={(e) => setEditSecret(e.target.value)}
+            placeholder={
+              webhook.secret_set
+                ? t("automations.secretKeep")
+                : t("automations.secretPlaceholder")
+            }
+            className={`${inputCls} w-full`}
+          />
           <div className="flex gap-2">
             <button
-              onClick={saveEvents}
-              disabled={update.isPending}
+              onClick={saveEdits}
+              disabled={!editUrl.trim() || update.isPending}
               className={saveBtnCls}
             >
               {t("automations.save")}
             </button>
             <button
-              onClick={() => {
-                setPicked(webhook.events);
-                setEditing(false);
-              }}
+              onClick={cancelEdit}
               className={fieldCls}
             >
               {t("automations.cancel")}
@@ -301,10 +346,10 @@ function WebhookRow({
         </div>
       ) : (
         <button
-          onClick={() => setEditing(true)}
+          onClick={startEdit}
           className="text-2xs text-cta hover:underline"
         >
-          {t("automations.editEvents")}
+          {t("automations.edit")}
         </button>
       )}
     </div>
@@ -368,9 +413,17 @@ export function AutomationsSection() {
 
   return (
     <section className="space-y-4">
-      <p className="text-sm text-fg-muted">
-        {t("automations.hint")}
-      </p>
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm text-fg-muted">
+          {t("automations.hint")}
+        </p>
+        <div className="shrink-0">
+          <HelpButton
+            title={t("automations.tab")}
+            doc={DOCS.automations}
+          />
+        </div>
+      </div>
 
       <div className={panelCls}>
         <div className={subCls}>
