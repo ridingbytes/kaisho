@@ -61,5 +61,7 @@
   "tabNotes": "Notas",
   "noNotes": "Aún no hay notas asignadas.",
   "newNotePlaceholder": "Nueva nota…",
-  "assignNote": "Adjuntar una nota"
+  "assignNote": "Adjuntar una nota",
+  "selectFile": "Selecciona un archivo para verlo.",
+  "fileSaved": "Archivo guardado"
 }

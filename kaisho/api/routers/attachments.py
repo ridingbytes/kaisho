@@ -22,6 +22,7 @@ from pathlib import Path
 from fastapi import (
     APIRouter, File, Form, HTTPException, UploadFile,
 )
+from pydantic import BaseModel
 from starlette.responses import FileResponse
 
 from ...config import get_config
@@ -203,6 +204,70 @@ def list_bucket(bucket: str):
             "size": path.stat().st_size,
         })
     return {"files": files}
+
+
+# Text files up to this size can be viewed / edited in
+# place (markdown, notes, small text/code).
+_MAX_TEXT_BYTES = 1024 * 1024  # 1 MiB
+
+
+@router.get("/{bucket}/{filename}/raw")
+def get_attachment_text(bucket: str, filename: str):
+    """Return an attachment's UTF-8 text content.
+
+    Used by the project file viewer to render / edit
+    markdown and text files. Refuses binary or oversized
+    files so the endpoint can't be used to slurp blobs.
+    """
+    safe_bucket = _safe_segment(bucket, "_misc")
+    safe_file = _safe_segment(filename, "upload")
+    root = _attachments_root()
+    target = _resolve_within(
+        root, root / safe_bucket / safe_file,
+    )
+    if not target.is_file():
+        raise HTTPException(
+            status_code=404, detail="attachment not found",
+        )
+    if target.stat().st_size > _MAX_TEXT_BYTES:
+        raise HTTPException(
+            status_code=413, detail="file too large to edit",
+        )
+    try:
+        content = target.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, ValueError):
+        raise HTTPException(
+            status_code=415, detail="not a text file",
+        )
+    return {"content": content}
+
+
+class _TextBody(BaseModel):
+    content: str
+
+
+@router.put("/{bucket}/{filename}")
+def put_attachment_text(
+    bucket: str, filename: str, body: _TextBody,
+):
+    """Replace a text attachment's content in place."""
+    safe_bucket = _safe_segment(bucket, "_misc")
+    safe_file = _safe_segment(filename, "upload")
+    root = _attachments_root()
+    target = _resolve_within(
+        root, root / safe_bucket / safe_file,
+    )
+    if not target.is_file():
+        raise HTTPException(
+            status_code=404, detail="attachment not found",
+        )
+    data = body.content.encode("utf-8")
+    if len(data) > _MAX_TEXT_BYTES:
+        raise HTTPException(
+            status_code=413, detail="content too large",
+        )
+    target.write_bytes(data)
+    return {"ok": True, "size": len(data)}
 
 
 @router.delete("/{bucket}/{filename}", status_code=204)

@@ -61,5 +61,7 @@
   "tabNotes": "Notizen",
   "noNotes": "Noch keine Notizen zugewiesen.",
   "newNotePlaceholder": "Neue Notiz…",
-  "assignNote": "Notiz anhängen"
+  "assignNote": "Notiz anhängen",
+  "selectFile": "Datei zum Ansehen auswählen.",
+  "fileSaved": "Datei gespeichert"
 }

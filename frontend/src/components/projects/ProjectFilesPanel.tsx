@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Download, Trash2, Upload } from "lucide-react";
+import { Trash2, Upload } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { StateMessage } from "../common/StateMessage";
+import { ProjectFileViewer } from "./ProjectFileViewer";
 import { uploadAttachment } from "../../api/client";
 import {
   useDeleteProjectFile,
@@ -31,8 +32,11 @@ export function ProjectFilesPanel({ projectId }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
 
   const files = data?.files ?? [];
+  const selectedFile =
+    files.find((f) => f.name === selected) ?? null;
 
   async function upload(list: FileList) {
     setUploading(true);
@@ -116,44 +120,63 @@ export function ProjectFilesPanel({ projectId }: Props) {
           {t("noFiles")}
         </div>
       ) : (
-        <ul className="divide-y divide-border-subtle">
-          {files.map((f) => (
-            <li
-              key={f.name}
-              className="flex items-center gap-2 py-2 group"
-            >
-              <span className="flex-1 text-sm truncate">
-                {f.display}
-              </span>
-              <span className="text-2xs text-fg-muted tabular-nums">
-                {formatBytes(f.size)}
-              </span>
-              <a
-                href={f.url}
-                target="_blank"
-                rel="noreferrer"
-                className="p-1 rounded text-fg-muted hover:text-cta"
-                title={t("download")}
+        // Master-detail: file list on the left, the
+        // selected file's viewer/editor on the right.
+        <div className="flex gap-4">
+          <ul className="w-56 shrink-0 divide-y divide-border-subtle">
+            {files.map((f) => (
+              <li
+                key={f.name}
+                className="flex items-center gap-1 py-1.5 group"
               >
-                <Download size={13} />
-              </a>
-              <ConfirmPopover
-                onConfirm={() =>
-                  remove.mutate({
-                    projectId, storedName: f.name,
-                  })
-                }
-              >
-                <button className={[
-                  "p-1 rounded text-fg-muted opacity-0",
-                  "group-hover:opacity-100 hover:text-red-400",
-                ].join(" ")}>
-                  <Trash2 size={13} />
+                <button
+                  onClick={() => setSelected(f.name)}
+                  className={[
+                    "flex-1 min-w-0 text-left px-1 py-0.5 rounded",
+                    "hover:bg-surface-overlay/50",
+                    selected === f.name
+                      ? "bg-cta-muted/40 text-cta"
+                      : "",
+                  ].join(" ")}
+                >
+                  <span className="block text-sm truncate">
+                    {f.display}
+                  </span>
+                  <span className="block text-2xs text-fg-muted tabular-nums">
+                    {formatBytes(f.size)}
+                  </span>
                 </button>
-              </ConfirmPopover>
-            </li>
-          ))}
-        </ul>
+                <ConfirmPopover
+                  onConfirm={() => {
+                    if (selected === f.name) setSelected(null);
+                    remove.mutate({
+                      projectId, storedName: f.name,
+                    });
+                  }}
+                >
+                  <button className={[
+                    "p-1 rounded text-fg-muted opacity-0",
+                    "group-hover:opacity-100 hover:text-red-400",
+                  ].join(" ")}>
+                    <Trash2 size={13} />
+                  </button>
+                </ConfirmPopover>
+              </li>
+            ))}
+          </ul>
+          <div className="flex-1 min-w-0">
+            {selectedFile ? (
+              <ProjectFileViewer
+                projectId={projectId}
+                file={selectedFile}
+              />
+            ) : (
+              <div className="text-xs text-fg-muted pt-2">
+                {t("selectFile")}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

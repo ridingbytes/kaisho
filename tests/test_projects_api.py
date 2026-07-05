@@ -159,6 +159,33 @@ def test_mcp_project_tools():
     assert agg["project"]["milestones"][0]["title"] == "M1"
 
 
+def test_project_file_text_read_and_replace(client):
+    pid = client.post(
+        "/api/projects", json={"name": "P"},
+    ).json()["id"]
+    r = client.post(
+        "/api/attachments",
+        files={"file": ("note.md", io.BytesIO(b"# Hi"),
+                        "text/markdown")},
+        data={"task_id": pid},
+    )
+    stored = r.json()["url"].split("/")[-1]
+
+    # Read raw text.
+    r = client.get(f"/api/attachments/{pid}/{stored}/raw")
+    assert r.status_code == 200
+    assert r.json()["content"] == "# Hi"
+
+    # Replace in place.
+    r = client.put(
+        f"/api/attachments/{pid}/{stored}",
+        json={"content": "# Edited\n\nbody"},
+    )
+    assert r.status_code == 200
+    r = client.get(f"/api/attachments/{pid}/{stored}/raw")
+    assert r.json()["content"] == "# Edited\n\nbody"
+
+
 def test_delete_project(client):
     pid = client.post(
         "/api/projects", json={"name": "Temp"},

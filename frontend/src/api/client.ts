@@ -2002,6 +2002,29 @@ export function deleteProjectFile(
   return del(`/attachments/${projectId}/${storedName}`);
 }
 
+/** Read a text/markdown attachment's content for viewing
+ * or editing. */
+export function fetchProjectFileText(
+  projectId: string,
+  storedName: string,
+): Promise<{ content: string }> {
+  return get(
+    `/attachments/${projectId}/${storedName}/raw`,
+  );
+}
+
+/** Replace a text attachment's content in place. */
+export function saveProjectFileText(
+  projectId: string,
+  storedName: string,
+  content: string,
+): Promise<{ ok: boolean; size: number }> {
+  return put(
+    `/attachments/${projectId}/${storedName}`,
+    { content },
+  );
+}
+
 // ─── Webhooks / automations ─────────────────────────
 
 /** List webhook subscriptions and the event catalog. */
