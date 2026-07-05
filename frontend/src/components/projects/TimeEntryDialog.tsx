@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Dialog } from "../common/Dialog";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { useUpdateClockEntry } from "../../hooks/useClocks";
+import { useProjects } from "../../hooks/useProjects";
 import { fieldCls, inputCls } from "../settings/styles";
 import type { ClockEntry } from "../../types";
 
@@ -16,6 +17,7 @@ export function TimeEntryDialog({ entry, onClose }: Props) {
   const { t } = useTranslation("projects");
   const { t: tc } = useTranslation("common");
   const update = useUpdateClockEntry();
+  const { data: projects = [] } = useProjects(true);
 
   const [description, setDescription] = useState(
     entry.description,
@@ -27,6 +29,7 @@ export function TimeEntryDialog({ entry, onClose }: Props) {
   const [contract, setContract] = useState(entry.contract ?? "");
   const [notes, setNotes] = useState(entry.notes ?? "");
   const [invoiced, setInvoiced] = useState(entry.invoiced);
+  const [project, setProject] = useState(entry.project ?? "");
 
   function save() {
     const h = parseFloat(hours);
@@ -40,6 +43,7 @@ export function TimeEntryDialog({ entry, onClose }: Props) {
           contract,
           notes,
           invoiced,
+          project,
         },
       },
       { onSuccess: onClose },
@@ -109,6 +113,23 @@ export function TimeEntryDialog({ entry, onClose }: Props) {
               onChange={(e) => setContract(e.target.value)}
               className={`${inputCls} w-full`}
             />
+          </label>
+          <label className="block">
+            <span className="block text-2xs uppercase tracking-wider text-fg-muted mb-1">
+              {t("project")}
+            </span>
+            <select
+              value={project}
+              onChange={(e) => setProject(e.target.value)}
+              className={`${fieldCls} w-full`}
+            >
+              <option value="">{t("noProject")}</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="flex items-center gap-2 mt-5 text-sm text-fg cursor-pointer">
             <input

@@ -55,5 +55,7 @@
   "descriptionLabel": "Beschreibung",
   "hours": "Stunden",
   "contract": "Vertrag",
-  "invoiced": "Abgerechnet"
+  "invoiced": "Abgerechnet",
+  "addToMilestone": "Aufgabe zu „{{name}}“ hinzufügen…",
+  "addUnassigned": "Aufgabe (ohne Meilenstein)…"
 }

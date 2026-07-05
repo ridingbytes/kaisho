@@ -776,25 +776,17 @@ def _get_project(args: dict) -> dict:
     logged time."""
     from ..services import projects as projects_svc
     pid = args["project_id"]
-    project = projects_svc.get_project(_projects_file(), pid)
-    if project is None:
+    result = projects_svc.aggregate_project(
+        _projects_file(), _backend(), pid,
+    )
+    if result is None:
         return {"error": f"Project not found: {pid}"}
-    backend = _backend()
-    tasks = [
-        t for t in backend.tasks.list_tasks(include_done=True)
-        if t.get("project") == pid
-    ]
-    task_ids = {t["id"] for t in tasks}
-    entries = [
-        e for e in backend.clocks.list_entries(period="all")
-        if e.get("project") == pid
-        or (e.get("task_id") and e["task_id"] in task_ids)
-    ]
-    minutes = sum(e.get("duration_minutes") or 0 for e in entries)
+    # Drop the full entry list for the LLM; the total and
+    # task list are the useful signal.
     return {
-        "project": project,
-        "tasks": tasks,
-        "total_minutes": minutes,
+        "project": result["project"],
+        "tasks": result["tasks"],
+        "total_minutes": result["total_minutes"],
     }
 
 

@@ -55,5 +55,7 @@
   "descriptionLabel": "Description",
   "hours": "Hours",
   "contract": "Contract",
-  "invoiced": "Invoiced"
+  "invoiced": "Invoiced",
+  "addToMilestone": "Add task to “{{name}}”…",
+  "addUnassigned": "Add task (no milestone)…"
 }

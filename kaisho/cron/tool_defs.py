@@ -1366,10 +1366,16 @@ TOOL_DEFS: list[dict] = [
                         "ARCHIVED (default: ACTIVE)"
                     ),
                 },
+                "contract": {"type": "string"},
+                "start": {
+                    "type": "string",
+                    "description": "Start date (YYYY-MM-DD)",
+                },
                 "due": {
                     "type": "string",
                     "description": "Due date (YYYY-MM-DD)",
                 },
+                "color": {"type": "string"},
             },
             "required": ["name"],
         },
@@ -1392,6 +1398,7 @@ TOOL_DEFS: list[dict] = [
                 "contract": {"type": "string"},
                 "start": {"type": "string"},
                 "due": {"type": "string"},
+                "color": {"type": "string"},
             },
             "required": ["project_id"],
         },

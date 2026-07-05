@@ -22,6 +22,7 @@ import {
   useUpdateProject,
 } from "../../hooks/useProjects";
 import { useAddTask, useUpdateTask } from "../../hooks/useTasks";
+import { useSettings } from "../../hooks/useSettings";
 import { formatDate, formatHours } from "../../utils/formatting";
 import { fieldCls, inputCls } from "../settings/styles";
 import type { ClockEntry, Milestone, Task } from "../../types";
@@ -363,9 +364,18 @@ function TaskGroup({
   const { t } = useTranslation("projects");
   const add = useAddTask();
   const updateTask = useUpdateTask();
+  const { data: settings } = useSettings();
   const [newTitle, setNewTitle] = useState("");
   const [assigning, setAssigning] = useState(false);
   const [assignVal, setAssignVal] = useState("");
+
+  // Derive "done" from the configured task states rather
+  // than guessing from the status name.
+  const doneStates = new Set(
+    (settings?.task_states ?? [])
+      .filter((s) => s.done)
+      .map((s) => s.name),
+  );
 
   // The unassigned bucket is only shown when it holds
   // tasks or there are no milestones to file under.
@@ -400,7 +410,7 @@ function TaskGroup({
   }
 
   const done = tasks.filter((task) =>
-    /done|cancel/i.test(task.status),
+    doneStates.has(task.status),
   ).length;
 
   return (
@@ -437,12 +447,19 @@ function TaskGroup({
           </li>
         ))}
       </ul>
-      <div className="flex items-center gap-3 mt-1.5">
+      {/* The add row is indented and rule-bordered so it
+          visually belongs to this milestone group, making
+          "which group does this task go to" unambiguous. */}
+      <div className="flex items-center gap-3 mt-1.5 pl-3 border-l-2 border-cta-muted">
         <form onSubmit={createTask} className="flex-1 flex gap-2">
           <input
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            placeholder={t("newTaskPlaceholder")}
+            placeholder={
+              milestone
+                ? t("addToMilestone", { name: milestone.title })
+                : t("addUnassigned")
+            }
             className={`${inputCls} flex-1`}
           />
           <button

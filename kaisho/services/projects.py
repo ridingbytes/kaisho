@@ -265,6 +265,46 @@ def update_project(
     return _heading_to_project(heading)
 
 
+def aggregate_project(
+    projects_file: Path, backend, project_id: str,
+) -> dict | None:
+    """Return a project with its assigned tasks, the time
+    entries that roll up to it, and the total minutes.
+
+    Time rolls up two ways: an entry assigned directly to
+    the project, or an entry logged against a task that
+    belongs to the project. Both are additive, so an entry
+    assigned to project A whose task belongs to project B
+    counts toward both -- expected, since the two links are
+    independent.
+
+    ``backend`` is passed in (rather than imported) so this
+    service stays backend-agnostic and testable.
+    """
+    project = get_project(projects_file, project_id)
+    if project is None:
+        return None
+    tasks = [
+        t for t in backend.tasks.list_tasks(include_done=True)
+        if t.get("project") == project_id
+    ]
+    task_ids = {t["id"] for t in tasks}
+    entries = [
+        e for e in backend.clocks.list_entries(period="all")
+        if e.get("project") == project_id
+        or (e.get("task_id") and e["task_id"] in task_ids)
+    ]
+    total_minutes = sum(
+        e.get("duration_minutes") or 0 for e in entries
+    )
+    return {
+        "project": project,
+        "tasks": tasks,
+        "entries": entries,
+        "total_minutes": total_minutes,
+    }
+
+
 def delete_project(
     projects_file: Path, project_id: str,
 ) -> bool:
@@ -320,7 +360,14 @@ def add_milestone(
 def _find_milestone(
     heading: Heading, milestone_id: str,
 ) -> Heading | None:
-    """Find a milestone child by its id."""
+    """Find a milestone child by its id.
+
+    An empty id never matches, so a hand-edited org file
+    with an id-less milestone child can't be updated or
+    deleted out from under itself.
+    """
+    if not milestone_id:
+        return None
     for child in _milestone_children(heading):
         if child.properties.get("MILESTONE_ID") == milestone_id:
             return child

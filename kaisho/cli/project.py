@@ -51,22 +51,15 @@ def project_list(include_archived, as_json):
 @click.option("--json", "as_json", is_flag=True)
 def project_show(project_id, as_json):
     """Show a project with its tasks and total time."""
-    p = projects_svc.get_project(_file(), project_id)
-    if p is None:
+    agg = projects_svc.aggregate_project(
+        _file(), get_backend(), project_id,
+    )
+    if agg is None:
         click.echo(f"Project not found: {project_id}", err=True)
         return
-    backend = get_backend()
-    tasks = [
-        t for t in backend.tasks.list_tasks(include_done=True)
-        if t.get("project") == project_id
-    ]
-    task_ids = {t["id"] for t in tasks}
-    entries = [
-        e for e in backend.clocks.list_entries(period="all")
-        if e.get("project") == project_id
-        or (e.get("task_id") and e["task_id"] in task_ids)
-    ]
-    minutes = sum(e.get("duration_minutes") or 0 for e in entries)
+    p = agg["project"]
+    tasks = agg["tasks"]
+    minutes = agg["total_minutes"]
     if as_json:
         click.echo(json.dumps({
             "project": p, "tasks": tasks,
@@ -96,14 +89,23 @@ def project_show(project_id, as_json):
 @click.argument("name")
 @click.option("--customer", default=None)
 @click.option("--description", default="")
+@click.option("--status", default="ACTIVE",
+              help="ACTIVE, ON_HOLD, COMPLETED, ARCHIVED")
+@click.option("--contract", default=None)
+@click.option("--start", default=None, help="YYYY-MM-DD")
 @click.option("--due", default=None, help="YYYY-MM-DD")
-def project_add(name, customer, description, due):
+@click.option("--color", default="")
+def project_add(
+    name, customer, description, status, contract,
+    start, due, color,
+):
     """Create a project."""
     if customer:
         get_backend().customers.ensure_customer(customer)
     p = projects_svc.add_project(
         _file(), name, customer=customer,
-        description=description, due=due,
+        description=description, status=status,
+        contract=contract, start=start, due=due, color=color,
     )
     click.echo(f"Created project {p['id']}: {p['name']}")
 

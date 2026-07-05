@@ -62,6 +62,8 @@ export function ProjectFilesPanel({ projectId }: Props) {
   return (
     <div className="space-y-3">
       <div
+        role="button"
+        tabIndex={0}
         onDragOver={(e) => {
           e.preventDefault();
           setDragging(true);
@@ -69,6 +71,12 @@ export function ProjectFilesPanel({ projectId }: Props) {
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
         onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
         className={[
           "flex flex-col items-center justify-center gap-1",
           "rounded-lg border-2 border-dashed py-8 px-4",

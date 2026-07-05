@@ -55,5 +55,7 @@
   "descriptionLabel": "Описание",
   "hours": "Часы",
   "contract": "Договор",
-  "invoiced": "Выставлено"
+  "invoiced": "Выставлено",
+  "addToMilestone": "Добавить задачу в «{{name}}»…",
+  "addUnassigned": "Добавить задачу (без вехи)…"
 }

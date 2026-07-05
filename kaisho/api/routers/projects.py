@@ -151,30 +151,9 @@ def aggregate_project(project_id: str):
     Files are fetched separately from the attachments
     endpoint (bucket = project id).
     """
-    project = projects_svc.get_project(_file(), project_id)
-    if project is None:
-        raise HTTPException(404, "Project not found")
-    backend = get_backend()
-    tasks = [
-        t for t in backend.tasks.list_tasks(include_done=True)
-        if t.get("project") == project_id
-    ]
-    # Time rolls up to a project two ways: an entry assigned
-    # directly, or an entry logged against a task that
-    # belongs to the project. The second makes time "just
-    # work" once tasks are assigned, with no per-entry step.
-    task_ids = {t["id"] for t in tasks}
-    entries = [
-        e for e in backend.clocks.list_entries(period="all")
-        if e.get("project") == project_id
-        or (e.get("task_id") and e["task_id"] in task_ids)
-    ]
-    total_minutes = sum(
-        e.get("duration_minutes") or 0 for e in entries
+    result = projects_svc.aggregate_project(
+        _file(), get_backend(), project_id,
     )
-    return {
-        "project": project,
-        "tasks": tasks,
-        "entries": entries,
-        "total_minutes": total_minutes,
-    }
+    if result is None:
+        raise HTTPException(404, "Project not found")
+    return result
