@@ -8,6 +8,7 @@ import {
   useUpdateMilestone,
 } from "../../hooks/useProjects";
 import type { Milestone } from "../../types";
+import { formatDateLabel } from "../../utils/dateLabel";
 import { fieldCls } from "../settings/styles";
 
 interface Props {
@@ -64,8 +65,8 @@ export function MilestonesSection({
               {m.title}
             </span>
             {m.due && (
-              <span className="text-2xs text-fg-muted tabular-nums">
-                {m.due}
+              <span className="text-2xs text-fg-muted">
+                {formatDateLabel(m.due)}
               </span>
             )}
             <ConfirmPopover

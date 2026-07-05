@@ -86,43 +86,45 @@ export function TaskCardContent({
 
   return (
     <>
-      {task.customer && (
-        <div className="mb-1.5 flex items-center gap-1.5">
-          <button
-            onPointerDown={(e) =>
-              e.stopPropagation()
-            }
-            onClick={() =>
-              onCustomerClick?.(task.customer!)
-            }
-            className={[
-              "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded",
-              "text-2xs font-semibold tracking-wider uppercase",
-              "bg-cta-muted text-cta-hover",
-              "hover:bg-cta/10 transition-colors cursor-pointer",
-            ].join(" ")}
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full shrink-0"
-              style={{
-                background:
-                  customerColors[task.customer] ||
-                  "#a1a1aa",
-              }}
-            />
-            {task.customer}
-          </button>
+      {(task.customer ||
+        task.project ||
+        (isTimerRunning && activeTimerStart)) && (
+        <div className="mb-1.5 flex items-center gap-1.5 flex-wrap">
+          {task.customer && (
+            <button
+              onPointerDown={(e) =>
+                e.stopPropagation()
+              }
+              onClick={() =>
+                onCustomerClick?.(task.customer!)
+              }
+              className={[
+                "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded",
+                "text-2xs font-semibold tracking-wider uppercase",
+                "bg-cta-muted text-cta-hover",
+                "hover:bg-cta/10 transition-colors cursor-pointer",
+              ].join(" ")}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{
+                  background:
+                    customerColors[task.customer] ||
+                    "#a1a1aa",
+                }}
+              />
+              {task.customer}
+            </button>
+          )}
+          {task.project && (
+            <ProjectBadge projectId={task.project} />
+          )}
           {isTimerRunning && activeTimerStart && (
             <TimerBadge
               start={activeTimerStart}
               onStop={onStopTimer}
             />
           )}
-        </div>
-      )}
-      {task.project && (
-        <div className="mb-1.5">
-          <ProjectBadge projectId={task.project} />
         </div>
       )}
       <p className="text-sm font-medium text-fg-strong leading-snug mb-1">

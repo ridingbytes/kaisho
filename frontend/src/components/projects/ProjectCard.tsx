@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { CalendarClock, ListChecks } from "lucide-react";
 import type { Project } from "../../types";
+import { formatDateLabel } from "../../utils/dateLabel";
 import {
   milestoneProgress,
   statusClasses,
@@ -22,8 +23,11 @@ export function ProjectCard({ project, onOpen }: Props) {
   return (
     <button
       onClick={() => onOpen(project.id)}
+      style={{
+        borderLeftColor: project.color || undefined,
+      }}
       className={[
-        "text-left rounded-lg border border-border",
+        "text-left rounded-lg border border-border border-l-4",
         "bg-surface-card p-4 transition-colors",
         "hover:border-cta/50 flex flex-col gap-3",
       ].join(" ")}
@@ -78,7 +82,7 @@ export function ProjectCard({ project, onOpen }: Props) {
         {project.due && (
           <div className="flex items-center gap-1 text-2xs text-fg-muted">
             <CalendarClock size={12} />
-            {t("due")} {project.due}
+            {t("due")} {formatDateLabel(project.due)}
           </div>
         )}
       </div>

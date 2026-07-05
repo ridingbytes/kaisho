@@ -57,6 +57,21 @@ def _now() -> str:
     return local_now().isoformat()
 
 
+# Badge colors, mirroring the customer palette. Assigned
+# deterministically from the project id so a project keeps
+# the same color without needing randomness.
+_PROJECT_COLORS = [
+    "#3b82f6", "#8b5cf6", "#ec4899", "#f97316",
+    "#10b981", "#06b6d4", "#eab308", "#ef4444",
+]
+
+
+def _color_for(project_id: str) -> str:
+    """Pick a stable badge color for a project id."""
+    idx = sum(ord(c) for c in project_id) % len(_PROJECT_COLORS)
+    return _PROJECT_COLORS[idx]
+
+
 def generate_project_id() -> str:
     """Return a fresh stable project id."""
     return f"P-{uuid.uuid4().hex[:8]}"
@@ -93,15 +108,18 @@ def _heading_to_project(heading: Heading) -> dict:
         _heading_to_milestone(c)
         for c in _milestone_children(heading)
     ]
+    pid = props.get("PROJECT_ID", "")
     return {
-        "id": props.get("PROJECT_ID", ""),
+        "id": pid,
         "name": heading.title.strip(),
         "customer": props.get("CUSTOMER") or None,
         "status": heading.keyword or "ACTIVE",
         "contract": props.get("CONTRACT") or None,
         "start": props.get("START") or None,
         "due": props.get("DUE") or None,
-        "color": props.get("COLOR", ""),
+        # Derive a stable color for older projects that
+        # predate the auto-assigned COLOR property.
+        "color": props.get("COLOR") or _color_for(pid),
         "description": "\n".join(heading.body).strip(),
         "updated_at": props.get("UPDATED_AT", ""),
         "milestones": milestones,
@@ -170,9 +188,13 @@ def add_project(
         projects_file.write_text("", encoding="utf-8")
     org_file = parse_org_file(projects_file, PROJECT_KEYWORDS)
 
+    pid = generate_project_id()
     props = {
-        "PROJECT_ID": generate_project_id(),
+        "PROJECT_ID": pid,
         "UPDATED_AT": _now(),
+        # Auto-assign a stable badge color when none given,
+        # so project badges are color-coded like customers.
+        "COLOR": color or _color_for(pid),
     }
     if customer:
         props["CUSTOMER"] = customer
@@ -182,8 +204,6 @@ def add_project(
         props["START"] = start
     if due:
         props["DUE"] = due
-    if color:
-        props["COLOR"] = color
 
     heading = Heading(
         level=1,

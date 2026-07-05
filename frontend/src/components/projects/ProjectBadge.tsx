@@ -15,15 +15,24 @@ export function ProjectBadge({ projectId }: Props) {
   const project = projects.find((p) => p.id === projectId);
   if (!project) return null;
 
+  // Color-code the whole badge with the project's color: a
+  // low-alpha tint behind the color as text/icon.
+  const color = project.color || "#71717a";
+  const style = {
+    backgroundColor: `${color}1f`,
+    color,
+  };
+
   return (
     <button
       onPointerDown={(e) => e.stopPropagation()}
       onClick={() => setView("projects", projectId)}
+      style={style}
       className={[
         "inline-flex items-center gap-1 px-1.5 py-0.5 rounded",
-        "text-2xs font-medium bg-surface-overlay text-fg-muted",
-        "hover:text-cta transition-colors cursor-pointer",
-        "max-w-full truncate",
+        "text-2xs font-semibold uppercase tracking-wider",
+        "hover:brightness-110 transition-all cursor-pointer",
+        "max-w-full truncate align-middle",
       ].join(" ")}
       title={project.name}
     >

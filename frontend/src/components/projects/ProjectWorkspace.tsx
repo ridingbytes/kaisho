@@ -24,6 +24,7 @@ import {
 import { useAddTask, useUpdateTask } from "../../hooks/useTasks";
 import { useSettings } from "../../hooks/useSettings";
 import { formatDate, formatHours } from "../../utils/formatting";
+import { formatDateLabel } from "../../utils/dateLabel";
 import { fieldCls, inputCls } from "../settings/styles";
 import type { ClockEntry, Milestone, Task } from "../../types";
 
@@ -139,7 +140,8 @@ export function ProjectWorkspace({ projectId, onBack }: Props) {
             )}
             {(project.start || project.due) && (
               <span className="text-2xs text-fg-muted">
-                {project.start || "…"} → {project.due || "…"}
+                {formatDateLabel(project.start) || "…"} →{" "}
+                {formatDateLabel(project.due) || "…"}
               </span>
             )}
             <span className="text-2xs text-fg-muted">
@@ -426,7 +428,7 @@ function TaskGroup({
         )}
         {milestone?.due && (
           <span className="text-2xs text-fg-muted">
-            {milestone.due}
+            {formatDateLabel(milestone.due)}
           </span>
         )}
       </div>
