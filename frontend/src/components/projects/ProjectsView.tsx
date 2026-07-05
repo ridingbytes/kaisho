@@ -6,7 +6,7 @@ import { StateMessage } from "../common/StateMessage";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { HelpButton } from "../common/HelpButton";
 import { DOCS } from "../../docs/panelDocs";
-import { ProjectCard } from "./ProjectCard";
+import { ProjectsBoard } from "./ProjectsBoard";
 import { ProjectWorkspace } from "./ProjectWorkspace";
 import {
   useCreateProject,
@@ -16,14 +16,15 @@ import { usePendingSearch } from "../../context/ViewContext";
 import { useToast } from "../../context/ToastContext";
 import { inputCls } from "../settings/styles";
 
-/** Projects view: a grid of project cards, a create form,
- * and the per-project workspace. */
+/** Projects view: a status board of projects, a create
+ * form, and the per-project workspace. */
 export function ProjectsView() {
   const { t } = useTranslation("projects");
   const { t: tc } = useTranslation("common");
-  const [includeArchived, setIncludeArchived] = useState(false);
+  // Include every status so all board columns populate
+  // (Archived is a column now, not a hidden filter).
   const { data: projects = [], isLoading } = useProjects(
-    includeArchived,
+    true,
   );
   const create = useCreateProject();
   const toast = useToast();
@@ -85,17 +86,6 @@ export function ProjectsView() {
       <PanelToolbar
         right={
           <div className="flex items-center gap-2">
-            <label className="flex items-center gap-1.5 text-xs text-fg-muted cursor-pointer">
-              <input
-                type="checkbox"
-                checked={includeArchived}
-                onChange={(e) =>
-                  setIncludeArchived(e.target.checked)
-                }
-                className="rounded border-border text-cta"
-              />
-              {t("showArchived")}
-            </label>
             <button
               onClick={() => setCreating((v) => !v)}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-sm bg-cta text-white hover:bg-cta-hover"
@@ -111,7 +101,7 @@ export function ProjectsView() {
       />
 
       <div className="flex-1 overflow-y-auto p-5 pb-20">
-        <div className="max-w-5xl mx-auto space-y-4">
+        <div className="space-y-4">
           {creating && (
             <form
               onSubmit={handleCreate}
@@ -154,15 +144,10 @@ export function ProjectsView() {
               {t("empty")}
             </StateMessage>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {projects.map((p) => (
-                <ProjectCard
-                  key={p.id}
-                  project={p}
-                  onOpen={setSelectedId}
-                />
-              ))}
-            </div>
+            <ProjectsBoard
+              projects={projects}
+              onOpen={setSelectedId}
+            />
           )}
         </div>
       </div>

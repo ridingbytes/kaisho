@@ -18,8 +18,9 @@ name and, optionally, a customer. Open a project to fill in the rest:
 - A **description** (markdown), for scope, links, and context.
 - **Milestones** — a checklist with optional due dates. The project
   card shows milestone progress at a glance.
-- A **status**: Active, On hold, Completed, or Archived. Archived
-  projects are hidden from the list unless you tick **Show archived**.
+- A **status**: Active, On hold, Completed, or Archived. The Projects
+  view is a board with one column per status — drag a project card
+  between columns to change its status, just like the task board.
 
 Projects are stored in `projects.org` in your profile's org directory,
 so they back up and sync along with the rest of your data.
