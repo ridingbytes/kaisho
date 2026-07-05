@@ -136,11 +136,12 @@ def _normalize_task(task: dict) -> dict:
     SQL and markdown backends emit and what
     ``frontend/src/types.ts:Task`` expects.
 
-    Today the only field needing a missing → None fill
-    is ``deadline``. The helper is deliberately additive
-    so future schema growth lands in one place.
+    The helper is deliberately additive so future schema
+    growth lands in one place.
     """
     task.setdefault("deadline", None)
+    task.setdefault("project", None)
+    task.setdefault("milestone", None)
     return task
 
 
@@ -234,6 +235,8 @@ class JsonTaskBackend(TaskBackend):
         sync_id=None,
         task_id=None,
         deadline=None,
+        project=None,
+        milestone=None,
     ) -> dict:
         """Create a new task and return its dict."""
         tasks = _read_json(self._tasks_file)
@@ -248,6 +251,8 @@ class JsonTaskBackend(TaskBackend):
             "properties": {},
             "created": datetime.now().isoformat(),
             "deadline": deadline or None,
+            "project": project or None,
+            "milestone": milestone or None,
         }
         tasks.insert(0, task)
         _write_json(self._tasks_file, tasks)
@@ -298,6 +303,8 @@ class JsonTaskBackend(TaskBackend):
         body=None,
         github_url=None,
         deadline=None,
+        project=None,
+        milestone=None,
     ) -> dict:
         """Update a task's fields and return updated dict."""
         tasks = _read_json(self._tasks_file)
@@ -313,6 +320,10 @@ class JsonTaskBackend(TaskBackend):
                     t["github_url"] = github_url
                 if deadline is not None:
                     t["deadline"] = deadline or None
+                if project is not None:
+                    t["project"] = project or None
+                if milestone is not None:
+                    t["milestone"] = milestone or None
                 _write_json(self._tasks_file, tasks)
                 return t
         raise ValueError(f"Task not found: {task_id}")
@@ -662,6 +673,7 @@ class JsonClockBackend(ClockBackend):
         notes: str | None = None,
         contract: str | None = None,
         sync_id: str | None = None,
+        project: str | None = None,
     ) -> dict | None:
         """Update fields of a clock entry.
 
@@ -689,6 +701,8 @@ class JsonClockBackend(ClockBackend):
                 entry["notes"] = notes
             if contract is not None:
                 entry["contract"] = contract
+            if project is not None:
+                entry["project"] = project or None
             if start_time is not None:
                 old_start = datetime.fromisoformat(
                     entry["start"]

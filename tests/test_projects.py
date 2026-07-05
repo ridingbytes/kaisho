@@ -127,3 +127,41 @@ def test_clock_entry_carries_project(org_dir):
     )
     again = clocks_svc.list_entries(clocks, period="all")
     assert again[0]["project"] == "P-1"
+
+
+# -- Backend parity: project/milestone across backends ----
+
+def _sql_backend(tmp_path):
+    from kaisho.backends.sql import make_sql_backend
+    return make_sql_backend(
+        f"sqlite:///{tmp_path / 'p.db'}",
+    )
+
+
+def test_sql_task_project_milestone_roundtrip(tmp_path):
+    tasks = _sql_backend(tmp_path)[0]
+    t = tasks.add_task(
+        customer="ACME", title="T",
+        project="P-1", milestone="M-1",
+    )
+    assert t["project"] == "P-1"
+    assert t["milestone"] == "M-1"
+    got = tasks.list_tasks(include_done=True)[0]
+    assert got["project"] == "P-1"
+    assert got["milestone"] == "M-1"
+    tasks.update_task(t["id"], project="", milestone="")
+    got = tasks.list_tasks(include_done=True)[0]
+    assert got["project"] is None
+    assert got["milestone"] is None
+
+
+def test_sql_clock_project_roundtrip(tmp_path):
+    clocks = _sql_backend(tmp_path)[1]
+    e = clocks.quick_book(
+        duration_str="1h", customer="ACME", description="x",
+    )
+    clocks.update_entry(
+        sync_id=e["sync_id"], project="P-1",
+    )
+    got = clocks.list_entries(period="all")[0]
+    assert got["project"] == "P-1"

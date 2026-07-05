@@ -445,6 +445,8 @@ def _section_to_task(sec: dict) -> dict:
             "archive_status", ""
         ),
         "deadline": meta.get("deadline") or None,
+        "project": meta.get("project") or None,
+        "milestone": meta.get("milestone") or None,
     }
 
 
@@ -467,6 +469,10 @@ def _task_to_section(task: dict) -> dict:
     # empty.
     if task.get("deadline"):
         meta["deadline"] = task["deadline"]
+    if task.get("project"):
+        meta["project"] = task["project"]
+    if task.get("milestone"):
+        meta["milestone"] = task["milestone"]
     props = _task_meta_to_props({
         **meta,
         "properties": task.get("properties", {}),
@@ -596,6 +602,8 @@ class MarkdownTaskBackend(TaskBackend):
         sync_id=None,
         task_id=None,
         deadline=None,
+        project=None,
+        milestone=None,
     ) -> dict:
         """Create a new task and return its dict."""
         tasks = self._load_tasks()
@@ -613,6 +621,8 @@ class MarkdownTaskBackend(TaskBackend):
             "created": now.isoformat(),
             "updated_at": now.isoformat(),
             "deadline": deadline or None,
+            "project": project or None,
+            "milestone": milestone or None,
         }
         tasks.insert(0, task)
         self._save_tasks(tasks)
@@ -669,6 +679,8 @@ class MarkdownTaskBackend(TaskBackend):
         body=None,
         github_url=None,
         deadline=None,
+        project=None,
+        milestone=None,
     ) -> dict:
         """Update a task's fields and return updated dict."""
         tasks = self._load_tasks()
@@ -684,6 +696,10 @@ class MarkdownTaskBackend(TaskBackend):
                     t["github_url"] = github_url
                 if deadline is not None:
                     t["deadline"] = deadline or None
+                if project is not None:
+                    t["project"] = project or None
+                if milestone is not None:
+                    t["milestone"] = milestone or None
                 t["updated_at"] = (
                     _local_now().isoformat()
                 )
@@ -842,6 +858,7 @@ def _load_clock_entries(text: str) -> list[dict]:
                 **parsed,
                 "task_id": meta.get("task_id", ""),
                 "contract": meta.get("contract", ""),
+                "project": meta.get("project") or None,
                 "invoiced": meta.get(
                     "invoiced", "",
                 ) == "true",
@@ -908,6 +925,8 @@ def _clock_entry_props(entry: dict) -> dict:
         props["task_id"] = entry["task_id"]
     if entry.get("contract"):
         props["contract"] = entry["contract"]
+    if entry.get("project"):
+        props["project"] = entry["project"]
     if entry.get("invoiced"):
         props["invoiced"] = "true"
     if entry.get("sync_id"):
@@ -1244,6 +1263,7 @@ class MarkdownClockBackend(ClockBackend):
         notes: str | None = None,
         contract: str | None = None,
         sync_id: str | None = None,
+        project: str | None = None,
     ) -> dict | None:
         """Update fields of a clock entry.
 
@@ -1272,6 +1292,8 @@ class MarkdownClockBackend(ClockBackend):
                 entry["notes"] = notes
             if contract is not None:
                 entry["contract"] = contract
+            if project is not None:
+                entry["project"] = project or None
             if start_time is not None:
                 old_start = datetime.fromisoformat(
                     entry["start"]
