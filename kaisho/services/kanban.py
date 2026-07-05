@@ -5,6 +5,7 @@ from ..org.models import Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 from ..time_utils import local_now
+from . import events
 from .clocks import (
     current_timestamp,
     ensure_sync_identity,
@@ -351,7 +352,9 @@ def add_task(
     org_file.headings.insert(0, new_heading)
     write_org_file(todos_file, org_file)
 
-    return _heading_to_task(new_heading, task_id)
+    task = _heading_to_task(new_heading, task_id)
+    events.emit(events.TASK_CREATED, {"task": task})
+    return task
 
 
 def move_task(
@@ -380,7 +383,15 @@ def move_task(
     heading.dirty = True
 
     write_org_file(todos_file, org_file)
-    return _heading_to_task(heading, task_id)
+    task = _heading_to_task(heading, task_id)
+    events.emit(events.TASK_MOVED, {
+        "task": task,
+        "delta": {
+            "from_state": old_status,
+            "to_state": new_status,
+        },
+    })
+    return task
 
 
 def set_task_tags(
@@ -401,7 +412,12 @@ def set_task_tags(
     heading.dirty = True
 
     write_org_file(todos_file, org_file)
-    return _heading_to_task(heading, task_id)
+    task = _heading_to_task(heading, task_id)
+    events.emit(events.TASK_UPDATED, {
+        "task": task,
+        "delta": {"tags": list(tags)},
+    })
+    return task
 
 
 def update_task(
@@ -448,7 +464,22 @@ def update_task(
     ensure_sync_identity(heading)
     heading.dirty = True
     write_org_file(todos_file, org_file)
-    return _heading_to_task(heading, task_id)
+    task = _heading_to_task(heading, task_id)
+    # Delta names the fields the caller actually passed;
+    # `None` means "leave alone" so it is excluded.
+    changed = {
+        "title": title,
+        "customer": customer,
+        "body": body,
+        "github_url": github_url,
+        "deadline": deadline,
+    }
+    delta = {k: v for k, v in changed.items() if v is not None}
+    events.emit(events.TASK_UPDATED, {
+        "task": task,
+        "delta": delta,
+    })
+    return task
 
 
 def archive_task(
@@ -468,6 +499,10 @@ def archive_task(
         return False
 
     original_keyword = heading.keyword
+    # Snapshot the task before archiving mutates its
+    # level and properties, so the event carries the
+    # entity as it was on the board.
+    archived = _heading_to_task(heading, task_id)
 
     # Write the additive side (archive.org) FIRST, then
     # remove from the source. A crash between the two
@@ -496,6 +531,7 @@ def archive_task(
     # Now remove from todos.org.
     _remove_heading_from_tree(org_file.headings, heading)
     write_org_file(todos_file, org_file)
+    events.emit(events.TASK_ARCHIVED, {"task": archived})
     return True
 
 

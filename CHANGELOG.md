@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Emit domain events on task and clock changes [#212].
+  Every task create / move / update / archive and clock
+  book / timer start / stop / update / delete fires a
+  semantic event on a new in-process event bus. This is
+  the foundation for outbound webhooks and workflow
+  automation (see `product/WORKFLOW-AUTOMATION.md`); no
+  user-visible behavior yet.
+
 ## 2.5.5
 
 A UX-focused release. The clock history gains date-range
