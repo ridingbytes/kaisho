@@ -377,6 +377,12 @@ backoff, then recorded as failed and kept in the delivery log for
 inspection. A subscription whose domain is not on the URL allowlist
 is recorded as `blocked` and never sent.
 
+## Recipes
+
+Prebuilt, importable automations live under
+[Automation Recipes](automations-recipes.md), starting with
+an n8n workflow that posts to Slack when a task is done.
+
 ## Testing with webhook.site
 
 To try it without any tooling, open [webhook.site](https://webhook.site),

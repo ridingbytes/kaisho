@@ -123,6 +123,7 @@ nav:
       - Emacs: integrations/emacs.md
       - MCP Server: integrations/mcp.md
       - Automations (Webhooks): integrations/automations.md
+      - Automation Recipes: integrations/automations-recipes.md
   - CLI Reference:
       - Overview: cli/index.md
       - clock: cli/clock.md

@@ -1,0 +1,73 @@
+{
+  "name": "Kaisho — Task moved to Slack",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "kaisho-task-moved",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "Kaisho Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [420, 300],
+      "webhookId": "kaisho-task-moved"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Keep only task.moved events that landed in a\n// done-type state, and build a Slack message. Adjust\n// DONE_STATES to match your board's done columns.\nconst DONE_STATES = ['DONE', 'CANCELLED'];\nconst out = [];\nfor (const item of $input.all()) {\n  const body = item.json.body || item.json;\n  if (!body || body.event !== 'task.moved') continue;\n  const to = body.data && body.data.delta\n    ? body.data.delta.to_state\n    : undefined;\n  if (!DONE_STATES.includes(to)) continue;\n  const task = (body.data && body.data.task) || {};\n  out.push({\n    json: {\n      text: ':white_check_mark: ' +\n        (task.title || 'Task') + ' → ' + to,\n    },\n  });\n}\nreturn out;"
+      },
+      "id": "a1000000-0000-4000-8000-000000000002",
+      "name": "Filter done moves",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/REPLACE/WITH/YOUR/WEBHOOK",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.text }) }}",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000003",
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Kaisho Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filter done moves",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter done moves": {
+      "main": [
+        [
+          {
+            "node": "Post to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "pinData": {},
+  "tags": []
+}
