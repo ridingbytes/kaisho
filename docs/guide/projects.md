@@ -53,12 +53,26 @@ rolls up two ways:
 This means you usually never assign time by hand: assign the tasks, and
 the hours aggregate themselves.
 
+## Notes
+
+The **Notes** tab gathers notes attached to the project. Create a note
+in the project (it inherits the customer) or attach an existing one,
+and open any note to jump to it in the Notes view.
+
 ## Files
 
 Drag and drop files straight onto the **Files** tab to keep everything
 for the project together — briefs, exports, screenshots, contracts.
-Files are stored with the profile under the project, and can be
-downloaded or removed from the same tab. Each file is capped at 25 MB.
+The tab is a viewer: images and PDFs render inline, markdown and text
+files can be read and edited in place, and anything else offers a
+download. Files are stored with the profile under the project, capped
+at 25 MB each.
+
+## On the dashboard
+
+The dashboard shows an **Active projects** widget with each project's
+milestone progress and logged time, clickable straight through to its
+workspace.
 
 ## CLI and AI
 
