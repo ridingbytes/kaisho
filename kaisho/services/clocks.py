@@ -38,6 +38,7 @@ from ..org.clock import format_org_date
 from ..org.models import Clock, Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
+from . import events
 
 # -- Constants ------------------------------------------------
 
@@ -1053,11 +1054,13 @@ def quick_book(
         clock, task_id, contract, notes,
         sync_id=sid, updated_at=ts,
     )
-    return clock_to_entry(
+    entry = clock_to_entry(
         clock, customer, description,
         task_id, notes=notes, contract=contract,
         sync_id=sid, updated_at=ts,
     )
+    events.emit(events.CLOCK_BOOKED, {"entry": entry})
+    return entry
 
 
 def start_timer(
@@ -1112,11 +1115,13 @@ def start_timer(
         task_id, contract,
         sync_id=sid, updated_at=ts,
     )
-    return clock_to_entry(
+    entry = clock_to_entry(
         clock, customer, description, task_id,
         contract=contract,
         sync_id=sid, updated_at=ts,
     )
+    events.emit(events.CLOCK_TIMER_STARTED, {"entry": entry})
+    return entry
 
 
 def _round_minutes(
@@ -1245,7 +1250,9 @@ def stop_timer(
         _clear_paused_flag(org_file, except_heading=None)
 
     write_org_file(clocks_file, org_file)
-    return heading_to_entry(found_heading, found_clock)
+    entry = heading_to_entry(found_heading, found_clock)
+    events.emit(events.CLOCK_TIMER_STOPPED, {"entry": entry})
+    return entry
 
 
 def split_multi_clock_headings(clocks_file: Path) -> int:
@@ -1506,7 +1513,27 @@ def update_clock_entry(
     heading.dirty = True
 
     write_org_file(clocks_file, org_file)
-    return heading_to_entry(heading, clock)
+    entry = heading_to_entry(heading, clock)
+    # Delta names only the fields the caller passed; a
+    # `None` param means "leave alone". `invoiced` may
+    # legitimately be `False`, so it survives the filter.
+    changed = {
+        "customer": customer,
+        "description": description,
+        "hours": hours,
+        "new_date": new_date.isoformat() if new_date else None,
+        "start_time": start_time,
+        "task_id": task_id,
+        "invoiced": invoiced,
+        "notes": notes,
+        "contract": contract,
+    }
+    delta = {k: v for k, v in changed.items() if v is not None}
+    events.emit(events.CLOCK_UPDATED, {
+        "entry": entry,
+        "delta": delta,
+    })
+    return entry
 
 
 def update_clock_entry_by_sync_id(
@@ -1733,6 +1760,9 @@ def delete_clock_entry(
                 else:
                     org_file.headings.remove(h)
                 write_org_file(clocks_file, org_file)
+                events.emit(
+                    events.CLOCK_DELETED, {"entry": entry},
+                )
                 return entry
     return None
 
