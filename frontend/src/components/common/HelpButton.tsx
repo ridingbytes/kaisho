@@ -1,5 +1,6 @@
 import { CircleHelp, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { View } from "../../App";
 import {
   displayShortcut,
@@ -43,34 +44,36 @@ export function HelpButton({ title, doc, view }: Props) {
         <CircleHelp size={14} />
       </button>
 
-      {open && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40 bg-black/30"
-            onClick={() => setOpen(false)}
-          />
+      {open &&
+        createPortal(
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 z-40 bg-black/30"
+              onClick={() => setOpen(false)}
+            />
 
-          {/* Panel */}
-          <div className="fixed top-0 right-0 h-full w-[440px] max-w-full z-50 flex flex-col bg-surface-card border-l border-border shadow-[var(--shadow-card-drag)]">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-border-subtle shrink-0">
-              <h2 className="text-sm font-semibold text-fg-strong">
-                {title}
-              </h2>
-              <button
-                onClick={() => setOpen(false)}
-                className="p-1 rounded text-fg-muted hover:text-fg-strong transition-colors"
-                aria-label="Close"
-              >
-                <X size={15} />
-              </button>
+            {/* Panel */}
+            <div className="fixed top-0 right-0 h-full w-[440px] max-w-full z-50 flex flex-col bg-surface-card border-l border-border shadow-[var(--shadow-card-drag)]">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-border-subtle shrink-0">
+                <h2 className="text-sm font-semibold text-fg-strong">
+                  {title}
+                </h2>
+                <button
+                  onClick={() => setOpen(false)}
+                  className="p-1 rounded text-fg-muted hover:text-fg-strong transition-colors"
+                  aria-label="Close"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-5 py-4">
+                <Markdown>{doc}</Markdown>
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              <Markdown>{doc}</Markdown>
-            </div>
-          </div>
-        </>
-      )}
+          </>,
+          document.body,
+        )}
     </>
   );
 }
