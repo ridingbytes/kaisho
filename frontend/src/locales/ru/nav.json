@@ -27,5 +27,6 @@
   "removeFilter": "Убрать фильтр {{prefix}}",
   "goToOrCreate": "Перейти или создать…",
   "noResults": "Ничего не найдено.",
-  "calendar": "Календарь"
+  "calendar": "Календарь",
+  "projects": "Проекты"
 }

@@ -17,6 +17,10 @@ import type {
   KnowledgeReindexReport,
   KnowledgeSearchResult,
   NoteItem,
+  Project,
+  ProjectAggregate,
+  ProjectFile,
+  Milestone,
   Settings,
   Task,
   Webhook,
@@ -187,6 +191,7 @@ export function updateTask(
     body?: string;
     github_url?: string;
     deadline?: string;
+    project?: string;
   }
 ): Promise<Task> {
   return patch<Task>(`/kanban/tasks/${taskId}`, updates);
@@ -1891,6 +1896,101 @@ export function updateGithubSettings(
   updates: { token?: string; base_url?: string }
 ): Promise<GithubSettings> {
   return patch<GithubSettings>("/settings/github", updates);
+}
+
+// ─── Projects ───────────────────────────────────────
+
+export function fetchProjects(
+  includeArchived = false,
+): Promise<Project[]> {
+  return get(
+    `/projects?include_archived=${includeArchived}`,
+  );
+}
+
+export function fetchProject(id: string): Promise<Project> {
+  return get(`/projects/${id}`);
+}
+
+export function fetchProjectAggregate(
+  id: string,
+): Promise<ProjectAggregate> {
+  return get(`/projects/${id}/aggregate`);
+}
+
+export function createProject(body: {
+  name: string;
+  customer?: string | null;
+  description?: string;
+  status?: string;
+  contract?: string | null;
+  start?: string | null;
+  due?: string | null;
+  color?: string;
+}): Promise<Project> {
+  return post<Project>("/projects", body);
+}
+
+export function updateProject(
+  id: string,
+  updates: Partial<{
+    name: string;
+    description: string;
+    status: string;
+    customer: string;
+    contract: string;
+    start: string;
+    due: string;
+    color: string;
+  }>,
+): Promise<Project> {
+  return patch<Project>(`/projects/${id}`, updates);
+}
+
+export function deleteProject(id: string): Promise<void> {
+  return del(`/projects/${id}`);
+}
+
+export function addMilestone(
+  projectId: string,
+  body: { title: string; due?: string | null },
+): Promise<Milestone> {
+  return post<Milestone>(
+    `/projects/${projectId}/milestones`, body,
+  );
+}
+
+export function updateMilestone(
+  projectId: string,
+  milestoneId: string,
+  updates: { title?: string; done?: boolean; due?: string },
+): Promise<Milestone> {
+  return patch<Milestone>(
+    `/projects/${projectId}/milestones/${milestoneId}`,
+    updates,
+  );
+}
+
+export function deleteMilestone(
+  projectId: string,
+  milestoneId: string,
+): Promise<void> {
+  return del(
+    `/projects/${projectId}/milestones/${milestoneId}`,
+  );
+}
+
+export function fetchProjectFiles(
+  projectId: string,
+): Promise<{ files: ProjectFile[] }> {
+  return get(`/attachments/${projectId}`);
+}
+
+export function deleteProjectFile(
+  projectId: string,
+  storedName: string,
+): Promise<void> {
+  return del(`/attachments/${projectId}/${storedName}`);
 }
 
 // ─── Webhooks / automations ─────────────────────────

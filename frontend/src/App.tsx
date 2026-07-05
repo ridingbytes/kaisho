@@ -50,6 +50,7 @@ import { CalendarPanel } from "./components/calendar-panel/CalendarPanel";
 import { ClockView } from "./components/clock/ClockView";
 import { CronView } from "./components/cron/CronView";
 import { CustomersView } from "./components/customers/CustomersView";
+import { ProjectsView } from "./components/projects/ProjectsView";
 import { DashboardView } from "./components/dashboard/DashboardView";
 import { GithubView } from "./components/github/GithubView";
 import { InboxView } from "./components/inbox/InboxView";
@@ -81,6 +82,7 @@ export type View =
   | "inbox"
   | "notes"
   | "customers"
+  | "projects"
   | "knowledge"
   | "github"
   | "clocks"
@@ -92,7 +94,7 @@ export type View =
 
 const VALID_VIEWS = new Set<View>([
   "dashboard", "board", "inbox", "notes", "customers",
-  "knowledge", "github",
+  "projects", "knowledge", "github",
   "clocks", "calendar", "cron", "settings", "advisor",
 ]);
 
@@ -1256,6 +1258,7 @@ function AppShell() {
             {view === "inbox" && <InboxView />}
             {view === "notes" && <NotesView />}
             {view === "customers" && <CustomersView />}
+            {view === "projects" && <ProjectsView />}
             {view === "knowledge" && <KnowledgeView />}
             {view === "github" && <GithubView />}
             {view === "clocks" && <ClockView />}

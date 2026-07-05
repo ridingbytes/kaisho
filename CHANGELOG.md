@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Add first-class Projects [#217]. A project belongs to a
+  customer and aggregates its tasks, time, notes, and files
+  in one workspace, with a markdown description and
+  milestones. Assign tasks to a project and their time
+  rolls up automatically; drag and drop files straight into
+  the project. New Projects view in the sidebar. See
+  `docs/guide/projects.md`.
+
 ## 2.6.0
 
 Workflow automation. Kaisho now emits a domain event on

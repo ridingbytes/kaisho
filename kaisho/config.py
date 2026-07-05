@@ -116,6 +116,11 @@ class Settings(BaseSettings):
     def NOTES_FILE(self) -> Path:
         return self.ORG_DIR.expanduser() / "notes.org"
 
+    @computed_field
+    @property
+    def PROJECTS_FILE(self) -> Path:
+        return self.ORG_DIR.expanduser() / "projects.org"
+
 
 @lru_cache(maxsize=1)
 def get_config() -> Settings:

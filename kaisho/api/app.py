@@ -29,6 +29,7 @@ from .routers import (
 from .routers import cloud_sync
 from .routers import integrations as integrations_router
 from .routers import settings as settings_router
+from .routers import projects as projects_router
 from .routers import settings_ai
 from .routers import settings_mcp
 from .routers import settings_profiles
@@ -197,6 +198,7 @@ app.add_middleware(
 app.include_router(kanban.router)
 app.include_router(clocks.router)
 app.include_router(customers.router)
+app.include_router(projects_router.router)
 app.include_router(inbox.router)
 app.include_router(notes.router)
 app.include_router(knowledge.router)

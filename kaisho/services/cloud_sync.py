@@ -633,6 +633,7 @@ def entry_to_wire(entry: dict) -> dict:
         ),
         "task_id": entry.get("task_id") or None,
         "contract": entry.get("contract") or None,
+        "project": entry.get("project") or None,
         "notes": entry.get("notes") or "",
         "invoiced": bool(entry.get("invoiced")),
         "updated_at": _local_to_utc(
@@ -664,6 +665,7 @@ def wire_to_local(entry: dict) -> dict:
         ),
         "task_id": entry.get("task_id") or None,
         "contract": entry.get("contract") or None,
+        "project": entry.get("project") or None,
         "notes": entry.get("notes") or "",
         "invoiced": bool(entry.get("invoiced")),
         "updated_at": _utc_to_local(
@@ -762,6 +764,7 @@ def task_to_wire(task: dict) -> dict:
         "body": task.get("body") or "",
         "github_url": task.get("github_url") or "",
         "deadline": task.get("deadline") or None,
+        "project": task.get("project") or None,
         "created_at": _local_to_utc(
             task.get("created") or local_now().isoformat()
         ),
@@ -783,6 +786,7 @@ def wire_to_task(entry: dict) -> dict:
         "body": entry.get("body") or "",
         "github_url": entry.get("github_url") or "",
         "deadline": entry.get("deadline") or None,
+        "project": entry.get("project") or None,
         "created": _utc_to_local(
             entry.get("created_at") or ""
         ),
@@ -1690,6 +1694,7 @@ def _apply_pulled_task(
         tags=incoming.get("tags"),
         sync_id=incoming["sync_id"],
         deadline=incoming.get("deadline"),
+        project=incoming.get("project"),
     )
     return 1, 0
 
@@ -1737,6 +1742,7 @@ def _apply_task_update(
         body=incoming["body"],
         github_url=incoming["github_url"],
         deadline=incoming.get("deadline"),
+        project=incoming.get("project"),
     )
     if incoming.get("tags") != existing.get("tags"):
         backend.tasks.set_tags(

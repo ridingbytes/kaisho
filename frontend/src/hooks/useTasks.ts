@@ -90,11 +90,17 @@ export function useUpdateTask() {
         body?: string;
         github_url?: string;
         deadline?: string;
+        project?: string;
       };
     }) => updateTask(taskId, updates),
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: ["tasks"],
+      });
+      // Assigning/unassigning a task changes project
+      // rollups, so refresh those too.
+      void qc.invalidateQueries({
+        queryKey: ["projects"],
       });
       toast("Task updated");
     },

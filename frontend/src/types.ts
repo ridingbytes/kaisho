@@ -16,6 +16,8 @@ export interface Task {
   github_url: string;
   /** Date-only ISO string (``YYYY-MM-DD``) or null. */
   deadline: string | null;
+  /** Project id this task is assigned to, or null. */
+  project?: string | null;
   state_history?: StateChange[];
 }
 
@@ -102,6 +104,48 @@ export interface ClockEntry {
   invoiced: boolean;
   notes: string;
   contract: string | null;
+  /** Project id this entry is assigned to, or null. */
+  project?: string | null;
+}
+
+/** A milestone within a project. */
+export interface Milestone {
+  id: string;
+  title: string;
+  done: boolean;
+  due: string | null;
+}
+
+/** A first-class project: the aggregation hub for a
+ * customer's tasks, time, notes, and files. */
+export interface Project {
+  id: string;
+  name: string;
+  customer: string | null;
+  status: string;
+  contract: string | null;
+  start: string | null;
+  due: string | null;
+  color: string;
+  description: string;
+  updated_at: string;
+  milestones: Milestone[];
+}
+
+/** A project with its assigned tasks and time rolled up. */
+export interface ProjectAggregate {
+  project: Project;
+  tasks: Task[];
+  entries: ClockEntry[];
+  total_minutes: number;
+}
+
+/** A file attached to a project (bucket = project id). */
+export interface ProjectFile {
+  name: string;
+  display: string;
+  url: string;
+  size: number;
 }
 
 export interface ActiveTimer {

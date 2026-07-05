@@ -167,6 +167,58 @@ _INLINE_IMAGE_MIMES = frozenset({
 })
 
 
+@router.get("/{bucket}")
+def list_bucket(bucket: str):
+    """List the files stored in a bucket.
+
+    Used by the project workspace to show and manage the
+    files dragged into a project (bucket = project id).
+    Returns the stored name (for URL / delete), a display
+    name with the random prefix stripped, the serve URL,
+    and the size.
+    """
+    safe_bucket = _safe_segment(bucket, "_misc")
+    root = _attachments_root()
+    bucket_dir = _resolve_within(root, root / safe_bucket)
+    if not bucket_dir.is_dir():
+        return {"files": []}
+    files = []
+    for path in sorted(bucket_dir.iterdir()):
+        if not path.is_file():
+            continue
+        stored = path.name
+        # Stored names are ``<8-hex>-<name>``; strip the
+        # prefix for a friendlier display name.
+        display = (
+            stored[9:]
+            if len(stored) > 9 and stored[8] == "-"
+            else stored
+        )
+        files.append({
+            "name": stored,
+            "display": display,
+            "url": f"/api/attachments/{safe_bucket}/{stored}",
+            "size": path.stat().st_size,
+        })
+    return {"files": files}
+
+
+@router.delete("/{bucket}/{filename}", status_code=204)
+def delete_attachment(bucket: str, filename: str):
+    """Delete a single attachment from a bucket."""
+    safe_bucket = _safe_segment(bucket, "_misc")
+    safe_file = _safe_segment(filename, "upload")
+    root = _attachments_root()
+    target = _resolve_within(
+        root, root / safe_bucket / safe_file,
+    )
+    if not target.is_file():
+        raise HTTPException(
+            status_code=404, detail="attachment not found",
+        )
+    target.unlink()
+
+
 @router.get("/{bucket}/{filename}")
 def get_attachment(bucket: str, filename: str):
     """Serve a previously uploaded attachment.

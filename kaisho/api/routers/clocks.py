@@ -59,6 +59,7 @@ class EntryUpdate(BaseModel):
     invoiced: bool | None = None
     notes: str | None = None
     contract: str | None = None
+    project: str | None = None
 
 
 @router.get("/entries")
@@ -311,6 +312,7 @@ def update_entry(
         invoiced=body.invoiced,
         notes=body.notes,
         contract=body.contract,
+        project=body.project,
     )
     if result is None:
         raise HTTPException(status_code=404, detail="Entry not found")

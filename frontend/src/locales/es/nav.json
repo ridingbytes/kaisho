@@ -27,5 +27,6 @@
   "removeFilter": "Eliminar filtro {{prefix}}",
   "goToOrCreate": "Ir a o crear…",
   "noResults": "Sin resultados.",
-  "calendar": "Calendario"
+  "calendar": "Calendario",
+  "projects": "Proyectos"
 }
