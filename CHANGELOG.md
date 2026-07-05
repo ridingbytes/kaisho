@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## 2.6.0
+
+Workflow automation. Kaisho now emits a domain event on
+every task and clock change and can deliver a signed
+webhook to an external tool (n8n, Make, Zapier, or any
+endpoint) whenever one fires. A new Settings → Automations
+panel manages endpoints, subscribed events, and a delivery
+log; mobile-originated changes trigger webhooks once they
+sync to a running desktop; and an importable n8n recipe
+ships as a starting point.
 
 - Add an importable n8n webhook recipe [#216]. A
   task-moved-to-Slack workflow plus an Automation Recipes
