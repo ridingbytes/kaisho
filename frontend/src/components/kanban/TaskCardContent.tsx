@@ -23,6 +23,7 @@ import { TagDropdown } from "../common/TagDropdown";
 import { useSetTaskTags, useUpdateTask } from "../../hooks/useTasks";
 import { stripCustomerPrefix } from "../../utils/customerPrefix";
 import { TimerBadge } from "./TimerBadge";
+import { ProjectBadge } from "../projects/ProjectBadge";
 import { TaskClockSection } from "./TaskClockSection";
 import type { Task } from "../../types";
 
@@ -117,6 +118,11 @@ export function TaskCardContent({
               onStop={onStopTimer}
             />
           )}
+        </div>
+      )}
+      {task.project && (
+        <div className="mb-1.5">
+          <ProjectBadge projectId={task.project} />
         </div>
       )}
       <p className="text-sm font-medium text-fg-strong leading-snug mb-1">

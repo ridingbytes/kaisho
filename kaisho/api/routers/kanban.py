@@ -42,6 +42,8 @@ class TaskCreate(BaseModel):
     deadline: str | None = None
     # Project id this task belongs to. Optional.
     project: str | None = None
+    # Milestone id within the project. Optional.
+    milestone: str | None = None
 
     @model_validator(mode="after")
     def _check_dates(self) -> "TaskCreate":
@@ -61,6 +63,8 @@ class TaskUpdate(BaseModel):
     # Project id. ``None`` = leave, ``""`` = unassign,
     # a project id = assign.
     project: str | None = None
+    # Milestone id within the project. Same sentinel rules.
+    milestone: str | None = None
 
     @model_validator(mode="after")
     def _check_dates(self) -> "TaskUpdate":
@@ -112,6 +116,7 @@ def create_task(body: TaskCreate):
         github_url=body.github_url,
         deadline=body.deadline,
         project=body.project,
+        milestone=body.milestone,
     )
 
 
@@ -133,6 +138,7 @@ def update_task(task_id: str, body: TaskUpdate):
             or body.github_url is not None
             or body.deadline is not None
             or body.project is not None
+            or body.milestone is not None
         ):
             result = tasks.update_task(
                 task_id,
@@ -142,6 +148,7 @@ def update_task(task_id: str, body: TaskUpdate):
                 github_url=body.github_url,
                 deadline=body.deadline,
                 project=body.project,
+                milestone=body.milestone,
             )
         if result is None:
             raise HTTPException(

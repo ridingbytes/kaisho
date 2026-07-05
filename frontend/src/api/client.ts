@@ -162,6 +162,9 @@ export interface CreateTaskParams {
   status: string;
   body?: string;
   githubUrl?: string;
+  deadline?: string;
+  project?: string;
+  milestone?: string;
 }
 
 /** Create a new kanban task for a customer.
@@ -175,6 +178,9 @@ export function createTask(
     status: params.status,
     body: params.body,
     github_url: params.githubUrl,
+    deadline: params.deadline,
+    project: params.project,
+    milestone: params.milestone,
   });
 }
 
@@ -192,6 +198,7 @@ export function updateTask(
     github_url?: string;
     deadline?: string;
     project?: string;
+    milestone?: string;
   }
 ): Promise<Task> {
   return patch<Task>(`/kanban/tasks/${taskId}`, updates);
@@ -811,6 +818,7 @@ export function updateClockEntry(
     invoiced?: boolean;
     notes?: string;
     contract?: string;
+    project?: string;
   }
 ): Promise<ClockEntry> {
   const qs = clockEntryQuery(entry.sync_id, entry.start);

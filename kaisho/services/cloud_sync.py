@@ -765,6 +765,7 @@ def task_to_wire(task: dict) -> dict:
         "github_url": task.get("github_url") or "",
         "deadline": task.get("deadline") or None,
         "project": task.get("project") or None,
+        "milestone": task.get("milestone") or None,
         "created_at": _local_to_utc(
             task.get("created") or local_now().isoformat()
         ),
@@ -787,6 +788,7 @@ def wire_to_task(entry: dict) -> dict:
         "github_url": entry.get("github_url") or "",
         "deadline": entry.get("deadline") or None,
         "project": entry.get("project") or None,
+        "milestone": entry.get("milestone") or None,
         "created": _utc_to_local(
             entry.get("created_at") or ""
         ),
@@ -1695,6 +1697,7 @@ def _apply_pulled_task(
         sync_id=incoming["sync_id"],
         deadline=incoming.get("deadline"),
         project=incoming.get("project"),
+        milestone=incoming.get("milestone"),
     )
     return 1, 0
 
@@ -1743,6 +1746,7 @@ def _apply_task_update(
         github_url=incoming["github_url"],
         deadline=incoming.get("deadline"),
         project=incoming.get("project"),
+        milestone=incoming.get("milestone"),
     )
     if incoming.get("tags") != existing.get("tags"):
         backend.tasks.set_tags(

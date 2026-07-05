@@ -26,11 +26,19 @@ so they back up and sync along with the rest of your data.
 
 ## Assigning tasks
 
-From a project's **Tasks** tab, use **Assign a task** to attach any
-existing board task to the project. Assigned tasks are listed there and
-link back to the board. Unassign a task with the row's remove action.
+A project's **Tasks** tab groups tasks under their milestone, with an
+**Unassigned** group for the rest. In any group you can:
 
-A task can belong to one project at a time.
+- Type a title and **Add** to create a task — it inherits the
+  project's customer and is filed under that milestone automatically.
+- **Assign existing** to attach a board task you already have.
+
+Click any task to open a rich edit subview: title, customer, status,
+deadline, tags, description, and its project and milestone. Assigned
+tasks also show a project badge on the board that links back here.
+
+A task belongs to one project (and at most one of its milestones) at a
+time.
 
 ## Time rollup
 
@@ -50,6 +58,23 @@ Drag and drop files straight onto the **Files** tab to keep everything
 for the project together — briefs, exports, screenshots, contracts.
 Files are stored with the profile under the project, and can be
 downloaded or removed from the same tab. Each file is capped at 25 MB.
+
+## CLI and AI
+
+Projects are scriptable from the `kai` CLI:
+
+```bash
+kai project list
+kai project add "Website Redesign" --customer ACME --due 2026-06-30
+kai project show P-1a2b3c4d
+kai project milestone add P-1a2b3c4d "Design phase" --due 2026-02-01
+kai project assign <task_id> P-1a2b3c4d --milestone M-...
+```
+
+The AI advisor and MCP tools can also read and manage projects
+(`list_projects`, `get_project`, `add_project`, `add_project_milestone`,
+`assign_task_to_project`, ...), so you can say "create a project for
+ACME and move the login task into it."
 
 ## Projects and contracts
 

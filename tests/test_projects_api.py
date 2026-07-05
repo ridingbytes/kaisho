@@ -1,9 +1,34 @@
 """API tests for the projects router and per-project file
-attachments, using the shared TestClient harness in
-``test_api.py`` (KAISHO_HOME isolation fixture)."""
+attachments."""
 import io
 
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def _isolate_env(tmp_path, monkeypatch):
+    """Point the app at a temp directory for each test so
+    projects/tasks/files never touch the real profile."""
+    data_dir = tmp_path / ".kaisho"
+    profile_dir = data_dir / "profiles" / "default"
+    org_dir = profile_dir / "org"
+    org_dir.mkdir(parents=True)
+    for f in (
+        "todos.org", "clocks.org", "customers.org",
+        "inbox.org", "notes.org", "archive.org",
+    ):
+        (org_dir / f).write_text("", encoding="utf-8")
+
+    monkeypatch.setenv("KAISHO_HOME", str(data_dir))
+    monkeypatch.setenv("PROFILE", "default")
+
+    from kaisho.config import reset_config
+    from kaisho.backends import get_backend
+    reset_config()
+    get_backend.cache_clear()
+    yield
+    reset_config()
+    get_backend.cache_clear()
 
 
 @pytest.fixture
@@ -103,6 +128,35 @@ def test_project_files_upload_list_delete(client):
     assert client.get(
         f"/api/attachments/{pid}",
     ).json()["files"] == []
+
+
+def test_mcp_project_tools():
+    from kaisho.cron.tools import execute_tool
+    from kaisho.backends import get_backend
+
+    added = execute_tool(
+        "add_project", {"name": "Alpha", "customer": "ACME"},
+    )
+    pid = added["project"]["id"]
+
+    listed = execute_tool("list_projects", {})
+    assert any(p["id"] == pid for p in listed["projects"])
+
+    execute_tool(
+        "add_project_milestone",
+        {"project_id": pid, "title": "M1"},
+    )
+
+    task = get_backend().tasks.add_task(
+        customer="ACME", title="T",
+    )
+    execute_tool(
+        "assign_task_to_project",
+        {"task_id": task["id"], "project_id": pid},
+    )
+    agg = execute_tool("get_project", {"project_id": pid})
+    assert len(agg["tasks"]) == 1
+    assert agg["project"]["milestones"][0]["title"] == "M1"
 
 
 def test_delete_project(client):

@@ -18,6 +18,8 @@ export interface Task {
   deadline: string | null;
   /** Project id this task is assigned to, or null. */
   project?: string | null;
+  /** Milestone id within the project, or null. */
+  milestone?: string | null;
   state_history?: StateChange[];
 }
 

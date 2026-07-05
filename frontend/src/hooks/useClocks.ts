@@ -277,11 +277,13 @@ export function useUpdateClockEntry() {
         invoiced?: boolean;
         notes?: string;
         contract?: string;
+        project?: string;
       };
       silent?: boolean;
     }) => updateClockEntry(entry, updates),
     onSuccess: (_data, vars) => {
       invalidateClockCaches(qc);
+      void qc.invalidateQueries({ queryKey: ["projects"] });
       if (!vars.silent) toast("Clock entry updated");
     },
   });

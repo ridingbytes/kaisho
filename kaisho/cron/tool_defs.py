@@ -1319,4 +1319,133 @@ TOOL_DEFS: list[dict] = [
             "required": ["event_id"],
         },
     },
+    {
+        "name": "list_projects",
+        "tier": "read",
+        "description": (
+            "List projects. A project is a customer-scoped "
+            "workspace that aggregates tasks, time, notes, "
+            "and files, with a description and milestones."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "include_archived": {"type": "boolean"},
+            },
+        },
+    },
+    {
+        "name": "get_project",
+        "tier": "read",
+        "description": (
+            "Get one project with its assigned tasks and "
+            "total logged minutes."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+            },
+            "required": ["project_id"],
+        },
+    },
+    {
+        "name": "add_project",
+        "tier": "write",
+        "description": "Create a project.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "customer": {"type": "string"},
+                "description": {"type": "string"},
+                "status": {
+                    "type": "string",
+                    "description": (
+                        "ACTIVE, ON_HOLD, COMPLETED, or "
+                        "ARCHIVED (default: ACTIVE)"
+                    ),
+                },
+                "due": {
+                    "type": "string",
+                    "description": "Due date (YYYY-MM-DD)",
+                },
+            },
+            "required": ["name"],
+        },
+    },
+    {
+        "name": "update_project",
+        "tier": "write",
+        "description": (
+            "Update a project's fields. Empty string clears "
+            "an optional field."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+                "name": {"type": "string"},
+                "description": {"type": "string"},
+                "status": {"type": "string"},
+                "customer": {"type": "string"},
+                "contract": {"type": "string"},
+                "start": {"type": "string"},
+                "due": {"type": "string"},
+            },
+            "required": ["project_id"],
+        },
+    },
+    {
+        "name": "delete_project",
+        "tier": "destructive",
+        "description": (
+            "Delete a project. Assigned tasks keep their id "
+            "reference but stop resolving."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+            },
+            "required": ["project_id"],
+        },
+    },
+    {
+        "name": "add_project_milestone",
+        "tier": "write",
+        "description": "Add a milestone to a project.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+                "title": {"type": "string"},
+                "due": {
+                    "type": "string",
+                    "description": "Due date (YYYY-MM-DD)",
+                },
+            },
+            "required": ["project_id", "title"],
+        },
+    },
+    {
+        "name": "assign_task_to_project",
+        "tier": "write",
+        "description": (
+            "Assign a task to a project and, optionally, a "
+            "milestone within it."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string"},
+                "project_id": {"type": "string"},
+                "milestone": {
+                    "type": "string",
+                    "description": "Milestone id (optional)",
+                },
+            },
+            "required": ["task_id", "project_id"],
+        },
+    },
 ]

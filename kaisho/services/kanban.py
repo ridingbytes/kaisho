@@ -99,6 +99,9 @@ def _heading_to_task(heading: Heading, task_id: str) -> dict:
             heading.properties.get("DEADLINE") or None
         ),
         "project": heading.properties.get("PROJECT") or None,
+        "milestone": (
+            heading.properties.get("MILESTONE") or None
+        ),
         "state_history": _state_history(heading),
     }
 
@@ -310,6 +313,7 @@ def add_task(
     task_id: str | None = None,
     deadline: str | None = None,
     project: str | None = None,
+    milestone: str | None = None,
 ) -> dict:
     """Add a new task to todos.org as a flat heading.
 
@@ -317,6 +321,8 @@ def add_task(
         Written as a ``:DEADLINE:`` heading property.
     :param project: Optional project id to assign the task
         to, written as a ``:PROJECT:`` heading property.
+    :param milestone: Optional milestone id within the
+        project, written as a ``:MILESTONE:`` property.
     """
     if not todos_file.exists():
         todos_file.parent.mkdir(parents=True, exist_ok=True)
@@ -347,6 +353,8 @@ def add_task(
         new_heading.properties["DEADLINE"] = deadline
     if project:
         new_heading.properties["PROJECT"] = project
+    if milestone:
+        new_heading.properties["MILESTONE"] = milestone
 
     # Persist the stable ID so renames don't change it.
     # Caller can pin the id explicitly (used by
@@ -436,13 +444,14 @@ def update_task(
     github_url: str | None = None,
     deadline: str | None = None,
     project: str | None = None,
+    milestone: str | None = None,
 ) -> dict:
     """Update a task's fields.
 
-    ``deadline`` and ``project`` follow the same sentinel
-    rules as the other params: ``None`` leaves the existing
-    value alone, an empty string clears the property, and a
-    non-empty string sets it.
+    ``deadline``, ``project`` and ``milestone`` follow the
+    same sentinel rules as the other params: ``None`` leaves
+    the existing value alone, an empty string clears the
+    property, and a non-empty string sets it.
     """
     org_file = parse_org_file(todos_file, keywords)
     heading = _find_task_heading(org_file, keywords, task_id)
@@ -472,6 +481,11 @@ def update_task(
             heading.properties["PROJECT"] = project
         else:
             heading.properties.pop("PROJECT", None)
+    if milestone is not None:
+        if milestone:
+            heading.properties["MILESTONE"] = milestone
+        else:
+            heading.properties.pop("MILESTONE", None)
     heading.properties["UPDATED_AT"] = current_timestamp()
     ensure_sync_identity(heading)
     heading.dirty = True
@@ -486,6 +500,7 @@ def update_task(
         "github_url": github_url,
         "deadline": deadline,
         "project": project,
+        "milestone": milestone,
     }
     delta = {k: v for k, v in changed.items() if v is not None}
     events.emit(events.TASK_UPDATED, {

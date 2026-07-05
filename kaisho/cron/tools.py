@@ -754,6 +754,111 @@ def _delete_profile(args: dict) -> dict:
 
 
 # -------------------------------------------------------------------
+# Projects
+# -------------------------------------------------------------------
+
+def _projects_file():
+    from ..config import get_config
+    return get_config().PROJECTS_FILE
+
+
+def _list_projects(args: dict) -> dict:
+    from ..services import projects as projects_svc
+    projects = projects_svc.list_projects(
+        _projects_file(),
+        include_archived=bool(args.get("include_archived")),
+    )
+    return {"projects": projects}
+
+
+def _get_project(args: dict) -> dict:
+    """Return a project with its assigned tasks and total
+    logged time."""
+    from ..services import projects as projects_svc
+    pid = args["project_id"]
+    project = projects_svc.get_project(_projects_file(), pid)
+    if project is None:
+        return {"error": f"Project not found: {pid}"}
+    backend = _backend()
+    tasks = [
+        t for t in backend.tasks.list_tasks(include_done=True)
+        if t.get("project") == pid
+    ]
+    task_ids = {t["id"] for t in tasks}
+    entries = [
+        e for e in backend.clocks.list_entries(period="all")
+        if e.get("project") == pid
+        or (e.get("task_id") and e["task_id"] in task_ids)
+    ]
+    minutes = sum(e.get("duration_minutes") or 0 for e in entries)
+    return {
+        "project": project,
+        "tasks": tasks,
+        "total_minutes": minutes,
+    }
+
+
+def _add_project(args: dict) -> dict:
+    from ..services import projects as projects_svc
+    if args.get("customer"):
+        _backend().customers.ensure_customer(args["customer"])
+    project = projects_svc.add_project(
+        _projects_file(),
+        name=args["name"],
+        customer=args.get("customer"),
+        description=args.get("description", ""),
+        status=args.get("status", "ACTIVE"),
+        due=args.get("due"),
+    )
+    return {"project": project}
+
+
+def _update_project(args: dict) -> dict:
+    from ..services import projects as projects_svc
+    fields = {
+        k: args[k] for k in (
+            "name", "description", "status", "customer",
+            "contract", "start", "due", "color",
+        ) if k in args
+    }
+    project = projects_svc.update_project(
+        _projects_file(), args["project_id"], **fields,
+    )
+    if project is None:
+        return {"error": "Project not found"}
+    return {"project": project}
+
+
+def _delete_project(args: dict) -> dict:
+    from ..services import projects as projects_svc
+    ok = projects_svc.delete_project(
+        _projects_file(), args["project_id"],
+    )
+    return {"deleted": ok}
+
+
+def _add_project_milestone(args: dict) -> dict:
+    from ..services import projects as projects_svc
+    m = projects_svc.add_milestone(
+        _projects_file(), args["project_id"],
+        args["title"], due=args.get("due"),
+    )
+    if m is None:
+        return {"error": "Project not found"}
+    return {"milestone": m}
+
+
+def _assign_task_to_project(args: dict) -> dict:
+    """Assign a task to a project and optional milestone."""
+    task = _backend().tasks.update_task(
+        args["task_id"],
+        project=args["project_id"],
+        milestone=args.get("milestone") or None,
+    )
+    return {"task": task}
+
+
+# -------------------------------------------------------------------
 # Dispatch table
 # -------------------------------------------------------------------
 
@@ -768,6 +873,13 @@ _HANDLERS: dict[str, Any] = {
     "list_customers": _list_customers,
     "list_contracts": _list_contracts,
     "delete_customer": _delete_customer,
+    "list_projects": _list_projects,
+    "get_project": _get_project,
+    "add_project": _add_project,
+    "update_project": _update_project,
+    "delete_project": _delete_project,
+    "add_project_milestone": _add_project_milestone,
+    "assign_task_to_project": _assign_task_to_project,
     "search_knowledge": lambda a: _search_knowledge(
         a["query"], a.get("max_results", 10),
     ),

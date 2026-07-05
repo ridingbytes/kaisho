@@ -55,19 +55,27 @@ export function useAddTask() {
       status,
       body,
       github_url,
+      project,
+      milestone,
     }: {
       customer: string;
       title: string;
       status: string;
       body?: string;
       github_url?: string;
+      project?: string;
+      milestone?: string;
     }) => createTask({
       customer, title, status, body,
-      githubUrl: github_url,
+      githubUrl: github_url, project, milestone,
     }),
     onSuccess: (_d, vars) => {
       void qc.invalidateQueries({
         queryKey: ["tasks"],
+      });
+      // A task created inside a project changes its rollup.
+      void qc.invalidateQueries({
+        queryKey: ["projects"],
       });
       toast(`Task added: ${vars.title}`);
     },
@@ -91,6 +99,7 @@ export function useUpdateTask() {
         github_url?: string;
         deadline?: string;
         project?: string;
+        milestone?: string;
       };
     }) => updateTask(taskId, updates),
     onSuccess: () => {

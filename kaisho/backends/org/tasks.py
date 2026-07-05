@@ -53,6 +53,7 @@ class OrgTaskBackend(TaskBackend):
         task_id: str | None = None,
         deadline: str | None = None,
         project: str | None = None,
+        milestone: str | None = None,
     ) -> dict:
         """Create a new task and return its dict."""
         return kanban.add_task(
@@ -68,6 +69,7 @@ class OrgTaskBackend(TaskBackend):
             task_id=task_id,
             deadline=deadline,
             project=project,
+            milestone=milestone,
         )
 
     def move_task(self, task_id: str, new_status: str) -> dict:
@@ -106,6 +108,7 @@ class OrgTaskBackend(TaskBackend):
         github_url: str | None = None,
         deadline: str | None = None,
         project: str | None = None,
+        milestone: str | None = None,
     ) -> dict:
         """Update a task's fields and return updated dict."""
         return kanban.update_task(
@@ -118,6 +121,7 @@ class OrgTaskBackend(TaskBackend):
             github_url=github_url,
             deadline=deadline,
             project=project,
+            milestone=milestone,
         )
 
     def archive_task(self, task_id: str) -> bool:
