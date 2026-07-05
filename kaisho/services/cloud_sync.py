@@ -33,10 +33,12 @@ import threading
 import urllib.error
 import urllib.parse
 import urllib.request
+from contextlib import nullcontext
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+from . import events
 from . import sync_state
 from ..time_utils import local_now
 
@@ -1166,21 +1168,31 @@ def apply_pulled_entry(
     deletes = 0
     pulled_ids: list[str] = []
     customer_names: set[str] = set()
-    for wire in entries:
-        local = wire_to_local(wire)
-        if local.get("deleted_at"):
-            backend.clocks.delete_entry_by_sync_id(
-                local["sync_id"],
-            )
-            deletes += 1
+    # Suppress per-item webhooks on a bulk pull (first sync
+    # or a large catch-up) so subscribers aren't flooded.
+    bulk = len(entries) >= events.SYNC_BULK_THRESHOLD
+    with events.suppressed() if bulk else nullcontext():
+        for wire in entries:
+            local = wire_to_local(wire)
+            if local.get("deleted_at"):
+                backend.clocks.delete_entry_by_sync_id(
+                    local["sync_id"],
+                )
+                deletes += 1
+                pulled_ids.append(wire["id"])
+                continue
+            backend.clocks.apply_sync_payload(local)
+            upserts += 1
             pulled_ids.append(wire["id"])
-            continue
-        backend.clocks.apply_sync_payload(local)
-        upserts += 1
-        pulled_ids.append(wire["id"])
-        name = local.get("customer") or ""
-        if name:
-            customer_names.add(name)
+            name = local.get("customer") or ""
+            if name:
+                customer_names.add(name)
+    if bulk:
+        log.info(
+            "Applied %d synced clock changes; per-item "
+            "webhook events suppressed (bulk pull)",
+            len(entries),
+        )
     autocreate_customer(backend, customer_names)
     return upserts, deletes, pulled_ids
 
@@ -1600,16 +1612,27 @@ def pull_and_apply_tasks(
                 if t.get("sync_id")
             }
         pulled_ids = []
-        for wire_item in entries:
-            incoming = wire_to_task(wire_item)
-            pulled_ids.append(wire_item["id"])
-            all_sync_ids.add(incoming["sync_id"])
-            existing = by_sync.get(incoming["sync_id"])
-            up, deleted = _apply_pulled_task(
-                backend, incoming, existing,
+        # Task applies reuse the normal task chokepoints, so
+        # they already emit events; suppress on a bulk pull
+        # to avoid flooding webhook subscribers.
+        bulk = len(entries) >= events.SYNC_BULK_THRESHOLD
+        with events.suppressed() if bulk else nullcontext():
+            for wire_item in entries:
+                incoming = wire_to_task(wire_item)
+                pulled_ids.append(wire_item["id"])
+                all_sync_ids.add(incoming["sync_id"])
+                existing = by_sync.get(incoming["sync_id"])
+                up, deleted = _apply_pulled_task(
+                    backend, incoming, existing,
+                )
+                total_up += up
+                total_del += deleted
+        if bulk:
+            log.info(
+                "Applied %d synced task changes; per-item "
+                "webhook events suppressed (bulk pull)",
+                len(entries),
             )
-            total_up += up
-            total_del += deleted
 
         try:
             ack_task_items(

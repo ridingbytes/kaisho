@@ -21,6 +21,10 @@ Webhooks fire from the desktop backend where your data lives, so they
 work offline against a webhook receiver on the same machine or LAN.
 They do not fire while the app is closed.
 
+Changes made on the mobile app fire webhooks too, once they sync to a
+running desktop. To avoid flooding your receiver, a large first sync
+or catch-up applies its changes without firing per-item events.
+
 ## Add an endpoint
 
 1. Open **Settings → Automations**.

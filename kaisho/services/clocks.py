@@ -1576,7 +1576,11 @@ def update_clock_entry_by_sync_id(
 
     apply_sync_payload(heading, clock, fields)
     write_org_file(clocks_file, org_file)
-    return heading_to_entry(heading, clock)
+    entry = heading_to_entry(heading, clock)
+    # Sync-origin update (a change made on another device).
+    # No delta: the payload overwrites the whole entry.
+    events.emit(events.CLOCK_UPDATED, {"entry": entry})
+    return entry
 
 
 def insert_clock_entry_from_sync(
@@ -1615,7 +1619,7 @@ def insert_clock_entry_from_sync(
         invoiced=bool(fields.get("invoiced")),
         from_cloud=not customer,
     )
-    return clock_to_entry(
+    entry = clock_to_entry(
         clock,
         customer=fields.get("customer") or "",
         description=fields.get("description") or "",
@@ -1626,6 +1630,10 @@ def insert_clock_entry_from_sync(
         sync_id=fields["sync_id"],
         updated_at=fields["updated_at"],
     )
+    # A new entry arrived from another device (e.g. time
+    # booked on mobile).
+    events.emit(events.CLOCK_BOOKED, {"entry": entry})
+    return entry
 
 
 def merge_entries(
@@ -1791,4 +1799,5 @@ def delete_clock_entry_by_sync_id(
     entry = heading_to_entry(heading, clock)
     org_file.headings.remove(heading)
     write_org_file(clocks_file, org_file)
+    events.emit(events.CLOCK_DELETED, {"entry": entry})
     return entry

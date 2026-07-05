@@ -232,7 +232,9 @@ it is marked failed.
 
 **Where it fires** — webhooks fire from the desktop app while it is
 running, so they work against a receiver on the same machine or LAN.
-They do not fire while the app is closed.
+They do not fire while the app is closed. Changes made on mobile fire
+too, once they sync to a running desktop; a large first sync applies
+without firing per-item events.
 
 See the full payload reference in the docs under
 Integrations → Automations.
