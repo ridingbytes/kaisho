@@ -86,9 +86,11 @@ async def upload_attachment(
     """Persist an uploaded file and return its URL.
 
     :param file: multipart file upload.
-    :param task_id: optional task id to bucket the file
-        under so attachments live alongside the task they
-        belong to.
+    :param task_id: the bucket to store the file under
+        (any owning entity id -- a task id, or a project id
+        for the project files panel). Named ``task_id`` for
+        backwards compatibility; treated purely as an opaque
+        bucket segment.
     :returns: ``{"url": str, "name": str, "size": int}``.
     """
     bucket = _safe_segment(task_id, "_misc")

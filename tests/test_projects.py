@@ -50,6 +50,20 @@ def test_update_project_and_clear_field(org_dir):
     assert updated["customer"] is None
 
 
+def test_description_with_star_lines_survives(org_dir):
+    # A description line starting with ``**`` must not be
+    # reparsed as a milestone child and lose the rest of
+    # the text (writer sanitizer regression).
+    f = org_dir / "projects.org"
+    desc = "Intro line\n** Phase two\nmore text"
+    proj = projects_svc.add_project(f, "P", description=desc)
+    got = projects_svc.get_project(f, proj["id"])
+    assert "Intro line" in got["description"]
+    assert "Phase two" in got["description"]
+    assert "more text" in got["description"]
+    assert got["milestones"] == []
+
+
 def test_delete_project(org_dir):
     f = org_dir / "projects.org"
     proj = projects_svc.add_project(f, "P")

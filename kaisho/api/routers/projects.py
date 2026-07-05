@@ -85,6 +85,8 @@ def get_project(project_id: str):
 @router.patch("/{project_id}")
 def update_project(project_id: str, body: ProjectUpdate):
     """Update a project."""
+    if body.customer:
+        get_backend().customers.ensure_customer(body.customer)
     result = projects_svc.update_project(
         _file(), project_id,
         **body.model_dump(exclude_unset=True),

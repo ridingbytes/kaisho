@@ -235,7 +235,9 @@ def update_project(
     if heading is None:
         return None
 
-    if name is not None:
+    # A project must keep a name; an empty string is
+    # ignored rather than blanking the heading.
+    if name:
         heading.title = name
     if status is not None and status in PROJECT_STATES:
         heading.keyword = status
@@ -343,7 +345,7 @@ def update_milestone(
     child = _find_milestone(heading, milestone_id)
     if child is None:
         return None
-    if title is not None:
+    if title:
         child.title = title
     if done is not None:
         child.keyword = "DONE" if done else "TODO"

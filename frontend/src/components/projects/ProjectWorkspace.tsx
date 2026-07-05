@@ -404,9 +404,9 @@ function TimeTab({
         </span>
       </div>
       <ul className="divide-y divide-border-subtle">
-        {entries.map((e) => (
+        {entries.map((e, i) => (
           <li
-            key={e.sync_id || e.start}
+            key={e.sync_id || `${e.start}-${i}`}
             className="flex items-center gap-2 py-1.5 text-xs"
           >
             <span className="text-fg-muted tabular-nums">

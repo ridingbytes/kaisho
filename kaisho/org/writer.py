@@ -1,9 +1,17 @@
 import os
+import re
 import tempfile
 from pathlib import Path
 
 from .clock import format_clock
 from .models import Heading, OrgFile
+
+# Any run of leading stars followed by a space is a heading
+# to the parser. Body text that starts that way (e.g. a
+# project description line like ``** Phase two``) must be
+# escaped or it would be reparsed as a phantom child
+# heading and its following lines lost.
+_STAR_RUN = re.compile(r"\*+ ")
 
 
 def format_heading_line(heading: Heading) -> str:
@@ -50,7 +58,7 @@ def _sanitize_body_line(line: str) -> str:
     """
     stripped = line.lstrip()
     if (
-        stripped.startswith("* ")
+        _STAR_RUN.match(stripped)
         or stripped == ":PROPERTIES:"
         or stripped == ":LOGBOOK:"
         or stripped == ":END:"
