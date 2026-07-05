@@ -89,6 +89,8 @@ export function TaskCard({
     "",
   );
   const [editDeadline, setEditDeadline] = useState("");
+  const [editProject, setEditProject] = useState("");
+  const [editMilestone, setEditMilestone] = useState("");
   const { overlayUrl, openOverlay, closeOverlay } =
     useLinkOverlay();
   const updateTask = useUpdateTask();
@@ -118,6 +120,8 @@ export function TaskCard({
     setEditBody(task.body ?? "");
     setEditGithubUrl(task.github_url ?? "");
     setEditDeadline(task.deadline ?? "");
+    setEditProject(task.project ?? "");
+    setEditMilestone(task.milestone ?? "");
     setEditing(true);
   }
 
@@ -137,6 +141,8 @@ export function TaskCard({
           // emptying the input. ``""`` clears server-side;
           // an unchanged value just rewrites the same date.
           deadline: editDeadline,
+          project: editProject,
+          milestone: editMilestone,
         },
       },
       {
@@ -249,12 +255,16 @@ export function TaskCard({
                 setTaskTags.isPending
               }
               editDeadline={editDeadline}
+              editProject={editProject}
+              editMilestone={editMilestone}
               onCustomerChange={setEditCustomer}
               onTitleChange={setEditTitle}
               onBodyChange={setEditBody}
               onGithubUrlChange={setEditGithubUrl}
               onTagsChange={setEditTags}
               onDeadlineChange={setEditDeadline}
+              onProjectChange={setEditProject}
+              onMilestoneChange={setEditMilestone}
               onSave={handleSave}
               onCancel={() => setEditing(false)}
             />

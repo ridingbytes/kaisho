@@ -13,6 +13,7 @@ import {
 } from "../common/ContractSelect";
 import { useContracts } from "../../hooks/useContracts";
 import { useTasks } from "../../hooks/useTasks";
+import { useProjects } from "../../hooks/useProjects";
 import { useUpdateClockEntry } from "../../hooks/useClocks";
 import { minutesToDecimal } from "../../utils/formatting";
 import { taskTitleById } from "../../utils/customerPrefix";
@@ -58,6 +59,10 @@ export function EditForm({
   const [invoiced, setInvoiced] = useState(
     entry.invoiced ?? false,
   );
+  const [project, setProject] = useState(
+    entry.project ?? "",
+  );
+  const { data: projects = [] } = useProjects(true);
   const [taskId, setTaskId] = useState<string | null>(
     entry.task_id,
   );
@@ -84,6 +89,7 @@ export function EditForm({
       contract?: string;
       notes?: string;
       invoiced?: boolean;
+      project?: string;
     } = {};
     const origDate = entry.start.slice(0, 10);
     const origTime = entry.start.slice(11, 16);
@@ -121,6 +127,9 @@ export function EditForm({
     }
     if (invoiced !== (entry.invoiced ?? false)) {
       updates.invoiced = invoiced;
+    }
+    if (project !== (entry.project ?? "")) {
+      updates.project = project;
     }
     if (Object.keys(updates).length === 0) {
       onClose();
@@ -304,23 +313,40 @@ export function EditForm({
               `${smallInputCls} w-full resize-y`
             }
           />
-          <label className={
-            "flex items-center gap-1.5 mt-1.5 " +
-            "text-xs text-fg-muted cursor-pointer"
-          }>
-            <input
-              type="checkbox"
-              checked={invoiced}
-              onChange={(e) =>
-                setInvoiced(e.target.checked)
-              }
-              className={
-                "rounded border-border text-cta " +
-                "focus:ring-cta"
-              }
-            />
-            {tc("invoiced")}
-          </label>
+          <div className="flex items-center gap-3 mt-1.5">
+            <label className={
+              "flex items-center gap-1.5 " +
+              "text-xs text-fg-muted cursor-pointer"
+            }>
+              <input
+                type="checkbox"
+                checked={invoiced}
+                onChange={(e) =>
+                  setInvoiced(e.target.checked)
+                }
+                className={
+                  "rounded border-border text-cta " +
+                  "focus:ring-cta"
+                }
+              />
+              {tc("invoiced")}
+            </label>
+            <select
+              value={project}
+              onChange={(e) => setProject(e.target.value)}
+              className={smallInputCls}
+              title={t("project", "Project")}
+            >
+              <option value="">
+                {t("noProject", "No project")}
+              </option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </td>
       </tr>
     </>

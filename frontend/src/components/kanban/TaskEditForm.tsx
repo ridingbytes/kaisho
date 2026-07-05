@@ -11,6 +11,7 @@ import { GithubIssueInput } from "./GithubIssueInput";
 import {
   useFileDropOnTextarea,
 } from "../../hooks/useFileDropOnTextarea";
+import { useProjects } from "../../hooks/useProjects";
 
 const editInputCls = [
   "w-full px-2 py-1 rounded text-xs",
@@ -35,6 +36,10 @@ interface TaskEditFormProps {
   editTags: string[];
   /** Date-only ISO ``YYYY-MM-DD`` or empty string. */
   editDeadline: string;
+  /** Project id or empty string. */
+  editProject: string;
+  /** Milestone id or empty string. */
+  editMilestone: string;
   allTags: TagDef[];
   isSaving: boolean;
   onCustomerChange: (v: string) => void;
@@ -43,6 +48,8 @@ interface TaskEditFormProps {
   onGithubUrlChange: (v: string) => void;
   onTagsChange: (tags: string[]) => void;
   onDeadlineChange: (v: string) => void;
+  onProjectChange: (v: string) => void;
+  onMilestoneChange: (v: string) => void;
   onSave: () => void;
   onCancel: () => void;
 }
@@ -60,6 +67,8 @@ export function TaskEditForm({
   editGithubUrl,
   editTags,
   editDeadline,
+  editProject,
+  editMilestone,
   allTags,
   isSaving,
   onCustomerChange,
@@ -68,11 +77,17 @@ export function TaskEditForm({
   onGithubUrlChange,
   onTagsChange,
   onDeadlineChange,
+  onProjectChange,
+  onMilestoneChange,
   onSave,
   onCancel,
 }: TaskEditFormProps) {
   const { t } = useTranslation("kanban");
   const { t: tc } = useTranslation("common");
+  const { t: tp } = useTranslation("projects");
+  const { data: projects = [] } = useProjects(true);
+  const milestones =
+    projects.find((p) => p.id === editProject)?.milestones ?? [];
 
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
   const drop = useFileDropOnTextarea({
@@ -167,6 +182,52 @@ export function TaskEditForm({
             className={editInputCls}
           />
         </label>
+      </div>
+      <div
+        onPointerDown={(e) => e.stopPropagation()}
+        className="flex gap-1.5"
+      >
+        <label className="flex-1 flex flex-col gap-0.5">
+          <span className="text-2xs text-fg-muted px-0.5">
+            {tp("project")}
+          </span>
+          <select
+            value={editProject}
+            onChange={(e) => {
+              onProjectChange(e.target.value);
+              onMilestoneChange("");
+            }}
+            className={editInputCls}
+          >
+            <option value="">{tp("noProject")}</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {milestones.length > 0 && (
+          <label className="flex-1 flex flex-col gap-0.5">
+            <span className="text-2xs text-fg-muted px-0.5">
+              {tp("milestone")}
+            </span>
+            <select
+              value={editMilestone}
+              onChange={(e) =>
+                onMilestoneChange(e.target.value)
+              }
+              className={editInputCls}
+            >
+              <option value="">{tp("noMilestone")}</option>
+              {milestones.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
       <div
         onPointerDown={(e) => e.stopPropagation()}
