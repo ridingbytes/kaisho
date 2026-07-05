@@ -115,7 +115,7 @@ function AddWebhookForm({ events }: { events: string[] }) {
         value={url}
         onChange={(e) => setUrl(e.target.value)}
         placeholder={t("automations.urlPlaceholder")}
-        className={inputCls}
+        className={`${inputCls} w-full`}
       />
       <div>
         <div
@@ -140,15 +140,17 @@ function AddWebhookForm({ events }: { events: string[] }) {
         value={secret}
         onChange={(e) => setSecret(e.target.value)}
         placeholder={t("automations.secretPlaceholder")}
-        className={inputCls}
+        className={`${inputCls} w-full`}
       />
-      <button
-        type="submit"
-        disabled={!url.trim() || create.isPending}
-        className={saveBtnCls}
-      >
-        {t("automations.addWebhook")}
-      </button>
+      <div>
+        <button
+          type="submit"
+          disabled={!url.trim() || create.isPending}
+          className={saveBtnCls}
+        >
+          {t("automations.addWebhook")}
+        </button>
+      </div>
     </form>
   );
 }
