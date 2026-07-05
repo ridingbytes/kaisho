@@ -13,6 +13,7 @@ import { StateMessage } from "../common/StateMessage";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { MilestonesSection } from "./MilestonesSection";
 import { ProjectFilesPanel } from "./ProjectFilesPanel";
+import { ProjectNotesTab } from "./ProjectNotesTab";
 import { TaskDetailDialog } from "./TaskDetailDialog";
 import { TimeEntryDialog } from "./TimeEntryDialog";
 import { PROJECT_STATUSES, statusClasses } from "./projectStatus";
@@ -28,7 +29,7 @@ import { formatDateLabel } from "../../utils/dateLabel";
 import { fieldCls, inputCls } from "../settings/styles";
 import type { ClockEntry, Milestone, Task } from "../../types";
 
-type Tab = "tasks" | "time" | "files";
+type Tab = "tasks" | "time" | "notes" | "files";
 
 interface Props {
   projectId: string;
@@ -59,7 +60,9 @@ export function ProjectWorkspace({ projectId, onBack }: Props) {
       <StateMessage kind="loading">{t("loading")}</StateMessage>
     );
   }
-  const { project, tasks, entries, total_minutes } = data;
+  const {
+    project, tasks, entries, notes, total_minutes,
+  } = data;
 
   function saveName() {
     if (nameDraft.trim()) {
@@ -80,6 +83,11 @@ export function ProjectWorkspace({ projectId, onBack }: Props) {
   const TABS: { id: Tab; label: string; count: number }[] = [
     { id: "tasks", label: t("tabTasks"), count: tasks.length },
     { id: "time", label: t("tabTime"), count: entries.length },
+    {
+      id: "notes",
+      label: t("tabNotes"),
+      count: notes.length,
+    },
     { id: "files", label: t("tabFiles"), count: 0 },
   ];
 
@@ -282,6 +290,13 @@ export function ProjectWorkspace({ projectId, onBack }: Props) {
               totalMinutes={total_minutes}
               onOpenEntry={setOpenEntry}
               t={t}
+            />
+          )}
+          {tab === "notes" && (
+            <ProjectNotesTab
+              projectId={projectId}
+              customer={project.customer ?? ""}
+              notes={notes}
             />
           )}
           {tab === "files" && (

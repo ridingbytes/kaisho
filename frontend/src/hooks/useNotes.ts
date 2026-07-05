@@ -48,11 +48,14 @@ export function useUpdateNote() {
         body?: string;
         customer?: string | null;
         task_id?: string | null;
+        project?: string | null;
         tags?: string[];
       };
     }) => updateNote(noteId, updates),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["notes"] });
+      // Assigning a note to a project changes its rollup.
+      void qc.invalidateQueries({ queryKey: ["projects"] });
     },
   });
 }

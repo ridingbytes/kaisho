@@ -317,10 +317,15 @@ def aggregate_project(
     total_minutes = sum(
         e.get("duration_minutes") or 0 for e in entries
     )
+    notes = [
+        n for n in backend.notes.list_notes()
+        if n.get("project") == project_id
+    ]
     return {
         "project": project,
         "tasks": tasks,
         "entries": entries,
+        "notes": notes,
         "total_minutes": total_minutes,
     }
 

@@ -57,5 +57,9 @@
   "contract": "Договор",
   "invoiced": "Выставлено",
   "addToMilestone": "Добавить задачу в «{{name}}»…",
-  "addUnassigned": "Добавить задачу (без вехи)…"
+  "addUnassigned": "Добавить задачу (без вехи)…",
+  "tabNotes": "Заметки",
+  "noNotes": "Пока нет назначенных заметок.",
+  "newNotePlaceholder": "Новая заметка…",
+  "assignNote": "Прикрепить заметку"
 }

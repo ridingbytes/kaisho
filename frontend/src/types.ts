@@ -139,6 +139,7 @@ export interface ProjectAggregate {
   project: Project;
   tasks: Task[];
   entries: ClockEntry[];
+  notes: NoteItem[];
   total_minutes: number;
 }
 
@@ -259,6 +260,7 @@ export interface NoteItem {
   title: string;
   customer: string | null;
   task_id: string | null;
+  project?: string | null;
   body: string;
   tags: string[];
   created: string;

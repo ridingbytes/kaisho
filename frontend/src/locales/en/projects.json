@@ -57,5 +57,9 @@
   "contract": "Contract",
   "invoiced": "Invoiced",
   "addToMilestone": "Add task to “{{name}}”…",
-  "addUnassigned": "Add task (no milestone)…"
+  "addUnassigned": "Add task (no milestone)…",
+  "tabNotes": "Notes",
+  "noNotes": "No notes assigned yet.",
+  "newNotePlaceholder": "New note…",
+  "assignNote": "Attach a note"
 }

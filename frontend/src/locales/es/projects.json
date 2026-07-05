@@ -57,5 +57,9 @@
   "contract": "Contrato",
   "invoiced": "Facturado",
   "addToMilestone": "Añadir tarea a «{{name}}»…",
-  "addUnassigned": "Añadir tarea (sin hito)…"
+  "addUnassigned": "Añadir tarea (sin hito)…",
+  "tabNotes": "Notas",
+  "noNotes": "Aún no hay notas asignadas.",
+  "newNotePlaceholder": "Nueva nota…",
+  "assignNote": "Adjuntar una nota"
 }

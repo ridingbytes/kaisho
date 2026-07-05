@@ -812,6 +812,7 @@ def note_to_wire(note: dict) -> dict:
         "body": note.get("body") or "",
         "tags": note.get("tags") or [],
         "task_id": note.get("task_id") or None,
+        "project": note.get("project") or None,
         "created_at": _local_to_utc(
             note.get("created") or local_now().isoformat()
         ),
@@ -831,6 +832,7 @@ def wire_to_note(entry: dict) -> dict:
         "body": entry.get("body") or "",
         "tags": entry.get("tags") or [],
         "task_id": entry.get("task_id") or None,
+        "project": entry.get("project") or None,
         "created": _utc_to_local(
             entry.get("created_at") or ""
         ),

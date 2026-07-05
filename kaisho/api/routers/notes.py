@@ -77,6 +77,7 @@ class NoteUpdate(BaseModel):
     title: str | None = None
     customer: str | None = None
     task_id: str | None = None
+    project: str | None = None
     body: str | None = None
     tags: list[str] | None = None
 

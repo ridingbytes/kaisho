@@ -47,6 +47,7 @@ def _heading_to_note(heading: Heading) -> dict:
         "title": title,
         "customer": customer,
         "task_id": heading.properties.get("TASK_ID") or None,
+        "project": heading.properties.get("PROJECT") or None,
         "body": body,
         "tags": list(heading.tags),
         "created": heading.properties.get("CREATED", ""),
@@ -212,6 +213,12 @@ def update_note(
             heading.properties["TASK_ID"] = tid
         else:
             heading.properties.pop("TASK_ID", None)
+    if "project" in updates:
+        pid = updates["project"]
+        if pid:
+            heading.properties["PROJECT"] = pid
+        else:
+            heading.properties.pop("PROJECT", None)
     heading.properties["UPDATED_AT"] = current_timestamp()
     ensure_sync_identity(heading)
     write_org_file(notes_file, org_file)

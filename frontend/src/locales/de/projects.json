@@ -57,5 +57,9 @@
   "contract": "Vertrag",
   "invoiced": "Abgerechnet",
   "addToMilestone": "Aufgabe zu „{{name}}“ hinzufügen…",
-  "addUnassigned": "Aufgabe (ohne Meilenstein)…"
+  "addUnassigned": "Aufgabe (ohne Meilenstein)…",
+  "tabNotes": "Notizen",
+  "noNotes": "Noch keine Notizen zugewiesen.",
+  "newNotePlaceholder": "Neue Notiz…",
+  "assignNote": "Notiz anhängen"
 }

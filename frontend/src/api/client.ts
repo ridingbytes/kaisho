@@ -1398,6 +1398,7 @@ export function updateNote(
     body?: string;
     customer?: string | null;
     task_id?: string | null;
+    project?: string | null;
     tags?: string[];
   }
 ): Promise<NoteItem> {
