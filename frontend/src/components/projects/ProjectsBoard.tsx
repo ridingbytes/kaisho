@@ -16,6 +16,21 @@ import type { Project } from "../../types";
 
 const STATUSES: readonly string[] = PROJECT_STATUSES;
 
+/** Colored status dot, matching the task board's column
+ * headers. */
+function statusDot(status: string): string {
+  switch (status) {
+    case "ACTIVE":
+      return "bg-emerald-500";
+    case "ON_HOLD":
+      return "bg-amber-500";
+    case "COMPLETED":
+      return "bg-cta";
+    default:
+      return "bg-fg-subtle";
+  }
+}
+
 function DraggableCard({
   project, onOpen,
 }: {
@@ -58,16 +73,24 @@ function Column({
     <div
       ref={setNodeRef}
       className={[
-        "flex-1 min-w-[240px] rounded-lg border p-2",
-        "transition-colors",
+        "w-80 shrink-0 rounded-lg border p-2",
+        "flex flex-col transition-colors",
         isOver
           ? "border-cta bg-cta-muted/20"
           : "border-border bg-surface-card/40",
       ].join(" ")}
     >
-      <div className="flex items-center gap-2 px-1 pb-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
-        {t(`status_${status}`, status)}
-        <span className="text-fg-subtle tabular-nums">
+      <div className="flex items-center gap-2 px-1 pb-2">
+        <span
+          className={[
+            "w-2 h-2 rounded-full shrink-0",
+            statusDot(status),
+          ].join(" ")}
+        />
+        <span className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">
+          {t(`status_${status}`, status)}
+        </span>
+        <span className="text-2xs text-fg-subtle tabular-nums">
           {projects.length}
         </span>
       </div>
