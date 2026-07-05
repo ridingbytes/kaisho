@@ -745,6 +745,61 @@ export function DashboardView() {
           </div>
         )}
 
+        {/* Active projects */}
+        {(data.projects?.length ?? 0) > 0 && (
+          <div
+            className={
+              "rounded-lg bg-surface-card " +
+              "border border-border-subtle p-5"
+            }
+          >
+            <h2
+              className={
+                "text-xs font-semibold tracking-wider " +
+                "uppercase text-fg-muted mb-4"
+              }
+            >
+              {t("activeProjects")}
+            </h2>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {data.projects!.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setView("projects", p.id)}
+                  style={{
+                    borderLeftColor: p.color || undefined,
+                  }}
+                  className={
+                    "text-left rounded-lg border " +
+                    "border-border-subtle border-l-4 p-3 " +
+                    "hover:border-cta/50 transition-colors"
+                  }
+                >
+                  <div className="font-medium text-fg-strong truncate">
+                    {p.name}
+                  </div>
+                  <div className="mt-1 flex items-center gap-2 text-2xs text-fg-muted">
+                    {p.customer && (
+                      <span className="uppercase tracking-wider">
+                        {p.customer}
+                      </span>
+                    )}
+                    {p.milestones_total > 0 && (
+                      <span className="tabular-nums">
+                        {p.milestones_done}/
+                        {p.milestones_total} ◆
+                      </span>
+                    )}
+                    <span className="ml-auto tabular-nums">
+                      {(p.minutes / 60).toFixed(1)}h
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Time Insights */}
         <TimeInsights />
       </div>

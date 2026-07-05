@@ -11,5 +11,6 @@
   "activity": "Активность",
   "billableSplit": "Оплачиваемое / неоплачиваемое",
   "byCustomer": "По клиентам",
-  "loadingInsights": "Загрузка аналитики..."
+  "loadingInsights": "Загрузка аналитики...",
+  "activeProjects": "Активные проекты"
 }

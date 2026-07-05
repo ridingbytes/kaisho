@@ -5,11 +5,12 @@
   "hoursThisMonth": "Horas este mes",
   "budgetsAtRisk": "Presupuestos en riesgo",
   "unassignedEntries": "Entradas sin asignar",
-  "inboxOlderThan7Days": "Bandeja > 7 d\u00edas",
+  "inboxOlderThan7Days": "Bandeja > 7 días",
   "budgetStatus": "Estado del presupuesto",
-  "timeInsights": "An\u00e1lisis de tiempo",
+  "timeInsights": "Análisis de tiempo",
   "activity": "Actividad",
-  "billableSplit": "Distribuci\u00f3n facturable",
+  "billableSplit": "Distribución facturable",
   "byCustomer": "Por cliente",
-  "loadingInsights": "Cargando an\u00e1lisis..."
+  "loadingInsights": "Cargando análisis...",
+  "activeProjects": "Proyectos activos"
 }

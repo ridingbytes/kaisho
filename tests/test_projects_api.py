@@ -186,6 +186,15 @@ def test_project_file_text_read_and_replace(client):
     assert r.json()["content"] == "# Edited\n\nbody"
 
 
+def test_dashboard_lists_active_projects(client):
+    pid = client.post(
+        "/api/projects", json={"name": "Alpha"},
+    ).json()["id"]
+    data = client.get("/api/dashboard").json()
+    cards = data.get("projects", [])
+    assert any(p["id"] == pid for p in cards)
+
+
 def test_delete_project(client):
     pid = client.post(
         "/api/projects", json={"name": "Temp"},

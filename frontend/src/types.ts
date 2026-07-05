@@ -194,6 +194,18 @@ export interface BudgetSummary {
   contracts: Contract[];
 }
 
+/** A compact active-project card for the dashboard. */
+export interface DashboardProject {
+  id: string;
+  name: string;
+  customer: string | null;
+  color: string;
+  task_count: number;
+  milestones_done: number;
+  milestones_total: number;
+  minutes: number;
+}
+
 export interface Dashboard {
   active_timer: ActiveTimer | null;
   open_task_count: number;
@@ -203,6 +215,7 @@ export interface Dashboard {
   budgets_warning: number;
   unassigned_cloud: number;
   aging_inbox: number;
+  projects?: DashboardProject[];
 }
 
 export interface KnowledgeFile {
