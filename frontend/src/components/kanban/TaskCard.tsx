@@ -28,6 +28,7 @@ import { useSettings } from "../../hooks/useSettings";
 import { stripCustomerPrefix } from "../../utils/customerPrefix";
 import type { Task } from "../../types";
 
+import { Dialog } from "../common/Dialog";
 import { StatusPicker } from "./StatusPicker";
 import { TaskEditForm } from "./TaskEditForm";
 import { TaskCardActions } from "./TaskCardActions";
@@ -242,7 +243,27 @@ export function TaskCard({
 
         {/* Card content */}
         <div className="flex-1 min-w-0 py-3 pr-3">
-          {editing ? (
+          <TaskCardContent
+            task={task}
+            customerColors={customerColors}
+            allTags={allTags}
+            isTimerRunning={isTimerRunning}
+            activeTimerStart={activeTimer?.start}
+            onStopTimer={() => stopClock.mutate()}
+            onCustomerClick={onCustomerClick}
+            onTagClick={onTagClick}
+            onHistoryOpen={() => setHistoryOpen(true)}
+            openOverlay={openOverlay}
+          />
+        </div>
+
+        {editing && (
+          <Dialog
+            open
+            onClose={() => setEditing(false)}
+            title={t("editTask")}
+            size="lg"
+          >
             <TaskEditForm
               taskId={task.id}
               editCustomer={editCustomer}
@@ -269,27 +290,8 @@ export function TaskCard({
               onSave={handleSave}
               onCancel={() => setEditing(false)}
             />
-          ) : (
-            <TaskCardContent
-              task={task}
-              customerColors={customerColors}
-              allTags={allTags}
-              isTimerRunning={isTimerRunning}
-              activeTimerStart={
-                activeTimer?.start
-              }
-              onStopTimer={() =>
-                stopClock.mutate()
-              }
-              onCustomerClick={onCustomerClick}
-              onTagClick={onTagClick}
-              onHistoryOpen={() =>
-                setHistoryOpen(true)
-              }
-              openOverlay={openOverlay}
-            />
-          )}
-        </div>
+          </Dialog>
+        )}
 
         {/* Hover actions */}
         {!editing && !isDragOverlay && (
