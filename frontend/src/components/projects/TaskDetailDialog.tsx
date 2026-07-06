@@ -4,7 +4,7 @@ import { Trash2 } from "lucide-react";
 import { Dialog } from "../common/Dialog";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
-import { TagDropdown } from "../common/TagDropdown";
+import { TagInput } from "../common/TagInput";
 import { MarkdownEditor } from "../common/MarkdownEditor";
 import {
   useArchiveTask,
@@ -183,10 +183,11 @@ export function TaskDetailDialog({ task, onClose }: Props) {
             />
           </Field>
           <Field label={t("tagsLabel")}>
-            <TagDropdown
-              selected={tags}
-              allTags={allTags}
+            <TagInput
+              value={tags}
               onChange={setTags2}
+              suggestions={allTags}
+              placeholder={t("addTag", "+ tag")}
             />
           </Field>
         </div>

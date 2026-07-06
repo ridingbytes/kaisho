@@ -6,7 +6,7 @@ import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, X } from "lucide-react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
-import { TagDropdown } from "../common/TagDropdown";
+import { TagInput } from "../common/TagInput";
 import { GithubIssueInput } from "./GithubIssueInput";
 import {
   useFileDropOnTextarea,
@@ -232,10 +232,10 @@ export function TaskEditForm({
       <div
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <TagDropdown
-          selected={editTags}
-          allTags={allTags}
+        <TagInput
+          value={editTags}
           onChange={onTagsChange}
+          suggestions={allTags}
         />
       </div>
       <div className="flex gap-1 justify-end items-center">
