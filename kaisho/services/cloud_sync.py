@@ -2328,6 +2328,7 @@ def _build_snapshot_config(
     path = settings_file or cfg.SETTINGS_FILE
     data = load_settings(path)
     tags = data.get("tags", [])
+    task_states = data.get("task_states", [])
     github = data.get("github", {})
     user_cfg = (
         _CfgForDir(profile_dir)
@@ -2342,6 +2343,18 @@ def _build_snapshot_config(
                 "color": t.get("color", ""),
             }
             for t in tags
+        ],
+        # The org TODO keywords with their display label,
+        # kanban colour, and done flag — so the PWA renders
+        # the user's own statuses in the user's own order.
+        "task_states": [
+            {
+                "name": s.get("name", ""),
+                "label": s.get("label", ""),
+                "color": s.get("color", ""),
+                "done": bool(s.get("done", False)),
+            }
+            for s in task_states
         ],
         "github_configured": bool(
             github.get("token"),
