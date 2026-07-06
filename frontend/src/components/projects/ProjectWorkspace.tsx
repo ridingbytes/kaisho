@@ -17,7 +17,7 @@ import { ProjectFilesPanel } from "./ProjectFilesPanel";
 import { ProjectNotesTab } from "./ProjectNotesTab";
 import { TaskDetailDialog } from "./TaskDetailDialog";
 import { TimeEntryDialog } from "./TimeEntryDialog";
-import { MarkdownEditor } from "../common/MarkdownEditor";
+import { MarkdownDialog } from "../common/MarkdownDialog";
 import { PROJECT_STATUSES, statusClasses } from "./projectStatus";
 import {
   useDeleteProject,
@@ -52,7 +52,6 @@ export function ProjectWorkspace({ projectId, onBack }: Props) {
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [editingDesc, setEditingDesc] = useState(false);
-  const [descDraft, setDescDraft] = useState("");
   const [openTask, setOpenTask] = useState<Task | null>(null);
   const [openEntry, setOpenEntry] =
     useState<ClockEntry | null>(null);
@@ -95,13 +94,6 @@ export function ProjectWorkspace({ projectId, onBack }: Props) {
       });
     }
     setEditingName(false);
-  }
-
-  function saveDesc() {
-    update.mutate({
-      id: projectId, updates: { description: descDraft },
-    });
-    setEditingDesc(false);
   }
 
   const TABS: { id: Tab; label: string; count: number }[] = [
@@ -252,46 +244,39 @@ export function ProjectWorkspace({ projectId, onBack }: Props) {
           </h2>
           {!editingDesc && (
             <button
-              onClick={() => {
-                setDescDraft(project.description);
-                setEditingDesc(true);
-              }}
+              onClick={() => setEditingDesc(true)}
               className="text-2xs text-cta hover:underline"
             >
               {tc("edit")}
             </button>
           )}
         </div>
-        {editingDesc ? (
-          <div className="space-y-2">
-            <MarkdownEditor
-              value={descDraft}
-              onChange={setDescDraft}
-              bucketId={projectId}
-              rows={5}
-              placeholder={t("descriptionPlaceholder")}
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={saveDesc}
-                className="px-3 py-1 rounded text-xs bg-cta text-white hover:bg-cta-hover"
-              >
-                {tc("save")}
-              </button>
-              <button
-                onClick={() => setEditingDesc(false)}
-                className={fieldCls}
-              >
-                {tc("cancel")}
-              </button>
-            </div>
-          </div>
-        ) : project.description ? (
+        {project.description ? (
           <Markdown compact>{project.description}</Markdown>
         ) : (
           <p className="text-xs text-fg-muted">
             {t("noDescription")}
           </p>
+        )}
+        {editingDesc && (
+          <MarkdownDialog
+            title={t("description")}
+            value={project.description}
+            bucketId={projectId}
+            saving={update.isPending}
+            onSave={(md) =>
+              update.mutate(
+                {
+                  id: projectId,
+                  updates: { description: md },
+                },
+                {
+                  onSuccess: () => setEditingDesc(false),
+                },
+              )
+            }
+            onClose={() => setEditingDesc(false)}
+          />
         )}
       </section>
 
