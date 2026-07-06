@@ -88,7 +88,9 @@ export function MarkdownEditor({
           style={{ minHeight: `${rows * 1.4}rem` }}
         >
           {value.trim() ? (
-            <Markdown>{value}</Markdown>
+            <Markdown onCheckboxToggle={onChange}>
+              {value}
+            </Markdown>
           ) : (
             <p className="text-xs text-fg-muted">
               {t("nothingToPreview")}
