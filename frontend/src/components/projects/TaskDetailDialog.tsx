@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import { Dialog } from "../common/Dialog";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
+import { TagDropdown } from "../common/TagDropdown";
 import { MarkdownEditor } from "../common/MarkdownEditor";
 import {
   useArchiveTask,
@@ -37,7 +38,10 @@ export function TaskDetailDialog({ task, onClose }: Props) {
   const [status, setStatus] = useState(task.status);
   const [deadline, setDeadline] = useState(task.deadline ?? "");
   const [body, setBody] = useState(task.body);
-  const [tags, setTags2] = useState((task.tags ?? []).join(", "));
+  const [tags, setTags2] = useState<string[]>(
+    task.tags ?? [],
+  );
+  const allTags = settings?.tags ?? [];
   const [project, setProject] = useState(task.project ?? "");
   const [milestone, setMilestone] = useState(
     task.milestone ?? "",
@@ -67,13 +71,9 @@ export function TaskDetailDialog({ task, onClose }: Props) {
       },
       {
         onSuccess: () => {
-          const parsed = tags
-            .split(",")
-            .map((x) => x.trim())
-            .filter(Boolean);
           const current = task.tags ?? [];
-          if (parsed.join(",") !== current.join(",")) {
-            setTags.mutate({ taskId: task.id, tags: parsed });
+          if (tags.join(",") !== current.join(",")) {
+            setTags.mutate({ taskId: task.id, tags });
           }
           onClose();
         },
@@ -183,11 +183,10 @@ export function TaskDetailDialog({ task, onClose }: Props) {
             />
           </Field>
           <Field label={t("tagsLabel")}>
-            <input
-              value={tags}
-              onChange={(e) => setTags2(e.target.value)}
-              placeholder={t("tagsPlaceholder")}
-              className={`${inputCls} w-full`}
+            <TagDropdown
+              selected={tags}
+              allTags={allTags}
+              onChange={setTags2}
             />
           </Field>
         </div>
