@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { FolderKanban } from "lucide-react";
 import { CollapsibleSection } from "../common/CollapsibleSection";
 import { useProjects } from "../../hooks/useProjects";
 import { useSetView } from "../../context/ViewContext";
@@ -24,7 +25,11 @@ export function CustomerProjectsSection({ customerName }: Props) {
   );
 
   return (
-    <CollapsibleSection label={t("projects")} count={mine.length}>
+    <CollapsibleSection
+      label={t("projects")}
+      count={mine.length}
+      icon={<FolderKanban size={12} />}
+    >
       <div className="ml-5">
         {mine.length === 0 ? (
           <p className="text-2xs text-fg-muted py-1">

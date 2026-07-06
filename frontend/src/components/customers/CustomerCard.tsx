@@ -218,8 +218,8 @@ export function CustomerCard({ customer: c }: Props) {
           {/* Collapsible sections */}
           <div
             className={
-              "border-t border-border-subtle pt-2 "
-              + "mt-1 flex flex-col gap-1"
+              "border-t border-border-subtle mt-1 "
+              + "rounded-lg divide-y divide-border-subtle"
             }
           >
             <CustomerProjectsSection customerName={c.name} />

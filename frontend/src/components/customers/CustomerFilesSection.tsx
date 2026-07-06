@@ -4,7 +4,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { BookOpen, Trash2, Upload } from "lucide-react";
+import { BookOpen, Paperclip, Trash2, Upload } from "lucide-react";
 import { CollapsibleSection } from "../common/CollapsibleSection";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ProjectFileViewer } from "../projects/ProjectFileViewer";
@@ -93,6 +93,7 @@ export function CustomerFilesSection({ customerName }: Props) {
     <CollapsibleSection
       label={t("files")}
       count={files.length + kbFiles.length}
+      icon={<Paperclip size={12} />}
     >
       <div className="ml-5 space-y-2">
         {kbFiles.length > 0 && (

@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { SquareCheck } from "lucide-react";
 import { CollapsibleSection } from "../common/CollapsibleSection";
 import { useTasks } from "../../hooks/useTasks";
 import { useSetView } from "../../context/ViewContext";
@@ -39,6 +40,7 @@ export function TasksSection({
     <CollapsibleSection
       label={t("tasks")}
       count={tasks.length}
+      icon={<SquareCheck size={12} />}
     >
       <div className="ml-5">
         {tasks.length === 0 ? (

@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Clock } from "lucide-react";
 import { CollapsibleSection } from "../common/CollapsibleSection";
 import { TimeEntryRow } from "./TimeEntryRow";
 import { useCustomerClockEntries } from "../../hooks/useClocks";
@@ -39,6 +40,7 @@ export function TimeEntriesSection({
     <CollapsibleSection
       label={t("timeEntries")}
       count={entries.length}
+      icon={<Clock size={12} />}
     >
       <div className="ml-5">
         {entries.length === 0 ? (

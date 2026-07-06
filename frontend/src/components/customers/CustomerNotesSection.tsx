@@ -36,7 +36,11 @@ export function CustomerNotesSection({ customerName }: Props) {
   }
 
   return (
-    <CollapsibleSection label={t("notes")} count={mine.length}>
+    <CollapsibleSection
+      label={t("notes")}
+      count={mine.length}
+      icon={<StickyNote size={12} />}
+    >
       <div className="ml-5 space-y-1">
         {mine.length === 0 ? (
           <p className="text-2xs text-fg-muted py-1">
