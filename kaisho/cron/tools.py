@@ -758,8 +758,8 @@ def _delete_profile(args: dict) -> dict:
 # -------------------------------------------------------------------
 
 def _projects_file():
-    from ..config import get_config
-    return get_config().PROJECTS_FILE
+    from ..backends import active_config
+    return active_config().PROJECTS_FILE
 
 
 def _list_projects(args: dict) -> dict:

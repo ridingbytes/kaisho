@@ -45,6 +45,28 @@ def get_backend() -> Backend:
     return _build_backend(get_config())
 
 
+def active_config():
+    """Return the active profile's config with settings path
+    overrides applied (``org_dir``, etc.).
+
+    Code that resolves org files outside the Backend
+    abstraction — the projects service and its CLI / MCP
+    tools — must use this rather than ``get_config()`` so it
+    reads and writes the same directory the backend does. A
+    bare ``get_config().PROJECTS_FILE`` uses the un-overlaid
+    ``ORG_DIR`` (a relative default), which points at the
+    wrong place and is not writable in the packaged app.
+    """
+    from ..config import get_config
+    from ..services.settings import (
+        get_path_settings, load_settings,
+    )
+    cfg = get_config()
+    data = load_settings(cfg.SETTINGS_FILE)
+    paths = get_path_settings(data, cfg)
+    return _OverlayCfg(cfg, paths)
+
+
 def make_backend_for_profile(
     data_dir: Path, profile_name: str,
 ) -> Backend:

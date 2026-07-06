@@ -205,3 +205,43 @@ def test_delete_project(client):
     assert client.get(
         f"/api/projects/{pid}",
     ).status_code == 404
+
+
+def test_projects_honour_org_dir_override(tmp_path, monkeypatch):
+    """Regression: the projects router must resolve its file
+    through the settings overlay (like every other org file),
+    not the un-overlaid base ORG_DIR. Otherwise projects land
+    in the wrong dir and creation 500s in the packaged app,
+    where the relative default path isn't writable."""
+    import yaml
+    from fastapi.testclient import TestClient
+    from kaisho.config import reset_config
+    from kaisho.backends import get_backend
+    from kaisho.api.app import app
+
+    data_dir = tmp_path / "home2"
+    profile_dir = data_dir / "profiles" / "default"
+    default_org = profile_dir / "org"
+    default_org.mkdir(parents=True)
+    custom_org = tmp_path / "somewhere_else" / "org"
+    custom_org.mkdir(parents=True)
+    (profile_dir / "settings.yaml").write_text(
+        yaml.safe_dump({
+            "paths": {"backend": "org",
+                      "org_dir": str(custom_org)},
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("KAISHO_HOME", str(data_dir))
+    monkeypatch.setenv("PROFILE", "default")
+    reset_config()
+    get_backend.cache_clear()
+
+    c = TestClient(app, raise_server_exceptions=False)
+    r = c.post("/api/projects", json={"name": "P"})
+    assert r.status_code == 201
+    assert (custom_org / "projects.org").exists()
+    assert not (default_org / "projects.org").exists()
+
+    reset_config()
+    get_backend.cache_clear()

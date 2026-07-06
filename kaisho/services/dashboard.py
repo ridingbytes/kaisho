@@ -7,7 +7,7 @@ testable without HTTP.
 from collections import defaultdict
 from datetime import date
 
-from ..config import get_config
+from ..backends import active_config
 from . import projects as projects_svc
 from .time_insights import (
     billable_contracts,
@@ -49,7 +49,7 @@ def build_project_cards(backend) -> list[dict]:
     or logged against an assigned task.
     """
     projects = projects_svc.list_projects(
-        get_config().PROJECTS_FILE,
+        active_config().PROJECTS_FILE,
     )
     active = [
         p for p in projects if p["status"] == "ACTIVE"

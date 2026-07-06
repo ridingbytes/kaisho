@@ -2,13 +2,12 @@ import json
 
 import click
 
-from ..backends import get_backend
-from ..config import get_config
+from ..backends import active_config, get_backend
 from ..services import projects as projects_svc
 
 
 def _file():
-    return get_config().PROJECTS_FILE
+    return active_config().PROJECTS_FILE
 
 
 def _format_project(p: dict) -> str:
