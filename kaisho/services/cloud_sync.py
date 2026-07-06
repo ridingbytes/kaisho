@@ -2225,24 +2225,24 @@ def _resolve_projects_file(
     """Resolve the ``projects.org`` path for the sync layer.
 
     Projects live outside the pluggable backend, so the sync
-    cycle must resolve the file the same way the API router
-    does — through the profile's settings overlay
-    (``org_dir``) rather than the un-overlaid global config.
+    cycle must resolve the file exactly the way the API
+    router does — ``active_config().PROJECTS_FILE`` — which
+    applies the profile's settings overlay (``org_dir``) and
+    expands ``~``. The earlier hand-rolled resolution used
+    ``get_config()`` and a raw, un-expanded ``org_dir``,
+    which points at the un-overlaid base ``data/org`` path,
+    so the step operated on the wrong file and silently
+    synced nothing.
 
     Returns ``None`` (and logs) when the path can't be
     resolved, so the project step degrades gracefully rather
     than crashing the best-effort cycle.
     """
-    from ..config import get_config
-    from .settings import get_path_settings, load_settings
+    from ..backends import active_config
 
     try:
-        cfg = get_config()
-        path = settings_file or cfg.SETTINGS_FILE
-        data = load_settings(path)
-        paths = get_path_settings(data, cfg)
-        return Path(paths["org_dir"]) / "projects.org"
-    except (OSError, AttributeError, ValueError) as exc:
+        return active_config().PROJECTS_FILE
+    except (OSError, AttributeError, ValueError, KeyError) as exc:
         log.warning("Could not resolve projects file: %s", exc)
         return None
 
