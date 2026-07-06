@@ -73,5 +73,6 @@
   "collapse": "Contraer columna",
   "expandAll": "Expandir todas las columnas",
   "allColumnsCollapsed": "Todas las columnas contraídas.",
-  "addTag": "+ etiqueta"
+  "addTag": "+ etiqueta",
+  "pdfNoInline": "La vista previa de PDF no está disponible aquí."
 }

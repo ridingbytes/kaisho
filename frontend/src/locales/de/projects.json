@@ -73,5 +73,6 @@
   "collapse": "Spalte einklappen",
   "expandAll": "Alle Spalten ausklappen",
   "allColumnsCollapsed": "Alle Spalten eingeklappt.",
-  "addTag": "+ Tag"
+  "addTag": "+ Tag",
+  "pdfNoInline": "Inline-PDF-Vorschau wird hier nicht unterstützt."
 }

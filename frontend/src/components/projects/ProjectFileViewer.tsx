@@ -118,11 +118,27 @@ export function ProjectFileViewer({ projectId, file }: Props) {
           className="max-w-full rounded border border-border-subtle"
         />
       ) : isPdf ? (
-        <iframe
-          src={file.url}
-          title={file.display}
+        // Use <object> (not <iframe>): if the webview can't
+        // render the PDF inline (e.g. macOS WKWebView), the
+        // fallback children show an open link instead of a
+        // blank/black frame.
+        <object
+          data={file.url}
+          type="application/pdf"
           className="w-full h-[70vh] rounded border border-border-subtle"
-        />
+        >
+          <div className="flex flex-col items-center gap-2 p-6 text-xs text-fg-muted">
+            {t("pdfNoInline")}
+            <a
+              href={file.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-cta hover:underline"
+            >
+              <Download size={13} /> {t("download")}
+            </a>
+          </div>
+        </object>
       ) : error ? (
         <div className="text-xs text-fg-muted">
           {t("fileLoadError")}{" "}
