@@ -86,6 +86,7 @@ export function NoteDialog({ note, onClose }: Props) {
           onChange={setBody}
           bucketId={note.id}
           rows={12}
+          defaultTab="preview"
           placeholder={t("notesPlaceholder")}
         />
       </div>

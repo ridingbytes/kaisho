@@ -14,6 +14,8 @@ interface Props {
   autoFocus?: boolean;
   className?: string;
   onKeyDown?: (e: React.KeyboardEvent) => void;
+  /** Which tab to show first (default: "write"). */
+  defaultTab?: "write" | "preview";
 }
 
 /** A markdown field with Write / Preview tabs (like a
@@ -29,9 +31,12 @@ export function MarkdownEditor({
   autoFocus,
   className,
   onKeyDown,
+  defaultTab = "write",
 }: Props) {
   const { t } = useTranslation("common");
-  const [tab, setTab] = useState<"write" | "preview">("write");
+  const [tab, setTab] = useState<"write" | "preview">(
+    defaultTab,
+  );
   const ref = useRef<HTMLTextAreaElement | null>(null);
   const drop = useFileDropOnTextarea({
     value,

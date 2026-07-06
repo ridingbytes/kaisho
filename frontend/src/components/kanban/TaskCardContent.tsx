@@ -6,19 +6,17 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ChevronDown,
-  ChevronRight,
+  ArrowUpRight,
   GitBranch,
   ListRestart,
   Tag,
 } from "lucide-react";
 import { RelDate } from "../common/RelDate";
-import { ContentPopup } from "../common/ContentPopup";
+import { MarkdownDialog } from "../common/MarkdownDialog";
 import {
   handleLinkClick,
 } from "../common/LinkPopover";
 import { tagBadgeStyle } from "../../utils/tagColors";
-import { Markdown } from "../common/Markdown";
 import { TagDropdown } from "../common/TagDropdown";
 import { useSetTaskTags, useUpdateTask } from "../../hooks/useTasks";
 import { stripCustomerPrefix } from "../../utils/customerPrefix";
@@ -70,9 +68,7 @@ export function TaskCardContent({
 }: TaskCardContentProps) {
   const { t } = useTranslation("kanban");
   const { t: tc } = useTranslation("common");
-  const [bodyExpanded, setBodyExpanded] = useState(
-    false,
-  );
+  const [showDesc, setShowDesc] = useState(false);
   const [tagging, setTagging] = useState(false);
   const setTaskTags = useSetTaskTags();
   const updateTask = useUpdateTask();
@@ -132,56 +128,30 @@ export function TaskCardContent({
       </p>
       {task.body && (
         <div className="mb-1.5">
-          <div className="flex items-center gap-1">
-            <button
-              onPointerDown={(e) =>
-                e.stopPropagation()
-              }
-              onClick={() =>
-                setBodyExpanded((v) => !v)
-              }
-              className="flex items-center gap-1 text-2xs text-fg-muted hover:text-fg transition-colors"
-            >
-              {bodyExpanded ? (
-                <ChevronDown size={10} />
-              ) : (
-                <ChevronRight size={10} />
-              )}
-              {tc("description")}
-            </button>
-            <span
-              onPointerDown={(e) =>
-                e.stopPropagation()
-              }
-            >
-              <ContentPopup
-                content={task.body}
-                title={stripCustomerPrefix(
-                  task.title,
-                )}
-                markdown
-                iconSize={9}
-                onCheckboxToggle={handleBodyToggle}
-              />
-            </span>
-          </div>
-          {bodyExpanded && (
-            <div
-              className="mt-1 pl-1 border-l border-border-subtle"
-              onPointerDown={(e) =>
-                e.stopPropagation()
-              }
-            >
-              <Markdown
-                className="text-xs text-fg [&_p]:mb-1 [&_p]:leading-relaxed break-words [&_a]:break-all"
-                onLinkClick={openOverlay}
-                onCheckboxToggle={handleBodyToggle}
-              >
-                {task.body}
-              </Markdown>
-            </div>
-          )}
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setShowDesc(true)}
+            className="flex items-center gap-1 text-2xs text-fg-muted hover:text-fg transition-colors"
+          >
+            <ArrowUpRight size={10} />
+            {tc("description")}
+          </button>
         </div>
+      )}
+      {showDesc && (
+        <span onPointerDown={(e) => e.stopPropagation()}>
+          <MarkdownDialog
+            title={stripCustomerPrefix(task.title)}
+            value={task.body}
+            bucketId={task.id}
+            saving={updateTask.isPending}
+            onSave={(md) => {
+              handleBodyToggle(md);
+              setShowDesc(false);
+            }}
+            onClose={() => setShowDesc(false)}
+          />
+        </span>
       )}
       <div className="flex items-center gap-2 flex-wrap">
         {task.github_url && (
