@@ -31,6 +31,7 @@ import { CollapsibleSection } from "../common/CollapsibleSection";
 import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { Button } from "../common/Button";
+import { Dialog } from "../common/Dialog";
 import { HelpButton } from "../common/HelpButton";
 import { MarkdownEditor } from "../common/MarkdownEditor";
 import { OpenInEditorButton } from "../common/OpenInEditorButton";
@@ -162,8 +163,8 @@ function NoteRow({
     doSave();
   }
 
-  function cancelEdit(e: React.MouseEvent) {
-    e.stopPropagation();
+  function cancelEdit(e?: React.MouseEvent) {
+    e?.stopPropagation();
     setEditing(false);
   }
 
@@ -418,7 +419,21 @@ function NoteRow({
           className="px-4 pb-3 flex flex-col gap-2"
           onClick={(e) => e.stopPropagation()}
         >
-          {editing ? (
+          {note.body && (
+            <Markdown
+              className="text-sm text-fg-strong"
+              onCheckboxToggle={handleBodyToggle}
+            >
+              {note.body}
+            </Markdown>
+          )}
+          {editing && (
+            <Dialog
+              open
+              onClose={cancelEdit}
+              title={t("editNote", "Edit note")}
+              size="lg"
+            >
             <div className="flex flex-col gap-2">
               <div className="flex gap-2">
                 <input
@@ -508,15 +523,7 @@ function NoteRow({
                 </div>
               </div>
             </div>
-          ) : (
-            note.body && (
-              <Markdown
-                className="text-sm text-fg-strong"
-                onCheckboxToggle={handleBodyToggle}
-              >
-                {note.body}
-              </Markdown>
-            )
+            </Dialog>
           )}
 
           {/* Move sub-panel (task/kb need input) */}
