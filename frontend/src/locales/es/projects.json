@@ -67,5 +67,10 @@
   "editNote": "Editar nota",
   "openInNotes": "Abrir en la vista de Notas",
   "fileLoadError": "No se pudo cargar este archivo.",
-  "searchProjects": "Buscar proyectos…"
+  "searchProjects": "Buscar proyectos…",
+  "moveLeft": "Mover columna a la izquierda",
+  "moveRight": "Mover columna a la derecha",
+  "collapse": "Contraer columna",
+  "expandAll": "Expandir todas las columnas",
+  "allColumnsCollapsed": "Todas las columnas contraídas."
 }

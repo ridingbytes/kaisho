@@ -67,5 +67,10 @@
   "editNote": "Notiz bearbeiten",
   "openInNotes": "In der Notizen-Ansicht öffnen",
   "fileLoadError": "Datei konnte nicht geladen werden.",
-  "searchProjects": "Projekte suchen…"
+  "searchProjects": "Projekte suchen…",
+  "moveLeft": "Spalte nach links",
+  "moveRight": "Spalte nach rechts",
+  "collapse": "Spalte einklappen",
+  "expandAll": "Alle Spalten ausklappen",
+  "allColumnsCollapsed": "Alle Spalten eingeklappt."
 }

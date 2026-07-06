@@ -67,5 +67,10 @@
   "editNote": "Edit note",
   "openInNotes": "Open in Notes view",
   "fileLoadError": "Could not load this file.",
-  "searchProjects": "Search projects…"
+  "searchProjects": "Search projects…",
+  "moveLeft": "Move column left",
+  "moveRight": "Move column right",
+  "collapse": "Collapse column",
+  "expandAll": "Expand all columns",
+  "allColumnsCollapsed": "All columns collapsed."
 }
