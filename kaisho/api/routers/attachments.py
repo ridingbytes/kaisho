@@ -317,31 +317,50 @@ def get_attachment(bucket: str, filename: str):
             status_code=404, detail="attachment not found",
         )
     mime, _ = mimetypes.guess_type(target)
-    # Raster images and PDFs render inline (the sandboxing
-    # CSP below neutralises any embedded scripts). Everything
-    # else is forced to download.
-    inline = (
-        (mime or "") in _INLINE_IMAGE_MIMES
-        or mime == "application/pdf"
-    )
-    headers = {
-        "X-Content-Type-Options": "nosniff",
-        "Content-Security-Policy": (
-            "default-src 'none'; sandbox"
-        ),
-    }
-    if inline:
+    nosniff = {"X-Content-Type-Options": "nosniff"}
+
+    # Raster images serve inline under a strict sandboxing
+    # CSP (images don't need scripts, so the CSP is free
+    # protection against a crafted HTML/SVG upload).
+    if (mime or "") in _INLINE_IMAGE_MIMES:
         return FileResponse(
-            target, media_type=mime, headers=headers,
+            target,
+            media_type=mime,
+            headers={
+                **nosniff,
+                "Content-Security-Policy": (
+                    "default-src 'none'; sandbox"
+                ),
+            },
         )
-    # Strip the original filename's path bits before
-    # echoing into Content-Disposition.
+
+    # PDFs render inline in the browser's built-in viewer.
+    # The sandbox CSP would blank it, so we omit it here;
+    # the browser runs any embedded PDF script in its own
+    # isolated engine, not in the app's origin.
+    if mime == "application/pdf":
+        return FileResponse(
+            target,
+            media_type="application/pdf",
+            headers={
+                **nosniff,
+                "Content-Disposition": "inline",
+            },
+        )
+
+    # Everything else is forced to download so user-supplied
+    # HTML / SVG cannot XSS the app.
     display = safe_file or "download"
-    headers["Content-Disposition"] = (
-        f'attachment; filename="{display}"'
-    )
     return FileResponse(
         target,
         media_type="application/octet-stream",
-        headers=headers,
+        headers={
+            **nosniff,
+            "Content-Security-Policy": (
+                "default-src 'none'; sandbox"
+            ),
+            "Content-Disposition": (
+                f'attachment; filename="{display}"'
+            ),
+        },
     )
