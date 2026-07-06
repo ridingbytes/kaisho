@@ -1459,6 +1459,7 @@ class MarkdownClockBackend(ClockBackend):
             "contract": fields.get("contract") or "",
             "invoiced": bool(fields.get("invoiced")),
             "notes": fields.get("notes") or "",
+            "project": fields.get("project") or "",
             "sync_id": sid,
             "updated_at": fields.get(
                 "updated_at", "",
@@ -1473,7 +1474,7 @@ class MarkdownClockBackend(ClockBackend):
     ) -> None:
         for key in (
             "customer", "description", "start", "end",
-            "task_id", "contract", "notes",
+            "task_id", "contract", "notes", "project",
         ):
             if key in fields:
                 entry[key] = fields[key] or ""

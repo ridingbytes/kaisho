@@ -210,7 +210,9 @@ def update_note(
         heading.body = (
             updates["body"].splitlines() if updates["body"] else []
         )
-        reap_removed_attachments(old_body, updates["body"] or "")
+        reap_removed_attachments(
+            old_body, updates["body"] or "", owner_bucket=note_id,
+        )
     if "tags" in updates:
         heading.tags = list(updates["tags"])
     if "task_id" in updates:

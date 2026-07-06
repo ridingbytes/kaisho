@@ -32,25 +32,34 @@ def _safe_segment(name: str, fallback: str) -> str:
 
 def reap_removed_attachments(
     old_body: str, new_body: str,
+    owner_bucket: str | None = None,
 ) -> int:
     """Delete attachment files linked in ``old_body`` but no
     longer in ``new_body``. Returns the count deleted.
 
-    Files are bucketed by the owning entity's id, so a link
-    removed from that entity's body is safe to reap. Paths
-    are resolved and confined to the attachments root; any
-    that escape are skipped rather than deleted.
+    When ``owner_bucket`` (the id of the entity being saved)
+    is given, only files in that entity's own bucket are
+    reaped. This keeps a link copied from another entity's
+    body — pointing at a foreign bucket — from deleting a
+    file that entity still references. Paths are resolved and
+    confined to the attachments root; any that escape are
+    skipped rather than deleted.
     """
     removed = _refs(old_body) - _refs(new_body)
     if not removed:
         return 0
     root = (get_config().PROFILE_DIR / "attachments").resolve()
+    safe_owner = (
+        _safe_segment(owner_bucket, "_misc")
+        if owner_bucket else None
+    )
     deleted = 0
     for bucket, name in removed:
+        safe_bucket = _safe_segment(bucket, "_misc")
+        if safe_owner is not None and safe_bucket != safe_owner:
+            continue
         target = (
-            root
-            / _safe_segment(bucket, "_misc")
-            / _safe_segment(name, "upload")
+            root / safe_bucket / _safe_segment(name, "upload")
         ).resolve()
         try:
             target.relative_to(root)

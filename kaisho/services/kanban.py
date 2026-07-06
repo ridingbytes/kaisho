@@ -468,7 +468,9 @@ def update_task(
     if body is not None:
         old_body = "\n".join(heading.body)
         _update_body(heading, body)
-        reap_removed_attachments(old_body, body)
+        reap_removed_attachments(
+            old_body, body, owner_bucket=task_id,
+        )
     if github_url is not None:
         if github_url:
             heading.properties["GITHUB_URL"] = github_url

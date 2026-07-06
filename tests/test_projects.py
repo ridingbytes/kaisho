@@ -210,3 +210,47 @@ def test_reap_removed_attachments(org_dir):
     assert reap_removed_attachments(old, new) == 1
     assert not gone.exists()
     assert kept.exists()
+
+
+def test_sql_clock_project_survives_sync(tmp_path):
+    clocks = _sql_backend(tmp_path)[1]
+    clocks.apply_sync_payload({
+        "sync_id": "s1",
+        "start": "2026-07-01T09:00:00",
+        "customer": "ACME",
+        "description": "work",
+        "project": "P-1",
+        "updated_at": "2026-07-01T09:00:00",
+    })
+    got = clocks.list_entries(period="all")[0]
+    assert got["project"] == "P-1"
+
+
+def test_project_stats_credits_direct_and_task(tmp_path):
+    from types import SimpleNamespace
+    b = _sql_backend(tmp_path)
+    tasks, clocks = b[0], b[1]
+    t = tasks.add_task(customer="ACME", title="T", project="P-B")
+    e = clocks.quick_book(
+        duration_str="2h", customer="ACME", description="x",
+    )
+    clocks.update_entry(
+        sync_id=e["sync_id"], project="P-A", task_id=t["id"],
+    )
+    from kaisho.services.projects import project_stats
+    backend = SimpleNamespace(tasks=tasks, clocks=clocks)
+    stats = project_stats(backend, {"P-A", "P-B"})
+    # The one 120-min entry is credited to its direct project
+    # (A) and its task's project (B) independently.
+    assert stats["P-A"]["minutes"] == 120
+    assert stats["P-B"]["minutes"] == 120
+
+
+def test_project_description_has_no_zero_width(org_dir):
+    f = org_dir / "projects.org"
+    p = projects_svc.add_project(
+        f, "P", description="* bullet one\n* bullet two",
+    )
+    got = projects_svc.get_project(f, p["id"])
+    assert "​" not in got["description"]
+    assert got["description"].startswith("* bullet one")

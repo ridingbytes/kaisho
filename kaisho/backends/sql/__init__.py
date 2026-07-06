@@ -1541,7 +1541,7 @@ def _apply_clock_fields(row: ClockRow, fields: dict) -> None:
 
     for col in (
         "customer", "description", "start",
-        "task_id", "contract", "notes",
+        "task_id", "contract", "notes", "project",
     ):
         if col in fields:
             setattr(row, col, fields[col] or "")

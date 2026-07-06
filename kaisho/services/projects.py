@@ -273,7 +273,9 @@ def update_project(
             description.splitlines()
             if description.strip() else []
         )
-        reap_removed_attachments(old_body, description)
+        reap_removed_attachments(
+            old_body, description, owner_bucket=project_id,
+        )
     if tags is not None:
         heading.tags = list(tags)
     fields = {
@@ -316,11 +318,19 @@ def project_stats(backend, project_ids: set) -> dict:
         counts[pid] += 1
     minutes: dict = defaultdict(int)
     for e in backend.clocks.list_entries(period="all"):
-        pid = e.get("project")
-        if pid not in project_ids:
-            pid = task_project.get(e.get("task_id"))
-        if pid in project_ids:
-            minutes[pid] += e.get("duration_minutes") or 0
+        dur = e.get("duration_minutes") or 0
+        # Credit the entry to its direct project AND its
+        # task's project independently (deduping so the same
+        # project isn't double-counted), matching how
+        # aggregate_project rolls time up.
+        credited = set()
+        direct = e.get("project")
+        if direct in project_ids:
+            minutes[direct] += dur
+            credited.add(direct)
+        task_pid = task_project.get(e.get("task_id"))
+        if task_pid in project_ids and task_pid not in credited:
+            minutes[task_pid] += dur
     return {
         pid: {
             "task_count": counts.get(pid, 0),
