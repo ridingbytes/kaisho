@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Clock,
   CloudOff,
+  FolderKanban,
   Inbox,
   Pencil,
   Square,
@@ -668,6 +669,15 @@ export function DashboardView() {
             cta="#d97706"
             onClick={() => setView("inbox")}
           />
+          {(data.projects?.length ?? 0) > 0 && (
+            <StatCard
+              label={t("activeProjects")}
+              value={data.projects!.length}
+              icon={FolderKanban}
+              cta="#0891b2"
+              onClick={() => setView("projects")}
+            />
+          )}
           {data.month_hours > 0 && (
             <StatCard
               label={t("hoursThisMonth")}
