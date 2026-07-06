@@ -240,20 +240,30 @@ export function CustomerCard({ customer: c }: Props) {
             }
           >
             {addingContract && (
-              <AddContractForm
-                customerName={c.name}
-                onDone={() =>
-                  setAddingContract(false)
-                }
-              />
+              <Dialog
+                open
+                onClose={() => setAddingContract(false)}
+                title={t("addContract")}
+              >
+                <AddContractForm
+                  customerName={c.name}
+                  onDone={() => setAddingContract(false)}
+                />
+              </Dialog>
             )}
             {booking && (
-              <QuickBookForm
-                customerName={c.name}
-                contracts={c.contracts}
-                defaultContract={activeContract}
-                onDone={() => setBooking(false)}
-              />
+              <Dialog
+                open
+                onClose={() => setBooking(false)}
+                title={t("bookTime")}
+              >
+                <QuickBookForm
+                  customerName={c.name}
+                  contracts={c.contracts}
+                  defaultContract={activeContract}
+                  onDone={() => setBooking(false)}
+                />
+              </Dialog>
             )}
             {invoicing && (
               <InvoicePanel
@@ -261,9 +271,7 @@ export function CustomerCard({ customer: c }: Props) {
                 onClose={() => setInvoicing(false)}
               />
             )}
-            {!addingContract
-              && !booking
-              && !invoicing && (
+            {(
               <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() =>

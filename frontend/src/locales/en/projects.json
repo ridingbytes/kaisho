@@ -75,5 +75,7 @@
   "allColumnsCollapsed": "All columns collapsed.",
   "addTag": "+ tag",
   "pdfNoInline": "Inline PDF preview isn't supported here.",
-  "startTime": "Start time"
+  "startTime": "Start time",
+  "addMilestone": "Add milestone",
+  "editMilestone": "Edit milestone"
 }

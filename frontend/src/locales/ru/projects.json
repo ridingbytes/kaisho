@@ -75,5 +75,7 @@
   "allColumnsCollapsed": "Все столбцы свёрнуты.",
   "addTag": "+ тег",
   "pdfNoInline": "Встроенный просмотр PDF здесь недоступен.",
-  "startTime": "Время начала"
+  "startTime": "Время начала",
+  "addMilestone": "Добавить веху",
+  "editMilestone": "Изменить веху"
 }

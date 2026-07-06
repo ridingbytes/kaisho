@@ -75,5 +75,7 @@
   "allColumnsCollapsed": "Alle Spalten eingeklappt.",
   "addTag": "+ Tag",
   "pdfNoInline": "Inline-PDF-Vorschau wird hier nicht unterstützt.",
-  "startTime": "Startzeit"
+  "startTime": "Startzeit",
+  "addMilestone": "Meilenstein hinzufügen",
+  "editMilestone": "Meilenstein bearbeiten"
 }

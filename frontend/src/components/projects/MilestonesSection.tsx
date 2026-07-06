@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Trash2 } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { Dialog } from "../common/Dialog";
 import {
   useAddMilestone,
   useDeleteMilestone,
@@ -9,32 +10,62 @@ import {
 } from "../../hooks/useProjects";
 import type { Milestone } from "../../types";
 import { formatDateLabel } from "../../utils/dateLabel";
-import { fieldCls } from "../settings/styles";
+import { fieldCls, inputCls } from "../settings/styles";
 
 interface Props {
   projectId: string;
   milestones: Milestone[];
 }
 
-/** Milestone checklist with add / toggle / delete. */
+/** Milestone checklist. Toggle/delete inline; add and edit
+ * (title + due) happen in a modal dialog. */
 export function MilestonesSection({
   projectId, milestones,
 }: Props) {
   const { t } = useTranslation("projects");
+  const { t: tc } = useTranslation("common");
   const add = useAddMilestone();
   const update = useUpdateMilestone();
   const remove = useDeleteMilestone();
+  // ``true`` = add dialog; a milestone = edit dialog.
+  const [dialog, setDialog] = useState<
+    Milestone | true | null
+  >(null);
   const [title, setTitle] = useState("");
   const [due, setDue] = useState("");
 
-  function handleAdd(e: React.FormEvent) {
-    e.preventDefault();
-    if (!title.trim()) return;
-    add.mutate(
-      { projectId, title: title.trim(), due: due || null },
-      { onSuccess: () => { setTitle(""); setDue(""); } },
-    );
+  function openAdd() {
+    setTitle("");
+    setDue("");
+    setDialog(true);
   }
+
+  function openEdit(m: Milestone) {
+    setTitle(m.title);
+    setDue(m.due ?? "");
+    setDialog(m);
+  }
+
+  function save() {
+    if (!title.trim()) return;
+    if (dialog === true) {
+      add.mutate(
+        { projectId, title: title.trim(), due: due || null },
+        { onSuccess: () => setDialog(null) },
+      );
+    } else if (dialog) {
+      update.mutate(
+        {
+          projectId,
+          milestoneId: dialog.id,
+          updates: { title: title.trim(), due: due || "" },
+        },
+        { onSuccess: () => setDialog(null) },
+      );
+    }
+  }
+
+  const saving = add.isPending || update.isPending;
 
   return (
     <div className="space-y-2">
@@ -56,14 +87,17 @@ export function MilestonesSection({
               }
               className="rounded border-border text-cta"
             />
-            <span className={[
-              "flex-1 text-sm",
-              m.done
-                ? "line-through text-fg-muted"
-                : "text-fg",
-            ].join(" ")}>
+            <button
+              onClick={() => openEdit(m)}
+              className={[
+                "flex-1 text-left text-sm hover:text-cta",
+                m.done
+                  ? "line-through text-fg-muted"
+                  : "text-fg",
+              ].join(" ")}
+            >
               {m.title}
-            </span>
+            </button>
             {m.due && (
               <span className="text-2xs text-fg-muted">
                 {formatDateLabel(m.due)}
@@ -91,31 +125,57 @@ export function MilestonesSection({
           </li>
         )}
       </ul>
-      <form onSubmit={handleAdd} className="flex gap-2">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={t("milestonePlaceholder")}
-          className={`${fieldCls} flex-1`}
-        />
-        <input
-          type="date"
-          value={due}
-          onChange={(e) => setDue(e.target.value)}
-          className={fieldCls}
-        />
-        <button
-          type="submit"
-          disabled={!title.trim() || add.isPending}
-          className={[
-            "inline-flex items-center gap-1 px-2 rounded",
-            "text-xs bg-cta text-white hover:bg-cta-hover",
-            "disabled:opacity-40",
-          ].join(" ")}
+      <button
+        onClick={openAdd}
+        className="inline-flex items-center gap-1 text-xs text-cta hover:underline"
+      >
+        <Plus size={13} /> {t("addMilestone", "Add milestone")}
+      </button>
+
+      {dialog && (
+        <Dialog
+          open
+          onClose={() => setDialog(null)}
+          title={
+            dialog === true
+              ? t("addMilestone", "Add milestone")
+              : t("editMilestone", "Edit milestone")
+          }
+          footer={
+            <div className="flex justify-end gap-2 w-full">
+              <button
+                onClick={() => setDialog(null)}
+                className={fieldCls}
+              >
+                {tc("cancel")}
+              </button>
+              <button
+                onClick={save}
+                disabled={!title.trim() || saving}
+                className="px-3 py-1.5 rounded text-sm bg-cta text-white hover:bg-cta-hover disabled:opacity-40"
+              >
+                {tc("save")}
+              </button>
+            </div>
+          }
         >
-          <Plus size={13} /> {t("add")}
-        </button>
-      </form>
+          <div className="space-y-3">
+            <input
+              autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t("milestonePlaceholder")}
+              className={`${inputCls} w-full`}
+            />
+            <input
+              type="date"
+              value={due}
+              onChange={(e) => setDue(e.target.value)}
+              className={`${fieldCls} w-full`}
+            />
+          </div>
+        </Dialog>
+      )}
     </div>
   );
 }
