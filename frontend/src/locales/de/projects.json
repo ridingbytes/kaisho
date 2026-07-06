@@ -72,5 +72,6 @@
   "moveRight": "Spalte nach rechts",
   "collapse": "Spalte einklappen",
   "expandAll": "Alle Spalten ausklappen",
-  "allColumnsCollapsed": "Alle Spalten eingeklappt."
+  "allColumnsCollapsed": "Alle Spalten eingeklappt.",
+  "addTag": "+ Tag"
 }

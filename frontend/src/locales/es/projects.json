@@ -72,5 +72,6 @@
   "moveRight": "Mover columna a la derecha",
   "collapse": "Contraer columna",
   "expandAll": "Expandir todas las columnas",
-  "allColumnsCollapsed": "Todas las columnas contraídas."
+  "allColumnsCollapsed": "Todas las columnas contraídas.",
+  "addTag": "+ etiqueta"
 }

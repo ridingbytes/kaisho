@@ -72,5 +72,6 @@
   "moveRight": "Move column right",
   "collapse": "Collapse column",
   "expandAll": "Expand all columns",
-  "allColumnsCollapsed": "All columns collapsed."
+  "allColumnsCollapsed": "All columns collapsed.",
+  "addTag": "+ tag"
 }

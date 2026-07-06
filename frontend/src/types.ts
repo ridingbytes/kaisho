@@ -129,6 +129,7 @@ export interface Project {
   start: string | null;
   due: string | null;
   color: string;
+  tags: string[];
   description: string;
   updated_at: string;
   milestones: Milestone[];

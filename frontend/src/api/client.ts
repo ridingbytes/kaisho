@@ -1936,6 +1936,7 @@ export function createProject(body: {
   start?: string | null;
   due?: string | null;
   color?: string;
+  tags?: string[];
 }): Promise<Project> {
   return post<Project>("/projects", body);
 }
@@ -1951,6 +1952,7 @@ export function updateProject(
     start: string;
     due: string;
     color: string;
+    tags: string[];
   }>,
 ): Promise<Project> {
   return patch<Project>(`/projects/${id}`, updates);

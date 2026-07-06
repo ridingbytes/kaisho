@@ -72,5 +72,6 @@
   "moveRight": "Сдвинуть столбец вправо",
   "collapse": "Свернуть столбец",
   "expandAll": "Развернуть все столбцы",
-  "allColumnsCollapsed": "Все столбцы свёрнуты."
+  "allColumnsCollapsed": "Все столбцы свёрнуты.",
+  "addTag": "+ тег"
 }

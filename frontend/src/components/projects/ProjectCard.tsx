@@ -62,6 +62,19 @@ export function ProjectCard({ project, onOpen }: Props) {
         </span>
       </div>
 
+      {project.tags && project.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {project.tags.map((tag) => (
+            <span
+              key={tag}
+              className="px-1.5 py-0.5 rounded text-2xs bg-surface-overlay text-fg-muted"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+
       {project.description && (
         <p className="text-xs text-fg-muted line-clamp-2">
           {project.description}

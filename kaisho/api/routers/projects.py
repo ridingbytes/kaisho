@@ -28,6 +28,7 @@ class ProjectCreate(BaseModel):
     start: str | None = None
     due: str | None = None
     color: str = ""
+    tags: list[str] = []
 
 
 class ProjectUpdate(BaseModel):
@@ -39,6 +40,7 @@ class ProjectUpdate(BaseModel):
     start: str | None = None
     due: str | None = None
     color: str | None = None
+    tags: list[str] | None = None
 
 
 class MilestoneCreate(BaseModel):
@@ -80,7 +82,7 @@ def create_project(body: ProjectCreate):
         _file(), name=body.name, customer=body.customer,
         description=body.description, status=body.status,
         contract=body.contract, start=body.start,
-        due=body.due, color=body.color,
+        due=body.due, color=body.color, tags=body.tags,
     )
 
 

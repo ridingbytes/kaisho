@@ -175,3 +175,17 @@ def test_sql_note_project_roundtrip(tmp_path):
     assert got["project"] == "P-1"
     notes.update_note(n["id"], {"project": ""})
     assert notes.list_notes()[0]["project"] in (None, "")
+
+
+def test_project_tags_roundtrip(org_dir):
+    f = org_dir / "projects.org"
+    proj = projects_svc.add_project(
+        f, "P", tags=["billing", "urgent"],
+    )
+    assert set(proj["tags"]) == {"billing", "urgent"}
+    got = projects_svc.get_project(f, proj["id"])
+    assert set(got["tags"]) == {"billing", "urgent"}
+    updated = projects_svc.update_project(
+        f, proj["id"], tags=["done"],
+    )
+    assert updated["tags"] == ["done"]

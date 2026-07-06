@@ -6,6 +6,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { Markdown } from "../common/Markdown";
@@ -55,6 +56,28 @@ export function ProjectWorkspace({ projectId, onBack }: Props) {
   const [openTask, setOpenTask] = useState<Task | null>(null);
   const [openEntry, setOpenEntry] =
     useState<ClockEntry | null>(null);
+  const [tagDraft, setTagDraft] = useState("");
+
+  function addTag(e: React.FormEvent) {
+    e.preventDefault();
+    const tag = tagDraft.trim();
+    setTagDraft("");
+    if (!data || !tag || data.project.tags.includes(tag)) return;
+    update.mutate({
+      id: projectId,
+      updates: { tags: [...data.project.tags, tag] },
+    });
+  }
+
+  function removeTag(tag: string) {
+    if (!data) return;
+    update.mutate({
+      id: projectId,
+      updates: {
+        tags: data.project.tags.filter((x) => x !== tag),
+      },
+    });
+  }
 
   if (isLoading || !data) {
     return (
@@ -156,6 +179,30 @@ export function ProjectWorkspace({ projectId, onBack }: Props) {
             <span className="text-2xs text-fg-muted">
               · {formatHours(total_minutes)} {t("logged")}
             </span>
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            {project.tags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-2xs bg-surface-overlay text-fg-muted"
+              >
+                {tag}
+                <button
+                  onClick={() => removeTag(tag)}
+                  className="hover:text-red-400"
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            ))}
+            <form onSubmit={addTag}>
+              <input
+                value={tagDraft}
+                onChange={(e) => setTagDraft(e.target.value)}
+                placeholder={t("addTag")}
+                className="text-2xs bg-transparent border-b border-border-subtle focus:outline-none focus:border-cta w-20 px-1 py-0.5"
+              />
+            </form>
           </div>
         </div>
         <select

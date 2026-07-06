@@ -121,6 +121,7 @@ def _heading_to_project(heading: Heading) -> dict:
         # Derive a stable color for older projects that
         # predate the auto-assigned COLOR property.
         "color": props.get("COLOR") or _color_for(pid),
+        "tags": list(heading.tags),
         "description": "\n".join(heading.body).strip(),
         "updated_at": props.get("UPDATED_AT", ""),
         "milestones": milestones,
@@ -182,6 +183,7 @@ def add_project(
     start: str | None = None,
     due: str | None = None,
     color: str = "",
+    tags: list | None = None,
 ) -> dict:
     """Create a project and return it."""
     if not projects_file.exists():
@@ -210,6 +212,7 @@ def add_project(
         level=1,
         keyword=status if status in PROJECT_STATES else "ACTIVE",
         title=name,
+        tags=list(tags or []),
         properties=props,
         body=(
             description.splitlines()
@@ -243,6 +246,7 @@ def update_project(
     start: str | None = None,
     due: str | None = None,
     color: str | None = None,
+    tags: list | None = None,
 ) -> dict | None:
     """Update a project. Returns the updated dict, or None.
 
@@ -267,6 +271,8 @@ def update_project(
             description.splitlines()
             if description.strip() else []
         )
+    if tags is not None:
+        heading.tags = list(tags)
     fields = {
         "customer": customer, "contract": contract,
         "start": start, "due": due, "color": color,

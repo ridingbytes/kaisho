@@ -45,7 +45,10 @@ export function ProjectsView() {
     ? projects.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
-          (p.customer ?? "").toLowerCase().includes(q),
+          (p.customer ?? "").toLowerCase().includes(q) ||
+          (p.tags ?? []).some((tag) =>
+            tag.toLowerCase().includes(q),
+          ),
       )
     : projects;
 
