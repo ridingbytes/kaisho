@@ -6,6 +6,7 @@ from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 from ..time_utils import local_now
 from . import events
+from .attachments_gc import reap_removed_attachments
 from .clocks import (
     current_timestamp,
     ensure_sync_identity,
@@ -465,7 +466,9 @@ def update_task(
         f"[{new_customer}]: {new_bare}" if new_customer else new_bare
     )
     if body is not None:
+        old_body = "\n".join(heading.body)
         _update_body(heading, body)
+        reap_removed_attachments(old_body, body)
     if github_url is not None:
         if github_url:
             heading.properties["GITHUB_URL"] = github_url

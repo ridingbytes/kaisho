@@ -38,6 +38,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from ..org.models import Heading
+from .attachments_gc import reap_removed_attachments
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 from ..time_utils import local_now
@@ -267,10 +268,12 @@ def update_project(
     if status is not None and status in PROJECT_STATES:
         heading.keyword = status
     if description is not None:
+        old_body = "\n".join(heading.body)
         heading.body = (
             description.splitlines()
             if description.strip() else []
         )
+        reap_removed_attachments(old_body, description)
     if tags is not None:
         heading.tags = list(tags)
     fields = {

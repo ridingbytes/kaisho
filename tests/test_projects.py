@@ -189,3 +189,24 @@ def test_project_tags_roundtrip(org_dir):
         f, proj["id"], tags=["done"],
     )
     assert updated["tags"] == ["done"]
+
+
+def test_reap_removed_attachments(org_dir):
+    from kaisho.services.attachments_gc import (
+        reap_removed_attachments,
+    )
+    from kaisho.config import get_config
+    root = get_config().PROFILE_DIR / "attachments" / "P-1"
+    root.mkdir(parents=True, exist_ok=True)
+    gone = root / "ab12-photo.png"
+    gone.write_bytes(b"x")
+    kept = root / "cd34-doc.pdf"
+    kept.write_bytes(b"y")
+    old = (
+        "![p](/api/attachments/P-1/ab12-photo.png) "
+        "![d](/api/attachments/P-1/cd34-doc.pdf)"
+    )
+    new = "![d](/api/attachments/P-1/cd34-doc.pdf)"
+    assert reap_removed_attachments(old, new) == 1
+    assert not gone.exists()
+    assert kept.exists()

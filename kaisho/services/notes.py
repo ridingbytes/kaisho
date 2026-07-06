@@ -5,6 +5,7 @@ from ..org.models import Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 from ..time_utils import local_now
+from .attachments_gc import reap_removed_attachments
 from .knowledge import write_kb_markdown
 from .clocks import (
     current_timestamp,
@@ -205,9 +206,11 @@ def update_note(
         else:
             heading.title = new_title
     if "body" in updates:
+        old_body = "\n".join(heading.body)
         heading.body = (
             updates["body"].splitlines() if updates["body"] else []
         )
+        reap_removed_attachments(old_body, updates["body"] or "")
     if "tags" in updates:
         heading.tags = list(updates["tags"])
     if "task_id" in updates:
