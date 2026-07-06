@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.7.3
+
+- Sync project definitions to the cloud [#219]. Projects,
+  their milestones, tags, and status now sync to the hosted
+  backend (last-writer-wins, with tombstones), so the mobile
+  app sees the same projects as the desktop.
+- Send the configured task states (label, colour, done flag,
+  and order) in the cloud reference snapshot, so the mobile
+  app renders task columns in the same order and colours as
+  the desktop instead of guessing.
+- More breathing room in the sidebar navigation.
+
 ## 2.7.2
 
 - Reorder projects on the board: drag a card within a column
