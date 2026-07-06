@@ -157,10 +157,43 @@ def list_projects(
     ]
     if not include_archived:
         projects = [p for p in projects if _is_active(p)]
-    projects.sort(
-        key=lambda p: p["updated_at"], reverse=True,
-    )
+    # File order is the display order so a manual reorder on
+    # the board (see reorder_projects) persists.
     return projects
+
+
+def reorder_projects(
+    projects_file: Path, project_ids: list,
+) -> list:
+    """Reorder project headings to match ``project_ids``.
+
+    Headings named in ``project_ids`` are placed, in that
+    order, at the file positions those headings currently
+    occupy; headings not listed keep their positions. Mirrors
+    :func:`kaisho.services.kanban.reorder_tasks`.
+    """
+    if not projects_file.exists():
+        return []
+    org_file = parse_org_file(projects_file, PROJECT_KEYWORDS)
+    by_id = {
+        h.properties.get("PROJECT_ID"): h
+        for h in org_file.headings
+        if h.properties.get("PROJECT_ID")
+    }
+    reordered = [
+        by_id[pid] for pid in project_ids if pid in by_id
+    ]
+    moved = set(id(h) for h in reordered)
+    positions = [
+        i for i, h in enumerate(org_file.headings)
+        if id(h) in moved
+    ]
+    result = list(org_file.headings)
+    for pos, heading in zip(positions, reordered):
+        result[pos] = heading
+    org_file.headings = result
+    write_org_file(projects_file, org_file)
+    return list_projects(projects_file, include_archived=True)
 
 
 def get_project(

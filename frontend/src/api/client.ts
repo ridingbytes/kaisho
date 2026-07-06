@@ -1962,6 +1962,12 @@ export function deleteProject(id: string): Promise<void> {
   return del(`/projects/${id}`);
 }
 
+export function reorderProjects(
+  ids: string[],
+): Promise<Project[]> {
+  return post<Project[]>("/projects/reorder", { ids });
+}
+
 export function addMilestone(
   projectId: string,
   body: { title: string; due?: string | null },

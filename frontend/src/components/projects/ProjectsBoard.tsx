@@ -18,7 +18,10 @@ import { CSS } from "@dnd-kit/utilities";
 import { BoardColumnShell } from "../board/BoardColumnShell";
 import { ProjectCard } from "./ProjectCard";
 import { PROJECT_STATUSES } from "./projectStatus";
-import { useUpdateProject } from "../../hooks/useProjects";
+import {
+  useReorderProjects,
+  useUpdateProject,
+} from "../../hooks/useProjects";
 import { useCollapsedColumns } from "../../hooks/useCollapsedColumns";
 import type { Project } from "../../types";
 
@@ -92,6 +95,7 @@ export function ProjectsBoard({
 }) {
   const { t } = useTranslation("projects");
   const update = useUpdateProject();
+  const reorder = useReorderProjects();
   const { isCollapsed, toggle } = useCollapsedColumns(
     "projects_collapsed_columns",
   );
@@ -148,17 +152,27 @@ export function ProjectsBoard({
       return;
     }
 
-    // Card move: the drop target is a column, or a card
-    // whose column we resolve to.
+    // Card drag.
     const proj = projects.find((p) => p.id === activeId);
     if (!proj) return;
-    let status = overId;
-    if (!isColumnId(status)) {
-      const overCard = projects.find((p) => p.id === overId);
-      status = overCard?.status ?? proj.status;
-    }
+    const overCard = projects.find((p) => p.id === overId);
+    const status = isColumnId(overId)
+      ? overId
+      : (overCard?.status ?? proj.status);
+
+    // Dropped in a different column → change status.
     if (STATUSES.includes(status) && proj.status !== status) {
       update.mutate({ id: proj.id, updates: { status } });
+      return;
+    }
+    // Dropped on another card in the same column → reorder.
+    if (overCard && overCard.id !== proj.id) {
+      const ids = projects.map((p) => p.id);
+      const from = ids.indexOf(proj.id);
+      const to = ids.indexOf(overCard.id);
+      if (from !== -1 && to !== -1) {
+        reorder.mutate(arrayMove(ids, from, to));
+      }
     }
   }
 

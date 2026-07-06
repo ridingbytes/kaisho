@@ -72,6 +72,16 @@ def list_projects(include_archived: bool = False):
     return projects
 
 
+class ReorderBody(BaseModel):
+    ids: list[str]
+
+
+@router.post("/reorder")
+def reorder_projects(body: ReorderBody):
+    """Persist a new project order (board drag-and-drop)."""
+    return projects_svc.reorder_projects(_file(), body.ids)
+
+
 @router.post("", status_code=201)
 def create_project(body: ProjectCreate):
     """Create a project."""

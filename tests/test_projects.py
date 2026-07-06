@@ -254,3 +254,18 @@ def test_project_description_has_no_zero_width(org_dir):
     got = projects_svc.get_project(f, p["id"])
     assert "​" not in got["description"]
     assert got["description"].startswith("* bullet one")
+
+
+def test_reorder_projects(org_dir):
+    f = org_dir / "projects.org"
+    a = projects_svc.add_project(f, "A")
+    b = projects_svc.add_project(f, "B")
+    c = projects_svc.add_project(f, "C")
+    ids = [p["id"] for p in projects_svc.list_projects(f)]
+    assert ids == [a["id"], b["id"], c["id"]]
+    # Move C to the front.
+    projects_svc.reorder_projects(
+        f, [c["id"], a["id"], b["id"]],
+    )
+    ids = [p["id"] for p in projects_svc.list_projects(f)]
+    assert ids == [c["id"], a["id"], b["id"]]

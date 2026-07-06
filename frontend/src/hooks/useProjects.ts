@@ -13,6 +13,7 @@ import {
   fetchProjectAggregate,
   fetchProjectFiles,
   fetchProjects,
+  reorderProjects,
   updateMilestone,
   updateProject,
 } from "../api/client";
@@ -81,6 +82,14 @@ export function useDeleteProject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: deleteProject,
+    onSuccess: () => invalidateProject(qc),
+  });
+}
+
+export function useReorderProjects() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => reorderProjects(ids),
     onSuccess: () => invalidateProject(qc),
   });
 }
