@@ -2,8 +2,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog } from "../common/Dialog";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
+import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { useUpdateClockEntry } from "../../hooks/useClocks";
 import { useProjects } from "../../hooks/useProjects";
+import { useTasks } from "../../hooks/useTasks";
+import { taskTitleById } from "../../utils/customerPrefix";
 import { fieldCls, inputCls } from "../settings/styles";
 import type { ClockEntry } from "../../types";
 
@@ -18,6 +21,7 @@ export function TimeEntryDialog({ entry, onClose }: Props) {
   const { t: tc } = useTranslation("common");
   const update = useUpdateClockEntry();
   const { data: projects = [] } = useProjects(true);
+  const { data: tasks = [] } = useTasks(true);
 
   const [description, setDescription] = useState(
     entry.description,
@@ -30,21 +34,43 @@ export function TimeEntryDialog({ entry, onClose }: Props) {
   const [notes, setNotes] = useState(entry.notes ?? "");
   const [invoiced, setInvoiced] = useState(entry.invoiced);
   const [project, setProject] = useState(entry.project ?? "");
+  const [entryDate, setEntryDate] = useState(
+    entry.start.slice(0, 10),
+  );
+  const [startTime, setStartTime] = useState(
+    entry.start ? entry.start.slice(11, 16) : "",
+  );
+  const [taskId, setTaskId] = useState<string | null>(
+    entry.task_id,
+  );
+  const [taskTitle, setTaskTitle] = useState(
+    entry.task_id
+      ? (taskTitleById(tasks, entry.task_id) ?? "")
+      : "",
+  );
 
   function save() {
     const h = parseFloat(hours);
+    const origDate = entry.start.slice(0, 10);
+    const origTime = entry.start.slice(11, 16);
+    const updates: Record<string, unknown> = {
+      description,
+      customer,
+      hours: isNaN(h) ? undefined : h,
+      contract,
+      notes,
+      invoiced,
+      project,
+      task_id: taskId ?? "",
+    };
+    if (entryDate !== origDate || startTime !== origTime) {
+      updates.new_date = entryDate;
+      updates.start_time = startTime;
+    }
     update.mutate(
       {
         entry: { sync_id: entry.sync_id, start: entry.start },
-        updates: {
-          description,
-          customer,
-          hours: isNaN(h) ? undefined : h,
-          contract,
-          notes,
-          invoiced,
-          project,
-        },
+        updates,
       },
       { onSuccess: onClose },
     );
@@ -81,7 +107,49 @@ export function TimeEntryDialog({ entry, onClose }: Props) {
             className={`${inputCls} w-full`}
           />
         </label>
+        <label className="block">
+          <span className="block text-2xs uppercase tracking-wider text-fg-muted mb-1">
+            {t("taskLabel", "Task")}
+          </span>
+          <TaskAutocomplete
+            taskId={taskId}
+            value={taskTitle}
+            onChange={setTaskTitle}
+            onSelect={(id, label) => {
+              setTaskId(id);
+              setTaskTitle(label);
+            }}
+            onClear={() => {
+              setTaskId(null);
+              setTaskTitle("");
+            }}
+            customer={customer}
+            inputClassName={inputCls}
+          />
+        </label>
         <div className="grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="block text-2xs uppercase tracking-wider text-fg-muted mb-1">
+              {tc("date")}
+            </span>
+            <input
+              type="date"
+              value={entryDate}
+              onChange={(e) => setEntryDate(e.target.value)}
+              className={`${fieldCls} w-full`}
+            />
+          </label>
+          <label className="block">
+            <span className="block text-2xs uppercase tracking-wider text-fg-muted mb-1">
+              {t("startTime")}
+            </span>
+            <input
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className={`${fieldCls} w-full`}
+            />
+          </label>
           <label className="block">
             <span className="block text-2xs uppercase tracking-wider text-fg-muted mb-1">
               {tc("customer")}

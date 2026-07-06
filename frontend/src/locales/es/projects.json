@@ -74,5 +74,6 @@
   "expandAll": "Expandir todas las columnas",
   "allColumnsCollapsed": "Todas las columnas contraídas.",
   "addTag": "+ etiqueta",
-  "pdfNoInline": "La vista previa de PDF no está disponible aquí."
+  "pdfNoInline": "La vista previa de PDF no está disponible aquí.",
+  "startTime": "Hora de inicio"
 }

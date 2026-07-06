@@ -74,5 +74,6 @@
   "expandAll": "Expand all columns",
   "allColumnsCollapsed": "All columns collapsed.",
   "addTag": "+ tag",
-  "pdfNoInline": "Inline PDF preview isn't supported here."
+  "pdfNoInline": "Inline PDF preview isn't supported here.",
+  "startTime": "Start time"
 }
