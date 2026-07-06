@@ -47,15 +47,19 @@ export function ProjectFileViewer({ projectId, file }: Props) {
   const [draft, setDraft] = useState("");
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
 
   useEffect(() => {
     setEditing(false);
     setText(null);
+    setError(false);
+    setImgFailed(false);
     if (!isText) return;
     let live = true;
     fetchProjectFileText(projectId, file.name)
       .then((r) => live && setText(r.content))
-      .catch(() => live && setText(""));
+      .catch(() => live && setError(true));
     return () => {
       live = false;
     };
@@ -106,10 +110,11 @@ export function ProjectFileViewer({ projectId, file }: Props) {
   return (
     <div>
       {header}
-      {isImage ? (
+      {isImage && !imgFailed ? (
         <img
           src={file.url}
           alt={file.display}
+          onError={() => setImgFailed(true)}
           className="max-w-full rounded border border-border-subtle"
         />
       ) : isPdf ? (
@@ -118,6 +123,18 @@ export function ProjectFileViewer({ projectId, file }: Props) {
           title={file.display}
           className="w-full h-[70vh] rounded border border-border-subtle"
         />
+      ) : error ? (
+        <div className="text-xs text-fg-muted">
+          {t("fileLoadError")}{" "}
+          <a
+            href={file.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-cta hover:underline"
+          >
+            {t("download")}
+          </a>
+        </div>
       ) : isText ? (
         editing ? (
           <div className="space-y-2">

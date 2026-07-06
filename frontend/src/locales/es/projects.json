@@ -65,5 +65,6 @@
   "selectFile": "Selecciona un archivo para verlo.",
   "fileSaved": "Archivo guardado",
   "editNote": "Editar nota",
-  "openInNotes": "Abrir en la vista de Notas"
+  "openInNotes": "Abrir en la vista de Notas",
+  "fileLoadError": "No se pudo cargar este archivo."
 }

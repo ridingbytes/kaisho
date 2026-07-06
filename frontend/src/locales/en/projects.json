@@ -65,5 +65,6 @@
   "selectFile": "Select a file to preview.",
   "fileSaved": "File saved",
   "editNote": "Edit note",
-  "openInNotes": "Open in Notes view"
+  "openInNotes": "Open in Notes view",
+  "fileLoadError": "Could not load this file."
 }
