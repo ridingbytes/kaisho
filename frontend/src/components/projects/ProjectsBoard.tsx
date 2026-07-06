@@ -124,11 +124,23 @@ export function ProjectsBoard({
     const activeId = String(active.id);
     const overId = String(over.id);
 
-    // Column reorder.
+    // Column reorder. The pointer often sits over a card
+    // rather than the column itself, so resolve the target
+    // column from the card under it — otherwise the drop is
+    // ignored and the column snaps back.
     if (isColumnId(activeId)) {
-      if (activeId !== overId && isColumnId(overId)) {
+      let target = overId;
+      if (!isColumnId(target)) {
+        const overCard = projects.find((p) => p.id === target);
+        target = overCard
+          ? (STATUSES.includes(overCard.status)
+              ? overCard.status
+              : "ACTIVE")
+          : activeId;
+      }
+      if (activeId !== target && isColumnId(target)) {
         const from = order.indexOf(activeId);
-        const to = order.indexOf(overId);
+        const to = order.indexOf(target);
         if (from !== -1 && to !== -1) {
           setOrder(arrayMove(order, from, to));
         }

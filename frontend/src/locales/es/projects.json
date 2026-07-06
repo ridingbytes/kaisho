@@ -77,5 +77,6 @@
   "pdfNoInline": "La vista previa de PDF no está disponible aquí.",
   "startTime": "Hora de inicio",
   "addMilestone": "Añadir hito",
-  "editMilestone": "Editar hito"
+  "editMilestone": "Editar hito",
+  "pickColor": "Elegir color"
 }

@@ -77,5 +77,6 @@
   "pdfNoInline": "Inline-PDF-Vorschau wird hier nicht unterstützt.",
   "startTime": "Startzeit",
   "addMilestone": "Meilenstein hinzufügen",
-  "editMilestone": "Meilenstein bearbeiten"
+  "editMilestone": "Meilenstein bearbeiten",
+  "pickColor": "Farbe wählen"
 }

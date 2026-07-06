@@ -117,6 +117,23 @@ export function ProjectWorkspace({ projectId, onBack }: Props) {
             </div>
           ) : (
             <div className="flex items-center gap-2 group">
+              <label
+                className="w-4 h-4 rounded-full shrink-0 cursor-pointer ring-1 ring-border hover:ring-cta transition-shadow"
+                style={{ background: project.color || "#71717a" }}
+                title={t("pickColor", "Pick color")}
+              >
+                <input
+                  type="color"
+                  value={project.color || "#71717a"}
+                  onChange={(e) =>
+                    update.mutate({
+                      id: projectId,
+                      updates: { color: e.target.value },
+                    })
+                  }
+                  className="sr-only"
+                />
+              </label>
               <h1 className="text-xl font-semibold text-fg-strong truncate">
                 {project.name}
               </h1>
@@ -343,7 +360,6 @@ function MilestoneTasks({
   tasks: Task[];
   onOpenTask: (task: Task) => void;
 }) {
-  const { t } = useTranslation("projects");
   const validIds = new Set(milestones.map((m) => m.id));
   const groups: { milestone: Milestone | null; tasks: Task[] }[] =
     [
@@ -369,23 +385,26 @@ function MilestoneTasks({
           milestone={g.milestone}
           tasks={g.tasks}
           onOpenTask={onOpenTask}
+          // Keep the unassigned group (with its add form)
+          // visible when there are no milestones to file
+          // under, so a fresh project can still get tasks.
+          forceShow={g.milestone === null && milestones.length === 0}
         />
       ))}
-      {tasks.length === 0 && milestones.length === 0 && (
-        <p className="text-xs text-fg-muted">{t("noTasks")}</p>
-      )}
     </div>
   );
 }
 
 function TaskGroup({
   projectId, customer, milestone, tasks, onOpenTask,
+  forceShow,
 }: {
   projectId: string;
   customer: string;
   milestone: Milestone | null;
   tasks: Task[];
   onOpenTask: (task: Task) => void;
+  forceShow?: boolean;
 }) {
   const { t } = useTranslation("projects");
   const add = useAddTask();
@@ -403,9 +422,22 @@ function TaskGroup({
       .map((s) => s.name),
   );
 
+  // Match the status badge to the colour configured for the
+  // matching board column.
+  function statusStyle(name: string) {
+    const c = (settings?.task_states ?? []).find(
+      (s) => s.name === name,
+    )?.color;
+    return c
+      ? { backgroundColor: `${c}1a`, color: c }
+      : undefined;
+  }
+
   // The unassigned bucket is only shown when it holds
   // tasks or there are no milestones to file under.
-  if (milestone === null && tasks.length === 0) return null;
+  if (milestone === null && tasks.length === 0 && !forceShow) {
+    return null;
+  }
 
   function createTask(e: React.FormEvent) {
     e.preventDefault();
@@ -463,7 +495,10 @@ function TaskGroup({
               onClick={() => onOpenTask(task)}
               className="flex items-center gap-2 py-1.5 w-full text-left hover:bg-surface-overlay/50 px-1 -mx-1 rounded"
             >
-              <span className="px-1.5 py-0.5 rounded text-2xs font-medium bg-surface-overlay text-fg-muted uppercase">
+              <span
+                className="px-1.5 py-0.5 rounded text-2xs font-semibold uppercase tracking-wider bg-surface-overlay text-fg-muted"
+                style={statusStyle(task.status)}
+              >
                 {task.status}
               </span>
               <span className="flex-1 text-sm truncate">

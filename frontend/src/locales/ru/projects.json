@@ -77,5 +77,6 @@
   "pdfNoInline": "Встроенный просмотр PDF здесь недоступен.",
   "startTime": "Время начала",
   "addMilestone": "Добавить веху",
-  "editMilestone": "Изменить веху"
+  "editMilestone": "Изменить веху",
+  "pickColor": "Выбрать цвет"
 }

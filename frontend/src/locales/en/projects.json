@@ -77,5 +77,6 @@
   "pdfNoInline": "Inline PDF preview isn't supported here.",
   "startTime": "Start time",
   "addMilestone": "Add milestone",
-  "editMilestone": "Edit milestone"
+  "editMilestone": "Edit milestone",
+  "pickColor": "Pick color"
 }
