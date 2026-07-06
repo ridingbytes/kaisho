@@ -33,7 +33,7 @@ import { HelpButton } from "../common/HelpButton";
 import { MarkdownEditor } from "../common/MarkdownEditor";
 import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { PanelToolbar } from "../common/PanelToolbar";
-import { TagDropdown } from "../common/TagDropdown";
+import { TagInput } from "../common/TagInput";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import {
   useFileDropOnTextarea,
@@ -418,6 +418,11 @@ function NoteRow({
                   inputClassName={`w-full ${smallFieldCls}`}
                 />
               </div>
+              <TagInput
+                value={editTags}
+                onChange={setEditTags}
+                suggestions={allTags}
+              />
               <TaskAutocomplete
                 taskId={editTaskId}
                 value={editTaskTitle}
@@ -458,11 +463,6 @@ function NoteRow({
                 <span className="text-2xs text-fg-subtle">
                   ⌘↵ save
                 </span>
-                <TagDropdown
-                  selected={editTags}
-                  allTags={allTags}
-                  onChange={setEditTags}
-                />
                 <div className="ml-auto flex gap-2">
                   <button
                     onClick={cancelEdit}
@@ -664,6 +664,11 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
           inputClassName={`w-full ${fieldCls}`}
         />
       </div>
+      <TagInput
+        value={tags}
+        onChange={setTags}
+        suggestions={allTags}
+      />
       <TaskAutocomplete
         taskId={taskId}
         value={taskTitle}
@@ -707,11 +712,6 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
         <span className="text-2xs text-fg-subtle">
           ⌘↵ save
         </span>
-        <TagDropdown
-          selected={tags}
-          allTags={allTags}
-          onChange={setTags}
-        />
         <div className="ml-auto flex gap-2">
           <button
             type="button"

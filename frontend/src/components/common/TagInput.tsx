@@ -25,7 +25,22 @@ export function TagInput({
 }: Props) {
   const [draft, setDraft] = useState("");
   const [open, setOpen] = useState(false);
+  const [dropUp, setDropUp] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Open the menu, flipping it above the input when there's
+  // more room there than below (e.g. a dialog footer).
+  function openMenu() {
+    const el = inputRef.current;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      const below = window.innerHeight - r.bottom;
+      const above = r.top;
+      setDropUp(below < 220 && above > below);
+    }
+    setOpen(true);
+  }
 
   const colorOf = (name: string) =>
     suggestions.find((s) => s.name === name)?.color;
@@ -67,12 +82,13 @@ export function TagInput({
       ))}
       <div className="relative">
         <input
+          ref={inputRef}
           value={draft}
           onChange={(e) => {
             setDraft(e.target.value);
-            setOpen(true);
+            openMenu();
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={openMenu}
           onBlur={() => setTimeout(() => setOpen(false), 120)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
@@ -88,7 +104,14 @@ export function TagInput({
           className="text-2xs bg-transparent border-b border-border-subtle focus:outline-none focus:border-cta w-24 px-1 py-0.5"
         />
         {open && matches.length > 0 && (
-          <div className="absolute top-full left-0 z-20 mt-1 min-w-[140px] bg-surface-overlay border border-border rounded-lg shadow-lg py-1 max-h-48 overflow-auto">
+          <div
+            className={[
+              "absolute left-0 z-20 min-w-[140px]",
+              "bg-surface-overlay border border-border",
+              "rounded-lg shadow-lg py-1 max-h-48 overflow-auto",
+              dropUp ? "bottom-full mb-1" : "top-full mt-1",
+            ].join(" ")}
+          >
             {matches.map((s) => (
               <button
                 key={s.name}
