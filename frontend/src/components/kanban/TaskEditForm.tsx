@@ -2,15 +2,12 @@
  * TaskEditForm -- Inline edit form for a task card, allowing
  * edits to customer, title, description, GitHub URL, and tags.
  */
-import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, X } from "lucide-react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
+import { MarkdownEditor } from "../common/MarkdownEditor";
 import { TagInput } from "../common/TagInput";
 import { GithubIssueInput } from "./GithubIssueInput";
-import {
-  useFileDropOnTextarea,
-} from "../../hooks/useFileDropOnTextarea";
 import { useProjects } from "../../hooks/useProjects";
 
 const editInputCls = [
@@ -89,14 +86,6 @@ export function TaskEditForm({
   const milestones =
     projects.find((p) => p.id === editProject)?.milestones ?? [];
 
-  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
-  const drop = useFileDropOnTextarea({
-    value: editBody,
-    onChange: onBodyChange,
-    bucketId: taskId,
-    textareaRef: bodyRef,
-  });
-
   function handleKeyDown(e: React.KeyboardEvent) {
     if (
       (e.metaKey || e.ctrlKey) &&
@@ -125,35 +114,14 @@ export function TaskEditForm({
         placeholder={tc("title")}
         className={editInputCls}
       />
-      <textarea
-        autoFocus
-        ref={bodyRef}
+      <MarkdownEditor
         value={editBody}
-        onChange={(e) => onBodyChange(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onDrop={drop.onDrop}
-        onDragOver={drop.onDragOver}
-        onPaste={drop.onPaste}
+        onChange={onBodyChange}
+        bucketId={taskId}
+        rows={8}
         placeholder={tc("descriptionOptional")}
-        rows={3}
-        // ``resize-y`` enables the native bottom-right
-        // grip for vertical resizing. Horizontal resize is
-        // intentionally blocked so dragging the corner
-        // doesn't push the column's neighbours around.
-        className={[editInputCls, "resize-y"].join(" ")}
+        onKeyDown={handleKeyDown}
       />
-      {drop.uploading > 0 && (
-        <div className="text-2xs text-fg-muted px-0.5">
-          {tc("uploadingAttachment", {
-            count: drop.uploading,
-          })}
-        </div>
-      )}
-      {drop.error && (
-        <div className="text-2xs text-red-500 px-0.5">
-          {drop.error}
-        </div>
-      )}
       <div
         onPointerDown={(e) => e.stopPropagation()}
       >

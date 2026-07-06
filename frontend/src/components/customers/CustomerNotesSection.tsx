@@ -2,22 +2,25 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, StickyNote } from "lucide-react";
 import { CollapsibleSection } from "../common/CollapsibleSection";
+import { NoteDialog } from "../projects/NoteDialog";
 import { useAddNote, useNotes } from "../../hooks/useNotes";
-import { useSetView } from "../../context/ViewContext";
 import { fieldCls } from "../settings/styles";
+import type { NoteItem } from "../../types";
 
 interface Props {
   customerName: string;
 }
 
 /** Notes belonging to a customer, shown on the customer
- * card. Add a note inline; click one to open it in the
- * Notes view (search by title, which resolves cleanly). */
+ * card. Add a note inline; click one to edit it in a
+ * modal. */
 export function CustomerNotesSection({ customerName }: Props) {
   const { t } = useTranslation("customers");
   const { data: notes = [] } = useNotes();
   const addNote = useAddNote();
-  const setView = useSetView();
+  const [openNote, setOpenNote] = useState<NoteItem | null>(
+    null,
+  );
   const [title, setTitle] = useState("");
 
   const mine = notes.filter(
@@ -36,6 +39,7 @@ export function CustomerNotesSection({ customerName }: Props) {
   }
 
   return (
+    <>
     <CollapsibleSection
       label={t("notes")}
       count={mine.length}
@@ -50,7 +54,7 @@ export function CustomerNotesSection({ customerName }: Props) {
           mine.map((n) => (
             <button
               key={n.id}
-              onClick={() => setView("notes", n.title)}
+              onClick={() => setOpenNote(n)}
               className="flex items-center gap-2 w-full text-left py-1 px-1 rounded hover:bg-surface-overlay/40"
             >
               <StickyNote
@@ -80,5 +84,12 @@ export function CustomerNotesSection({ customerName }: Props) {
         </form>
       </div>
     </CollapsibleSection>
+    {openNote && (
+      <NoteDialog
+        note={openNote}
+        onClose={() => setOpenNote(null)}
+      />
+    )}
+    </>
   );
 }
