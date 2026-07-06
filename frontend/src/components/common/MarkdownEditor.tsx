@@ -31,7 +31,7 @@ export function MarkdownEditor({
   autoFocus,
   className,
   onKeyDown,
-  defaultTab = "write",
+  defaultTab = "preview",
 }: Props) {
   const { t } = useTranslation("common");
   const [tab, setTab] = useState<"write" | "preview">(
