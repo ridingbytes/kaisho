@@ -4,10 +4,12 @@
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { SquareCheck } from "lucide-react";
 import { CollapsibleSection } from "../common/CollapsibleSection";
+import { TaskDetailDialog } from "../projects/TaskDetailDialog";
 import { useTasks } from "../../hooks/useTasks";
-import { useSetView } from "../../context/ViewContext";
 import { CUSTOMER_PREFIX_RE } from "../../utils/customerPrefix";
+import type { Task } from "../../types";
 
 const PAGE_SIZE = 5;
 
@@ -23,8 +25,8 @@ export function TasksSection({
   const { t } = useTranslation("customers");
   const { t: tc } = useTranslation("common");
   const { data: allTasks = [] } = useTasks(true);
-  const setView = useSetView();
   const [limit, setLimit] = useState(PAGE_SIZE);
+  const [openTask, setOpenTask] = useState<Task | null>(null);
 
   const tasks = allTasks.filter(
     (t) =>
@@ -36,9 +38,11 @@ export function TasksSection({
   const hasMore = tasks.length > limit;
 
   return (
+    <>
     <CollapsibleSection
       label={t("tasks")}
       count={tasks.length}
+      icon={<SquareCheck size={12} />}
     >
       <div className="ml-5">
         {tasks.length === 0 ? (
@@ -54,15 +58,7 @@ export function TasksSection({
             {visible.map((t) => (
               <button
                 key={t.id}
-                onClick={() =>
-                  setView(
-                    "board",
-                    t.title.replace(
-                      CUSTOMER_PREFIX_RE,
-                      "",
-                    ),
-                  )
-                }
+                onClick={() => setOpenTask(t)}
                 className={[
                   "w-full text-left flex",
                   "items-center gap-2 py-1.5 text-xs",
@@ -127,5 +123,12 @@ export function TasksSection({
         )}
       </div>
     </CollapsibleSection>
+    {openTask && (
+      <TaskDetailDialog
+        task={openTask}
+        onClose={() => setOpenTask(null)}
+      />
+    )}
+    </>
   );
 }

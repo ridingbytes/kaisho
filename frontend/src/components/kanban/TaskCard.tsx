@@ -28,6 +28,7 @@ import { useSettings } from "../../hooks/useSettings";
 import { stripCustomerPrefix } from "../../utils/customerPrefix";
 import type { Task } from "../../types";
 
+import { Dialog } from "../common/Dialog";
 import { StatusPicker } from "./StatusPicker";
 import { TaskEditForm } from "./TaskEditForm";
 import { TaskCardActions } from "./TaskCardActions";
@@ -89,6 +90,8 @@ export function TaskCard({
     "",
   );
   const [editDeadline, setEditDeadline] = useState("");
+  const [editProject, setEditProject] = useState("");
+  const [editMilestone, setEditMilestone] = useState("");
   const { overlayUrl, openOverlay, closeOverlay } =
     useLinkOverlay();
   const updateTask = useUpdateTask();
@@ -118,6 +121,8 @@ export function TaskCard({
     setEditBody(task.body ?? "");
     setEditGithubUrl(task.github_url ?? "");
     setEditDeadline(task.deadline ?? "");
+    setEditProject(task.project ?? "");
+    setEditMilestone(task.milestone ?? "");
     setEditing(true);
   }
 
@@ -137,6 +142,8 @@ export function TaskCard({
           // emptying the input. ``""`` clears server-side;
           // an unchanged value just rewrites the same date.
           deadline: editDeadline,
+          project: editProject,
+          milestone: editMilestone,
         },
       },
       {
@@ -179,9 +186,10 @@ export function TaskCard({
         .filter(Boolean)
         .join(" ")}
     >
-      {/* Status color stripe */}
+      {/* Status color stripe — a 4px left accent matching
+          the project cards' colored left border. */}
       <div
-        className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-lg"
+        className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
         style={{ backgroundColor: statusColor }}
       />
 
@@ -235,7 +243,27 @@ export function TaskCard({
 
         {/* Card content */}
         <div className="flex-1 min-w-0 py-3 pr-3">
-          {editing ? (
+          <TaskCardContent
+            task={task}
+            customerColors={customerColors}
+            allTags={allTags}
+            isTimerRunning={isTimerRunning}
+            activeTimerStart={activeTimer?.start}
+            onStopTimer={() => stopClock.mutate()}
+            onCustomerClick={onCustomerClick}
+            onTagClick={onTagClick}
+            onHistoryOpen={() => setHistoryOpen(true)}
+            openOverlay={openOverlay}
+          />
+        </div>
+
+        {editing && (
+          <Dialog
+            open
+            onClose={() => setEditing(false)}
+            title={t("editTask")}
+            size="lg"
+          >
             <TaskEditForm
               taskId={task.id}
               editCustomer={editCustomer}
@@ -249,36 +277,21 @@ export function TaskCard({
                 setTaskTags.isPending
               }
               editDeadline={editDeadline}
+              editProject={editProject}
+              editMilestone={editMilestone}
               onCustomerChange={setEditCustomer}
               onTitleChange={setEditTitle}
               onBodyChange={setEditBody}
               onGithubUrlChange={setEditGithubUrl}
               onTagsChange={setEditTags}
               onDeadlineChange={setEditDeadline}
+              onProjectChange={setEditProject}
+              onMilestoneChange={setEditMilestone}
               onSave={handleSave}
               onCancel={() => setEditing(false)}
             />
-          ) : (
-            <TaskCardContent
-              task={task}
-              customerColors={customerColors}
-              allTags={allTags}
-              isTimerRunning={isTimerRunning}
-              activeTimerStart={
-                activeTimer?.start
-              }
-              onStopTimer={() =>
-                stopClock.mutate()
-              }
-              onCustomerClick={onCustomerClick}
-              onTagClick={onTagClick}
-              onHistoryOpen={() =>
-                setHistoryOpen(true)
-              }
-              openOverlay={openOverlay}
-            />
-          )}
-        </div>
+          </Dialog>
+        )}
 
         {/* Hover actions */}
         {!editing && !isDragOverlay && (

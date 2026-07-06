@@ -149,7 +149,14 @@ def _process_heading_line(
         heading.body.append(stripped)
         return
 
-    heading.body.append(line.rstrip("\n"))
+    # Strip the zero-width space the writer prepends to body
+    # lines that would otherwise be reparsed as headings or
+    # drawers (see writer._sanitize_body_line): escape on
+    # write, unescape on read so clients never see it.
+    body_line = line.rstrip("\n")
+    if body_line.startswith("\u200b"):
+        body_line = body_line[1:]
+    heading.body.append(body_line)
 
 
 def _insert_heading(headings: list[Heading], new_heading: Heading) -> None:

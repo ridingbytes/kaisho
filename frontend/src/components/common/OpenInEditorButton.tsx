@@ -12,7 +12,8 @@ export type EditorPanelKind =
   | "clocks"
   | "notes"
   | "inbox"
-  | "customers";
+  | "customers"
+  | "projects";
 
 interface Props {
   kind: EditorPanelKind;

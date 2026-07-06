@@ -123,6 +123,7 @@ class OrgClockBackend(ClockBackend):
         notes: str | None = None,
         contract: str | None = None,
         sync_id: str | None = None,
+        project: str | None = None,
     ) -> dict | None:
         return clocks.update_clock_entry(
             clocks_file=self._clocks_file,
@@ -137,6 +138,7 @@ class OrgClockBackend(ClockBackend):
             notes=notes,
             contract=contract,
             sync_id=sync_id,
+            project=project,
         )
 
     def merge_entries(

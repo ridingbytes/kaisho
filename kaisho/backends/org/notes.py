@@ -25,6 +25,7 @@ class OrgNotesBackend(NotesBackend):
         tags: list[str] | None = None,
         task_id: str | None = None,
         sync_id: str | None = None,
+        project: str | None = None,
     ) -> dict:
         return notes_service.add_note(
             notes_file=self._notes_file,
@@ -34,6 +35,7 @@ class OrgNotesBackend(NotesBackend):
             tags=tags,
             task_id=task_id,
             sync_id=sync_id,
+            project=project,
         )
 
     def reorder_notes(

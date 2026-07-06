@@ -283,6 +283,7 @@ def clock_to_entry(
     contract: str | None = None,
     sync_id: str | None = None,
     updated_at: str | None = None,
+    project: str | None = None,
 ) -> dict:
     """Convert a Clock model + metadata into a clock entry
     dict suitable for API responses.
@@ -316,6 +317,7 @@ def clock_to_entry(
         "invoiced": invoiced,
         "notes": notes or "",
         "contract": contract or None,
+        "project": project or None,
         "updated_at": updated_at,
     }
 
@@ -385,11 +387,13 @@ def heading_to_entry(
     )
     notes = extract_notes(heading)
     contract = heading.properties.get("CONTRACT") or None
+    project = heading.properties.get("PROJECT") or None
     sync_id, updated_at = ensure_sync_identity(heading)
     entry = clock_to_entry(
         clock, customer, desc,
         task_id, invoiced, notes, contract,
         sync_id=sync_id, updated_at=updated_at,
+        project=project,
     )
     if from_cloud:
         entry["from_cloud"] = True
@@ -690,6 +694,7 @@ def apply_property_updates(
     invoiced: bool | None,
     notes: str | None,
     contract: str | None,
+    project: str | None = None,
 ) -> None:
     """Apply optional property changes to a heading.
 
@@ -701,6 +706,7 @@ def apply_property_updates(
     :param invoiced: Invoice flag to set/clear.
     :param notes: Free-form notes to set/clear.
     :param contract: Contract name to set/clear.
+    :param project: Project id to set/clear.
     """
     if task_id is not None:
         if task_id == "":
@@ -724,6 +730,12 @@ def apply_property_updates(
             heading.properties["CONTRACT"] = contract
         else:
             heading.properties.pop("CONTRACT", None)
+        heading.dirty = True
+    if project is not None:
+        if project:
+            heading.properties["PROJECT"] = project
+        else:
+            heading.properties.pop("PROJECT", None)
         heading.dirty = True
 
 
@@ -779,6 +791,9 @@ def apply_sync_payload(
     )
     set_or_pop_property(
         props, "CONTRACT", fields.get("contract"),
+    )
+    set_or_pop_property(
+        props, "PROJECT", fields.get("project"),
     )
     if fields.get("invoiced"):
         props["INVOICED"] = "true"
@@ -1452,6 +1467,7 @@ def update_clock_entry(
     notes: str | None = None,
     contract: str | None = None,
     sync_id: str | None = None,
+    project: str | None = None,
 ) -> dict | None:
     """Update fields of a clock entry.
 
@@ -1506,6 +1522,7 @@ def update_clock_entry(
     apply_hours_update(heading, clock, hours)
     apply_property_updates(
         heading, task_id, invoiced, notes, contract,
+        project=project,
     )
     heading.properties.pop("FROM_CLOUD", None)
     heading.properties["UPDATED_AT"] = current_timestamp()
@@ -1527,6 +1544,7 @@ def update_clock_entry(
         "invoiced": invoiced,
         "notes": notes,
         "contract": contract,
+        "project": project,
     }
     delta = {k: v for k, v in changed.items() if v is not None}
     events.emit(events.CLOCK_UPDATED, {

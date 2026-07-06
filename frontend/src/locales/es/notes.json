@@ -5,5 +5,6 @@
   "addNote": "Añadir",
   "noNotesYet": "Aún no hay notas.",
   "noMatchingNotes": "No hay notas que coincidan.",
-  "deleted": "[eliminado]"
+  "deleted": "[eliminado]",
+  "editNote": "Editar nota"
 }

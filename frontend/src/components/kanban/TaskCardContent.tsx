@@ -6,23 +6,20 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ChevronDown,
-  ChevronRight,
+  ArrowUpRight,
   GitBranch,
   ListRestart,
-  Tag,
 } from "lucide-react";
 import { RelDate } from "../common/RelDate";
-import { ContentPopup } from "../common/ContentPopup";
+import { MarkdownDialog } from "../common/MarkdownDialog";
 import {
   handleLinkClick,
 } from "../common/LinkPopover";
 import { tagBadgeStyle } from "../../utils/tagColors";
-import { Markdown } from "../common/Markdown";
-import { TagDropdown } from "../common/TagDropdown";
-import { useSetTaskTags, useUpdateTask } from "../../hooks/useTasks";
+import { useUpdateTask } from "../../hooks/useTasks";
 import { stripCustomerPrefix } from "../../utils/customerPrefix";
 import { TimerBadge } from "./TimerBadge";
+import { ProjectBadge } from "../projects/ProjectBadge";
 import { TaskClockSection } from "./TaskClockSection";
 import type { Task } from "../../types";
 
@@ -69,11 +66,7 @@ export function TaskCardContent({
 }: TaskCardContentProps) {
   const { t } = useTranslation("kanban");
   const { t: tc } = useTranslation("common");
-  const [bodyExpanded, setBodyExpanded] = useState(
-    false,
-  );
-  const [tagging, setTagging] = useState(false);
-  const setTaskTags = useSetTaskTags();
+  const [showDesc, setShowDesc] = useState(false);
   const updateTask = useUpdateTask();
 
   function handleBodyToggle(md: string) {
@@ -85,32 +78,39 @@ export function TaskCardContent({
 
   return (
     <>
-      {task.customer && (
-        <div className="mb-1.5 flex items-center gap-1.5">
-          <button
-            onPointerDown={(e) =>
-              e.stopPropagation()
-            }
-            onClick={() =>
-              onCustomerClick?.(task.customer!)
-            }
-            className={[
-              "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded",
-              "text-2xs font-semibold tracking-wider uppercase",
-              "bg-cta-muted text-cta-hover",
-              "hover:bg-cta/10 transition-colors cursor-pointer",
-            ].join(" ")}
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full shrink-0"
-              style={{
-                background:
-                  customerColors[task.customer] ||
-                  "#a1a1aa",
-              }}
-            />
-            {task.customer}
-          </button>
+      {(task.customer ||
+        task.project ||
+        (isTimerRunning && activeTimerStart)) && (
+        <div className="mb-1.5 flex items-center gap-1.5 flex-wrap">
+          {task.customer && (
+            <button
+              onPointerDown={(e) =>
+                e.stopPropagation()
+              }
+              onClick={() =>
+                onCustomerClick?.(task.customer!)
+              }
+              className={[
+                "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded",
+                "text-2xs font-semibold tracking-wider uppercase",
+                "bg-cta-muted text-cta-hover",
+                "hover:bg-cta/10 transition-colors cursor-pointer",
+              ].join(" ")}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{
+                  background:
+                    customerColors[task.customer] ||
+                    "#a1a1aa",
+                }}
+              />
+              {task.customer}
+            </button>
+          )}
+          {task.project && (
+            <ProjectBadge projectId={task.project} />
+          )}
           {isTimerRunning && activeTimerStart && (
             <TimerBadge
               start={activeTimerStart}
@@ -124,56 +124,30 @@ export function TaskCardContent({
       </p>
       {task.body && (
         <div className="mb-1.5">
-          <div className="flex items-center gap-1">
-            <button
-              onPointerDown={(e) =>
-                e.stopPropagation()
-              }
-              onClick={() =>
-                setBodyExpanded((v) => !v)
-              }
-              className="flex items-center gap-1 text-2xs text-fg-muted hover:text-fg transition-colors"
-            >
-              {bodyExpanded ? (
-                <ChevronDown size={10} />
-              ) : (
-                <ChevronRight size={10} />
-              )}
-              {tc("description")}
-            </button>
-            <span
-              onPointerDown={(e) =>
-                e.stopPropagation()
-              }
-            >
-              <ContentPopup
-                content={task.body}
-                title={stripCustomerPrefix(
-                  task.title,
-                )}
-                markdown
-                iconSize={9}
-                onCheckboxToggle={handleBodyToggle}
-              />
-            </span>
-          </div>
-          {bodyExpanded && (
-            <div
-              className="mt-1 pl-1 border-l border-border-subtle"
-              onPointerDown={(e) =>
-                e.stopPropagation()
-              }
-            >
-              <Markdown
-                className="text-xs text-fg [&_p]:mb-1 [&_p]:leading-relaxed break-words [&_a]:break-all"
-                onLinkClick={openOverlay}
-                onCheckboxToggle={handleBodyToggle}
-              >
-                {task.body}
-              </Markdown>
-            </div>
-          )}
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setShowDesc(true)}
+            className="flex items-center gap-1 text-2xs text-fg-muted hover:text-fg transition-colors"
+          >
+            <ArrowUpRight size={10} />
+            {tc("description")}
+          </button>
         </div>
+      )}
+      {showDesc && (
+        <span onPointerDown={(e) => e.stopPropagation()}>
+          <MarkdownDialog
+            title={stripCustomerPrefix(task.title)}
+            value={task.body}
+            bucketId={task.id}
+            saving={updateTask.isPending}
+            onSave={(md) => {
+              handleBodyToggle(md);
+              setShowDesc(false);
+            }}
+            onClose={() => setShowDesc(false)}
+          />
+        </span>
       )}
       <div className="flex items-center gap-2 flex-wrap">
         {task.github_url && (
@@ -194,72 +168,31 @@ export function TaskCardContent({
             #{extractIssueNumber(task.github_url)}
           </a>
         )}
-        {tagging ? (
-          <div
-            onPointerDown={(e) =>
-              e.stopPropagation()
-            }
-          >
-            <TagDropdown
-              selected={task.tags}
-              allTags={allTags}
-              autoOpen
-              addOnly
-              onChange={(tags) => {
-                setTaskTags.mutate({
-                  taskId: task.id,
-                  tags,
-                });
-              }}
-            />
-          </div>
-        ) : (
-          <>
-            {task.tags.map((tagName) => {
-              const def = allTags.find(
-                (t) => t.name === tagName,
-              );
-              return def ? (
-                <button
-                  key={tagName}
-                  onPointerDown={(e) =>
-                    e.stopPropagation()
-                  }
-                  onClick={() =>
-                    onTagClick?.(tagName)
-                  }
-                  className="px-1.5 py-0.5 rounded text-2xs font-semibold hover:opacity-80 transition-opacity"
-                  style={tagBadgeStyle(def.color)}
-                >
-                  {tagName}
-                </button>
-              ) : (
-                <button
-                  key={tagName}
-                  onPointerDown={(e) =>
-                    e.stopPropagation()
-                  }
-                  onClick={() =>
-                    onTagClick?.(tagName)
-                  }
-                  className="px-1.5 py-0.5 rounded text-2xs font-medium bg-surface-overlay text-fg border border-border-subtle hover:border-cta hover:text-cta transition-colors"
-                >
-                  {tagName}
-                </button>
-              );
-            })}
+        {task.tags.map((tagName) => {
+          const def = allTags.find(
+            (t) => t.name === tagName,
+          );
+          return def ? (
             <button
-              onPointerDown={(e) =>
-                e.stopPropagation()
-              }
-              onClick={() => setTagging(true)}
-              className="p-0.5 rounded text-fg-subtle hover:text-cta transition-colors"
-              title={t("editTags")}
+              key={tagName}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => onTagClick?.(tagName)}
+              className="px-1.5 py-0.5 rounded text-2xs font-semibold hover:opacity-80 transition-opacity"
+              style={tagBadgeStyle(def.color)}
             >
-              <Tag size={10} />
+              {tagName}
             </button>
-          </>
-        )}
+          ) : (
+            <button
+              key={tagName}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => onTagClick?.(tagName)}
+              className="px-1.5 py-0.5 rounded text-2xs font-medium bg-surface-overlay text-fg border border-border-subtle hover:border-cta hover:text-cta transition-colors"
+            >
+              {tagName}
+            </button>
+          );
+        })}
         <span className="ml-auto flex items-center gap-1 shrink-0">
           <RelDate
             date={task.created}

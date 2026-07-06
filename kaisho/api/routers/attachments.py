@@ -22,6 +22,7 @@ from pathlib import Path
 from fastapi import (
     APIRouter, File, Form, HTTPException, UploadFile,
 )
+from pydantic import BaseModel
 from starlette.responses import FileResponse
 
 from ...config import get_config
@@ -86,9 +87,11 @@ async def upload_attachment(
     """Persist an uploaded file and return its URL.
 
     :param file: multipart file upload.
-    :param task_id: optional task id to bucket the file
-        under so attachments live alongside the task they
-        belong to.
+    :param task_id: the bucket to store the file under
+        (any owning entity id -- a task id, or a project id
+        for the project files panel). Named ``task_id`` for
+        backwards compatibility; treated purely as an opaque
+        bucket segment.
     :returns: ``{"url": str, "name": str, "size": int}``.
     """
     bucket = _safe_segment(task_id, "_misc")
@@ -167,6 +170,132 @@ _INLINE_IMAGE_MIMES = frozenset({
 })
 
 
+@router.get("/{bucket}")
+def list_bucket(bucket: str):
+    """List the files stored in a bucket.
+
+    Used by the project workspace to show and manage the
+    files dragged into a project (bucket = project id).
+    Returns the stored name (for URL / delete), a display
+    name with the random prefix stripped, the serve URL,
+    and the size.
+    """
+    safe_bucket = _safe_segment(bucket, "_misc")
+    root = _attachments_root()
+    bucket_dir = _resolve_within(root, root / safe_bucket)
+    if not bucket_dir.is_dir():
+        return {"files": []}
+    files = []
+    for path in sorted(bucket_dir.iterdir()):
+        if not path.is_file():
+            continue
+        stored = path.name
+        # Stored names are ``<8-hex>-<name>``; strip the
+        # prefix for a friendlier display name.
+        display = (
+            stored[9:]
+            if len(stored) > 9 and stored[8] == "-"
+            else stored
+        )
+        files.append({
+            "name": stored,
+            "display": display,
+            "url": f"/api/attachments/{safe_bucket}/{stored}",
+            "size": path.stat().st_size,
+        })
+    return {"files": files}
+
+
+# Text files up to this size can be viewed / edited in
+# place (markdown, notes, small text/code).
+_MAX_TEXT_BYTES = 1024 * 1024  # 1 MiB
+
+
+@router.get("/{bucket}/{filename}/raw")
+def get_attachment_text(bucket: str, filename: str):
+    """Return an attachment's UTF-8 text content.
+
+    Used by the project file viewer to render / edit
+    markdown and text files. Refuses binary or oversized
+    files so the endpoint can't be used to slurp blobs.
+    """
+    safe_bucket = _safe_segment(bucket, "_misc")
+    safe_file = _safe_segment(filename, "upload")
+    root = _attachments_root()
+    target = _resolve_within(
+        root, root / safe_bucket / safe_file,
+    )
+    if not target.is_file():
+        raise HTTPException(
+            status_code=404, detail="attachment not found",
+        )
+    if target.stat().st_size > _MAX_TEXT_BYTES:
+        raise HTTPException(
+            status_code=413, detail="file too large to edit",
+        )
+    try:
+        content = target.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, ValueError):
+        raise HTTPException(
+            status_code=415, detail="not a text file",
+        )
+    return {"content": content}
+
+
+class _TextBody(BaseModel):
+    content: str
+
+
+@router.put("/{bucket}/{filename}")
+def put_attachment_text(
+    bucket: str, filename: str, body: _TextBody,
+):
+    """Replace a text attachment's content in place."""
+    safe_bucket = _safe_segment(bucket, "_misc")
+    safe_file = _safe_segment(filename, "upload")
+    root = _attachments_root()
+    target = _resolve_within(
+        root, root / safe_bucket / safe_file,
+    )
+    if not target.is_file():
+        raise HTTPException(
+            status_code=404, detail="attachment not found",
+        )
+    # Only replace files that are already text, so a stray
+    # call can't clobber a binary attachment (PNG/PDF) with
+    # UTF-8 text.
+    try:
+        target.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, ValueError):
+        raise HTTPException(
+            status_code=415,
+            detail="not an editable text file",
+        )
+    data = body.content.encode("utf-8")
+    if len(data) > _MAX_TEXT_BYTES:
+        raise HTTPException(
+            status_code=413, detail="content too large",
+        )
+    target.write_bytes(data)
+    return {"ok": True, "size": len(data)}
+
+
+@router.delete("/{bucket}/{filename}", status_code=204)
+def delete_attachment(bucket: str, filename: str):
+    """Delete a single attachment from a bucket."""
+    safe_bucket = _safe_segment(bucket, "_misc")
+    safe_file = _safe_segment(filename, "upload")
+    root = _attachments_root()
+    target = _resolve_within(
+        root, root / safe_bucket / safe_file,
+    )
+    if not target.is_file():
+        raise HTTPException(
+            status_code=404, detail="attachment not found",
+        )
+    target.unlink()
+
+
 @router.get("/{bucket}/{filename}")
 def get_attachment(bucket: str, filename: str):
     """Serve a previously uploaded attachment.
@@ -188,25 +317,50 @@ def get_attachment(bucket: str, filename: str):
             status_code=404, detail="attachment not found",
         )
     mime, _ = mimetypes.guess_type(target)
-    inline = (mime or "") in _INLINE_IMAGE_MIMES
-    headers = {
-        "X-Content-Type-Options": "nosniff",
-        "Content-Security-Policy": (
-            "default-src 'none'; sandbox"
-        ),
-    }
-    if inline:
+    nosniff = {"X-Content-Type-Options": "nosniff"}
+
+    # Raster images serve inline under a strict sandboxing
+    # CSP (images don't need scripts, so the CSP is free
+    # protection against a crafted HTML/SVG upload).
+    if (mime or "") in _INLINE_IMAGE_MIMES:
         return FileResponse(
-            target, media_type=mime, headers=headers,
+            target,
+            media_type=mime,
+            headers={
+                **nosniff,
+                "Content-Security-Policy": (
+                    "default-src 'none'; sandbox"
+                ),
+            },
         )
-    # Strip the original filename's path bits before
-    # echoing into Content-Disposition.
+
+    # PDFs render inline in the browser's built-in viewer.
+    # The sandbox CSP would blank it, so we omit it here;
+    # the browser runs any embedded PDF script in its own
+    # isolated engine, not in the app's origin.
+    if mime == "application/pdf":
+        return FileResponse(
+            target,
+            media_type="application/pdf",
+            headers={
+                **nosniff,
+                "Content-Disposition": "inline",
+            },
+        )
+
+    # Everything else is forced to download so user-supplied
+    # HTML / SVG cannot XSS the app.
     display = safe_file or "download"
-    headers["Content-Disposition"] = (
-        f'attachment; filename="{display}"'
-    )
     return FileResponse(
         target,
         media_type="application/octet-stream",
-        headers=headers,
+        headers={
+            **nosniff,
+            "Content-Security-Policy": (
+                "default-src 'none'; sandbox"
+            ),
+            "Content-Disposition": (
+                f'attachment; filename="{display}"'
+            ),
+        },
     )

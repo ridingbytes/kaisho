@@ -5,5 +5,6 @@
   "addNote": "Hinzufügen",
   "noNotesYet": "Noch keine Notizen.",
   "noMatchingNotes": "Keine passenden Notizen.",
-  "deleted": "[gelöscht]"
+  "deleted": "[gelöscht]",
+  "editNote": "Notiz bearbeiten"
 }

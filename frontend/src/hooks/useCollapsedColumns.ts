@@ -27,8 +27,8 @@ import {
 const STORAGE_KEY = "board_collapsed_columns";
 const CHANGE_EVENT = "collapsed-columns-change";
 
-function load(): Set<string> {
-  const raw = profileGet(STORAGE_KEY);
+function load(key: string): Set<string> {
+  const raw = profileGet(key);
   if (!raw) return new Set();
   try {
     const parsed = JSON.parse(raw) as unknown;
@@ -46,28 +46,31 @@ function load(): Set<string> {
   return new Set();
 }
 
-function persist(state: Set<string>): void {
-  profileSet(
-    STORAGE_KEY, JSON.stringify(Array.from(state)),
-  );
-  window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
+function persist(key: string, state: Set<string>): void {
+  profileSet(key, JSON.stringify(Array.from(state)));
+  window.dispatchEvent(new CustomEvent(`${CHANGE_EVENT}:${key}`));
 }
 
-export function useCollapsedColumns(): {
+export function useCollapsedColumns(
+  storageKey: string = STORAGE_KEY,
+): {
   isCollapsed: (name: string) => boolean;
   toggle: (name: string) => void;
 } {
-  const [state, setState] = useState<Set<string>>(load);
+  const [state, setState] = useState<Set<string>>(() =>
+    load(storageKey),
+  );
 
   useEffect(() => {
     function onChange() {
-      setState(load());
+      setState(load(storageKey));
     }
-    window.addEventListener(CHANGE_EVENT, onChange);
+    const evt = `${CHANGE_EVENT}:${storageKey}`;
+    window.addEventListener(evt, onChange);
     return () => {
-      window.removeEventListener(CHANGE_EVENT, onChange);
+      window.removeEventListener(evt, onChange);
     };
-  }, []);
+  }, [storageKey]);
 
   const isCollapsed = useCallback(
     (name: string) => state.has(name),
@@ -81,9 +84,9 @@ export function useCollapsedColumns(): {
     } else {
       next.add(name);
     }
-    persist(next);
+    persist(storageKey, next);
     setState(next);
-  }, [state]);
+  }, [state, storageKey]);
 
   return { isCollapsed, toggle };
 }

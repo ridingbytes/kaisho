@@ -202,6 +202,36 @@ Requires \`GITHUB_TOKEN\` (or gh CLI auth) to be configured. Set the
 \`REPO\` property on a customer to include it.
 `,
 
+  projects: `
+# Projects
+
+A project is the aggregation hub for a piece of work: it
+belongs to a customer and gathers its tasks, time, notes,
+and files in one place, with a description and milestones.
+
+**Create** — "New project", give it a name and optional
+customer. Open a project to edit its description, add
+milestones, and assign work.
+
+**Milestones** — a simple checklist with optional due
+dates; check them off as you go. The card shows progress.
+
+**Tasks** — assign existing tasks to the project from the
+Tasks tab. Assigned tasks show here and their logged time
+rolls up automatically under the Time tab.
+
+**Time** — every clock entry logged against an assigned
+task (or assigned directly to the project) counts toward
+the project total.
+
+**Files** — drag and drop files straight into the Files
+tab to keep everything for the project together. Files are
+stored with the profile.
+
+**Status** — Active, On hold, Completed, or Archived.
+Archived projects are hidden unless you show them.
+`,
+
   automations: `
 # Automations (Webhooks)
 

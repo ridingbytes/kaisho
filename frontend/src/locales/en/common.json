@@ -51,7 +51,6 @@
   "inactive": "Inactive",
   "stopped": "Stopped",
   "resume": "Resume",
-  "clear": "Clear",
   "closed": "closed",
   "expand": "Expand",
   "collapse": "Collapse",
@@ -109,5 +108,8 @@
   "filterInvalid": "Invalid regex -- filter is ignored until you fix it",
   "cmdEnterToSave": "⌘↵ to save",
   "noCustomer": "No customer",
-  "dismiss": "Dismiss"
+  "dismiss": "Dismiss",
+  "write": "Write",
+  "preview": "Preview",
+  "nothingToPreview": "Nothing to preview."
 }

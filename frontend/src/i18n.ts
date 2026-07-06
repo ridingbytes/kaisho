@@ -18,6 +18,7 @@ import navEn from "./locales/en/nav.json";
 import clocksEn from "./locales/en/clocks.json";
 import kanbanEn from "./locales/en/kanban.json";
 import customersEn from "./locales/en/customers.json";
+import projectsEn from "./locales/en/projects.json";
 import settingsEn from "./locales/en/settings.json";
 import inboxEn from "./locales/en/inbox.json";
 import advisorEn from "./locales/en/advisor.json";
@@ -34,6 +35,7 @@ import navEs from "./locales/es/nav.json";
 import clocksEs from "./locales/es/clocks.json";
 import kanbanEs from "./locales/es/kanban.json";
 import customersEs from "./locales/es/customers.json";
+import projectsEs from "./locales/es/projects.json";
 import settingsEs from "./locales/es/settings.json";
 import inboxEs from "./locales/es/inbox.json";
 import advisorEs from "./locales/es/advisor.json";
@@ -50,6 +52,7 @@ import navDe from "./locales/de/nav.json";
 import clocksDe from "./locales/de/clocks.json";
 import kanbanDe from "./locales/de/kanban.json";
 import customersDe from "./locales/de/customers.json";
+import projectsDe from "./locales/de/projects.json";
 import settingsDe from "./locales/de/settings.json";
 import inboxDe from "./locales/de/inbox.json";
 import advisorDe from "./locales/de/advisor.json";
@@ -66,6 +69,7 @@ import navRu from "./locales/ru/nav.json";
 import clocksRu from "./locales/ru/clocks.json";
 import kanbanRu from "./locales/ru/kanban.json";
 import customersRu from "./locales/ru/customers.json";
+import projectsRu from "./locales/ru/projects.json";
 import settingsRu from "./locales/ru/settings.json";
 import inboxRu from "./locales/ru/inbox.json";
 import advisorRu from "./locales/ru/advisor.json";
@@ -113,6 +117,7 @@ i18n.use(initReactI18next).init({
       clocks: clocksEn,
       kanban: kanbanEn,
       customers: customersEn,
+      projects: projectsEn,
       settings: settingsEn,
       inbox: inboxEn,
       advisor: advisorEn,
@@ -128,6 +133,7 @@ i18n.use(initReactI18next).init({
       clocks: clocksDe,
       kanban: kanbanDe,
       customers: customersDe,
+      projects: projectsDe,
       settings: settingsDe,
       inbox: inboxDe,
       advisor: advisorDe,
@@ -143,6 +149,7 @@ i18n.use(initReactI18next).init({
       clocks: clocksEs,
       kanban: kanbanEs,
       customers: customersEs,
+      projects: projectsEs,
       settings: settingsEs,
       inbox: inboxEs,
       advisor: advisorEs,
@@ -158,6 +165,7 @@ i18n.use(initReactI18next).init({
       clocks: clocksRu,
       kanban: kanbanRu,
       customers: customersRu,
+      projects: projectsRu,
       settings: settingsRu,
       inbox: inboxRu,
       advisor: advisorRu,

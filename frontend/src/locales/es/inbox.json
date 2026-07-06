@@ -19,5 +19,6 @@
   "emailChannel": "Correo electrónico",
   "phoneChannel": "Teléfono",
   "chatChannel": "Chat",
-  "otherChannel": "Otro"
+  "otherChannel": "Otro",
+  "editItem": "Editar elemento"
 }

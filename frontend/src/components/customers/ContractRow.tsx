@@ -3,9 +3,10 @@
  * editing, budget bar, and delete action.
  */
 import { useState } from "react";
-import { Pencil, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { Dialog } from "../common/Dialog";
 import { EditFooter } from "../common/EditFooter";
 import { HoverActions } from "../common/HoverActions";
 import {
@@ -115,20 +116,13 @@ export function ContractRow({
     if (e.key === "Escape") setEditing(false);
   }
 
-  if (editing) {
-    // Label cell — small uppercase eyebrow above the
-    // input. Without labels the form is impossible to
-    // read once the user has typed (the placeholder
-    // disappears and '40' on its own gives no context).
-    const labelCls =
-      "text-2xs text-fg-muted uppercase tracking-wider";
-    return (
-      <div
-        className={
-          "flex flex-col gap-2 py-2 border-b "
-          + "border-border-subtle last:border-0"
-        }
-      >
+  // Label cell — small uppercase eyebrow above the input,
+  // so a typed value keeps its context after the placeholder
+  // disappears.
+  const labelCls =
+    "text-2xs text-fg-muted uppercase tracking-wider";
+  const editForm = (
+      <div className="flex flex-col gap-2">
         <div className="grid grid-cols-3 gap-2">
           <label className="flex flex-col gap-0.5 min-w-0">
             <span className={labelCls}>{tc("name")}</span>
@@ -268,22 +262,24 @@ export function ContractRow({
           showHint={false}
         />
       </div>
-    );
-  }
+  );
 
   return (
+    <>
     <div className="group py-1">
-      {/* Row 1: name */}
-      <p
+      {/* Row 1: name — click to edit */}
+      <button
+        onClick={startEdit}
         className={[
-          "text-xs font-medium truncate mb-1",
+          "text-xs font-medium truncate mb-1 text-left",
+          "hover:text-cta",
           isActive
             ? "text-fg-strong"
             : "text-fg-muted",
         ].join(" ")}
       >
         {contract.name}
-      </p>
+      </button>
       {/* Row 2: hours + badge + actions */}
       <div className="flex items-center gap-1 mb-1">
         <span
@@ -325,17 +321,6 @@ export function ContractRow({
           </span>
         )}
         <HoverActions className="gap-0.5 ml-auto">
-          <button
-            onClick={startEdit}
-            className={
-              "p-0.5 rounded text-fg-subtle "
-              + "hover:text-cta hover:bg-cta-muted "
-              + "transition-colors"
-            }
-            title={tc("edit")}
-          >
-            <Pencil size={10} />
-          </button>
           <ConfirmPopover
             onConfirm={() =>
               deleteContract.mutate({
@@ -389,5 +374,16 @@ export function ContractRow({
         </p>
       )}
     </div>
+    {editing && (
+      <Dialog
+        open
+        onClose={() => setEditing(false)}
+        title={t("editContract", "Edit contract")}
+        size="lg"
+      >
+        {editForm}
+      </Dialog>
+    )}
+    </>
   );
 }

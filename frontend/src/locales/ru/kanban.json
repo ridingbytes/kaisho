@@ -31,5 +31,6 @@
   "githubIssueUrl": "URL issue на GitHub",
   "filterIssues": "Фильтр issues...",
   "entryCount": "{{count}} запись",
-  "entriesCount": "{{count}} записей"
+  "entriesCount": "{{count}} записей",
+  "editTask": "Изменить задачу"
 }

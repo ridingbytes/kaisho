@@ -14,10 +14,14 @@ import {
   Trash2,
 } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { Dialog } from "../common/Dialog";
 import { BudgetBar } from "./BudgetBar";
 import { ContractsSection } from "./ContractsSection";
 import { TasksSection } from "./TasksSection";
 import { TimeEntriesSection } from "./TimeEntriesSection";
+import { CustomerProjectsSection } from "./CustomerProjectsSection";
+import { CustomerNotesSection } from "./CustomerNotesSection";
+import { CustomerFilesSection } from "./CustomerFilesSection";
 import { AddContractForm } from "./AddContractForm";
 import { QuickBookForm } from "./QuickBookForm";
 import { InvoicePanel } from "./InvoicePanel";
@@ -76,15 +80,7 @@ export function CustomerCard({ customer: c }: Props) {
           : "border-border",
       ].join(" ")}
     >
-      {editing ? (
-        <CustomerEditForm
-          customer={c}
-          form={form}
-          setForm={setForm}
-          onClose={() => setEditing(false)}
-        />
-      ) : (
-        <>
+      <>
           {/* Header */}
           <div
             className={
@@ -222,15 +218,18 @@ export function CustomerCard({ customer: c }: Props) {
           {/* Collapsible sections */}
           <div
             className={
-              "border-t border-border-subtle pt-2 "
-              + "mt-1 flex flex-col gap-1"
+              "border-t border-border-subtle mt-1 "
+              + "rounded-lg divide-y divide-border-subtle"
             }
           >
+            <CustomerProjectsSection customerName={c.name} />
             <TasksSection customerName={c.name} />
             <TimeEntriesSection
               customerName={c.name}
               contracts={c.contracts}
             />
+            <CustomerNotesSection customerName={c.name} />
+            <CustomerFilesSection customerName={c.name} />
           </div>
 
           {/* Actions */}
@@ -241,20 +240,30 @@ export function CustomerCard({ customer: c }: Props) {
             }
           >
             {addingContract && (
-              <AddContractForm
-                customerName={c.name}
-                onDone={() =>
-                  setAddingContract(false)
-                }
-              />
+              <Dialog
+                open
+                onClose={() => setAddingContract(false)}
+                title={t("addContract")}
+              >
+                <AddContractForm
+                  customerName={c.name}
+                  onDone={() => setAddingContract(false)}
+                />
+              </Dialog>
             )}
             {booking && (
-              <QuickBookForm
-                customerName={c.name}
-                contracts={c.contracts}
-                defaultContract={activeContract}
-                onDone={() => setBooking(false)}
-              />
+              <Dialog
+                open
+                onClose={() => setBooking(false)}
+                title={t("bookTime")}
+              >
+                <QuickBookForm
+                  customerName={c.name}
+                  contracts={c.contracts}
+                  defaultContract={activeContract}
+                  onDone={() => setBooking(false)}
+                />
+              </Dialog>
             )}
             {invoicing && (
               <InvoicePanel
@@ -262,9 +271,7 @@ export function CustomerCard({ customer: c }: Props) {
                 onClose={() => setInvoicing(false)}
               />
             )}
-            {!addingContract
-              && !booking
-              && !invoicing && (
+            {(
               <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() =>
@@ -293,6 +300,20 @@ export function CustomerCard({ customer: c }: Props) {
             )}
           </div>
         </>
+      {editing && (
+        <Dialog
+          open
+          onClose={() => setEditing(false)}
+          title={t("editCustomer", "Edit customer")}
+          size="lg"
+        >
+          <CustomerEditForm
+            customer={c}
+            form={form}
+            setForm={setForm}
+            onClose={() => setEditing(false)}
+          />
+        </Dialog>
       )}
     </div>
   );

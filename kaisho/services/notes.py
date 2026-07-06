@@ -5,6 +5,7 @@ from ..org.models import Heading, OrgFile
 from ..org.parser import parse_org_file
 from ..org.writer import write_org_file
 from ..time_utils import local_now
+from .attachments_gc import reap_removed_attachments
 from .knowledge import write_kb_markdown
 from .clocks import (
     current_timestamp,
@@ -47,6 +48,7 @@ def _heading_to_note(heading: Heading) -> dict:
         "title": title,
         "customer": customer,
         "task_id": heading.properties.get("TASK_ID") or None,
+        "project": heading.properties.get("PROJECT") or None,
         "body": body,
         "tags": list(heading.tags),
         "created": heading.properties.get("CREATED", ""),
@@ -124,6 +126,7 @@ def add_note(
     tags: list[str] | None = None,
     task_id: str | None = None,
     sync_id: str | None = None,
+    project: str | None = None,
 ) -> dict:
     """Append a new note to notes.org and return its dict."""
     now = local_now()
@@ -139,6 +142,8 @@ def add_note(
     }
     if task_id:
         props["TASK_ID"] = task_id
+    if project:
+        props["PROJECT"] = project
 
     new_heading = Heading(
         level=1,
@@ -201,8 +206,12 @@ def update_note(
         else:
             heading.title = new_title
     if "body" in updates:
+        old_body = "\n".join(heading.body)
         heading.body = (
             updates["body"].splitlines() if updates["body"] else []
+        )
+        reap_removed_attachments(
+            old_body, updates["body"] or "", owner_bucket=note_id,
         )
     if "tags" in updates:
         heading.tags = list(updates["tags"])
@@ -212,6 +221,12 @@ def update_note(
             heading.properties["TASK_ID"] = tid
         else:
             heading.properties.pop("TASK_ID", None)
+    if "project" in updates:
+        pid = updates["project"]
+        if pid:
+            heading.properties["PROJECT"] = pid
+        else:
+            heading.properties.pop("PROJECT", None)
     heading.properties["UPDATED_AT"] = current_timestamp()
     ensure_sync_identity(heading)
     write_org_file(notes_file, org_file)

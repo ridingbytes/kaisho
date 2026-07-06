@@ -7,6 +7,8 @@ testable without HTTP.
 from collections import defaultdict
 from datetime import date
 
+from ..config import get_config
+from . import projects as projects_svc
 from .time_insights import (
     billable_contracts,
     is_billable,
@@ -37,6 +39,46 @@ def is_aging_item(item: dict) -> bool:
     return (date.today() - created_date).days > 7
 
 
+def build_project_cards(backend) -> list[dict]:
+    """Summarize active projects for the dashboard widget.
+
+    Builds a project-id -> minutes map in a single pass over
+    tasks and clock entries, so cost is O(tasks + entries)
+    regardless of project count. Time rolls up the same way
+    the project workspace does: an entry assigned directly,
+    or logged against an assigned task.
+    """
+    projects = projects_svc.list_projects(
+        get_config().PROJECTS_FILE,
+    )
+    active = [
+        p for p in projects if p["status"] == "ACTIVE"
+    ][:8]
+    if not active:
+        return []
+    stats = projects_svc.project_stats(
+        backend, {p["id"] for p in active},
+    )
+    cards = []
+    for p in active:
+        pid = p["id"]
+        ms = p["milestones"]
+        s = stats.get(pid, {"task_count": 0, "minutes": 0})
+        cards.append({
+            "id": pid,
+            "name": p["name"],
+            "customer": p.get("customer"),
+            "color": p.get("color", ""),
+            "task_count": s["task_count"],
+            "milestones_done": sum(
+                1 for m in ms if m["done"]
+            ),
+            "milestones_total": len(ms),
+            "minutes": s["minutes"],
+        })
+    return cards
+
+
 def build_summary(backend) -> dict:
     """Assemble the dashboard summary metrics."""
     inbox_items = backend.inbox.list_items()
@@ -64,6 +106,7 @@ def build_summary(backend) -> dict:
         "aging_inbox": sum(
             1 for i in inbox_items if is_aging_item(i)
         ),
+        "projects": build_project_cards(backend),
     }
 
 

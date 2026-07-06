@@ -22,19 +22,18 @@ import {
   ArrowRightLeft,
   Check,
   GripVertical,
-  Pencil,
   Plus,
   Trash2,
   X,
 } from "lucide-react";
 import { CollapsibleSection } from "../common/CollapsibleSection";
-import { ContentPopup } from "../common/ContentPopup";
-import { Markdown } from "../common/Markdown";
 import { Button } from "../common/Button";
+import { Dialog } from "../common/Dialog";
 import { HelpButton } from "../common/HelpButton";
+import { MarkdownEditor } from "../common/MarkdownEditor";
 import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { PanelToolbar } from "../common/PanelToolbar";
-import { TagDropdown } from "../common/TagDropdown";
+import { TagInput } from "../common/TagInput";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import {
   useFileDropOnTextarea,
@@ -128,8 +127,8 @@ function NoteRow({
   const updateNote = useUpdateNote();
   const move = useMoveNote();
 
-  function startEdit(e: React.MouseEvent) {
-    e.stopPropagation();
+  function startEdit(e?: React.MouseEvent) {
+    e?.stopPropagation();
     setEditTitle(note.title);
     setEditBody(note.body ?? "");
     setEditCustomer(note.customer ?? "");
@@ -137,7 +136,6 @@ function NoteRow({
     setEditTaskId(note.task_id ?? null);
     setEditTaskTitle("");
     setEditing(true);
-    setExpanded(true);
   }
 
   function doSave() {
@@ -161,17 +159,11 @@ function NoteRow({
     doSave();
   }
 
-  function cancelEdit(e: React.MouseEvent) {
-    e.stopPropagation();
+  function cancelEdit(e?: React.MouseEvent) {
+    e?.stopPropagation();
     setEditing(false);
   }
 
-  function handleBodyToggle(md: string) {
-    updateNote.mutate({
-      noteId: note.id,
-      updates: { body: md },
-    });
-  }
 
   function handleContextMenu(e: React.MouseEvent) {
     e.preventDefault();
@@ -263,7 +255,7 @@ function NoteRow({
     >
       <div
         className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-surface-raised transition-colors"
-        onClick={() => !editing && setExpanded((v) => !v)}
+        onClick={() => !editing && startEdit()}
         onContextMenu={handleContextMenu}
       >
         <button
@@ -328,16 +320,6 @@ function NoteRow({
         <span className="text-sm text-fg-strong flex-1 truncate">
           {note.title}
         </span>
-        {note.body && (
-          <span onClick={(e) => e.stopPropagation()}>
-            <ContentPopup
-              content={note.body}
-              title={note.title}
-              markdown
-              onCheckboxToggle={handleBodyToggle}
-            />
-          </span>
-        )}
         {note.tags?.map((tagName) => {
           const def = allTags.find((t) => t.name === tagName);
           return (
@@ -355,13 +337,6 @@ function NoteRow({
             </button>
           );
         })}
-        <button
-          onClick={startEdit}
-          className="text-fg-subtle hover:text-cta transition-colors shrink-0"
-          title="Edit"
-        >
-          <Pencil size={12} />
-        </button>
         <div className="relative shrink-0">
           <button
             title="Move"
@@ -412,12 +387,13 @@ function NoteRow({
         </ConfirmPopover>
       </div>
 
-      {expanded && (
-        <div
-          className="px-4 pb-3 flex flex-col gap-2"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {editing ? (
+      {editing && (
+            <Dialog
+              open
+              onClose={cancelEdit}
+              title={t("editNote", "Edit note")}
+              size="lg"
+            >
             <div className="flex flex-col gap-2">
               <div className="flex gap-2">
                 <input
@@ -442,6 +418,11 @@ function NoteRow({
                   inputClassName={`w-full ${smallFieldCls}`}
                 />
               </div>
+              <TagInput
+                value={editTags}
+                onChange={setEditTags}
+                suggestions={allTags}
+              />
               <TaskAutocomplete
                 taskId={editTaskId}
                 value={editTaskTitle}
@@ -457,30 +438,22 @@ function NoteRow({
                 customer={editCustomer}
                 inputClassName={smallFieldCls}
               />
-              <textarea
-                ref={editBodyRef}
+              <MarkdownEditor
                 value={editBody}
-                onChange={(e) => setEditBody(e.target.value)}
-                onKeyDown={(e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                onChange={setEditBody}
+                bucketId={note.id}
+                rows={8}
+                placeholder={t("bodyOptional")}
+                onKeyDown={(e: React.KeyboardEvent) => {
+                  if (
+                    (e.metaKey || e.ctrlKey) &&
+                    e.key === "Enter"
+                  ) {
                     e.preventDefault();
                     doSave();
                   }
                 }}
-                onDrop={editDrop.onDrop}
-                onDragOver={editDrop.onDragOver}
-                onPaste={editDrop.onPaste}
-                placeholder={t("bodyOptional")}
-                rows={8}
-                className={`${smallFieldCls} w-full resize-y`}
               />
-              {editDrop.uploading > 0 && (
-                <div className="text-2xs text-fg-muted px-0.5">
-                  {tc("uploadingAttachment", {
-                    count: editDrop.uploading,
-                  })}
-                </div>
-              )}
               {editDrop.error && (
                 <div className="text-2xs text-red-500 px-0.5">
                   {editDrop.error}
@@ -490,11 +463,6 @@ function NoteRow({
                 <span className="text-2xs text-fg-subtle">
                   ⌘↵ save
                 </span>
-                <TagDropdown
-                  selected={editTags}
-                  allTags={allTags}
-                  onChange={setEditTags}
-                />
                 <div className="ml-auto flex gap-2">
                   <button
                     onClick={cancelEdit}
@@ -515,17 +483,14 @@ function NoteRow({
                 </div>
               </div>
             </div>
-          ) : (
-            note.body && (
-              <Markdown
-                className="text-sm text-fg-strong"
-                onCheckboxToggle={handleBodyToggle}
-              >
-                {note.body}
-              </Markdown>
-            )
-          )}
+            </Dialog>
+      )}
 
+      {expanded && (
+        <div
+          className="px-4 pb-3 flex flex-col gap-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Move sub-panel (task/kb need input) */}
           {moving && moveDest === "task" && (
             <div
@@ -699,6 +664,11 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
           inputClassName={`w-full ${fieldCls}`}
         />
       </div>
+      <TagInput
+        value={tags}
+        onChange={setTags}
+        suggestions={allTags}
+      />
       <TaskAutocomplete
         taskId={taskId}
         value={taskTitle}
@@ -742,11 +712,6 @@ function AddNoteForm({ onClose }: { onClose: () => void }) {
         <span className="text-2xs text-fg-subtle">
           ⌘↵ save
         </span>
-        <TagDropdown
-          selected={tags}
-          allTags={allTags}
-          onChange={setTags}
-        />
         <div className="ml-auto flex gap-2">
           <button
             type="button"

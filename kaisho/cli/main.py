@@ -14,6 +14,7 @@ from .config_cmd import config_cmd
 from .contract import contract_cmd
 from .cron import cron_cmd
 from .customer import customer
+from .project import project
 from .gh import gh
 from .inbox import inbox
 from .knowledge import knowledge
@@ -130,6 +131,7 @@ def profiles_rename(old_name, new_name):
 cli.add_command(task)
 cli.add_command(clock)
 cli.add_command(customer)
+cli.add_command(project)
 cli.add_command(contract_cmd, name="contract")
 cli.add_command(inbox)
 cli.add_command(knowledge)

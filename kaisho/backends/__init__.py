@@ -164,6 +164,7 @@ _ORG_FILE_MAP = {
     "INBOX_FILE": "inbox.org",
     "ARCHIVE_FILE": "archive.org",
     "NOTES_FILE": "notes.org",
+    "PROJECTS_FILE": "projects.org",
 }
 
 

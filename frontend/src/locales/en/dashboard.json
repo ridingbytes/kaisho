@@ -11,5 +11,6 @@
   "activity": "Activity",
   "billableSplit": "Billable Split",
   "byCustomer": "By Customer",
-  "loadingInsights": "Loading insights..."
+  "loadingInsights": "Loading insights...",
+  "activeProjects": "Active projects"
 }

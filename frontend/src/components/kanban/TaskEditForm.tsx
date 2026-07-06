@@ -2,15 +2,13 @@
  * TaskEditForm -- Inline edit form for a task card, allowing
  * edits to customer, title, description, GitHub URL, and tags.
  */
-import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, X } from "lucide-react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
-import { TagDropdown } from "../common/TagDropdown";
+import { MarkdownEditor } from "../common/MarkdownEditor";
+import { TagInput } from "../common/TagInput";
 import { GithubIssueInput } from "./GithubIssueInput";
-import {
-  useFileDropOnTextarea,
-} from "../../hooks/useFileDropOnTextarea";
+import { useProjects } from "../../hooks/useProjects";
 
 const editInputCls = [
   "w-full px-2 py-1 rounded text-xs",
@@ -35,6 +33,10 @@ interface TaskEditFormProps {
   editTags: string[];
   /** Date-only ISO ``YYYY-MM-DD`` or empty string. */
   editDeadline: string;
+  /** Project id or empty string. */
+  editProject: string;
+  /** Milestone id or empty string. */
+  editMilestone: string;
   allTags: TagDef[];
   isSaving: boolean;
   onCustomerChange: (v: string) => void;
@@ -43,6 +45,8 @@ interface TaskEditFormProps {
   onGithubUrlChange: (v: string) => void;
   onTagsChange: (tags: string[]) => void;
   onDeadlineChange: (v: string) => void;
+  onProjectChange: (v: string) => void;
+  onMilestoneChange: (v: string) => void;
   onSave: () => void;
   onCancel: () => void;
 }
@@ -60,6 +64,8 @@ export function TaskEditForm({
   editGithubUrl,
   editTags,
   editDeadline,
+  editProject,
+  editMilestone,
   allTags,
   isSaving,
   onCustomerChange,
@@ -68,19 +74,17 @@ export function TaskEditForm({
   onGithubUrlChange,
   onTagsChange,
   onDeadlineChange,
+  onProjectChange,
+  onMilestoneChange,
   onSave,
   onCancel,
 }: TaskEditFormProps) {
   const { t } = useTranslation("kanban");
   const { t: tc } = useTranslation("common");
-
-  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
-  const drop = useFileDropOnTextarea({
-    value: editBody,
-    onChange: onBodyChange,
-    bucketId: taskId,
-    textareaRef: bodyRef,
-  });
+  const { t: tp } = useTranslation("projects");
+  const { data: projects = [] } = useProjects(true);
+  const milestones =
+    projects.find((p) => p.id === editProject)?.milestones ?? [];
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (
@@ -110,35 +114,14 @@ export function TaskEditForm({
         placeholder={tc("title")}
         className={editInputCls}
       />
-      <textarea
-        autoFocus
-        ref={bodyRef}
+      <MarkdownEditor
         value={editBody}
-        onChange={(e) => onBodyChange(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onDrop={drop.onDrop}
-        onDragOver={drop.onDragOver}
-        onPaste={drop.onPaste}
+        onChange={onBodyChange}
+        bucketId={taskId}
+        rows={8}
         placeholder={tc("descriptionOptional")}
-        rows={3}
-        // ``resize-y`` enables the native bottom-right
-        // grip for vertical resizing. Horizontal resize is
-        // intentionally blocked so dragging the corner
-        // doesn't push the column's neighbours around.
-        className={[editInputCls, "resize-y"].join(" ")}
+        onKeyDown={handleKeyDown}
       />
-      {drop.uploading > 0 && (
-        <div className="text-2xs text-fg-muted px-0.5">
-          {tc("uploadingAttachment", {
-            count: drop.uploading,
-          })}
-        </div>
-      )}
-      {drop.error && (
-        <div className="text-2xs text-red-500 px-0.5">
-          {drop.error}
-        </div>
-      )}
       <div
         onPointerDown={(e) => e.stopPropagation()}
       >
@@ -170,11 +153,57 @@ export function TaskEditForm({
       </div>
       <div
         onPointerDown={(e) => e.stopPropagation()}
+        className="flex gap-1.5"
       >
-        <TagDropdown
-          selected={editTags}
-          allTags={allTags}
+        <label className="flex-1 flex flex-col gap-0.5">
+          <span className="text-2xs text-fg-muted px-0.5">
+            {tp("project")}
+          </span>
+          <select
+            value={editProject}
+            onChange={(e) => {
+              onProjectChange(e.target.value);
+              onMilestoneChange("");
+            }}
+            className={editInputCls}
+          >
+            <option value="">{tp("noProject")}</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {milestones.length > 0 && (
+          <label className="flex-1 flex flex-col gap-0.5">
+            <span className="text-2xs text-fg-muted px-0.5">
+              {tp("milestone")}
+            </span>
+            <select
+              value={editMilestone}
+              onChange={(e) =>
+                onMilestoneChange(e.target.value)
+              }
+              className={editInputCls}
+            >
+              <option value="">{tp("noMilestone")}</option>
+              {milestones.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
+      <div
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <TagInput
+          value={editTags}
           onChange={onTagsChange}
+          suggestions={allTags}
         />
       </div>
       <div className="flex gap-1 justify-end items-center">

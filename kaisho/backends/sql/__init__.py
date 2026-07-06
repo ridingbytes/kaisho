@@ -65,6 +65,10 @@ class TaskRow(Base):
     # close or past. Crosses the wire so PWA / iOS see the
     # same date.
     deadline = Column(String, nullable=True)
+    # Project id this task is assigned to, and the milestone
+    # within it. Both NULL when unassigned.
+    project = Column(String, nullable=True)
+    milestone = Column(String, nullable=True)
 
 
 class ClockRow(Base):  # noqa: E302
@@ -82,6 +86,8 @@ class ClockRow(Base):  # noqa: E302
     notes = Column(Text, default="")
     sync_id = Column(String, nullable=True)
     updated_at = Column(String, nullable=True)
+    # Project id this entry is assigned to (NULL otherwise).
+    project = Column(String, nullable=True)
     # Local UI hint: signals that the entry was stopped
     # with the intent to resume. Mirrors the org backend's
     # PAUSED=true heading property. Not part of the cloud
@@ -114,6 +120,7 @@ class NoteRow(Base):
     body = Column(Text, default="")
     customer = Column(String, default="")
     task_id = Column(String, nullable=True)
+    project = Column(String, nullable=True)
     tags = Column(String, default="")
     created = Column(String, nullable=False)
     # Cloud-sync identity (see InboxRow).
@@ -182,6 +189,7 @@ class _Engine:
         Base.metadata.create_all(self.engine)
         _ensure_paused_column(self.engine)
         _ensure_task_date_columns(self.engine)
+        _ensure_project_columns(self.engine)
         _ensure_customer_used_offset_column(self.engine)
         _ensure_sync_columns(self.engine, "notes")
         _ensure_sync_columns(self.engine, "inbox")
@@ -231,6 +239,52 @@ def _ensure_task_date_columns(engine) -> None:
             conn.execute(text(
                 "ALTER TABLE tasks ADD COLUMN deadline VARCHAR"
             ))
+
+
+def _ensure_project_columns(engine) -> None:
+    """Add the project-assignment columns on legacy DBs:
+    ``tasks.project`` / ``tasks.milestone`` and
+    ``clocks.project``. Idempotent per-column check.
+    """
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    names = inspector.get_table_names()
+    with engine.begin() as conn:
+        if "tasks" in names:
+            cols = {
+                c["name"]
+                for c in inspector.get_columns("tasks")
+            }
+            if "project" not in cols:
+                conn.execute(text(
+                    "ALTER TABLE tasks ADD COLUMN "
+                    "project VARCHAR"
+                ))
+            if "milestone" not in cols:
+                conn.execute(text(
+                    "ALTER TABLE tasks ADD COLUMN "
+                    "milestone VARCHAR"
+                ))
+        if "clocks" in names:
+            cols = {
+                c["name"]
+                for c in inspector.get_columns("clocks")
+            }
+            if "project" not in cols:
+                conn.execute(text(
+                    "ALTER TABLE clocks ADD COLUMN "
+                    "project VARCHAR"
+                ))
+        if "notes" in names:
+            cols = {
+                c["name"]
+                for c in inspector.get_columns("notes")
+            }
+            if "project" not in cols:
+                conn.execute(text(
+                    "ALTER TABLE notes ADD COLUMN "
+                    "project VARCHAR"
+                ))
 
 
 def _ensure_sync_columns(engine, table: str) -> None:
@@ -444,6 +498,8 @@ def _task_row_to_dict(row: TaskRow) -> dict:
         "archived_at": row.archived_at,
         "archive_status": row.archive_status,
         "deadline": row.deadline or None,
+        "project": row.project or None,
+        "milestone": row.milestone or None,
     }
 
 
@@ -462,6 +518,7 @@ def _clock_row_to_dict(row: ClockRow) -> dict:
         "sync_id": row.sync_id or "",
         "updated_at": row.updated_at or "",
         "paused": bool(row.paused),
+        "project": row.project or None,
     }
 
 
@@ -512,6 +569,7 @@ def _note_row_to_dict(row: NoteRow) -> dict:
         "body": row.body or "",
         "customer": row.customer or "",
         "task_id": row.task_id,
+        "project": row.project or None,
         "tags": _parse_tags(row.tags),
         "created": row.created,
         "sync_id": row.sync_id or "",
@@ -706,6 +764,8 @@ class SqlTaskBackend(TaskBackend):
         sync_id=None,
         task_id=None,
         deadline=None,
+        project=None,
+        milestone=None,
     ) -> dict:
         """Create a new task and return its dict."""
         # ``task_id`` is honoured when the caller wants to
@@ -725,6 +785,8 @@ class SqlTaskBackend(TaskBackend):
             properties="{}",
             created=now,
             deadline=deadline or None,
+            project=project or None,
+            milestone=milestone or None,
         )
         session = self._eng.session()
         try:
@@ -743,6 +805,8 @@ class SqlTaskBackend(TaskBackend):
             "properties": {},
             "created": now,
             "deadline": deadline or None,
+            "project": project or None,
+            "milestone": milestone or None,
         }
 
     def move_task(self, task_id, new_status) -> dict:
@@ -814,13 +878,15 @@ class SqlTaskBackend(TaskBackend):
         body=None,
         github_url=None,
         deadline=None,
+        project=None,
+        milestone=None,
     ) -> dict:
         """Update a task's fields and return updated dict.
 
-        ``deadline`` follows the same sentinel rules as
-        every other field on this helper: ``None`` leaves
-        the existing value alone, an empty string clears the
-        column, a date string (``YYYY-MM-DD``) sets it.
+        ``deadline``, ``project`` and ``milestone`` follow
+        the same sentinel rules as every other field on this
+        helper: ``None`` leaves the existing value alone, an
+        empty string clears the column, a value sets it.
         """
         session = self._eng.session()
         try:
@@ -839,6 +905,10 @@ class SqlTaskBackend(TaskBackend):
                 row.github_url = github_url
             if deadline is not None:
                 row.deadline = deadline or None
+            if project is not None:
+                row.project = project or None
+            if milestone is not None:
+                row.milestone = milestone or None
             session.commit()
             result = _task_row_to_dict(row)
         finally:
@@ -1234,6 +1304,7 @@ class SqlClockBackend(ClockBackend):
         notes=None,
         contract=None,
         sync_id=None,
+        project=None,
     ) -> dict | None:
         """Update fields of a clock entry.
 
@@ -1269,6 +1340,8 @@ class SqlClockBackend(ClockBackend):
                 row.notes = notes
             if contract is not None:
                 row.contract = contract
+            if project is not None:
+                row.project = project or None
 
             if start_time is not None:
                 old_start = datetime.fromisoformat(
@@ -1468,7 +1541,7 @@ def _apply_clock_fields(row: ClockRow, fields: dict) -> None:
 
     for col in (
         "customer", "description", "start",
-        "task_id", "contract", "notes",
+        "task_id", "contract", "notes", "project",
     ):
         if col in fields:
             setattr(row, col, fields[col] or "")
@@ -1662,6 +1735,7 @@ class SqlNotesBackend(NotesBackend):
         tags=None,
         task_id=None,
         sync_id=None,
+        project=None,
     ) -> dict:
         """Create a new note and return its dict."""
         note_id = _generate_id(title)
@@ -1673,6 +1747,7 @@ class SqlNotesBackend(NotesBackend):
             body=body,
             customer=customer or "",
             task_id=task_id,
+            project=project or None,
             tags=_serialize_tags(tags),
             created=now,
             sync_id=sid,
@@ -1711,6 +1786,7 @@ class SqlNotesBackend(NotesBackend):
                 )
             allowed = (
                 "title", "body", "customer", "task_id",
+                "project",
             )
             for key in allowed:
                 if key in updates:

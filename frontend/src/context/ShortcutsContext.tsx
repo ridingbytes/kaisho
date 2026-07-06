@@ -21,6 +21,7 @@ export const DEFAULT_SHORTCUTS: ShortcutsConfig = {
     board: "b",
     inbox: "i",
     notes: "n",
+    projects: "p",
     customers: "c",
     knowledge: "k",
     github: "g",

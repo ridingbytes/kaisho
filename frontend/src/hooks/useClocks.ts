@@ -35,6 +35,9 @@ import type { ClockEntry } from "../types";
 function invalidateClockCaches(qc: QueryClient) {
   for (const key of [
     "clocks", "customers", "contracts", "dashboard",
+    // Project rollups sum time booked directly or via an
+    // assigned task, so any clock write can change them.
+    "projects",
   ]) {
     void qc.invalidateQueries({ queryKey: [key] });
   }
@@ -277,11 +280,14 @@ export function useUpdateClockEntry() {
         invoiced?: boolean;
         notes?: string;
         contract?: string;
+        project?: string;
       };
       silent?: boolean;
     }) => updateClockEntry(entry, updates),
     onSuccess: (_data, vars) => {
       invalidateClockCaches(qc);
+      void qc.invalidateQueries({ queryKey: ["projects"] });
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
       if (!vars.silent) toast("Clock entry updated");
     },
   });

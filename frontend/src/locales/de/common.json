@@ -14,7 +14,7 @@
   "edit": "Bearbeiten",
   "search": "Suchen...",
   "filter": "Filtern...",
-  "clear": "Leeren",
+  "clear": "Verwerfen",
   "clearFilter": "Filter leeren",
   "clearAllFilters": "Alle Filter leeren",
   "all": "Alle",
@@ -51,7 +51,6 @@
   "inactive": "Inaktiv",
   "stopped": "Gestoppt",
   "resume": "Fortsetzen",
-  "clear": "Verwerfen",
   "closed": "geschlossen",
   "expand": "Aufklappen",
   "collapse": "Zuklappen",
@@ -109,5 +108,8 @@
   "filterInvalid": "Ungültiger Regex — Filter wird ignoriert",
   "cmdEnterToSave": "⌘↵ zum Speichern",
   "noCustomer": "Kein Kunde",
-  "dismiss": "Schließen"
+  "dismiss": "Schließen",
+  "write": "Schreiben",
+  "preview": "Vorschau",
+  "nothingToPreview": "Nichts zur Vorschau."
 }

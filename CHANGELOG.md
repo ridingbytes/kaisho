@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Add first-class Projects [#217]. A project belongs to a
+  customer and aggregates its tasks, time, and files in one
+  workspace, with a markdown description and milestones.
+  Tasks are grouped under their milestone; create a task in
+  a project (it inherits the customer) or assign an existing
+  one, and its time rolls up automatically. Click a task or
+  time entry for a rich edit subview; tasks show a project
+  badge on the board. Drag and drop files into the project.
+  Scriptable via `kai project` and exposed to the AI/MCP
+  tools. See `docs/guide/projects.md`.
+
 ## 2.6.0
 
 Workflow automation. Kaisho now emits a domain event on

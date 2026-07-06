@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
-import { EditForm } from "./EditForm";
+import { TimeEntryDialog } from "../projects/TimeEntryDialog";
 import {
   useDeleteClockEntry,
   useQuickBook,
@@ -89,16 +89,8 @@ export function EntryRow({
     });
   }
 
-  if (mode === "edit") {
-    return (
-      <EditForm
-        entry={entry}
-        onClose={() => setMode("view")}
-      />
-    );
-  }
-
   return (
+    <>
     <tr
       // Double-click anywhere on the row opens the same
       // inline edit form as the pencil button. Link cells
@@ -335,5 +327,12 @@ export function EntryRow({
         </span>
       </td>
     </tr>
+    {mode === "edit" && (
+      <TimeEntryDialog
+        entry={entry}
+        onClose={() => setMode("view")}
+      />
+    )}
+    </>
   );
 }

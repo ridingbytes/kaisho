@@ -136,11 +136,12 @@ def _normalize_task(task: dict) -> dict:
     SQL and markdown backends emit and what
     ``frontend/src/types.ts:Task`` expects.
 
-    Today the only field needing a missing → None fill
-    is ``deadline``. The helper is deliberately additive
-    so future schema growth lands in one place.
+    The helper is deliberately additive so future schema
+    growth lands in one place.
     """
     task.setdefault("deadline", None)
+    task.setdefault("project", None)
+    task.setdefault("milestone", None)
     return task
 
 
@@ -234,6 +235,8 @@ class JsonTaskBackend(TaskBackend):
         sync_id=None,
         task_id=None,
         deadline=None,
+        project=None,
+        milestone=None,
     ) -> dict:
         """Create a new task and return its dict."""
         tasks = _read_json(self._tasks_file)
@@ -248,6 +251,8 @@ class JsonTaskBackend(TaskBackend):
             "properties": {},
             "created": datetime.now().isoformat(),
             "deadline": deadline or None,
+            "project": project or None,
+            "milestone": milestone or None,
         }
         tasks.insert(0, task)
         _write_json(self._tasks_file, tasks)
@@ -298,6 +303,8 @@ class JsonTaskBackend(TaskBackend):
         body=None,
         github_url=None,
         deadline=None,
+        project=None,
+        milestone=None,
     ) -> dict:
         """Update a task's fields and return updated dict."""
         tasks = _read_json(self._tasks_file)
@@ -313,6 +320,10 @@ class JsonTaskBackend(TaskBackend):
                     t["github_url"] = github_url
                 if deadline is not None:
                     t["deadline"] = deadline or None
+                if project is not None:
+                    t["project"] = project or None
+                if milestone is not None:
+                    t["milestone"] = milestone or None
                 _write_json(self._tasks_file, tasks)
                 return t
         raise ValueError(f"Task not found: {task_id}")
@@ -430,6 +441,7 @@ class JsonClockBackend(ClockBackend):
         # on legacy entries (no pause/resume support) reads
         # as False, which is the correct interpretation.
         entry["paused"] = bool(entry.get("paused"))
+        entry.setdefault("project", None)
         return entry
 
     # -- queries -------------------------------------------------
@@ -662,6 +674,7 @@ class JsonClockBackend(ClockBackend):
         notes: str | None = None,
         contract: str | None = None,
         sync_id: str | None = None,
+        project: str | None = None,
     ) -> dict | None:
         """Update fields of a clock entry.
 
@@ -689,6 +702,8 @@ class JsonClockBackend(ClockBackend):
                 entry["notes"] = notes
             if contract is not None:
                 entry["contract"] = contract
+            if project is not None:
+                entry["project"] = project or None
             if start_time is not None:
                 old_start = datetime.fromisoformat(
                     entry["start"]
@@ -856,6 +871,7 @@ class JsonClockBackend(ClockBackend):
             "contract": fields.get("contract") or "",
             "invoiced": bool(fields.get("invoiced")),
             "notes": fields.get("notes") or "",
+            "project": fields.get("project") or "",
             "sync_id": sid,
             "updated_at": fields.get("updated_at", ""),
         }
@@ -869,7 +885,7 @@ class JsonClockBackend(ClockBackend):
         """Overwrite entry fields from a sync payload."""
         for key in (
             "customer", "description", "start", "end",
-            "task_id", "contract", "notes",
+            "task_id", "contract", "notes", "project",
         ):
             if key in fields:
                 entry[key] = fields[key] or ""
@@ -1344,6 +1360,7 @@ class JsonNotesBackend(NotesBackend):
     def add_note(
         self, title, body="", customer=None,
         tags=None, task_id=None, sync_id=None,
+        project=None,
     ) -> dict:
         """Create a new note and return its dict."""
         notes = _read_json(self._notes_file)
@@ -1353,6 +1370,7 @@ class JsonNotesBackend(NotesBackend):
             "body": body,
             "customer": customer or "",
             "task_id": task_id or None,
+            "project": project or None,
             "tags": tags or [],
             "created": datetime.now().isoformat(),
         }
