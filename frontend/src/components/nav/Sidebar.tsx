@@ -109,8 +109,8 @@ export function Sidebar({
       className={[
         "flex flex-col shrink-0 border-r",
         "border-border-subtle bg-surface-card",
-        "transition-[width] duration-200 py-2 gap-0.5",
-        "h-full w-40",
+        "transition-[width] duration-200 py-3 gap-1",
+        "h-full w-44",
         !expanded && "md:w-14",
       ]
         .filter(Boolean)
@@ -152,7 +152,7 @@ export function Sidebar({
             className={[
               "relative flex items-center",
               // Mobile: always horizontal. Desktop: depends on open
-              "px-3 gap-2.5 h-8",
+              "px-3 gap-2.5 h-9",
               !expanded && "md:flex-col md:justify-center md:mx-2 md:h-10 md:gap-1 md:px-0",
               "rounded-lg transition-colors",
               "text-xs font-semibold tracking-wider",
@@ -211,7 +211,7 @@ export function Sidebar({
             onClick={() => onChange(id)}
             className={[
               "relative flex items-center",
-              "px-3 gap-2.5 h-8",
+              "px-3 gap-2.5 h-9",
               !expanded && "md:flex-col md:justify-center md:mx-2 md:h-10 md:gap-1 md:px-0",
               "rounded-lg transition-colors",
               "text-xs font-semibold tracking-wider",
