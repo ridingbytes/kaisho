@@ -113,7 +113,11 @@ def project_add(
 @click.argument("project_id")
 def project_rm(project_id):
     """Delete a project."""
+    from ..services import cloud_sync as sync_svc
+    project = projects_svc.get_project(_file(), project_id)
     if projects_svc.delete_project(_file(), project_id):
+        if project:
+            sync_svc.on_local_delete_project(project)
         click.echo(f"Deleted {project_id}")
     else:
         click.echo(f"Project not found: {project_id}", err=True)

@@ -39,6 +39,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from . import events
+from . import projects as projects_svc
 from . import sync_state
 from ..time_utils import local_now
 
@@ -843,6 +844,73 @@ def wire_to_note(entry: dict) -> dict:
     }
 
 
+# -- Project wire format -----------------------------------------
+
+def _milestones_to_wire(milestones: list[dict]) -> list[dict]:
+    """Normalise a project's milestones for the wire."""
+    return [
+        {
+            "id": m.get("id"),
+            "title": m.get("title") or "",
+            "done": bool(m.get("done")),
+            "due": m.get("due") or None,
+        }
+        for m in milestones or []
+    ]
+
+
+def project_to_wire(project: dict) -> dict:
+    """Convert a local project dict to wire format.
+
+    Projects only track ``updated_at`` locally, so it feeds
+    both ``created_at`` and ``updated_at`` on the wire (with
+    a ``now()`` fallback, matching how tasks handle a missing
+    ``created``).
+    """
+    updated = project.get("updated_at") or local_now().isoformat()
+    return {
+        "id": project["id"],
+        "name": project.get("name") or "",
+        "customer": project.get("customer") or None,
+        "status": project.get("status") or "ACTIVE",
+        "contract": project.get("contract") or None,
+        "start": project.get("start") or None,
+        "due": project.get("due") or None,
+        "color": project.get("color") or None,
+        "tags": project.get("tags") or [],
+        "description": project.get("description") or "",
+        "milestones": _milestones_to_wire(
+            project.get("milestones") or [],
+        ),
+        "created_at": _local_to_utc(updated),
+        "updated_at": _local_to_utc(updated),
+    }
+
+
+def wire_to_project(entry: dict) -> dict:
+    """Convert a wire-format project to a local dict for
+    :func:`kaisho.services.projects.apply_project`."""
+    return {
+        "id": entry["id"],
+        "name": entry.get("name") or "",
+        "customer": entry.get("customer") or None,
+        "status": entry.get("status") or "ACTIVE",
+        "contract": entry.get("contract") or None,
+        "start": entry.get("start") or None,
+        "due": entry.get("due") or None,
+        "color": entry.get("color") or None,
+        "tags": entry.get("tags") or [],
+        "description": entry.get("description") or "",
+        "milestones": _milestones_to_wire(
+            entry.get("milestones") or [],
+        ),
+        "updated_at": _utc_to_local(
+            entry.get("updated_at", ""),
+        ),
+        "deleted_at": entry.get("deleted_at"),
+    }
+
+
 # -- Entity tombstone wire format --------------------------------
 
 def _entity_tombstone_to_wire(item: dict, to_wire) -> dict:
@@ -881,6 +949,11 @@ def task_tombstone_to_wire(task: dict) -> dict:
 def note_tombstone_to_wire(note: dict) -> dict:
     """Convert a local note tombstone to wire format."""
     return _entity_tombstone_to_wire(note, note_to_wire)
+
+
+def project_tombstone_to_wire(project: dict) -> dict:
+    """Convert a local project tombstone to wire format."""
+    return _entity_tombstone_to_wire(project, project_to_wire)
 
 
 # -- Clock wire format -------------------------------------------
@@ -1018,6 +1091,35 @@ def on_local_delete_note(note: dict) -> None:
     schedule_push()
 
 
+def on_local_delete_project(project: dict) -> None:
+    """Record a tombstone for a deleted project and schedule
+    a background push.
+
+    Projects are keyed on ``id`` (the PROJECT_ID), but the
+    entity-tombstone store keys on ``sync_id``; the id is
+    mirrored into ``sync_id`` so storage and clearing work
+    the same way as the other entities.
+
+    :param project: The project that is about to be deleted
+        (must contain ``id``).
+    """
+    from ..config import get_config
+    if not project or not project.get("id"):
+        return
+    cfg = get_config()
+    now = local_now().isoformat()
+    tombstone = {
+        **project,
+        "sync_id": project["id"],
+        "deleted_at": now,
+        "updated_at": now,
+    }
+    sync_state.record_entity_tombstone(
+        cfg.PROFILE_DIR, "project", tombstone,
+    )
+    schedule_push()
+
+
 def push_inbox_tombstones(
     cloud_url: str, api_key: str, profile_dir: Path,
 ) -> int:
@@ -1088,6 +1190,31 @@ def push_note_tombstones(
     push_note_items(cloud_url, api_key, wire)
     sync_state.clear_entity_tombstones(
         profile_dir, "note",
+        [t["sync_id"] for t in tombstones],
+    )
+    return len(tombstones)
+
+
+def push_project_tombstones(
+    cloud_url: str, api_key: str, profile_dir: Path,
+) -> int:
+    """Push pending project tombstones to the cloud.
+
+    :param cloud_url: Base URL.
+    :param api_key: API key.
+    :param profile_dir: Profile directory.
+    :returns: Number of tombstones pushed.
+    :raises CloudUnavailable: On network failure.
+    """
+    tombstones = sync_state.load_entity_tombstones(
+        profile_dir, "project",
+    )
+    if not tombstones:
+        return 0
+    wire = list(map(project_tombstone_to_wire, tombstones))
+    push_project_items(cloud_url, api_key, wire)
+    sync_state.clear_entity_tombstones(
+        profile_dir, "project",
         [t["sync_id"] for t in tombstones],
     )
     return len(tombstones)
@@ -1943,6 +2070,183 @@ def collect_note_changes(
     return wire
 
 
+# -- Project sync ------------------------------------------------
+
+def pull_project_changes(
+    cloud_url: str, api_key: str, since: str,
+) -> tuple[str, list[dict], bool]:
+    """Pull projects from the cloud."""
+    qs = urllib.parse.urlencode({
+        "since": since, "limit": 200,
+    })
+    url = f"{cloud_url}/sync/projects/changes?{qs}"
+    data = safe_request(url, api_key)
+    return (
+        data.get("cursor", since),
+        data.get("entries", []),
+        data.get("has_more", False),
+    )
+
+
+def push_project_items(
+    cloud_url: str, api_key: str, items: list[dict],
+) -> int:
+    """Push projects to the cloud."""
+    if not items:
+        return 0
+    url = f"{cloud_url}/sync/projects/apply"
+    data = safe_request(
+        url, api_key, "POST", {"entries": items},
+    )
+    return (
+        data.get("inserted", 0) + data.get("updated", 0)
+    )
+
+
+def ack_project_items(
+    cloud_url: str, api_key: str, ids: list[str],
+) -> None:
+    """Mark projects as synced on the cloud."""
+    if not ids:
+        return
+    for i in range(0, len(ids), 500):
+        batch = ids[i:i + 500]
+        url = f"{cloud_url}/sync/projects/ack"
+        safe_request(
+            url, api_key, "POST", {"ids": batch},
+        )
+
+
+def pull_and_apply_projects(
+    projects_file: Path,
+    cloud_url: str,
+    api_key: str,
+    since: str,
+) -> tuple[str, int, int, set[str]]:
+    """Pull projects from cloud and apply locally (LWW).
+
+    Projects live outside the pluggable backend, so this
+    step operates directly on the ``projects.org`` path.
+
+    :returns: (cursor, upserted, deleted, pulled_ids)
+    """
+    cursor = since
+    total_up = 0
+    total_del = 0
+    all_ids: set[str] = set()
+    by_id: dict | None = None
+
+    while True:
+        new_cursor, entries, has_more = (
+            pull_project_changes(cloud_url, api_key, cursor)
+        )
+        if by_id is None:
+            local = projects_svc.list_projects(
+                projects_file, include_archived=True,
+            )
+            by_id = {p["id"]: p for p in local}
+        pulled_ids = []
+        for wire_item in entries:
+            incoming = wire_to_project(wire_item)
+            pulled_ids.append(wire_item["id"])
+            all_ids.add(incoming["id"])
+            existing = by_id.get(incoming["id"])
+            up, deleted = _apply_pulled_project(
+                projects_file, incoming, existing,
+            )
+            total_up += up
+            total_del += deleted
+
+        try:
+            ack_project_items(
+                cloud_url, api_key, pulled_ids,
+            )
+        except CloudUnavailable:
+            pass
+        cursor = new_cursor
+        if not has_more:
+            break
+
+    return cursor, total_up, total_del, all_ids
+
+
+def _apply_pulled_project(
+    projects_file: Path,
+    incoming: dict,
+    existing: dict | None,
+) -> tuple[int, int]:
+    """Reconcile one pulled project against local state.
+
+    Tombstones delete the local project (if present); a
+    matching id only applies when the remote is newer
+    (lexicographic ISO compare on ``updated_at``); an
+    unknown id is created. Returns ``(upserts, deletes)``.
+    """
+    if incoming.get("deleted_at"):
+        if existing and projects_svc.delete_project(
+            projects_file, incoming["id"],
+        ):
+            return 0, 1
+        return 0, 0
+
+    if existing and not _is_remote_newer(incoming, existing):
+        return 0, 0
+
+    projects_svc.apply_project(projects_file, incoming)
+    return 1, 0
+
+
+def collect_project_changes(
+    projects_file: Path,
+    since: str,
+    exclude: set[str] | None = None,
+) -> list[dict]:
+    """Gather projects changed after ``since``.
+
+    :param exclude: Project ids to skip (just-pulled items).
+    """
+    skip = exclude or set()
+    projects = projects_svc.list_projects(
+        projects_file, include_archived=True,
+    )
+    wire = []
+    for project in projects:
+        if project.get("id") in skip:
+            continue
+        updated = project.get("updated_at", "")
+        if updated > since:
+            wire.append(project_to_wire(project))
+    return wire
+
+
+def _resolve_projects_file(
+    settings_file: Path | None,
+) -> Path | None:
+    """Resolve the ``projects.org`` path for the sync layer.
+
+    Projects live outside the pluggable backend, so the sync
+    cycle must resolve the file the same way the API router
+    does — through the profile's settings overlay
+    (``org_dir``) rather than the un-overlaid global config.
+
+    Returns ``None`` (and logs) when the path can't be
+    resolved, so the project step degrades gracefully rather
+    than crashing the best-effort cycle.
+    """
+    from ..config import get_config
+    from .settings import get_path_settings, load_settings
+
+    try:
+        cfg = get_config()
+        path = settings_file or cfg.SETTINGS_FILE
+        data = load_settings(path)
+        paths = get_path_settings(data, cfg)
+        return Path(paths["org_dir"]) / "projects.org"
+    except (OSError, AttributeError, ValueError) as exc:
+        log.warning("Could not resolve projects file: %s", exc)
+        return None
+
+
 class _CfgForDir:
     """Minimal config stub pointing at a profile dir.
 
@@ -2200,6 +2504,68 @@ def _store_digest(profile_dir: Path, digest: str) -> None:
 
 # -- Main sync cycle ------------------------------------------
 
+def _sync_projects_step(
+    projects_file: Path,
+    cloud_url: str,
+    api_key: str,
+    profile_dir: Path,
+    cursor: dict,
+    result: dict,
+    entity_errors: list,
+    is_initial: bool,
+    started: str,
+) -> None:
+    """Run the project pull/push step of the sync cycle.
+
+    Mirrors the task/note steps but takes a resolved
+    ``projects_file`` (projects sit outside the backend).
+    Mutates ``cursor``, ``result``, and ``entity_errors`` in
+    place; never raises (network errors are recorded).
+    """
+    project_pull_since = (
+        cursor.get("project_pull_cursor")
+        or sync_state.EPOCH
+    )
+    project_push_since = (
+        sync_state.EPOCH
+        if is_initial
+        else cursor.get("project_push_cursor")
+        or sync_state.EPOCH
+    )
+    try:
+        (
+            project_cursor, project_up,
+            project_del, project_pulled,
+        ) = pull_and_apply_projects(
+            projects_file, cloud_url, api_key,
+            project_pull_since,
+        )
+        cursor["project_pull_cursor"] = project_cursor
+        cursor["project_push_cursor"] = max(
+            cursor.get("project_push_cursor") or "",
+            project_cursor,
+        )
+        result["pulled_up"] += project_up
+        result["pulled_del"] += project_del
+
+        pushed_del = push_project_tombstones(
+            cloud_url, api_key, profile_dir,
+        )
+        result["pushed_deletes"] += pushed_del
+        project_wire = collect_project_changes(
+            projects_file, project_push_since,
+            project_pulled,
+        )
+        pushed = push_project_items(
+            cloud_url, api_key, project_wire,
+        )
+        result["pushed_live"] += pushed
+        cursor["project_push_cursor"] = started
+    except CloudUnavailable as exc:
+        entity_errors.append(f"project: {exc}")
+        log.warning("Project sync failed: %s", exc)
+
+
 def run_sync_cycle(
     cloud_url: str,
     api_key: str,
@@ -2446,7 +2812,18 @@ def run_sync_cycle(
         entity_errors.append(f"note: {exc}")
         log.warning("Note sync failed: %s", exc)
 
-    # Step 7: Pull config updates (e.g. name changed
+    # Step 7: Project sync. Projects live outside the
+    # pluggable backend, so the file is resolved here; a
+    # failed resolution skips the step (best-effort).
+    projects_file = _resolve_projects_file(settings_file)
+    if projects_file is not None:
+        _sync_projects_step(
+            projects_file, cloud_url, api_key, profile_dir,
+            cursor, result, entity_errors, is_initial,
+            started,
+        )
+
+    # Step 8: Pull config updates (e.g. name changed
     # in PWA). Each profile has its own user.yaml, so
     # this is safe for all profiles.
     try:
@@ -2458,7 +2835,7 @@ def run_sync_cycle(
             "Config pull failed", exc_info=True,
         )
 
-    # Step 8: Reference snapshot
+    # Step 9: Reference snapshot
     if push_reference_snapshot(
         cloud_url, api_key, customers_fn, tasks_fn,
         settings_file=settings_file,

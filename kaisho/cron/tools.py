@@ -823,9 +823,12 @@ def _update_project(args: dict) -> dict:
 
 def _delete_project(args: dict) -> dict:
     from ..services import projects as projects_svc
-    ok = projects_svc.delete_project(
-        _projects_file(), args["project_id"],
-    )
+    from ..services import cloud_sync as sync_svc
+    pid = args["project_id"]
+    project = projects_svc.get_project(_projects_file(), pid)
+    ok = projects_svc.delete_project(_projects_file(), pid)
+    if ok and project:
+        sync_svc.on_local_delete_project(project)
     return {"deleted": ok}
 
 
