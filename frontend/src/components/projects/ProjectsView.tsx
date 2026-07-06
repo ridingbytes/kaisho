@@ -5,6 +5,7 @@ import { PanelToolbar } from "../common/PanelToolbar";
 import { StateMessage } from "../common/StateMessage";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { HelpButton } from "../common/HelpButton";
+import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { DOCS } from "../../docs/panelDocs";
 import { ProjectsBoard } from "./ProjectsBoard";
 import { ProjectWorkspace } from "./ProjectWorkspace";
@@ -92,6 +93,7 @@ export function ProjectsView() {
             >
               <Plus size={14} /> {t("newProject")}
             </button>
+            <OpenInEditorButton kind="projects" />
             <HelpButton
               title={t("title")}
               doc={DOCS.projects}

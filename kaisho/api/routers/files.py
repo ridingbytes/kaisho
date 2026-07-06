@@ -77,6 +77,13 @@ def api_get_file_path(kind: str):
     Returns 404 when the active backend has no addressable
     file for the kind (currently the SQL backend).
     """
+    # Projects always live in ``projects.org`` in the org
+    # dir, regardless of the active task/clock backend, so
+    # they resolve the same way for every backend.
+    if kind == "projects":
+        path = get_config().PROJECTS_FILE.expanduser()
+        return {"path": str(path), "exists": path.exists()}
+
     overlay = _active_backend_cfg()
     backend = overlay.BACKEND
     kind_map = _KIND_FILENAMES.get(backend)
