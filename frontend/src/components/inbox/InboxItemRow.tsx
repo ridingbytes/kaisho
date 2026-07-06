@@ -11,6 +11,7 @@ import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { RelDate } from "../common/RelDate";
 import { Markdown } from "../common/Markdown";
+import { Dialog } from "../common/Dialog";
 import { KbDestinationPicker } from "../common/KbDestinationPicker";
 import {
   useDeleteItem,
@@ -404,7 +405,21 @@ export function InboxItemRow({ item }: Props) {
           className="px-4 pb-3 flex flex-col gap-2"
           onClick={(e) => e.stopPropagation()}
         >
-          {editing ? (
+          {item.body && (
+            <Markdown
+              className="text-sm text-fg"
+              onCheckboxToggle={handleBodyToggle}
+            >
+              {item.body}
+            </Markdown>
+          )}
+          {editing && (
+            <Dialog
+              open
+              onClose={() => setEditing(false)}
+              title={t("editItem", "Edit item")}
+              size="lg"
+            >
             <div className="flex flex-col gap-2">
               <div className="flex gap-2">
                 <select
@@ -496,17 +511,7 @@ export function InboxItemRow({ item }: Props) {
                 </button>
               </div>
             </div>
-          ) : (
-            <>
-              {item.body && (
-                <Markdown
-                  className="text-sm text-fg"
-                  onCheckboxToggle={handleBodyToggle}
-                >
-                  {item.body}
-                </Markdown>
-              )}
-            </>
+            </Dialog>
           )}
 
           {/* Move sub-panel (todo/kb need input) */}

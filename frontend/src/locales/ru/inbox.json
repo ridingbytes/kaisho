@@ -19,5 +19,6 @@
   "emailChannel": "Email",
   "phoneChannel": "Телефон",
   "chatChannel": "Чат",
-  "otherChannel": "Другое"
+  "otherChannel": "Другое",
+  "editItem": "Изменить запись"
 }
