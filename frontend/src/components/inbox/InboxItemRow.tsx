@@ -2,15 +2,12 @@ import { useTranslation } from "react-i18next";
 import {
   ArrowRightLeft,
   Check,
-  Pencil,
   Trash2,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { ContentPopup } from "../common/ContentPopup";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { RelDate } from "../common/RelDate";
-import { Markdown } from "../common/Markdown";
 import { Dialog } from "../common/Dialog";
 import { KbDestinationPicker } from "../common/KbDestinationPicker";
 import {
@@ -136,8 +133,8 @@ export function InboxItemRow({ item }: Props) {
   const typeStyle =
     TYPE_STYLES[item.type?.toUpperCase()] ?? TYPE_STYLES["NOTE"];
 
-  function startEdit(e: React.MouseEvent) {
-    e.stopPropagation();
+  function startEdit(e?: React.MouseEvent) {
+    e?.stopPropagation();
     setEditTitle(cleanTitle(item.title));
     setEditType(item.type ?? "NOTE");
     setEditCustomer(item.customer ?? "");
@@ -145,7 +142,6 @@ export function InboxItemRow({ item }: Props) {
     setEditChannel(item.channel ?? "");
     setEditDirection(item.direction ?? "");
     setEditing(true);
-    setExpanded(true);
   }
 
   function handleSave(e: React.MouseEvent) {
@@ -169,20 +165,6 @@ export function InboxItemRow({ item }: Props) {
   function cancelEdit(e: React.MouseEvent) {
     e.stopPropagation();
     setEditing(false);
-  }
-
-  function handleBodyToggle(md: string) {
-    update.mutate({
-      itemId: item.id,
-      updates: {
-        title: item.title,
-        type: item.type,
-        customer: item.customer || undefined,
-        body: md,
-        channel: item.channel,
-        direction: item.direction,
-      },
-    });
   }
 
   function openMovePanel(e: React.MouseEvent) {
@@ -239,7 +221,7 @@ export function InboxItemRow({ item }: Props) {
     <div className="group border-b border-border-subtle last:border-0">
       <div
         className="flex items-start gap-3 pl-1 pr-4 py-3 hover:bg-surface-raised/40 transition-colors cursor-pointer"
-        onClick={() => !editing && setExpanded((v) => !v)}
+        onClick={() => !editing && startEdit()}
       >
         {/* Type badge */}
         <span className={[badgeCls, typeStyle].join(" ")}>
@@ -287,14 +269,6 @@ export function InboxItemRow({ item }: Props) {
             <span className="text-sm text-fg-strong break-words">
               {cleanTitle(item.title)}
             </span>
-            {item.body && (
-              <ContentPopup
-                content={item.body}
-                title={cleanTitle(item.title)}
-                markdown
-                onCheckboxToggle={handleBodyToggle}
-              />
-            )}
           </div>
           <RelDate
             date={item.created}
@@ -304,13 +278,6 @@ export function InboxItemRow({ item }: Props) {
 
         {/* Actions */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          <button
-            title={tc("edit")}
-            onClick={startEdit}
-            className="p-1.5 rounded-md text-fg-muted hover:text-cta hover:bg-cta-muted transition-colors"
-          >
-            <Pencil size={13} strokeWidth={2} />
-          </button>
           <div className="relative">
             <button
               title={tc("move")}
@@ -399,21 +366,7 @@ export function InboxItemRow({ item }: Props) {
         </div>
       </div>
 
-      {/* Expanded content */}
-      {expanded && (
-        <div
-          className="px-4 pb-3 flex flex-col gap-2"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {item.body && (
-            <Markdown
-              className="text-sm text-fg"
-              onCheckboxToggle={handleBodyToggle}
-            >
-              {item.body}
-            </Markdown>
-          )}
-          {editing && (
+      {editing && (
             <Dialog
               open
               onClose={() => setEditing(false)}
@@ -512,8 +465,13 @@ export function InboxItemRow({ item }: Props) {
               </div>
             </div>
             </Dialog>
-          )}
+      )}
 
+      {expanded && (
+        <div
+          className="px-4 pb-3 flex flex-col gap-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Move sub-panel (todo/kb need input) */}
           {moving && moveDest === "todo" && (
             <div

@@ -22,14 +22,11 @@ import {
   ArrowRightLeft,
   Check,
   GripVertical,
-  Pencil,
   Plus,
   Trash2,
   X,
 } from "lucide-react";
 import { CollapsibleSection } from "../common/CollapsibleSection";
-import { ContentPopup } from "../common/ContentPopup";
-import { Markdown } from "../common/Markdown";
 import { Button } from "../common/Button";
 import { Dialog } from "../common/Dialog";
 import { HelpButton } from "../common/HelpButton";
@@ -130,8 +127,8 @@ function NoteRow({
   const updateNote = useUpdateNote();
   const move = useMoveNote();
 
-  function startEdit(e: React.MouseEvent) {
-    e.stopPropagation();
+  function startEdit(e?: React.MouseEvent) {
+    e?.stopPropagation();
     setEditTitle(note.title);
     setEditBody(note.body ?? "");
     setEditCustomer(note.customer ?? "");
@@ -139,7 +136,6 @@ function NoteRow({
     setEditTaskId(note.task_id ?? null);
     setEditTaskTitle("");
     setEditing(true);
-    setExpanded(true);
   }
 
   function doSave() {
@@ -168,12 +164,6 @@ function NoteRow({
     setEditing(false);
   }
 
-  function handleBodyToggle(md: string) {
-    updateNote.mutate({
-      noteId: note.id,
-      updates: { body: md },
-    });
-  }
 
   function handleContextMenu(e: React.MouseEvent) {
     e.preventDefault();
@@ -265,7 +255,7 @@ function NoteRow({
     >
       <div
         className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-surface-raised transition-colors"
-        onClick={() => !editing && setExpanded((v) => !v)}
+        onClick={() => !editing && startEdit()}
         onContextMenu={handleContextMenu}
       >
         <button
@@ -330,16 +320,6 @@ function NoteRow({
         <span className="text-sm text-fg-strong flex-1 truncate">
           {note.title}
         </span>
-        {note.body && (
-          <span onClick={(e) => e.stopPropagation()}>
-            <ContentPopup
-              content={note.body}
-              title={note.title}
-              markdown
-              onCheckboxToggle={handleBodyToggle}
-            />
-          </span>
-        )}
         {note.tags?.map((tagName) => {
           const def = allTags.find((t) => t.name === tagName);
           return (
@@ -357,13 +337,6 @@ function NoteRow({
             </button>
           );
         })}
-        <button
-          onClick={startEdit}
-          className="text-fg-subtle hover:text-cta transition-colors shrink-0"
-          title="Edit"
-        >
-          <Pencil size={12} />
-        </button>
         <div className="relative shrink-0">
           <button
             title="Move"
@@ -414,20 +387,7 @@ function NoteRow({
         </ConfirmPopover>
       </div>
 
-      {expanded && (
-        <div
-          className="px-4 pb-3 flex flex-col gap-2"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {note.body && (
-            <Markdown
-              className="text-sm text-fg-strong"
-              onCheckboxToggle={handleBodyToggle}
-            >
-              {note.body}
-            </Markdown>
-          )}
-          {editing && (
+      {editing && (
             <Dialog
               open
               onClose={cancelEdit}
@@ -524,8 +484,13 @@ function NoteRow({
               </div>
             </div>
             </Dialog>
-          )}
+      )}
 
+      {expanded && (
+        <div
+          className="px-4 pb-3 flex flex-col gap-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Move sub-panel (task/kb need input) */}
           {moving && moveDest === "task" && (
             <div
