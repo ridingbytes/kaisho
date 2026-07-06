@@ -43,5 +43,10 @@
   "entriesMarkedInvoiced": "{{count}} entradas marcadas como facturadas",
   "hUsed": "h usadas",
   "hLeft": "h restantes",
-  "startDate": "Fecha de inicio"
+  "startDate": "Fecha de inicio",
+  "projects": "Proyectos",
+  "noProjects": "Aún no hay proyectos.",
+  "notes": "Notas",
+  "noNotes": "Aún no hay notas.",
+  "files": "Archivos"
 }

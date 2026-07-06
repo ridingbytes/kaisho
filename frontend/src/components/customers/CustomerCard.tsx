@@ -18,6 +18,9 @@ import { BudgetBar } from "./BudgetBar";
 import { ContractsSection } from "./ContractsSection";
 import { TasksSection } from "./TasksSection";
 import { TimeEntriesSection } from "./TimeEntriesSection";
+import { CustomerProjectsSection } from "./CustomerProjectsSection";
+import { CustomerNotesSection } from "./CustomerNotesSection";
+import { CustomerFilesSection } from "./CustomerFilesSection";
 import { AddContractForm } from "./AddContractForm";
 import { QuickBookForm } from "./QuickBookForm";
 import { InvoicePanel } from "./InvoicePanel";
@@ -226,11 +229,14 @@ export function CustomerCard({ customer: c }: Props) {
               + "mt-1 flex flex-col gap-1"
             }
           >
+            <CustomerProjectsSection customerName={c.name} />
             <TasksSection customerName={c.name} />
             <TimeEntriesSection
               customerName={c.name}
               contracts={c.contracts}
             />
+            <CustomerNotesSection customerName={c.name} />
+            <CustomerFilesSection customerName={c.name} />
           </div>
 
           {/* Actions */}
