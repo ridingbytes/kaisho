@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.7.2
+
+- Reorder projects on the board: drag a card within a column
+  to reorder it, drag it to another column to change its
+  status, and drag a column by its grip to reorder columns.
+  All three now persist.
+- A project's Tasks tab always shows an add-task control,
+  even for a fresh project with no tasks or milestones.
+- Change a project's colour from the workspace header, like
+  customers.
+- Task status badges in a project match the colours
+  configured for the board's status columns.
+
 ## 2.7.1
 
 - Fix a 500 error when creating a project in the packaged
