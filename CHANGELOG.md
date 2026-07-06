@@ -1,17 +1,34 @@
 # Changelog
 
-## Unreleased
+## 2.7.0
 
 - Add first-class Projects [#217]. A project belongs to a
-  customer and aggregates its tasks, time, and files in one
-  workspace, with a markdown description and milestones.
-  Tasks are grouped under their milestone; create a task in
-  a project (it inherits the customer) or assign an existing
-  one, and its time rolls up automatically. Click a task or
-  time entry for a rich edit subview; tasks show a project
-  badge on the board. Drag and drop files into the project.
-  Scriptable via `kai project` and exposed to the AI/MCP
-  tools. See `docs/guide/projects.md`.
+  customer and aggregates its tasks, time, notes, and files
+  in one workspace, with a markdown description, milestones,
+  tags, a deadline, and a status. Tasks are grouped under
+  their milestone; create a task in a project (it inherits
+  the customer) or assign an existing one, and its time
+  rolls up automatically. A kanban-style board shows
+  projects by status with drag-to-reorder, collapsible
+  columns, and search. Projects appear on the dashboard and
+  on customer cards, are scriptable via `kai project`, and
+  are exposed to the AI/MCP tools. See
+  `docs/guide/projects.md`.
+- Every editing surface now opens in a modal dialog — tasks,
+  notes, clock entries, customers, inbox items, contracts,
+  and milestones — replacing inline pencil and collapsible
+  edit forms.
+- Markdown fields (task/note/project descriptions and note
+  bodies) use a Preview/Write editor with interactive
+  checkboxes and drag-and-drop attachments; removing a
+  dropped-file link now deletes the underlying file.
+- Consistent tagging across projects and tasks via a shared
+  tag input that autocompletes existing tags and accepts new
+  ones.
+- Customer cards gain Projects, Notes, and Files sections
+  (including customer-linked knowledge-base files).
+- A keyboard shortcut for the Projects view (default `p`),
+  configurable in Settings.
 
 ## 2.6.0
 
