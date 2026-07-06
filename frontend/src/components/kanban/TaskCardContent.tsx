@@ -9,7 +9,6 @@ import {
   ArrowUpRight,
   GitBranch,
   ListRestart,
-  Tag,
 } from "lucide-react";
 import { RelDate } from "../common/RelDate";
 import { MarkdownDialog } from "../common/MarkdownDialog";
@@ -17,8 +16,7 @@ import {
   handleLinkClick,
 } from "../common/LinkPopover";
 import { tagBadgeStyle } from "../../utils/tagColors";
-import { TagDropdown } from "../common/TagDropdown";
-import { useSetTaskTags, useUpdateTask } from "../../hooks/useTasks";
+import { useUpdateTask } from "../../hooks/useTasks";
 import { stripCustomerPrefix } from "../../utils/customerPrefix";
 import { TimerBadge } from "./TimerBadge";
 import { ProjectBadge } from "../projects/ProjectBadge";
@@ -69,8 +67,6 @@ export function TaskCardContent({
   const { t } = useTranslation("kanban");
   const { t: tc } = useTranslation("common");
   const [showDesc, setShowDesc] = useState(false);
-  const [tagging, setTagging] = useState(false);
-  const setTaskTags = useSetTaskTags();
   const updateTask = useUpdateTask();
 
   function handleBodyToggle(md: string) {
@@ -172,72 +168,31 @@ export function TaskCardContent({
             #{extractIssueNumber(task.github_url)}
           </a>
         )}
-        {tagging ? (
-          <div
-            onPointerDown={(e) =>
-              e.stopPropagation()
-            }
-          >
-            <TagDropdown
-              selected={task.tags}
-              allTags={allTags}
-              autoOpen
-              addOnly
-              onChange={(tags) => {
-                setTaskTags.mutate({
-                  taskId: task.id,
-                  tags,
-                });
-              }}
-            />
-          </div>
-        ) : (
-          <>
-            {task.tags.map((tagName) => {
-              const def = allTags.find(
-                (t) => t.name === tagName,
-              );
-              return def ? (
-                <button
-                  key={tagName}
-                  onPointerDown={(e) =>
-                    e.stopPropagation()
-                  }
-                  onClick={() =>
-                    onTagClick?.(tagName)
-                  }
-                  className="px-1.5 py-0.5 rounded text-2xs font-semibold hover:opacity-80 transition-opacity"
-                  style={tagBadgeStyle(def.color)}
-                >
-                  {tagName}
-                </button>
-              ) : (
-                <button
-                  key={tagName}
-                  onPointerDown={(e) =>
-                    e.stopPropagation()
-                  }
-                  onClick={() =>
-                    onTagClick?.(tagName)
-                  }
-                  className="px-1.5 py-0.5 rounded text-2xs font-medium bg-surface-overlay text-fg border border-border-subtle hover:border-cta hover:text-cta transition-colors"
-                >
-                  {tagName}
-                </button>
-              );
-            })}
+        {task.tags.map((tagName) => {
+          const def = allTags.find(
+            (t) => t.name === tagName,
+          );
+          return def ? (
             <button
-              onPointerDown={(e) =>
-                e.stopPropagation()
-              }
-              onClick={() => setTagging(true)}
-              className="p-0.5 rounded text-fg-subtle hover:text-cta transition-colors"
-              title={t("editTags")}
+              key={tagName}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => onTagClick?.(tagName)}
+              className="px-1.5 py-0.5 rounded text-2xs font-semibold hover:opacity-80 transition-opacity"
+              style={tagBadgeStyle(def.color)}
             >
-              <Tag size={10} />
+              {tagName}
             </button>
-          </>
-        )}
+          ) : (
+            <button
+              key={tagName}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => onTagClick?.(tagName)}
+              className="px-1.5 py-0.5 rounded text-2xs font-medium bg-surface-overlay text-fg border border-border-subtle hover:border-cta hover:text-cta transition-colors"
+            >
+              {tagName}
+            </button>
+          );
+        })}
         <span className="ml-auto flex items-center gap-1 shrink-0">
           <RelDate
             date={task.created}
