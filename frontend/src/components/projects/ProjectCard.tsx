@@ -18,6 +18,24 @@ interface Props {
   onOpen: (id: string) => void;
 }
 
+/** Deadline badge tone: red when past, amber within a
+ * week, muted otherwise. */
+function dueTone(due: string): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(due);
+  if (!m) return "text-fg-muted";
+  const d = new Date(
+    Number(m[1]), Number(m[2]) - 1, Number(m[3]),
+  );
+  const days = Math.round(
+    (d.getTime() - today.getTime()) / 86400000,
+  );
+  if (days < 0) return "bg-red-500/10 text-red-500";
+  if (days <= 7) return "bg-amber-500/10 text-amber-600";
+  return "text-fg-muted";
+}
+
 /** A project tile in the projects grid. */
 export function ProjectCard({ project, onOpen }: Props) {
   const { t } = useTranslation("projects");
@@ -108,7 +126,13 @@ export function ProjectCard({ project, onOpen }: Props) {
             {formatHours(project.minutes ?? 0)}
           </span>
           {project.due && (
-            <span className="inline-flex items-center gap-1 ml-auto">
+            <span
+              className={[
+                "inline-flex items-center gap-1 ml-auto",
+                "px-1.5 py-0.5 rounded font-medium",
+                dueTone(project.due),
+              ].join(" ")}
+            >
               <CalendarClock size={12} />
               {formatDateLabel(project.due)}
             </span>

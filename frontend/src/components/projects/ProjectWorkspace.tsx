@@ -170,12 +170,20 @@ export function ProjectWorkspace({ projectId, onBack }: Props) {
                 {project.contract}
               </span>
             )}
-            {(project.start || project.due) && (
-              <span className="text-2xs text-fg-muted">
-                {formatDateLabel(project.start) || "…"} →{" "}
-                {formatDateLabel(project.due) || "…"}
-              </span>
-            )}
+            <label className="inline-flex items-center gap-1 text-2xs text-fg-muted">
+              {t("deadlineLabel")}
+              <input
+                type="date"
+                value={project.due ?? ""}
+                onChange={(e) =>
+                  update.mutate({
+                    id: projectId,
+                    updates: { due: e.target.value },
+                  })
+                }
+                className={`${fieldCls} py-0.5`}
+              />
+            </label>
             <span className="text-2xs text-fg-muted">
               · {formatHours(total_minutes)} {t("logged")}
             </span>
