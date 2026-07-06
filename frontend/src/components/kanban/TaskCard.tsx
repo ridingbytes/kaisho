@@ -185,9 +185,10 @@ export function TaskCard({
         .filter(Boolean)
         .join(" ")}
     >
-      {/* Status color stripe */}
+      {/* Status color stripe — a 4px left accent matching
+          the project cards' colored left border. */}
       <div
-        className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-lg"
+        className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
         style={{ backgroundColor: statusColor }}
       />
 
