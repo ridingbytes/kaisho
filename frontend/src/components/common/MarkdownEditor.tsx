@@ -65,8 +65,8 @@ export function MarkdownEditor({
   return (
     <div className={className}>
       <div className="flex gap-1 mb-1.5 border-b border-border-subtle">
-        {tabBtn("write", t("write"))}
         {tabBtn("preview", t("preview"))}
+        {tabBtn("write", t("write"))}
       </div>
       {tab === "write" ? (
         <textarea
