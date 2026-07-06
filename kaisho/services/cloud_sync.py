@@ -1888,6 +1888,9 @@ def pull_and_apply_notes(
                             "task_id": incoming.get(
                                 "task_id",
                             ),
+                            "project": incoming.get(
+                                "project",
+                            ),
                         },
                     )
                     total_up += 1
@@ -1902,6 +1905,7 @@ def pull_and_apply_notes(
                     tags=incoming.get("tags"),
                     task_id=incoming.get("task_id"),
                     sync_id=incoming["sync_id"],
+                    project=incoming.get("project"),
                 )
                 total_up += 1
 

@@ -125,6 +125,7 @@ def add_note(
     tags: list[str] | None = None,
     task_id: str | None = None,
     sync_id: str | None = None,
+    project: str | None = None,
 ) -> dict:
     """Append a new note to notes.org and return its dict."""
     now = local_now()
@@ -140,6 +141,8 @@ def add_note(
     }
     if task_id:
         props["TASK_ID"] = task_id
+    if project:
+        props["PROJECT"] = project
 
     new_heading = Heading(
         level=1,

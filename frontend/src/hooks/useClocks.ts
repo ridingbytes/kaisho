@@ -284,6 +284,7 @@ export function useUpdateClockEntry() {
     onSuccess: (_data, vars) => {
       invalidateClockCaches(qc);
       void qc.invalidateQueries({ queryKey: ["projects"] });
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
       if (!vars.silent) toast("Clock entry updated");
     },
   });

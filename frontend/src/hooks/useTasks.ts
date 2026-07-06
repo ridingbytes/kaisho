@@ -77,6 +77,7 @@ export function useAddTask() {
       void qc.invalidateQueries({
         queryKey: ["projects"],
       });
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
       toast(`Task added: ${vars.title}`);
     },
   });
@@ -111,6 +112,7 @@ export function useUpdateTask() {
       void qc.invalidateQueries({
         queryKey: ["projects"],
       });
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
       toast("Task updated");
     },
   });

@@ -54,6 +54,8 @@ export function useProjectFiles(id: string | null) {
 /** Invalidate everything that depends on a project. */
 function invalidateProject(qc: ReturnType<typeof useQueryClient>) {
   void qc.invalidateQueries({ queryKey: KEY });
+  // The dashboard embeds active-project cards.
+  void qc.invalidateQueries({ queryKey: ["dashboard"] });
 }
 
 export function useCreateProject() {

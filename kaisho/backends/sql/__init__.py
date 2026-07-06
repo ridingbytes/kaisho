@@ -120,6 +120,7 @@ class NoteRow(Base):
     body = Column(Text, default="")
     customer = Column(String, default="")
     task_id = Column(String, nullable=True)
+    project = Column(String, nullable=True)
     tags = Column(String, default="")
     created = Column(String, nullable=False)
     # Cloud-sync identity (see InboxRow).
@@ -272,6 +273,16 @@ def _ensure_project_columns(engine) -> None:
             if "project" not in cols:
                 conn.execute(text(
                     "ALTER TABLE clocks ADD COLUMN "
+                    "project VARCHAR"
+                ))
+        if "notes" in names:
+            cols = {
+                c["name"]
+                for c in inspector.get_columns("notes")
+            }
+            if "project" not in cols:
+                conn.execute(text(
+                    "ALTER TABLE notes ADD COLUMN "
                     "project VARCHAR"
                 ))
 
@@ -558,6 +569,7 @@ def _note_row_to_dict(row: NoteRow) -> dict:
         "body": row.body or "",
         "customer": row.customer or "",
         "task_id": row.task_id,
+        "project": row.project or None,
         "tags": _parse_tags(row.tags),
         "created": row.created,
         "sync_id": row.sync_id or "",
@@ -1723,6 +1735,7 @@ class SqlNotesBackend(NotesBackend):
         tags=None,
         task_id=None,
         sync_id=None,
+        project=None,
     ) -> dict:
         """Create a new note and return its dict."""
         note_id = _generate_id(title)
@@ -1734,6 +1747,7 @@ class SqlNotesBackend(NotesBackend):
             body=body,
             customer=customer or "",
             task_id=task_id,
+            project=project or None,
             tags=_serialize_tags(tags),
             created=now,
             sync_id=sid,
@@ -1772,6 +1786,7 @@ class SqlNotesBackend(NotesBackend):
                 )
             allowed = (
                 "title", "body", "customer", "task_id",
+                "project",
             )
             for key in allowed:
                 if key in updates:

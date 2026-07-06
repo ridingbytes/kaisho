@@ -7,6 +7,8 @@ testable without HTTP.
 from collections import defaultdict
 from datetime import date
 
+from ..config import get_config
+from . import projects as projects_svc
 from .time_insights import (
     billable_contracts,
     is_billable,
@@ -40,15 +42,12 @@ def is_aging_item(item: dict) -> bool:
 def build_project_cards(backend) -> list[dict]:
     """Summarize active projects for the dashboard widget.
 
-    One pass over tasks and clock entries feeds every card,
-    so this stays cheap regardless of project count. Time
-    rolls up the same way the project workspace does: an
-    entry assigned directly, or logged against an assigned
-    task.
+    Builds a project-id -> minutes map in a single pass over
+    tasks and clock entries, so cost is O(tasks + entries)
+    regardless of project count. Time rolls up the same way
+    the project workspace does: an entry assigned directly,
+    or logged against an assigned task.
     """
-    from ..config import get_config
-    from . import projects as projects_svc
-
     projects = projects_svc.list_projects(
         get_config().PROJECTS_FILE,
     )
@@ -57,32 +56,43 @@ def build_project_cards(backend) -> list[dict]:
     ][:8]
     if not active:
         return []
+    active_ids = {p["id"] for p in active}
+
     tasks = backend.tasks.list_tasks(include_done=True)
-    entries = backend.clocks.list_entries(period="all")
+    # task id -> the project it belongs to (active only).
+    task_project = {
+        t["id"]: t["project"]
+        for t in tasks
+        if t.get("project") in active_ids
+    }
+    task_counts: dict = defaultdict(int)
+    for pid in task_project.values():
+        task_counts[pid] += 1
+
+    minutes: dict = defaultdict(int)
+    for e in backend.clocks.list_entries(period="all"):
+        dur = e.get("duration_minutes") or 0
+        pid = e.get("project")
+        if pid not in active_ids:
+            pid = task_project.get(e.get("task_id"))
+        if pid in active_ids:
+            minutes[pid] += dur
+
     cards = []
     for p in active:
         pid = p["id"]
-        p_tasks = [
-            t for t in tasks if t.get("project") == pid
-        ]
-        task_ids = {t["id"] for t in p_tasks}
-        minutes = sum(
-            e.get("duration_minutes") or 0 for e in entries
-            if e.get("project") == pid
-            or (e.get("task_id") and e["task_id"] in task_ids)
-        )
         ms = p["milestones"]
         cards.append({
             "id": pid,
             "name": p["name"],
             "customer": p.get("customer"),
             "color": p.get("color", ""),
-            "task_count": len(p_tasks),
+            "task_count": task_counts.get(pid, 0),
             "milestones_done": sum(
                 1 for m in ms if m["done"]
             ),
             "milestones_total": len(ms),
-            "minutes": minutes,
+            "minutes": minutes.get(pid, 0),
         })
     return cards
 

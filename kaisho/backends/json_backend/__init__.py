@@ -441,6 +441,7 @@ class JsonClockBackend(ClockBackend):
         # on legacy entries (no pause/resume support) reads
         # as False, which is the correct interpretation.
         entry["paused"] = bool(entry.get("paused"))
+        entry.setdefault("project", None)
         return entry
 
     # -- queries -------------------------------------------------
@@ -1358,6 +1359,7 @@ class JsonNotesBackend(NotesBackend):
     def add_note(
         self, title, body="", customer=None,
         tags=None, task_id=None, sync_id=None,
+        project=None,
     ) -> dict:
         """Create a new note and return its dict."""
         notes = _read_json(self._notes_file)
@@ -1367,6 +1369,7 @@ class JsonNotesBackend(NotesBackend):
             "body": body,
             "customer": customer or "",
             "task_id": task_id or None,
+            "project": project or None,
             "tags": tags or [],
             "created": datetime.now().isoformat(),
         }

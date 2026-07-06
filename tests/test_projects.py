@@ -165,3 +165,13 @@ def test_sql_clock_project_roundtrip(tmp_path):
     )
     got = clocks.list_entries(period="all")[0]
     assert got["project"] == "P-1"
+
+
+def test_sql_note_project_roundtrip(tmp_path):
+    notes = _sql_backend(tmp_path)[4]
+    n = notes.add_note(title="N", project="P-1")
+    assert n["project"] == "P-1"
+    got = notes.list_notes()[0]
+    assert got["project"] == "P-1"
+    notes.update_note(n["id"], {"project": ""})
+    assert notes.list_notes()[0]["project"] in (None, "")

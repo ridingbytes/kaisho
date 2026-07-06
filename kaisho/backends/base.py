@@ -405,11 +405,14 @@ class NotesBackend(ABC):
         tags: list[str] | None = None,
         task_id: str | None = None,
         sync_id: str | None = None,
+        project: str | None = None,
     ) -> dict:
         """Add a new note, return its dict.
 
         :param sync_id: Optional UUID for cloud sync
             identity. Generated if not provided.
+        :param project: Optional project id to file the
+            note under.
         """
 
     def reorder_notes(

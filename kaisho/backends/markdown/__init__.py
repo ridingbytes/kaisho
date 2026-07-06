@@ -1785,6 +1785,7 @@ def _section_to_note(sec: dict) -> dict:
         "body": sec.get("body", ""),
         "customer": meta.get("customer", ""),
         "task_id": meta.get("task_id") or None,
+        "project": meta.get("project") or None,
         "tags": tags,
         "created": meta.get("created", ""),
         "updated_at": updated_at,
@@ -1802,6 +1803,8 @@ def _note_to_section(note: dict) -> dict:
     }
     if note.get("task_id"):
         meta["task_id"] = note["task_id"]
+    if note.get("project"):
+        meta["project"] = note["project"]
     return {
         "heading": _note_heading(note),
         "meta": meta,
@@ -1854,6 +1857,7 @@ class MarkdownNotesBackend(NotesBackend):
     def add_note(
         self, title, body="", customer=None,
         tags=None, task_id=None, sync_id=None,
+        project=None,
     ) -> dict:
         """Create a new note and return its dict."""
         notes = self._load_notes()
@@ -1865,6 +1869,7 @@ class MarkdownNotesBackend(NotesBackend):
             "body": body,
             "customer": customer or "",
             "task_id": task_id or None,
+            "project": project or None,
             "tags": tags or [],
             "created": now.isoformat(),
             "updated_at": now.isoformat(),

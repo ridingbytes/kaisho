@@ -261,6 +261,16 @@ def put_attachment_text(
         raise HTTPException(
             status_code=404, detail="attachment not found",
         )
+    # Only replace files that are already text, so a stray
+    # call can't clobber a binary attachment (PNG/PDF) with
+    # UTF-8 text.
+    try:
+        target.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, ValueError):
+        raise HTTPException(
+            status_code=415,
+            detail="not an editable text file",
+        )
     data = body.content.encode("utf-8")
     if len(data) > _MAX_TEXT_BYTES:
         raise HTTPException(
@@ -307,7 +317,13 @@ def get_attachment(bucket: str, filename: str):
             status_code=404, detail="attachment not found",
         )
     mime, _ = mimetypes.guess_type(target)
-    inline = (mime or "") in _INLINE_IMAGE_MIMES
+    # Raster images and PDFs render inline (the sandboxing
+    # CSP below neutralises any embedded scripts). Everything
+    # else is forced to download.
+    inline = (
+        (mime or "") in _INLINE_IMAGE_MIMES
+        or mime == "application/pdf"
+    )
     headers = {
         "X-Content-Type-Options": "nosniff",
         "Content-Security-Policy": (
