@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { RelDate } from "../common/RelDate";
 import { Dialog } from "../common/Dialog";
+import { MarkdownEditor } from "../common/MarkdownEditor";
 import { KbDestinationPicker } from "../common/KbDestinationPicker";
 import {
   useDeleteItem,
@@ -16,9 +17,6 @@ import {
   useUpdateItem,
 } from "../../hooks/useInbox";
 import { useSetView } from "../../context/ViewContext";
-import {
-  useFileDropOnTextarea,
-} from "../../hooks/useFileDropOnTextarea";
 import type { InboxItem } from "../../types";
 
 import { useSettings } from "../../hooks/useSettings";
@@ -92,15 +90,6 @@ export function InboxItemRow({ item }: Props) {
   const [editType, setEditType] = useState("");
   const [editCustomer, setEditCustomer] = useState("");
   const [editBody, setEditBody] = useState("");
-  const editBodyRef = useRef<HTMLTextAreaElement | null>(
-    null,
-  );
-  const drop = useFileDropOnTextarea({
-    value: editBody,
-    onChange: setEditBody,
-    bucketId: item.id,
-    textareaRef: editBodyRef,
-  });
   const [editChannel, setEditChannel] = useState("");
   const [editDirection, setEditDirection] = useState("");
   const [targetCustomer, setTargetCustomer] = useState(
@@ -423,29 +412,13 @@ export function InboxItemRow({ item }: Props) {
                 placeholder={tc("title")}
                 className={`${fieldCls} w-full`}
               />
-              <textarea
-                ref={editBodyRef}
+              <MarkdownEditor
                 value={editBody}
-                onChange={(e) => setEditBody(e.target.value)}
-                onDrop={drop.onDrop}
-                onDragOver={drop.onDragOver}
-                onPaste={drop.onPaste}
+                onChange={setEditBody}
+                bucketId={item.id}
+                rows={8}
                 placeholder={t("bodyOptional")}
-                rows={3}
-                className={`${fieldCls} w-full resize-y`}
               />
-              {drop.uploading > 0 && (
-                <div className="text-2xs text-fg-muted px-0.5">
-                  {tc("uploadingAttachment", {
-                    count: drop.uploading,
-                  })}
-                </div>
-              )}
-              {drop.error && (
-                <div className="text-2xs text-red-500 px-0.5">
-                  {drop.error}
-                </div>
-              )}
               <div className="flex gap-2">
                 <button
                   onClick={handleSave}
