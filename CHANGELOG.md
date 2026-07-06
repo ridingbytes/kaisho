@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.7.1
+
+- Fix a 500 error when creating a project in the packaged
+  app. The projects file is now resolved through the same
+  settings overlay as every other org file, honouring a
+  configured `org_dir` instead of an un-writable default
+  path.
+
 ## 2.7.0
 
 - Add first-class Projects [#217]. A project belongs to a
