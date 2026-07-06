@@ -38,6 +38,16 @@ export function ProjectsView() {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [customer, setCustomer] = useState("");
+  const [search, setSearch] = useState("");
+
+  const q = search.trim().toLowerCase();
+  const visible = q
+    ? projects.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.customer ?? "").toLowerCase().includes(q),
+      )
+    : projects;
 
   // Deep-link: setView("projects", id) focuses a project.
   useEffect(() => {
@@ -85,6 +95,14 @@ export function ProjectsView() {
   return (
     <div className="flex flex-col h-full">
       <PanelToolbar
+        left={
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("searchProjects")}
+            className={`${inputCls} w-64 max-w-full`}
+          />
+        }
         right={
           <div className="flex items-center gap-2">
             <button
@@ -147,7 +165,7 @@ export function ProjectsView() {
             </StateMessage>
           ) : (
             <ProjectsBoard
-              projects={projects}
+              projects={visible}
               onOpen={setSelectedId}
             />
           )}

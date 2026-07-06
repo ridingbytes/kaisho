@@ -34,6 +34,7 @@ Project heading::
 """
 import uuid
 
+from collections import defaultdict
 from pathlib import Path
 
 from ..org.models import Heading
@@ -283,6 +284,41 @@ def update_project(
     heading.dirty = True
     write_org_file(projects_file, org_file)
     return _heading_to_project(heading)
+
+
+def project_stats(backend, project_ids: set) -> dict:
+    """Return ``{project_id: {task_count, minutes}}`` in a
+    single pass over tasks and clock entries.
+
+    Time rolls up two ways (direct assignment or via an
+    assigned task), matching :func:`aggregate_project`.
+    Shared by the projects list and the dashboard.
+    """
+    if not project_ids:
+        return {}
+    tasks = backend.tasks.list_tasks(include_done=True)
+    task_project = {
+        t["id"]: t["project"]
+        for t in tasks
+        if t.get("project") in project_ids
+    }
+    counts: dict = defaultdict(int)
+    for pid in task_project.values():
+        counts[pid] += 1
+    minutes: dict = defaultdict(int)
+    for e in backend.clocks.list_entries(period="all"):
+        pid = e.get("project")
+        if pid not in project_ids:
+            pid = task_project.get(e.get("task_id"))
+        if pid in project_ids:
+            minutes[pid] += e.get("duration_minutes") or 0
+    return {
+        pid: {
+            "task_count": counts.get(pid, 0),
+            "minutes": minutes.get(pid, 0),
+        }
+        for pid in project_ids
+    }
 
 
 def aggregate_project(

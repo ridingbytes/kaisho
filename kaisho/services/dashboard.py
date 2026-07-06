@@ -56,43 +56,25 @@ def build_project_cards(backend) -> list[dict]:
     ][:8]
     if not active:
         return []
-    active_ids = {p["id"] for p in active}
-
-    tasks = backend.tasks.list_tasks(include_done=True)
-    # task id -> the project it belongs to (active only).
-    task_project = {
-        t["id"]: t["project"]
-        for t in tasks
-        if t.get("project") in active_ids
-    }
-    task_counts: dict = defaultdict(int)
-    for pid in task_project.values():
-        task_counts[pid] += 1
-
-    minutes: dict = defaultdict(int)
-    for e in backend.clocks.list_entries(period="all"):
-        dur = e.get("duration_minutes") or 0
-        pid = e.get("project")
-        if pid not in active_ids:
-            pid = task_project.get(e.get("task_id"))
-        if pid in active_ids:
-            minutes[pid] += dur
-
+    stats = projects_svc.project_stats(
+        backend, {p["id"] for p in active},
+    )
     cards = []
     for p in active:
         pid = p["id"]
         ms = p["milestones"]
+        s = stats.get(pid, {"task_count": 0, "minutes": 0})
         cards.append({
             "id": pid,
             "name": p["name"],
             "customer": p.get("customer"),
             "color": p.get("color", ""),
-            "task_count": task_counts.get(pid, 0),
+            "task_count": s["task_count"],
             "milestones_done": sum(
                 1 for m in ms if m["done"]
             ),
             "milestones_total": len(ms),
-            "minutes": minutes.get(pid, 0),
+            "minutes": s["minutes"],
         })
     return cards
 

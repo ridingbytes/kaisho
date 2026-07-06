@@ -132,6 +132,10 @@ export interface Project {
   description: string;
   updated_at: string;
   milestones: Milestone[];
+  /** Attached by the list endpoint: assigned task count. */
+  task_count?: number;
+  /** Attached by the list endpoint: logged minutes. */
+  minutes?: number;
 }
 
 /** A project with its assigned tasks and time rolled up. */

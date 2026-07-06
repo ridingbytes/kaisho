@@ -1,7 +1,13 @@
 import { useTranslation } from "react-i18next";
-import { CalendarClock, ListChecks } from "lucide-react";
+import {
+  CalendarClock,
+  Clock,
+  ListChecks,
+  SquareCheck,
+} from "lucide-react";
 import type { Project } from "../../types";
 import { formatDateLabel } from "../../utils/dateLabel";
+import { formatHours } from "../../utils/formatting";
 import {
   milestoneProgress,
   statusClasses,
@@ -28,8 +34,8 @@ export function ProjectCard({ project, onOpen }: Props) {
       }}
       className={[
         "text-left rounded-lg border border-border border-l-4",
-        "bg-surface-card p-4 transition-colors",
-        "hover:border-cta/50 flex flex-col gap-3",
+        "bg-surface-card p-4 transition-colors min-h-[8rem]",
+        "hover:border-cta/50 flex flex-col gap-3 w-full",
       ].join(" ")}
     >
       <div className="flex items-start justify-between gap-2">
@@ -79,12 +85,22 @@ export function ProjectCard({ project, onOpen }: Props) {
             </span>
           </div>
         )}
-        {project.due && (
-          <div className="flex items-center gap-1 text-2xs text-fg-muted">
-            <CalendarClock size={12} />
-            {t("due")} {formatDateLabel(project.due)}
-          </div>
-        )}
+        <div className="flex items-center gap-3 text-2xs text-fg-muted">
+          <span className="inline-flex items-center gap-1">
+            <SquareCheck size={12} className="text-fg-subtle" />
+            {project.task_count ?? 0}
+          </span>
+          <span className="inline-flex items-center gap-1 tabular-nums">
+            <Clock size={12} className="text-fg-subtle" />
+            {formatHours(project.minutes ?? 0)}
+          </span>
+          {project.due && (
+            <span className="inline-flex items-center gap-1 ml-auto">
+              <CalendarClock size={12} />
+              {formatDateLabel(project.due)}
+            </span>
+          )}
+        </div>
       </div>
     </button>
   );

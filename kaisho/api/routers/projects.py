@@ -54,10 +54,21 @@ class MilestoneUpdate(BaseModel):
 
 @router.get("")
 def list_projects(include_archived: bool = False):
-    """List projects, newest-updated first."""
-    return projects_svc.list_projects(
+    """List projects (newest-updated first) with each
+    project's task count and logged minutes attached."""
+    projects = projects_svc.list_projects(
         _file(), include_archived=include_archived,
     )
+    stats = projects_svc.project_stats(
+        get_backend(), {p["id"] for p in projects},
+    )
+    for p in projects:
+        p.update(
+            stats.get(
+                p["id"], {"task_count": 0, "minutes": 0},
+            )
+        )
+    return projects
 
 
 @router.post("", status_code=201)

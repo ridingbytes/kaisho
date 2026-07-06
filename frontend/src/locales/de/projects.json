@@ -66,5 +66,6 @@
   "fileSaved": "Datei gespeichert",
   "editNote": "Notiz bearbeiten",
   "openInNotes": "In der Notizen-Ansicht öffnen",
-  "fileLoadError": "Datei konnte nicht geladen werden."
+  "fileLoadError": "Datei konnte nicht geladen werden.",
+  "searchProjects": "Projekte suchen…"
 }

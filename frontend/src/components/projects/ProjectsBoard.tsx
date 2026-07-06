@@ -73,11 +73,11 @@ function Column({
     <div
       ref={setNodeRef}
       className={[
-        "w-80 shrink-0 rounded-lg border p-2",
-        "flex flex-col transition-colors",
+        "w-80 shrink-0 rounded-lg border border-dashed p-2",
+        "flex flex-col min-h-[70vh] transition-colors",
         isOver
           ? "border-cta bg-cta-muted/20"
-          : "border-border bg-surface-card/40",
+          : "border-border bg-surface-card/30",
       ].join(" ")}
     >
       <div className="flex items-center gap-2 px-1 pb-2">
