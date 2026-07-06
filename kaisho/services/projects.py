@@ -330,6 +330,130 @@ def update_project(
     return _heading_to_project(heading)
 
 
+def _apply_scalar_prop(
+    props: dict, key: str, value,
+) -> None:
+    """Set a heading property, or clear it when falsy."""
+    if value:
+        props[key] = value
+    else:
+        props.pop(key, None)
+
+
+def _apply_project_fields(heading: Heading, entry: dict) -> None:
+    """Write an entry's scalar fields onto a project heading.
+
+    Mirrors how :func:`update_project` maps fields, but works
+    from a sync payload (so it always writes rather than
+    honouring ``None`` = leave-alone).
+    """
+    status = entry.get("status") or "ACTIVE"
+    heading.keyword = (
+        status if status in PROJECT_STATES else "ACTIVE"
+    )
+    if entry.get("name"):
+        heading.title = entry["name"]
+    heading.tags = list(entry.get("tags") or [])
+    description = entry.get("description") or ""
+    heading.body = (
+        description.splitlines() if description.strip() else []
+    )
+    props = heading.properties
+    props["PROJECT_ID"] = entry["id"]
+    _apply_scalar_prop(props, "CUSTOMER", entry.get("customer"))
+    _apply_scalar_prop(props, "CONTRACT", entry.get("contract"))
+    _apply_scalar_prop(props, "START", entry.get("start"))
+    _apply_scalar_prop(props, "DUE", entry.get("due"))
+    props["COLOR"] = entry.get("color") or _color_for(entry["id"])
+    props["UPDATED_AT"] = entry.get("updated_at") or _now()
+    heading.dirty = True
+
+
+def _new_milestone_heading(
+    parent: Heading, milestone: dict,
+) -> Heading:
+    """Build a milestone child heading from a sync payload,
+    preserving the payload's milestone id."""
+    props = {"MILESTONE_ID": milestone["id"]}
+    if milestone.get("due"):
+        props["DUE"] = milestone["due"]
+    return Heading(
+        level=parent.level + 1,
+        keyword="DONE" if milestone.get("done") else "TODO",
+        title=milestone.get("title") or "",
+        properties=props,
+        dirty=True,
+    )
+
+
+def _apply_milestone_fields(
+    child: Heading, milestone: dict,
+) -> None:
+    """Write a sync payload's fields onto a milestone child."""
+    if milestone.get("title"):
+        child.title = milestone["title"]
+    child.keyword = "DONE" if milestone.get("done") else "TODO"
+    _apply_scalar_prop(
+        child.properties, "DUE", milestone.get("due"),
+    )
+    child.dirty = True
+
+
+def _reconcile_milestones(
+    heading: Heading, milestones: list[dict],
+) -> None:
+    """Reconcile a project's milestone children to match the
+    sync payload exactly.
+
+    Milestones present in the payload but not locally are
+    added (keeping the payload's id); matching ids are
+    updated in place; local milestones whose id is absent
+    from the payload are deleted.
+    """
+    existing = {
+        c.properties.get("MILESTONE_ID"): c
+        for c in _milestone_children(heading)
+    }
+    wanted = {m["id"] for m in milestones if m.get("id")}
+    for mid, child in existing.items():
+        if mid not in wanted:
+            heading.children.remove(child)
+    for milestone in milestones:
+        mid = milestone.get("id")
+        if not mid:
+            continue
+        child = existing.get(mid)
+        if child is None:
+            heading.children.append(
+                _new_milestone_heading(heading, milestone),
+            )
+        else:
+            _apply_milestone_fields(child, milestone)
+
+
+def apply_project(projects_file: Path, entry: dict) -> dict:
+    """Upsert a project (and its milestones) from a sync
+    payload keyed on ``entry["id"]`` (the PROJECT_ID).
+
+    Creates the heading with that exact id when it is
+    unknown; otherwise updates every scalar field. Milestone
+    children are reconciled to match ``entry["milestones"]``
+    exactly. Returns the applied project dict.
+    """
+    if not projects_file.exists():
+        projects_file.parent.mkdir(parents=True, exist_ok=True)
+        projects_file.write_text("", encoding="utf-8")
+    org_file = parse_org_file(projects_file, PROJECT_KEYWORDS)
+    heading = _find_project_heading(org_file, entry["id"])
+    if heading is None:
+        heading = Heading(level=1, keyword="ACTIVE", title="")
+        org_file.headings.append(heading)
+    _apply_project_fields(heading, entry)
+    _reconcile_milestones(heading, entry.get("milestones") or [])
+    write_org_file(projects_file, org_file)
+    return _heading_to_project(heading)
+
+
 def project_stats(backend, project_ids: set) -> dict:
     """Return ``{project_id: {task_count, minutes}}`` in a
     single pass over tasks and clock entries.

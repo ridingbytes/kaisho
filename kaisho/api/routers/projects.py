@@ -122,9 +122,16 @@ def update_project(project_id: str, body: ProjectUpdate):
 def delete_project(project_id: str):
     """Delete a project. Assigned entities keep their id
     reference but stop resolving; unassign them first if
-    that matters."""
+    that matters.
+
+    Records a sync tombstone so the deletion propagates to
+    the cloud on the next push cycle."""
+    from ...services import cloud_sync as sync_svc
+    project = projects_svc.get_project(_file(), project_id)
     if not projects_svc.delete_project(_file(), project_id):
         raise HTTPException(404, "Project not found")
+    if project:
+        sync_svc.on_local_delete_project(project)
 
 
 @router.post("/{project_id}/milestones", status_code=201)
