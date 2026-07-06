@@ -49,5 +49,7 @@
   "notes": "Notizen",
   "noNotes": "Noch keine Notizen.",
   "files": "Dateien",
-  "editCustomer": "Kunde bearbeiten"
+  "editCustomer": "Kunde bearbeiten",
+  "addNotePlaceholder": "Neue Notiz…",
+  "knowledge": "WB"
 }

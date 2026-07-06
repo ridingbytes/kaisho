@@ -49,5 +49,7 @@
   "notes": "Notas",
   "noNotes": "Aún no hay notas.",
   "files": "Archivos",
-  "editCustomer": "Editar cliente"
+  "editCustomer": "Editar cliente",
+  "addNotePlaceholder": "Nueva nota…",
+  "knowledge": "BC"
 }

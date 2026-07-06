@@ -49,5 +49,7 @@
   "notes": "Notes",
   "noNotes": "No notes yet.",
   "files": "Files",
-  "editCustomer": "Edit customer"
+  "editCustomer": "Edit customer",
+  "addNotePlaceholder": "New note…",
+  "knowledge": "KB"
 }

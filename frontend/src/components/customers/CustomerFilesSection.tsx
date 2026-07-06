@@ -4,7 +4,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Trash2, Upload } from "lucide-react";
+import { BookOpen, Trash2, Upload } from "lucide-react";
 import { CollapsibleSection } from "../common/CollapsibleSection";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ProjectFileViewer } from "../projects/ProjectFileViewer";
@@ -13,10 +13,36 @@ import {
   fetchProjectFiles,
   uploadAttachment,
 } from "../../api/client";
+import { useKnowledgeTree } from "../../hooks/useKnowledge";
+import { useSetView } from "../../context/ViewContext";
 import { useToast } from "../../context/ToastContext";
+import type { KnowledgeFile } from "../../types";
 
 interface Props {
   customerName: string;
+}
+
+interface TreeNode extends KnowledgeFile {
+  children?: TreeNode[];
+}
+
+/** Flatten the KB tree to the files linked to a customer. */
+function kbFilesForCustomer(
+  nodes: TreeNode[], customer: string,
+): TreeNode[] {
+  const out: TreeNode[] = [];
+  const want = customer.toLowerCase();
+  const walk = (list: TreeNode[]) => {
+    for (const n of list) {
+      if (n.kind === "folder") {
+        walk(n.children ?? []);
+      } else if ((n.customer || "").toLowerCase() === want) {
+        out.push(n);
+      }
+    }
+  };
+  walk(nodes);
+  return out;
 }
 
 /** Files attached to a customer (bucketed by name), shown
@@ -34,6 +60,11 @@ export function CustomerFilesSection({ customerName }: Props) {
     queryFn: () => fetchProjectFiles(bucket),
   });
   const files = data?.files ?? [];
+  const { data: tree = [] } = useKnowledgeTree();
+  const setView = useSetView();
+  const kbFiles = kbFilesForCustomer(
+    tree as TreeNode[], customerName,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
@@ -59,8 +90,34 @@ export function CustomerFilesSection({ customerName }: Props) {
   }
 
   return (
-    <CollapsibleSection label={t("files")} count={files.length}>
+    <CollapsibleSection
+      label={t("files")}
+      count={files.length + kbFiles.length}
+    >
       <div className="ml-5 space-y-2">
+        {kbFiles.length > 0 && (
+          <ul className="divide-y divide-border-subtle">
+            {kbFiles.map((f) => (
+              <li key={f.path}>
+                <button
+                  onClick={() => setView("knowledge", f.path)}
+                  className="flex items-center gap-2 w-full text-left py-1 px-1 rounded hover:bg-surface-overlay/40"
+                >
+                  <BookOpen
+                    size={12}
+                    className="text-cta shrink-0"
+                  />
+                  <span className="flex-1 min-w-0 text-xs truncate">
+                    {f.title || f.label || f.name}
+                  </span>
+                  <span className="text-2xs text-fg-subtle shrink-0">
+                    {t("knowledge", "KB")}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         <div
           role="button"
           tabIndex={0}

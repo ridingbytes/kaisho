@@ -49,5 +49,7 @@
   "notes": "Заметки",
   "noNotes": "Пока нет заметок.",
   "files": "Файлы",
-  "editCustomer": "Изменить клиента"
+  "editCustomer": "Изменить клиента",
+  "addNotePlaceholder": "Новая заметка…",
+  "knowledge": "БЗ"
 }
