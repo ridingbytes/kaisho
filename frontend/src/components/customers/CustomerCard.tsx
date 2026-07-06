@@ -14,6 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { Dialog } from "../common/Dialog";
 import { BudgetBar } from "./BudgetBar";
 import { ContractsSection } from "./ContractsSection";
 import { TasksSection } from "./TasksSection";
@@ -79,15 +80,7 @@ export function CustomerCard({ customer: c }: Props) {
           : "border-border",
       ].join(" ")}
     >
-      {editing ? (
-        <CustomerEditForm
-          customer={c}
-          form={form}
-          setForm={setForm}
-          onClose={() => setEditing(false)}
-        />
-      ) : (
-        <>
+      <>
           {/* Header */}
           <div
             className={
@@ -299,6 +292,20 @@ export function CustomerCard({ customer: c }: Props) {
             )}
           </div>
         </>
+      {editing && (
+        <Dialog
+          open
+          onClose={() => setEditing(false)}
+          title={t("editCustomer", "Edit customer")}
+          size="lg"
+        >
+          <CustomerEditForm
+            customer={c}
+            form={form}
+            setForm={setForm}
+            onClose={() => setEditing(false)}
+          />
+        </Dialog>
       )}
     </div>
   );
