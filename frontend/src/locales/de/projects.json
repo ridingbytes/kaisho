@@ -50,7 +50,7 @@
   "tagsLabel": "Tags",
   "tagsPlaceholder": "Komma, getrennt",
   "notesLabel": "Notizen",
-  "notesPlaceholder": "Details, Links, Kontext…",
+  "notesPlaceholder": "Notiz schreiben (Markdown)…",
   "editEntry": "Zeiteintrag bearbeiten",
   "descriptionLabel": "Beschreibung",
   "hours": "Stunden",
@@ -63,5 +63,7 @@
   "newNotePlaceholder": "Neue Notiz…",
   "assignNote": "Notiz anhängen",
   "selectFile": "Datei zum Ansehen auswählen.",
-  "fileSaved": "Datei gespeichert"
+  "fileSaved": "Datei gespeichert",
+  "editNote": "Notiz bearbeiten",
+  "openInNotes": "In der Notizen-Ansicht öffnen"
 }

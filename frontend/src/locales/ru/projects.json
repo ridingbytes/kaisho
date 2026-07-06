@@ -50,7 +50,7 @@
   "tagsLabel": "Теги",
   "tagsPlaceholder": "через, запятую",
   "notesLabel": "Заметки",
-  "notesPlaceholder": "Детали, ссылки, контекст…",
+  "notesPlaceholder": "Напишите заметку (markdown)…",
   "editEntry": "Изменить запись времени",
   "descriptionLabel": "Описание",
   "hours": "Часы",
@@ -63,5 +63,7 @@
   "newNotePlaceholder": "Новая заметка…",
   "assignNote": "Прикрепить заметку",
   "selectFile": "Выберите файл для просмотра.",
-  "fileSaved": "Файл сохранён"
+  "fileSaved": "Файл сохранён",
+  "editNote": "Изменить заметку",
+  "openInNotes": "Открыть в разделе Заметки"
 }

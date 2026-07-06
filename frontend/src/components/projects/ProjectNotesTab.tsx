@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, StickyNote, X } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { NoteDialog } from "./NoteDialog";
 import {
   useAddNote,
   useNotes,
   useUpdateNote,
 } from "../../hooks/useNotes";
-import { useSetView } from "../../context/ViewContext";
 import { fieldCls, inputCls } from "../settings/styles";
 import type { NoteItem } from "../../types";
 
@@ -23,11 +23,13 @@ export function ProjectNotesTab({
   projectId, customer, notes,
 }: Props) {
   const { t } = useTranslation("projects");
-  const setView = useSetView();
   const { data: allNotes = [] } = useNotes();
   const addNote = useAddNote();
   const updateNote = useUpdateNote();
   const [title, setTitle] = useState("");
+  const [openNote, setOpenNote] = useState<NoteItem | null>(
+    null,
+  );
 
   const unassigned = allNotes.filter(
     (n) => n.project !== projectId,
@@ -45,6 +47,8 @@ export function ProjectNotesTab({
             updates: { project: projectId },
           });
           setTitle("");
+          // Open the fresh note so the user can write it.
+          setOpenNote({ ...note, project: projectId });
         },
       },
     );
@@ -72,7 +76,7 @@ export function ProjectNotesTab({
             className="flex items-start gap-2 py-2 group"
           >
             <button
-              onClick={() => setView("notes", n.id)}
+              onClick={() => setOpenNote(n)}
               className="flex-1 min-w-0 text-left hover:bg-surface-overlay/50 px-1 -mx-1 rounded"
             >
               <div className="flex items-center gap-2">
@@ -137,6 +141,12 @@ export function ProjectNotesTab({
           </select>
         )}
       </div>
+      {openNote && (
+        <NoteDialog
+          note={openNote}
+          onClose={() => setOpenNote(null)}
+        />
+      )}
     </div>
   );
 }

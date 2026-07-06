@@ -50,7 +50,7 @@
   "tagsLabel": "Etiquetas",
   "tagsPlaceholder": "separadas, por comas",
   "notesLabel": "Notas",
-  "notesPlaceholder": "Detalles, enlaces, contexto…",
+  "notesPlaceholder": "Escribe tu nota (markdown)…",
   "editEntry": "Editar registro de tiempo",
   "descriptionLabel": "Descripción",
   "hours": "Horas",
@@ -63,5 +63,7 @@
   "newNotePlaceholder": "Nueva nota…",
   "assignNote": "Adjuntar una nota",
   "selectFile": "Selecciona un archivo para verlo.",
-  "fileSaved": "Archivo guardado"
+  "fileSaved": "Archivo guardado",
+  "editNote": "Editar nota",
+  "openInNotes": "Abrir en la vista de Notas"
 }

@@ -50,7 +50,7 @@
   "tagsLabel": "Tags",
   "tagsPlaceholder": "comma, separated",
   "notesLabel": "Notes",
-  "notesPlaceholder": "Details, links, context…",
+  "notesPlaceholder": "Write your note (markdown)…",
   "editEntry": "Edit time entry",
   "descriptionLabel": "Description",
   "hours": "Hours",
@@ -63,5 +63,7 @@
   "newNotePlaceholder": "New note…",
   "assignNote": "Attach a note",
   "selectFile": "Select a file to preview.",
-  "fileSaved": "File saved"
+  "fileSaved": "File saved",
+  "editNote": "Edit note",
+  "openInNotes": "Open in Notes view"
 }
