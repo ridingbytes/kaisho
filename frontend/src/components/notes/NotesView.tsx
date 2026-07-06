@@ -32,6 +32,7 @@ import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { Button } from "../common/Button";
 import { HelpButton } from "../common/HelpButton";
+import { MarkdownEditor } from "../common/MarkdownEditor";
 import { OpenInEditorButton } from "../common/OpenInEditorButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { TagDropdown } from "../common/TagDropdown";
@@ -457,30 +458,22 @@ function NoteRow({
                 customer={editCustomer}
                 inputClassName={smallFieldCls}
               />
-              <textarea
-                ref={editBodyRef}
+              <MarkdownEditor
                 value={editBody}
-                onChange={(e) => setEditBody(e.target.value)}
-                onKeyDown={(e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                onChange={setEditBody}
+                bucketId={note.id}
+                rows={8}
+                placeholder={t("bodyOptional")}
+                onKeyDown={(e: React.KeyboardEvent) => {
+                  if (
+                    (e.metaKey || e.ctrlKey) &&
+                    e.key === "Enter"
+                  ) {
                     e.preventDefault();
                     doSave();
                   }
                 }}
-                onDrop={editDrop.onDrop}
-                onDragOver={editDrop.onDragOver}
-                onPaste={editDrop.onPaste}
-                placeholder={t("bodyOptional")}
-                rows={8}
-                className={`${smallFieldCls} w-full resize-y`}
               />
-              {editDrop.uploading > 0 && (
-                <div className="text-2xs text-fg-muted px-0.5">
-                  {tc("uploadingAttachment", {
-                    count: editDrop.uploading,
-                  })}
-                </div>
-              )}
               {editDrop.error && (
                 <div className="text-2xs text-red-500 px-0.5">
                   {editDrop.error}

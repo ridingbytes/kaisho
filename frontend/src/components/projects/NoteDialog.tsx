@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ExternalLink, Trash2 } from "lucide-react";
 import { Dialog } from "../common/Dialog";
 import { ConfirmPopover } from "../common/ConfirmPopover";
+import { MarkdownEditor } from "../common/MarkdownEditor";
 import {
   useDeleteNote,
   useUpdateNote,
@@ -80,12 +81,12 @@ export function NoteDialog({ note, onClose }: Props) {
           placeholder={tc("title")}
           className={`${inputCls} w-full`}
         />
-        <textarea
+        <MarkdownEditor
           value={body}
-          onChange={(e) => setBody(e.target.value)}
+          onChange={setBody}
+          bucketId={note.id}
           rows={12}
           placeholder={t("notesPlaceholder")}
-          className={`${inputCls} w-full resize-y`}
         />
       </div>
     </Dialog>

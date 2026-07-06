@@ -16,6 +16,7 @@ import { ProjectFilesPanel } from "./ProjectFilesPanel";
 import { ProjectNotesTab } from "./ProjectNotesTab";
 import { TaskDetailDialog } from "./TaskDetailDialog";
 import { TimeEntryDialog } from "./TimeEntryDialog";
+import { MarkdownEditor } from "../common/MarkdownEditor";
 import { PROJECT_STATUSES, statusClasses } from "./projectStatus";
 import {
   useDeleteProject,
@@ -208,12 +209,11 @@ export function ProjectWorkspace({ projectId, onBack }: Props) {
         </div>
         {editingDesc ? (
           <div className="space-y-2">
-            <textarea
-              autoFocus
+            <MarkdownEditor
               value={descDraft}
-              onChange={(e) => setDescDraft(e.target.value)}
+              onChange={setDescDraft}
+              bucketId={projectId}
               rows={5}
-              className={`${inputCls} w-full resize-y`}
               placeholder={t("descriptionPlaceholder")}
             />
             <div className="flex gap-2">

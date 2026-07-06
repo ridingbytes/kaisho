@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import { Dialog } from "../common/Dialog";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
+import { MarkdownEditor } from "../common/MarkdownEditor";
 import {
   useArchiveTask,
   useSetTaskTags,
@@ -191,11 +192,11 @@ export function TaskDetailDialog({ task, onClose }: Props) {
           </Field>
         </div>
         <Field label={t("notesLabel")}>
-          <textarea
+          <MarkdownEditor
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={setBody}
+            bucketId={task.id}
             rows={6}
-            className={`${inputCls} w-full resize-y`}
             placeholder={t("notesPlaceholder")}
           />
         </Field>
