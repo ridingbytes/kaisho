@@ -168,3 +168,26 @@ def test_migration_skips_files_without_legacy(tmp_path):
         "Today ${date}", encoding="utf-8",
     )
     assert migrate_profile_prompts(profile) == 0
+
+
+def test_known_placeholders_match_validator():
+    """The help list and is_known_placeholder must agree --
+    single source of truth for tool help text."""
+    from kaisho.services.placeholders import (
+        is_known_placeholder,
+        known_placeholders,
+    )
+    names = known_placeholders()
+    assert "date" in names
+    assert "user.name" in names
+    for name in names:
+        assert is_known_placeholder(name)
+
+
+def test_valid_placeholders_help_formats_tokens():
+    from kaisho.services.placeholders import (
+        valid_placeholders_help,
+    )
+    help_str = valid_placeholders_help()
+    assert "${date}" in help_str
+    assert "${user.research_targets}" in help_str

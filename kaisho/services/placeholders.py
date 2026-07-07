@@ -161,6 +161,25 @@ def find_placeholders(body: str) -> set[str]:
     }
 
 
+def known_placeholders() -> list[str]:
+    """Canonical list of every valid placeholder token, e.g.
+    ``["date", "fetch_results", "user.name", ...]``. Single
+    source of truth for help text and validation messages so
+    they can't drift from what :func:`is_known_placeholder`
+    actually accepts."""
+    return list(SYSTEM_FIELDS) + [
+        f"user.{field}" for field in USER_FIELDS
+    ]
+
+
+def valid_placeholders_help() -> str:
+    """Human-readable ``${...}`` list of the valid
+    placeholders, for error messages and tool descriptions."""
+    return ", ".join(
+        f"${{{name}}}" for name in known_placeholders()
+    )
+
+
 def is_known_placeholder(name: str) -> bool:
     """Return True if ``name`` is a recognised
     placeholder. Used by the editor highlighter.
