@@ -137,9 +137,18 @@ Open <http://localhost:5173> (dev) or
 
 ### Wire up your AI editor (MCP)
 
+Two transports, same tools:
+
 ```bash
-# Claude Code / Cursor / Claude Desktop config:
+# stdio -- launched per-client (no server needed):
 #   "kaisho": { "command": "/path/to/kaisho/scripts/mcp-server.sh" }
+
+# streamable HTTP -- served by a running `kai serve` at /mcp,
+# with a Bearer token from Settings -> MCP:
+#   "kaisho": {
+#     "url": "http://localhost:8765/mcp",
+#     "headers": { "Authorization": "Bearer <token>" }
+#   }
 ```
 
 See the
@@ -186,8 +195,11 @@ kai convert --from org --to sql \      # Backend migration
   gating (read / write / destructive), URL allowlist.
   Bring-your-own provider OR use the hosted Companion/Pro
   gateway.
-- **MCP**: first-class server in `scripts/mcp-server.sh`,
-  works over stdio with any MCP-compatible client.
+- **MCP**: first-class server over two transports -- stdio
+  (`scripts/mcp-server.sh`, spawned per-client) and
+  streamable HTTP (mounted at `/mcp` on a running `kai
+  serve`, Bearer-token authenticated) -- for any
+  MCP-compatible client.
 - **Real-time**: WebSocket + file watcher for live updates
   on external file changes.
 - **Desktop**: Tauri v2 with auto-updater (macOS Apple
