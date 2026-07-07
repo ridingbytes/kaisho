@@ -1784,15 +1784,15 @@ def _reject_unknown_placeholders(body: str) -> str | None:
     Guards the write path so a typo like ``${user.compny}``
     is caught before it silently renders as a literal token
     at run time. Escape a literal with ``\\${...}``."""
+    from ..services.placeholders import valid_placeholders_help
     unknown = _placeholder_report(body)["unknown"]
     if not unknown:
         return None
     return (
         "Unknown placeholders: "
         + ", ".join(f"${{{n}}}" for n in unknown)
-        + ". Valid: ${date}, ${fetch_results}, "
-        "${user.name|email|bio|company|industry|"
-        "research_targets}. Escape a literal as \\${...}."
+        + ". Valid: " + valid_placeholders_help()
+        + ". Escape a literal as \\${...}."
     )
 
 
@@ -2106,12 +2106,22 @@ _EDITABLE_LIST_SETTINGS = (
 _EDITABLE_AI_FIELDS = ("advisor_model", "cron_model")
 
 
+def _settings_file():
+    """The active profile's settings.yaml path."""
+    from ..config import get_config
+    return get_config().SETTINGS_FILE
+
+
+def _mutate_settings(apply) -> dict:
+    """Apply ``apply`` to the settings dict under the lock."""
+    from ..services import settings as settings_svc
+    return settings_svc.mutate_settings(_settings_file(), apply)
+
+
 def _get_settings() -> dict:
     """Return the profile's settings with all secrets masked."""
-    from ..config import get_config
     from ..services import settings as settings_svc
-    cfg = get_config()
-    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    data = settings_svc.load_settings(_settings_file())
     return {"settings": settings_svc.mask_secrets(data)}
 
 
@@ -2141,15 +2151,11 @@ def _set_tags(tags: Any) -> dict:
                 tag.get("description", ""),
             ).strip(),
         })
-    from ..config import get_config
-    from ..services import settings as settings_svc
 
     def _apply(data: dict) -> None:
         data["tags"] = cleaned
 
-    settings_svc.mutate_settings(
-        get_config().SETTINGS_FILE, _apply,
-    )
+    _mutate_settings(_apply)
     return {"ok": True, "tags": cleaned}
 
 
@@ -2171,8 +2177,6 @@ def _set_task_state(
     if not name or not label:
         return {"error": "name and label are required"}
     from ..backends import reset_backend
-    from ..config import get_config
-    from ..services import settings as settings_svc
 
     def _apply(data: dict) -> None:
         states = data.get("task_states", [])
@@ -2201,9 +2205,7 @@ def _set_task_state(
             states.insert(idx + 1, new)
         data["task_states"] = states
 
-    settings_svc.mutate_settings(
-        get_config().SETTINGS_FILE, _apply,
-    )
+    _mutate_settings(_apply)
     # The org parser's TODO-keyword set is derived from
     # task_states; rebuild so a new column is recognised.
     reset_backend()
@@ -2212,7 +2214,8 @@ def _set_task_state(
 
 def _set_list_setting(key: str, values: Any) -> dict:
     """Replace one of the allowlisted string-list settings
-    (customer_types, inbox_channels, url_allowlist)."""
+    (customer_types, inbox_channels). url_allowlist is
+    excluded on purpose -- it is a security control."""
     if key not in _EDITABLE_LIST_SETTINGS:
         allowed = ", ".join(_EDITABLE_LIST_SETTINGS)
         return {
@@ -2221,15 +2224,11 @@ def _set_list_setting(key: str, values: Any) -> dict:
     cleaned = _clean_str_list(values)
     if cleaned is None:
         return {"error": "values must be a list of strings"}
-    from ..config import get_config
-    from ..services import settings as settings_svc
 
     def _apply(data: dict) -> None:
         data[key] = cleaned
 
-    settings_svc.mutate_settings(
-        get_config().SETTINGS_FILE, _apply,
-    )
+    _mutate_settings(_apply)
     return {"ok": True, "key": key, "values": cleaned}
 
 
@@ -2245,11 +2244,9 @@ def _set_clock_rounding(minutes: int) -> dict:
         return {
             "error": "minutes must be a non-negative integer",
         }
-    from ..config import get_config
     from ..services import settings as settings_svc
     block = settings_svc.set_clocks_settings(
-        get_config().SETTINGS_FILE,
-        {"rounding_minutes": minutes},
+        _settings_file(), {"rounding_minutes": minutes},
     )
     return {"ok": True, "clocks": block}
 
@@ -2258,10 +2255,9 @@ def _set_backup_retention(keep: int) -> dict:
     """Set how many recent backups to retain."""
     if not _is_int(keep) or keep < 1:
         return {"error": "keep must be an integer >= 1"}
-    from ..config import get_config
     from ..services import settings as settings_svc
     block = settings_svc.set_backup_settings(
-        get_config().SETTINGS_FILE, {"keep": keep},
+        _settings_file(), {"keep": keep},
     )
     return {"ok": True, "backup": block}
 
@@ -2275,15 +2271,11 @@ def _set_timezone(timezone: str) -> dict:
         return {
             "error": f"unknown timezone: {timezone!r}",
         }
-    from ..config import get_config
-    from ..services import settings as settings_svc
 
     def _apply(data: dict) -> None:
         data["timezone"] = timezone
 
-    settings_svc.mutate_settings(
-        get_config().SETTINGS_FILE, _apply,
-    )
+    _mutate_settings(_apply)
     return {"ok": True, "timezone": timezone}
 
 
@@ -2313,9 +2305,8 @@ def _set_ai_model(
                 "supply advisor_model and/or cron_model"
             ),
         }
-    from ..config import get_config
     from ..services import settings as settings_svc
     ai = settings_svc.set_ai_settings(
-        get_config().SETTINGS_FILE, updates,
+        _settings_file(), updates,
     )
     return {"ok": True, "ai": ai}

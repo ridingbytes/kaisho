@@ -13,6 +13,11 @@ Each tool is a dict with ``name``, ``description``,
 OpenAI / Ollama chat format on the fly.  The ``tier`` field
 is ignored by the advisor and cron executor.
 """
+from ..services.placeholders import valid_placeholders_help
+
+# Single-sourced from the placeholders service so tool help
+# can't drift from what validation actually accepts.
+_VALID_PLACEHOLDERS = valid_placeholders_help()
 
 TOOL_DEFS: list[dict] = [
     {
@@ -1092,14 +1097,12 @@ TOOL_DEFS: list[dict] = [
             "Replace a cron job's prompt body. Validates "
             "placeholders and rejects unknown ${...} "
             "tokens (a typo like ${user.compny}) before "
-            "saving. Valid placeholders: ${date}, "
-            "${fetch_results}, and ${user.name}, "
-            "${user.email}, ${user.bio}, ${user.company}, "
-            "${user.industry}, ${user.research_targets}. "
-            "Escape a literal as \\${...}. Read the current "
-            "prompt with get_cron_job first, then send the "
-            "full revised body. Confirm the change with "
-            "the user before calling."
+            "saving. Valid placeholders: "
+            + _VALID_PLACEHOLDERS
+            + ". Escape a literal as \\${...}. Read the "
+            "current prompt with get_cron_job first, then "
+            "send the full revised body. Confirm the change "
+            "with the user before calling."
         ),
         "input_schema": {
             "type": "object",
