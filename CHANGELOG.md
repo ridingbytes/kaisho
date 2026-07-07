@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.8.0
+
+- Let the advisor read and tune cron job prompts [#224]. The
+  AI advisor can now inspect a scheduled job's prompt and
+  placeholders (`get_cron_job`), rewrite it to your needs
+  (`update_cron_prompt`), and create a job from a template
+  with a custom prompt in one step. Unknown `${...}`
+  placeholders are rejected before saving so a typo can't
+  silently render as literal text at run time.
+- Let the advisor read and tune app settings [#225]. A new
+  `get_settings` returns your configuration with every secret
+  masked, and a bounded set of setters lets the advisor adjust
+  tags, kanban columns, customer/inbox vocabularies, clock
+  rounding, backup retention, timezone, and the AI model. API
+  keys, tokens, and data paths are never readable or writable
+  through the advisor, which is exposed to prompt injection.
+- Fix a crash when the advisor or an MCP client listed
+  knowledge-base files [#223].
+
 ## 2.7.3
 
 - Sync project definitions to the cloud [#219]. Projects,

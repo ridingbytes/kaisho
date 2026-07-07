@@ -377,6 +377,8 @@ for write and destructive operations.
 | `list_github_issues` | Open GitHub issues |
 | `list_github_projects` | GitHub Projects v2 |
 | `list_cron_jobs` | Scheduled jobs |
+| `get_cron_job` | One job's config, prompt body, and placeholders |
+| `get_settings` | App settings (secrets masked) |
 | `list_profiles` | Available profiles |
 | `list_backups` | Backup archives |
 | `get_time_insights` | Time analytics |
@@ -404,6 +406,14 @@ for write and destructive operations.
 | `archive_task` | Archive a task (reversible) |
 | `approve_url_domain` | Add URL to allowlist |
 | `create_backup` | Create data backup |
+| `update_cron_prompt` | Rewrite a cron job's prompt (validates placeholders) |
+| `set_tags` | Replace the tag vocabulary |
+| `set_task_state` | Add or update a kanban column |
+| `set_list_setting` | Set customer types or inbox channels |
+| `set_clock_rounding` | Set time-rounding interval |
+| `set_backup_retention` | Set how many backups to keep |
+| `set_timezone` | Set the profile timezone |
+| `set_ai_model` | Set the advisor / cron model (no keys) |
 
 ### Destructive Tools
 
