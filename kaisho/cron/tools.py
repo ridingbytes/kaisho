@@ -2093,8 +2093,12 @@ def _list_backups() -> dict:
 # -------------------------------------------------------------------
 
 # Top-level string-list settings the advisor may replace wholesale.
+# url_allowlist is deliberately EXCLUDED: it is the SSRF guard
+# enforced in _fetch_url, and a prompt-injected advisor that could
+# rewrite it would defeat the human-in-the-loop that keeps the
+# destructive approve_url_domain tool out of its reach.
 _EDITABLE_LIST_SETTINGS = (
-    "customer_types", "inbox_channels", "url_allowlist",
+    "customer_types", "inbox_channels",
 )
 
 # AI fields the advisor may set. Deliberately excludes every secret

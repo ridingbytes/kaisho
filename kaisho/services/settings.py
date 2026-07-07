@@ -326,16 +326,39 @@ def _mask_secrets(data: dict) -> dict:
             )
         elif isinstance(v, dict):
             out[k] = _mask_secrets(v)
+        elif isinstance(v, list):
+            out[k] = _mask_secrets_in_list(v)
         else:
             out[k] = v
     return out
 
 
+def _mask_secrets_in_list(values: list) -> list:
+    """Mask secrets inside a list of settings values.
+
+    A list can hold dicts (e.g. task_states, webhooks), so
+    recurse into each dict element. Scalars pass through.
+    Keeps masking fail-safe: a secret nested inside a list
+    is masked instead of leaking out of ``get_settings``.
+    """
+    out = []
+    for item in values:
+        if isinstance(item, dict):
+            out.append(_mask_secrets(item))
+        elif isinstance(item, list):
+            out.append(_mask_secrets_in_list(item))
+        else:
+            out.append(item)
+    return out
+
+
 def mask_secrets(data: dict) -> dict:
-    """Public wrapper returning a copy of ``data`` with every
-    secret value masked. See :func:`_mask_secrets`. Use this
-    anywhere settings are exposed outside the trusted core
-    (e.g. the advisor's ``get_settings`` tool)."""
+    """Public wrapper returning a masked view of ``data`` with
+    every secret value replaced (dicts are rebuilt; non-dict
+    values are shared, not deep-copied). See
+    :func:`_mask_secrets`. Use this anywhere settings are
+    exposed outside the trusted core (e.g. the advisor's
+    ``get_settings`` tool)."""
     return _mask_secrets(data)
 
 

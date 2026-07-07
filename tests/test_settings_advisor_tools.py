@@ -77,6 +77,27 @@ def test_get_settings_masks_ai_key(clean_profile):
     assert ai["claude_api_key_preview"] == "1234"
 
 
+def test_get_settings_masks_secret_nested_in_list(
+    clean_profile,
+):
+    """Fail-safe: a secret nested inside a list of dicts is
+    masked, not leaked, so a future list-shaped setting
+    holding a token cannot escape get_settings."""
+    from kaisho.config import get_config
+    from kaisho.services import settings as ss
+
+    def _seed(data):
+        data["webhooks"] = [
+            {"url": "https://x", "token": "whsec-abcd1234"},
+        ]
+
+    ss.mutate_settings(get_config().SETTINGS_FILE, _seed)
+    hook = _settings()["webhooks"][0]
+    assert "token" not in hook
+    assert hook["token_set"] is True
+    assert hook["token_preview"] == "1234"
+
+
 # -- set_tags ----------------------------------------------
 
 def test_set_tags_replaces_vocabulary(clean_profile):
@@ -153,6 +174,19 @@ def test_set_list_setting_rejects_bad_key(clean_profile):
         {"key": "paths", "values": ["x"]},
     )
     assert "error" in result
+
+
+def test_set_list_setting_rejects_url_allowlist(clean_profile):
+    """url_allowlist is the SSRF guard; a prompt-injected
+    advisor must not be able to rewrite it. Approval stays
+    on the destructive approve_url_domain tool only."""
+    before = _settings().get("url_allowlist")
+    result = execute_tool(
+        "set_list_setting",
+        {"key": "url_allowlist", "values": ["evil.com"]},
+    )
+    assert "error" in result
+    assert _settings().get("url_allowlist") == before
 
 
 # -- scalar setters ----------------------------------------
