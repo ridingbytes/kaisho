@@ -1621,9 +1621,9 @@ TOOL_DEFS: list[dict] = [
         "tier": "write",
         "description": (
             "Replace one of the string-list settings: "
-            "customer_types, inbox_channels, or "
-            "url_allowlist. Pass the FULL list you want to "
-            "keep. Read get_settings first."
+            "customer_types or inbox_channels. Pass the "
+            "FULL list you want to keep. Read get_settings "
+            "first."
         ),
         "input_schema": {
             "type": "object",
@@ -1633,7 +1633,6 @@ TOOL_DEFS: list[dict] = [
                     "enum": [
                         "customer_types",
                         "inbox_channels",
-                        "url_allowlist",
                     ],
                 },
                 "values": {
