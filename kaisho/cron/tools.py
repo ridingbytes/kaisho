@@ -946,6 +946,10 @@ _HANDLERS: dict[str, Any] = {
     "list_cron_templates": (
         lambda a: _list_cron_templates()
     ),
+    "get_cron_job": lambda a: _get_cron_job(a["job_id"]),
+    "update_cron_prompt": lambda a: _update_cron_prompt(
+        a["job_id"], a["prompt"],
+    ),
     "create_cron_from_template": lambda a: (
         _create_cron_from_template(
             template_id=a["template_id"],
@@ -953,6 +957,7 @@ _HANDLERS: dict[str, Any] = {
             name=a.get("name"),
             schedule=a.get("schedule"),
             enabled=a.get("enabled", False),
+            prompt=a.get("prompt"),
         )
     ),
     "trigger_cron_job": lambda a: _trigger_cron_job(
@@ -1716,12 +1721,59 @@ def _list_cron_templates() -> dict:
     return {"templates": compact}
 
 
+def _prompt_path_for_job(job: dict) -> Path:
+    """Resolve a job's prompt file to an absolute path.
+
+    Mirrors the executor: expand ``~`` first, then join a
+    relative path onto the install root (where built-in
+    template prompts live)."""
+    from ..config import get_project_root
+    p = Path(job.get("prompt_file", "")).expanduser()
+    if not p.is_absolute():
+        p = get_project_root() / p
+    return p
+
+
+def _placeholder_report(body: str) -> dict:
+    """Split the placeholders used in ``body`` into known
+    and unknown, for advisor-facing diagnostics."""
+    from ..services.placeholders import (
+        find_placeholders,
+        is_known_placeholder,
+    )
+    used = find_placeholders(body)
+    unknown = sorted(
+        n for n in used if not is_known_placeholder(n)
+    )
+    return {"used": sorted(used), "unknown": unknown}
+
+
+def _reject_unknown_placeholders(body: str) -> str | None:
+    """Return an error message if ``body`` contains an
+    unknown ``${...}`` placeholder, else None.
+
+    Guards the write path so a typo like ``${user.compny}``
+    is caught before it silently renders as a literal token
+    at run time. Escape a literal with ``\\${...}``."""
+    unknown = _placeholder_report(body)["unknown"]
+    if not unknown:
+        return None
+    return (
+        "Unknown placeholders: "
+        + ", ".join(f"${{{n}}}" for n in unknown)
+        + ". Valid: ${date}, ${fetch_results}, "
+        "${user.name|email|bio|company|industry|"
+        "research_targets}. Escape a literal as \\${...}."
+    )
+
+
 def _create_cron_from_template(
     template_id: str,
     job_id: str,
     name: str | None = None,
     schedule: str | None = None,
     enabled: bool = False,
+    prompt: str | None = None,
 ) -> dict:
     """Stamp a new cron job from a template.
 
@@ -1731,6 +1783,10 @@ def _create_cron_from_template(
     so the file survives Kaisho version updates (the
     runtime install dir gets refreshed on update; the
     profile dir does not).
+
+    An optional ``prompt`` overrides the template body, so
+    the advisor can tailor the prompt (and its
+    placeholders) to the user in one call.
     """
     from ..config import get_config
     from ..services.cron import add_job, get_job
@@ -1748,15 +1804,18 @@ def _create_cron_from_template(
             "error": f"Template not found: {template_id}",
         }
 
+    body = tpl["prompt"] if prompt is None else prompt
+    err = _reject_unknown_placeholders(body)
+    if err:
+        return {"error": err}
+
     cfg = get_config()
     if get_job(cfg.JOBS_FILE, job_id) is not None:
         return {
             "error": f"Job already exists: {job_id}",
         }
 
-    prompt_path = _write_user_prompt(
-        cfg, job_id, tpl["prompt"],
-    )
+    prompt_path = _write_user_prompt(cfg, job_id, body)
 
     job = {
         "id": job_id,
@@ -1788,6 +1847,65 @@ def _create_cron_from_template(
         "model": job["model"],
         "schedule": job["schedule"],
         "enabled": enabled,
+    }
+
+
+def _get_cron_job(job_id: str) -> dict:
+    """Return a job's full config plus its prompt body and
+    a placeholder report, so the advisor can read what a
+    job actually does before editing it."""
+    from ..config import get_config
+    from ..services.cron import get_job
+    cfg = get_config()
+    job = get_job(cfg.JOBS_FILE, job_id)
+    if job is None:
+        return {"error": f"Job not found: {job_id}"}
+
+    path = _prompt_path_for_job(job)
+    if path.exists():
+        prompt = path.read_text(encoding="utf-8")
+        placeholders = _placeholder_report(prompt)
+    else:
+        prompt = None
+        placeholders = {"used": [], "unknown": []}
+    return {
+        "job": job,
+        "prompt": prompt,
+        "placeholders": placeholders,
+    }
+
+
+def _update_cron_prompt(job_id: str, prompt: str) -> dict:
+    """Overwrite a job's prompt body, validating
+    placeholders first.
+
+    Always writes to a per-job prompt file under the
+    profile dir and repoints the job there, so editing a
+    job that still references a shared built-in prompt
+    never mutates the install dir."""
+    from ..config import get_config
+    from ..services.cron import get_job, update_job
+    cfg = get_config()
+    job = get_job(cfg.JOBS_FILE, job_id)
+    if job is None:
+        return {"error": f"Job not found: {job_id}"}
+
+    err = _reject_unknown_placeholders(prompt)
+    if err:
+        return {"error": err}
+
+    prompt_path = _write_user_prompt(cfg, job_id, prompt)
+    if job.get("prompt_file") != str(prompt_path):
+        update_job(
+            cfg.JOBS_FILE, job_id,
+            {"prompt_file": str(prompt_path)},
+        )
+
+    return {
+        "ok": True,
+        "job_id": job_id,
+        "prompt_file": str(prompt_path),
+        "placeholders": _placeholder_report(prompt),
     }
 
 

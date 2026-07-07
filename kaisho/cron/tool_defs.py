@@ -1062,6 +1062,66 @@ TOOL_DEFS: list[dict] = [
         },
     },
     {
+        "name": "get_cron_job",
+        "tier": "read",
+        "description": (
+            "Return one cron job's full config plus its "
+            "prompt body and a placeholder report (which "
+            "${...} placeholders it uses and which are "
+            "unknown). Use this to read what a job does "
+            "before editing its prompt with "
+            "update_cron_prompt."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "job_id": {
+                    "type": "string",
+                    "description": (
+                        "ID from list_cron_jobs"
+                    ),
+                },
+            },
+            "required": ["job_id"],
+        },
+    },
+    {
+        "name": "update_cron_prompt",
+        "tier": "write",
+        "description": (
+            "Replace a cron job's prompt body. Validates "
+            "placeholders and rejects unknown ${...} "
+            "tokens (a typo like ${user.compny}) before "
+            "saving. Valid placeholders: ${date}, "
+            "${fetch_results}, and ${user.name}, "
+            "${user.email}, ${user.bio}, ${user.company}, "
+            "${user.industry}, ${user.research_targets}. "
+            "Escape a literal as \\${...}. Read the current "
+            "prompt with get_cron_job first, then send the "
+            "full revised body. Confirm the change with "
+            "the user before calling."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "job_id": {
+                    "type": "string",
+                    "description": (
+                        "ID from list_cron_jobs"
+                    ),
+                },
+                "prompt": {
+                    "type": "string",
+                    "description": (
+                        "The full new prompt body "
+                        "(replaces the old one)"
+                    ),
+                },
+            },
+            "required": ["job_id", "prompt"],
+        },
+    },
+    {
         "name": "create_cron_from_template",
         "tier": "write",
         "description": (
@@ -1069,9 +1129,12 @@ TOOL_DEFS: list[dict] = [
             "template's prompt, model, and timeout are "
             "used as defaults. The user MUST supply a "
             "unique job_id; an optional schedule can "
-            "override the template's default schedule. "
-            "Confirm with the user before calling — "
-            "scheduling work has side effects."
+            "override the template's default schedule. An "
+            "optional prompt overrides the template body "
+            "so you can tailor it (and its placeholders) "
+            "to the user in one call. Confirm with the "
+            "user before calling — scheduling work has "
+            "side effects."
         ),
         "input_schema": {
             "type": "object",
@@ -1110,6 +1173,15 @@ TOOL_DEFS: list[dict] = [
                         "Whether the job runs on its "
                         "schedule. Default false — let "
                         "the user enable it after review."
+                    ),
+                },
+                "prompt": {
+                    "type": "string",
+                    "description": (
+                        "Optional custom prompt body; "
+                        "defaults to the template's "
+                        "prompt. Unknown ${...} "
+                        "placeholders are rejected."
                     ),
                 },
             },
