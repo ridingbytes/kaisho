@@ -21,7 +21,12 @@ import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "../../context/ToastContext";
 import { useReindexKnowledge } from "../../hooks/useKnowledge";
+import { ClipboardPaste } from "lucide-react";
 import { TreeNodeRow } from "./TreeNodeRow";
+import {
+  TreeContextMenu,
+  type MenuItem,
+} from "./TreeContextMenu";
 import { useKbDnd } from "./kbDnd";
 import { MAX_WIDTH, MIN_WIDTH } from "./knowledgeEditorUtils";
 import { type TreeNode } from "./knowledgeTree";
@@ -491,7 +496,26 @@ function LabelSection({
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [dropActive, setDropActive] = useState(false);
+  const [menu, setMenu] = useState<{ x: number; y: number }
+    | null>(null);
   const rootTarget = { path: "", label };
+
+  const menuItems: MenuItem[] = [
+    {
+      key: "paste", label: t("ctxPaste"),
+      icon: <ClipboardPaste size={13} />,
+      disabled: !dnd.canPaste(rootTarget),
+      onClick: () => dnd.paste(rootTarget),
+    },
+    {
+      key: "newfolder", label: t("addFolder"),
+      icon: <FolderPlus size={13} />,
+      onClick: () => {
+        setAdding(true);
+        setName("");
+      },
+    },
+  ];
 
   function handleAdd() {
     const n = name.trim();
@@ -514,6 +538,11 @@ function LabelSection({
           e.preventDefault();
           setDropActive(false);
           dnd.requestDrop(rootTarget, e.clientX, e.clientY);
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setMenu({ x: e.clientX, y: e.clientY });
         }}
         className={[
           "group/label flex items-center transition-colors",
@@ -637,6 +666,14 @@ function LabelSection({
             onToggleStar={onToggleStar}
           />
         ))}
+      {menu && (
+        <TreeContextMenu
+          x={menu.x}
+          y={menu.y}
+          items={menuItems}
+          onClose={() => setMenu(null)}
+        />
+      )}
     </div>
   );
 }

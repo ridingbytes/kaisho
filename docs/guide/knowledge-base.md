@@ -275,6 +275,11 @@ trigger a background warm-and-prune pass.
 - Drag a file or folder onto another folder (or a source
   header) and choose **Move here** or **Copy here** on drop.
   This works within a source and across sources.
+- Right-click any file or folder for a context menu: Open,
+  Cut, Copy, Copy path, Rename, New subfolder, and Delete.
+  Cut or Copy an item, then right-click a folder (or source
+  header) and choose **Paste here** — the same move/copy
+  semantics as drag-and-drop.
 - Delete files (with confirmation)
 - Edit Markdown files inline with a live preview editor
 

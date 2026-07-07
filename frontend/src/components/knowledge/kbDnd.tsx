@@ -42,6 +42,12 @@ export interface KbDropTarget {
 /** Whether the user chose to move or copy. */
 export type KbRelocateOp = "move" | "copy";
 
+/** An item on the cut/copy clipboard, awaiting a paste. */
+export interface KbClipboard {
+  item: KbDragItem;
+  op: KbRelocateOp;
+}
+
 interface KbDndValue {
   dragItem: KbDragItem | null;
   startDrag: (item: KbDragItem) => void;
@@ -50,6 +56,12 @@ interface KbDndValue {
   requestDrop: (
     target: KbDropTarget, x: number, y: number,
   ) => void;
+  clipboard: KbClipboard | null;
+  cut: (item: KbDragItem) => void;
+  copy: (item: KbDragItem) => void;
+  clearClipboard: () => void;
+  canPaste: (target: KbDropTarget) => boolean;
+  paste: (target: KbDropTarget) => void;
 }
 
 const KbDndContext = createContext<KbDndValue | null>(null);
@@ -67,6 +79,28 @@ export function useKbDnd(): KbDndValue {
 function dirOf(path: string): string {
   const i = path.lastIndexOf("/");
   return i < 0 ? "" : path.slice(0, i);
+}
+
+/** Whether ``item`` can land in ``target``. Rejects a no-op
+ *  (same label + same parent dir) and moving a folder into
+ *  itself or one of its own descendants. Shared by drop and
+ *  paste so both enforce the same rules. */
+function isValidTarget(
+  item: KbDragItem, target: KbDropTarget,
+): boolean {
+  const sameLabel = item.label === target.label;
+  if (sameLabel && dirOf(item.path) === target.path) {
+    return false;
+  }
+  if (item.kind === "folder" && sameLabel) {
+    if (
+      target.path === item.path ||
+      target.path.startsWith(item.path + "/")
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 interface Pending {
@@ -95,33 +129,45 @@ export function KbDndProvider({
     null,
   );
   const [pending, setPending] = useState<Pending | null>(null);
+  const [clipboard, setClipboard] =
+    useState<KbClipboard | null>(null);
 
   const startDrag = useCallback(
     (item: KbDragItem) => setDragItem(item), [],
   );
   const endDrag = useCallback(() => setDragItem(null), []);
 
-  // A drop is valid unless it is a no-op (same label + same
-  // parent dir) or would move a folder into itself or one of
-  // its own descendants.
   const canDrop = useCallback(
-    (target: KbDropTarget): boolean => {
-      if (!dragItem) return false;
-      const sameLabel = dragItem.label === target.label;
-      if (sameLabel && dirOf(dragItem.path) === target.path) {
-        return false;
-      }
-      if (dragItem.kind === "folder" && sameLabel) {
-        if (
-          target.path === dragItem.path ||
-          target.path.startsWith(dragItem.path + "/")
-        ) {
-          return false;
-        }
-      }
-      return true;
-    },
+    (target: KbDropTarget): boolean =>
+      !!dragItem && isValidTarget(dragItem, target),
     [dragItem],
+  );
+
+  const cut = useCallback(
+    (item: KbDragItem) =>
+      setClipboard({ item, op: "move" }), [],
+  );
+  const copy = useCallback(
+    (item: KbDragItem) =>
+      setClipboard({ item, op: "copy" }), [],
+  );
+  const clearClipboard = useCallback(
+    () => setClipboard(null), [],
+  );
+  const canPaste = useCallback(
+    (target: KbDropTarget): boolean =>
+      !!clipboard && isValidTarget(clipboard.item, target),
+    [clipboard],
+  );
+  const paste = useCallback(
+    (target: KbDropTarget) => {
+      if (!clipboard || !isValidTarget(clipboard.item, target)) {
+        return;
+      }
+      onRelocate(clipboard.item, target, clipboard.op);
+      setClipboard(null);
+    },
+    [clipboard, onRelocate],
   );
 
   const requestDrop = useCallback(
@@ -161,8 +207,12 @@ export function KbDndProvider({
   const value = useMemo(
     () => ({
       dragItem, startDrag, endDrag, canDrop, requestDrop,
+      clipboard, cut, copy, clearClipboard, canPaste, paste,
     }),
-    [dragItem, startDrag, endDrag, canDrop, requestDrop],
+    [
+      dragItem, startDrag, endDrag, canDrop, requestDrop,
+      clipboard, cut, copy, clearClipboard, canPaste, paste,
+    ],
   );
 
   const destName = pending

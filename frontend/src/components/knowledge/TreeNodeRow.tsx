@@ -11,21 +11,28 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  ClipboardPaste,
+  Copy,
   FileText,
   Folder,
   FolderOpen,
   FolderPlus,
+  Link2,
   Pencil,
+  Scissors,
   Star,
   Trash2,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { fetchKnowledgeAbsolutePath } from "../../api/client";
+import { useToast } from "../../context/ToastContext";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { HoverActions } from "../common/HoverActions";
 import type { TreeNode } from "./knowledgeTree";
 import { useKbDnd } from "./kbDnd";
+import { TreeContextMenu, type MenuItem } from "./TreeContextMenu";
 
 /** Props for {@link TreeNodeRow}. */
 export interface TreeNodeRowProps {
@@ -72,12 +79,137 @@ export function TreeNodeRow({
 }: TreeNodeRowProps) {
   const { t } = useTranslation("knowledge");
   const dnd = useKbDnd();
+  const toast = useToast();
   const indent = depth * 16;
   const [renaming, setRenaming] = useState(false);
   const [renamePath, setRenamePath] = useState("");
   const [addingFolder, setAddingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [dropActive, setDropActive] = useState(false);
+  const [menu, setMenu] = useState<{ x: number; y: number }
+    | null>(null);
+
+  const selfItem = {
+    path: node.path,
+    label: node.label,
+    kind: node.kind,
+    name: node.name,
+  };
+  const selfTarget = { path: node.path, label: node.label };
+
+  async function copyPath() {
+    try {
+      const res = await fetchKnowledgeAbsolutePath(node.path);
+      await navigator.clipboard.writeText(res.path);
+      toast(t("pathCopied"), "success");
+    } catch (err) {
+      toast(String(err), "error");
+    }
+  }
+
+  function startRename() {
+    setRenamePath(node.path);
+    setRenaming(true);
+  }
+
+  function startAddFolder() {
+    setAddingFolder(true);
+    setNewFolderName("");
+    if (node.kind === "folder" && !node.expanded) {
+      onToggle(node.path);
+    }
+  }
+
+  function leafMenuItems(): MenuItem[] {
+    return [
+      {
+        key: "open", label: t("ctxOpen"),
+        icon: <FileText size={13} />,
+        onClick: () => onSelect(node.path, node.label),
+      },
+      { key: "s1", label: "", separator: true },
+      {
+        key: "cut", label: t("ctxCut"),
+        icon: <Scissors size={13} />,
+        onClick: () => dnd.cut(selfItem),
+      },
+      {
+        key: "copy", label: t("ctxCopy"),
+        icon: <Copy size={13} />,
+        onClick: () => dnd.copy(selfItem),
+      },
+      {
+        key: "path", label: t("copyPath"),
+        icon: <Link2 size={13} />, onClick: copyPath,
+      },
+      {
+        key: "rename", label: t("ctxRename"),
+        icon: <Pencil size={13} />, onClick: startRename,
+      },
+      { key: "s2", label: "", separator: true },
+      {
+        key: "delete", label: t("deleteFile"),
+        confirmLabel: t("ctxConfirmDelete"),
+        icon: <Trash2 size={13} />, danger: true,
+        onClick: () => onDelete(node.path),
+      },
+    ];
+  }
+
+  function folderMenuItems(): MenuItem[] {
+    const expanded =
+      node.kind === "folder" && node.expanded;
+    return [
+      {
+        key: "open",
+        label: expanded ? t("ctxCollapse") : t("ctxOpen"),
+        icon: expanded
+          ? <FolderOpen size={13} />
+          : <Folder size={13} />,
+        onClick: () => onToggle(node.path),
+      },
+      {
+        key: "paste", label: t("ctxPaste"),
+        icon: <ClipboardPaste size={13} />,
+        disabled: !dnd.canPaste(selfTarget),
+        onClick: () => dnd.paste(selfTarget),
+      },
+      { key: "s1", label: "", separator: true },
+      {
+        key: "cut", label: t("ctxCut"),
+        icon: <Scissors size={13} />,
+        onClick: () => dnd.cut(selfItem),
+      },
+      {
+        key: "copy", label: t("ctxCopy"),
+        icon: <Copy size={13} />,
+        onClick: () => dnd.copy(selfItem),
+      },
+      {
+        key: "newfolder", label: t("addSubfolder"),
+        icon: <FolderPlus size={13} />,
+        onClick: startAddFolder,
+      },
+    ];
+  }
+
+  function openMenu(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setMenu({ x: e.clientX, y: e.clientY });
+  }
+
+  const contextMenu = menu ? (
+    <TreeContextMenu
+      x={menu.x}
+      y={menu.y}
+      items={
+        node.kind === "leaf"
+          ? leafMenuItems() : folderMenuItems()
+      }
+      onClose={() => setMenu(null)}
+    />
+  ) : null;
 
   const dragProps = {
     draggable: true,
@@ -175,9 +307,11 @@ export function TreeNodeRow({
     }
 
     return (
+      <>
       <div
         ref={rowRef}
         {...dragProps}
+        onContextMenu={openMenu}
         className={[
           "group/leaf flex items-center py-1 pr-1",
           "hover:bg-surface-raised transition-colors",
@@ -260,6 +394,8 @@ export function TreeNodeRow({
           </ConfirmPopover>
         </HoverActions>
       </div>
+      {contextMenu}
+      </>
     );
   }
 
@@ -294,6 +430,7 @@ export function TreeNodeRow({
           setDropActive(false);
           dnd.requestDrop(dropTarget, e.clientX, e.clientY);
         }}
+        onContextMenu={openMenu}
         className={[
           "group/folder flex items-center transition-colors",
           "cursor-grab active:cursor-grabbing",
@@ -428,6 +565,7 @@ export function TreeNodeRow({
             onToggleStar={onToggleStar}
           />
         ))}
+      {contextMenu}
     </>
   );
 }
