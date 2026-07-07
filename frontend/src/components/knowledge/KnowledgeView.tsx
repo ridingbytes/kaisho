@@ -21,6 +21,8 @@ import {
 import { useTranslation } from "react-i18next";
 import {
   useCreateKnowledgeFolder,
+  useCopyKnowledgeFile,
+  useCopyKnowledgeFolder,
   useDeleteKnowledgeFile,
   useKnowledgeDistinctValues,
   useKnowledgeFile,
@@ -28,8 +30,10 @@ import {
   useKnowledgeTags,
   useKnowledgeTree,
   useMoveKnowledgeFile,
+  useMoveKnowledgeFolder,
   useRenameKnowledgeFile,
 } from "../../hooks/useKnowledge";
+import { useToast } from "../../context/ToastContext";
 import { useCustomers } from "../../hooks/useCustomers";
 import { useKbSources } from "../../hooks/useSettings";
 import { useTasks } from "../../hooks/useTasks";
@@ -47,6 +51,12 @@ import {
 } from "./knowledgeEditorUtils";
 import { stripFrontmatter } from "./markdownBody";
 import { KnowledgeSidebar } from "./KnowledgeSidebar";
+import {
+  KbDndProvider,
+  type KbDragItem,
+  type KbDropTarget,
+  type KbRelocateOp,
+} from "./kbDnd";
 import { TokenFilterInput } from "../common/TokenFilterInput";
 import { NewFileForm } from "./NewFileForm";
 import { CopyKbFilePathButton } from "./CopyKbFilePathButton";
@@ -433,8 +443,12 @@ export function KnowledgeView() {
     });
   }
 
+  const toast = useToast();
   const renameFile = useRenameKnowledgeFile();
   const moveFile = useMoveKnowledgeFile();
+  const copyFile = useCopyKnowledgeFile();
+  const moveFolder = useMoveKnowledgeFolder();
+  const copyFolder = useCopyKnowledgeFolder();
 
   function handleRename(
     oldPath: string, newPath: string
@@ -452,22 +466,46 @@ export function KnowledgeView() {
     );
   }
 
-  function handleMove(
-    oldPath: string,
-    oldLabel: string,
-    newLabel: string
+  function handleRelocate(
+    source: KbDragItem,
+    target: KbDropTarget,
+    op: KbRelocateOp,
   ) {
-    moveFile.mutate(
-      { oldPath, oldLabel, newLabel },
-      {
-        onSuccess: (f) => {
-          if (selectedPath === oldPath) {
-            setSelectedPath(f.path);
-            setSelectedLabel(f.label);
-          }
-        },
+    const baseName =
+      source.path.split("/").pop() ?? source.name;
+    const newPath = target.path
+      ? `${target.path}/${baseName}` : baseName;
+    const params = {
+      oldPath: source.path,
+      oldLabel: source.label,
+      newLabel: target.label,
+      newPath,
+    };
+    const onError = (e: unknown) =>
+      toast(String(e), "error");
+    const onSuccess = () => {
+      // Keep the open file pointed at its new location when
+      // it was the one that just moved.
+      if (
+        op === "move" &&
+        source.kind === "leaf" &&
+        selectedPath === source.path
+      ) {
+        setSelectedPath(newPath);
+        setSelectedLabel(target.label);
       }
-    );
+    };
+
+    if (source.kind === "folder") {
+      const mut = op === "move" ? moveFolder : copyFolder;
+      mut.mutate(params, { onError });
+      return;
+    }
+    if (op === "copy") {
+      copyFile.mutate(params, { onError });
+    } else {
+      moveFile.mutate(params, { onSuccess, onError });
+    }
   }
 
   const deleteFile = useDeleteKnowledgeFile();
@@ -719,6 +757,7 @@ export function KnowledgeView() {
           onDeleted={handleDeleted}
         />
       ) : (
+        <KbDndProvider onRelocate={handleRelocate}>
         <div className="flex flex-1 min-h-0">
           <KnowledgeSidebar
             sidebarOpen={sidebarOpen}
@@ -751,7 +790,6 @@ export function KnowledgeView() {
             onToggleLabel={handleToggleLabel}
             onToggleFolder={handleToggleFolder}
             onRename={handleRename}
-            onMove={handleMove}
             onDelete={handleDeleteFile}
             onCreateFolder={handleCreateFolder}
             starred={starred}
@@ -836,6 +874,7 @@ export function KnowledgeView() {
           </div>
           )}
         </div>
+        </KbDndProvider>
       )}
     </div>
   );

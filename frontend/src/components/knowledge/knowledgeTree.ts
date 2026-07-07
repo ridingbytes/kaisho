@@ -113,6 +113,26 @@ function ensureFolder(
   }
 }
 
+/** Sort a node list in place-free fashion: folders first,
+ *  then files, each group alphabetical (case-insensitive)
+ *  by display name. Recurses into folder children so the
+ *  whole subtree is ordered consistently. */
+export function sortNodes(nodes: TreeNode[]): TreeNode[] {
+  const byName = (a: TreeNode, b: TreeNode) =>
+    a.name.localeCompare(b.name, undefined, {
+      sensitivity: "base",
+      numeric: true,
+    });
+  const folders = nodes
+    .filter((n): n is TreeFolder => n.kind === "folder")
+    .map((f) => ({ ...f, children: sortNodes(f.children) }))
+    .sort(byName);
+  const leaves = nodes
+    .filter((n): n is TreeLeaf => n.kind === "leaf")
+    .sort(byName);
+  return [...folders, ...leaves];
+}
+
 function buildLabelNodes(
   files: KnowledgeFile[],
   label: string,
@@ -129,7 +149,7 @@ function buildLabelNodes(
     const segments = file.path.split("/").filter(Boolean);
     insertIntoFolder(nodes, segments, file);
   }
-  return nodes;
+  return sortNodes(nodes);
 }
 
 /** Build a label-keyed tree from a flat file list.

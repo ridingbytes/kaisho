@@ -22,11 +22,9 @@ import { useTranslation } from "react-i18next";
 import { useToast } from "../../context/ToastContext";
 import { useReindexKnowledge } from "../../hooks/useKnowledge";
 import { TreeNodeRow } from "./TreeNodeRow";
+import { useKbDnd } from "./kbDnd";
 import { MAX_WIDTH, MIN_WIDTH } from "./knowledgeEditorUtils";
-import {
-  collectFolderPaths,
-  type TreeNode,
-} from "./knowledgeTree";
+import { type TreeNode } from "./knowledgeTree";
 import type { KnowledgeFile } from "../../types";
 import { RelDate } from "../common/RelDate";
 
@@ -81,14 +79,8 @@ export interface KnowledgeSidebarProps {
   onToggleLabel: (label: string) => void;
   /** Toggle a folder node expanded/collapsed. */
   onToggleFolder: (path: string) => void;
-  /** Rename a file path. */
+  /** Rename a file path (inline rename). */
   onRename: (oldPath: string, newPath: string) => void;
-  /** Move a file to a different label. */
-  onMove: (
-    oldPath: string,
-    oldLabel: string,
-    newLabel: string
-  ) => void;
   /** Delete a file. */
   onDelete: (path: string) => void;
   /** Create a subfolder. */
@@ -135,7 +127,6 @@ export function KnowledgeSidebar({
   onToggleLabel,
   onToggleFolder,
   onRename,
-  onMove,
   onDelete,
   onCreateFolder,
   starred,
@@ -415,12 +406,10 @@ export function KnowledgeSidebar({
                 collapsed={collapsedLabels.has(label)}
                 nodes={treeNodes[label] ?? []}
                 selectedPath={selectedPath}
-                labels={labels}
                 onToggleLabel={onToggleLabel}
                 onSelectFile={onSelectFile}
                 onToggleFolder={onToggleFolder}
                 onRename={onRename}
-                onMove={onMove}
                 onDelete={onDelete}
                 onCreateFolder={onCreateFolder}
                 starred={starred}
@@ -471,12 +460,10 @@ interface LabelSectionProps {
   collapsed: boolean;
   nodes: TreeNode[];
   selectedPath: string | null;
-  labels: string[];
   onToggleLabel: (label: string) => void;
   onSelectFile: (path: string, label: string) => void;
   onToggleFolder: (path: string) => void;
   onRename: (old: string, next: string) => void;
-  onMove: (old: string, oldL: string, newL: string) => void;
   onDelete: (path: string) => void;
   onCreateFolder: (
     label: string, path: string, name: string,
@@ -490,21 +477,21 @@ function LabelSection({
   collapsed,
   nodes,
   selectedPath,
-  labels,
   onToggleLabel,
   onSelectFile,
   onToggleFolder,
   onRename,
-  onMove,
   onDelete,
   onCreateFolder,
   starred,
   onToggleStar,
 }: LabelSectionProps) {
   const { t } = useTranslation("knowledge");
+  const dnd = useKbDnd();
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
-  const folderPaths = collectFolderPaths(nodes);
+  const [dropActive, setDropActive] = useState(false);
+  const rootTarget = { path: "", label };
 
   function handleAdd() {
     const n = name.trim();
@@ -517,11 +504,23 @@ function LabelSection({
   return (
     <div>
       <div
-        className={
-          "group/label flex items-center "
-          + "hover:bg-surface-raised "
-          + "transition-colors"
-        }
+        onDragOver={(e) => {
+          if (!dnd.canDrop(rootTarget)) return;
+          e.preventDefault();
+          setDropActive(true);
+        }}
+        onDragLeave={() => setDropActive(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDropActive(false);
+          dnd.requestDrop(rootTarget, e.clientX, e.clientY);
+        }}
+        className={[
+          "group/label flex items-center transition-colors",
+          dropActive
+            ? "bg-cta-muted ring-1 ring-cta/50"
+            : "hover:bg-surface-raised",
+        ].join(" ")}
       >
         <button
           onClick={() => onToggleLabel(label)}
@@ -629,14 +628,11 @@ function LabelSection({
             node={node}
             depth={1}
             selectedPath={selectedPath}
-            labels={labels}
             onSelect={onSelectFile}
             onToggle={onToggleFolder}
             onRename={onRename}
-            onMove={onMove}
             onDelete={onDelete}
             onCreateFolder={onCreateFolder}
-            folders={folderPaths}
             starred={starred}
             onToggleStar={onToggleStar}
           />

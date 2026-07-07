@@ -271,10 +271,15 @@ trigger a background warm-and-prune pass.
 
 ## File operations
 
-- Rename or move files within a source
-- Move between sources (e.g. from Personal to Company Docs)
+- Rename files inline (pencil icon)
+- Drag a file or folder onto another folder (or a source
+  header) and choose **Move here** or **Copy here** on drop.
+  This works within a source and across sources.
 - Delete files (with confirmation)
 - Edit Markdown files inline with a live preview editor
+
+The tree lists folders before files, each group sorted
+alphabetically.
 
 ## Supported file types
 

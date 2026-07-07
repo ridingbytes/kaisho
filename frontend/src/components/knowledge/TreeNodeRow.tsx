@@ -25,91 +25,7 @@ import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { HoverActions } from "../common/HoverActions";
 import type { TreeNode } from "./knowledgeTree";
-
-/** Combined dropdown: move to folder or another label. */
-function MovePicker({
-  filePath,
-  fileLabel,
-  folders,
-  labels,
-  onRename,
-  onMove,
-}: {
-  filePath: string;
-  fileLabel: string;
-  folders: string[];
-  labels: string[];
-  onRename: (old: string, next: string) => void;
-  onMove: (
-    old: string, oldLabel: string, newLabel: string,
-  ) => void;
-}) {
-  const { t } = useTranslation("knowledge");
-  const fileName = filePath.split("/").pop() ?? "";
-  const currentDir = filePath.includes("/")
-    ? filePath.slice(0, filePath.lastIndexOf("/"))
-    : "";
-  const otherLabels = labels.filter(
-    (l) => l !== fileLabel,
-  );
-  const availableFolders = folders.filter(
-    (f) => f !== currentDir,
-  );
-  const showRoot = currentDir !== "";
-  const hasFolders = showRoot
-    || availableFolders.length > 0;
-
-  if (!hasFolders && otherLabels.length === 0) {
-    return null;
-  }
-
-  function handleChange(val: string) {
-    if (val.startsWith("label:")) {
-      onMove(filePath, fileLabel, val.slice(6));
-    } else {
-      const dir = val === "/" ? "" : val;
-      const newPath = dir
-        ? `${dir}/${fileName}` : fileName;
-      onRename(filePath, newPath);
-    }
-  }
-
-  return (
-    <select
-      value=""
-      onChange={(e) => {
-        if (e.target.value) handleChange(e.target.value);
-      }}
-      className={
-        "w-12 text-2xs bg-transparent "
-        + "text-fg-subtle hover:text-fg "
-        + "cursor-pointer"
-      }
-      title={t("moveTo")}
-    >
-      <option value="">{t("moveOption")}</option>
-      {hasFolders && (
-        <optgroup label={t("folders")}>
-          {showRoot && (
-            <option value="/">{t("rootOption")}</option>
-          )}
-          {availableFolders.map((f) => (
-            <option key={f} value={f}>{f}</option>
-          ))}
-        </optgroup>
-      )}
-      {otherLabels.length > 0 && (
-        <optgroup label={t("sources")}>
-          {otherLabels.map((l) => (
-            <option key={l} value={`label:${l}`}>
-              {l}
-            </option>
-          ))}
-        </optgroup>
-      )}
-    </select>
-  );
-}
+import { useKbDnd } from "./kbDnd";
 
 /** Props for {@link TreeNodeRow}. */
 export interface TreeNodeRowProps {
@@ -119,22 +35,12 @@ export interface TreeNodeRowProps {
   depth: number;
   /** Path of the currently selected file, if any. */
   selectedPath: string | null;
-  /** All available library labels (for move menu). */
-  labels: string[];
-  /** Folder paths within the same label (for move-to). */
-  folders: string[];
   /** Called when a leaf is clicked. */
   onSelect: (path: string, label: string) => void;
   /** Called when a folder chevron is toggled. */
   onToggle: (path: string) => void;
-  /** Called to rename/move a file path. */
+  /** Called to rename a file path (inline rename). */
   onRename: (oldPath: string, newPath: string) => void;
-  /** Called to move a file to a different label. */
-  onMove: (
-    oldPath: string,
-    oldLabel: string,
-    newLabel: string
-  ) => void;
   /** Called to delete a file. */
   onDelete: (path: string) => void;
   /** Called to create a subfolder inside a folder. */
@@ -156,23 +62,39 @@ export function TreeNodeRow({
   node,
   depth,
   selectedPath,
-  labels,
-  folders,
   onSelect,
   onToggle,
   onRename,
-  onMove,
   onDelete,
   onCreateFolder,
   starred,
   onToggleStar,
 }: TreeNodeRowProps) {
   const { t } = useTranslation("knowledge");
+  const dnd = useKbDnd();
   const indent = depth * 16;
   const [renaming, setRenaming] = useState(false);
   const [renamePath, setRenamePath] = useState("");
   const [addingFolder, setAddingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [dropActive, setDropActive] = useState(false);
+
+  const dragProps = {
+    draggable: true,
+    onDragStart: (e: React.DragEvent) => {
+      e.stopPropagation();
+      // Firefox only starts a drag when data is set.
+      e.dataTransfer.setData("text/plain", node.path);
+      e.dataTransfer.effectAllowed = "copyMove";
+      dnd.startDrag({
+        path: node.path,
+        label: node.label,
+        kind: node.kind,
+        name: node.name,
+      });
+    },
+    onDragEnd: () => dnd.endDrag(),
+  };
 
   if (node.kind === "leaf") {
     const isSelected = selectedPath === node.path;
@@ -255,9 +177,11 @@ export function TreeNodeRow({
     return (
       <div
         ref={rowRef}
+        {...dragProps}
         className={[
           "group/leaf flex items-center py-1 pr-1",
           "hover:bg-surface-raised transition-colors",
+          "cursor-grab active:cursor-grabbing",
           isSelected
             ? "text-cta bg-cta-muted"
             : "text-fg-strong",
@@ -321,14 +245,6 @@ export function TreeNodeRow({
           >
             <Pencil size={9} />
           </button>
-          <MovePicker
-            filePath={node.path}
-            fileLabel={node.label}
-            folders={folders}
-            labels={labels}
-            onRename={onRename}
-            onMove={onMove}
-          />
           <ConfirmPopover
             onConfirm={() => onDelete(node.path)}
           >
@@ -359,14 +275,32 @@ export function TreeNodeRow({
     setAddingFolder(false);
   }
 
+  const dropTarget = { path: node.path, label: node.label };
+
   return (
     <>
       <div
-        className={
-          "group/folder flex items-center "
-          + "hover:bg-surface-raised "
-          + "transition-colors"
-        }
+        {...dragProps}
+        onDragOver={(e) => {
+          if (!dnd.canDrop(dropTarget)) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setDropActive(true);
+        }}
+        onDragLeave={() => setDropActive(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setDropActive(false);
+          dnd.requestDrop(dropTarget, e.clientX, e.clientY);
+        }}
+        className={[
+          "group/folder flex items-center transition-colors",
+          "cursor-grab active:cursor-grabbing",
+          dropActive
+            ? "bg-cta-muted ring-1 ring-cta/50"
+            : "hover:bg-surface-raised",
+        ].join(" ")}
       >
         <button
           onClick={() => onToggle(node.path)}
@@ -485,14 +419,11 @@ export function TreeNodeRow({
             node={child}
             depth={depth + 1}
             selectedPath={selectedPath}
-            labels={labels}
             onSelect={onSelect}
             onToggle={onToggle}
             onRename={onRename}
-            onMove={onMove}
             onDelete={onDelete}
             onCreateFolder={onCreateFolder}
-            folders={folders}
             starred={starred}
             onToggleStar={onToggleStar}
           />

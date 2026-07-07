@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  copyKnowledgeFile,
+  copyKnowledgeFolder,
   createKnowledgeFolder,
   deleteKnowledgeFile,
   fetchKnowledgeDistinctValues,
@@ -8,6 +10,7 @@ import {
   fetchKnowledgeTags,
   fetchKnowledgeTree,
   moveKnowledgeFile,
+  moveKnowledgeFolder,
   patchKnowledgeMetadata,
   reindexKnowledge,
   renameKnowledgeFile,
@@ -200,6 +203,72 @@ export function useMoveKnowledgeFile() {
       newLabel: string;
       newPath?: string;
     }) => moveKnowledgeFile({
+      oldPath, oldLabel, newLabel, newPath,
+    }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["knowledge"] });
+    },
+  });
+}
+
+export function useCopyKnowledgeFile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      oldPath,
+      oldLabel,
+      newLabel,
+      newPath,
+    }: {
+      oldPath: string;
+      oldLabel: string;
+      newLabel: string;
+      newPath?: string;
+    }) => copyKnowledgeFile({
+      oldPath, oldLabel, newLabel, newPath,
+    }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["knowledge"] });
+    },
+  });
+}
+
+export function useMoveKnowledgeFolder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      oldPath,
+      oldLabel,
+      newLabel,
+      newPath,
+    }: {
+      oldPath: string;
+      oldLabel: string;
+      newLabel: string;
+      newPath: string;
+    }) => moveKnowledgeFolder({
+      oldPath, oldLabel, newLabel, newPath,
+    }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["knowledge"] });
+    },
+  });
+}
+
+export function useCopyKnowledgeFolder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      oldPath,
+      oldLabel,
+      newLabel,
+      newPath,
+    }: {
+      oldPath: string;
+      oldLabel: string;
+      newLabel: string;
+      newPath: string;
+    }) => copyKnowledgeFolder({
       oldPath, oldLabel, newLabel, newPath,
     }),
     onSuccess: () => {

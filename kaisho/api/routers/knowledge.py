@@ -431,6 +431,20 @@ class FileMove(BaseModel):
     new_path: str | None = None
 
 
+class FileCopy(BaseModel):
+    old_path: str
+    old_label: str
+    new_label: str
+    new_path: str | None = None
+
+
+class FolderRelocate(BaseModel):
+    old_path: str
+    old_label: str
+    new_label: str
+    new_path: str
+
+
 @router.post("/rename", status_code=200)
 def rename_file(body: FileRename):
     """Rename or move a file within its source."""
@@ -452,6 +466,44 @@ def move_file(body: FileMove):
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/copy", status_code=200)
+def copy_file(body: FileCopy):
+    """Copy a file within or between KB sources."""
+    try:
+        return kb_service.copy_file(
+            _sources(), body.old_path, body.old_label,
+            body.new_label, body.new_path,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+
+
+@router.post("/folder/move", status_code=200)
+def move_folder(body: FolderRelocate):
+    """Move a folder (and its contents) within or between
+    KB sources."""
+    try:
+        return kb_service.move_folder(
+            _sources(), body.old_path, body.old_label,
+            body.new_label, body.new_path,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+
+
+@router.post("/folder/copy", status_code=200)
+def copy_folder(body: FolderRelocate):
+    """Copy a folder (and its contents) within or between
+    KB sources."""
+    try:
+        return kb_service.copy_folder(
+            _sources(), body.old_path, body.old_label,
+            body.new_label, body.new_path,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 
 @router.delete("/file", status_code=204)
