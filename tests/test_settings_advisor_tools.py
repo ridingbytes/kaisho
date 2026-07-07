@@ -136,6 +136,31 @@ def test_set_task_state_requires_label(clean_profile):
     assert "error" in result
 
 
+def test_set_task_state_preserves_done_on_partial_update(
+    clean_profile,
+):
+    """Updating only label/colour must not reset done --
+    that would reclassify every task in the column."""
+    execute_tool(
+        "set_task_state",
+        {
+            "name": "SHIPPED", "label": "Shipped",
+            "color": "#0f0", "done": True,
+        },
+    )
+    # Re-edit without passing done.
+    execute_tool(
+        "set_task_state",
+        {
+            "name": "SHIPPED", "label": "Shipped ✔",
+            "color": "#0a0",
+        },
+    )
+    states = {s["name"]: s for s in _settings()["task_states"]}
+    assert states["SHIPPED"]["label"] == "Shipped ✔"
+    assert states["SHIPPED"]["done"] is True
+
+
 # -- set_list_setting --------------------------------------
 
 def test_set_list_setting_replaces(clean_profile):
@@ -187,6 +212,17 @@ def test_set_backup_retention_rejects_zero(clean_profile):
     assert "error" in result
 
 
+def test_int_setters_reject_bool(clean_profile):
+    """bool is an int subclass; True must not sneak through
+    as 1 for a numeric setting."""
+    assert "error" in execute_tool(
+        "set_clock_rounding", {"minutes": True},
+    )
+    assert "error" in execute_tool(
+        "set_backup_retention", {"keep": True},
+    )
+
+
 def test_set_timezone_valid(clean_profile):
     result = execute_tool(
         "set_timezone", {"timezone": "America/New_York"},
@@ -217,4 +253,13 @@ def test_set_ai_model_sets_only_model_fields(clean_profile):
 
 def test_set_ai_model_requires_a_field(clean_profile):
     result = execute_tool("set_ai_model", {})
+    assert "error" in result
+
+
+def test_set_ai_model_rejects_empty_model(clean_profile):
+    """An empty-after-strip model would silently break the
+    next advisor/cron run."""
+    result = execute_tool(
+        "set_ai_model", {"advisor_model": "   "},
+    )
     assert "error" in result

@@ -973,7 +973,7 @@ _HANDLERS: dict[str, Any] = {
         name=a.get("name", ""),
         label=a.get("label", ""),
         color=a.get("color", ""),
-        done=a.get("done", False),
+        done=a.get("done"),
         after=a.get("after"),
     ),
     "set_list_setting": lambda a: _set_list_setting(
@@ -2153,12 +2153,17 @@ def _set_task_state(
     name: str,
     label: str,
     color: str,
-    done: bool = False,
+    done: bool | None = None,
     after: str | None = None,
 ) -> dict:
     """Add a kanban column, or update an existing one by
     name. Never removes a state (that would orphan tasks
-    already in it), so this is a safe upsert."""
+    already in it), so this is a safe upsert.
+
+    On update, ``done`` is only changed when explicitly
+    supplied -- an advisor editing just the label or colour
+    must not silently flip a done-column back to not-done
+    and reclassify every task in it."""
     if not name or not label:
         return {"error": "name and label are required"}
     from ..backends import reset_backend
@@ -2171,7 +2176,8 @@ def _set_task_state(
             if state["name"] == name:
                 state["label"] = label
                 state["color"] = color
-                state["done"] = bool(done)
+                if done is not None:
+                    state["done"] = bool(done)
                 data["task_states"] = states
                 return
         new = {
@@ -2223,9 +2229,15 @@ def _set_list_setting(key: str, values: Any) -> dict:
     return {"ok": True, "key": key, "values": cleaned}
 
 
+def _is_int(value: Any) -> bool:
+    """True only for real ints. Rejects bool, which is an
+    int subclass and would otherwise pass numeric checks."""
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
 def _set_clock_rounding(minutes: int) -> dict:
     """Set the clock rounding interval in minutes."""
-    if not isinstance(minutes, int) or minutes < 0:
+    if not _is_int(minutes) or minutes < 0:
         return {
             "error": "minutes must be a non-negative integer",
         }
@@ -2240,7 +2252,7 @@ def _set_clock_rounding(minutes: int) -> dict:
 
 def _set_backup_retention(keep: int) -> dict:
     """Set how many recent backups to retain."""
-    if not isinstance(keep, int) or keep < 1:
+    if not _is_int(keep) or keep < 1:
         return {"error": "keep must be an integer >= 1"}
     from ..config import get_config
     from ..services import settings as settings_svc
@@ -2279,10 +2291,18 @@ def _set_ai_model(
     non-secret fields are writable -- keys and provider
     URLs are never touched here."""
     updates = {}
-    if advisor_model is not None:
-        updates["advisor_model"] = str(advisor_model).strip()
-    if cron_model is not None:
-        updates["cron_model"] = str(cron_model).strip()
+    for field, value in (
+        ("advisor_model", advisor_model),
+        ("cron_model", cron_model),
+    ):
+        if value is None:
+            continue
+        cleaned = str(value).strip()
+        if not cleaned:
+            return {
+                "error": f"{field} must not be empty",
+            }
+        updates[field] = cleaned
     if not updates:
         return {
             "error": (
