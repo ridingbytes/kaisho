@@ -34,8 +34,8 @@ and your mind.
 - **MCP server** out of the box. One-line config for Claude
   Code / Cursor / Claude Desktop and any other MCP client.
   Your AI gains `add_task`, `book_time`, `list_customers`,
-  `search_knowledge` and 30+ more tools that read and write
-  your real data without copy-paste.
+  `search_knowledge`, `add_project` and 60+ more tools that
+  read and write your real data without copy-paste.
 - **Agentic advisor** with read / write / destructive tool
   tiers, URL allowlist, per-session write caps. Bring your
   own model: Ollama, LM Studio, Claude API, OpenRouter,
@@ -49,6 +49,17 @@ and your mind.
   an AI shell. Drag-and-drop tasks, billable/bookable
   contracts with budget bars, unbilled-entry preview, CSV
   export.
+- **Projects.** A customer-scoped workspace that aggregates
+  its tasks, time, notes, and files in one place, with a
+  markdown description, milestones, tags, a deadline, and a
+  status. A kanban board groups projects by status with
+  drag-to-reorder, collapsible columns, and search; time
+  rolls up automatically from assigned tasks.
+- **Automations.** Every task and clock change emits a
+  domain event that can fire a signed webhook to n8n, Make,
+  Zapier, or any endpoint. A Settings panel manages
+  endpoints, subscribed events, and a delivery log; an
+  importable n8n recipe ships as a starting point.
 - **Backend-agnostic storage.** Keep everything in
   Org-mode (default), Markdown, JSON, or a SQL database
   (SQLite or Postgres) for concurrent access. Web UI, CLI,
@@ -73,7 +84,7 @@ Adds a hosted memory layer at
 want cross-device convenience without setting up a server:
 
 - **Cross-device sync + mobile PWA** for clock tracking,
-  inbox, and the advisor on the go.
+  inbox, projects, and the advisor on the go.
 - **Managed AI token quota** of a frontier model -- skip
   the key-juggling for everyday work.
 - **Hosted MCP gateway** so the same tools stay reachable
@@ -147,6 +158,9 @@ kai clock stop                         # Stop
 kai clock book 3h --customer Acme      # Book hours
 kai customer list                      # List customers
 kai contract add Acme "Q3 Dev" --hours 60
+kai project list                       # List projects
+kai project add "Website" --customer Acme --due 2026-09-30
+kai project assign T-123 P-abc --milestone M-1
 kai inbox list                         # Show inbox
 kai briefing                           # Morning overview
 kai ask "Which customer needs attention?"
@@ -168,7 +182,7 @@ kai convert --from org --to sql \      # Backend migration
 - **Storage**: pluggable backends -- Org-mode (default),
   Markdown, JSON, SQL (SQLite / Postgres). Switchable per
   profile; converter ships in the box.
-- **AI**: agentic tool loop with 30+ tools, tool-tier
+- **AI**: agentic tool loop with 60+ tools, tool-tier
   gating (read / write / destructive), URL allowlist.
   Bring-your-own provider OR use the hosted Companion/Pro
   gateway.
@@ -205,7 +219,7 @@ frontend/            React SPA
 desktop/             Tauri v2 wrapper
   src-tauri/         Rust shell (sidecar, auto-updater)
   src/               Splash screen
-tests/               pytest suite (239 tests)
+tests/               pytest suite (800+ tests)
 templates/           Default profile templates
 prompts/             AI cron-job prompt templates
 scripts/             mcp-server.sh, demo data, screenshots
@@ -230,6 +244,7 @@ data/
       clocks.org
       inbox.org
       notes.org
+      projects.org
     # OR markdown/, OR json/, OR a SQL DSN
 ```
 
