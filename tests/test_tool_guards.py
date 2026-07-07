@@ -171,6 +171,25 @@ def test_write_kb_file_refuses_silent_overwrite(
     assert "already exists" in second["error"]
 
 
+def test_list_kb_files_returns_written_file(clean_profile):
+    """Regression: ``list_kb_files`` used to crash because
+    it called ``file_tree`` without the required
+    ``profile_dir`` argument, so the advisor and MCP client
+    got a 500 instead of the file list."""
+    execute_tool(
+        "write_kb_file",
+        {
+            "label": "knowledge",
+            "filename": "listed.md",
+            "content": "hello",
+        },
+    )
+    result = execute_tool("list_kb_files", {})
+    assert "error" not in result
+    names = {f["name"] for f in result["files"]}
+    assert "listed" in names
+
+
 def test_caps_interaction_kb_and_general_share_budget():
     """KB writes count toward BOTH caps. Three KB writes
     plus two non-KB writes should still be allowed (5

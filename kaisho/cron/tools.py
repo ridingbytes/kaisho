@@ -1126,8 +1126,12 @@ def _kb_sources() -> list[dict]:
 
 
 def _list_kb_files() -> dict:
+    from ..config import get_config
     from ..services import knowledge as kb_svc
-    return {"files": kb_svc.file_tree(_kb_sources())}
+    profile_dir = get_config().PROFILE_DIR
+    return {
+        "files": kb_svc.file_tree(_kb_sources(), profile_dir),
+    }
 
 
 _KB_WRITE_MAX_BYTES = 1_000_000
