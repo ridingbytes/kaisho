@@ -331,6 +331,14 @@ def _mask_secrets(data: dict) -> dict:
     return out
 
 
+def mask_secrets(data: dict) -> dict:
+    """Public wrapper returning a copy of ``data`` with every
+    secret value masked. See :func:`_mask_secrets`. Use this
+    anywhere settings are exposed outside the trusted core
+    (e.g. the advisor's ``get_settings`` tool)."""
+    return _mask_secrets(data)
+
+
 def clear_ai_key(path: Path, field: str) -> dict:
     """Wipe a single AI secret key. Returns the masked
     AI block. Raises ``ValueError`` if ``field`` is not a

@@ -1527,4 +1527,183 @@ TOOL_DEFS: list[dict] = [
             "required": ["task_id", "project_id"],
         },
     },
+    {
+        "name": "get_settings",
+        "tier": "read",
+        "description": (
+            "Return the profile's app settings with all "
+            "secrets masked (API keys and tokens are never "
+            "revealed). Covers tags, kanban task states, "
+            "customer/inbox vocabularies, clock rounding, "
+            "backup retention, timezone, URL allowlist, and "
+            "the AI model choice. Read this before "
+            "proposing or making a settings change."
+        ),
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "set_tags",
+        "tier": "write",
+        "description": (
+            "Replace the tag vocabulary. Pass the FULL list "
+            "of tags you want to keep -- omitted tags are "
+            "removed. Each tag needs a 'name'; 'color' (hex "
+            "or name) and 'description' are optional. Read "
+            "get_settings first and confirm with the user."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "color": {"type": "string"},
+                            "description": {
+                                "type": "string",
+                            },
+                        },
+                        "required": ["name"],
+                    },
+                },
+            },
+            "required": ["tags"],
+        },
+    },
+    {
+        "name": "set_task_state",
+        "tier": "write",
+        "description": (
+            "Add a kanban column, or update an existing one "
+            "by name. Safe upsert -- it never removes a "
+            "state, since that would orphan tasks already "
+            "in it. To rename the visible text, update the "
+            "'label' (the 'name' is the stable id)."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": (
+                        "Stable id, e.g. IN_PROGRESS"
+                    ),
+                },
+                "label": {
+                    "type": "string",
+                    "description": "Column heading shown",
+                },
+                "color": {
+                    "type": "string",
+                    "description": "Hex or colour name",
+                },
+                "done": {
+                    "type": "boolean",
+                    "description": (
+                        "Whether this column counts as done"
+                    ),
+                },
+                "after": {
+                    "type": "string",
+                    "description": (
+                        "Insert after this state name "
+                        "(new states only)"
+                    ),
+                },
+            },
+            "required": ["name", "label", "color"],
+        },
+    },
+    {
+        "name": "set_list_setting",
+        "tier": "write",
+        "description": (
+            "Replace one of the string-list settings: "
+            "customer_types, inbox_channels, or "
+            "url_allowlist. Pass the FULL list you want to "
+            "keep. Read get_settings first."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string",
+                    "enum": [
+                        "customer_types",
+                        "inbox_channels",
+                        "url_allowlist",
+                    ],
+                },
+                "values": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+            },
+            "required": ["key", "values"],
+        },
+    },
+    {
+        "name": "set_clock_rounding",
+        "tier": "write",
+        "description": (
+            "Set the time-tracking rounding interval in "
+            "minutes (0 disables rounding)."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "minutes": {"type": "integer"},
+            },
+            "required": ["minutes"],
+        },
+    },
+    {
+        "name": "set_backup_retention",
+        "tier": "write",
+        "description": (
+            "Set how many recent backups to keep (>= 1). "
+            "Older backups are pruned on the next backup."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "keep": {"type": "integer"},
+            },
+            "required": ["keep"],
+        },
+    },
+    {
+        "name": "set_timezone",
+        "tier": "write",
+        "description": (
+            "Set the profile timezone. Must be a valid IANA "
+            "name like 'Europe/Berlin' or 'America/New_York'."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "timezone": {"type": "string"},
+            },
+            "required": ["timezone"],
+        },
+    },
+    {
+        "name": "set_ai_model",
+        "tier": "write",
+        "description": (
+            "Set which model the advisor and/or cron jobs "
+            "use. Only the model names are writable -- API "
+            "keys and provider URLs are never changed here. "
+            "Supply advisor_model, cron_model, or both."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "advisor_model": {"type": "string"},
+                "cron_model": {"type": "string"},
+            },
+        },
+    },
 ]

@@ -967,6 +967,31 @@ _HANDLERS: dict[str, Any] = {
         prune=a.get("prune", True),
     ),
     "list_backups": lambda a: _list_backups(),
+    "get_settings": lambda a: _get_settings(),
+    "set_tags": lambda a: _set_tags(a.get("tags")),
+    "set_task_state": lambda a: _set_task_state(
+        name=a.get("name", ""),
+        label=a.get("label", ""),
+        color=a.get("color", ""),
+        done=a.get("done", False),
+        after=a.get("after"),
+    ),
+    "set_list_setting": lambda a: _set_list_setting(
+        a.get("key", ""), a.get("values"),
+    ),
+    "set_clock_rounding": lambda a: _set_clock_rounding(
+        a.get("minutes"),
+    ),
+    "set_backup_retention": lambda a: _set_backup_retention(
+        a.get("keep"),
+    ),
+    "set_timezone": lambda a: _set_timezone(
+        a.get("timezone", ""),
+    ),
+    "set_ai_model": lambda a: _set_ai_model(
+        advisor_model=a.get("advisor_model"),
+        cron_model=a.get("cron_model"),
+    ),
 }
 
 
@@ -2054,3 +2079,219 @@ def _list_backups() -> dict:
             for b in backup_svc.list_backups(target)
         ],
     }
+
+
+# -------------------------------------------------------------------
+# App settings tools
+#
+# The advisor may read all settings (secrets masked) and edit a
+# bounded, non-secret slice: tags, kanban states, a few string-list
+# vocabularies, clock rounding, backup retention, timezone, and the
+# AI model choice. Secret values (API keys, tokens) and data paths
+# are never readable or writable here -- masked on read, rejected on
+# write -- because the advisor is exposed to prompt injection.
+# -------------------------------------------------------------------
+
+# Top-level string-list settings the advisor may replace wholesale.
+_EDITABLE_LIST_SETTINGS = (
+    "customer_types", "inbox_channels", "url_allowlist",
+)
+
+# AI fields the advisor may set. Deliberately excludes every secret
+# key and the provider URLs that pair with one.
+_EDITABLE_AI_FIELDS = ("advisor_model", "cron_model")
+
+
+def _get_settings() -> dict:
+    """Return the profile's settings with all secrets masked."""
+    from ..config import get_config
+    from ..services import settings as settings_svc
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    return {"settings": settings_svc.mask_secrets(data)}
+
+
+def _clean_str_list(values: Any) -> list[str] | None:
+    """Coerce a tool-supplied list into stripped, non-empty
+    strings, or None if the shape is wrong."""
+    if not isinstance(values, list):
+        return None
+    return [
+        str(v).strip() for v in values if str(v).strip()
+    ]
+
+
+def _set_tags(tags: Any) -> dict:
+    """Replace the tag vocabulary. Each tag needs a name;
+    colour and description are optional."""
+    if not isinstance(tags, list) or not tags:
+        return {"error": "tags must be a non-empty list"}
+    cleaned = []
+    for tag in tags:
+        if not isinstance(tag, dict) or not tag.get("name"):
+            return {"error": "each tag needs a 'name'"}
+        cleaned.append({
+            "name": str(tag["name"]).strip(),
+            "color": str(tag.get("color", "")).strip(),
+            "description": str(
+                tag.get("description", ""),
+            ).strip(),
+        })
+    from ..config import get_config
+    from ..services import settings as settings_svc
+
+    def _apply(data: dict) -> None:
+        data["tags"] = cleaned
+
+    settings_svc.mutate_settings(
+        get_config().SETTINGS_FILE, _apply,
+    )
+    return {"ok": True, "tags": cleaned}
+
+
+def _set_task_state(
+    name: str,
+    label: str,
+    color: str,
+    done: bool = False,
+    after: str | None = None,
+) -> dict:
+    """Add a kanban column, or update an existing one by
+    name. Never removes a state (that would orphan tasks
+    already in it), so this is a safe upsert."""
+    if not name or not label:
+        return {"error": "name and label are required"}
+    from ..backends import reset_backend
+    from ..config import get_config
+    from ..services import settings as settings_svc
+
+    def _apply(data: dict) -> None:
+        states = data.get("task_states", [])
+        for state in states:
+            if state["name"] == name:
+                state["label"] = label
+                state["color"] = color
+                state["done"] = bool(done)
+                data["task_states"] = states
+                return
+        new = {
+            "name": name, "label": label,
+            "color": color, "done": bool(done),
+        }
+        idx = next(
+            (
+                i for i, s in enumerate(states)
+                if s["name"] == after
+            ),
+            None,
+        )
+        if idx is None:
+            states.append(new)
+        else:
+            states.insert(idx + 1, new)
+        data["task_states"] = states
+
+    settings_svc.mutate_settings(
+        get_config().SETTINGS_FILE, _apply,
+    )
+    # The org parser's TODO-keyword set is derived from
+    # task_states; rebuild so a new column is recognised.
+    reset_backend()
+    return {"ok": True, "name": name}
+
+
+def _set_list_setting(key: str, values: Any) -> dict:
+    """Replace one of the allowlisted string-list settings
+    (customer_types, inbox_channels, url_allowlist)."""
+    if key not in _EDITABLE_LIST_SETTINGS:
+        allowed = ", ".join(_EDITABLE_LIST_SETTINGS)
+        return {
+            "error": f"key must be one of: {allowed}",
+        }
+    cleaned = _clean_str_list(values)
+    if cleaned is None:
+        return {"error": "values must be a list of strings"}
+    from ..config import get_config
+    from ..services import settings as settings_svc
+
+    def _apply(data: dict) -> None:
+        data[key] = cleaned
+
+    settings_svc.mutate_settings(
+        get_config().SETTINGS_FILE, _apply,
+    )
+    return {"ok": True, "key": key, "values": cleaned}
+
+
+def _set_clock_rounding(minutes: int) -> dict:
+    """Set the clock rounding interval in minutes."""
+    if not isinstance(minutes, int) or minutes < 0:
+        return {
+            "error": "minutes must be a non-negative integer",
+        }
+    from ..config import get_config
+    from ..services import settings as settings_svc
+    block = settings_svc.set_clocks_settings(
+        get_config().SETTINGS_FILE,
+        {"rounding_minutes": minutes},
+    )
+    return {"ok": True, "clocks": block}
+
+
+def _set_backup_retention(keep: int) -> dict:
+    """Set how many recent backups to retain."""
+    if not isinstance(keep, int) or keep < 1:
+        return {"error": "keep must be an integer >= 1"}
+    from ..config import get_config
+    from ..services import settings as settings_svc
+    block = settings_svc.set_backup_settings(
+        get_config().SETTINGS_FILE, {"keep": keep},
+    )
+    return {"ok": True, "backup": block}
+
+
+def _set_timezone(timezone: str) -> dict:
+    """Set the profile timezone (validated IANA name)."""
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+    try:
+        ZoneInfo(timezone)
+    except (ZoneInfoNotFoundError, ValueError):
+        return {
+            "error": f"unknown timezone: {timezone!r}",
+        }
+    from ..config import get_config
+    from ..services import settings as settings_svc
+
+    def _apply(data: dict) -> None:
+        data["timezone"] = timezone
+
+    settings_svc.mutate_settings(
+        get_config().SETTINGS_FILE, _apply,
+    )
+    return {"ok": True, "timezone": timezone}
+
+
+def _set_ai_model(
+    advisor_model: str | None = None,
+    cron_model: str | None = None,
+) -> dict:
+    """Set the advisor and/or cron model. Only these two
+    non-secret fields are writable -- keys and provider
+    URLs are never touched here."""
+    updates = {}
+    if advisor_model is not None:
+        updates["advisor_model"] = str(advisor_model).strip()
+    if cron_model is not None:
+        updates["cron_model"] = str(cron_model).strip()
+    if not updates:
+        return {
+            "error": (
+                "supply advisor_model and/or cron_model"
+            ),
+        }
+    from ..config import get_config
+    from ..services import settings as settings_svc
+    ai = settings_svc.set_ai_settings(
+        get_config().SETTINGS_FILE, updates,
+    )
+    return {"ok": True, "ai": ai}
