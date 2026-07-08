@@ -87,6 +87,8 @@ export function TimeEntryDialog({ entry, onClose }: Props) {
       open
       onClose={onClose}
       title={t("editEntry")}
+      size="lg"
+      resizable
       footer={
         <div className="flex justify-end gap-2 w-full">
           <button onClick={onClose} className={fieldCls}>
@@ -227,7 +229,7 @@ export function TimeEntryDialog({ entry, onClose }: Props) {
             value={notes}
             onChange={setNotes}
             bucketId={entry.sync_id ?? entry.start}
-            rows={3}
+            rows={8}
           />
         </label>
       </div>

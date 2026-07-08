@@ -3,6 +3,7 @@ import {
   ReactNode,
   useEffect,
   useRef,
+  useState,
 } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
@@ -23,17 +24,24 @@ interface Props {
   /** Optional footer (typically a row of buttons). */
   footer?: ReactNode;
   /** Width preset for the panel. */
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   /** Disable backdrop click-to-close (for forms with
    *  unsaved state). Escape still works. */
   noBackdropClose?: boolean;
+  /** Show a corner handle to drag-resize the panel. The
+   *  chosen size is kept while the dialog stays mounted. */
+  resizable?: boolean;
 }
 
 const SIZE_CLASSES: Record<NonNullable<Props["size"]>, string> = {
   sm: "max-w-sm",
   md: "max-w-md",
   lg: "max-w-2xl",
+  xl: "max-w-4xl",
 };
+
+const MIN_W = 360;
+const MIN_H = 240;
 
 /**
  * Centered modal dialog with backdrop + focus management.
@@ -64,10 +72,46 @@ const SIZE_CLASSES: Record<NonNullable<Props["size"]>, string> = {
  */
 export function Dialog({
   open, onClose, title, subtitle, children, footer,
-  size = "md", noBackdropClose,
+  size = "md", noBackdropClose, resizable,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
+  // Explicit pixel size once the user drags the handle;
+  // ``null`` falls back to the responsive width preset.
+  const [dims, setDims] = useState<
+    { w: number; h: number } | null
+  >(null);
+
+  function startResize(e: React.PointerEvent) {
+    e.preventDefault();
+    const rect = panelRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startW = rect.width;
+    const startH = rect.height;
+    // The panel is centred, so each edge moves by half the
+    // width change -- double the delta so the corner tracks
+    // the pointer.
+    function onMove(ev: PointerEvent) {
+      setDims({
+        w: Math.max(
+          MIN_W,
+          startW + (ev.clientX - startX) * 2,
+        ),
+        h: Math.max(
+          MIN_H,
+          startH + (ev.clientY - startY) * 2,
+        ),
+      });
+    }
+    function onUp() {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
 
   // Body scroll lock + focus restore.
   useEffect(() => {
@@ -112,12 +156,23 @@ export function Dialog({
         ref={panelRef}
         tabIndex={-1}
         onKeyDown={onKey}
+        style={
+          dims
+            ? {
+                width: dims.w,
+                height: dims.h,
+                maxWidth: "95vw",
+                maxHeight: "95vh",
+              }
+            : undefined
+        }
         className={[
-          "w-full flex flex-col",
+          "relative w-full flex flex-col",
           "bg-surface-card border border-border rounded-lg",
           "shadow-card-drag outline-none",
-          "max-h-[90vh] overflow-hidden",
-          SIZE_CLASSES[size],
+          dims ? "" : "max-h-[90vh]",
+          "overflow-hidden",
+          dims ? "" : SIZE_CLASSES[size],
         ].join(" ")}
       >
         <header className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border-subtle">
@@ -150,6 +205,28 @@ export function Dialog({
           <footer className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border-subtle">
             {footer}
           </footer>
+        )}
+
+        {resizable && (
+          <div
+            onPointerDown={startResize}
+            title="Drag to resize"
+            className={[
+              "absolute bottom-0 right-0 z-10",
+              "w-4 h-4 cursor-nwse-resize",
+              "text-fg-subtle hover:text-fg-muted",
+            ].join(" ")}
+          >
+            <svg
+              viewBox="0 0 10 10"
+              className="w-full h-full"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1"
+            >
+              <path d="M9 3 L3 9 M9 6 L6 9" />
+            </svg>
+          </div>
         )}
       </div>
     </div>,
