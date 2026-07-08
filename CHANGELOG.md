@@ -1,27 +1,6 @@
 # Changelog
 
-## Unreleased
-
-- Widen the time-entry edit dialog and let it resize [#241]. The
-  edit dialog was too narrow for long notes; it is now wider by
-  default, its notes editor is taller, and a corner handle lets
-  you drag it to any size. The markdown view/edit dialog is
-  resizable too.
-
-- Edit a clock entry's description from its popup [#240]. In the
-  Clocks table, a long description opened a read-only expand
-  viewer while notes opened an editable one. The description now
-  uses the same editable popup (text icon, Preview/Write), so both
-  behave the same.
-
-- Unify the notes indicator across tasks and clock entries [#239].
-  A clock entry with notes now shows the same speech-bubble icon
-  everywhere it appears (Clocks table, timer sidebar, task-card
-  entries, dashboard, customer view), and clicking it opens an
-  editable Preview/Write dialog instead of a read-only modal in
-  some places and an editor in others. Task cards get a matching
-  text icon for their description. One shared NotesBubble component
-  backs all of them.
+## 2.8.2
 
 - Edit every time entry through the shared modal, with notes
   preview/edit tabs [#236]. Every clock and task time entry now
@@ -44,6 +23,24 @@
   (Vertrag) field as free text; it now lists the selected
   customer's contracts and clears the value when the customer
   changes.
+- Unify the notes indicator across tasks and clock entries [#239].
+  A clock entry with notes now shows the same speech-bubble icon
+  everywhere it appears (Clocks table, timer sidebar, task-card
+  entries, dashboard, customer view), and clicking it opens an
+  editable Preview/Write dialog instead of a read-only modal in
+  some places and an editor in others. Task cards get a matching
+  text icon for their description. One shared NotesBubble component
+  backs all of them.
+- Edit a clock entry's description from its popup [#240]. In the
+  Clocks table, a long description opened a read-only expand
+  viewer while notes opened an editable one. The description now
+  uses the same editable popup (text icon, Preview/Write), so both
+  behave the same.
+- Widen the time-entry edit dialog and let it resize [#241]. The
+  edit dialog was too narrow for long notes; it is now wider by
+  default, its notes editor is taller, and a corner handle lets
+  you drag it to any size. The markdown view/edit dialog is
+  resizable too.
 
 ## 2.8.1
 
