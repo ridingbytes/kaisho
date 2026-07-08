@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
-import { ContentPopup } from "../common/ContentPopup";
+import { NotesBubble } from "../common/NotesBubble";
 import { HoverActions } from "../common/HoverActions";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
 import {
@@ -27,6 +27,7 @@ import {
   useCustomerClockEntries,
   useDeleteClockEntry,
   useStopTimer,
+  useUpdateClockEntry,
 } from "../../hooks/useClocks";
 import { useDashboard } from "../../hooks/useDashboard";
 import { useSetView } from "../../context/ViewContext";
@@ -123,6 +124,7 @@ function ClockEntryRow({
   const [editing, setEditing] = useState(false);
   const deleteEntry = useDeleteClockEntry();
   const invoicedSet = useInvoicedContracts();
+  const updateEntry = useUpdateClockEntry();
   const isInv = isInvoiced(
     invoicedSet, entry.customer, entry.contract,
   );
@@ -169,13 +171,19 @@ function ClockEntryRow({
             <em className="text-fg-muted">{tc("noDescription")}</em>
           )}
         </span>
-        {entry.notes && (
-          <ContentPopup
-            content={entry.notes}
-            title={tc("notes")}
-            icon="notes"
-          />
-        )}
+        <NotesBubble
+          value={entry.notes ?? ""}
+          title={tc("notes")}
+          bucketId={entry.sync_id ?? entry.start}
+          iconSize={12}
+          saving={updateEntry.isPending}
+          onSave={(md) =>
+            updateEntry.mutate({
+              entry,
+              updates: { notes: md },
+            })
+          }
+        />
       </span>
       {entry.contract && (
         <span

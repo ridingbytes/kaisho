@@ -3,15 +3,13 @@
  * showing customer badge, title, description, GitHub link,
  * tags, creation date, and clock entries.
  */
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ArrowUpRight,
   GitBranch,
   ListRestart,
 } from "lucide-react";
 import { RelDate } from "../common/RelDate";
-import { MarkdownDialog } from "../common/MarkdownDialog";
+import { NotesBubble } from "../common/NotesBubble";
 import {
   handleLinkClick,
 } from "../common/LinkPopover";
@@ -66,7 +64,6 @@ export function TaskCardContent({
 }: TaskCardContentProps) {
   const { t } = useTranslation("kanban");
   const { t: tc } = useTranslation("common");
-  const [showDesc, setShowDesc] = useState(false);
   const updateTask = useUpdateTask();
 
   function handleBodyToggle(md: string) {
@@ -124,30 +121,16 @@ export function TaskCardContent({
       </p>
       {task.body && (
         <div className="mb-1.5">
-          <button
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => setShowDesc(true)}
-            className="flex items-center gap-1 text-2xs text-fg-muted hover:text-fg transition-colors"
-          >
-            <ArrowUpRight size={10} />
-            {tc("description")}
-          </button>
-        </div>
-      )}
-      {showDesc && (
-        <span onPointerDown={(e) => e.stopPropagation()}>
-          <MarkdownDialog
-            title={stripCustomerPrefix(task.title)}
+          <NotesBubble
+            icon="description"
+            label={tc("description")}
             value={task.body}
+            title={stripCustomerPrefix(task.title)}
             bucketId={task.id}
             saving={updateTask.isPending}
-            onSave={(md) => {
-              handleBodyToggle(md);
-              setShowDesc(false);
-            }}
-            onClose={() => setShowDesc(false)}
+            onSave={handleBodyToggle}
           />
-        </span>
+        </div>
       )}
       <div className="flex items-center gap-2 flex-wrap">
         {task.github_url && (

@@ -7,11 +7,14 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
-import { ContentPopup } from "../common/ContentPopup";
+import { NotesBubble } from "../common/NotesBubble";
 import { HoverActions } from "../common/HoverActions";
 import { TimeEntryDialog } from "../projects/TimeEntryDialog";
 import { navigateToClockDate } from "../../utils/clockNavigation";
-import { useDeleteClockEntry } from "../../hooks/useClocks";
+import {
+  useDeleteClockEntry,
+  useUpdateClockEntry,
+} from "../../hooks/useClocks";
 import {
   useInvoicedContracts,
   isInvoiced,
@@ -47,6 +50,7 @@ export function TimeEntryRow({ entry }: TimeEntryRowProps) {
     entry.contract,
   );
   const deleteEntry = useDeleteClockEntry();
+  const updateEntry = useUpdateClockEntry();
 
   return (
     <>
@@ -79,13 +83,18 @@ export function TimeEntryRow({ entry }: TimeEntryRowProps) {
             {entry.description}
           </span>
         </button>
-        {entry.notes && (
-          <ContentPopup
-            content={entry.notes}
-            title="Notes"
-            icon="notes"
-          />
-        )}
+        <NotesBubble
+          value={entry.notes ?? ""}
+          title={tc("notes")}
+          bucketId={entry.sync_id ?? entry.start}
+          saving={updateEntry.isPending}
+          onSave={(md) =>
+            updateEntry.mutate({
+              entry,
+              updates: { notes: md },
+            })
+          }
+        />
         {entry.contract && (
           <span
             className={[

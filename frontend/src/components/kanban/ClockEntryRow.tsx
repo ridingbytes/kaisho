@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
-import { ContentPopup } from "../common/ContentPopup";
+import { NotesBubble } from "../common/NotesBubble";
 import { TimeEntryDialog } from "../projects/TimeEntryDialog";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import { formatHours } from "../../utils/formatting";
@@ -41,6 +41,7 @@ export function ClockEntryRow({
   deleteEntry,
 }: ClockEntryRowProps) {
   const { t } = useTranslation("clocks");
+  const { t: tc } = useTranslation("common");
   const [editing, setEditing] = useState(false);
 
   return (
@@ -64,13 +65,19 @@ export function ClockEntryRow({
         <span className="truncate min-w-0">
           {entry.description}
         </span>
-        {entry.notes && (
-          <ContentPopup
-            content={entry.notes}
-            title="Notes"
-            icon="notes"
-          />
-        )}
+        <NotesBubble
+          value={entry.notes ?? ""}
+          title={tc("notes")}
+          bucketId={entry.sync_id ?? entry.start}
+          iconSize={9}
+          saving={updateEntry.isPending}
+          onSave={(md) =>
+            updateEntry.mutate({
+              entry,
+              updates: { notes: md },
+            })
+          }
+        />
       </span>
       <span className="tabular-nums text-fg">
         {formatHours(entry.duration_minutes)}

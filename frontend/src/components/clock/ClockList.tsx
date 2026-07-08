@@ -3,7 +3,7 @@ import {
   ArrowUpToLine, Pencil, RotateCw, Trash2,
 } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
-import { ContentPopup } from "../common/ContentPopup";
+import { NotesBubble } from "../common/NotesBubble";
 import { TimeEntryDialog } from "../projects/TimeEntryDialog";
 import {
   useInvoicedContracts,
@@ -15,6 +15,7 @@ import {
   useDeleteClockEntry,
   useMergeClockEntries,
   useStartTimer,
+  useUpdateClockEntry,
 } from "../../hooks/useClocks";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
 import { useTasks } from "../../hooks/useTasks";
@@ -81,6 +82,7 @@ function SlotRow({
   const setView = useSetView();
   const deleteEntry = useDeleteClockEntry();
   const mergeEntry = useMergeClockEntries();
+  const updateEntry = useUpdateClockEntry();
   const canMerge = Boolean(
     previousEntry?.sync_id &&
     entry.sync_id &&
@@ -137,14 +139,19 @@ function SlotRow({
           ? formatDuration(entry.duration_minutes)
           : "…"}
       </span>
-      {entry.notes && (
-        <ContentPopup
-          content={entry.notes}
-          title={tc("notes")}
-          icon="notes"
-          iconSize={10}
-        />
-      )}
+      <NotesBubble
+        value={entry.notes ?? ""}
+        title={tc("notes")}
+        bucketId={entry.sync_id ?? entry.start}
+        iconSize={10}
+        saving={updateEntry.isPending}
+        onSave={(md) =>
+          updateEntry.mutate({
+            entry,
+            updates: { notes: md },
+          })
+        }
+      />
       <button
         onClick={() => setEditing(true)}
         className={actionBtn}

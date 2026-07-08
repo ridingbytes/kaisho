@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Unify the notes indicator across tasks and clock entries [#239].
+  A clock entry with notes now shows the same speech-bubble icon
+  everywhere it appears (Clocks table, timer sidebar, task-card
+  entries, dashboard, customer view), and clicking it opens an
+  editable Preview/Write dialog instead of a read-only modal in
+  some places and an editor in others. Task cards get a matching
+  text icon for their description. One shared NotesBubble component
+  backs all of them.
+
 - Edit every time entry through the shared modal, with notes
   preview/edit tabs [#236]. Every clock and task time entry now
   opens the same edit dialog -- the Clocks table, the timer

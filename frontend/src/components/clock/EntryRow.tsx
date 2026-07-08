@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
+import { NotesBubble } from "../common/NotesBubble";
 import { TimeEntryDialog } from "../projects/TimeEntryDialog";
 import {
   useDeleteClockEntry,
@@ -219,14 +220,18 @@ export function EntryRow({
               content={entry.description}
             />
           )}
-          {entry.notes && (
-            <ContentPopup
-              content={entry.notes}
-              title={tc("notes")}
-              icon="notes"
-              markdown
-            />
-          )}
+          <NotesBubble
+            value={entry.notes ?? ""}
+            title={tc("notes")}
+            bucketId={entry.sync_id ?? entry.start}
+            saving={updateEntry.isPending}
+            onSave={(md) =>
+              updateEntry.mutate({
+                entry,
+                updates: { notes: md },
+              })
+            }
+          />
         </span>
       </td>
       <td className={
