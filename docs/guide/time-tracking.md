@@ -100,6 +100,12 @@ the same in every place. In the dialog you can:
 The notes field has **Preview** and **Write** tabs, so links render
 as clickable in Preview and switch to a plain text box to edit.
 
+When an entry has notes, a small speech-bubble icon appears next to
+it wherever the entry is shown. Click it to read the notes and edit
+them in place with the same Preview/Write tabs -- no need to open the
+full dialog. Task cards use a text icon next to their description that
+works the same way.
+
 The table supports column filtering (including regex), sorting, and
 resizing.
 
