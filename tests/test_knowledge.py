@@ -369,3 +369,33 @@ def test_delete_folder_refuses_root(tmp_path):
         delete_folder(sources, "")
     # The source directory is untouched.
     assert (tmp_path / "wissen").exists()
+
+
+def test_move_file_refuses_overwrite(tmp_path):
+    from kaisho.services.knowledge import move_file
+    sources = _make_sources(tmp_path)
+    # notes.md and guide.md both exist in wissen; moving
+    # notes onto guide must not clobber guide.
+    with pytest.raises(ValueError, match="already exists"):
+        move_file(
+            sources, "notes.md", "wissen", "wissen",
+            new_path="guide.md",
+        )
+    assert (
+        tmp_path / "wissen" / "guide.md"
+    ).read_text() == "# Guide\n\nStep by step instructions."
+    # The source file is untouched.
+    assert (tmp_path / "wissen" / "notes.md").exists()
+
+
+def test_move_file_into_folder(tmp_path):
+    from kaisho.services.knowledge import move_file
+    sources = _make_sources(tmp_path)
+    move_file(
+        sources, "notes.md", "wissen", "wissen",
+        new_path="sub/notes.md",
+    )
+    assert not (tmp_path / "wissen" / "notes.md").exists()
+    assert (
+        tmp_path / "wissen" / "sub" / "notes.md"
+    ).exists()

@@ -606,6 +606,16 @@ def delete_folder(
     return False
 
 
+def _prune_empty_parents(start: Path, stop_at: Path) -> None:
+    """Remove now-empty parent directories of ``start``,
+    walking up but never past ``stop_at`` (the source root)."""
+    for parent in start.parents:
+        if parent == stop_at:
+            break
+        if parent.exists() and not any(parent.iterdir()):
+            parent.rmdir()
+
+
 def rename_file(
     sources: list[dict],
     old_path: str,
@@ -627,12 +637,7 @@ def rename_file(
             continue
         dst.parent.mkdir(parents=True, exist_ok=True)
         src.rename(dst)
-        # Clean up empty parent dirs
-        for parent in src.parents:
-            if parent == base:
-                break
-            if parent.exists() and not any(parent.iterdir()):
-                parent.rmdir()
+        _prune_empty_parents(src, base)
         return {
             "path": new_path,
             "label": label,
@@ -692,22 +697,25 @@ def move_file(
     """Move a KB file from one source to another.
 
     If new_path is None, keeps the same relative path.
+    Refuses to overwrite an existing destination so a drop
+    onto a folder that already holds a same-named file
+    fails loudly instead of silently destroying it.
     """
     dest_path = new_path or old_path
-    src_base = dst_base = None
-    for lbl, base in _expand_sources(sources):
-        if lbl == old_label:
-            src_base = base
-        if lbl == new_label:
-            dst_base = base
-    if src_base is None:
-        raise ValueError(f"Source not found: {old_label!r}")
-    if dst_base is None:
-        raise ValueError(f"Destination not found: {new_label!r}")
+    src_base, dst_base = _label_bases(
+        sources, old_label, new_label,
+    )
     src = _safe_path(src_base, old_path)
     if not src.exists():
         raise ValueError(f"File not found: {old_path!r}")
     dst = _safe_path(dst_base, dest_path)
+    # ``samefile`` lets a case-only rename on a
+    # case-insensitive filesystem through while still
+    # blocking a move onto a genuinely different file.
+    if dst.exists() and not dst.samefile(src):
+        raise ValueError(
+            f"Destination already exists: {dest_path!r}"
+        )
     dst.parent.mkdir(parents=True, exist_ok=True)
     # ``shutil.move`` preserves binary content (KB files
     # include PDFs, which ``read_text`` would corrupt) and
@@ -804,12 +812,7 @@ def move_folder(
         )
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.move(str(src), str(dst))
-    # Prune now-empty parents left behind in the source.
-    for parent in src.parents:
-        if parent == src_base:
-            break
-        if parent.exists() and not any(parent.iterdir()):
-            parent.rmdir()
+    _prune_empty_parents(src, src_base)
     return {
         "path": new_path,
         "label": new_label,
