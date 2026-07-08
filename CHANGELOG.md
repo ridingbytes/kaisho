@@ -10,6 +10,14 @@
   fields. The notes field gained Preview/Write tabs so links
   render as clickable in view mode, and double-click-to-edit is
   gone (the pencil opens the dialog).
+- Remove the pause-timer feature [#237]. Pause was a
+  desktop-only, device-local flag that never synced to mobile or
+  the cloud and needed dedicated cloud-pull regression tests to
+  stay consistent. Its one convenience -- restart a recent entry
+  without re-entering metadata -- is already covered by the
+  mobile "resume last stopped entry" affordance, so it is dropped
+  across the backend (all four storage backends), the API, the UI
+  (main timer + tray), and the docs.
 
 ## 2.8.1
 

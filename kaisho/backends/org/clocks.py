@@ -68,24 +68,12 @@ class OrgClockBackend(ClockBackend):
         self,
         rounding_minutes: int = 0,
         rounding_mode: str = "nearest",
-        paused: bool = False,
     ) -> dict:
         return clocks.stop_timer(
             clocks_file=self._clocks_file,
             rounding_minutes=rounding_minutes,
             rounding_mode=rounding_mode,
-            paused=paused,
         )
-
-    def get_paused(self) -> dict | None:
-        return clocks.get_paused_entry(
-            clocks_file=self._clocks_file,
-        )
-
-    def clear_paused(self) -> bool:
-        return clocks.clear_paused_flag(
-            clocks_file=self._clocks_file,
-        ) is not None
 
     def quick_book(
         self,

@@ -57,32 +57,6 @@ clock entries.
     kai clock stop --customer "Beta Inc"  # reassign
     ```
 
-## Pausing and Resuming
-
-!!! version-added "Since 1.8.1"
-
-A running timer can be paused mid-session and resumed later
-without splitting the entry. Pausing freezes the elapsed counter;
-resuming continues accumulating into the same clock entry.
-
-=== "Web UI"
-
-    Click the **Pause** icon on the active-timer banner or the
-    clock widget. The icon flips to **Resume**. The header pill
-    shows a dotted ring while paused.
-
-=== "CLI"
-
-    ```bash
-    kai clock pause
-    kai clock resume
-    ```
-
-=== "Tray"
-
-    The menu-bar tray reflects the paused state with a dimmed
-    icon and a "paused" label. Right-click for resume.
-
 ## Rounding and Merging
 
 !!! version-added "Since 1.8.0"

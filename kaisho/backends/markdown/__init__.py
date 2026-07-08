@@ -865,9 +865,6 @@ def _load_clock_entries(text: str) -> list[dict]:
                 "notes": body,
                 "sync_id": meta.get("sync_id", ""),
                 "updated_at": meta.get("updated_at", ""),
-                # Local-only UI hint. Missing on legacy
-                # entries -> falsy, which is correct.
-                "paused": meta.get("paused", "") == "true",
             })
             continue
 
@@ -933,30 +930,7 @@ def _clock_entry_props(entry: dict) -> dict:
         props["sync_id"] = entry["sync_id"]
     if entry.get("updated_at"):
         props["updated_at"] = entry["updated_at"]
-    # Only emit when true: keeps the markdown clean for
-    # the common (non-paused) case and matches the
-    # missing-field-means-false read semantics.
-    if entry.get("paused"):
-        props["paused"] = "true"
     return props
-
-
-def _clear_paused_in_place(
-    entries: list[dict],
-    except_entry: dict | None = None,
-) -> bool:
-    """Set ``paused=False`` on every entry except *except_entry*.
-
-    :returns: ``True`` when any entry was actually changed.
-    """
-    changed = False
-    for entry in entries:
-        if entry is except_entry:
-            continue
-        if entry.get("paused"):
-            entry["paused"] = False
-            changed = True
-    return changed
 
 
 def _save_clock_entries(
@@ -1027,8 +1001,6 @@ class MarkdownClockBackend(ClockBackend):
             entry["sync_id"] = str(uuid.uuid4())
         if not entry.get("updated_at"):
             entry["updated_at"] = _local_now().isoformat()
-        # Normalise so callers can rely on a bool.
-        entry["paused"] = bool(entry.get("paused"))
         return entry
 
     # -- queries -------------------------------------------------
@@ -1110,19 +1082,12 @@ class MarkdownClockBackend(ClockBackend):
         task_id=None,
         contract=None,
     ) -> dict:
-        """Open a new clock entry. Raises if one is running.
-
-        Also clears the ``paused`` flag on any previously
-        paused entry: starting a new timer means the user
-        moved on, so a stale "Resume" affordance would be
-        misleading. Mirrors the SQL/org backends.
-        """
+        """Open a new clock entry. Raises if one is running."""
         if self.get_active() is not None:
             raise ValueError(
                 "A clock entry is already running"
             )
         entries = self._load_entries()
-        _clear_paused_in_place(entries)
         entry = {
             "customer": customer,
             "description": description,
@@ -1134,7 +1099,6 @@ class MarkdownClockBackend(ClockBackend):
             "notes": "",
             "sync_id": str(uuid.uuid4()),
             "updated_at": _local_now().isoformat(),
-            "paused": False,
         }
         entries.append(entry)
         self._save_entries(entries)
@@ -1144,7 +1108,6 @@ class MarkdownClockBackend(ClockBackend):
         self,
         rounding_minutes: int = 0,
         rounding_mode: str = "nearest",
-        paused: bool = False,
     ) -> dict:
         """Close the running clock entry. Raises if none.
 
@@ -1152,12 +1115,6 @@ class MarkdownClockBackend(ClockBackend):
         accepted for interface parity but ignored:
         rounding is only implemented in the org backend
         today.
-
-        ``paused`` mirrors the org/SQL backends: when true,
-        the just-stopped entry is marked ``paused=true`` so
-        the UI can offer "Resume". When false, the flag is
-        cleared on every entry, matching a plain stop's
-        wipe of any stale Resume affordance.
         """
         _ = rounding_minutes, rounding_mode
         entries = self._load_entries()
@@ -1167,45 +1124,9 @@ class MarkdownClockBackend(ClockBackend):
                     _local_now().isoformat()
                 )
                 entry["updated_at"] = _local_now().isoformat()
-                if paused:
-                    # At most one paused entry by design.
-                    _clear_paused_in_place(
-                        entries, except_entry=entry,
-                    )
-                    entry["paused"] = True
-                else:
-                    _clear_paused_in_place(entries)
-                    entry["paused"] = False
                 self._save_entries(entries)
                 return self._enrich(entry)
         raise ValueError("No running clock entry")
-
-    def get_paused(self) -> dict | None:
-        """Return the most-recent paused entry, or ``None``.
-
-        Mirrors ``services.clocks.get_paused_entry``: there
-        is at most one paused entry at a time by design, so
-        we just return the newest match.
-        """
-        paused = [
-            e for e in self._load_entries()
-            if e.get("paused") and e.get("end")
-        ]
-        if not paused:
-            return None
-        newest = max(paused, key=lambda e: e.get("end", ""))
-        return self._enrich(newest)
-
-    def clear_paused(self) -> bool:
-        """Clear the paused flag from every entry.
-
-        :returns: ``True`` when any entry was changed.
-        """
-        entries = self._load_entries()
-        if not _clear_paused_in_place(entries):
-            return False
-        self._save_entries(entries)
-        return True
 
     def quick_book(
         self,

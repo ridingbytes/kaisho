@@ -165,17 +165,12 @@ def start_timer(body: TimerStart):
 @router.post("/stop")
 def stop_timer(
     apply_rounding: bool = True,
-    paused: bool = False,
 ):
     """Stop the active timer and save the entry.
 
     :param apply_rounding: When false, the profile's
-        rounding setting is ignored. Set by Pause so a
-        mid-segment stop is recorded at exact length.
-    :param paused: When true, mark the entry as paused
-        so the UI can show a Resume affordance. Set by
-        the Pause action; defaults to false so the Stop
-        action clears any prior paused state cleanly.
+        rounding setting is ignored and the entry is
+        recorded at its exact length.
     """
     from ...config import get_config
     from ...services import cloud_sync as sync_svc
@@ -191,41 +186,12 @@ def stop_timer(
         entry = get_backend().clocks.stop(
             rounding_minutes=minutes,
             rounding_mode=mode,
-            paused=paused,
         )
         sync_svc.schedule_push()
         caldav_sync.schedule_push()
         return entry
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-
-
-@router.get("/paused")
-def get_paused():
-    """Return the currently paused entry, or ``null``.
-
-    Paused state means the user clicked Pause; the entry
-    is closed but the UI should surface a Resume button.
-    A regular Stop clears the paused state.
-    """
-    entry = get_backend().clocks.get_paused()
-    return entry
-
-
-@router.delete("/paused", status_code=204)
-def clear_paused():
-    """Clear the paused flag without touching the entry.
-
-    Used by the paused widget's Stop button: the user
-    decided not to resume. The closed entry stays in the
-    file as a normal stopped entry; only the PAUSED hint
-    goes away.
-    """
-    from ...services import cloud_sync as sync_svc
-    from ...services import caldav_sync
-    get_backend().clocks.clear_paused()
-    sync_svc.schedule_push()
-    caldav_sync.schedule_push()
 
 
 class MergeRequest(BaseModel):

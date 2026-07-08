@@ -53,7 +53,7 @@ def test_entries_changed_schedules_sync(monkeypatch):
 
 def test_timer_started_schedules_sync(monkeypatch):
     """A ``timer:started`` from the cloud (iPhone starting
-    a brand-new timer or resuming a paused entry) must
+    a brand-new timer or restarting a stopped entry) must
     schedule a sync. Without it, the desktop sees only
     the immediate clocks broadcast and refetches stale
     local state until the 5-minute poller catches up."""

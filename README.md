@@ -162,7 +162,6 @@ for the exact config per editor.
 kai task list                          # List open tasks
 kai task add "Fix bug" --customer Acme --tag @code
 kai clock start --customer Acme        # Start timer
-kai clock pause                        # Pause (resumable)
 kai clock stop                         # Stop
 kai clock book 3h --customer Acme      # Book hours
 kai customer list                      # List customers
