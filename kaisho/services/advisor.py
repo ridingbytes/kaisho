@@ -222,6 +222,11 @@ _BASE_SYSTEM_PROMPT = (
     "say you lack information before searching first. If the search "
     "returns results, read the relevant files with "
     "read_knowledge_file before answering.\n"
+    "5b. WEB SEARCH: For general knowledge, current events, or any "
+    "question the knowledge base does not answer, use web_search "
+    "(it uses a Brave/Tavily key when configured, otherwise a "
+    "keyless fallback). Do NOT refuse a question merely because it "
+    "is not in the user's own data -- search the web, then answer.\n"
     "5z. CONTRACTS: list_contracts returns a ``state`` field on "
     "each contract. NEVER reason over ``state == 'invoiced'`` or "
     "``state == 'ended'`` contracts when answering budget / "
@@ -261,7 +266,14 @@ _BASE_SYSTEM_PROMPT = (
     "   ---\n"
     "   Analyze: {fetch_results}\n\n"
     "   Domains must be in the URL allowlist (Settings > AI). "
-    "   Use approve_url_domain to add missing domains."
+    "   Use approve_url_domain to add missing domains.\n"
+    "7. MISSING REQUIREMENTS: When a tool result reports that a "
+    "capability is unavailable because something is not configured "
+    "(no API key, no connected account, disabled integration), tell "
+    "the user plainly what is missing and where to set it (e.g. "
+    "'web search needs a Brave or Tavily API key under Settings > "
+    "AI'). Never pretend the data should exist or give a vague "
+    "refusal -- name the requirement and point to the fix."
 )
 
 

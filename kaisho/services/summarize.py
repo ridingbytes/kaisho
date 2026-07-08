@@ -40,13 +40,20 @@ SYSTEM_PROMPT = (
 
 CHAT_SYSTEM_PROMPT = (
     "You are answering questions about a single "
-    "document. The full document text follows; use it as "
-    "ground truth and quote short passages when they "
-    "directly answer the question. If the answer cannot "
-    "be derived from the document, say so explicitly "
-    "rather than guessing. Keep answers brief unless the "
-    "user asks for depth -- 4 sentences or fewer by "
-    "default. Markdown is fine."
+    "document. Treat the document as the primary source "
+    "and quote short passages when they directly answer "
+    "the question. When the document does not cover the "
+    "question, you may draw on the web search results "
+    "provided below (cite the source URL) or on your own "
+    "general knowledge -- just make clear when you are "
+    "going beyond the document. If a 'Web search' section "
+    "says the capability is unavailable and the question "
+    "needs external or current information, tell the user "
+    "plainly that web search is off and how to enable it, "
+    "instead of pretending the document should contain the "
+    "answer. Keep answers brief unless the user asks for "
+    "depth -- 4 sentences or fewer by default. Markdown is "
+    "fine."
 )
 
 
@@ -158,6 +165,7 @@ def chat_about_kb_file(
                 "User" if role == "user" else "Assistant"
             )
             sections.append(f"**{label}:** {text}")
+    sections.extend(_web_context_section(question))
     sections.extend([
         "",
         "---",
@@ -173,6 +181,49 @@ def chat_about_kb_file(
         cloud_api_key=cloud_api_key,
         system_prompt=CHAT_SYSTEM_PROMPT,
     )
+
+
+def _web_context_section(question: str) -> list[str]:
+    """Build the ``## Web search`` prompt section.
+
+    Always attempts a search so the chat can answer beyond
+    the document: Brave/Tavily when a key is configured,
+    otherwise a keyless DuckDuckGo fetch. On failure the
+    section states the capability is unavailable and how to
+    enable it, so the model can relay an actionable message
+    instead of pretending the document is the only source.
+    """
+    from . import websearch
+    result = websearch.web_search(question, max_results=5)
+    results = result.get("results") or []
+    if results:
+        lines = [
+            "", "---", "",
+            "## Web search results",
+            "(Use these for anything the document does not "
+            "cover; cite the source URL.)",
+            "",
+        ]
+        for hit in results:
+            title = hit.get("title", "").strip()
+            url = hit.get("url", "").strip()
+            snippet = (hit.get("snippet") or "").strip()
+            lines.append(f"- **{title}** — {url}")
+            if snippet:
+                lines.append(f"  {snippet}")
+        return lines
+
+    hint = (
+        " Adding a Brave or Tavily API key under "
+        "Settings -> AI enables higher-quality search."
+        if not websearch.has_search_keys() else ""
+    )
+    return [
+        "", "---", "",
+        "## Web search",
+        "Web search is currently unavailable, so external "
+        "or current information cannot be looked up." + hint,
+    ]
 
 
 def _hash_file_bytes(
