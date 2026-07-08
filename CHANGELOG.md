@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Widen the time-entry edit dialog and let it resize [#241]. The
+  edit dialog was too narrow for long notes; it is now wider by
+  default, its notes editor is taller, and a corner handle lets
+  you drag it to any size. The markdown view/edit dialog is
+  resizable too.
+
 - Edit a clock entry's description from its popup [#240]. In the
   Clocks table, a long description opened a read-only expand
   viewer while notes opened an editable one. The description now

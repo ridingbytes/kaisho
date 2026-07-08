@@ -31,6 +31,7 @@ export function MarkdownDialog({
       onClose={onClose}
       title={title}
       size="lg"
+      resizable
       footer={
         <div className="flex justify-end gap-2 w-full">
           <button onClick={onClose} className={fieldCls}>
