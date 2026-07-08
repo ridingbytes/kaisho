@@ -194,7 +194,12 @@ def _web_context_section(question: str) -> list[str]:
     instead of pretending the document is the only source.
     """
     from . import websearch
-    result = websearch.web_search(question, max_results=5)
+    # Tighter timeout than the default: this runs on the
+    # interactive chat hot path, so a slow provider must not
+    # stall the reply for the full 15s.
+    result = websearch.web_search(
+        question, max_results=5, timeout=8,
+    )
     results = result.get("results") or []
     if results:
         lines = [

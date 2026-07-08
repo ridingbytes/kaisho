@@ -37,6 +37,7 @@ def has_search_keys() -> bool:
 
 def search_brave(
     query: str, api_key: str, max_results: int,
+    timeout: int = 15,
 ) -> dict:
     """Search via the Brave Search API."""
     url = (
@@ -50,7 +51,7 @@ def search_brave(
         "Accept-Encoding": "gzip",
         "X-Subscription-Token": api_key,
     })
-    with urllib.request.urlopen(req, timeout=15) as resp:
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
         raw = resp.read()
         if resp.headers.get("Content-Encoding") == "gzip":
             raw = gzip.decompress(raw)
@@ -69,6 +70,7 @@ def search_brave(
 
 def search_tavily(
     query: str, api_key: str, max_results: int,
+    timeout: int = 15,
 ) -> dict:
     """Search via the Tavily Search API."""
     payload = json.dumps({
@@ -84,7 +86,7 @@ def search_tavily(
             "Authorization": f"Bearer {api_key}",
         },
     )
-    with urllib.request.urlopen(req, timeout=15) as resp:
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
         data = json.loads(resp.read())
     results = []
     for item in (data.get("results") or []):
@@ -98,7 +100,9 @@ def search_tavily(
     return {"results": results, "provider": "tavily"}
 
 
-def search_duckduckgo(query: str, max_results: int) -> dict:
+def search_duckduckgo(
+    query: str, max_results: int, timeout: int = 15,
+) -> dict:
     """Fallback: scrape DuckDuckGo HTML results."""
     url = (
         "https://html.duckduckgo.com/html/?q="
@@ -109,7 +113,7 @@ def search_duckduckgo(query: str, max_results: int) -> dict:
             "Mozilla/5.0 (compatible; kaisho/1.0)"
         ),
     })
-    with urllib.request.urlopen(req, timeout=15) as resp:
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
         html = resp.read(200_000).decode(
             "utf-8", errors="replace",
         )
@@ -141,29 +145,37 @@ def search_duckduckgo(query: str, max_results: int) -> dict:
     return {"results": results, "provider": "duckduckgo"}
 
 
-def web_search(query: str, max_results: int = 5) -> dict:
+def web_search(
+    query: str, max_results: int = 5, timeout: int = 15,
+) -> dict:
     """Search the web using the best available provider.
 
     Priority: Brave > Tavily > DuckDuckGo (fallback). Returns
     ``{"results": [...], "provider": name}`` or
     ``{"error": ...}`` when every provider fails.
+
+    ``timeout`` bounds each provider's network call -- pass a
+    tighter value on interactive paths (e.g. the KB chat) so
+    a slow provider can't stall the request for the full 15s.
     """
     keys = search_keys()
     providers = []
     if keys["brave"]:
         providers.append(
             lambda: search_brave(
-                query, keys["brave"], max_results,
+                query, keys["brave"], max_results, timeout,
             )
         )
     if keys["tavily"]:
         providers.append(
             lambda: search_tavily(
-                query, keys["tavily"], max_results,
+                query, keys["tavily"], max_results, timeout,
             )
         )
     providers.append(
-        lambda: search_duckduckgo(query, max_results)
+        lambda: search_duckduckgo(
+            query, max_results, timeout,
+        )
     )
 
     last_error = ""
