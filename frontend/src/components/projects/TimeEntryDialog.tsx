@@ -3,8 +3,10 @@ import { useTranslation } from "react-i18next";
 import { Dialog } from "../common/Dialog";
 import { MarkdownEditor } from "../common/MarkdownEditor";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
+import { ContractSelect } from "../common/ContractSelect";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { useUpdateClockEntry } from "../../hooks/useClocks";
+import { useContracts } from "../../hooks/useContracts";
 import { useProjects } from "../../hooks/useProjects";
 import { useTasks } from "../../hooks/useTasks";
 import { taskTitleById } from "../../utils/customerPrefix";
@@ -48,6 +50,9 @@ export function TimeEntryDialog({ entry, onClose }: Props) {
     entry.task_id
       ? (taskTitleById(tasks, entry.task_id) ?? "")
       : "",
+  );
+  const { data: contracts = [] } = useContracts(
+    customer || null,
   );
 
   function save() {
@@ -157,7 +162,10 @@ export function TimeEntryDialog({ entry, onClose }: Props) {
             </span>
             <CustomerAutocomplete
               value={customer}
-              onChange={setCustomer}
+              onChange={(v) => {
+                setCustomer(v);
+                setContract("");
+              }}
               inputClassName={inputCls}
             />
           </label>
@@ -177,10 +185,11 @@ export function TimeEntryDialog({ entry, onClose }: Props) {
             <span className="block text-2xs uppercase tracking-wider text-fg-muted mb-1">
               {t("contract")}
             </span>
-            <input
+            <ContractSelect
+              contracts={contracts}
               value={contract}
-              onChange={(e) => setContract(e.target.value)}
-              className={`${inputCls} w-full`}
+              onChange={setContract}
+              className={`${fieldCls} w-full`}
             />
           </label>
           <label className="block">
