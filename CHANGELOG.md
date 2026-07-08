@@ -18,6 +18,11 @@
   mobile "resume last stopped entry" affordance, so it is dropped
   across the backend (all four storage backends), the API, the UI
   (main timer + tray), and the docs.
+- Make the time-entry dialog contract field a customer-scoped
+  dropdown [#238]. The shared edit dialog rendered the contract
+  (Vertrag) field as free text; it now lists the selected
+  customer's contracts and clears the value when the customer
+  changes.
 
 ## 2.8.1
 
