@@ -465,7 +465,8 @@ def move_file(body: FileMove):
             body.new_label, body.new_path,
         )
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        status = 409 if "already exists" in str(e) else 404
+        raise HTTPException(status_code=status, detail=str(e))
 
 
 @router.post("/copy", status_code=200)
