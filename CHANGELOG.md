@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.8.1
+
+- Manage knowledge-base files from the tree [#230]. Drag a
+  file or folder onto another folder (or a source header) and
+  choose Move or Copy on drop; right-click any item for a
+  context menu with open, cut, copy, copy-path, rename, new
+  subfolder, and delete (files and folders). Folders are
+  listed before files, each sorted alphabetically, and every
+  move or copy triggers a background reindex so metadata
+  follows the moved paths. The per-row pencil and trash icons
+  are gone -- those actions live in the context menu now.
+- Answer beyond the document with web search [#231]. The KB
+  document chat and the main advisor now use web search
+  (Brave or Tavily when a key is configured, otherwise a
+  keyless fallback) for questions your own data does not
+  cover, and state plainly when a capability is unavailable
+  and how to enable it instead of a vague refusal.
+
 ## 2.8.0
 
 - Let the advisor read and tune cron job prompts [#224]. The
