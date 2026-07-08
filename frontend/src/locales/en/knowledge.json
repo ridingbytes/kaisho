@@ -10,6 +10,16 @@
   "addSubfolder": "Add subfolder",
   "moveTo": "Move to...",
   "moveOption": "Move...",
+  "dropInto": "Into {{name}}",
+  "moveHere": "Move here",
+  "copyHere": "Copy here",
+  "ctxOpen": "Open",
+  "ctxCollapse": "Collapse",
+  "ctxCut": "Cut",
+  "ctxCopy": "Copy",
+  "ctxPaste": "Paste here",
+  "ctxRename": "Rename",
+  "ctxConfirmDelete": "Click again to delete",
   "rootOption": "(root)",
   "folders": "Folders",
   "sources": "Sources",
@@ -70,5 +80,6 @@
   "groupSearchByFile": "Group search results by file",
   "matches": "{{count}} match",
   "matches_one": "{{count}} match",
-  "matches_other": "{{count}} matches"
+  "matches_other": "{{count}} matches",
+  "ctxDeleteFolder": "Delete folder"
 }

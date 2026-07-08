@@ -271,10 +271,29 @@ trigger a background warm-and-prune pass.
 
 ## File operations
 
-- Rename or move files within a source
-- Move between sources (e.g. from Personal to Company Docs)
-- Delete files (with confirmation)
+The tree row shows only the file name and a star toggle;
+rename, move/copy, and delete all live in the right-click
+context menu.
+
+- Drag a file or folder onto another folder (or a source
+  header) and choose **Move here** or **Copy here** on drop.
+  This works within a source and across sources.
+- Right-click any file or folder for a context menu: Open,
+  Cut, Copy, Copy path, Rename, New subfolder, and Delete.
+  Cut or Copy an item, then right-click a folder (or source
+  header) and choose **Paste here** — the same move/copy
+  semantics as drag-and-drop.
+- Delete files or folders. Folder delete removes the folder
+  and everything in it (a source root can never be deleted
+  this way). Both use a two-click confirm.
 - Edit Markdown files inline with a live preview editor
+
+Every drag-and-drop or paste triggers a background reindex
+so file metadata (tags, titles) follows the moved or copied
+paths automatically.
+
+The tree lists folders before files, each group sorted
+alphabetically.
 
 ## Supported file types
 

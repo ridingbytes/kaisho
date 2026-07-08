@@ -10,6 +10,16 @@
   "addSubfolder": "Добавить подпапку",
   "moveTo": "Переместить в...",
   "moveOption": "Переместить...",
+  "dropInto": "В {{name}}",
+  "moveHere": "Переместить сюда",
+  "copyHere": "Копировать сюда",
+  "ctxOpen": "Открыть",
+  "ctxCollapse": "Свернуть",
+  "ctxCut": "Вырезать",
+  "ctxCopy": "Копировать",
+  "ctxPaste": "Вставить сюда",
+  "ctxRename": "Переименовать",
+  "ctxConfirmDelete": "Нажмите ещё раз для удаления",
   "rootOption": "(корень)",
   "folders": "Папки",
   "sources": "Источники",
@@ -72,5 +82,6 @@
   "matches_one": "{{count}} совпадение",
   "matches_few": "{{count}} совпадения",
   "matches_many": "{{count}} совпадений",
-  "matches_other": "{{count}} совпадения"
+  "matches_other": "{{count}} совпадения",
+  "ctxDeleteFolder": "Удалить папку"
 }

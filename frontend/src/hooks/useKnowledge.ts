@@ -1,13 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  copyKnowledgeFile,
+  copyKnowledgeFolder,
   createKnowledgeFolder,
   deleteKnowledgeFile,
+  deleteKnowledgeFolder,
   fetchKnowledgeDistinctValues,
   fetchKnowledgeFile,
   fetchKnowledgeMetadata,
   fetchKnowledgeTags,
   fetchKnowledgeTree,
   moveKnowledgeFile,
+  moveKnowledgeFolder,
   patchKnowledgeMetadata,
   reindexKnowledge,
   renameKnowledgeFile,
@@ -170,6 +174,16 @@ export function useDeleteKnowledgeFile() {
   });
 }
 
+export function useDeleteKnowledgeFolder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (path: string) => deleteKnowledgeFolder(path),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["knowledge"] });
+    },
+  });
+}
+
 export function useRenameKnowledgeFile() {
   const qc = useQueryClient();
   return useMutation({
@@ -200,6 +214,72 @@ export function useMoveKnowledgeFile() {
       newLabel: string;
       newPath?: string;
     }) => moveKnowledgeFile({
+      oldPath, oldLabel, newLabel, newPath,
+    }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["knowledge"] });
+    },
+  });
+}
+
+export function useCopyKnowledgeFile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      oldPath,
+      oldLabel,
+      newLabel,
+      newPath,
+    }: {
+      oldPath: string;
+      oldLabel: string;
+      newLabel: string;
+      newPath?: string;
+    }) => copyKnowledgeFile({
+      oldPath, oldLabel, newLabel, newPath,
+    }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["knowledge"] });
+    },
+  });
+}
+
+export function useMoveKnowledgeFolder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      oldPath,
+      oldLabel,
+      newLabel,
+      newPath,
+    }: {
+      oldPath: string;
+      oldLabel: string;
+      newLabel: string;
+      newPath: string;
+    }) => moveKnowledgeFolder({
+      oldPath, oldLabel, newLabel, newPath,
+    }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["knowledge"] });
+    },
+  });
+}
+
+export function useCopyKnowledgeFolder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      oldPath,
+      oldLabel,
+      newLabel,
+      newPath,
+    }: {
+      oldPath: string;
+      oldLabel: string;
+      newLabel: string;
+      newPath: string;
+    }) => copyKnowledgeFolder({
       oldPath, oldLabel, newLabel, newPath,
     }),
     onSuccess: () => {

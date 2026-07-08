@@ -3,113 +3,35 @@
  *
  * Recursive renderer for a single node in the knowledge
  * file tree. Handles both folder (collapsible) and leaf
- * (selectable file) nodes, with inline rename, move-to-
- * label, and delete actions.
+ * (selectable file) nodes. Rename, move/copy, and delete
+ * live in the right-click context menu; the row itself
+ * shows only the star toggle and the drag handle.
  */
 
 import {
   Check,
   ChevronDown,
   ChevronRight,
+  ClipboardPaste,
+  Copy,
   FileText,
   Folder,
   FolderOpen,
   FolderPlus,
+  Link2,
   Pencil,
+  Scissors,
   Star,
   Trash2,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmPopover } from "../common/ConfirmPopover";
-import { HoverActions } from "../common/HoverActions";
+import { fetchKnowledgeAbsolutePath } from "../../api/client";
+import { useToast } from "../../context/ToastContext";
 import type { TreeNode } from "./knowledgeTree";
-
-/** Combined dropdown: move to folder or another label. */
-function MovePicker({
-  filePath,
-  fileLabel,
-  folders,
-  labels,
-  onRename,
-  onMove,
-}: {
-  filePath: string;
-  fileLabel: string;
-  folders: string[];
-  labels: string[];
-  onRename: (old: string, next: string) => void;
-  onMove: (
-    old: string, oldLabel: string, newLabel: string,
-  ) => void;
-}) {
-  const { t } = useTranslation("knowledge");
-  const fileName = filePath.split("/").pop() ?? "";
-  const currentDir = filePath.includes("/")
-    ? filePath.slice(0, filePath.lastIndexOf("/"))
-    : "";
-  const otherLabels = labels.filter(
-    (l) => l !== fileLabel,
-  );
-  const availableFolders = folders.filter(
-    (f) => f !== currentDir,
-  );
-  const showRoot = currentDir !== "";
-  const hasFolders = showRoot
-    || availableFolders.length > 0;
-
-  if (!hasFolders && otherLabels.length === 0) {
-    return null;
-  }
-
-  function handleChange(val: string) {
-    if (val.startsWith("label:")) {
-      onMove(filePath, fileLabel, val.slice(6));
-    } else {
-      const dir = val === "/" ? "" : val;
-      const newPath = dir
-        ? `${dir}/${fileName}` : fileName;
-      onRename(filePath, newPath);
-    }
-  }
-
-  return (
-    <select
-      value=""
-      onChange={(e) => {
-        if (e.target.value) handleChange(e.target.value);
-      }}
-      className={
-        "w-12 text-2xs bg-transparent "
-        + "text-fg-subtle hover:text-fg "
-        + "cursor-pointer"
-      }
-      title={t("moveTo")}
-    >
-      <option value="">{t("moveOption")}</option>
-      {hasFolders && (
-        <optgroup label={t("folders")}>
-          {showRoot && (
-            <option value="/">{t("rootOption")}</option>
-          )}
-          {availableFolders.map((f) => (
-            <option key={f} value={f}>{f}</option>
-          ))}
-        </optgroup>
-      )}
-      {otherLabels.length > 0 && (
-        <optgroup label={t("sources")}>
-          {otherLabels.map((l) => (
-            <option key={l} value={`label:${l}`}>
-              {l}
-            </option>
-          ))}
-        </optgroup>
-      )}
-    </select>
-  );
-}
+import { useKbDnd } from "./kbDnd";
+import { TreeContextMenu, type MenuItem } from "./TreeContextMenu";
 
 /** Props for {@link TreeNodeRow}. */
 export interface TreeNodeRowProps {
@@ -119,24 +41,16 @@ export interface TreeNodeRowProps {
   depth: number;
   /** Path of the currently selected file, if any. */
   selectedPath: string | null;
-  /** All available library labels (for move menu). */
-  labels: string[];
-  /** Folder paths within the same label (for move-to). */
-  folders: string[];
   /** Called when a leaf is clicked. */
   onSelect: (path: string, label: string) => void;
   /** Called when a folder chevron is toggled. */
   onToggle: (path: string) => void;
-  /** Called to rename/move a file path. */
+  /** Called to rename a file path (inline rename). */
   onRename: (oldPath: string, newPath: string) => void;
-  /** Called to move a file to a different label. */
-  onMove: (
-    oldPath: string,
-    oldLabel: string,
-    newLabel: string
-  ) => void;
   /** Called to delete a file. */
   onDelete: (path: string) => void;
+  /** Called to delete a folder and its contents. */
+  onDeleteFolder: (path: string) => void;
   /** Called to create a subfolder inside a folder. */
   onCreateFolder: (
     label: string, parentPath: string, name: string,
@@ -150,29 +64,179 @@ export interface TreeNodeRowProps {
 /**
  * Renders a single tree node. Folders show a chevron and
  * recursively render children; leaves show the file name
- * with hover actions for rename, move, and delete.
+ * and a star toggle. Rename, move/copy, and delete are in
+ * the right-click context menu.
  */
 export function TreeNodeRow({
   node,
   depth,
   selectedPath,
-  labels,
-  folders,
   onSelect,
   onToggle,
   onRename,
-  onMove,
   onDelete,
+  onDeleteFolder,
   onCreateFolder,
   starred,
   onToggleStar,
 }: TreeNodeRowProps) {
   const { t } = useTranslation("knowledge");
+  const dnd = useKbDnd();
+  const toast = useToast();
   const indent = depth * 16;
   const [renaming, setRenaming] = useState(false);
   const [renamePath, setRenamePath] = useState("");
   const [addingFolder, setAddingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [dropActive, setDropActive] = useState(false);
+  const [menu, setMenu] = useState<{ x: number; y: number }
+    | null>(null);
+
+  const selfItem = {
+    path: node.path,
+    label: node.label,
+    kind: node.kind,
+    name: node.name,
+  };
+  const selfTarget = { path: node.path, label: node.label };
+
+  async function copyPath() {
+    try {
+      const res = await fetchKnowledgeAbsolutePath(node.path);
+      await navigator.clipboard.writeText(res.path);
+      toast(t("pathCopied"), "success");
+    } catch (err) {
+      toast(String(err), "error");
+    }
+  }
+
+  function startRename() {
+    setRenamePath(node.path);
+    setRenaming(true);
+  }
+
+  function startAddFolder() {
+    setAddingFolder(true);
+    setNewFolderName("");
+    if (node.kind === "folder" && !node.expanded) {
+      onToggle(node.path);
+    }
+  }
+
+  function leafMenuItems(): MenuItem[] {
+    return [
+      {
+        key: "open", label: t("ctxOpen"),
+        icon: <FileText size={13} />,
+        onClick: () => onSelect(node.path, node.label),
+      },
+      { key: "s1", label: "", separator: true },
+      {
+        key: "cut", label: t("ctxCut"),
+        icon: <Scissors size={13} />,
+        onClick: () => dnd.cut(selfItem),
+      },
+      {
+        key: "copy", label: t("ctxCopy"),
+        icon: <Copy size={13} />,
+        onClick: () => dnd.copy(selfItem),
+      },
+      {
+        key: "path", label: t("copyPath"),
+        icon: <Link2 size={13} />, onClick: copyPath,
+      },
+      {
+        key: "rename", label: t("ctxRename"),
+        icon: <Pencil size={13} />, onClick: startRename,
+      },
+      { key: "s2", label: "", separator: true },
+      {
+        key: "delete", label: t("deleteFile"),
+        confirmLabel: t("ctxConfirmDelete"),
+        icon: <Trash2 size={13} />, danger: true,
+        onClick: () => onDelete(node.path),
+      },
+    ];
+  }
+
+  function folderMenuItems(): MenuItem[] {
+    const expanded =
+      node.kind === "folder" && node.expanded;
+    return [
+      {
+        key: "open",
+        label: expanded ? t("ctxCollapse") : t("ctxOpen"),
+        icon: expanded
+          ? <FolderOpen size={13} />
+          : <Folder size={13} />,
+        onClick: () => onToggle(node.path),
+      },
+      {
+        key: "paste", label: t("ctxPaste"),
+        icon: <ClipboardPaste size={13} />,
+        disabled: !dnd.canPaste(selfTarget),
+        onClick: () => dnd.paste(selfTarget),
+      },
+      { key: "s1", label: "", separator: true },
+      {
+        key: "cut", label: t("ctxCut"),
+        icon: <Scissors size={13} />,
+        onClick: () => dnd.cut(selfItem),
+      },
+      {
+        key: "copy", label: t("ctxCopy"),
+        icon: <Copy size={13} />,
+        onClick: () => dnd.copy(selfItem),
+      },
+      {
+        key: "newfolder", label: t("addSubfolder"),
+        icon: <FolderPlus size={13} />,
+        onClick: startAddFolder,
+      },
+      { key: "s2", label: "", separator: true },
+      {
+        key: "delete", label: t("ctxDeleteFolder"),
+        confirmLabel: t("ctxConfirmDelete"),
+        icon: <Trash2 size={13} />, danger: true,
+        onClick: () => onDeleteFolder(node.path),
+      },
+    ];
+  }
+
+  function openMenu(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setMenu({ x: e.clientX, y: e.clientY });
+  }
+
+  const contextMenu = menu ? (
+    <TreeContextMenu
+      x={menu.x}
+      y={menu.y}
+      items={
+        node.kind === "leaf"
+          ? leafMenuItems() : folderMenuItems()
+      }
+      onClose={() => setMenu(null)}
+    />
+  ) : null;
+
+  const dragProps = {
+    draggable: true,
+    onDragStart: (e: React.DragEvent) => {
+      e.stopPropagation();
+      // Firefox only starts a drag when data is set.
+      e.dataTransfer.setData("text/plain", node.path);
+      e.dataTransfer.effectAllowed = "copyMove";
+      dnd.startDrag({
+        path: node.path,
+        label: node.label,
+        kind: node.kind,
+        name: node.name,
+      });
+    },
+    onDragEnd: () => dnd.endDrag(),
+  };
 
   if (node.kind === "leaf") {
     const isSelected = selectedPath === node.path;
@@ -253,11 +317,15 @@ export function TreeNodeRow({
     }
 
     return (
+      <>
       <div
         ref={rowRef}
+        {...dragProps}
+        onContextMenu={openMenu}
         className={[
           "group/leaf flex items-center py-1 pr-1",
           "hover:bg-surface-raised transition-colors",
+          "cursor-grab active:cursor-grabbing",
           isSelected
             ? "text-cta bg-cta-muted"
             : "text-fg-strong",
@@ -306,44 +374,9 @@ export function TreeNodeRow({
           />
           <span className="truncate">{node.name}</span>
         </button>
-        <HoverActions group="leaf" className="gap-0.5">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setRenamePath(node.path);
-              setRenaming(true);
-            }}
-            className={
-              "p-0.5 rounded text-fg-subtle " +
-              "hover:text-cta transition-colors"
-            }
-            title={t("editFile")}
-          >
-            <Pencil size={9} />
-          </button>
-          <MovePicker
-            filePath={node.path}
-            fileLabel={node.label}
-            folders={folders}
-            labels={labels}
-            onRename={onRename}
-            onMove={onMove}
-          />
-          <ConfirmPopover
-            onConfirm={() => onDelete(node.path)}
-          >
-            <button
-              className={
-                "p-0.5 rounded text-fg-subtle " +
-                "hover:text-red-400 transition-colors"
-              }
-              title={t("deleteFile")}
-            >
-              <Trash2 size={9} />
-            </button>
-          </ConfirmPopover>
-        </HoverActions>
       </div>
+      {contextMenu}
+      </>
     );
   }
 
@@ -359,14 +392,33 @@ export function TreeNodeRow({
     setAddingFolder(false);
   }
 
+  const dropTarget = { path: node.path, label: node.label };
+
   return (
     <>
       <div
-        className={
-          "group/folder flex items-center "
-          + "hover:bg-surface-raised "
-          + "transition-colors"
-        }
+        {...dragProps}
+        onDragOver={(e) => {
+          if (!dnd.canDrop(dropTarget)) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setDropActive(true);
+        }}
+        onDragLeave={() => setDropActive(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setDropActive(false);
+          dnd.requestDrop(dropTarget, e.clientX, e.clientY);
+        }}
+        onContextMenu={openMenu}
+        className={[
+          "group/folder flex items-center transition-colors",
+          "cursor-grab active:cursor-grabbing",
+          dropActive
+            ? "bg-cta-muted ring-1 ring-cta/50"
+            : "hover:bg-surface-raised",
+        ].join(" ")}
       >
         <button
           onClick={() => onToggle(node.path)}
@@ -485,18 +537,17 @@ export function TreeNodeRow({
             node={child}
             depth={depth + 1}
             selectedPath={selectedPath}
-            labels={labels}
             onSelect={onSelect}
             onToggle={onToggle}
             onRename={onRename}
-            onMove={onMove}
             onDelete={onDelete}
+            onDeleteFolder={onDeleteFolder}
             onCreateFolder={onCreateFolder}
-            folders={folders}
             starred={starred}
             onToggleStar={onToggleStar}
           />
         ))}
+      {contextMenu}
     </>
   );
 }

@@ -10,6 +10,16 @@
   "addSubfolder": "Unterordner hinzufügen",
   "moveTo": "Verschieben nach...",
   "moveOption": "Verschieben...",
+  "dropInto": "Nach {{name}}",
+  "moveHere": "Hierher verschieben",
+  "copyHere": "Hierher kopieren",
+  "ctxOpen": "Öffnen",
+  "ctxCollapse": "Einklappen",
+  "ctxCut": "Ausschneiden",
+  "ctxCopy": "Kopieren",
+  "ctxPaste": "Hier einfügen",
+  "ctxRename": "Umbenennen",
+  "ctxConfirmDelete": "Zum Löschen erneut klicken",
   "rootOption": "(Wurzel)",
   "folders": "Ordner",
   "sources": "Quellen",
@@ -70,5 +80,6 @@
   "groupSearchByFile": "Suchergebnisse pro Datei zusammenfassen",
   "matches": "{{count}} Treffer",
   "matches_one": "{{count}} Treffer",
-  "matches_other": "{{count}} Treffer"
+  "matches_other": "{{count}} Treffer",
+  "ctxDeleteFolder": "Ordner löschen"
 }

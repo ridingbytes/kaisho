@@ -1326,6 +1326,16 @@ export function deleteKnowledgeFile(path: string): Promise<void> {
   );
 }
 
+/** Delete a knowledge base folder and everything under it. */
+export function deleteKnowledgeFolder(
+  path: string,
+): Promise<void> {
+  return del(
+    `/knowledge/folder?path=${encodeURIComponent(path)}` +
+    `&confirm=true`,
+  );
+}
+
 /** Rename a knowledge base file (change its path). */
 export function renameKnowledgeFile(
   oldPath: string,
@@ -1356,6 +1366,51 @@ export function moveKnowledgeFile(
     old_label: params.oldLabel,
     new_label: params.newLabel,
     new_path: params.newPath ?? null,
+  });
+}
+
+/** Copy a knowledge base file within or across sources.
+ *  Refuses to overwrite an existing destination (409). */
+export function copyKnowledgeFile(
+  params: MoveKnowledgeFileParams,
+): Promise<KnowledgeFile> {
+  return post<KnowledgeFile>("/knowledge/copy", {
+    old_path: params.oldPath,
+    old_label: params.oldLabel,
+    new_label: params.newLabel,
+    new_path: params.newPath ?? null,
+  });
+}
+
+/** Params for relocating a knowledge folder. */
+export interface RelocateKnowledgeFolderParams {
+  oldPath: string;
+  oldLabel: string;
+  newLabel: string;
+  newPath: string;
+}
+
+/** Move a knowledge folder (and its contents). */
+export function moveKnowledgeFolder(
+  params: RelocateKnowledgeFolderParams,
+): Promise<KnowledgeFile> {
+  return post<KnowledgeFile>("/knowledge/folder/move", {
+    old_path: params.oldPath,
+    old_label: params.oldLabel,
+    new_label: params.newLabel,
+    new_path: params.newPath,
+  });
+}
+
+/** Copy a knowledge folder (and its contents). */
+export function copyKnowledgeFolder(
+  params: RelocateKnowledgeFolderParams,
+): Promise<KnowledgeFile> {
+  return post<KnowledgeFile>("/knowledge/folder/copy", {
+    old_path: params.oldPath,
+    old_label: params.oldLabel,
+    new_label: params.newLabel,
+    new_path: params.newPath,
   });
 }
 

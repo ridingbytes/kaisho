@@ -10,6 +10,16 @@
   "addSubfolder": "Añadir subcarpeta",
   "moveTo": "Mover a...",
   "moveOption": "Mover...",
+  "dropInto": "A {{name}}",
+  "moveHere": "Mover aquí",
+  "copyHere": "Copiar aquí",
+  "ctxOpen": "Abrir",
+  "ctxCollapse": "Contraer",
+  "ctxCut": "Cortar",
+  "ctxCopy": "Copiar",
+  "ctxPaste": "Pegar aquí",
+  "ctxRename": "Renombrar",
+  "ctxConfirmDelete": "Haz clic de nuevo para eliminar",
   "rootOption": "(raíz)",
   "folders": "Carpetas",
   "sources": "Fuentes",
@@ -70,5 +80,6 @@
   "groupSearchByFile": "Agrupar resultados por archivo",
   "matches": "{{count}} coincidencias",
   "matches_one": "{{count}} coincidencia",
-  "matches_other": "{{count}} coincidencias"
+  "matches_other": "{{count}} coincidencias",
+  "ctxDeleteFolder": "Eliminar carpeta"
 }

@@ -584,6 +584,28 @@ def delete_file(
     return False
 
 
+def delete_folder(
+    sources: list[dict], rel_path: str
+) -> bool:
+    """Delete a KB folder and everything under it.
+
+    Returns False if not found. An empty ``rel_path`` is
+    refused so a caller can never delete a whole source
+    root through this path.
+    """
+    if not rel_path.strip():
+        raise ValueError("refusing to delete a source root")
+    for _label, base in _expand_sources(sources):
+        try:
+            candidate = _safe_path(base, rel_path)
+        except ValueError:
+            continue
+        if candidate.exists() and candidate.is_dir():
+            shutil.rmtree(candidate)
+            return True
+    return False
+
+
 def rename_file(
     sources: list[dict],
     old_path: str,
@@ -698,6 +720,132 @@ def move_file(
         "label": new_label,
         "name": dst.stem,
         "size": dst.stat().st_size,
+    }
+
+
+def _label_bases(
+    sources: list[dict], old_label: str, new_label: str,
+) -> tuple[Path, Path]:
+    """Resolve the source and destination base dirs for a
+    relocation, raising a clear error if either label is
+    unknown."""
+    src_base = dst_base = None
+    for lbl, base in _expand_sources(sources):
+        if lbl == old_label:
+            src_base = base
+        if lbl == new_label:
+            dst_base = base
+    if src_base is None:
+        raise ValueError(f"Source not found: {old_label!r}")
+    if dst_base is None:
+        raise ValueError(
+            f"Destination not found: {new_label!r}"
+        )
+    return src_base, dst_base
+
+
+def copy_file(
+    sources: list[dict],
+    old_path: str,
+    old_label: str,
+    new_label: str,
+    new_path: str | None = None,
+) -> dict:
+    """Copy a KB file within or across sources.
+
+    Refuses to overwrite an existing destination so a drop
+    onto a folder that already holds a same-named file is a
+    safe, reported no-op rather than silent data loss.
+    ``shutil.copy2`` preserves binary content (PDFs) and the
+    modification time.
+    """
+    dest_path = new_path or old_path
+    src_base, dst_base = _label_bases(
+        sources, old_label, new_label,
+    )
+    src = _safe_path(src_base, old_path)
+    if not src.exists() or not src.is_file():
+        raise ValueError(f"File not found: {old_path!r}")
+    dst = _safe_path(dst_base, dest_path)
+    if dst.exists():
+        raise ValueError(
+            f"Destination already exists: {dest_path!r}"
+        )
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(str(src), str(dst))
+    return {
+        "path": dest_path,
+        "label": new_label,
+        "name": dst.stem,
+        "size": dst.stat().st_size,
+    }
+
+
+def move_folder(
+    sources: list[dict],
+    old_path: str,
+    old_label: str,
+    new_label: str,
+    new_path: str,
+) -> dict:
+    """Move a folder and everything under it within or
+    across sources. Refuses to overwrite an existing
+    destination folder."""
+    src_base, dst_base = _label_bases(
+        sources, old_label, new_label,
+    )
+    src = _safe_path(src_base, old_path)
+    if not src.exists() or not src.is_dir():
+        raise ValueError(f"Folder not found: {old_path!r}")
+    dst = _safe_path(dst_base, new_path)
+    if dst.exists():
+        raise ValueError(
+            f"Destination already exists: {new_path!r}"
+        )
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(src), str(dst))
+    # Prune now-empty parents left behind in the source.
+    for parent in src.parents:
+        if parent == src_base:
+            break
+        if parent.exists() and not any(parent.iterdir()):
+            parent.rmdir()
+    return {
+        "path": new_path,
+        "label": new_label,
+        "name": dst.name,
+        "kind": "folder",
+    }
+
+
+def copy_folder(
+    sources: list[dict],
+    old_path: str,
+    old_label: str,
+    new_label: str,
+    new_path: str,
+) -> dict:
+    """Copy a folder and everything under it within or
+    across sources. Refuses to overwrite an existing
+    destination folder."""
+    src_base, dst_base = _label_bases(
+        sources, old_label, new_label,
+    )
+    src = _safe_path(src_base, old_path)
+    if not src.exists() or not src.is_dir():
+        raise ValueError(f"Folder not found: {old_path!r}")
+    dst = _safe_path(dst_base, new_path)
+    if dst.exists():
+        raise ValueError(
+            f"Destination already exists: {new_path!r}"
+        )
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(str(src), str(dst))
+    return {
+        "path": new_path,
+        "label": new_label,
+        "name": dst.name,
+        "kind": "folder",
     }
 
 

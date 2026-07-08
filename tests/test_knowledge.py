@@ -256,3 +256,116 @@ def test_file_tree_enriches_from_index(tmp_path):
     assert notes["tags"] == ["a", "b"]
     guide = next(f for f in files if f["name"] == "guide")
     assert guide["tags"] == []
+
+
+# -- copy_file / move_folder / copy_folder ------------------
+
+def test_copy_file_within_source(tmp_path):
+    from kaisho.services.knowledge import copy_file
+    sources = _make_sources(tmp_path)
+    out = copy_file(
+        sources, "notes.md", "wissen", "wissen",
+        new_path="archive/notes.md",
+    )
+    assert out["path"] == "archive/notes.md"
+    # Original still there, copy created.
+    assert (tmp_path / "wissen" / "notes.md").exists()
+    assert (
+        tmp_path / "wissen" / "archive" / "notes.md"
+    ).exists()
+
+
+def test_copy_file_across_sources(tmp_path):
+    from kaisho.services.knowledge import copy_file
+    sources = _make_sources(tmp_path)
+    copy_file(
+        sources, "notes.md", "wissen", "research",
+        new_path="notes.md",
+    )
+    assert (tmp_path / "wissen" / "notes.md").exists()
+    assert (tmp_path / "research" / "notes.md").exists()
+
+
+def test_copy_file_refuses_overwrite(tmp_path):
+    from kaisho.services.knowledge import copy_file
+    sources = _make_sources(tmp_path)
+    with pytest.raises(ValueError, match="already exists"):
+        copy_file(
+            sources, "notes.md", "wissen", "wissen",
+            new_path="guide.md",
+        )
+
+
+def test_move_folder(tmp_path):
+    from kaisho.services.knowledge import move_folder
+    sources = _make_sources(tmp_path)
+    sub = tmp_path / "wissen" / "topic"
+    sub.mkdir()
+    (sub / "a.md").write_text("# A", encoding="utf-8")
+    move_folder(
+        sources, "topic", "wissen", "research", "topic",
+    )
+    assert not (tmp_path / "wissen" / "topic").exists()
+    assert (
+        tmp_path / "research" / "topic" / "a.md"
+    ).exists()
+
+
+def test_copy_folder(tmp_path):
+    from kaisho.services.knowledge import copy_folder
+    sources = _make_sources(tmp_path)
+    sub = tmp_path / "wissen" / "topic"
+    sub.mkdir()
+    (sub / "a.md").write_text("# A", encoding="utf-8")
+    copy_folder(
+        sources, "topic", "wissen", "wissen",
+        "archive/topic",
+    )
+    assert (tmp_path / "wissen" / "topic" / "a.md").exists()
+    assert (
+        tmp_path / "wissen" / "archive" / "topic" / "a.md"
+    ).exists()
+
+
+def test_copy_folder_refuses_overwrite(tmp_path):
+    from kaisho.services.knowledge import copy_folder
+    sources = _make_sources(tmp_path)
+    (tmp_path / "wissen" / "topic").mkdir()
+    (tmp_path / "research" / "topic").mkdir()
+    with pytest.raises(ValueError, match="already exists"):
+        copy_folder(
+            sources, "topic", "wissen", "research", "topic",
+        )
+
+
+def test_delete_folder(tmp_path):
+    from kaisho.services.knowledge import delete_folder
+    sources = _make_sources(tmp_path)
+    sub = tmp_path / "wissen" / "topic"
+    sub.mkdir()
+    (sub / "a.md").write_text("# A", encoding="utf-8")
+    assert delete_folder(sources, "topic") is True
+    assert not (tmp_path / "wissen" / "topic").exists()
+
+
+def test_delete_empty_folder(tmp_path):
+    from kaisho.services.knowledge import delete_folder
+    sources = _make_sources(tmp_path)
+    (tmp_path / "wissen" / "empty").mkdir()
+    assert delete_folder(sources, "empty") is True
+    assert not (tmp_path / "wissen" / "empty").exists()
+
+
+def test_delete_folder_missing(tmp_path):
+    from kaisho.services.knowledge import delete_folder
+    sources = _make_sources(tmp_path)
+    assert delete_folder(sources, "nope") is False
+
+
+def test_delete_folder_refuses_root(tmp_path):
+    from kaisho.services.knowledge import delete_folder
+    sources = _make_sources(tmp_path)
+    with pytest.raises(ValueError, match="source root"):
+        delete_folder(sources, "")
+    # The source directory is untouched.
+    assert (tmp_path / "wissen").exists()
