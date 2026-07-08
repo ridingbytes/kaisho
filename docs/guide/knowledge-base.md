@@ -271,7 +271,10 @@ trigger a background warm-and-prune pass.
 
 ## File operations
 
-- Rename files inline (pencil icon)
+The tree row shows only the file name and a star toggle;
+rename, move/copy, and delete all live in the right-click
+context menu.
+
 - Drag a file or folder onto another folder (or a source
   header) and choose **Move here** or **Copy here** on drop.
   This works within a source and across sources.

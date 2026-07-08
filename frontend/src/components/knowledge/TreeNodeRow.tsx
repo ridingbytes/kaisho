@@ -3,8 +3,9 @@
  *
  * Recursive renderer for a single node in the knowledge
  * file tree. Handles both folder (collapsible) and leaf
- * (selectable file) nodes, with inline rename, move-to-
- * label, and delete actions.
+ * (selectable file) nodes. Rename, move/copy, and delete
+ * live in the right-click context menu; the row itself
+ * shows only the star toggle and the drag handle.
  */
 
 import {
@@ -28,8 +29,6 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchKnowledgeAbsolutePath } from "../../api/client";
 import { useToast } from "../../context/ToastContext";
-import { ConfirmPopover } from "../common/ConfirmPopover";
-import { HoverActions } from "../common/HoverActions";
 import type { TreeNode } from "./knowledgeTree";
 import { useKbDnd } from "./kbDnd";
 import { TreeContextMenu, type MenuItem } from "./TreeContextMenu";
@@ -65,7 +64,8 @@ export interface TreeNodeRowProps {
 /**
  * Renders a single tree node. Folders show a chevron and
  * recursively render children; leaves show the file name
- * with hover actions for rename, move, and delete.
+ * and a star toggle. Rename, move/copy, and delete are in
+ * the right-click context menu.
  */
 export function TreeNodeRow({
   node,
@@ -374,35 +374,6 @@ export function TreeNodeRow({
           />
           <span className="truncate">{node.name}</span>
         </button>
-        <HoverActions group="leaf" className="gap-0.5">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setRenamePath(node.path);
-              setRenaming(true);
-            }}
-            className={
-              "p-0.5 rounded text-fg-subtle " +
-              "hover:text-cta transition-colors"
-            }
-            title={t("editFile")}
-          >
-            <Pencil size={9} />
-          </button>
-          <ConfirmPopover
-            onConfirm={() => onDelete(node.path)}
-          >
-            <button
-              className={
-                "p-0.5 rounded text-fg-subtle " +
-                "hover:text-red-400 transition-colors"
-              }
-              title={t("deleteFile")}
-            >
-              <Trash2 size={9} />
-            </button>
-          </ConfirmPopover>
-        </HoverActions>
       </div>
       {contextMenu}
       </>
