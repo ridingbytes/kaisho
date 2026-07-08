@@ -336,3 +336,36 @@ def test_copy_folder_refuses_overwrite(tmp_path):
         copy_folder(
             sources, "topic", "wissen", "research", "topic",
         )
+
+
+def test_delete_folder(tmp_path):
+    from kaisho.services.knowledge import delete_folder
+    sources = _make_sources(tmp_path)
+    sub = tmp_path / "wissen" / "topic"
+    sub.mkdir()
+    (sub / "a.md").write_text("# A", encoding="utf-8")
+    assert delete_folder(sources, "topic") is True
+    assert not (tmp_path / "wissen" / "topic").exists()
+
+
+def test_delete_empty_folder(tmp_path):
+    from kaisho.services.knowledge import delete_folder
+    sources = _make_sources(tmp_path)
+    (tmp_path / "wissen" / "empty").mkdir()
+    assert delete_folder(sources, "empty") is True
+    assert not (tmp_path / "wissen" / "empty").exists()
+
+
+def test_delete_folder_missing(tmp_path):
+    from kaisho.services.knowledge import delete_folder
+    sources = _make_sources(tmp_path)
+    assert delete_folder(sources, "nope") is False
+
+
+def test_delete_folder_refuses_root(tmp_path):
+    from kaisho.services.knowledge import delete_folder
+    sources = _make_sources(tmp_path)
+    with pytest.raises(ValueError, match="source root"):
+        delete_folder(sources, "")
+    # The source directory is untouched.
+    assert (tmp_path / "wissen").exists()

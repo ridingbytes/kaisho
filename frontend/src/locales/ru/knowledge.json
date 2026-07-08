@@ -82,5 +82,6 @@
   "matches_one": "{{count}} совпадение",
   "matches_few": "{{count}} совпадения",
   "matches_many": "{{count}} совпадений",
-  "matches_other": "{{count}} совпадения"
+  "matches_other": "{{count}} совпадения",
+  "ctxDeleteFolder": "Удалить папку"
 }

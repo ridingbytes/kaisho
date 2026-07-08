@@ -80,5 +80,6 @@
   "groupSearchByFile": "Group search results by file",
   "matches": "{{count}} match",
   "matches_one": "{{count}} match",
-  "matches_other": "{{count}} matches"
+  "matches_other": "{{count}} matches",
+  "ctxDeleteFolder": "Delete folder"
 }

@@ -88,6 +88,8 @@ export interface KnowledgeSidebarProps {
   onRename: (oldPath: string, newPath: string) => void;
   /** Delete a file. */
   onDelete: (path: string) => void;
+  /** Delete a folder and its contents. */
+  onDeleteFolder: (path: string) => void;
   /** Create a subfolder. */
   onCreateFolder: (
     label: string, path: string, name: string,
@@ -133,6 +135,7 @@ export function KnowledgeSidebar({
   onToggleFolder,
   onRename,
   onDelete,
+  onDeleteFolder,
   onCreateFolder,
   starred,
   onToggleStar,
@@ -416,6 +419,7 @@ export function KnowledgeSidebar({
                 onToggleFolder={onToggleFolder}
                 onRename={onRename}
                 onDelete={onDelete}
+                onDeleteFolder={onDeleteFolder}
                 onCreateFolder={onCreateFolder}
                 starred={starred}
                 onToggleStar={onToggleStar}
@@ -470,6 +474,7 @@ interface LabelSectionProps {
   onToggleFolder: (path: string) => void;
   onRename: (old: string, next: string) => void;
   onDelete: (path: string) => void;
+  onDeleteFolder: (path: string) => void;
   onCreateFolder: (
     label: string, path: string, name: string,
   ) => void;
@@ -487,6 +492,7 @@ function LabelSection({
   onToggleFolder,
   onRename,
   onDelete,
+  onDeleteFolder,
   onCreateFolder,
   starred,
   onToggleStar,
@@ -661,6 +667,7 @@ function LabelSection({
             onToggle={onToggleFolder}
             onRename={onRename}
             onDelete={onDelete}
+            onDeleteFolder={onDeleteFolder}
             onCreateFolder={onCreateFolder}
             starred={starred}
             onToggleStar={onToggleStar}

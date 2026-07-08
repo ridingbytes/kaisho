@@ -24,6 +24,8 @@ import {
   useCopyKnowledgeFile,
   useCopyKnowledgeFolder,
   useDeleteKnowledgeFile,
+  useDeleteKnowledgeFolder,
+  useReindexKnowledge,
   useKnowledgeDistinctValues,
   useKnowledgeFile,
   useKnowledgeSearch,
@@ -449,6 +451,16 @@ export function KnowledgeView() {
   const copyFile = useCopyKnowledgeFile();
   const moveFolder = useMoveKnowledgeFolder();
   const copyFolder = useCopyKnowledgeFolder();
+  const deleteFolder = useDeleteKnowledgeFolder();
+  const reindex = useReindexKnowledge();
+
+  // Refresh the KB index after any file/folder relocate so
+  // per-file metadata (tags, titles) follows the new paths
+  // instead of going stale. Runs in the background; the
+  // tree itself refreshes via query invalidation.
+  function triggerReindex() {
+    reindex.mutate();
+  }
 
   function handleRename(
     oldPath: string, newPath: string
@@ -484,6 +496,8 @@ export function KnowledgeView() {
     const onError = (e: unknown) =>
       toast(String(e), "error");
     const onSuccess = () => {
+      // Reindex so file metadata follows the new paths.
+      triggerReindex();
       // Keep the open file pointed at its new location when
       // it was the one that just moved.
       if (
@@ -498,11 +512,11 @@ export function KnowledgeView() {
 
     if (source.kind === "folder") {
       const mut = op === "move" ? moveFolder : copyFolder;
-      mut.mutate(params, { onError });
+      mut.mutate(params, { onSuccess, onError });
       return;
     }
     if (op === "copy") {
-      copyFile.mutate(params, { onError });
+      copyFile.mutate(params, { onSuccess, onError });
     } else {
       moveFile.mutate(params, { onSuccess, onError });
     }
@@ -519,6 +533,24 @@ export function KnowledgeView() {
           setEditing(false);
         }
       },
+    });
+  }
+
+  function handleDeleteFolder(path: string) {
+    deleteFolder.mutate(path, {
+      onSuccess: () => {
+        // Clear the open file when it lived in the folder
+        // that was just removed.
+        if (
+          selectedPath &&
+          (selectedPath === path ||
+            selectedPath.startsWith(path + "/"))
+        ) {
+          setSelectedPath(null);
+          setEditing(false);
+        }
+      },
+      onError: (e) => toast(String(e), "error"),
     });
   }
 
@@ -791,6 +823,7 @@ export function KnowledgeView() {
             onToggleFolder={handleToggleFolder}
             onRename={handleRename}
             onDelete={handleDeleteFile}
+            onDeleteFolder={handleDeleteFolder}
             onCreateFolder={handleCreateFolder}
             starred={starred}
             onToggleStar={toggleStar}

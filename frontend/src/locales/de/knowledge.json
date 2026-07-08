@@ -80,5 +80,6 @@
   "groupSearchByFile": "Suchergebnisse pro Datei zusammenfassen",
   "matches": "{{count}} Treffer",
   "matches_one": "{{count}} Treffer",
-  "matches_other": "{{count}} Treffer"
+  "matches_other": "{{count}} Treffer",
+  "ctxDeleteFolder": "Ordner löschen"
 }

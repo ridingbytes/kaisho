@@ -4,6 +4,7 @@ import {
   copyKnowledgeFolder,
   createKnowledgeFolder,
   deleteKnowledgeFile,
+  deleteKnowledgeFolder,
   fetchKnowledgeDistinctValues,
   fetchKnowledgeFile,
   fetchKnowledgeMetadata,
@@ -167,6 +168,16 @@ export function useDeleteKnowledgeFile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (path: string) => deleteKnowledgeFile(path),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["knowledge"] });
+    },
+  });
+}
+
+export function useDeleteKnowledgeFolder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (path: string) => deleteKnowledgeFolder(path),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["knowledge"] });
     },

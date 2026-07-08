@@ -528,3 +528,29 @@ def delete_file(path: str, confirm: bool = False):
         raise HTTPException(
             status_code=404, detail="File not found"
         )
+
+
+@router.delete("/folder", status_code=204)
+def delete_folder(path: str, confirm: bool = False):
+    """Delete a knowledge base folder and its contents.
+
+    Requires ``?confirm=true`` for the same reason as file
+    deletion. Refuses an empty path so a whole source root
+    can never be wiped through this endpoint.
+    """
+    if not confirm:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Delete requires confirm=true. Pass "
+                "?confirm=true to proceed."
+            ),
+        )
+    try:
+        found = kb_service.delete_folder(_sources(), path)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not found:
+        raise HTTPException(
+            status_code=404, detail="Folder not found"
+        )

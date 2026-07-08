@@ -280,8 +280,14 @@ trigger a background warm-and-prune pass.
   Cut or Copy an item, then right-click a folder (or source
   header) and choose **Paste here** — the same move/copy
   semantics as drag-and-drop.
-- Delete files (with confirmation)
+- Delete files or folders. Folder delete removes the folder
+  and everything in it (a source root can never be deleted
+  this way). Both use a two-click confirm.
 - Edit Markdown files inline with a live preview editor
+
+Every drag-and-drop or paste triggers a background reindex
+so file metadata (tags, titles) follows the moved or copied
+paths automatically.
 
 The tree lists folders before files, each group sorted
 alphabetically.

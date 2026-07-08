@@ -584,6 +584,28 @@ def delete_file(
     return False
 
 
+def delete_folder(
+    sources: list[dict], rel_path: str
+) -> bool:
+    """Delete a KB folder and everything under it.
+
+    Returns False if not found. An empty ``rel_path`` is
+    refused so a caller can never delete a whole source
+    root through this path.
+    """
+    if not rel_path.strip():
+        raise ValueError("refusing to delete a source root")
+    for _label, base in _expand_sources(sources):
+        try:
+            candidate = _safe_path(base, rel_path)
+        except ValueError:
+            continue
+        if candidate.exists() and candidate.is_dir():
+            shutil.rmtree(candidate)
+            return True
+    return False
+
+
 def rename_file(
     sources: list[dict],
     old_path: str,

@@ -80,5 +80,6 @@
   "groupSearchByFile": "Agrupar resultados por archivo",
   "matches": "{{count}} coincidencias",
   "matches_one": "{{count}} coincidencia",
-  "matches_other": "{{count}} coincidencias"
+  "matches_other": "{{count}} coincidencias",
+  "ctxDeleteFolder": "Eliminar carpeta"
 }

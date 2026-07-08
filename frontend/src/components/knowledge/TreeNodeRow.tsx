@@ -50,6 +50,8 @@ export interface TreeNodeRowProps {
   onRename: (oldPath: string, newPath: string) => void;
   /** Called to delete a file. */
   onDelete: (path: string) => void;
+  /** Called to delete a folder and its contents. */
+  onDeleteFolder: (path: string) => void;
   /** Called to create a subfolder inside a folder. */
   onCreateFolder: (
     label: string, parentPath: string, name: string,
@@ -73,6 +75,7 @@ export function TreeNodeRow({
   onToggle,
   onRename,
   onDelete,
+  onDeleteFolder,
   onCreateFolder,
   starred,
   onToggleStar,
@@ -189,6 +192,13 @@ export function TreeNodeRow({
         key: "newfolder", label: t("addSubfolder"),
         icon: <FolderPlus size={13} />,
         onClick: startAddFolder,
+      },
+      { key: "s2", label: "", separator: true },
+      {
+        key: "delete", label: t("ctxDeleteFolder"),
+        confirmLabel: t("ctxConfirmDelete"),
+        icon: <Trash2 size={13} />, danger: true,
+        onClick: () => onDeleteFolder(node.path),
       },
     ];
   }
@@ -560,6 +570,7 @@ export function TreeNodeRow({
             onToggle={onToggle}
             onRename={onRename}
             onDelete={onDelete}
+            onDeleteFolder={onDeleteFolder}
             onCreateFolder={onCreateFolder}
             starred={starred}
             onToggleStar={onToggleStar}

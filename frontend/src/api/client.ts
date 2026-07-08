@@ -1326,6 +1326,16 @@ export function deleteKnowledgeFile(path: string): Promise<void> {
   );
 }
 
+/** Delete a knowledge base folder and everything under it. */
+export function deleteKnowledgeFolder(
+  path: string,
+): Promise<void> {
+  return del(
+    `/knowledge/folder?path=${encodeURIComponent(path)}` +
+    `&confirm=true`,
+  );
+}
+
 /** Rename a knowledge base file (change its path). */
 export function renameKnowledgeFile(
   oldPath: string,
