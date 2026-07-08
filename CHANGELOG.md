@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Edit every time entry through the shared modal, with notes
+  preview/edit tabs [#236]. Every clock and task time entry now
+  opens the same edit dialog -- the Clocks table, the timer
+  sidebar, the entries under a task card, the dashboard, and the
+  customer view -- instead of ad-hoc inline forms with differing
+  fields. The notes field gained Preview/Write tabs so links
+  render as clickable in view mode, and double-click-to-edit is
+  gone (the pencil opens the dialog).
+
 ## 2.8.1
 
 - Manage knowledge-base files from the tree [#230]. Drag a

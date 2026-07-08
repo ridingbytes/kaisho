@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
-  Check,
   CheckSquare,
   ChevronDown,
   ChevronRight,
@@ -13,7 +12,6 @@ import {
   Square,
   Trash2,
   TrendingDown,
-  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
@@ -29,9 +27,7 @@ import {
   useCustomerClockEntries,
   useDeleteClockEntry,
   useStopTimer,
-  useUpdateClockEntry,
 } from "../../hooks/useClocks";
-import { useContracts } from "../../hooks/useContracts";
 import { useDashboard } from "../../hooks/useDashboard";
 import { useSetView } from "../../context/ViewContext";
 import { navigateToClockDate } from "../../utils/clockNavigation";
@@ -40,12 +36,12 @@ import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { DOCS } from "../../docs/panelDocs";
 import { TimeInsights } from "./TimeInsights";
+import { TimeEntryDialog } from "../projects/TimeEntryDialog";
 import {
   elapsed,
   formatDate,
   formatHours,
 } from "../../utils/formatting";
-import { smallInputCls } from "../../styles/formStyles";
 
 function budgetBarColor(usedPercent: number): string {
   if (usedPercent >= 100) return "#dc2626";
@@ -120,25 +116,12 @@ function StatCard({
 
 function ClockEntryRow({
   entry,
-  customerName,
 }: {
   entry: ClockEntry;
-  customerName: string;
 }) {
   const { t: tc } = useTranslation("common");
   const [editing, setEditing] = useState(false);
-  const [desc, setDesc] = useState(entry.description);
-  const [hours, setHours] = useState(
-    ((entry.duration_minutes ?? 0) / 60).toFixed(2)
-  );
-  const [contract, setContract] = useState(
-    entry.contract ?? ""
-  );
-  const updateEntry = useUpdateClockEntry();
   const deleteEntry = useDeleteClockEntry();
-  const { data: contracts } = useContracts(
-    editing ? customerName : null
-  );
   const invoicedSet = useInvoicedContracts();
   const isInv = isInvoiced(
     invoicedSet, entry.customer, entry.contract,
@@ -146,92 +129,18 @@ function ClockEntryRow({
 
   const minutes = entry.duration_minutes ?? 0;
 
-  function handleSave() {
-    updateEntry.mutate(
-      {
-        entry,
-        updates: {
-          description: desc,
-          hours: parseFloat(hours) || minutes / 60,
-          contract,
-        },
-      },
-      { onSuccess: () => setEditing(false) }
-    );
-  }
-
   function handleDelete() {
     deleteEntry.mutate(entry);
   }
 
-  if (editing) {
-    return (
-      <div
-        className={
-          "flex items-center gap-2 py-1.5 " +
-          "border-b border-border-subtle last:border-0"
-        }
-      >
-        <span
-          className={
-            "text-xs text-fg-muted tabular-nums shrink-0 " +
-            "w-16"
-          }
-        >
-          {formatDate(entry.start)}
-        </span>
-        <input
-          className={smallInputCls + " flex-1 min-w-0"}
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-          placeholder={tc("description")}
-        />
-        <input
-          className={smallInputCls + " w-14 text-right"}
-          value={hours}
-          onChange={(e) => setHours(e.target.value)}
-          type="number"
-          step="0.25"
-          min="0"
-        />
-        <select
-          className={smallInputCls + " w-24"}
-          value={contract}
-          onChange={(e) => setContract(e.target.value)}
-        >
-          <option value="">--</option>
-          {(contracts ?? []).map((c) => (
-            <option key={c.name} value={c.name}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={handleSave}
-          disabled={updateEntry.isPending}
-          className={
-            "p-0.5 rounded text-green-400 " +
-            "hover:text-green-300 transition-colors"
-          }
-          title={tc("save")}
-        >
-          <Check size={13} strokeWidth={2} />
-        </button>
-        <button
-          onClick={() => setEditing(false)}
-          className={
-            "p-0.5 rounded text-fg-muted " +
-            "hover:text-fg-strong transition-colors"
-          }
-          title={tc("cancel")}
-        >
-          <X size={13} strokeWidth={2} />
-        </button>
-      </div>
-    );
-  }
-
   return (
+    <>
+    {editing && (
+      <TimeEntryDialog
+        entry={entry}
+        onClose={() => setEditing(false)}
+      />
+    )}
     <div
       className={
         "group flex items-center gap-2 py-1.5 " +
@@ -316,6 +225,7 @@ function ClockEntryRow({
         </ConfirmPopover>
       </HoverActions>
     </div>
+    </>
   );
 }
 
@@ -359,7 +269,6 @@ function CustomerClockEntries({
         <ClockEntryRow
           key={entry.start}
           entry={entry}
-          customerName={customerName}
         />
       ))}
     </div>

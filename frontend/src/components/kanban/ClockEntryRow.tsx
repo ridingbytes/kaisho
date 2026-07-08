@@ -1,17 +1,18 @@
 /**
- * ClockEntryRow -- A single clock entry row with inline editing,
- * detach, and delete actions.
+ * ClockEntryRow -- A single clock entry row that opens the
+ * shared TimeEntryDialog to edit, plus detach and delete
+ * actions.
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Pencil,
   Trash2,
-  Check,
   X,
 } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
+import { TimeEntryDialog } from "../projects/TimeEntryDialog";
 import { navigateToClockDate } from "../../utils/clockNavigation";
 import { formatHours } from "../../utils/formatting";
 import {
@@ -41,73 +42,15 @@ export function ClockEntryRow({
 }: ClockEntryRowProps) {
   const { t } = useTranslation("clocks");
   const [editing, setEditing] = useState(false);
-  const [desc, setDesc] = useState(entry.description);
-  const [hours, setHours] = useState(
-    String((entry.duration_minutes ?? 0) / 60)
-  );
-
-  function startEdit() {
-    setDesc(entry.description);
-    setHours(
-      String((entry.duration_minutes ?? 0) / 60)
-    );
-    setEditing(true);
-  }
-
-  function handleSave() {
-    const h = parseFloat(hours);
-    if (isNaN(h)) return;
-    updateEntry.mutate(
-      {
-        entry,
-        updates: { description: desc, hours: h },
-      },
-      { onSuccess: () => setEditing(false) }
-    );
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") handleSave();
-    if (e.key === "Escape") setEditing(false);
-  }
-
-  if (editing) {
-    return (
-      <li className="flex items-center gap-1 text-2xs">
-        <input
-          autoFocus
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="flex-1 min-w-0 px-1 py-0.5 rounded text-2xs bg-surface-raised border border-border text-fg-strong focus:outline-none focus:border-cta"
-        />
-        <input
-          type="number"
-          step="0.25"
-          min="0"
-          value={hours}
-          onChange={(e) => setHours(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="w-14 px-1 py-0.5 rounded text-2xs tabular-nums bg-surface-raised border border-border text-fg-strong focus:outline-none focus:border-cta"
-        />
-        <button
-          onClick={() => setEditing(false)}
-          className="p-0.5 rounded text-fg-muted hover:text-fg-strong"
-        >
-          <X size={9} />
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={updateEntry.isPending}
-          className="p-0.5 rounded text-cta hover:bg-cta-muted disabled:opacity-40"
-        >
-          <Check size={9} />
-        </button>
-      </li>
-    );
-  }
 
   return (
+    <>
+    {editing && (
+      <TimeEntryDialog
+        entry={entry}
+        onClose={() => setEditing(false)}
+      />
+    )}
     <li className="flex items-center gap-1.5 text-2xs group/entry">
       <span
         className="font-mono text-fg-muted cursor-pointer hover:text-cta"
@@ -133,7 +76,7 @@ export function ClockEntryRow({
         {formatHours(entry.duration_minutes)}
       </span>
       <button
-        onClick={startEdit}
+        onClick={() => setEditing(true)}
         title={t("editEntry")}
         className="opacity-0 group-hover/entry:opacity-100 p-0.5 rounded text-fg-muted hover:text-fg-strong"
       >
@@ -165,5 +108,6 @@ export function ClockEntryRow({
         </button>
       </ConfirmPopover>
     </li>
+    </>
   );
 }

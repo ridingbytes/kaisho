@@ -112,13 +112,19 @@ duration, customer, and description.
 
 ## Editing Entries
 
-Every clock entry is editable. In the **Clocks** view:
+Every clock entry is editable. Click the pencil on a row to open
+the edit dialog. The same dialog is used everywhere a time entry
+appears -- the Clocks table, the timer sidebar, the entries under a
+task card, the dashboard, and the customer view -- so editing works
+the same in every place. In the dialog you can:
 
-- Click any cell to edit it inline
-- Double-click a row to open the inline edit form
-- Change customer, description, hours, date, contract, or notes
+- Change customer, description, hours, date, contract, project, or
+  notes
 - Toggle the invoiced flag
-- Link entries to tasks
+- Link the entry to a task
+
+The notes field has **Preview** and **Write** tabs, so links render
+as clickable in Preview and switch to a plain text box to edit.
 
 The table supports column filtering (including regex), sorting, and
 resizing.

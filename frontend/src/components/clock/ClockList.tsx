@@ -2,30 +2,24 @@ import { useTranslation } from "react-i18next";
 import {
   ArrowUpToLine, Pencil, RotateCw, Trash2,
 } from "lucide-react";
-import { EditFooter } from "../common/EditFooter";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
+import { TimeEntryDialog } from "../projects/TimeEntryDialog";
 import {
   useInvoicedContracts,
   isInvoiced,
 } from "../../hooks/useInvoicedContracts";
 import { useState } from "react";
-import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
-import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import {
   useClockEntries,
   useDeleteClockEntry,
   useMergeClockEntries,
   useStartTimer,
-  useUpdateClockEntry,
 } from "../../hooks/useClocks";
 import { useCustomerColors } from "../../hooks/useCustomerColors";
-import { useContracts } from "../../hooks/useContracts";
 import { useTasks } from "../../hooks/useTasks";
 import { useSetView } from "../../context/ViewContext";
 import { taskTitleById } from "../../utils/customerPrefix";
-import { minutesToDecimal } from "../../utils/formatting";
-import { inputCls } from "../../styles/formStyles";
 import type { ClockEntry, Task } from "../../types";
 
 function formatDuration(minutes: number): string {
@@ -66,42 +60,6 @@ function groupEntries(entries: ClockEntry[]): TaskGroup[] {
   return Array.from(map.values());
 }
 
-// --- Contract selector for a given customer ---
-
-function ContractSelect({
-  customer,
-  value,
-  onChange,
-}: {
-  customer: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const { t: tc } = useTranslation("common");
-  const { data: allContracts = [] } = useContracts(
-    customer || null,
-  );
-  const contracts = allContracts.filter(
-    (c) => !c.invoiced,
-  );
-  if (!customer || contracts.length === 0) return null;
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={inputCls + " w-full"}
-    >
-      <option value="">{tc("noContract")}</option>
-      {contracts.map((c) => (
-        <option key={c.name} value={c.name}>
-          {c.name}
-          {c.end_date ? ` (${tc("closed")})` : ""}
-        </option>
-      ))}
-    </select>
-  );
-}
-
 // --- Individual slot row (edit/delete per clock stamp) ---
 
 interface SlotRowProps {
@@ -119,20 +77,8 @@ function SlotRow({
 }: SlotRowProps) {
   const { t } = useTranslation("clocks");
   const { t: tc } = useTranslation("common");
-  const [mode, setMode] = useState<"view" | "edit">("view");
-  const [editCustomer, setEditCustomer] = useState("");
+  const [editing, setEditing] = useState(false);
   const setView = useSetView();
-  const [editContract, setEditContract] = useState("");
-  const [editDesc, setEditDesc] = useState("");
-  const [editDate, setEditDate] = useState("");
-  const [editStartTime, setEditStartTime] = useState("");
-  const [editHours, setEditHours] = useState("");
-  const [editNotes, setEditNotes] = useState("");
-  const [editTaskId, setEditTaskId] = useState<string | null>(
-    null
-  );
-  const [editTaskTitle, setEditTaskTitle] = useState("");
-  const updateEntry = useUpdateClockEntry();
   const deleteEntry = useDeleteClockEntry();
   const mergeEntry = useMergeClockEntries();
   const canMerge = Boolean(
@@ -143,218 +89,14 @@ function SlotRow({
     previousEntry?.customer === entry.customer,
   );
 
-  function startEdit() {
-    setEditCustomer(entry.customer);
-    setEditContract(entry.contract ?? "");
-    setEditDesc(entry.description);
-    setEditDate(entry.start.slice(0, 10));
-    setEditStartTime(entry.start.slice(11, 16));
-    setEditHours(minutesToDecimal(entry.duration_minutes));
-    setEditNotes(entry.notes ?? "");
-    setEditTaskId(entry.task_id ?? null);
-    setEditTaskTitle(taskTitleById(tasks, entry.task_id) ?? "");
-    setMode("edit");
-  }
-
-  function handleSave() {
-    const updates: Parameters<
-      typeof updateEntry.mutate
-    >[0]["updates"] = {};
-    if (editCustomer.trim() !== entry.customer) {
-      updates.customer = editCustomer.trim();
-    }
-    if (editDesc.trim() !== entry.description) {
-      updates.description = editDesc.trim();
-    }
-    const entryDate = entry.start.slice(0, 10);
-    const entryTime = entry.start.slice(11, 16);
-    if (editDate && editDate !== entryDate) {
-      updates.new_date = editDate;
-    }
-    if (editStartTime && editStartTime !== entryTime) {
-      updates.start_time = editStartTime;
-      if (!updates.new_date) {
-        updates.new_date = editDate || entryDate;
-      }
-    }
-    const h = parseFloat(editHours);
-    if (!isNaN(h) && h > 0) {
-      updates.hours = h;
-    }
-    if (editNotes !== (entry.notes ?? "")) {
-      updates.notes = editNotes;
-    }
-    const currentContract = entry.contract ?? "";
-    if (editContract !== currentContract) {
-      updates.contract = editContract;
-    }
-    const currentTaskId = entry.task_id ?? null;
-    if (editTaskId !== currentTaskId) {
-      updates.task_id = editTaskId ?? "";
-    }
-    if (Object.keys(updates).length === 0) {
-      setMode("view");
-      return;
-    }
-    updateEntry.mutate(
-      { entry, updates },
-      { onSuccess: () => setMode("view") }
-    );
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (
-      e.key === "Enter" ||
-      ((e.metaKey || e.ctrlKey) && e.key === "Enter")
-    ) {
-      handleSave();
-    }
-    if (e.key === "Escape") setMode("view");
-  }
-
-  function handleTextareaKeyDown(e: React.KeyboardEvent) {
-    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") handleSave();
-    if (e.key === "Escape") setMode("view");
-  }
-
-  if (mode === "edit") {
-    // Eyebrow label cell -- same recipe ContractRow uses,
-    // for visual consistency across all inline edit forms.
-    const labelCls =
-      "text-2xs text-fg-muted uppercase tracking-wider";
-    return (
-      <div className="pl-3 pt-1.5 pb-2">
-        <div className="flex flex-col gap-2">
-          <label className="flex flex-col gap-0.5">
-            <span className={labelCls}>{tc("customer")}</span>
-            <CustomerAutocomplete
-              value={editCustomer}
-              onChange={(v) => {
-                setEditCustomer(v);
-                setEditContract("");
-              }}
-              onKeyDown={handleKeyDown}
-              inputClassName={inputCls + " w-full"}
-            />
-          </label>
-          <label className="flex flex-col gap-0.5">
-            <span className={labelCls}>{tc("contract")}</span>
-            <ContractSelect
-              customer={editCustomer}
-              value={editContract}
-              onChange={setEditContract}
-            />
-          </label>
-          <label className="flex flex-col gap-0.5">
-            <span className={labelCls}>
-              {tc("description")}
-            </span>
-            <input
-              value={editDesc}
-              onChange={(e) =>
-                setEditDesc(e.target.value)
-              }
-              onKeyDown={handleKeyDown}
-              placeholder={tc("description")}
-              className={inputCls + " w-full"}
-            />
-          </label>
-          <label className="flex flex-col gap-0.5">
-            <span className={labelCls}>{tc("task")}</span>
-            <TaskAutocomplete
-              taskId={editTaskId}
-              value={editTaskTitle}
-              onChange={setEditTaskTitle}
-              onSelect={(id, label) => {
-                setEditTaskId(id);
-                setEditTaskTitle(label);
-              }}
-              onClear={() => {
-                setEditTaskId(null);
-                setEditTaskTitle("");
-              }}
-              customer={editCustomer}
-              inputClassName={inputCls + " w-full"}
-              onKeyDown={handleKeyDown}
-            />
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            <label
-              className="flex flex-col gap-0.5 min-w-0"
-            >
-              <span className={labelCls}>{tc("date")}</span>
-              <input
-                type="date"
-                value={editDate}
-                onChange={(e) =>
-                  setEditDate(e.target.value)
-                }
-                onKeyDown={handleKeyDown}
-                className={inputCls + " w-full"}
-              />
-            </label>
-            <label
-              className="flex flex-col gap-0.5 min-w-0"
-            >
-              <span className={labelCls}>
-                {t("startTime")}
-              </span>
-              <input
-                type="time"
-                value={editStartTime}
-                onChange={(e) =>
-                  setEditStartTime(e.target.value)
-                }
-                onKeyDown={handleKeyDown}
-                className={inputCls + " w-full"}
-              />
-            </label>
-            <label
-              className="flex flex-col gap-0.5 min-w-0"
-            >
-              <span className={labelCls}>
-                {tc("hours")}
-              </span>
-              <input
-                value={editHours}
-                onChange={(e) =>
-                  setEditHours(e.target.value)
-                }
-                onKeyDown={handleKeyDown}
-                placeholder={tc("hours")}
-                className={
-                  inputCls + " w-full tabular-nums"
-                }
-              />
-            </label>
-          </div>
-          <label className="flex flex-col gap-0.5">
-            <span className={labelCls}>{tc("notes")}</span>
-            <textarea
-              autoFocus
-              value={editNotes}
-              onChange={(e) =>
-                setEditNotes(e.target.value)
-              }
-              onKeyDown={handleTextareaKeyDown}
-              placeholder={tc("notes")}
-              rows={2}
-              className={
-                inputCls + " w-full resize-y"
-              }
-            />
-          </label>
-        </div>
-        <EditFooter
-          onSave={handleSave}
-          onCancel={() => setMode("view")}
-          isPending={updateEntry.isPending}
-        />
-      </div>
-    );
-  }
-
   return (
+    <>
+    {editing && (
+      <TimeEntryDialog
+        entry={entry}
+        onClose={() => setEditing(false)}
+      />
+    )}
     <div className="group/slot flex items-center gap-2 pl-3 py-0.5">
       <span className="text-2xs font-mono text-fg-muted tabular-nums">
         {timeLabel(entry.start)}–{timeLabel(entry.end)}
@@ -404,7 +146,7 @@ function SlotRow({
         />
       )}
       <button
-        onClick={startEdit}
+        onClick={() => setEditing(true)}
         className={actionBtn}
         title={tc("edit")}
       >
@@ -445,6 +187,7 @@ function SlotRow({
         </button>
       </ConfirmPopover>
     </div>
+    </>
   );
 }
 

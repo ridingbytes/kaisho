@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog } from "../common/Dialog";
+import { MarkdownEditor } from "../common/MarkdownEditor";
 import { CustomerAutocomplete } from "../common/CustomerAutocomplete";
 import { TaskAutocomplete } from "../common/TaskAutocomplete";
 import { useUpdateClockEntry } from "../../hooks/useClocks";
@@ -213,11 +214,11 @@ export function TimeEntryDialog({ entry, onClose }: Props) {
           <span className="block text-2xs uppercase tracking-wider text-fg-muted mb-1">
             {t("notesLabel")}
           </span>
-          <textarea
+          <MarkdownEditor
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={setNotes}
+            bucketId={entry.sync_id ?? entry.start}
             rows={3}
-            className={`${inputCls} w-full resize-y`}
           />
         </label>
       </div>
