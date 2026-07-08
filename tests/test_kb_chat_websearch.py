@@ -12,7 +12,7 @@ def _join(section):
 def test_web_section_injects_results(monkeypatch):
     monkeypatch.setattr(
         websearch, "web_search",
-        lambda q, max_results=5: {
+        lambda q, max_results=5, timeout=15: {
             "results": [
                 {
                     "title": "npm vs npx",
@@ -35,7 +35,7 @@ def test_web_section_no_keys_points_to_settings(
 ):
     monkeypatch.setattr(
         websearch, "web_search",
-        lambda q, max_results=5: {"error": "boom"},
+        lambda q, max_results=5, timeout=15: {"error": "boom"},
     )
     monkeypatch.setattr(
         websearch, "has_search_keys",
@@ -52,7 +52,7 @@ def test_web_section_with_keys_omits_setup_hint(
 ):
     monkeypatch.setattr(
         websearch, "web_search",
-        lambda q, max_results=5: {"error": "boom"},
+        lambda q, max_results=5, timeout=15: {"error": "boom"},
     )
     monkeypatch.setattr(
         websearch, "has_search_keys",
