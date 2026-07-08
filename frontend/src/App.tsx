@@ -23,7 +23,6 @@ import {
 import ReactDOM from "react-dom";
 import {
   useActiveTimer,
-  usePausedTimer,
   useStopTimer,
   useTimerChangedListener,
 } from "./hooks/useClocks";
@@ -31,7 +30,6 @@ import { ToastProvider } from "./context/ToastContext";
 import { CalendarWidget } from "./components/clock/CalendarWidget";
 import { ClockList } from "./components/clock/ClockList";
 import { StartForm } from "./components/clock/StartForm";
-import { PausedTimer } from "./components/clock/PausedTimer";
 import {
   useCloudSyncStatus,
   useCreateProfile,
@@ -105,12 +103,10 @@ function MobileTimerModal({
 }) {
   const { t: tClocks } = useTranslation("clocks");
   const { data: timer } = useActiveTimer();
-  const { data: pausedEntry } = usePausedTimer();
   const [selectedDate, setSelectedDate] = useState<
     string | null
   >(null);
   const isRunning = timer?.active === true;
-  const showPaused = !isRunning && !!pausedEntry;
 
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[60] flex flex-col bg-surface-card">
@@ -148,8 +144,7 @@ function MobileTimerModal({
             }}
           />
         )}
-        {showPaused && <PausedTimer entry={pausedEntry} />}
-        {!isRunning && !showPaused && (
+        {!isRunning && (
           <StartForm onStarted={() => {}} />
         )}
         <CalendarWidget

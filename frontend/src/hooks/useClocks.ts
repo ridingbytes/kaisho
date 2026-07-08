@@ -8,11 +8,8 @@ import {
 import { useToast } from "../context/ToastContext";
 import { isTauri } from "../utils/tauri";
 import {
-  clearPausedTimer,
   deleteClockEntry,
-  fetchPausedTimer,
   mergeClockEntries,
-  pauseTimer,
   fetchActiveTimer,
   fetchClockEntries,
   fetchCustomerClockEntries,
@@ -54,18 +51,6 @@ export function useActiveTimer() {
   });
 }
 
-/** Provides the currently paused entry, if any. The UI
- *  shows a Resume affordance for it. Polled at the same
- *  cadence as the active timer so toggles propagate
- *  quickly. */
-export function usePausedTimer() {
-  return useQuery({
-    queryKey: ["clocks", "paused"],
-    queryFn: fetchPausedTimer,
-    refetchInterval: 5_000,
-    staleTime: 0,
-  });
-}
 
 /** Listen for ``timer-changed`` Tauri events emitted by
  *  the tray popover (separate webview) and global
@@ -191,35 +176,6 @@ export function useStopTimer() {
     onSuccess: () => {
       invalidateClockCaches(qc);
       toast("Timer stopped");
-    },
-  });
-}
-
-/** Dismiss the paused state without touching the
- *  underlying clock entry. The Resume widget disappears
- *  and the closed entry stays in the file. */
-export function useClearPaused() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: clearPausedTimer,
-    onSuccess: () => {
-      invalidateClockCaches(qc);
-    },
-  });
-}
-
-/** Returns a mutation that pauses the running timer:
- *  stops it but skips the round-on-stop setting so the
- *  partial segment is recorded at exact length. The
- *  user can Resume from the entry's row to reopen it. */
-export function usePauseTimer() {
-  const qc = useQueryClient();
-  const toast = useToast();
-  return useMutation({
-    mutationFn: pauseTimer,
-    onSuccess: () => {
-      invalidateClockCaches(qc);
-      toast("Timer paused");
     },
   });
 }

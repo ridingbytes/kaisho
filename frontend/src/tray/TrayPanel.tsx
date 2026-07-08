@@ -9,9 +9,6 @@ import {
   fetchActiveTimer,
   fetchCustomers,
   fetchTodayEntries,
-  clearPausedTimer,
-  fetchPausedTimer,
-  pauseTimer,
   startTimer,
   stopTimer,
   updateClockEntry,
@@ -91,8 +88,6 @@ export function TrayPanel() {
   const [customers, setCustomers] = useState<Customer[]>(
     [],
   );
-  const [paused, setPaused] =
-    useState<ClockEntry | null>(null);
   const [, setTick] = useState(0);
 
   // Poll active timer + today entries every 5s. The
@@ -100,19 +95,16 @@ export function TrayPanel() {
   // so this loop only refreshes the popover content.
   const refresh = useCallback(async () => {
     try {
-      const [t, e, c, p] = await Promise.all([
+      const [t, e, c] = await Promise.all([
         fetchActiveTimer(),
         fetchTodayEntries(),
         fetchCustomers(),
-        fetchPausedTimer(),
       ]);
       setTimer(t);
       setEntries(e);
       setCustomers(c);
-      setPaused(p);
     } catch {
       setTimer(null);
-      setPaused(null);
     }
   }, []);
 
@@ -207,29 +199,6 @@ export function TrayPanel() {
     void emitTimerChanged();
   }
 
-  async function handlePause() {
-    await pauseTimer();
-    refresh();
-    void emitTimerChanged();
-  }
-
-  async function handleResumePaused(entry: ClockEntry) {
-    await startTimer({
-      customer: entry.customer,
-      description: entry.description,
-      contract: entry.contract ?? undefined,
-      taskId: entry.task_id ?? undefined,
-    });
-    refresh();
-    void emitTimerChanged();
-  }
-
-  async function handleDismissPaused() {
-    await clearPausedTimer();
-    refresh();
-    void emitTimerChanged();
-  }
-
   async function handleUpdateDescription(desc: string) {
     if (!timer?.start) return;
     await updateClockEntry(
@@ -274,12 +243,8 @@ export function TrayPanel() {
           isRunning ? formatElapsed(timer!.start!) : ""
         }
         customers={customers}
-        pausedEntry={paused}
         onStart={handleStart}
         onStop={handleStop}
-        onPause={handlePause}
-        onResumePaused={handleResumePaused}
-        onDismissPaused={handleDismissPaused}
         onUpdateDescription={handleUpdateDescription}
         onUpdateNotes={handleUpdateNotes}
       />

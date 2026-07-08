@@ -171,7 +171,6 @@ class ClockBackend(ABC):
         self,
         rounding_minutes: int = 0,
         rounding_mode: str = "nearest",
-        paused: bool = False,
     ) -> dict:
         """Close the running clock entry.
 
@@ -179,30 +178,8 @@ class ClockBackend(ABC):
             duration to N-minute buckets on stop.
         :param rounding_mode: ``"nearest"``, ``"up"``, or
             ``"down"``. Ignored when rounding is off.
-        :param paused: When true, mark the entry so the UI
-            can surface a "Resume" affordance for it.
-            Only the org backend currently honours this;
-            others accept and ignore the flag.
         :raises ValueError: If no timer is running.
         """
-
-    def get_paused(self) -> dict | None:
-        """Return the currently paused entry, or ``None``.
-
-        Default implementation returns ``None``: only the
-        org backend tracks paused state today. Other
-        backends override when they grow the feature.
-        """
-        return None
-
-    def clear_paused(self) -> bool:
-        """Clear the paused flag (user dismissed it).
-
-        Default no-op: only the org backend implements
-        paused state today. Returns ``True`` when state
-        was actually changed.
-        """
-        return False
 
     @abstractmethod
     def quick_book(

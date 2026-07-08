@@ -230,8 +230,8 @@ BROADCAST_RESOURCES = ("clocks", "inbox", "kanban", "notes")
 #
 # ``timer:started`` covers two cases that both need a
 # pull: a brand-new timer started on another device, and
-# a paused entry resumed on another device (the cloud
-# emits ``timer:started`` for resume because the entry's
+# a stopped entry's timer restarted on another device
+# (the cloud emits ``timer:started`` because the entry's
 # end is cleared).
 _WS_EVENT_TO_RESOURCE = {
     "entries:changed": "clocks",
