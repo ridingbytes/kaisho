@@ -12,7 +12,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { ConfirmPopover } from "../common/ConfirmPopover";
-import { ContentPopup } from "../common/ContentPopup";
 import { NotesBubble } from "../common/NotesBubble";
 import { TimeEntryDialog } from "../projects/TimeEntryDialog";
 import {
@@ -216,8 +215,18 @@ export function EntryRow({
             {entry.description}
           </span>
           {entry.description.length > 40 && (
-            <ContentPopup
-              content={entry.description}
+            <NotesBubble
+              icon="description"
+              value={entry.description}
+              title={tc("description")}
+              bucketId={entry.sync_id ?? entry.start}
+              saving={updateEntry.isPending}
+              onSave={(md) =>
+                updateEntry.mutate({
+                  entry,
+                  updates: { description: md },
+                })
+              }
             />
           )}
           <NotesBubble

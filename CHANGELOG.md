@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Edit a clock entry's description from its popup [#240]. In the
+  Clocks table, a long description opened a read-only expand
+  viewer while notes opened an editable one. The description now
+  uses the same editable popup (text icon, Preview/Write), so both
+  behave the same.
+
 - Unify the notes indicator across tasks and clock entries [#239].
   A clock entry with notes now shows the same speech-bubble icon
   everywhere it appears (Clocks table, timer sidebar, task-card
