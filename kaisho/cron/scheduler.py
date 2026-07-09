@@ -124,14 +124,27 @@ def _cron_kwargs(schedule: str) -> dict:
 def _add_job_to_scheduler(
     scheduler: BackgroundScheduler, job: dict
 ) -> None:
-    """Add a single enabled job to the live scheduler."""
+    """Add a single enabled job to the live scheduler.
+
+    A malformed schedule -- wrong field count *or* an
+    out-of-range value like hour 45 -- is logged and
+    skipped. One bad job must never abort the whole sync:
+    ``sync_jobs`` re-adds every enabled job on each cron
+    mutation, so a propagated error would turn every
+    enable/disable/update into a 500.
+    """
     try:
         kwargs = _cron_kwargs(job["schedule"])
-    except ValueError:
+        trigger = CronTrigger(**kwargs)
+    except ValueError as exc:
+        logging.getLogger(__name__).warning(
+            "Skipping cron job %r: invalid schedule %r (%s)",
+            job.get("id"), job.get("schedule"), exc,
+        )
         return
     scheduler.add_job(
         _run_job,
-        trigger=CronTrigger(**kwargs),
+        trigger=trigger,
         args=[job],
         id=job["id"],
         name=job.get("name", job["id"]),

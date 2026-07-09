@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Skip cron jobs with invalid schedules instead of 500-ing every
+  cron mutation [#243]. A job with an out-of-range schedule field
+  (e.g. hour 45) made every cron enable/disable/update return 500,
+  so the editor kept showing a stale timeout and saves appeared to
+  revert. Malformed schedules are now logged and skipped.
+
 ## 2.8.2
 
 - Edit every time entry through the shared modal, with notes
