@@ -13,6 +13,7 @@ import {
   saveJobPrompt,
   triggerCronJob,
   updateCronJob,
+  validateCronSchedule,
 } from "../api/client";
 import type { CronJob } from "../types";
 import { useToast } from "../context/ToastContext";
@@ -125,6 +126,15 @@ export function useDeleteCronJob() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["cron"] });
     },
+  });
+}
+
+export function useValidateSchedule(schedule: string) {
+  return useQuery({
+    queryKey: ["cron", "validate", schedule],
+    queryFn: () => validateCronSchedule(schedule),
+    enabled: schedule.trim().length > 0,
+    staleTime: 5 * 60_000,
   });
 }
 
