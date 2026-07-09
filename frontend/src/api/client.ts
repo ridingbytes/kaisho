@@ -1827,6 +1827,19 @@ export function saveJobPrompt(
   return put(path, { content });
 }
 
+export interface ScheduleCheck {
+  valid: boolean;
+  error: string | null;
+  next_runs: string[];
+}
+
+/** Validate a cron schedule and preview its next runs. */
+export function validateCronSchedule(
+  schedule: string
+): Promise<ScheduleCheck> {
+  return post<ScheduleCheck>("/cron/validate-schedule", { schedule });
+}
+
 /** Manually trigger a cron job to run immediately. */
 export function triggerCronJob(
   jobId: string

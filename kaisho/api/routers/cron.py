@@ -29,6 +29,7 @@ from ...services.cron import (
     set_enabled,
     start_run,
     update_job,
+    validate_cron_schedule,
 )
 
 router = APIRouter(prefix="/api/cron", tags=["cron"])
@@ -76,6 +77,21 @@ class PromptUpdate(BaseModel):
     content: str
 
 
+class ScheduleValidate(BaseModel):
+    schedule: str
+
+
+@router.post("/validate-schedule")
+def api_validate_schedule(body: ScheduleValidate):
+    """Validate a cron schedule and preview its next runs.
+
+    Powers the live feedback under the schedule field in the
+    job editor, so an invalid schedule (like hour 45) is
+    caught before it can be saved.
+    """
+    return validate_cron_schedule(body.schedule)
+
+
 @router.get("/templates")
 def api_list_templates():
     """List available cron job templates with prompt
@@ -121,6 +137,13 @@ def api_add_job(body: JobCreate):
     if err:
         raise HTTPException(status_code=400, detail=err)
 
+    schedule_check = validate_cron_schedule(body.schedule)
+    if not schedule_check["valid"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid schedule: {schedule_check['error']}",
+        )
+
     cfg = get_config()
     data = body.model_dump()
     prompt_content = data.pop("prompt_content", "")
@@ -149,6 +172,13 @@ def api_add_job(body: JobCreate):
 def api_update_job(job_id: str, body: JobUpdate):
     """Update properties of an existing cron job."""
     updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    if "schedule" in updates:
+        schedule_check = validate_cron_schedule(updates["schedule"])
+        if not schedule_check["valid"]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid schedule: {schedule_check['error']}",
+            )
     try:
         job = update_job(_jobs_file(), job_id, updates)
     except ValueError as e:

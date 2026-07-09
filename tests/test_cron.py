@@ -1,6 +1,5 @@
 """Tests for the cron service."""
 import pytest
-import yaml
 
 from kaisho.cron.executor import resolve_model_label
 from kaisho.services.cron import (
@@ -13,6 +12,7 @@ from kaisho.services.cron import (
     set_enabled,
     start_run,
     update_job,
+    validate_cron_schedule,
 )
 
 
@@ -32,6 +32,30 @@ def _make_job(job_id="test-job", enabled=True):
 def test_list_jobs_empty(tmp_path):
     jobs_file = tmp_path / "jobs.yaml"
     assert list_jobs(jobs_file) == []
+
+
+def test_validate_schedule_valid_previews_runs():
+    res = validate_cron_schedule("45 6 * * *")
+    assert res["valid"] is True
+    assert res["error"] is None
+    assert len(res["next_runs"]) == 3
+
+
+def test_validate_schedule_out_of_range_hour():
+    res = validate_cron_schedule("06 45 * * *")
+    assert res["valid"] is False
+    assert res["error"]
+    assert res["next_runs"] == []
+
+
+def test_validate_schedule_wrong_field_count():
+    res = validate_cron_schedule("0 9 * *")
+    assert res["valid"] is False
+    assert res["next_runs"] == []
+
+
+def test_validate_schedule_empty():
+    assert validate_cron_schedule("")["valid"] is False
 
 
 def test_add_job(tmp_path):

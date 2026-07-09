@@ -10,13 +10,20 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmPopover } from "../common/ConfirmPopover";
 import { ContentPopup } from "../common/ContentPopup";
 import { Markdown } from "../common/Markdown";
 import { PromptEditor } from "../common/PromptEditor";
 import { Button } from "../common/Button";
+import { CronJobDialog } from "./CronJobDialog";
+import {
+  fieldCls,
+  MODEL_DATALIST,
+  OutputSelect,
+  ScheduleField,
+} from "./cronFields";
 import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { ResizeHandle } from "../common/ResizeHandle";
@@ -25,7 +32,6 @@ import { DOCS } from "../../docs/panelDocs";
 import {
   useAiSettings,
   useCloudSyncStatus,
-  useKbSources,
 } from "../../hooks/useSettings";
 import {
   useAddCronJob,
@@ -38,16 +44,12 @@ import {
   useEnableCronJob,
   useJobPrompt,
   useMoveCronOutput,
-  useSaveJobPrompt,
   useTriggerCronJob,
-  useUpdateCronJob,
 } from "../../hooks/useCron";
 import { useAvailableModels } from "../../hooks/useSettings";
 import { Toggle } from "../common/Toggle";
 import type { CronJob, CronRun } from "../../types";
 import type { CronTemplate } from "../../api/client";
-
-const MODEL_DATALIST = "cron-model-list";
 
 const CRON_HISTORY_COLUMNS = [
   { key: "toggle", defaultPct: 3 },
@@ -60,11 +62,6 @@ const CRON_HISTORY_COLUMNS = [
   { key: "error", defaultPct: 15 },
   { key: "actions", defaultPct: 4 },
 ];
-
-const fieldCls =
-  "px-2 py-1 rounded text-xs bg-surface-raised border border-border " +
-  "text-fg-strong placeholder-fg-muted focus:outline-none " +
-  "focus:border-border-strong font-mono";
 
 function CopyToInboxBtn({ runId }: { runId: number }) {
   const { t } = useTranslation("cron");
@@ -96,32 +93,6 @@ function CopyToInboxBtn({ runId }: { runId: number }) {
     >
       {done ? <Check size={12} /> : <Inbox size={12} />}
     </button>
-  );
-}
-
-function OutputSelect({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const { t } = useTranslation("cron");
-  const { data: sources = [] } = useKbSources();
-  return (
-    <select
-      className={fieldCls}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="none">{t("outputNone")}</option>
-      <option value="inbox">{t("outputInbox")}</option>
-      {sources.map((s) => (
-        <option key={s.label} value={s.label}>
-          KB: {s.label}
-        </option>
-      ))}
-    </select>
   );
 }
 
@@ -174,88 +145,20 @@ function JobCard({
 }) {
   const { t } = useTranslation("cron");
   const [expanded, setExpanded] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [editSchedule, setEditSchedule] = useState(job.schedule);
-  const [editModel, setEditModel] = useState(job.model);
-  const [editOutput, setEditOutput] = useState(job.output);
-  const [editTimeout, setEditTimeout] = useState(String(job.timeout));
-  const [editCloud, setEditCloud] = useState(!!job.cloud);
-  const { data: cloudStatus } = useCloudSyncStatus();
-  // Cloud cron requires a connected paid plan.
-  const canCloud = ["companion", "pro", "team"].includes(
-    cloudStatus?.plan ?? ""
-  );
-  // undefined = not yet edited; string = user has typed something
-  const [promptDraft, setPromptDraft] = useState<string | undefined>(
-    undefined
-  );
-  const [promptSaved, setPromptSaved] = useState(false);
-  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   const trigger = useTriggerCronJob();
   const [triggered, setTriggered] = useState(false);
   const hasModel = !!job.model;
-  const updateJob = useUpdateCronJob();
   const deleteJob = useDeleteCronJob();
-  const savePrompt = useSaveJobPrompt();
 
-  // Always fetch; staleTime keeps it cheap after first load
+  // Fetch the raw prompt for the read-only preview shown when
+  // the card is expanded; editing happens in the dialog.
   const { data: promptData } = useJobPrompt(job.id);
-
-  // Effective content: user edit takes precedence over fetched value
-  const promptContent = promptDraft ?? promptData?.content ?? "";
-
-  function handleExpand() {
-    if (expanded) {
-      setExpanded(false);
-      setEditing(false);
-    } else {
-      setExpanded(true);
-    }
-  }
 
   function startEdit(e: React.MouseEvent) {
     e.stopPropagation();
-    setEditSchedule(job.schedule);
-    setEditModel(job.model);
-    setEditOutput(job.output);
-    setEditTimeout(String(job.timeout));
-    setEditCloud(!!job.cloud);
-    setEditing(true);
-    setExpanded(true);
-  }
-
-  function handleSaveFields() {
-    updateJob.mutate(
-      {
-        jobId: job.id,
-        updates: {
-          schedule: editSchedule,
-          model: editModel,
-          output: editOutput,
-          timeout: Number(editTimeout),
-          cloud: canCloud ? editCloud : false,
-        },
-      },
-      { onSuccess: () => setEditing(false) }
-    );
-  }
-
-  function handleSavePrompt() {
-    savePrompt.mutate(
-      { jobId: job.id, content: promptContent },
-      {
-        onSuccess: () => {
-          setPromptDraft(undefined);
-          setPromptSaved(true);
-          if (savedTimer.current) clearTimeout(savedTimer.current);
-          savedTimer.current = setTimeout(
-            () => setPromptSaved(false),
-            2000
-          );
-        },
-      }
-    );
+    setEditOpen(true);
   }
 
   function handleDelete() {
@@ -264,10 +167,13 @@ function JobCard({
 
   return (
     <div className="bg-surface-card rounded-lg border border-border shadow-card flex flex-col">
+      {editOpen && (
+        <CronJobDialog job={job} onClose={() => setEditOpen(false)} />
+      )}
       {/* Header row */}
       <div
         className="flex items-center gap-3 px-4 py-3 cursor-pointer"
-        onClick={handleExpand}
+        onClick={() => setExpanded((v) => !v)}
       >
         <span className="text-fg-muted shrink-0">
           {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
@@ -346,7 +252,7 @@ function JobCard({
       {/* Summary pills */}
       <div
         className="flex gap-3 px-4 pb-3 text-2xs text-fg-muted font-mono cursor-pointer"
-        onClick={handleExpand}
+        onClick={() => setExpanded((v) => !v)}
       >
         <span title={t("schedule")}>{job.schedule}</span>
         <span className="text-fg-subtle">|</span>
@@ -363,140 +269,37 @@ function JobCard({
         <span title={t("output")}>{job.output}</span>
       </div>
 
-      {/* Expanded body */}
+      {/* Expanded body: read-only prompt preview. Editing
+          the prompt and the fields happens in the dialog
+          (pencil). */}
       {expanded && (
         <div
-          className="border-t border-border-subtle px-4 py-3 flex flex-col gap-3"
+          className="border-t border-border-subtle px-4 py-3 flex flex-col gap-2"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Field editor */}
-          {editing ? (
-            <div className="flex flex-col gap-2">
-              <div className="grid grid-cols-2 gap-2">
-                <label className="flex flex-col gap-1">
-                  <span className="text-2xs text-fg-muted uppercase tracking-wide">
-                    {t("schedule")}
-                  </span>
-                  <input
-                    className={fieldCls}
-                    value={editSchedule}
-                    onChange={(e) => setEditSchedule(e.target.value)}
-                    placeholder="0 9 * * 1-5"
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-2xs text-fg-muted uppercase tracking-wide">
-                    {t("model")}
-                  </span>
-                  <input
-                    className={fieldCls}
-                    value={editModel}
-                    onChange={(e) =>
-                      setEditModel(e.target.value)
-                    }
-                    placeholder="ollama:qwen3:14b"
-                    list={MODEL_DATALIST}
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-2xs text-fg-muted uppercase tracking-wide">
-                    {t("output")}
-                  </span>
-                  <OutputSelect
-                    value={editOutput}
-                    onChange={setEditOutput}
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-2xs text-fg-muted uppercase tracking-wide">
-                    {t("timeoutS")}
-                  </span>
-                  <input
-                    className={fieldCls}
-                    type="number"
-                    value={editTimeout}
-                    onChange={(e) => setEditTimeout(e.target.value)}
-                    placeholder="120"
-                  />
-                </label>
-              </div>
-              {canCloud && (
-                <label className="flex items-center gap-2 text-xs text-fg-muted">
-                  <input
-                    type="checkbox"
-                    checked={editCloud}
-                    onChange={(e) =>
-                      setEditCloud(e.target.checked)
-                    }
-                  />
-                  <span>{t("runInCloud")}</span>
-                </label>
-              )}
-              <div className="flex gap-2">
-                <button
-                  onClick={handleSaveFields}
-                  disabled={updateJob.isPending}
-                  className="px-3 py-1 rounded-lg text-xs bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-50"
-                >
-                  {updateJob.isPending
-                    ? t("saving")
-                    : t("save", { ns: "common" })}
-                </button>
-                <button
-                  onClick={() => setEditing(false)}
-                  className="px-3 py-1 rounded-lg text-xs text-fg hover:text-fg-strong transition-colors"
-                >
-                  {t("cancel", { ns: "common" })}
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          {/* Prompt editor */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="text-2xs text-fg-muted uppercase tracking-wide">
-                {t("prompt")}
+          <div className="flex items-center justify-between">
+            <span className="text-2xs text-fg-muted uppercase tracking-wide">
+              {t("prompt")}
+            </span>
+            {promptData?.path && (
+              <span className="text-2xs text-fg-subtle font-mono">
+                {promptData.path}
               </span>
-              {promptData?.path && (
-                <span className="text-2xs text-fg-subtle font-mono">
-                  {promptData.path}
-                </span>
-              )}
-            </div>
-            {promptData?.error && (
-              <p className="text-xs text-red-400">{promptData.error}</p>
             )}
-            <PromptEditor
-              value={promptContent}
-              onChange={(next) => setPromptDraft(next)}
-              placeholder={t("enterPrompt")}
-              minHeight={120}
-            />
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleSavePrompt}
-                disabled={savePrompt.isPending}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-50"
-              >
-                {savePrompt.isPending ? (
-                  t("saving")
-                ) : promptSaved ? (
-                  <>
-                    <Check size={11} />
-                    {t("promptSaved")}
-                  </>
-                ) : (
-                  t("savePrompt")
-                )}
-              </button>
-              {savePrompt.isError && (
-                <span className="text-xs text-red-400">
-                  {t("promptSaveFailed")}
-                </span>
-              )}
-            </div>
           </div>
+          {promptData?.error && (
+            <p className="text-xs text-red-400">{promptData.error}</p>
+          )}
+          <pre className="max-h-72 overflow-auto rounded-lg border border-border bg-surface-raised p-3 text-xs text-fg font-mono whitespace-pre-wrap break-words">
+            {promptData?.content || t("enterPrompt")}
+          </pre>
+          <button
+            onClick={() => setEditOpen(true)}
+            className="self-start flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs bg-surface-raised border border-border text-fg-strong hover:bg-surface-overlay transition-colors"
+          >
+            <Pencil size={11} />
+            {t("editJob")}
+          </button>
         </div>
       )}
     </div>
@@ -618,6 +421,7 @@ function AddJobForm({
     template?.prompt ?? "",
   );
   const [cloud, setCloud] = useState(false);
+  const [scheduleValid, setScheduleValid] = useState(true);
   const { data: cloudStatus } = useCloudSyncStatus();
   // Cloud cron requires a connected paid plan.
   const canCloud = ["companion", "pro", "team"].includes(
@@ -695,12 +499,10 @@ function AddJobForm({
           <span className="text-2xs text-fg-muted uppercase tracking-wide">
             {t("schedule")}
           </span>
-          <input
-            className={fieldCls}
+          <ScheduleField
             value={schedule}
-            onChange={(e) => setSchedule(e.target.value)}
-            placeholder="0 9 * * 1-5"
-            required
+            onChange={setSchedule}
+            onValidChange={setScheduleValid}
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -772,7 +574,7 @@ function AddJobForm({
         </button>
         <button
           type="submit"
-          disabled={addJob.isPending}
+          disabled={addJob.isPending || !scheduleValid}
           className="px-4 py-1.5 rounded-lg text-sm bg-cta text-white hover:bg-cta-hover transition-colors disabled:opacity-50"
         >
           {addJob.isPending

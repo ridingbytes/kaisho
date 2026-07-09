@@ -6,15 +6,48 @@ are thin callers.
 """
 import json
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 import yaml
+from apscheduler.triggers.cron import CronTrigger
 
 from ..time_utils import local_now_iso
 
 
 def _now_iso() -> str:
     return local_now_iso(timespec="seconds")
+
+
+def validate_cron_schedule(schedule: str, count: int = 3) -> dict:
+    """Validate a 5-field cron schedule and preview its runs.
+
+    Uses the same APScheduler ``CronTrigger`` that actually
+    schedules jobs, so the verdict always matches runtime
+    behaviour (no drift from a hand-rolled validator).
+
+    :param schedule: A crontab string, e.g. ``"45 6 * * *"``.
+    :param count: How many upcoming fire times to return.
+    :returns: ``{"valid": bool, "error": str | None,
+        "next_runs": list[str]}`` -- ``next_runs`` holds up
+        to ``count`` upcoming fire times as ISO strings,
+        empty when the schedule is invalid.
+    """
+    try:
+        trigger = CronTrigger.from_crontab(schedule.strip())
+    except (ValueError, TypeError) as exc:
+        return {"valid": False, "error": str(exc), "next_runs": []}
+    ref = datetime.now(trigger.timezone)
+    runs: list[str] = []
+    prev = None
+    for _ in range(count):
+        nxt = trigger.get_next_fire_time(prev, ref)
+        if nxt is None:
+            break
+        runs.append(nxt.isoformat())
+        prev = nxt
+        ref = nxt
+    return {"valid": True, "error": None, "next_runs": runs}
 
 
 def _load_yaml(jobs_file: Path) -> dict:

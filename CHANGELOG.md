@@ -7,6 +7,12 @@
   (e.g. hour 45) made every cron enable/disable/update return 500,
   so the editor kept showing a stale timeout and saves appeared to
   revert. Malformed schedules are now logged and skipped.
+- Edit cron jobs in a modal with live schedule validation
+  [#244]. The pencil opens a dialog (like task and clock time
+  entries) for the schedule, model, output, timeout, cloud flag,
+  and prompt. The schedule field validates as you type against
+  the real scheduler, previewing the next runs and blocking Save
+  on an invalid expression.
 
 ## 2.8.2
 
