@@ -13,10 +13,11 @@
   and prompt. The schedule field validates as you type against
   the real scheduler, previewing the next runs and blocking Save
   on an invalid expression.
-- Add an AI assistant to the cron prompt editor [#245]. An
-  instruction box in the job modal asks the advisor model to
-  rewrite the prompt; the change comes back as an inline diff you
-  accept, reject, or hand-edit -- a pair-programming feel.
+- Add an AI assistant to the cron prompt editor [#245] [#246]. A
+  sidebar in the job modal, opened by a sparkles button, asks the
+  advisor model to rewrite the prompt; the change appears as an
+  inline diff you accept, reject, or hand-edit -- a
+  pair-programming feel.
 
 ## 2.8.2
 
