@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Dialog } from "../common/Dialog";
 import { PromptEditor } from "../common/PromptEditor";
@@ -45,6 +46,7 @@ export function CronJobDialog({ job, onClose }: Props) {
   const [scheduleValid, setScheduleValid] = useState(true);
   // Pending assistant rewrite shown as a diff; null = none.
   const [proposal, setProposal] = useState<string | null>(null);
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const { data: aiSettings } = useAiSettings();
   const advisorModel = aiSettings?.advisor_model || "";
@@ -93,7 +95,7 @@ export function CronJobDialog({ job, onClose }: Props) {
       onClose={onClose}
       title={t("editJob")}
       subtitle={job.id}
-      size="lg"
+      size={assistantOpen ? "xl" : "lg"}
       resizable
       noBackdropClose
       footer={
@@ -111,7 +113,8 @@ export function CronJobDialog({ job, onClose }: Props) {
         </div>
       }
     >
-      <div className="flex flex-col gap-3">
+      <div className="flex gap-4 items-stretch">
+      <div className="flex-1 min-w-0 flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1">
             <span className="text-2xs text-fg-muted uppercase tracking-wide">
@@ -167,44 +170,61 @@ export function CronJobDialog({ job, onClose }: Props) {
         )}
 
         <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <span className="text-2xs text-fg-muted uppercase tracking-wide">
               {t("prompt")}
             </span>
-            {promptData?.path && (
-              <span className="text-2xs text-fg-subtle font-mono">
-                {promptData.path}
-              </span>
-            )}
+            <div className="flex items-center gap-2 min-w-0">
+              {promptData?.path && (
+                <span className="text-2xs text-fg-subtle font-mono truncate">
+                  {promptData.path}
+                </span>
+              )}
+              {!assistantOpen && (
+                <button
+                  type="button"
+                  onClick={() => setAssistantOpen(true)}
+                  className="flex items-center gap-1 px-2 py-1 rounded text-2xs bg-cta/10 text-cta hover:bg-cta/20 transition-colors shrink-0"
+                  title={t("aiAssistant")}
+                >
+                  <Sparkles size={12} />
+                  {t("aiAssistant")}
+                </button>
+              )}
+            </div>
           </div>
           {promptData?.error && (
             <p className="text-xs text-red-400">{promptData.error}</p>
           )}
           {proposal !== null ? (
-            <PromptDiff
-              before={prompt}
-              after={proposal}
-              onAccept={() => {
-                setPrompt(proposal);
-                setProposal(null);
-              }}
-              onReject={() => setProposal(null)}
-            />
+            <PromptDiff before={prompt} after={proposal} />
           ) : (
             <PromptEditor
               value={prompt}
               onChange={setPrompt}
               placeholder={t("enterPrompt")}
-              minHeight={200}
+              minHeight={240}
             />
           )}
+        </div>
+      </div>
+
+      {assistantOpen && (
+        <aside className="w-72 shrink-0 border-l border-border-subtle pl-4">
           <CronPromptAssistant
             currentPrompt={prompt}
             model={advisorModel}
-            disabled={proposal !== null}
+            proposal={proposal}
             onPropose={setProposal}
+            onAccept={() => {
+              if (proposal !== null) setPrompt(proposal);
+              setProposal(null);
+            }}
+            onReject={() => setProposal(null)}
+            onClose={() => setAssistantOpen(false)}
           />
-        </div>
+        </aside>
+      )}
       </div>
     </Dialog>
   );

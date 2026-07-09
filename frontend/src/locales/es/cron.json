@@ -25,6 +25,8 @@
   "acceptChanges": "Aceptar",
   "rejectChanges": "Descartar",
   "noAdvisorModel": "Configura un modelo de asesor en Ajustes > IA para usar el asistente.",
+  "proposalReady": "Revisa los cambios propuestos y acéptalos o recházalos.",
+  "assistHint": "Los cambios aparecen como diff. Nada se guarda hasta pulsar Guardar.",
   "runInCloud": "Ejecutar en la nube (aunque este dispositivo esté apagado)",
   "prompt": "Prompt",
   "enterPrompt": "Introduce el texto del prompt que se enviará al modelo…",

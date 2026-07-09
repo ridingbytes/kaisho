@@ -25,6 +25,8 @@
   "acceptChanges": "Übernehmen",
   "rejectChanges": "Verwerfen",
   "noAdvisorModel": "Lege unter Einstellungen > KI ein Berater-Modell fest, um den Assistenten zu nutzen.",
+  "proposalReady": "Prüfe die vorgeschlagenen Änderungen und übernimm oder verwirf sie.",
+  "assistHint": "Änderungen erscheinen als Diff. Gespeichert wird erst mit „Speichern“.",
   "runInCloud": "In der Cloud ausführen (auch wenn dieses Gerät aus ist)",
   "prompt": "Prompt",
   "enterPrompt": "Prompttext eingeben, der an das Modell gesendet wird…",
