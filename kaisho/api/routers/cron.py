@@ -1,6 +1,12 @@
+import json
+import queue
+import threading
+from collections.abc import Generator
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from ...backends import get_backend
@@ -13,6 +19,7 @@ from ...cron.executor import (
 from ...cron.scheduler import sync_jobs
 from ...services import cloud_cron
 from ...services import settings as settings_svc
+from ...services.cron_assist import rewrite_cron_prompt
 from ...services.cron_templates import (
     get_cron_template,
     list_cron_templates,
@@ -90,6 +97,118 @@ def api_validate_schedule(body: ScheduleValidate):
     caught before it can be saved.
     """
     return validate_cron_schedule(body.schedule)
+
+
+class PromptAssist(BaseModel):
+    current_prompt: str
+    instruction: str
+    # Blank = use the advisor_model from settings.
+    model: str = ""
+
+
+def _sse_line(event: str, data: dict[str, Any]) -> str:
+    """Format a single SSE event line."""
+    payload = json.dumps(data, default=str)
+    return f"event: {event}\ndata: {payload}\n\n"
+
+
+_SENTINEL = object()
+
+
+def _assist_provider_kwargs(ai: dict) -> dict:
+    """Map AI settings to rewrite_cron_prompt kwargs."""
+    return {
+        "ollama_base_url": ai.get("ollama_url", ""),
+        "ollama_api_key": ai.get("ollama_api_key", ""),
+        "ollama_cloud_url": ai.get("ollama_cloud_url", ""),
+        "ollama_cloud_api_key": ai.get(
+            "ollama_cloud_api_key", "",
+        ),
+        "lm_studio_base_url": ai.get("lm_studio_url", ""),
+        "claude_api_key": ai.get("claude_api_key", ""),
+        "openrouter_base_url": ai.get("openrouter_url", ""),
+        "openrouter_api_key": ai.get("openrouter_api_key", ""),
+        "openai_base_url": ai.get("openai_url", ""),
+        "openai_api_key": ai.get("openai_api_key", ""),
+    }
+
+
+def _stream_assist(
+    body: PromptAssist, model_str: str,
+) -> Generator[str, None, None]:
+    """Run the prompt rewrite in a thread, yield SSE events."""
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    ai = settings_svc.get_ai_settings(data)
+    sync = data.get("cloud_sync", {})
+
+    q: queue.Queue = queue.Queue()
+
+    def on_event(event_type: str, payload: dict) -> None:
+        q.put((event_type, payload))
+
+    def run() -> None:
+        try:
+            out = rewrite_cron_prompt(
+                body.instruction,
+                body.current_prompt,
+                model_str,
+                **_assist_provider_kwargs(ai),
+                cloud_url=sync.get("url", ""),
+                cloud_api_key=settings_svc.get_cloud_sync_key(
+                    data,
+                ),
+                on_event=on_event,
+            )
+            q.put(("result", {"content": out}))
+        except Exception as exc:  # noqa: BLE001
+            q.put(("error", {"detail": str(exc)}))
+        finally:
+            q.put(_SENTINEL)
+
+    q.put(("model", {"model": model_str}))
+    q.put(("thinking", {}))
+    threading.Thread(target=run, daemon=True).start()
+
+    while True:
+        item = q.get()
+        if item is _SENTINEL:
+            break
+        yield _sse_line(*item)
+
+
+@router.post("/prompt-assist")
+def api_prompt_assist(body: PromptAssist):
+    """Rewrite a cron prompt from an instruction (SSE stream).
+
+    Uses the advisor model from settings unless the request
+    overrides it. Streams a ``thinking`` event then a
+    ``result`` with the rewritten prompt (or an ``error``).
+    """
+    if not body.instruction.strip():
+        raise HTTPException(
+            status_code=400, detail="instruction is required",
+        )
+    cfg = get_config()
+    data = settings_svc.load_settings(cfg.SETTINGS_FILE)
+    ai = settings_svc.get_ai_settings(data)
+    model_str = body.model or ai.get("advisor_model", "")
+    if not model_str:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "No advisor model configured. Set one in "
+                "Settings > AI."
+            ),
+        )
+    return StreamingResponse(
+        _stream_assist(body, model_str),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/templates")

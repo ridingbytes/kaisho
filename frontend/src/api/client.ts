@@ -2402,6 +2402,72 @@ export async function askAdvisor(
   return { answer };
 }
 
+/** Rewrite a cron prompt from an instruction via SSE. Calls
+ *  onEvent for intermediate steps (e.g. "thinking") and
+ *  resolves with the rewritten prompt. */
+export async function assistCronPrompt(params: {
+  currentPrompt: string;
+  instruction: string;
+  model?: string;
+  signal?: AbortSignal;
+  onEvent?: (type: string, data: Record<string, unknown>) => void;
+}): Promise<{ content: string }> {
+  const res = await fetch(`${BASE}/cron/prompt-assist`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      current_prompt: params.currentPrompt,
+      instruction: params.instruction,
+      model: params.model ?? "",
+    }),
+    signal: params.signal,
+  });
+  if (!res.ok) {
+    throw await extractError("POST", "/cron/prompt-assist", res);
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) return { content: "" };
+
+  const decoder = new TextDecoder();
+  let content = "";
+  let buf = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+
+    const parts = buf.split("\n\n");
+    buf = parts.pop() ?? "";
+
+    for (const part of parts) {
+      let evtType = "";
+      let evtData = "";
+      for (const line of part.split("\n")) {
+        if (line.startsWith("event: ")) {
+          evtType = line.slice(7);
+        } else if (line.startsWith("data: ")) {
+          evtData = line.slice(6);
+        }
+      }
+      if (!evtType || !evtData) continue;
+      const parsed = JSON.parse(evtData) as Record<string, unknown>;
+      if (evtType === "result") {
+        content = (parsed.content as string) ?? "";
+      } else if (evtType === "error") {
+        throw new Error(
+          (parsed.detail as string) ?? "Assistant error",
+        );
+      } else if (params.onEvent) {
+        params.onEvent(evtType, parsed);
+      }
+    }
+  }
+
+  return { content };
+}
+
 /** Fetch a packaged advisor prompt body (e.g. onboard) by
  *  name. The frontend uses this for slash commands that
  *  inject canned instructions into the chat. */
