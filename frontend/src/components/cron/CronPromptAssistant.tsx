@@ -24,13 +24,13 @@ export function PromptDiff({
           className={[
             "px-3 py-0.5 whitespace-pre-wrap break-words",
             r.type === "add"
-              ? "bg-emerald-500/15 text-emerald-300"
+              ? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-200"
               : r.type === "del"
-                ? "bg-red-500/15 text-red-300"
+                ? "bg-red-500/20 text-red-800 dark:text-red-200"
                 : "text-fg",
           ].join(" ")}
         >
-          <span className="select-none text-fg-subtle mr-2">
+          <span className="select-none mr-2 opacity-70">
             {r.type === "add" ? "+" : r.type === "del" ? "−" : " "}
           </span>
           {r.text || " "}
