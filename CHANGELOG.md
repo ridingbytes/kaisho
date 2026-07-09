@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Edit cron jobs in a modal with live schedule validation
+  [#244]. The pencil opens a dialog (like task and clock time
+  entries) for the schedule, model, output, timeout, cloud flag,
+  and prompt. The schedule field validates as you type against
+  the real scheduler, previewing the next runs and blocking Save
+  on an invalid expression.
+
 ## 2.8.2
 
 - Edit every time entry through the shared modal, with notes
