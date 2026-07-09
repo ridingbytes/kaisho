@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.8.3
 
 - Skip cron jobs with invalid schedules instead of 500-ing every
   cron mutation [#243]. A job with an out-of-range schedule field
