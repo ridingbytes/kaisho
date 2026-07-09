@@ -8,7 +8,14 @@ import {
   OutputSelect,
   ScheduleField,
 } from "./cronFields";
-import { useCloudSyncStatus } from "../../hooks/useSettings";
+import {
+  CronPromptAssistant,
+  PromptDiff,
+} from "./CronPromptAssistant";
+import {
+  useAiSettings,
+  useCloudSyncStatus,
+} from "../../hooks/useSettings";
 import {
   useJobPrompt,
   useSaveJobPrompt,
@@ -36,7 +43,11 @@ export function CronJobDialog({ job, onClose }: Props) {
   const [cloud, setCloud] = useState(!!job.cloud);
   const [prompt, setPrompt] = useState("");
   const [scheduleValid, setScheduleValid] = useState(true);
+  // Pending assistant rewrite shown as a diff; null = none.
+  const [proposal, setProposal] = useState<string | null>(null);
 
+  const { data: aiSettings } = useAiSettings();
+  const advisorModel = aiSettings?.advisor_model || "";
   const { data: cloudStatus } = useCloudSyncStatus();
   const canCloud = ["companion", "pro", "team"].includes(
     cloudStatus?.plan ?? "",
@@ -169,11 +180,29 @@ export function CronJobDialog({ job, onClose }: Props) {
           {promptData?.error && (
             <p className="text-xs text-red-400">{promptData.error}</p>
           )}
-          <PromptEditor
-            value={prompt}
-            onChange={setPrompt}
-            placeholder={t("enterPrompt")}
-            minHeight={200}
+          {proposal !== null ? (
+            <PromptDiff
+              before={prompt}
+              after={proposal}
+              onAccept={() => {
+                setPrompt(proposal);
+                setProposal(null);
+              }}
+              onReject={() => setProposal(null)}
+            />
+          ) : (
+            <PromptEditor
+              value={prompt}
+              onChange={setPrompt}
+              placeholder={t("enterPrompt")}
+              minHeight={200}
+            />
+          )}
+          <CronPromptAssistant
+            currentPrompt={prompt}
+            model={advisorModel}
+            disabled={proposal !== null}
+            onPropose={setProposal}
           />
         </div>
       </div>
