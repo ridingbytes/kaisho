@@ -130,16 +130,6 @@ def connect(body: ConnectBody):
         )
 
     plan = stats.get("plan", "free")
-    if plan not in ("companion", "pro", "team"):
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                "Cloud Sync requires a paid plan. "
-                "Visit kaisho.dev/#pricing to "
-                "upgrade."
-            ),
-        )
-
     cfg = get_config()
 
     # Reset sync state so all local entries push to the
@@ -158,7 +148,7 @@ def connect(body: ConnectBody):
         },
     )
 
-    auto_set = _autoset_kaisho_models(cfg, plan)
+    auto_set = _autoset_kaisho_models(cfg)
 
     return {
         "ok": True,
@@ -167,14 +157,11 @@ def connect(body: ConnectBody):
     }
 
 
-def _autoset_kaisho_models(cfg, plan: str) -> dict:
-    """On paid-plan activation, populate empty
-    advisor_model / cron_model with kaisho:advisor /
-    kaisho:cron so the cloud gateway is wired up by
-    default. Every paid tier includes the AI gateway.
-    Existing non-empty values are kept."""
-    if plan not in ("companion", "pro", "team"):
-        return {}
+def _autoset_kaisho_models(cfg) -> dict:
+    """On connect, populate empty advisor_model / cron_model
+    with kaisho:advisor / kaisho:cron so a connected server's
+    AI gateway is wired up by default. Existing non-empty
+    values are kept, so a bring-your-own-model choice stands."""
     data = settings_svc.load_settings(cfg.SETTINGS_FILE)
     ai = settings_svc.get_ai_settings(data)
     updates: dict[str, str] = {}
