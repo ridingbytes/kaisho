@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Drop the paid-plan gate on cloud sync and integrations [#247].
+  Connecting to a Kaisho server (ours or your own) no longer
+  requires a plan: the 403 "requires a paid plan" check is gone,
+  the hosted advisor/cron models are wired up on connect, and the
+  GitHub token is pushed to any connected server (not just
+  Pro/Team). Kaisho is free and open source.
+
 ## 2.8.3
 
 - Skip cron jobs with invalid schedules instead of 500-ing every

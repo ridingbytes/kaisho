@@ -1,17 +1,16 @@
-"""Premium integrations API router.
+"""Integrations API router.
 
-Proxies the desktop UI to the Kaisho Cloud ``/integrations``
-endpoints using the stored cloud-sync credentials. The
-cloud enforces the Pro plan gate for Linear / Slack /
-Google.
+Proxies the desktop UI to a connected Kaisho server's
+``/integrations`` endpoints using the stored cloud-sync
+credentials. Integrations (Linear / Slack / Google Calendar /
+GitHub Projects) are available to any connected account.
 
-GitHub is the exception: it is available on every plan and
-its token is stored **locally** (it powers the local GitHub
-sidebar view and the local AI tools, which run on the
-desktop). For Pro users the same token is additionally
-pushed to the cloud so the hosted MCP gateway and the
-server-side advisor can reach GitHub too. This is the
-single place a GitHub PAT is entered.
+GitHub's token is stored **locally** (it powers the local
+GitHub sidebar view and the local AI tools, which run on the
+desktop). When a server is connected, the same token is also
+pushed to it so the hosted MCP gateway and the server-side
+advisor can reach GitHub. This is the single place a GitHub
+PAT is entered.
 """
 import json
 import urllib.error
@@ -27,10 +26,9 @@ router = APIRouter(
     prefix="/api/integrations", tags=["integrations"],
 )
 
-# GitHub connects locally on every plan; only Pro/Team also
-# get a cloud copy. Other kinds are cloud-only (Pro-gated).
+# GitHub connects locally; when a server is connected its
+# token is also copied there. Other kinds are server-only.
 GITHUB_KIND = "github"
-CLOUD_PLANS = ("pro", "team")
 
 
 class ConnectKeyBody(BaseModel):
@@ -82,7 +80,7 @@ def _cloud(url, key, path, method="GET", data=None):
         )
 
 
-# ── GitHub (local, all plans) ─────────────────────────
+# ── GitHub (stored locally) ───────────────────────────
 
 
 def _github_token_set() -> bool:
@@ -93,22 +91,16 @@ def _github_token_set() -> bool:
     return bool(gh.get("token"))
 
 
-def _cloud_plan(url: str, key: str) -> str:
-    """Resolve the account plan, or "" if unavailable."""
-    stats = sync_svc.cloud_stats(url, key)
-    return (stats or {}).get("plan", "")
-
-
 def _connect_github(token: str) -> dict:
-    """Store the GitHub PAT locally, and additionally in the
-    cloud when the account is Pro/Team (so the hosted
-    gateway can use it). Local storage always wins."""
+    """Store the GitHub PAT locally, and additionally on a
+    connected server (so its gateway can use it). Local
+    storage always wins."""
     cfg = get_config()
     settings_svc.set_github_settings(
         cfg.SETTINGS_FILE, {"token": token},
     )
     url, key = _cloud_creds()
-    if url and key and _cloud_plan(url, key) in CLOUD_PLANS:
+    if url and key:
         _cloud(
             url, key, f"/integrations/{GITHUB_KIND}", "POST",
             {"api_key": token},
@@ -117,14 +109,14 @@ def _connect_github(token: str) -> dict:
 
 
 def _disconnect_github() -> dict:
-    """Clear the local GitHub PAT, and the cloud copy too
-    when present (Pro/Team)."""
+    """Clear the local GitHub PAT, and the copy on a connected
+    server too when present."""
     cfg = get_config()
     settings_svc.set_github_settings(
         cfg.SETTINGS_FILE, {"token": ""},
     )
     url, key = _cloud_creds()
-    if url and key and _cloud_plan(url, key) in CLOUD_PLANS:
+    if url and key:
         _cloud(
             url, key, f"/integrations/{GITHUB_KIND}",
             "DELETE",
@@ -160,7 +152,8 @@ def list_integrations():
 @router.post("/{kind}")
 def connect_key(kind: str, body: ConnectKeyBody):
     """Connect an API-key / PAT integration. GitHub stores
-    locally (every plan); Linear is cloud-only (Pro)."""
+    locally; others (e.g. Linear) go to the connected
+    server."""
     if kind == GITHUB_KIND:
         return _connect_github(body.api_key)
     url, key = _require_cloud()
