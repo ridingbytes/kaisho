@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Reframe README and cloud docs around free/open-source [#249].
+  The optional cloud is described as a self-hostable (or
+  Kaisho-hosted) server with no plans or tiers; the Companion /
+  Pro / Team plan table and "requires a paid plan" language are
+  gone.
 - Remove plan gating and upsell from the desktop UI [#248]. Delete
   the "Companion and Pro" upsell banner and the plan badge; cloud
   sync, hosted AI, integrations, and cloud cron are now available
