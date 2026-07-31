@@ -77,30 +77,29 @@ and your mind.
 - **Docker-ready.** Single-container deployment for
   self-hosting.
 
-### Companion / Pro / Team (hosted, optional)
+### Optional cloud (self-host or hosted)
 
-Adds a hosted memory layer at
-[cloud.kaisho.dev](https://cloud.kaisho.dev) for users who
-want cross-device convenience without setting up a server:
+Everything above is free and works fully standalone. When you
+want cross-device convenience, connect Kaisho to a
+[kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud)
+server. It is open source too, so you can run your own on plain
+PostgreSQL, or point at a Kaisho-hosted instance if you'd rather
+not operate a server. Same features either way:
 
 - **Cross-device sync + mobile PWA** for clock tracking,
   inbox, projects, and the advisor on the go.
-- **Managed AI token quota** of a frontier model -- skip
-  the key-juggling for everyday work.
-- **Hosted MCP gateway** so the same tools stay reachable
-  from Claude Code / Cursor when your laptop is closed.
-- **Scheduled AI runs** on a hosted runner that fires even
-  when you're offline, using the included token quota.
-- **Pro** adds premium integrations the advisor can read
-  and act on: Google Calendar, Slack, Linear, GitHub
-  Projects. Credentials are stored encrypted server-side.
-- **Team** adds a shared knowledge base, team-wide cron
-  agents, role-based access control, and an audit log.
+- **Hosted AI gateway** so you can use a frontier model without
+  wiring up your own key on every device.
+- **MCP gateway** so the same tools stay reachable from
+  Claude Code / Cursor when your laptop is closed.
+- **Scheduled AI runs** on the server, firing even when
+  you're offline.
+- **Premium integrations** the advisor can read and act on:
+  Google Calendar, Slack, Linear, GitHub Projects. Credentials
+  are stored encrypted server-side.
 
-See [pricing](https://kaisho.dev/#pricing) and the
-[cloud repo](https://github.com/ridingbytes/kaisho-cloud)
-for the hosted side. Local stays free forever; the
-core software is MIT.
+No plans, no tiers: connect to a server and everything is
+available. The whole stack is MIT.
 
 
 ## Quick start
@@ -192,8 +191,8 @@ kai convert --from org --to sql \      # Backend migration
   profile; converter ships in the box.
 - **AI**: agentic tool loop with 60+ tools, tool-tier
   gating (read / write / destructive), URL allowlist.
-  Bring-your-own provider OR use the hosted Companion/Pro
-  gateway.
+  Bring-your-own provider OR use a connected server's hosted
+  AI gateway.
 - **MCP**: first-class server over two transports -- stdio
   (`scripts/mcp-server.sh`, spawned per-client) and
   streamable HTTP (mounted at `/mcp` on a running `kai
@@ -286,10 +285,10 @@ kaisho repos.
 ## Companion projects
 
 - **[kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud)**
-  -- the hosted Companion / Pro / Team service: cloud sync,
-  hosted MCP gateway, hosted cron worker, premium
-  integrations, mobile PWA at
-  [cloud.kaisho.dev/m](https://cloud.kaisho.dev/m).
+  -- the open-source, self-hostable sync + AI server: cloud
+  sync, hosted AI + MCP gateway, cron worker, premium
+  integrations, mobile PWA. Run your own on PostgreSQL, or use
+  a Kaisho-hosted instance.
 - **[kaisho-mode](https://github.com/ridingbytes/kaisho-mode)**
   -- Emacs Lisp client. Connects to a running local Kaisho
   for tasks, clocks and the advisor under `SPC n k`.

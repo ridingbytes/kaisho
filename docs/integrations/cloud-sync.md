@@ -1,39 +1,28 @@
 # Cloud Sync
 
 Cloud sync keeps your data in step between the desktop app and the
-mobile PWA. It uses Kaisho Cloud as the synchronization relay.
+mobile PWA, using a Kaisho server as the synchronization relay.
 
-## Plans
-
-| Plan | Cloud sync | Mobile PWA | Hosted AI | Pro integrations |
-|------|------------|------------|-----------|------------------|
-| Free | no | no | no | no |
-| Companion | yes | yes | yes | no |
-| Pro | yes | yes | yes | yes |
-| Team | yes | yes | yes | yes |
-
-!!! info "Since 1.7.3"
-    The plan tiers were renamed from Free / Sync / Sync+AI to
-    Free / Companion / Pro / Team. The Companion tier covers
-    everything an individual needs; Pro and Team unlock the
-    workspace integrations (Linear, Slack, Google).
-
-The free plan cannot connect; the cloud refuses connection attempts
-from accounts on a free plan.
+The server is [kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud),
+which is open source. Run your own on plain PostgreSQL, or point at a
+Kaisho-hosted instance. There are no plans or tiers: once you connect a
+server, cloud sync, the mobile PWA, the hosted AI gateway, and the
+workspace integrations (Linear, Slack, Google Calendar, GitHub Projects)
+are all available. Kaisho is free and works fully standalone; the cloud
+is optional.
 
 ## Connecting
 
 1. Go to **Settings > Cloud Sync**.
-2. Enter your Kaisho Cloud API key.
+2. Enter your Kaisho server URL and its sync token (API key).
 3. Press **Connect**.
 
-The initial sync pulls cloud-side data; subsequent changes flow in
+The initial sync pulls server-side data; subsequent changes flow in
 both directions automatically.
 
-If `advisor_model` and `cron_model` are not yet set, connecting on
-a paid plan auto-populates them with the hosted models
-(`kaisho:advisor` and `kaisho:cron`). Any model you already chose
-is preserved.
+If `advisor_model` and `cron_model` are not yet set, connecting
+auto-populates them with the hosted models (`kaisho:advisor` and
+`kaisho:cron`). Any model you already chose is preserved.
 
 ## How sync works
 
@@ -92,12 +81,13 @@ contract before they enter the regular timeline.
 
 ## Kaisho Cloud AI
 
-Companion, Pro, and Team plans include access to the hosted AI
-gateway. No local AI provider or API keys needed. Toggle this in
+A connected server that exposes an AI gateway gives you hosted AI
+with no local AI provider or API keys needed. Toggle this in
 **Settings > Cloud Sync > Use Kaisho AI**.
 
 The AI token usage meter shows your consumption against the
-monthly quota (default 200,000 tokens; raised on Pro and Team).
+server's monthly cap (default 200,000 tokens, configurable per
+instance).
 
 ### Use Kaisho models everywhere
 

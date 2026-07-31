@@ -16,7 +16,7 @@ Bidirectional synchronization with Kaisho Cloud.
 GET /api/cloud-sync/status
 ```
 
-Returns connection state, the active plan, and sync metadata.
+Returns connection state and sync metadata.
 
 **Response:**
 
@@ -27,7 +27,7 @@ Returns connection state, the active plan, and sync metadata.
   "url": "https://cloud.kaisho.dev",
   "interval": 300,
   "connected": true,
-  "plan": "pro",
+  "plan": "free",
   "email": "user@example.com",
   "last_pull_cursor": "2026-06-02T08:14:11Z",
   "last_push_cursor": "2026-06-02T08:14:09Z",
@@ -41,8 +41,8 @@ Returns connection state, the active plan, and sync metadata.
 }
 ```
 
-`plan` is one of `companion`, `pro`, `team`. The free tier cannot
-connect.
+`plan` is always `free` (there are no paid tiers). Any account on
+a connected server can sync.
 
 ## Connect
 
@@ -67,12 +67,12 @@ runs an initial pull.
 ```json
 {
   "ok": true,
-  "plan": "pro",
+  "plan": "free",
   "auto_set_models": true
 }
 ```
 
-On a paid plan, if `advisor_model` and `cron_model` are unset in
+On connect, if `advisor_model` and `cron_model` are unset in
 settings, they are auto-populated to `kaisho:advisor` and
 `kaisho:cron`. Existing non-empty values are preserved.
 
@@ -115,7 +115,7 @@ Returns monthly token usage from the hosted AI gateway.
 }
 ```
 
-Cap defaults to 200000 tokens; Pro and Team tiers raise this.
+Cap defaults to 200000 tokens, configurable per server instance.
 
 ## Sync Now
 
