@@ -51,9 +51,9 @@ export function CronJobDialog({ job, onClose }: Props) {
   const { data: aiSettings } = useAiSettings();
   const advisorModel = aiSettings?.advisor_model || "";
   const { data: cloudStatus } = useCloudSyncStatus();
-  const canCloud = ["companion", "pro", "team"].includes(
-    cloudStatus?.plan ?? "",
-  );
+  // Cloud cron is available whenever a Kaisho server is
+  // connected (ours or self-hosted).
+  const canCloud = !!cloudStatus?.connected;
 
   const { data: promptData } = useJobPrompt(job.id);
   // Seed the editor once the fetched prompt arrives, without

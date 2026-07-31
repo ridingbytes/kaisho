@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Remove plan gating and upsell from the desktop UI [#248]. Delete
+  the "Companion and Pro" upsell banner and the plan badge; cloud
+  sync, hosted AI, integrations, and cloud cron are now available
+  whenever a Kaisho server is connected (driven by the connection,
+  not a plan). Settings/docs copy reframed to "connect to a Kaisho
+  server, ours or your own"; plan-tier and pricing strings removed
+  across locales.
 - Drop the paid-plan gate on cloud sync and integrations [#247].
   Connecting to a Kaisho server (ours or your own) no longer
   requires a plan: the 403 "requires a paid plan" check is gone,

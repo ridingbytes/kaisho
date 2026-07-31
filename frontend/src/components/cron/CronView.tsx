@@ -423,10 +423,9 @@ function AddJobForm({
   const [cloud, setCloud] = useState(false);
   const [scheduleValid, setScheduleValid] = useState(true);
   const { data: cloudStatus } = useCloudSyncStatus();
-  // Cloud cron requires a connected paid plan.
-  const canCloud = ["companion", "pro", "team"].includes(
-    cloudStatus?.plan ?? ""
-  );
+  // Cloud cron is available whenever a Kaisho server is
+  // connected (ours or self-hosted).
+  const canCloud = !!cloudStatus?.connected;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -829,11 +828,9 @@ export function CronView() {
   const { data: models = [] } = useAvailableModels();
   const { data: cloudStatus } = useCloudSyncStatus();
   const { data: aiSettings } = useAiSettings();
-  // Every paid tier (Companion / Pro / Team) includes the
-  // cloud AI gateway.
-  const onSyncAi = ["companion", "pro", "team"].includes(
-    cloudStatus?.plan ?? "",
-  );
+  // Hosted Kaisho models are offered whenever a cloud
+  // server is connected (ours or self-hosted).
+  const onSyncAi = !!cloudStatus?.connected;
   const defaultCronModel =
     aiSettings?.cron_model || "";
   const deleteRun = useDeleteCronRun();

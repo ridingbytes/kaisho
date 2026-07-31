@@ -439,66 +439,6 @@ function applyFont(id: FontPresetId) {
   );
 }
 
-const NUDGE_DISMISS_KEY = "kaisho_cloud_nudge_dismissed";
-const NUDGE_DISMISS_DAYS = 14;
-
-function CloudNudgeBanner({
-  show,
-  onOpenSettings,
-}: {
-  show: boolean;
-  onOpenSettings: () => void;
-}) {
-  const [dismissed, setDismissed] = useState(() => {
-    const ts = localStorage.getItem(NUDGE_DISMISS_KEY);
-    if (!ts) return false;
-    const elapsed = Date.now() - Number(ts);
-    return elapsed < NUDGE_DISMISS_DAYS * 86400000;
-  });
-
-  if (!show || dismissed) return null;
-
-  function handleDismiss() {
-    localStorage.setItem(
-      NUDGE_DISMISS_KEY, String(Date.now()),
-    );
-    setDismissed(true);
-  }
-
-  return (
-    <div className="flex items-center gap-3 px-4 py-1.5 bg-cta/10 border-b border-cta/20 shrink-0">
-      <p className="flex-1 text-xs text-fg">
-        Companion and Pro add hosted sync, the MCP gateway,
-        mobile and scheduled AI runs.{" "}
-        <button
-          onClick={() =>
-            openExternal(
-              "https://kaisho.dev/#pricing",
-            )
-          }
-          className="text-cta hover:underline font-medium"
-        >
-          See pricing
-        </button>
-        {" "}or{" "}
-        <button
-          onClick={onOpenSettings}
-          className="text-cta hover:underline font-medium"
-        >
-          connect to a self-hosted cloud
-        </button>
-      </p>
-      <button
-        onClick={handleDismiss}
-        className="text-fg-subtle hover:text-fg transition-colors shrink-0"
-        title="Dismiss for 14 days"
-      >
-        <X size={12} />
-      </button>
-    </div>
-  );
-}
-
 // Cached lookup of the Tauri shell's debug_assertions
 // flag. Build mode never changes within a session, so the
 // IPC roundtrip happens exactly once per page load.
@@ -1015,13 +955,7 @@ function AppShell() {
                 title="Cloud Sync settings"
               >
                 <CloudCog size={12} />
-                {cloudStatus.plan === "pro"
-                  ? "Pro"
-                  : cloudStatus.plan === "team"
-                    ? "Team"
-                    : cloudStatus.plan === "companion"
-                      ? "Companion"
-                      : "Free"}
+                Cloud
               </button>
               <button
                 onClick={() =>
@@ -1244,10 +1178,6 @@ function AppShell() {
 
           <main className="flex-1 min-w-0 overflow-hidden relative flex flex-col">
             <UpdateBanner />
-            <CloudNudgeBanner
-              show={!cloudStatus?.connected}
-              onOpenSettings={() => setView("settings")}
-            />
             {view === "dashboard" && <DashboardView />}
             {view === "board" && <KanbanBoard />}
             {view === "inbox" && <InboxView />}

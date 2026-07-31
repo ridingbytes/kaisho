@@ -481,11 +481,9 @@ export function AiSection(): JSX.Element {
   const { data: cloudStatus } = useCloudSyncStatus();
   const { data: probe } = useAiProbe();
   const update = useUpdateAiSettings();
-  // Every paid tier (Companion / Pro / Team) includes the
-  // cloud AI gateway.
-  const onSyncAi = ["companion", "pro", "team"].includes(
-    cloudStatus?.plan ?? "",
-  );
+  // Hosted Kaisho models are offered whenever a cloud
+  // server is connected (ours or a self-hosted instance).
+  const onSyncAi = !!cloudStatus?.connected;
 
   const [form, setForm] = useState<AiSettings>({
     ollama_url: "",
