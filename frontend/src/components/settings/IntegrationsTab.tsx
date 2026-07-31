@@ -24,16 +24,17 @@ interface Provider {
   // Always-shown line under the label, e.g. to point at a
   // related settings tab.
   crossRefKey?: string;
-  // Connectable on every plan (GitHub). Others are Pro.
-  free?: boolean;
+  // Stored locally, so it works without a cloud server
+  // (GitHub). Cloud integrations need a connection.
+  local?: boolean;
 }
 
-// GitHub is the one free integration: it stores its token
-// locally and powers the GitHub sidebar + local AI tools.
-// Linear/Slack/Google are Pro and live in the cloud.
+// GitHub stores its token locally and powers the GitHub
+// sidebar + local AI tools. Linear/Slack/Google live in
+// the cloud and connect once a Kaisho server is linked.
 const PROVIDERS: Provider[] = [
   { kind: "github", label: "GitHub", type: "key",
-    free: true, hintKey: "integrations.hint.github" },
+    local: true, hintKey: "integrations.hint.github" },
   { kind: "linear", label: "Linear", type: "key",
     hintKey: "integrations.hint.linear" },
   { kind: "slack", label: "Slack", type: "oauth" },
@@ -48,8 +49,10 @@ const btn =
 export function IntegrationsSection() {
   const { t } = useTranslation("settings");
   const { data: cloudStatus } = useCloudSyncStatus();
-  const plan = cloudStatus?.plan;
-  const isPro = plan === "pro" || plan === "team";
+  // Cloud integrations require a connected Kaisho server
+  // (ours or self-hosted); GitHub is local and always
+  // connectable.
+  const serverConnected = !!cloudStatus?.connected;
 
   const [connected, setConnected] = useState<
     ConnectedIntegration[]
@@ -79,10 +82,10 @@ export function IntegrationsSection() {
   }
 
   useEffect(() => {
-    // Always refresh: GitHub is connectable on every plan
-    // and its connected state comes from the local token.
+    // Always refresh: GitHub is connectable without a
+    // server and its state comes from the local token.
     refresh();
-  }, [isPro]);
+  }, [serverConnected]);
 
   const isConnected = (kind: string) =>
     connected.some((c) => c.kind === kind);
@@ -153,9 +156,9 @@ export function IntegrationsSection() {
       {PROVIDERS.map((p) => {
         const conn = isConnected(p.kind);
         const isBusy = busy === p.kind;
-        // Non-free integrations need Pro; lock the row and
-        // show a Pro note instead of connect controls.
-        const locked = !p.free && !isPro;
+        // Cloud integrations need a connected server; lock
+        // the row and explain instead of showing controls.
+        const locked = !p.local && !serverConnected;
         return (
           <div
             key={p.kind}
@@ -171,7 +174,7 @@ export function IntegrationsSection() {
                 </p>
                 {locked ? (
                   <p className="text-2xs text-fg-muted mt-0.5">
-                    {t("integrations.proOnly.short")}
+                    {t("integrations.needsServer")}
                   </p>
                 ) : conn ? (
                   <p className="text-xs text-green-600 mt-0.5">

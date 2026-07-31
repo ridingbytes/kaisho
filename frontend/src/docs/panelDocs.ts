@@ -324,8 +324,8 @@ model prefixes: \`ollama:\`, \`lm_studio:\`, \`claude:\`,
 \`openrouter:\`, \`openai:\`.
 
 **Kaisho AI** — when enabled in Cloud Sync settings, all jobs
-route through OpenRouter via your Sync + AI subscription. The
-per-job model field is overridden and shows "Kaisho AI".
+route through your connected Kaisho server. The per-job model
+field is overridden and shows "Kaisho AI".
 
 **Output** — set to \`inbox\` to capture output as an inbox item, or
 provide a file path (e.g. \`~/reports/brief-{date}.md\`).
@@ -373,8 +373,8 @@ cron syntax. \`{date}\` in output path is substituted with
 **AI** — configure local AI providers (Ollama, LM Studio) or cloud
 API keys (Claude, OpenRouter, OpenAI). Set default models for the
 Advisor and Cron jobs. When Kaisho AI is enabled in Cloud Sync
-settings, all AI requests route through OpenRouter via your
-subscription and local model settings are not used.
+settings, all AI requests route through your connected Kaisho
+server and local model settings are not used.
 
 **Task States** — ordered list of kanban columns. Configured via CLI
 (\`kai config\`). States marked "done" are hidden from the board by
@@ -416,8 +416,8 @@ and your user profile (name, avatar).
 
 - **Sync Now** triggers an immediate pull/push cycle.
 - **Disconnect** wipes all cloud entries and resets sync.
-- **Sync + AI plan** enables cloud-routed AI for the
-  advisor and cron jobs without a local GPU.
+- **Kaisho AI** routes the advisor and cron jobs through
+  the connected server, so they run without a local GPU.
 
 Tags, task states, and your display name are synced as
 part of the reference snapshot. Changes to your name in
@@ -425,8 +425,10 @@ the PWA profile are pulled back on the next sync cycle.
 GitHub URL fields are only shown in the PWA when GitHub
 is configured in Settings.
 
-Cloud Sync requires a paid plan. Visit kaisho.dev for
-pricing.
+Kaisho is free and open source and works fully standalone.
+Cloud Sync is optional: connect to a Kaisho server (ours
+or your own self-hosted instance) to enable sync and
+hosted AI.
 
 **Import Data** — import org-mode or Markdown files from
 another directory. Import is additive and uses upsert:
@@ -447,8 +449,8 @@ models detected from your configured providers.
 
 **Kaisho AI** — when enabled in Cloud Sync settings, the model
 selector is replaced with a "Kaisho AI" badge. All requests route
-through OpenRouter via your Sync + AI subscription. No local
-model configuration needed.
+through your connected Kaisho server. No local model
+configuration needed.
 
 ## Model prefixes
 

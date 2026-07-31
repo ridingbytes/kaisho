@@ -13,7 +13,6 @@ import {
 } from "../../api/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmPopover } from "../common/ConfirmPopover";
-import { openExternal } from "../../utils/tauri";
 import { inputCls, saveBtnCls } from "./styles";
 
 export function CloudSyncSection(): JSX.Element {
@@ -22,23 +21,6 @@ export function CloudSyncSection(): JSX.Element {
     useCloudSyncStatus();
   const { data: aiUsage } = useAiUsage();
   const qc = useQueryClient();
-
-  function planLabel(plan: string): string {
-    const map: Record<string, string> = {
-      free: t("planFree"),
-      companion: t("planCompanion"),
-      pro: t("planPro"),
-      team: t("planTeam"),
-    };
-    return map[plan] || plan;
-  }
-
-  // Every paid tier includes the AI gateway (Companion
-  // 500k tokens/mo, Pro/Team 2M). Used to gate the AI
-  // usage panels below.
-  const PAID_AI_PLANS = ["companion", "pro", "team"];
-  const planHasAi = (plan?: string | null): boolean =>
-    !!plan && PAID_AI_PLANS.includes(plan);
 
   const DEFAULT_CLOUD_URL = "https://cloud.kaisho.dev";
   const isDev = window.location.hostname === "localhost";
@@ -64,8 +46,7 @@ export function CloudSyncSection(): JSX.Element {
       .then((res) => {
         const auto = res.auto_set_models ?? {};
         const autoSet = Object.keys(auto);
-        const baseMsg =
-          `Connected (plan: ${res.plan || "free"})`;
+        const baseMsg = "Connected";
         if (autoSet.length > 0) {
           setMsg(
             `${baseMsg} — auto-configured ` +
@@ -203,29 +184,6 @@ export function CloudSyncSection(): JSX.Element {
 
   return (
     <section>
-      {!connected && (
-        <div className="mb-5 rounded-lg border border-cta/30 bg-cta/5 overflow-hidden">
-          <div className="px-4 py-3">
-            <p className="text-sm font-semibold text-fg-strong mb-1">
-              {t("unlockCloudSync")}
-            </p>
-            <p className="text-xs text-fg-muted leading-relaxed mb-3">
-              {t("unlockCloudSyncHint")}
-            </p>
-            <button
-              onClick={() =>
-                openExternal(
-                  "https://kaisho.dev/#pricing",
-                )
-              }
-              className="px-4 py-1.5 rounded-lg text-xs font-medium bg-cta text-white hover:bg-cta-hover transition-colors"
-            >
-              {t("viewPlans")}
-            </button>
-          </div>
-        </div>
-      )}
-
       {connected ? (
         <div className="bg-surface-card rounded-lg border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border-subtle">
@@ -237,11 +195,6 @@ export function CloudSyncSection(): JSX.Element {
               <span className="text-xs text-green-400">
                 {t("connected")}
               </span>
-              {status?.plan && (
-                <span className="ml-2 px-2 py-0.5 rounded text-2xs font-semibold bg-surface-raised text-fg-muted border border-border-subtle">
-                  {planLabel(status.plan)}
-                </span>
-              )}
             </div>
             <p className="text-xs text-fg-muted">
               {status?.url}
@@ -292,8 +245,8 @@ export function CloudSyncSection(): JSX.Element {
             </dl>
           </div>
 
-          {/* Kaisho AI info — any paid plan */}
-          {planHasAi(status?.plan) && (
+          {/* Kaisho AI info — available on any connected server */}
+          {connected && (
             <div className="px-4 py-3 border-b border-border-subtle">
               <p className="text-xs font-medium text-fg">
                 {t("useKaishoAi")}
@@ -324,7 +277,7 @@ export function CloudSyncSection(): JSX.Element {
           )}
 
           {/* AI token usage meter */}
-          {planHasAi(status?.plan) && aiUsage && (
+          {connected && aiUsage && (
             <div className="px-4 py-3 border-b border-border-subtle">
               <p className="text-2xs font-semibold uppercase tracking-wider text-fg-muted mb-2">
                 {t("aiUsage")} ({aiUsage.month || "---"})

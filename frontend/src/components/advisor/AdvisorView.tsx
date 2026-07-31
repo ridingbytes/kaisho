@@ -21,7 +21,6 @@ import { Markdown } from "../common/Markdown";
 import { HelpButton } from "../common/HelpButton";
 import { PanelToolbar } from "../common/PanelToolbar";
 import { DOCS } from "../../docs/panelDocs";
-import { openExternal } from "../../utils/tauri";
 
 const QUESTION_TEMPLATE_KEYS = [
   "focusToday",
@@ -493,11 +492,17 @@ export function AdvisorView({ messages, onMessagesChange }: AdvisorViewProps) {
               {t("noAiProviderHint")}
             </p>
             <button
-              onClick={() =>
-                openExternal(
-                  "https://kaisho.dev/#pricing",
-                )
-              }
+              onClick={() => {
+                window.location.hash = "settings";
+                setTimeout(() => {
+                  window.dispatchEvent(
+                    new CustomEvent(
+                      "navigate-settings-tab",
+                      { detail: "ai" },
+                    ),
+                  );
+                }, 50);
+              }}
               className="text-xs text-cta hover:underline"
             >
               {ts("learnKaishoCloud")}
