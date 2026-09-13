@@ -1,7 +1,10 @@
 # Changelog
 
-## Unreleased
+## 2.9.1
 
+- Raise the setuptools floor to 77 for the PEP 639 licence [#254].
+  `license` as an SPDX string and `license-files` need setuptools
+  77; the build-system pin still allowed 68, which rejects both.
 - Stop the SPA fallback serving files from outside the frontend
   directory [#253]. The ASGI server percent-decodes the URL path
   without normalising it, so `..` segments reached the handler
@@ -12,7 +15,6 @@
 - Add the MIT licence the README has always claimed [#252].
   The repo is public and had no LICENSE file, which means all
   rights reserved, not MIT.
-
 - Stop the WebView caching a stale index.html across updates [#251].
   The app is a WebView on a URL that never changes between
   versions, and index.html was served with no Cache-Control, so
