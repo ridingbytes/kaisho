@@ -277,6 +277,29 @@ def _frontend_dist():
     return base / "frontend" / "dist"
 
 
+def _safe_child(root, relative):
+    """Resolve ``relative`` under ``root``, or None if it
+    escapes.
+
+    The path comes off the URL, and the ASGI server hands it
+    over percent-decoded and un-normalised: a request for
+    ``/%2e%2e%2f%2e%2e%2f...`` arrives here as ``../../...``.
+    Joining that onto a directory walks straight out of it,
+    so resolve first and check the result is still inside.
+
+    Symlinks resolve too, which is deliberate: a link inside
+    dist pointing outside it is just as much a way out.
+    """
+    root = root.resolve()
+    try:
+        candidate = (root / relative).resolve()
+    except OSError:
+        return None
+    if candidate != root and root not in candidate.parents:
+        return None
+    return candidate
+
+
 def _mount_frontend(target=None, dist=None):
     """Mount the built frontend when SERVE_FRONTEND=true.
 
@@ -352,8 +375,8 @@ def _mount_frontend(target=None, dist=None):
                 {"detail": "Not Found"},
                 status_code=404,
             )
-        file = dist / path
-        if file.is_file():
+        file = _safe_child(dist, path)
+        if file is not None and file.is_file():
             return FileResponse(
                 file,
                 headers={"cache-control": CACHE_REVALIDATE},
