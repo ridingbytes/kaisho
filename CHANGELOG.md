@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add the MIT licence the README has always claimed [#252].
+  The repo is public and had no LICENSE file, which means all
+  rights reserved, not MIT.
+
 - Stop the WebView caching a stale index.html across updates [#251].
   The app is a WebView on a URL that never changes between
   versions, and index.html was served with no Cache-Control, so
