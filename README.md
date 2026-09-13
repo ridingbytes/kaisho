@@ -299,7 +299,13 @@ kaisho repos.
 
 ## License
 
-MIT. Run the desktop app, the MCP server, and the sync
-layer entirely on your own hardware. The source is on
-GitHub, the data is yours, and the architecture works
-without us.
+MIT, see [LICENSE](./LICENSE).
+Copyright (c) 2026 RIDING BYTES GmbH.
+
+Run the desktop app, the MCP server, and the sync layer
+entirely on your own hardware. The source is on GitHub, the
+data is yours, and the architecture works without us.
+
+The optional server this app can connect to,
+[kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud),
+is AGPL-3.0: run your own, or use ours. Neither is required.
