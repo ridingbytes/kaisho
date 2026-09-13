@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Stop the WebView caching a stale index.html across updates [#251].
+  The app is a WebView on a URL that never changes between
+  versions, and index.html was served with no Cache-Control, so
+  WebKit cached it heuristically. After an update it kept serving
+  the previous build's index.html, which names the previous
+  build's fingerprinted assets, still in the same cache: the whole
+  old frontend rendered against a new backend. Fingerprinted
+  assets are now immutable, index.html is no-store, and names that
+  are stable across builds revalidate.
+
 ## 2.9.0
 
 - Reframe README and cloud docs around free/open-source [#249].

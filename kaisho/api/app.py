@@ -238,15 +238,58 @@ def health():
 
 
 # -- Serve frontend static files in production ----------
-def _mount_frontend():
+
+# Cache policy for the served frontend.
+#
+# The desktop app is a WebView pointed at this server, and
+# the URL never changes between versions. Without an
+# explicit Cache-Control, WebKit falls back to heuristic
+# caching off Last-Modified and may keep serving the old
+# index.html after an update. That index.html references
+# the previous build's fingerprinted assets, which are
+# still in the same cache, so the app renders the whole
+# previous frontend while the backend is already new.
+# That is exactly what happened on the v2.9.0 update.
+#
+# Vite fingerprints everything under /assets, so those
+# files may be cached forever: a new build means new names.
+# index.html carries those names and must never be cached.
+# Anything else in dist (logos, favicon, manifest) keeps
+# its name across builds, so it revalidates instead.
+CACHE_IMMUTABLE = "public, max-age=31536000, immutable"
+CACHE_NEVER = "no-store, must-revalidate"
+CACHE_REVALIDATE = "no-cache"
+
+
+def _frontend_dist():
+    """Locate the built frontend.
+
+    Frozen builds unpack it next to the binary; a source
+    checkout has it at the repo root.
+    """
+    import sys
+    from pathlib import Path
+
+    if getattr(sys, "frozen", False):
+        base = Path(sys._MEIPASS)
+    else:
+        base = Path(__file__).parent.parent.parent
+    return base / "frontend" / "dist"
+
+
+def _mount_frontend(target=None, dist=None):
     """Mount the built frontend when SERVE_FRONTEND=true.
 
     In development Vite proxies API calls, so the backend
     should NOT serve static files. In Docker / production,
     set SERVE_FRONTEND=true to serve the built frontend.
+
+    :param target: app to mount on. Defaults to the module
+        app; tests pass their own.
+    :param dist: built frontend directory. Defaults to
+        ``_frontend_dist()``; tests pass a fixture tree.
     """
     import os
-    from pathlib import Path
 
     serve = os.environ.get(
         "SERVE_FRONTEND", "",
@@ -257,23 +300,34 @@ def _mount_frontend():
     from fastapi.staticfiles import StaticFiles
     from starlette.responses import FileResponse
 
-    import sys
-    if getattr(sys, "frozen", False):
-        base = Path(sys._MEIPASS)
-    else:
-        base = Path(__file__).parent.parent.parent
-    dist = base / "frontend" / "dist"
+    app = target if target is not None else globals()["app"]
+    dist = dist if dist is not None else _frontend_dist()
     if not dist.is_dir():
         return
 
-    # Serve static assets (JS, CSS, images)
+    class _FingerprintedStatic(StaticFiles):
+        """StaticFiles for Vite's fingerprinted output.
+
+        Every name under /assets contains a content hash,
+        so a file at a given name never changes and may be
+        cached indefinitely. A new build produces new
+        names, which index.html points at.
+        """
+
+        def file_response(self, *args, **kwargs):
+            response = super().file_response(*args, **kwargs)
+            response.headers["cache-control"] = CACHE_IMMUTABLE
+            return response
+
     app.mount(
         "/assets",
-        StaticFiles(directory=dist / "assets"),
+        _FingerprintedStatic(directory=dist / "assets"),
         name="static-assets",
     )
 
-    # Serve logo/wordmark SVGs from dist root
+    # Serve logo/wordmark SVGs from dist root. These names
+    # are stable across builds, so they revalidate against
+    # the ETag rather than being cached blind.
     for name in (
         "kaisho-logo.svg",
         "kaisho-logo-light.svg",
@@ -284,7 +338,10 @@ def _mount_frontend():
         if logo.exists():
             @app.get(f"/{name}")
             def _logo(p=logo):
-                return FileResponse(p)
+                return FileResponse(
+                    p,
+                    headers={"cache-control": CACHE_REVALIDATE},
+                )
 
     # SPA fallback: serve index.html for all non-API paths
     @app.get("/{path:path}")
@@ -297,8 +354,18 @@ def _mount_frontend():
             )
         file = dist / path
         if file.is_file():
-            return FileResponse(file)
-        return FileResponse(dist / "index.html")
+            return FileResponse(
+                file,
+                headers={"cache-control": CACHE_REVALIDATE},
+            )
+        # index.html names the fingerprinted assets, so a
+        # stale copy pins the whole frontend to the build
+        # it came from. It is small and local; never cache
+        # it.
+        return FileResponse(
+            dist / "index.html",
+            headers={"cache-control": CACHE_NEVER},
+        )
 
 
 _mount_frontend()
