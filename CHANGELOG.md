@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.9.0
 
 - Reframe README and cloud docs around free/open-source [#249].
   The optional cloud is described as a self-hostable (or
