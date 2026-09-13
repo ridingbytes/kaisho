@@ -97,7 +97,7 @@ async def lifespan(app: FastAPI):
     # One-shot migration of legacy ``{date}`` /
     # ``{fetch_results}`` placeholders in the profile's
     # prompt files to the new ``${...}`` syntax.
-    # Idempotent — running twice does nothing.
+    # Idempotent: running twice does nothing.
     from ..services.placeholders_migration import (
         migrate_profile_prompts,
     )
@@ -249,7 +249,9 @@ def health():
 # the previous build's fingerprinted assets, which are
 # still in the same cache, so the app renders the whole
 # previous frontend while the backend is already new.
-# That is exactly what happened on the v2.9.0 update.
+# That is exactly what the 2.9.0 update looked like:
+# the app reported 2.9.0 while rendering the 2.8.3
+# frontend out of the cache.
 #
 # Vite fingerprints everything under /assets, so those
 # files may be cached forever: a new build means new names.

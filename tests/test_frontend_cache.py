@@ -7,7 +7,8 @@ Last-Modified and keeps serving the previous build's
 index.html after an update. That file names the previous
 build's fingerprinted assets, which are still in the same
 cache, so the app renders the entire old frontend against a
-new backend. v2.9.0 shipped that way.
+new backend. Updating to 2.9.0 looked exactly like this:
+the chip read 2.9.0, the page was still 2.8.3.
 
 These tests pin the policy: fingerprinted assets immutable,
 index.html never stored, stable names revalidated.
