@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Stop the SPA fallback serving files from outside the frontend
+  directory [#253]. The ASGI server percent-decodes the URL path
+  without normalising it, so `..` segments reached the handler
+  intact and were joined onto the build directory: a request with
+  enough of them read any file the process could. Paths are now
+  resolved and checked against the build directory before being
+  served.
 - Add the MIT licence the README has always claimed [#252].
   The repo is public and had no LICENSE file, which means all
   rights reserved, not MIT.

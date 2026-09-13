@@ -112,6 +112,46 @@ def test_other_dist_files_revalidate(client):
     assert "no-cache" in response.headers["cache-control"]
 
 
+@pytest.mark.parametrize("depth", [2, 4, 6, 8, 12])
+def test_traversal_cannot_escape_dist(client, depth):
+    """The ASGI server percent-decodes but does not
+    normalise, so ../ arrives intact at the handler. Joining
+    it onto dist walks out of the tree; enough of them reach
+    the filesystem root and then anywhere. /etc/passwd exists
+    on every machine this runs on, so it is the probe."""
+    attack = "/" + "%2e%2e%2f" * depth + "etc/passwd"
+    response = client.get(attack)
+    assert "root:" not in response.text
+    assert response.text.lstrip().startswith("<!doctype")
+
+
+def test_traversal_one_level_up(client, dist, tmp_path):
+    """The deterministic version of the check above.
+
+    dist is tmp_path/"dist", so this file sits exactly one
+    level above it and a single ../ reaches it regardless of
+    where pytest put tmp_path. The /etc/passwd probes depend
+    on the tree being deep enough to walk out of; this one
+    cannot miss."""
+    secret = tmp_path / "outside.txt"
+    secret.write_text("do-not-serve", encoding="utf-8")
+    assert secret.parent == dist.parent
+
+    response = client.get("/%2e%2e%2f" + secret.name)
+    assert "do-not-serve" not in response.text
+    assert response.text.lstrip().startswith("<!doctype")
+
+
+def test_legitimate_nested_file_still_served(client, dist):
+    """The guard must not break ordinary nested paths."""
+    nested = dist / "sub"
+    nested.mkdir()
+    (nested / "thing.txt").write_text("hello", encoding="utf-8")
+    response = client.get("/sub/thing.txt")
+    assert response.status_code == 200
+    assert response.text == "hello"
+
+
 def test_api_paths_are_not_swallowed(client):
     """The catch-all must not answer for /api."""
     response = client.get("/api/does-not-exist")
