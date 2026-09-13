@@ -1,5 +1,8 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+# setuptools 77 is the floor for PEP 639: the SPDX
+# `license` string and `license-files` below are
+# rejected outright by 68-76.
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
