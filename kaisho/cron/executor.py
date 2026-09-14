@@ -244,6 +244,27 @@ def write_output(
 
 MAX_TOOL_ITERATIONS = 30
 
+# What a job writes when it uses up its tool budget without
+# producing an answer.
+#
+# The three provider loops each fell out of the bottom with
+# something that is not an answer: the Claude path returned
+# the text attached to the last tool_use block, usually
+# nothing, and the Ollama and OpenAI paths returned
+# messages[-1], which at that point is a tool result. Either
+# way write_output puts it in the inbox under the job's
+# name, so the user finds a "Morning Briefing" that is blank
+# or is raw JSON, with nothing to say why.
+#
+# Nobody is watching a cron run, so the message has to carry
+# the diagnosis on its own.
+TOOL_LIMIT_OUTPUT = (
+    "This job used all {limit} of its tool calls without "
+    "reaching an answer. That usually means the prompt asks "
+    "for more lookups than one run can make; try narrowing "
+    "it or splitting it into two jobs."
+).format(limit=MAX_TOOL_ITERATIONS)
+
 
 def _execute_tool_calls(
     tool_calls: list[dict], include_id: bool = True,
@@ -355,7 +376,7 @@ def run_prompt_claude(
         messages.append({
             "role": "user", "content": tool_results,
         })
-    return _extract_claude_text(resp.content)
+    return TOOL_LIMIT_OUTPUT
 
 
 # ---------------------------------------------------------------------------
@@ -412,7 +433,7 @@ def run_prompt_ollama(
                 tool_calls, include_id=False,
             )
         )
-    return messages[-1].get("content", "")
+    return TOOL_LIMIT_OUTPUT
 
 
 # ---------------------------------------------------------------------------
@@ -462,7 +483,7 @@ def run_prompt_openai_compatible(
                 tool_calls, include_id=True,
             )
         )
-    return messages[-1].get("content", "")
+    return TOOL_LIMIT_OUTPUT
 
 
 # ---------------------------------------------------------------------------
