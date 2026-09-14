@@ -24,7 +24,7 @@ interface Props {
  *       checked={enabled}
  *       onChange={setEnabled}
  *       label={t("externalEditorEnable")}
- *       description={t("externalEditorEnableHint")}
+ *       description={t("externalEditorHelp")}
  *     />
  */
 export function ToggleField({

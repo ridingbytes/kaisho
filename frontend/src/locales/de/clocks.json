@@ -72,5 +72,6 @@
   "bulkUnmarkInvoiced": "Abgerechnet aufheben",
   "bulkSetCustomer": "Kunde setzen",
   "bulkSetContract": "Vertrag setzen",
-  "bulkContractMixedCustomers": "Zeilen eines einzelnen Kunden auswählen, um einen Vertrag zu setzen"
+  "bulkContractMixedCustomers": "Zeilen eines einzelnen Kunden auswählen, um einen Vertrag zu setzen",
+  "capture": "Erfassen"
 }

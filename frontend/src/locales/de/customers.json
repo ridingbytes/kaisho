@@ -51,5 +51,6 @@
   "files": "Dateien",
   "editCustomer": "Kunde bearbeiten",
   "addNotePlaceholder": "Neue Notiz…",
-  "knowledge": "WB"
+  "knowledge": "WB",
+  "editContract": "Vertrag bearbeiten"
 }

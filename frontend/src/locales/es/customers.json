@@ -51,5 +51,6 @@
   "files": "Archivos",
   "editCustomer": "Editar cliente",
   "addNotePlaceholder": "Nueva nota…",
-  "knowledge": "BC"
+  "knowledge": "BC",
+  "editContract": "Editar contrato"
 }

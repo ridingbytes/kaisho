@@ -72,5 +72,6 @@
   "bulkUnmarkInvoiced": "Снять отметку выставленного",
   "bulkSetCustomer": "Задать клиента",
   "bulkSetContract": "Задать договор",
-  "bulkContractMixedCustomers": "Выберите строки одного клиента, чтобы задать договор"
+  "bulkContractMixedCustomers": "Выберите строки одного клиента, чтобы задать договор",
+  "capture": "Записать"
 }

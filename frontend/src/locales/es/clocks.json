@@ -72,5 +72,6 @@
   "bulkUnmarkInvoiced": "Desmarcar facturado",
   "bulkSetCustomer": "Asignar cliente",
   "bulkSetContract": "Asignar contrato",
-  "bulkContractMixedCustomers": "Selecciona filas de un solo cliente para asignar un contrato"
+  "bulkContractMixedCustomers": "Selecciona filas de un solo cliente para asignar un contrato",
+  "capture": "Capturar"
 }

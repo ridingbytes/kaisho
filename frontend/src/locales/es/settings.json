@@ -374,5 +374,6 @@
   "automations.editEvents": "Editar eventos",
   "automations.edit": "Editar",
   "automations.saved": "Guardado",
-  "automations.secretKeep": "Deja en blanco para mantener el secreto actual"
+  "automations.secretKeep": "Deja en blanco para mantener el secreto actual",
+  "language": "Idioma"
 }

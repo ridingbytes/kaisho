@@ -78,5 +78,6 @@
   "startTime": "Startzeit",
   "addMilestone": "Meilenstein hinzufügen",
   "editMilestone": "Meilenstein bearbeiten",
-  "pickColor": "Farbe wählen"
+  "pickColor": "Farbe wählen",
+  "taskLabel": "Aufgabe"
 }

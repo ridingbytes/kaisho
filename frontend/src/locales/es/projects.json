@@ -78,5 +78,6 @@
   "startTime": "Hora de inicio",
   "addMilestone": "Añadir hito",
   "editMilestone": "Editar hito",
-  "pickColor": "Elegir color"
+  "pickColor": "Elegir color",
+  "taskLabel": "Tarea"
 }
