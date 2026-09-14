@@ -78,5 +78,6 @@
   "startTime": "Время начала",
   "addMilestone": "Добавить веху",
   "editMilestone": "Изменить веху",
-  "pickColor": "Выбрать цвет"
+  "pickColor": "Выбрать цвет",
+  "taskLabel": "Задача"
 }

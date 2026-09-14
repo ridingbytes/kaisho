@@ -51,5 +51,6 @@
   "files": "Файлы",
   "editCustomer": "Изменить клиента",
   "addNotePlaceholder": "Новая заметка…",
-  "knowledge": "БЗ"
+  "knowledge": "БЗ",
+  "editContract": "Изменить договор"
 }

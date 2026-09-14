@@ -78,5 +78,6 @@
   "startTime": "Start time",
   "addMilestone": "Add milestone",
   "editMilestone": "Edit milestone",
-  "pickColor": "Pick color"
+  "pickColor": "Pick color",
+  "taskLabel": "Task"
 }

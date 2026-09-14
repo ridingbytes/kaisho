@@ -72,5 +72,6 @@
   "bulkUnmarkInvoiced": "Unmark invoiced",
   "bulkSetCustomer": "Set customer",
   "bulkSetContract": "Set contract",
-  "bulkContractMixedCustomers": "Select rows from a single customer to set a contract"
+  "bulkContractMixedCustomers": "Select rows from a single customer to set a contract",
+  "capture": "Capture"
 }

@@ -762,7 +762,7 @@ function TraySection() {
           + "tracking-wider text-fg-muted mb-3"
         }
       >
-        {t("tray") || "System Tray"}
+        {t("tray")}
       </h3>
       <label className="flex items-center justify-between cursor-pointer">
         <div>
@@ -826,7 +826,7 @@ function LanguageSection() {
           "tracking-wider text-fg-muted mb-3"
         }
       >
-        {t("language") || "Language"}
+        {t("language")}
       </h3>
       <select
         value={lang}

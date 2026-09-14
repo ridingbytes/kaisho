@@ -51,5 +51,6 @@
   "files": "Files",
   "editCustomer": "Edit customer",
   "addNotePlaceholder": "New note…",
-  "knowledge": "KB"
+  "knowledge": "KB",
+  "editContract": "Edit contract"
 }
