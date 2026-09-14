@@ -1,8 +1,8 @@
 """Mirror local cron jobs to the hosted cloud cron worker.
 
 When a job is flagged ``cloud: true`` the desktop pushes its
-spec to ``POST /cloud/jobs`` (Companion+) so it runs
-server-side even when the laptop is closed. Everything here
+spec to ``POST /cloud/jobs`` so it runs server-side even when
+the laptop is closed. Everything here
 is best-effort: a cloud failure logs a warning and never
 blocks the local job mutation (local-first).
 

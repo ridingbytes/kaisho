@@ -77,14 +77,14 @@ and your mind.
 - **Docker-ready.** Single-container deployment for
   self-hosting.
 
-### Optional cloud (self-host or hosted)
+### Optional cloud (self-hosted)
 
 Everything above is free and works fully standalone. When you
 want cross-device convenience, connect Kaisho to a
 [kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud)
-server. It is open source too, so you can run your own on plain
-PostgreSQL, or point at a Kaisho-hosted instance if you'd rather
-not operate a server. Same features either way:
+server. You run it: there is no Kaisho-hosted option, which is
+why that server is open source and documented for
+self-hosting. What connecting gets you:
 
 - **Cross-device sync + mobile PWA** for clock tracking,
   inbox, projects, and the advisor on the go.
@@ -94,7 +94,7 @@ not operate a server. Same features either way:
   Claude Code / Cursor when your laptop is closed.
 - **Scheduled AI runs** on the server, firing even when
   you're offline.
-- **Premium integrations** the advisor can read and act on:
+- **Workspace integrations** the advisor can read and act on:
   Google Calendar, Slack, Linear, GitHub Projects. Credentials
   are stored encrypted server-side.
 
@@ -286,9 +286,8 @@ kaisho repos.
 
 - **[kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud)**
   -- the open-source, self-hostable sync + AI server: cloud
-  sync, hosted AI + MCP gateway, cron worker, premium
-  integrations, mobile PWA. Run your own on PostgreSQL, or use
-  a Kaisho-hosted instance.
+  sync, hosted AI + MCP gateway, cron worker, workspace
+  integrations, mobile PWA. Runs on plain PostgreSQL.
 - **[kaisho-mode](https://github.com/ridingbytes/kaisho-mode)**
   -- Emacs Lisp client. Connects to a running local Kaisho
   for tasks, clocks and the advisor under `SPC n k`.
