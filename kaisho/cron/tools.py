@@ -5,12 +5,16 @@ Tool definitions live in ``tool_defs.py``.
 ``execute_tool(name, args)`` dispatches a tool call to the backend.
 """
 import json
+import logging
 import re
+import urllib.request
 from pathlib import Path
 from typing import Any
 
 from . import guards
 from .tool_defs import TOOL_DEFS
+
+log = logging.getLogger(__name__)
 
 # Slug pattern for cron job ids and any user-supplied
 # string that ends up in a filesystem path. Lowercase
@@ -1039,6 +1043,60 @@ def _is_domain_allowed(domain: str) -> bool:
     return domain in get_url_allowlist(data)
 
 
+class _AllowlistRedirectHandler(
+    urllib.request.HTTPRedirectHandler
+):
+    """Re-check the allowlist at every hop.
+
+    ``urlopen`` follows redirects, so checking the domain
+    of the URL we were given says nothing about the domain
+    we end up reading. An allowed host that answers 302
+    with a ``Location`` of its choosing could hand us
+    anything the machine can reach: another service on
+    localhost, a box on the LAN, a cloud metadata endpoint.
+    Whatever comes back is then fed to the model and
+    written into the user's inbox.
+
+    Refusing is ``redirect_request`` returning ``None``,
+    which urllib turns into an HTTPError the caller already
+    handles.
+    """
+
+    def redirect_request(
+        self, req, fp, code, msg, headers, newurl,
+    ):
+        if not newurl.startswith(("http://", "https://")):
+            log.warning(
+                "refusing redirect to non-http scheme: %s",
+                newurl,
+            )
+            return None
+        domain = _extract_domain(newurl)
+        if not _is_domain_allowed(domain):
+            log.warning(
+                "refusing redirect to %s: not in the URL "
+                "allowlist", domain or "(no host)",
+            )
+            return None
+        return super().redirect_request(
+            req, fp, code, msg, headers, newurl,
+        )
+
+
+def _open_allowlisted(req, timeout: int):
+    """``urlopen`` that keeps checking the allowlist.
+
+    Every fetch of a URL the model or a cron prompt chose
+    goes through here. Building an opener per call is
+    cheap next to the request itself, and it keeps the
+    handler from picking up process-wide state.
+    """
+    opener = urllib.request.build_opener(
+        _AllowlistRedirectHandler
+    )
+    return opener.open(req, timeout=timeout)
+
+
 def _rewrite_pypi_url(url: str) -> str | None:
     """Rewrite PyPI project URLs to use the JSON API.
 
@@ -1060,12 +1118,11 @@ def _rewrite_pypi_url(url: str) -> str | None:
 
 def _fetch_pypi(url: str) -> dict:
     """Fetch package info via the PyPI JSON API."""
-    import urllib.request
     req = urllib.request.Request(url, headers={
         "User-Agent": "kaisho/1.0",
         "Accept": "application/json",
     })
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    with _open_allowlisted(req, timeout=30) as resp:
         import json as _json
         data = _json.loads(resp.read())
     info = data.get("info", {})
@@ -1081,7 +1138,6 @@ def _fetch_pypi(url: str) -> dict:
 
 def _fetch_url(url: str, accept: str = "") -> dict:
     """Fetch a URL (must be in allowlist, truncated to 50k)."""
-    import urllib.request
     if not url.startswith(("http://", "https://")):
         return {"error": "only http/https URLs are supported"}
 
@@ -1108,7 +1164,7 @@ def _fetch_url(url: str, accept: str = "") -> dict:
         headers["Accept"] = accept
     req = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with _open_allowlisted(req, timeout=30) as resp:
             raw = resp.read(50_000)
             charset = (
                 resp.headers.get_content_charset() or "utf-8"
