@@ -37,14 +37,41 @@ const SIDECAR_PORT: &str = "8767";
 fn kill_stale() {
     #[cfg(unix)]
     {
+        // -sTCP:LISTEN, not a bare -i. `lsof -i :8765`
+        // matches any socket with that port on either end,
+        // so it lists the server *and* everything connected
+        // to it. Measured: with one listener and one client
+        // on a port, `lsof -ti :PORT` returns both PIDs and
+        // `lsof -ti :PORT -sTCP:LISTEN` returns only the
+        // listener.
+        //
+        // Without the filter this kills whatever is talking
+        // to the sidecar, and the busiest such client is the
+        // webview of a kaisho-desktop that is still running:
+        // an auto-update restart or a second launch would
+        // take out the instance already on screen.
+        //
+        // The Windows branch below already guards against
+        // exactly this -- read its comment -- and says why.
+        // The fix never reached here.
         if let Ok(out) = crate::proc::configured(
             "lsof", "kill_stale.lsof",
         )
-            .args(["-ti", &format!(":{}", SIDECAR_PORT)])
+            .args([
+                "-ti",
+                &format!(":{}", SIDECAR_PORT),
+                "-sTCP:LISTEN",
+            ])
             .output()
         {
             let pids = String::from_utf8_lossy(&out.stdout);
+            let own = std::process::id().to_string();
             for pid in pids.split_whitespace() {
+                // Belt and braces: a listener that is this
+                // very process is not stale.
+                if pid.trim() == own {
+                    continue;
+                }
                 eprintln!(
                     "[kai] killing stale process {}",
                     pid,
