@@ -75,12 +75,12 @@ The advisor has access to 40 tools covering every domain:
 | Research | web search, fetch URLs, YouTube transcripts |
 | System | list profiles, create backups, time insights |
 
-## Premium Integrations (Pro)
+## Workspace Integrations
 
-When you connect a premium integration in **Settings >
-Integrations** (a Pro feature), its tools are added to the
-advisor automatically, so you can ask things like "what's on
-my calendar tomorrow?" or "post a summary to #standup":
+When you connect an integration in **Settings >
+Integrations**, its tools are added to the advisor
+automatically, so you can ask things like "what's on my
+calendar tomorrow?" or "post a summary to #standup":
 
 | Integration | Tools |
 |-------------|-------|
@@ -89,10 +89,9 @@ my calendar tomorrow?" or "post a summary to #standup":
 | Linear | list teams, list/get/create issues |
 | GitHub Projects | list projects, list items, create draft |
 
-The credentials live in Kaisho Cloud and the calls run
-server-side, so the advisor never sees your tokens. Only the
-integrations you have actually connected appear; nothing is
-offered on the free tier.
+The credentials live on your kaisho-cloud server and the
+calls run server-side, so the advisor never sees your tokens.
+Only the integrations you have actually connected appear.
 
 ## Model Selection
 

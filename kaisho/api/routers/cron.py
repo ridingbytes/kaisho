@@ -64,8 +64,8 @@ class JobCreate(BaseModel):
     output: str = "inbox"
     timeout: int = 600
     enabled: bool = True
-    # Mirror this job to the hosted cloud cron worker so it
-    # runs even when the laptop is closed (Companion+).
+    # Mirror this job to the cloud cron worker so it runs
+    # even when the laptop is closed.
     cloud: bool = False
 
 

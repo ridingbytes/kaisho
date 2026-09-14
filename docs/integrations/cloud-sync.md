@@ -4,12 +4,13 @@ Cloud sync keeps your data in step between the desktop app and the
 mobile PWA, using a Kaisho server as the synchronization relay.
 
 The server is [kaisho-cloud](https://github.com/ridingbytes/kaisho-cloud),
-which is open source. Run your own on plain PostgreSQL, or point at a
-Kaisho-hosted instance. There are no plans or tiers: once you connect a
-server, cloud sync, the mobile PWA, the hosted AI gateway, and the
-workspace integrations (Linear, Slack, Google Calendar, GitHub Projects)
-are all available. Kaisho is free and works fully standalone; the cloud
-is optional.
+which is open source. You run it: there is no Kaisho-hosted option, and
+that is why the server is open source and documented for self-hosting.
+
+There are no plans or tiers. Once you connect a server, cloud sync, the
+mobile PWA, the hosted AI gateway, and the workspace integrations
+(Linear, Slack, Google Calendar, GitHub Projects) are all available.
+Kaisho is free and works fully standalone; the cloud is optional.
 
 ## Connecting
 

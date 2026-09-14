@@ -18,11 +18,11 @@ The integration now lists project boards alongside issues and PRs.
       the `kai gh` commands, and
     - the AI advisor's GitHub tools.
 
-    The token is stored **locally**. On **Pro**, the same token is
-    additionally stored encrypted in Kaisho Cloud so the hosted MCP
-    gateway and the server-side advisor can reach GitHub when the
-    desktop is closed (see [MCP Server](mcp.md)). On the free tier it
-    stays strictly local.
+    The token is stored **locally**. Connect the integration on a
+    kaisho-cloud server and the same token is additionally stored
+    encrypted there, so the hosted MCP gateway and the server-side
+    advisor can reach GitHub when the desktop is closed (see
+    [MCP Server](mcp.md)). Without a server it stays strictly local.
 
     View options (hide the sidebar entry, GitHub Enterprise API URL)
     live under the connected GitHub row in **Settings → Integrations**.
