@@ -73,8 +73,17 @@ class CloudWsClient:
         delay = _MIN_DELAY
         while not self._stop.is_set():
             try:
-                self._connect()
-                delay = _MIN_DELAY
+                # Only a session the server confirmed earns
+                # the reset. _connect returning is not that:
+                # an API key the server rejects gets a clean
+                # TCP connection, a clean send, and an
+                # immediate close, so this used to reset the
+                # delay on every rejection and retry every
+                # two seconds forever. Measured against a
+                # server that always refuses: 6 attempts in
+                # 12 seconds, the gaps never growing.
+                if self._connect():
+                    delay = _MIN_DELAY
             except (OSError, ValueError) as exc:
                 log.warning("Cloud WS error: %s", exc)
             except Exception:  # noqa: BLE001
@@ -86,12 +95,17 @@ class CloudWsClient:
                 break
             delay = min(delay * 2, _MAX_DELAY)
 
-    def _connect(self) -> None:
+    def _connect(self) -> bool:
         """Single WebSocket connection session.
 
         Authenticates via a first-message auth handshake
         instead of passing the API key in the query
         string (which leaks into proxy/server logs).
+
+        :returns: True if the server confirmed the session.
+            A rejected key looks exactly like a successful
+            connect up to the point the server hangs up, so
+            the caller needs to be told which happened.
         """
         try:
             import websocket
@@ -101,7 +115,7 @@ class CloudWsClient:
                 "cloud WS disabled",
             )
             self._stop.set()
-            return
+            return False
 
         ws_url = self._url.replace(
             "https://", "wss://",
@@ -120,19 +134,22 @@ class CloudWsClient:
                 "type": "auth",
                 "api_key": self._api_key,
             }))
-            log.info("Cloud WS connected")
-            self._receive_loop(ws)
+            return self._receive_loop(ws)
         finally:
             try:
                 ws.close()
             except OSError:
                 pass
-            log.info("Cloud WS disconnected")
 
-    def _receive_loop(self, ws) -> None:
-        """Process messages until disconnect."""
+    def _receive_loop(self, ws) -> bool:
+        """Process messages until disconnect.
+
+        :returns: True if the server ever confirmed the
+            session with its ``connected`` event.
+        """
         import websocket as ws_module
 
+        confirmed = False
         while not self._stop.is_set():
             try:
                 raw = ws.recv()
@@ -160,6 +177,9 @@ class CloudWsClient:
 
             event = msg.get("event", "")
             data = msg.get("data", {})
+            if event == "connected" and not confirmed:
+                confirmed = True
+                log.info("Cloud WS connected")
             try:
                 self._on_event(event, data)
             except Exception:  # noqa: BLE001
@@ -167,6 +187,9 @@ class CloudWsClient:
                     "Event handler error for %s",
                     event,
                 )
+        if confirmed:
+            log.info("Cloud WS disconnected")
+        return confirmed
 
 
 _client: CloudWsClient | None = None
