@@ -1459,6 +1459,32 @@ def push_local_entry(
     return pushed
 
 
+# Pull pages are driven entirely by what the server says:
+# keep going while ``has_more``, resume from ``cursor``. Two
+# things have to be true for that to terminate, and only one
+# of them is ours to check.
+#
+# A server that reports more pages without advancing the
+# cursor turns the loop into an unbounded request flood. Ours
+# does not, but the whole point of this client is that it
+# talks to whatever server the user runs, and a stale proxy
+# or an older deployment is enough. Measured against a stub
+# that always answers ``has_more`` with the same cursor: 11990
+# requests in five seconds and still going.
+#
+# So a page only continues the loop when the cursor actually
+# moved, and there is a ceiling on top of that. 500 pages is
+# 100k rows at the server's cap, far past any real account, so
+# reaching it means something is wrong rather than that
+# someone has a lot of history.
+MAX_PULL_PAGES = 500
+
+
+def _cursor_advanced(new: str, old: str) -> bool:
+    """True when a page moved the cursor forward."""
+    return bool(new) and new != old
+
+
 def pull_and_apply(
     backend, cloud_url: str, api_key: str, since: str,
 ) -> tuple[str, int, int]:
@@ -1476,7 +1502,7 @@ def pull_and_apply(
     total_up = 0
     total_del = 0
     all_ids: list[str] = []
-    while True:
+    for _ in range(MAX_PULL_PAGES):
         resp = pull_changes(cloud_url, api_key, cursor)
         entries = resp.get("entries", [])
         if entries:
@@ -1486,9 +1512,18 @@ def pull_and_apply(
             total_up += up
             total_del += dl
             all_ids.extend(ids)
-        cursor = resp.get("cursor", cursor)
+        new_cursor = resp.get("cursor", cursor)
         if not resp.get("has_more"):
+            cursor = new_cursor
             break
+        if not _cursor_advanced(new_cursor, cursor):
+            log.warning(
+                "cloud reported more pages without "
+                "advancing the cursor (%s); stopping",
+                cursor,
+            )
+            break
+        cursor = new_cursor
     # Ack so the mobile UI shows a synced indicator.
     # Best-effort — if it fails the next cycle retries.
     if all_ids:
@@ -1575,7 +1610,7 @@ def pull_and_apply_inbox(
     all_sync_ids: set[str] = set()
     by_sync: dict | None = None
 
-    while True:
+    for _ in range(MAX_PULL_PAGES):
         new_cursor, entries, has_more = (
             pull_inbox_changes(cloud_url, api_key, cursor)
         )
@@ -1645,9 +1680,17 @@ def pull_and_apply_inbox(
         except CloudUnavailable:
             pass
 
-        cursor = new_cursor
         if not has_more:
+            cursor = new_cursor
             break
+        if not _cursor_advanced(new_cursor, cursor):
+            log.warning(
+                "cloud reported more pages without "
+                "advancing the cursor (%s); stopping",
+                cursor,
+            )
+            break
+        cursor = new_cursor
 
     return cursor, total_up, total_del, all_sync_ids
 
@@ -1734,7 +1777,7 @@ def pull_and_apply_tasks(
     all_sync_ids: set[str] = set()
     by_sync: dict | None = None
 
-    while True:
+    for _ in range(MAX_PULL_PAGES):
         new_cursor, entries, has_more = (
             pull_task_changes(cloud_url, api_key, cursor)
         )
@@ -1775,9 +1818,17 @@ def pull_and_apply_tasks(
             )
         except CloudUnavailable:
             pass
-        cursor = new_cursor
         if not has_more:
+            cursor = new_cursor
             break
+        if not _cursor_advanced(new_cursor, cursor):
+            log.warning(
+                "cloud reported more pages without "
+                "advancing the cursor (%s); stopping",
+                cursor,
+            )
+            break
+        cursor = new_cursor
 
     return cursor, total_up, total_del, all_sync_ids
 
@@ -1969,7 +2020,7 @@ def pull_and_apply_notes(
     all_sync_ids: set[str] = set()
     by_sync: dict | None = None
 
-    while True:
+    for _ in range(MAX_PULL_PAGES):
         new_cursor, entries, has_more = (
             pull_note_changes(cloud_url, api_key, cursor)
         )
@@ -2042,9 +2093,17 @@ def pull_and_apply_notes(
             )
         except CloudUnavailable:
             pass
-        cursor = new_cursor
         if not has_more:
+            cursor = new_cursor
             break
+        if not _cursor_advanced(new_cursor, cursor):
+            log.warning(
+                "cloud reported more pages without "
+                "advancing the cursor (%s); stopping",
+                cursor,
+            )
+            break
+        cursor = new_cursor
 
     return cursor, total_up, total_del, all_sync_ids
 
@@ -2136,7 +2195,7 @@ def pull_and_apply_projects(
     all_ids: set[str] = set()
     by_id: dict | None = None
 
-    while True:
+    for _ in range(MAX_PULL_PAGES):
         new_cursor, entries, has_more = (
             pull_project_changes(cloud_url, api_key, cursor)
         )
@@ -2163,9 +2222,17 @@ def pull_and_apply_projects(
             )
         except CloudUnavailable:
             pass
-        cursor = new_cursor
         if not has_more:
+            cursor = new_cursor
             break
+        if not _cursor_advanced(new_cursor, cursor):
+            log.warning(
+                "cloud reported more pages without "
+                "advancing the cursor (%s); stopping",
+                cursor,
+            )
+            break
+        cursor = new_cursor
 
     return cursor, total_up, total_del, all_ids
 
