@@ -675,11 +675,14 @@ def write_kb_markdown(
         f"# {title}\n\n{body}\n" if body else f"# {title}\n"
     )
     rel_dir = Path(subdir.strip("/")) if subdir else Path()
-    target_dir = (kb_dir / rel_dir).resolve()
-    if not str(target_dir).startswith(
-        str(kb_dir.resolve())
-    ):
-        raise ValueError("subdir escapes KB source root")
+    # _safe_path, not a startswith: a sibling directory
+    # whose name begins with the KB directory's name has
+    # the same string prefix. With a KB at .../kb, a subdir
+    # of ../kb-private resolved to .../kb-private and the
+    # comparison passed. _safe_path uses relative_to, which
+    # compares path components, and its own docstring names
+    # this bypass.
+    target_dir = _safe_path(kb_dir, str(rel_dir))
     target_dir.mkdir(parents=True, exist_ok=True)
     dest = target_dir / filename
     dest.write_text(content, encoding="utf-8")

@@ -11,6 +11,7 @@ from kaisho.services.knowledge import (
     read_file,
     search,
     update_metadata,
+    write_kb_markdown,
 )
 
 
@@ -223,6 +224,48 @@ def test_update_metadata_rejects_path_traversal(tmp_path):
         update_metadata(
             sources, profile, "../secret.md", {"title": "x"},
         )
+
+
+def test_write_kb_rejects_a_sibling_with_the_same_prefix(
+    tmp_path,
+):
+    """The guard used to be a string prefix comparison.
+
+    A sibling directory whose name begins with the KB
+    directory's name has the same prefix, so ``../kb-private``
+    resolved outside the KB and the check passed.
+    """
+    kb = tmp_path / "kb"
+    kb.mkdir()
+    (tmp_path / "kb-private").mkdir()
+
+    with pytest.raises(ValueError):
+        write_kb_markdown(
+            kb, "leak.md", "T", "B", subdir="../kb-private",
+        )
+    assert not (tmp_path / "kb-private" / "leak.md").exists()
+
+
+def test_write_kb_rejects_plain_traversal(tmp_path):
+    kb = tmp_path / "kb"
+    kb.mkdir()
+    with pytest.raises(ValueError):
+        write_kb_markdown(
+            kb, "x.md", "T", "B", subdir="../../..",
+        )
+
+
+def test_write_kb_still_writes_a_real_subdir(tmp_path):
+    kb = tmp_path / "kb"
+    kb.mkdir()
+    dest, rel = write_kb_markdown(
+        kb, "note.md", "Titel", "Inhalt", subdir="projekte",
+    )
+    assert dest == kb / "projekte" / "note.md"
+    assert rel == "projekte/note.md"
+    assert dest.read_text(encoding="utf-8").startswith(
+        "# Titel"
+    )
 
 
 def test_get_metadata_rejects_path_traversal(tmp_path):
