@@ -12,6 +12,7 @@ prompt body, so models that cannot tool-call (e.g. Gemma
 free-tier) still produce sensible briefings, and models
 that can tool-call still see the same baseline data.
 """
+import logging
 from datetime import datetime, timezone
 
 from ..services.advisor import (
@@ -20,6 +21,8 @@ from ..services.advisor import (
     _format_inbox,
     _format_tasks,
 )
+
+log = logging.getLogger(__name__)
 
 
 def _format_time_insights(label: str, data: dict) -> str:
@@ -89,47 +92,85 @@ def _collect_time_insights(period: str) -> dict:
     }
 
 
+def _section(heading: str, render) -> list[str]:
+    """Render one section, or a note that it is missing.
+
+    The per-section catch this docstring used to promise was
+    never written: one raising backend call took the whole
+    context with it. The caller catches, so the job still
+    ran -- with no tasks, no clocks, no inbox, no budgets
+    and no insights, and nothing in the output to say so.
+    A briefing built blind reads exactly like a briefing
+    built on an empty week.
+    """
+    try:
+        return [heading, render()]
+    except Exception as exc:  # noqa: BLE001
+        log.warning(
+            "cron context: %s unavailable: %s",
+            heading.lstrip("# "), exc,
+        )
+        return [
+            heading,
+            f"  (unavailable: {exc})\n",
+        ]
+
+
 def build_cron_context() -> str:
     """Build the markdown context block prepended to every
     cron prompt.
 
     Pulls open tasks, recent clock entries, inbox items,
     customer budgets, and time insights for week/month.
-    Errors are caught per-section so a single failing
-    backend call doesn't kill the whole context.
+    Errors are caught per section, so one failing backend
+    call costs that section and not the rest.
     """
     from ..backends import get_backend
-    backend = get_backend()
     now = datetime.now(timezone.utc).strftime(
         "%Y-%m-%d %H:%M UTC",
     )
 
     sections = [f"# Kaisho Context  ({now})\n"]
 
-    sections.append("## Open Tasks")
-    tasks = backend.tasks.list_tasks(include_done=False)
-    sections.append(_format_tasks(tasks))
+    def tasks():
+        return _format_tasks(
+            get_backend().tasks.list_tasks(
+                include_done=False,
+            )
+        )
 
-    sections.append("## Recent Clock Entries (week)")
-    week_entries = backend.clocks.list_entries(
-        period="week",
+    def clocks():
+        return _format_clocks(
+            get_backend().clocks.list_entries(period="week")
+        )
+
+    def inbox():
+        return _format_inbox(
+            get_backend().inbox.list_items()
+        )
+
+    def budgets():
+        return _format_budgets(
+            get_backend().customers.list_customers()
+        )
+
+    def insights():
+        return (
+            _format_time_insights(
+                "This week", _collect_time_insights("week"),
+            )
+            + _format_time_insights(
+                "This month",
+                _collect_time_insights("month"),
+            )
+        )
+
+    sections += _section("## Open Tasks", tasks)
+    sections += _section(
+        "## Recent Clock Entries (week)", clocks,
     )
-    sections.append(_format_clocks(week_entries))
-
-    sections.append("## Inbox")
-    inbox = backend.inbox.list_items()
-    sections.append(_format_inbox(inbox))
-
-    sections.append("## Customer Budgets")
-    customers = backend.customers.list_customers()
-    sections.append(_format_budgets(customers))
-
-    sections.append("## Time Insights")
-    week = _collect_time_insights("week")
-    month = _collect_time_insights("month")
-    sections.append(_format_time_insights("This week", week))
-    sections.append(
-        _format_time_insights("This month", month),
-    )
+    sections += _section("## Inbox", inbox)
+    sections += _section("## Customer Budgets", budgets)
+    sections += _section("## Time Insights", insights)
 
     return "\n".join(sections)
