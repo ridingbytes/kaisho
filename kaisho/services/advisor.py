@@ -8,10 +8,14 @@ The advisor uses an agentic loop: models that support tool calling can
 read and write app data (tasks, inbox, clocks, customers) while
 answering the question.
 
-Personality and user context are loaded from optional markdown files:
-  data/soul.md  -- advisor personality, tone, behavioral rules
-  data/user.md  -- user profile, role, preferences
-  data/skills/  -- reusable prompt templates (*.md)
+Personality and user context are loaded from optional
+markdown files in the profile directory. The names are
+upper-case, and on a case-sensitive filesystem that is the
+difference between a personality that loads and one that
+silently does not:
+  SOUL.md   -- advisor personality, tone, behavioral rules
+  USER.md   -- user profile, role, preferences
+  SKILLS/   -- reusable prompt templates (*.md)
 """
 import json
 from collections.abc import Callable
@@ -320,6 +324,21 @@ def build_system_prompt(
 
 _MAX_TURNS = 10
 
+# What to say when the loop runs out of turns.
+#
+# The three provider paths each got this wrong, and each
+# differently: the Claude path returned "" so the user saw
+# nothing at all, while the Ollama and OpenAI paths
+# returned messages[-1], which after exhaustion is a tool
+# result -- raw JSON presented as the advisor's answer.
+#
+# Neither is an answer. Say what happened instead, matching
+# what the cloud advisor says in the same situation.
+_TURN_LIMIT_REPLY = (
+    "I ran out of tool-use budget before I could finish "
+    "that. Try narrowing the question and asking again."
+)
+
 # Phrases that indicate the model is describing a completed action without
 # having called a tool — i.e. a hallucination that must trigger a retry.
 _ACTION_PHRASES = (
@@ -459,7 +478,7 @@ def ask_ollama(
             )
         )
 
-    return messages[-1].get("content", "")
+    return _TURN_LIMIT_REPLY
 
 
 def ask_openai_compatible(
@@ -524,7 +543,7 @@ def ask_openai_compatible(
             )
         )
 
-    return messages[-1].get("content", "")
+    return _TURN_LIMIT_REPLY
 
 
 def ask_claude(
@@ -586,7 +605,7 @@ def ask_claude(
             "content": tool_results,
         })
 
-    return ""
+    return _TURN_LIMIT_REPLY
 
 
 def _execute_claude_tools(
