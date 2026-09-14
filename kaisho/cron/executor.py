@@ -128,10 +128,20 @@ def load_prompt(prompt_file: str, project_root: Path) -> str:
 def _prefetch_urls(urls: list[str]) -> str:
     """Fetch each URL and return combined content."""
     import urllib.request
-    from .tools import _is_domain_allowed, _extract_domain
+    from .tools import (
+        _extract_domain, _is_domain_allowed,
+        _open_allowlisted,
+    )
 
     parts = []
     for url in urls:
+        if not url.startswith(("http://", "https://")):
+            parts.append(
+                f"--- {url} ---\n"
+                f"[BLOCKED: only http and https URLs are "
+                f"fetched]\n"
+            )
+            continue
         domain = _extract_domain(url)
         if not _is_domain_allowed(domain):
             parts.append(
@@ -149,9 +159,7 @@ def _prefetch_urls(urls: list[str]) -> str:
                     "Accept": "application/json",
                 },
             )
-            with urllib.request.urlopen(
-                req, timeout=15
-            ) as resp:
+            with _open_allowlisted(req, timeout=15) as resp:
                 raw = resp.read(100_000)
                 charset = (
                     resp.headers.get_content_charset()
