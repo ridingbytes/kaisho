@@ -1,5 +1,88 @@
 # Changelog
 
+## 2.9.2
+
+A review pass over the whole codebase. Everything below was
+reproduced before it was fixed, and each has a test that
+fails against the old code.
+
+Security:
+
+- Keep checking the URL allowlist after a redirect [#256].
+  It was checked once, against the URL handed in, and
+  `urlopen` follows redirects: an allowed host answering 302
+  could hand the model anything this machine can reach, and
+  the result is written into the inbox. Both fetch paths,
+  including the tool where the model picks the URL.
+- Check the KB subdir by path, not by string prefix [#257].
+  `startswith` let a sibling directory whose name begins
+  with the KB's name through, so `../kb-private` resolved
+  outside the KB and passed. `_safe_path`, in the same file,
+  already documents that bypass.
+
+Things that could not stop, or stopped wrong:
+
+- Bound the pull loop [#255]. Five `while True` loops that
+  end only if the server advances its cursor. Against one
+  that does not: 11990 requests in five seconds, from a sync
+  that runs by itself every five minutes.
+- Back off when the cloud rejects the key [#260]. The
+  WebSocket reset its backoff whenever the connect returned,
+  and a refused session returns the same way a good one
+  does. A revoked sync token meant a reconnect every two
+  seconds, indefinitely.
+- Make a weekly task weekly [#259]. The recurrence check
+  turned on `set_task_property`, which no backend has, so
+  every pass looked like the first: a weekly template
+  produced seven tasks a week, a quarterly one ninety.
+
+Answers that were not answers:
+
+- Say something when the advisor runs out of turns [#262].
+  The Claude path returned `""`, which the UI renders as a
+  blank reply; the others returned the last tool result as
+  prose.
+- Say why a cron job produced nothing [#263]. The same, into
+  the inbox, unattended.
+- Catch cron context errors per section, as documented
+  [#261]. The docstring promised it and there was no `try`
+  at all, so one failing backend call cost the whole block
+  and the briefing was written blind, reading exactly like a
+  briefing about an empty week.
+
+Desktop shell:
+
+- Stop the launcher killing the app that is running [#265].
+  `lsof -ti :8765` lists every socket on that port on either
+  end, including the webview of a running Kaisho. The
+  Windows branch already guarded against this and names the
+  case in its comment; the fix never reached `lsof`.
+- Give the backend calls a deadline [#266]. A sidecar that
+  accepts and never answers froze the tray ticker on a Tokio
+  worker until restart.
+
+Frontend:
+
+- Read org timestamps with a non-English weekday [#267].
+  Kaisho writes English abbreviations on purpose, but these
+  files are edited in Emacs, and a German one writes `Mo`,
+  `Di`, `Mi`. Those fell through to the date-only branch and
+  rendered a 09:00 entry at midnight.
+- Format the clock widget heading in the selected language
+  [#267]. It was hardcoded to `en-US`, next to a heading
+  that says "Heute" the rest of the time.
+- Translate the four keys that rendered as their own name
+  [#264], including the Settings language heading, whose
+  `|| "Language"` fallback could never fire.
+- Stop writing one profile's state into another [#268].
+  Until the active profile was known, writes landed under
+  `default:`, and a read could move a legacy value into the
+  wrong profile and delete the original.
+
+Also: stop offering hosting we do not do [#258], and the
+first tests for the frontend and the Tauri crate, neither of
+which had any.
+
 ## 2.9.1
 
 - Raise the setuptools floor to 77 for the PEP 639 licence [#254].
