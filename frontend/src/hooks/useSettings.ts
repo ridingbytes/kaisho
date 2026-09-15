@@ -68,6 +68,7 @@ import {
   updateTag,
   updateUrlAllowlist,
 } from "../api/client";
+import { setActiveProfile } from "../utils/profileStorage";
 import type { ExternalEditorSettings } from "../api/client";
 import type { AiSettings, TaskState } from "../types";
 
@@ -640,7 +641,13 @@ export function useSwitchProfile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (profile: string) => switchProfile(profile),
-    onSuccess: () => {
+    onSuccess: (_data, profile) => {
+      // Record the new name before the caller reloads.
+      // profileStorage reads this synchronously on the next
+      // load, which is what keeps the reads immediately
+      // after a switch on the right profile rather than on
+      // the previous one until its fetch lands.
+      setActiveProfile(profile);
       void qc.invalidateQueries();
     },
   });
