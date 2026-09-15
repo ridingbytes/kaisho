@@ -48,3 +48,6 @@ jobs:
 
       - name: Type check and build
         run: cd frontend && pnpm build
+
+      - name: Run tests
+        run: cd frontend && pnpm test
