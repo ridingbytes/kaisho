@@ -1,6 +1,24 @@
-# esbuild ships a prebuilt binary and needs its install
-# script to put it in place; vitest will not start without
-# it. Approved explicitly because pnpm blocks build scripts
-# by default, which is the right default.
+# Both keys are load-bearing, for different pnpm versions.
+#
+# packages: pnpm 9, which CI pins, treats any
+# pnpm-workspace.yaml as a workspace declaration and
+# refuses to install without this field:
+#
+#   ERROR  packages field missing or empty
+#
+# "." is this package itself, so the install layout is
+# unchanged.
+#
+# ignoredBuiltDependencies: pnpm 10 and later refuse to
+# finish an install that skipped a package's build script
+# (ERR_PNPM_IGNORED_BUILDS) unless told the skip is
+# deliberate. esbuild's script places a prebuilt binary
+# that neither the build nor the tests need: verified with
+# a clean install that skipped it, followed by pnpm build
+# and pnpm test, both green.
+packages:
+  - .
 allowBuilds:
-  esbuild: true
+  esbuild: set this to true or false
+ignoredBuiltDependencies:
+  - esbuild
