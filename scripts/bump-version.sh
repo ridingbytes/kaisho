@@ -63,6 +63,15 @@ p.write_text(json.dumps(data, indent=2) + '\n')
 sed -i '' "s/^version = \".*\"/version = \"$VERSION\"/" \
     "$ROOT/desktop/src-tauri/Cargo.toml"
 
+# Cargo.lock carries the crate's own version too, and cargo
+# rewrites it on the next build. Leaving it behind means the
+# committed lock is a release or two stale and every build
+# dirties the working tree -- which trains people to discard
+# the change without reading it. --offline so a version bump
+# does not need the network, and -p so nothing else moves.
+(cd "$ROOT/desktop/src-tauri" \
+    && cargo update --offline -p kaisho-desktop >/dev/null)
+
 # frontend/package.json
 python3 -c "
 import json, pathlib
@@ -72,4 +81,5 @@ data['version'] = '$VERSION'
 p.write_text(json.dumps(data, indent=2) + '\n')
 "
 
-echo "Done: pyproject.toml, tauri.conf.json, Cargo.toml, frontend/package.json all at v$VERSION"
+echo "Done: pyproject.toml, tauri.conf.json, Cargo.toml, \
+Cargo.lock, frontend/package.json all at v$VERSION"
