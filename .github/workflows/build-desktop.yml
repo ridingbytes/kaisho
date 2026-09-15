@@ -38,7 +38,14 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # 22, not 20. jsdom 30 (via vitest) declares
+          # engines ^22.22.2 || ^24.15.0 || >=26.0.0, and on
+          # 20 it fails at import with
+          # "webidl.util.markAsUncloneable is not a
+          # function" rather than anything that names a Node
+          # version. The runners also warn that 20 is
+          # deprecated and force actions onto 24.
+          node-version: "22"
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
