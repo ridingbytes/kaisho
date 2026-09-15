@@ -7,8 +7,19 @@
  * string for tooltip display.
  */
 
+// \S+ for the weekday, not \w{3}. Kaisho writes an English
+// three-letter abbreviation on purpose (see _EN_WEEKDAYS in
+// kaisho/org/clock.py), but these files are edited in Emacs
+// too, and Emacs writes the weekday in the running locale:
+// German gives "Mo", "Di", "Mi" -- two letters. Those failed
+// this pattern, then failed new Date(), and fell through to
+// the date-only branch, which drops the time and renders the
+// entry at midnight.
+//
+// The Python parser already takes \S+ for exactly this
+// reason; its comment says so. This is the same rule.
 const ORG_DATE_RE =
-  /^(\d{4}-\d{2}-\d{2})\s+\w{3}\s+(\d{2}:\d{2})/;
+  /^(\d{4}-\d{2}-\d{2})\s+\S+\s+(\d{2}:\d{2})/;
 
 function parseDate(raw: string): Date | null {
   const s = raw.replace(/^\[/, "").replace(/\]$/, "");

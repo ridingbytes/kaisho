@@ -2,6 +2,7 @@
  * Shared formatting utilities for durations, dates,
  * and times. Replaces per-component duplicates.
  */
+import i18n from "../i18n";
 
 /** Format minutes as "Xh" or "X.Xh" (e.g. "2.5h"). */
 export function formatHours(
@@ -77,13 +78,19 @@ export function formatTime(
 }
 
 /**
- * Format ISO date as short heading (e.g. "Apr 12").
- * Used in calendar/clock widgets.
+ * Format ISO date as a short heading, in the selected UI
+ * language. Used in the clock widget.
+ *
+ * The locale was hardcoded to "en-US", which put "Apr 12"
+ * next to a heading that says "Heute" the rest of the time:
+ * ClockWidget shows either the translated word for today or
+ * this. formatDateLabel in dateLabel.ts has always taken
+ * i18n.language; this is the same rule.
  */
 export function formatDateHeading(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
   const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString(i18n.language, {
     month: "short",
     day: "numeric",
   });
