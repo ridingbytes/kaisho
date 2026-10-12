@@ -4,8 +4,9 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 BASE = "http://localhost:5173"
-OUT = Path(
-    "/Users/rbartl/develop/kaisho-website/screenshots"
+OUT = (
+    Path(__file__).resolve().parent.parent.parent
+    / "kaisho-website" / "screenshots"
 )
 OUT.mkdir(exist_ok=True)
 

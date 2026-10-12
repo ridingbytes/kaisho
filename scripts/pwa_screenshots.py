@@ -171,8 +171,9 @@ if __name__ == "__main__":
         OUT = Path(__file__).parent.parent / \
             "docs" / "assets" / "images"
     else:
-        OUT = Path(
-            "/Users/rbartl/develop/kaisho-website/screenshots"
+        OUT = (
+            Path(__file__).resolve().parent.parent.parent
+            / "kaisho-website" / "screenshots"
         )
     OUT.mkdir(parents=True, exist_ok=True)
     print(f"Taking PWA screenshots from {BASE}")
